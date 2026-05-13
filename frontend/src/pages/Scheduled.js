@@ -6,7 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 function untilLabel(iso) {
     if (!iso) return "";
@@ -27,6 +27,7 @@ export default function Scheduled() {
     const [sort, setSort] = useState("soonest");
     const [selected, setSelected] = useState(new Set());
     const navigate = useNavigate();
+    const { openCompose } = useOutletContext() || {};
 
     const load = () => {
         setLoading(true);
@@ -103,7 +104,16 @@ export default function Scheduled() {
                 <div className="px-6 py-16 text-center">
                     <div className="w-20 h-20 rounded-full bg-black/[0.04] grid place-items-center mx-auto mb-5 border border-black/[0.08]"><Clock size={28} className="text-black/40" /></div>
                     <p className="text-black font-heading text-lg tracking-tight">{q ? "Sem resultados" : "Nenhum agendamento"}</p>
-                    <p className="text-black/50 text-sm mt-1">Programa publicações futuras a partir do compositor.</p>
+                    <p className="text-black/50 text-sm mt-1 mb-6">Programa publicações futuras a partir do compositor.</p>
+                    {!q && (
+                        <button
+                            onClick={() => (openCompose ? openCompose() : navigate("/"))}
+                            data-testid="scheduled-empty-cta"
+                            className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]"
+                        >
+                            <Calendar size={13} /> Agendar publicação
+                        </button>
+                    )}
                 </div>
             ) : (
                 <>

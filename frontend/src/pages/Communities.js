@@ -165,7 +165,16 @@ export default function Communities() {
                     </div>
                     <p className="type-overline mb-2">Sem comunidades</p>
                     <h3 className="font-display text-[19px] font-bold tracking-tight text-black">{q || cat ? "Sem resultados" : "Nenhuma comunidade ainda"}</h3>
-                    <p className="text-black/55 text-sm mt-2">{q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}</p>
+                    <p className="text-black/55 text-sm mt-2 mb-6">{q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}</p>
+                    {!q && !cat && (
+                        <button
+                            onClick={() => setCreating(true)}
+                            data-testid="communities-empty-cta"
+                            className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]"
+                        >
+                            <Plus size={13} /> Criar comunidade
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div>

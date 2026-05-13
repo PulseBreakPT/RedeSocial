@@ -10,6 +10,7 @@ import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
 import { ScrollToTop } from "./ScrollToTop";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useGlobalNotifications } from "../hooks/useGlobalNotifications";
+import { useEscapeKey } from "../hooks/useClickOutside";
 import { X } from "lucide-react";
 
 export function Layout() {
@@ -21,6 +22,12 @@ export function Layout() {
         openHelp: () => setHelpOpen(true),
     });
     useGlobalNotifications();
+
+    // ESC closes the most relevant modal first (help > compose).
+    useEscapeKey(() => {
+        if (helpOpen) setHelpOpen(false);
+        else if (composeOpen) setComposeOpen(false);
+    }, helpOpen || composeOpen);
 
     // Lock body scroll while compose modal is open (so the page behind doesn't scroll on mobile)
     useEffect(() => {

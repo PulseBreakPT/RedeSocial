@@ -19,6 +19,8 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useLocalDraft } from "../hooks/useLocalDraft";
+import { useClickOutside } from "../hooks/useClickOutside";
+import { Spinner } from "./Spinner";
 import { toast } from "sonner";
 
 const EMOJIS = ["🔥", "✨", "🚀", "❤️", "👀", "💯", "😂", "🙌", "⚡", "🌙"];
@@ -76,6 +78,11 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
 
     const fileRef = useRef(null);
     const textareaRef = useRef(null);
+
+    // Click-outside / ESC handling for each popover
+    const audRef = useClickOutside(() => setAudOpen(false), audOpen);
+    const ringRef = useClickOutside(() => setRingOpen(false), ringOpen);
+    const emojiRef = useClickOutside(() => setEmojiOpen(false), emojiOpen);
 
     useEffect(() => {
         if (content && content.trim().length > 0) setHadDraft(true);
@@ -203,7 +210,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
 
                     {/* Audience + Identity Ring selectors */}
                     <div className="mb-2 flex items-center gap-2 flex-wrap">
-                        <div className="relative inline-block">
+                        <div className="relative inline-block" ref={audRef}>
                             <button
                                 onClick={() => setAudOpen((v) => !v)}
                                 data-testid="composer-audience-btn"
@@ -214,8 +221,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             </button>
                             {audOpen && (
                                 <div
-                                    onMouseLeave={() => setAudOpen(false)}
-                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[200px]"
+                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[200px] anim-fade-up"
                                 >
                                     {AUDIENCES.map((a) => {
                                         const I = a.Icon;
@@ -241,7 +247,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         </div>
 
                         {/* F2.4 Identity Ring */}
-                        <div className="relative inline-block">
+                        <div className="relative inline-block" ref={ringRef}>
                             <button
                                 onClick={() => setRingOpen((v) => !v)}
                                 data-testid="composer-ring-btn"
@@ -256,8 +262,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             </button>
                             {ringOpen && (
                                 <div
-                                    onMouseLeave={() => setRingOpen(false)}
-                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[260px]"
+                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[260px] anim-fade-up"
                                 >
                                     {RINGS.map((r) => (
                                         <button
@@ -443,14 +448,13 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             <ComposerIconBtn onClick={() => insertText("@")} label="menção">
                                 <AtSign size={18} />
                             </ComposerIconBtn>
-                            <div className="relative">
+                            <div className="relative" ref={emojiRef}>
                                 <ComposerIconBtn onClick={() => setEmojiOpen((v) => !v)} data-testid="composer-emoji-btn" label="emoji">
                                     <Smile size={18} />
                                 </ComposerIconBtn>
                                 {emojiOpen && (
                                     <div
-                                        onMouseLeave={() => setEmojiOpen(false)}
-                                        className="absolute left-0 top-full mt-1 flex bg-white border border-black/[0.08] rounded-2xl px-2 py-1.5 gap-0.5 z-30 shadow-xl"
+                                        className="absolute left-0 top-full mt-1 flex bg-white border border-black/[0.08] rounded-2xl px-2 py-1.5 gap-0.5 z-30 shadow-xl anim-fade-up"
                                     >
                                         {EMOJIS.map((emj) => (
                                             <button
@@ -494,9 +498,10 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 disabled={busy || (!content.trim() && images.length === 0 && !pollOpen) || remaining < 0}
                                 onClick={() => submit("publish")}
                                 data-testid="composer-publish-btn"
-                                className="btn-obsidian text-[13px] py-2.5 px-5 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="btn-obsidian text-[13px] py-2.5 px-5 disabled:opacity-30 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                             >
-                                {busy ? "…" : scheduledAt ? "Agendar" : "Publicar"}
+                                {busy && <Spinner size={12} />}
+                                {busy ? "A publicar…" : scheduledAt ? "Agendar" : "Publicar"}
                             </button>
                         </div>
                     </div>

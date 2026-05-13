@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
@@ -19,8 +19,9 @@ const TABS = [
 ];
 
 export default function Explore() {
-    const [tab, setTab] = useState("posts");
-    const [mood, setMood] = useState("");
+    const [sp, setSp] = useSearchParams();
+    const [tab, setTab] = useState(() => (TABS.find((t) => t.key === sp.get("tab"))?.key) || "posts");
+    const [mood, setMood] = useState(() => sp.get("mood") || "");
     const [sort, setSort] = useState("trending");
     const [q, setQ] = useState("");
     const [posts, setPosts] = useState([]);
@@ -30,6 +31,15 @@ export default function Explore() {
     const [cidades, setCidades] = useState([]);
     const [loading, setLoading] = useState(true);
     useLiveTime(30000);
+
+    useEffect(() => {
+        // Sync URL with current tab + mood (replace, so back-button doesn't pile up)
+        const next = new URLSearchParams();
+        if (tab !== "posts") next.set("tab", tab);
+        if (mood) next.set("mood", mood);
+        const cur = sp.toString();
+        if (cur !== next.toString()) setSp(next, { replace: true });
+    }, [tab, mood]); // eslint-disable-line
 
     useEffect(() => {
         setLoading(true);

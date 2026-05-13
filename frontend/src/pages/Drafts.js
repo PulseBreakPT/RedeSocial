@@ -6,7 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime } from "../lib/time";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 export default function Drafts() {
     const [posts, setPosts] = useState([]);
@@ -15,6 +15,7 @@ export default function Drafts() {
     const [sort, setSort] = useState("recent"); // recent | oldest | length
     const [selected, setSelected] = useState(new Set());
     const navigate = useNavigate();
+    const { openCompose } = useOutletContext() || {};
 
     const load = () => {
         setLoading(true);
@@ -99,7 +100,16 @@ export default function Drafts() {
                 <div className="px-6 py-16 text-center">
                     <div className="w-20 h-20 rounded-full bg-black/[0.04] grid place-items-center mx-auto mb-5 border border-black/[0.08]"><FileText size={28} className="text-black/40" /></div>
                     <p className="text-black font-heading text-lg tracking-tight">{q ? "Sem resultados" : "Sem rascunhos"}</p>
-                    <p className="text-black/50 text-sm mt-1">Guarda uma publicação para a continuares depois.</p>
+                    <p className="text-black/50 text-sm mt-1 mb-6">Guarda uma publicação para a continuares depois.</p>
+                    {!q && (
+                        <button
+                            onClick={() => (openCompose ? openCompose() : navigate("/"))}
+                            data-testid="drafts-empty-cta"
+                            className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]"
+                        >
+                            <FileText size={13} /> Criar publicação
+                        </button>
+                    )}
                 </div>
             ) : (
                 <>

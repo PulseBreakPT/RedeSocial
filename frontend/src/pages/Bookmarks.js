@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, Plus, FolderPlus, Pencil, Trash2, Search, X, Image as ImageIcon, BarChart3, Type } from "lucide-react";
+import { Bookmark, Plus, FolderPlus, Pencil, Trash2, Search, X, Image as ImageIcon, BarChart3, Type, Compass } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
+import { useEscapeKey } from "../hooks/useClickOutside";
 import { toast } from "sonner";
 
 export default function Bookmarks() {
@@ -17,6 +19,7 @@ export default function Bookmarks() {
     const [showNew, setShowNew] = useState(false);
     const [newName, setNewName] = useState("");
     useLiveTime(30000);
+    useEscapeKey(() => setShowNew(false), showNew);
 
     const loadCollections = async () => {
         try { const { data } = await api.get("/bookmark-collections"); setCollections(data); }
@@ -170,14 +173,26 @@ export default function Bookmarks() {
                     </div>
                     <p className="type-overline mb-2">Sem nada guardado</p>
                     <h3 className="font-display text-[19px] font-bold tracking-tight text-black">{q ? "Nada encontrado" : "Nada guardado ainda"}</h3>
-                    <p className="text-black/55 text-sm mt-2">Toca no marcador de uma publicação para guardá-la.</p>
+                    <p className="text-black/55 text-sm mt-2 mb-6">Toca no marcador de uma publicação para guardá-la.</p>
+                    {!q && (
+                        <Link to="/explore" data-testid="bookmarks-empty-cta" className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]">
+                            <Compass size={13} /> Explorar publicações
+                        </Link>
+                    )}
                 </div>
             ) : (
                 filtered.map((p) => (
                     <PostCard
                         key={p.id}
                         post={p}
-                        onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                        onChange={(np) => {
+                            // If the post was un-bookmarked, remove it from the list immediately.
+                            if (np && np.bookmarked === false) {
+                                setPosts((prev) => prev.filter((x) => x.id !== np.id));
+                            } else {
+                                setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)));
+                            }
+                        }}
                         onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
                     />
                 ))

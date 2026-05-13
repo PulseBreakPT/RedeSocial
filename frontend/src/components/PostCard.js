@@ -133,6 +133,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         try {
             const { data } = await api.post(`/posts/${post.id}/bookmark`);
             setBookmarked(data.bookmarked);
+            onChange?.({ ...post, bookmarked: data.bookmarked });
             toast.success(data.bookmarked ? "Guardado" : "Removido dos guardados");
         } catch (err) {
             setBookmarked(prev);
@@ -293,7 +294,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(`/post/${post.id}`);
+                                    navigate(`/post/${post.id}`, { state: { focusComment: true } });
                                 }}
                                 data-testid={`comment-btn-${post.id}`}
                                 className="eng-btn is-commented"

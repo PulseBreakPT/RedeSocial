@@ -253,6 +253,15 @@ function ComunidadesList({ items }) {
     );
 }
 
+function slugifyCity(s) {
+    return (s || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+}
+
 function CidadesList({ items }) {
     if (items.length === 0) return <EmptyState msg="Sem cidades em alta" />;
     return (
@@ -260,8 +269,8 @@ function CidadesList({ items }) {
             {items.map((c, i) => (
                 <Link
                     key={c.city}
-                    to={`/tag/${c.city.toLowerCase().replace(/\s+/g, "").replace(/[áàâ]/g, "a").replace(/[éê]/g, "e").replace(/í/g, "i").replace(/[óô]/g, "o").replace(/ú/g, "u").replace(/ç/g, "c")}`}
-                    className="flex items-center gap-3 bg-white px-5 py-4 hover:bg-black/[0.015] transition"
+                    to={`/tag/${c.tag || slugifyCity(c.city)}`}
+                    className="flex items-center gap-3 bg-white px-5 py-4 hover:bg-black/[0.015] transition tap-shrink"
                 >
                     <div className="w-9 text-right font-display text-[22px] text-black/25 leading-none">
                         {String(i + 1).padStart(2, "0")}

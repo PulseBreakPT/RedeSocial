@@ -289,22 +289,37 @@ export default function Profile() {
                             </div>
                         )}
                         {regionMeta && (
-                            <div className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] rounded-full px-3 py-1" data-testid="region-pill">
+                            <Link
+                                to={`/tag/${(regionMeta.label || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "")}`}
+                                className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] hover:border-black/30 hover:bg-black/[0.02] rounded-full px-3 py-1 tap-shrink transition"
+                                data-testid="region-pill"
+                                title={`Explorar ${regionMeta.label}`}
+                            >
                                 <span aria-hidden>{regionMeta.emoji}</span>
                                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-black/75">{regionMeta.label}</span>
-                            </div>
+                            </Link>
                         )}
                         {moodMeta && (
-                            <div className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] rounded-full px-3 py-1" data-testid="mood-pill">
+                            <Link
+                                to={`/explore?mood=${moodMeta.key}`}
+                                className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] hover:border-black/30 hover:bg-black/[0.02] rounded-full px-3 py-1 tap-shrink transition"
+                                data-testid="mood-pill"
+                                title={`Ver pessoas com mood ${moodMeta.label}`}
+                            >
                                 <span aria-hidden>{moodMeta.emoji}</span>
                                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-black/75">{moodMeta.label}</span>
-                            </div>
+                            </Link>
                         )}
                         {teamMeta && teamMeta.key !== "nenhum" && (
-                            <div className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] rounded-full px-3 py-1" data-testid="team-pill">
+                            <Link
+                                to={`/tag/${(teamMeta.label || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "")}`}
+                                className="inline-flex items-center gap-1.5 bg-white border border-black/[0.10] hover:border-black/30 hover:bg-black/[0.02] rounded-full px-3 py-1 tap-shrink transition"
+                                data-testid="team-pill"
+                                title={`Explorar ${teamMeta.label}`}
+                            >
                                 <span aria-hidden>{teamMeta.emoji}</span>
                                 <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-black/75">{teamMeta.label}</span>
-                            </div>
+                            </Link>
                         )}
                     </div>
 

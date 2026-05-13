@@ -229,13 +229,13 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
+  version: "2.1"
   test_sequence: 0
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Fase 2 — PT social mechanics (trending velocity, moods, badges, regions, collections, members, stats, notif star/snooze, conv pin/archive, tag stats, categories)"
+    - "UX polish pass — dead-click elimination across PostDetail (threaded comments), Composer dropdowns (click-outside/ESC), search (hashtag results + ESC), Stories (full-screen tap zones), Bookmarks (auto-remove on unbookmark), empty-state CTAs, Profile clickable pills, Trending city tag canonicalisation"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -244,4 +244,11 @@ agent_communication:
     - agent: "main"
       message: |
         Phase 2 backend complete — broad expansion. Please test ALL endpoints listed in the new "Fase 2" backend task description. Use admin@vermillion.app / admin123 (admin already seeded with PT demo data). Skip Phase 1 retest; only test Phase 2 + legacy sanity checks listed in the task. DO NOT test frontend yet.
+    - agent: "main"
+      message: |
+        UX polish pass (front-end only). Backend endpoints used: GET/POST /api/posts/{id}/comments (with parent_id), DELETE /api/comments/{id} (cascading delete), GET /api/trending (now also consumed for hashtag search results in the right sidebar). Please re-verify just these two endpoints work as the front-end now relies on them more heavily:
+          1. POST /api/posts/{post_id}/comments with body {"content":"…","parent_id":"<id>"} → returns enriched comment with replies_count and parent_id
+          2. DELETE /api/comments/{comment_id} → returns {"deleted": N} where N includes descendants and removes them transitively
+        No new endpoints, no schema changes.
+
 

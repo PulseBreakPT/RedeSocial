@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
+import { useEscapeKey } from "../hooks/useClickOutside";
 import { toast } from "sonner";
 
 function StoryViewer({ groups, startIndex, onClose }) {
@@ -10,19 +11,30 @@ function StoryViewer({ groups, startIndex, onClose }) {
     const [gi, setGi] = useState(startIndex);
     const [si, setSi] = useState(0);
     const [progress, setProgress] = useState(0);
+    const [paused, setPaused] = useState(false);
     const intervalRef = useRef(null);
+    const startRef = useRef(Date.now());
+    const elapsedRef = useRef(0);
 
     const group = groups[gi];
     const story = group?.stories[si];
+
+    useEscapeKey(onClose, true);
 
     useEffect(() => {
         if (!story) return;
         api.post(`/stories/${story.id}/view`).catch(() => {});
         setProgress(0);
-        const start = Date.now();
+        startRef.current = Date.now();
+        elapsedRef.current = 0;
         const dur = 5000;
         intervalRef.current = setInterval(() => {
-            const p = Math.min(100, ((Date.now() - start) / dur) * 100);
+            if (paused) {
+                startRef.current = Date.now() - elapsedRef.current;
+                return;
+            }
+            elapsedRef.current = Date.now() - startRef.current;
+            const p = Math.min(100, (elapsedRef.current / dur) * 100);
             setProgress(p);
             if (p >= 100) {
                 clearInterval(intervalRef.current);
@@ -31,7 +43,7 @@ function StoryViewer({ groups, startIndex, onClose }) {
         }, 50);
         return () => clearInterval(intervalRef.current);
         // eslint-disable-next-line
-    }, [gi, si]);
+    }, [gi, si, paused]);
 
     const next = () => {
         if (si + 1 < group.stories.length) setSi(si + 1);
@@ -64,7 +76,7 @@ function StoryViewer({ groups, startIndex, onClose }) {
                         <div className="text-white font-heading font-medium text-[14px] tracking-tight">{group.author.name}</div>
                         <div className="text-white/70 font-mono text-[11px]">@{group.author.username}</div>
                     </div>
-                    <button onClick={onClose} data-testid="story-close" className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md">
+                    <button onClick={onClose} data-testid="story-close" className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md tap-shrink">
                         <X size={16} strokeWidth={1.8} />
                     </button>
                 </div>
@@ -80,12 +92,29 @@ function StoryViewer({ groups, startIndex, onClose }) {
                             try { await api.delete(`/stories/${story.id}`); toast.success("Story apagado"); onClose(); }
                             catch (e) { toastApiError(e); }
                         }}
-                        className="absolute bottom-4 right-4 z-30 text-[10px] font-mono uppercase tracking-[0.16em] bg-white/10 hover:bg-red-soft/85 text-white px-3 py-1.5 rounded-full backdrop-blur-md transition">
+                        className="absolute bottom-4 right-4 z-30 text-[10px] font-mono uppercase tracking-[0.16em] bg-white/10 hover:bg-red-soft/85 text-white px-3 py-1.5 rounded-full backdrop-blur-md transition tap-shrink">
                         Apagar
                     </button>
                 )}
-                <button onClick={prev} className="absolute left-0 top-0 bottom-0 w-1/3 z-20" aria-label="anterior" />
-                <button onClick={next} className="absolute right-0 top-0 bottom-0 w-1/3 z-20" aria-label="próximo" />
+                {/* Tap zones: left half = prev, right half = next. Long-press = pause. No dead zone. */}
+                <button
+                    onClick={prev}
+                    onPointerDown={() => setPaused(true)}
+                    onPointerUp={() => setPaused(false)}
+                    onPointerLeave={() => setPaused(false)}
+                    className="absolute left-0 top-16 bottom-12 w-1/2 z-20"
+                    aria-label="anterior"
+                    data-testid="story-prev"
+                />
+                <button
+                    onClick={next}
+                    onPointerDown={() => setPaused(true)}
+                    onPointerUp={() => setPaused(false)}
+                    onPointerLeave={() => setPaused(false)}
+                    className="absolute right-0 top-16 bottom-12 w-1/2 z-20"
+                    aria-label="próximo"
+                    data-testid="story-next"
+                />
             </div>
         </div>
     );

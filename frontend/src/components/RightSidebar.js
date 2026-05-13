@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, TrendingUp, Sparkles } from "lucide-react";
+import { Search, TrendingUp, Sparkles, Hash, X } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
+import { Spinner } from "./Spinner";
+import { useClickOutside } from "../hooks/useClickOutside";
 import { toast } from "sonner";
 
 export function RightSidebar() {
     const [q, setQ] = useState("");
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState({ users: [], tags: [] });
+    const [searching, setSearching] = useState(false);
+    const [focused, setFocused] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
     const [trending, setTrending] = useState([]);
     const navigate = useNavigate();
+
+    const searchRef = useClickOutside(() => setFocused(false), focused);
 
     useEffect(() => {
         api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
@@ -20,12 +26,21 @@ export function RightSidebar() {
     }, []);
 
     useEffect(() => {
-        if (!q.trim()) { setResults([]); return; }
+        if (!q.trim()) { setResults({ users: [], tags: [] }); setSearching(false); return; }
+        setSearching(true);
         const id = setTimeout(async () => {
             try {
-                const { data } = await api.get(`/users/search?q=${encodeURIComponent(q)}`);
-                setResults(data);
+                const [u, t] = await Promise.all([
+                    api.get(`/users/search?q=${encodeURIComponent(q)}`).catch(() => ({ data: [] })),
+                    api.get(`/trending`).catch(() => ({ data: [] })),
+                ]);
+                const needle = q.toLowerCase().replace(/^#/, "");
+                const tags = (t.data || [])
+                    .filter((x) => (x.tag || "").toLowerCase().includes(needle))
+                    .slice(0, 5);
+                setResults({ users: u.data || [], tags });
             } catch {}
+            finally { setSearching(false); }
         }, 250);
         return () => clearTimeout(id);
     }, [q]);
@@ -40,6 +55,11 @@ export function RightSidebar() {
         }
     };
 
+    const closeSearch = () => { setQ(""); setFocused(false); };
+
+    const showDropdown = focused && q.trim().length > 0;
+    const isEmpty = !searching && results.users.length === 0 && results.tags.length === 0;
+
     // First 5 online-marked suggestions feed the "Online agora" widget.
     // If no online flag exists on backend, we still show the first few suggestions as the "active circle".
     const onlineNow = suggestions.slice(0, 5);
@@ -47,33 +67,88 @@ export function RightSidebar() {
     return (
         <aside className="hidden lg:flex flex-col gap-5 py-6 pl-2 sticky top-0 h-screen overflow-y-auto no-scrollbar" data-testid="right-sidebar">
             {/* Search */}
-            <div className="relative">
+            <div className="relative" ref={searchRef}>
                 <Search size={15} strokeWidth={1.7} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
                 <input
                     data-testid="search-input"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Pesquisar utilizadores…"
-                    className="w-full bg-white border border-black/[0.08] rounded-full pl-10 pr-4 py-3 text-[13px] focus:border-black/30 focus:bg-white outline-none transition placeholder:text-black/35"
+                    onFocus={() => setFocused(true)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape") closeSearch();
+                        if (e.key === "Enter" && results.users[0]) {
+                            navigate(`/u/${results.users[0].username}`);
+                            closeSearch();
+                        }
+                    }}
+                    placeholder="Pesquisar pessoas ou #tags…"
+                    className="w-full bg-white border border-black/[0.08] rounded-full pl-10 pr-9 py-3 text-[13px] focus:border-black/30 focus:bg-white outline-none transition placeholder:text-black/35"
                 />
-                {q && results.length > 0 && (
-                    <div className="absolute z-30 left-0 right-0 mt-2 card-premium rounded-2xl overflow-hidden">
-                        {results.map((u) => (
-                            <div
-                                key={u.id}
-                                onClick={() => { navigate(`/u/${u.username}`); setQ(""); }}
-                                className="flex items-center gap-3 p-3 hover:bg-black/[0.03] cursor-pointer tap-shrink"
-                                data-testid={`search-result-${u.username}`}
-                            >
-                                <Avatar user={u} size={36} />
-                                <div>
-                                    <div className="text-sm font-heading font-semibold flex items-center gap-1 text-black">
-                                        {u.name} {u.verified && <VerifiedBadge size={11} />}
-                                    </div>
-                                    <div className="text-xs font-mono text-black/50">@{u.username}</div>
-                                </div>
+                {q && (
+                    <button
+                        onClick={closeSearch}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/45 tap-shrink"
+                        aria-label="Limpar"
+                    >
+                        <X size={13} />
+                    </button>
+                )}
+                {showDropdown && (
+                    <div className="absolute z-30 left-0 right-0 mt-2 card-premium rounded-2xl overflow-hidden anim-fade-up">
+                        {searching && (
+                            <div className="px-4 py-5 inline-flex items-center gap-2 text-[12px] font-mono text-black/55 w-full justify-center">
+                                <Spinner size={13} /> a procurar…
                             </div>
-                        ))}
+                        )}
+                        {!searching && results.tags.length > 0 && (
+                            <div>
+                                <div className="px-4 pt-3 pb-1 type-overline text-black/45">Hashtags</div>
+                                {results.tags.map((t) => (
+                                    <button
+                                        key={t.tag}
+                                        onClick={() => { navigate(`/tag/${t.tag}`); closeSearch(); }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-black/[0.03] cursor-pointer tap-shrink text-left transition"
+                                        data-testid={`search-tag-${t.tag}`}
+                                    >
+                                        <div className="w-9 h-9 rounded-full bg-black/[0.04] grid place-items-center">
+                                            <Hash size={15} className="text-black/65" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-heading font-semibold text-black truncate">#{t.tag}</div>
+                                            <div className="text-xs font-mono text-black/50">{t.count} publicações</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {!searching && results.users.length > 0 && (
+                            <div>
+                                {results.tags.length > 0 && <div className="hairline-t" />}
+                                <div className="px-4 pt-3 pb-1 type-overline text-black/45">Pessoas</div>
+                                {results.users.map((u) => (
+                                    <button
+                                        key={u.id}
+                                        onClick={() => { navigate(`/u/${u.username}`); closeSearch(); }}
+                                        className="w-full flex items-center gap-3 p-3 hover:bg-black/[0.03] cursor-pointer tap-shrink text-left transition"
+                                        data-testid={`search-result-${u.username}`}
+                                    >
+                                        <Avatar user={u} size={36} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-heading font-semibold flex items-center gap-1 text-black truncate">
+                                                {u.name} {u.verified && <VerifiedBadge size={11} />}
+                                            </div>
+                                            <div className="text-xs font-mono text-black/50 truncate">@{u.username}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {!searching && isEmpty && (
+                            <div className="px-4 py-7 text-center">
+                                <p className="type-overline mb-1">Sem resultados</p>
+                                <p className="text-xs font-mono text-black/55">Tenta outra palavra ou #tag.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
