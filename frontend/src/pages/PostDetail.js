@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
@@ -27,7 +27,7 @@ export default function PostDetail() {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const load = async () => {
+    const load = useCallback(async () => {
         try {
             const [p, c] = await Promise.all([
                 api.get(`/posts/${postId}`),
@@ -41,11 +41,11 @@ export default function PostDetail() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [postId, navigate]);
 
     useEffect(() => {
         load();
-    }, [postId]);
+    }, [load]);
 
     const submitComment = async () => {
         if (!text.trim()) return;

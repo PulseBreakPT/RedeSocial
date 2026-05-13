@@ -601,12 +601,18 @@ async def user_stats(username: str, viewer: Optional[dict] = Depends(maybe_user)
     joined_days = (datetime.now(timezone.utc) - datetime.fromisoformat(user["created_at"])).days
     # Profile completion: bio(20)+avatar(20)+banner(15)+verified(10)+>=1 post(20)+>=3 following(15)
     completion = 0
-    if user.get("bio"): completion += 20
-    if user.get("avatar"): completion += 20
-    if user.get("banner"): completion += 15
-    if user.get("verified"): completion += 10
-    if posts_count >= 1: completion += 20
-    if len(user.get("following", [])) >= 3: completion += 15
+    if user.get("bio"):
+        completion += 20
+    if user.get("avatar"):
+        completion += 20
+    if user.get("banner"):
+        completion += 15
+    if user.get("verified"):
+        completion += 10
+    if posts_count >= 1:
+        completion += 20
+    if len(user.get("following", [])) >= 3:
+        completion += 15
     return {
         "posts_count": posts_count,
         "likes_received": likes_received,
