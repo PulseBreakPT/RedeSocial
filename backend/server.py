@@ -405,15 +405,6 @@ async def reset_password(payload: ResetPasswordIn):
 # ============================================================
 # Users
 # ============================================================
-@api.get("/users/suggestions")
-async def user_suggestions(user=Depends(get_current_user)):
-    cursor = db.users.find(
-        {"id": {"$nin": user.get("following", []) + [user["id"]]}}, {"_id": 0},
-    ).limit(5)
-    users = await cursor.to_list(5)
-    return [public_user(u) for u in users]
-
-
 @api.get("/users/search")
 async def search_users(q: str = "", user=Depends(get_current_user)):
     if not q.strip():
@@ -469,6 +460,93 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
         "can_view": await can_view_profile(user, viewer),
     })
     return data
+
+
+@api.get("/users/suggestions")
+async def user_suggestions(user=Depends(get_current_user)):
+    # Smart: friends-of-friends ranked by mutual followers + recent activity
+    following = set(user.get("following", []))
+    excluded = following | {user["id"]}
+    candidates = await db.users.find(
+        {"id": {"$nin": list(excluded)}}, {"_id": 0},
+    ).to_list(200)
+    scored = []
+    for c in candidates:
+        c_followers = set(c.get("followers", []))
+        mutual = len(c_followers & following)
+        followers_total = len(c.get("followers", []))
+        # Score: 10 * mutuals + log(followers+1) + 1 if verified
+        score = mutual * 10 + math.log1p(followers_total) + (2 if c.get("verified") else 0)
+        scored.append((score, mutual, c))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    out = []
+    for score, mutual, c in scored[:5]:
+        d = public_user(c)
+        d["mutual_count"] = mutual
+        d["reason"] = (
+            f"{mutual} em comum" if mutual > 0
+            else ("popular" if len(c.get("followers", [])) >= 3 else "novo")
+        )
+        out.append(d)
+    return out
+
+
+@api.get("/activity")
+async def activity_feed(limit: int = 30):
+    # Recent platform activity: latest posts + follow notifs (aggregated)
+    items = await db.notifications.find(
+        {"type": {"$in": ["like", "comment", "follow", "repost", "quote"]}}, {"_id": 0},
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    out = []
+    for n in items:
+        from_user = await db.users.find_one({"id": n["from_user_id"]}, {"_id": 0})
+        target = await db.users.find_one({"id": n["user_id"]}, {"_id": 0})
+        if not from_user or not target:
+            continue
+        verb = {
+            "like": "gostou de uma publicação de",
+            "comment": "comentou numa publicação de",
+            "follow": "começou a seguir",
+            "repost": "republicou",
+            "quote": "citou",
+        }.get(n["type"], "interagiu com")
+        out.append({
+            "id": n["id"],
+            "type": n["type"],
+            "actor": public_user(from_user),
+            "target_username": target["username"],
+            "verb": verb,
+            "created_at": n["created_at"],
+        })
+    return out
+
+
+@api.get("/posts/{post_id}/analytics")
+async def post_analytics(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    likes = len(post.get("likes", []))
+    reposts = len(post.get("reposts", []))
+    bookmarks = len(post.get("bookmarks", []))
+    comments = await db.comments.count_documents({"post_id": post_id})
+    views = post.get("views", 0)
+    # Engagement = (likes + reposts*2 + comments*3 + bookmarks*1.5) / max(views,1) * 100
+    eng = (likes + reposts * 2 + comments * 3 + bookmarks * 1.5) / max(views, 1) * 100
+    reach = views  # simple model
+    return {
+        "post_id": post_id,
+        "views": views,
+        "likes": likes,
+        "reposts": reposts,
+        "comments": comments,
+        "bookmarks": bookmarks,
+        "engagement_rate": round(eng, 2),
+        "reach": reach,
+        "created_at": post["created_at"],
+    }
 
 
 @api.get("/users/{username}/posts")
@@ -727,9 +805,29 @@ async def feed(user=Depends(get_current_user)):
 
 
 @api.get("/posts/explore")
-async def explore(viewer: Optional[dict] = Depends(maybe_user)):
-    posts = await db.posts.find({"repost_of": {"$exists": False}}, {"_id": 0}).sort("created_at", -1).to_list(100)
+async def explore(sort: str = "trending", viewer: Optional[dict] = Depends(maybe_user)):
+    posts = await db.posts.find({"repost_of": {"$exists": False}}, {"_id": 0}).sort("created_at", -1).to_list(300)
+    if sort == "trending":
+        # Score with time decay (half-life ~ 12h)
+        now = datetime.now(timezone.utc)
+        def score(p):
+            likes = len(p.get("likes", []))
+            reposts = len(p.get("reposts", []))
+            try:
+                age_h = (now - datetime.fromisoformat(p["created_at"])).total_seconds() / 3600
+            except Exception:
+                age_h = 24
+            base = likes + reposts * 2
+            return base * math.exp(-age_h / 12)
+        posts = sorted(posts, key=score, reverse=True)[:100]
+    else:
+        posts = posts[:100]
     return [await enrich_post(p, viewer) for p in posts]
+
+
+@api.get("/posts/_explore_legacy")
+async def explore_legacy_unused(viewer: Optional[dict] = Depends(maybe_user)):
+    return []
 
 
 @api.get("/posts/bookmarks")

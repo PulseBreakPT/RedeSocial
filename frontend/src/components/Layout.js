@@ -7,6 +7,7 @@ import { OnboardingModal } from "./OnboardingModal";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileTopBar } from "./MobileTopBar";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
+import { ScrollToTop } from "./ScrollToTop";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useGlobalNotifications } from "../hooks/useGlobalNotifications";
 import { X } from "lucide-react";
@@ -34,6 +35,7 @@ export function Layout() {
 
             <OnboardingModal />
             <MobileBottomNav onCompose={() => setComposeOpen(true)} />
+            <ScrollToTop />
             {helpOpen && <KeyboardShortcutsHelp onClose={() => setHelpOpen(false)} />}
 
             {composeOpen && (

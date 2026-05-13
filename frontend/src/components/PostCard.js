@@ -10,6 +10,7 @@ import { PostMenu } from "./PostMenu";
 import { EditPostModal } from "./EditPostModal";
 import { QuoteModal } from "./QuoteModal";
 import { RepostMenu } from "./RepostMenu";
+import { PostAnalyticsModal } from "./PostAnalyticsModal";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const [lightbox, setLightbox] = useState(false);
     const [editing, setEditing] = useState(false);
     const [quoting, setQuoting] = useState(false);
+    const [analytics, setAnalytics] = useState(false);
     const viewedRef = useRef(false);
     const isOwn = user?.id === post.author?.id;
 
@@ -165,6 +167,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                         onEdit={() => setEditing(true)}
                                         onDelete={remove}
                                         onPinToggle={setPinned}
+                                        onAnalytics={() => setAnalytics(true)}
                                     />
                                 </div>
                             )}
@@ -272,6 +275,9 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             )}
             {quoting && (
                 <QuoteModal post={{ ...post, content }} onClose={() => setQuoting(false)} />
+            )}
+            {analytics && (
+                <PostAnalyticsModal postId={post.id} onClose={() => setAnalytics(false)} />
             )}
         </>
     );

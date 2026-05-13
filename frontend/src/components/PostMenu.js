@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Copy, Flag, Link2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3 } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { toast } from "sonner";
 
-export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
+export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalytics }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
@@ -31,6 +31,13 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
         e.stopPropagation();
         navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
         toast.success("Link copiado");
+        setOpen(false);
+    };
+
+    const handleCopyText = (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(post.content || "");
+        toast.success("Texto copiado");
         setOpen(false);
     };
 
@@ -63,6 +70,20 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
                     <button onClick={handleCopy} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
                         <Link2 size={14} /> Copiar link
                     </button>
+                    {post.content && (
+                        <button onClick={handleCopyText} data-testid={`copy-text-${post.id}`} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
+                            <Type size={14} /> Copiar texto
+                        </button>
+                    )}
+                    {isOwn && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onAnalytics?.(); setOpen(false); }}
+                            data-testid={`analytics-${post.id}`}
+                            className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5"
+                        >
+                            <BarChart3 size={14} /> Analytics
+                        </button>
+                    )}
                     {isOwn && (
                         <button onClick={handlePin} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
                             {post.pinned ? <><PinOff size={14} /> Desafixar</> : <><Pin size={14} /> Fixar no perfil</>}
