@@ -1,165 +1,187 @@
 import { useRef, useState } from "react";
-import { Camera, Lock, LogOut } from "lucide-react";
+import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../context/AuthContext";
+import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
+
+const TABS = [
+    { key: "conta", label: "Conta", icon: UserIcon },
+    { key: "notif", label: "Notificações", icon: Bell },
+    { key: "priv", label: "Privacidade", icon: Shield },
+    { key: "apar", label: "Aparência", icon: Palette },
+];
 
 export default function Settings() {
     const { user, setUser, logout } = useAuth();
-    const [form, setForm] = useState({
-        name: user?.name || "",
-        bio: user?.bio || "",
-        avatar: user?.avatar || "",
-        banner: user?.banner || "",
-        private: !!user?.private,
-    });
+    const [tab, setTab] = useState("conta");
+    const [form, setForm] = useState({ name: user?.name || "", bio: user?.bio || "", avatar: user?.avatar || "", banner: user?.banner || "", private: !!user?.private });
     const [busy, setBusy] = useState(false);
+    // Local prefs
+    const [prefs, setPrefs] = useState(() => ({
+        notif_likes: lsGet("pref.notif_likes", true),
+        notif_comments: lsGet("pref.notif_comments", true),
+        notif_follows: lsGet("pref.notif_follows", true),
+        notif_mentions: lsGet("pref.notif_mentions", true),
+        notif_dm: lsGet("pref.notif_dm", true),
+        priv_show_online: lsGet("pref.priv_show_online", true),
+        priv_typing: lsGet("pref.priv_typing", true),
+        priv_search: lsGet("pref.priv_search", true),
+        theme: lsGet("pref.theme", "light"),
+        density: lsGet("pref.density", "comfortable"),
+        language: lsGet("pref.language", "pt-PT"),
+        reduce_motion: lsGet("pref.reduce_motion", false),
+    }));
+    const setPref = (k, v) => { setPrefs((p) => ({ ...p, [k]: v })); lsSet(`pref.${k}`, v); };
     const avatarRef = useRef(null);
     const bannerRef = useRef(null);
 
     const readFile = (file, cb) => {
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            toast.error("Imagem não pode exceder 2MB");
-            return;
-        }
+        if (file.size > 2 * 1024 * 1024) return toast.error("Imagem não pode exceder 2MB");
         const reader = new FileReader();
         reader.onload = (ev) => cb(ev.target.result);
         reader.readAsDataURL(file);
     };
-
     const save = async () => {
         setBusy(true);
-        try {
-            const { data } = await api.patch("/users/me", form);
-            setUser({ ...user, ...data });
-            toast.success("Perfil atualizado");
-        } catch (e) {
-            toast.error(formatApiError(e));
-        } finally {
-            setBusy(false);
-        }
+        try { const { data } = await api.patch("/users/me", form); setUser({ ...user, ...data }); toast.success("Perfil atualizado"); }
+        catch (e) { toast.error(formatApiError(e)); }
+        finally { setBusy(false); }
+    };
+    const downloadData = () => {
+        const blob = new Blob([JSON.stringify({ user, prefs }, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url; a.download = `vermillion-${user?.username || "user"}.json`; a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Download iniciado");
     };
 
     return (
         <div data-testid="settings-page">
-            <PageHeader title="Definições" subtitle="Perfil e privacidade" back testid="settings-header" />
-
-            {/* Banner */}
-            <div className="relative h-32 lg:h-44 overflow-hidden">
-                <div className="absolute inset-0 silver-grad" />
-                <div
-                    className="absolute inset-0 opacity-50 mix-blend-multiply"
-                    style={{
-                        background:
-                            "radial-gradient(circle at 25% 35%, rgba(106,168,230,0.15), transparent 55%), radial-gradient(circle at 80% 70%, rgba(232,93,108,0.10), transparent 55%)",
-                    }}
-                />
-                {form.banner && <img src={form.banner} alt="" className="relative w-full h-full object-cover" />}
-                <button
-                    onClick={() => bannerRef.current?.click()}
-                    data-testid="banner-upload-btn"
-                    className="absolute bottom-3 right-3 bg-black/80 hover:bg-black p-2.5 rounded-full text-white active:scale-90 tap-shrink shadow-lg"
-                    aria-label="alterar capa"
-                >
-                    <Camera size={15} strokeWidth={1.7} />
-                </button>
-                <input
-                    ref={bannerRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, banner: d }))}
-                />
-            </div>
-
-            <div className="px-4 lg:px-6 -mt-10 lg:-mt-12 relative">
-                <div className="relative inline-block rounded-full p-1 bg-white shadow-[0_8px_24px_-12px_rgba(13,13,16,0.25)]">
-                    <Avatar user={{ ...user, avatar: form.avatar }} size={84} />
-                    <button
-                        onClick={() => avatarRef.current?.click()}
-                        data-testid="avatar-upload-btn"
-                        className="absolute bottom-1 right-1 bg-black/85 hover:bg-black p-1.5 rounded-full text-white active:scale-90 tap-shrink shadow-md"
-                        aria-label="alterar avatar"
-                    >
-                        <Camera size={12} strokeWidth={1.7} />
-                    </button>
-                    <input
-                        ref={avatarRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, avatar: d }))}
-                    />
+            <PageHeader title="Definições" subtitle="Conta, notificações e privacidade" back testid="settings-header">
+                <div className="px-3 lg:px-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
+                    {TABS.map((t) => { const Icon = t.icon; const active = tab === t.key; return (
+                        <button key={t.key} onClick={() => setTab(t.key)} data-testid={`settings-tab-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "border-black text-black" : "border-transparent text-black/55 hover:text-black"}`}>
+                            <Icon size={13} /> {t.label}
+                        </button>
+                    ); })}
                 </div>
+            </PageHeader>
 
-                <div className="space-y-6 mt-6 max-w-2xl">
-                    <div>
-                        <label className="type-overline">Nome</label>
-                        <input
-                            data-testid="settings-name"
-                            value={form.name}
-                            onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition"
-                        />
-                    </div>
-                    <div>
-                        <label className="type-overline">Bio</label>
-                        <textarea
-                            data-testid="settings-bio"
-                            value={form.bio}
-                            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                            rows={3}
-                            maxLength={160}
-                            placeholder="Conta-nos algo em poucas palavras…"
-                            className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition resize-none"
-                        />
-                        <div className="font-mono text-[10px] text-black/40 text-right mt-1 tracking-wider">{160 - (form.bio?.length || 0)} restantes</div>
+            {tab === "conta" && (
+                <>
+                    <div className="relative h-32 lg:h-44 overflow-hidden">
+                        <div className="absolute inset-0 silver-grad" />
+                        <div className="absolute inset-0 opacity-50 mix-blend-multiply" style={{ background: "radial-gradient(circle at 25% 35%, rgba(106,168,230,0.15), transparent 55%), radial-gradient(circle at 80% 70%, rgba(232,93,108,0.10), transparent 55%)" }} />
+                        {form.banner && <img src={form.banner} alt="" className="relative w-full h-full object-cover" />}
+                        <button onClick={() => bannerRef.current?.click()} data-testid="banner-upload-btn" className="absolute bottom-3 right-3 bg-black/80 hover:bg-black p-2.5 rounded-full text-white shadow-lg" aria-label="alterar capa"><Camera size={15} /></button>
+                        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, banner: d }))} />
                     </div>
 
-                    <label
-                        className="flex items-center justify-between p-4 card-lux cursor-pointer transition hover:shadow-md"
-                        data-testid="privacy-toggle"
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06]">
-                                <Lock size={15} strokeWidth={1.7} className="text-black/70" />
+                    <div className="px-4 lg:px-6 -mt-10 lg:-mt-12 relative">
+                        <div className="relative inline-block rounded-full p-1 bg-white shadow-[0_8px_24px_-12px_rgba(13,13,16,0.25)]">
+                            <Avatar user={{ ...user, avatar: form.avatar }} size={84} />
+                            <button onClick={() => avatarRef.current?.click()} data-testid="avatar-upload-btn" className="absolute bottom-1 right-1 bg-black/85 hover:bg-black p-1.5 rounded-full text-white shadow-md" aria-label="alterar avatar"><Camera size={12} /></button>
+                            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, avatar: d }))} />
+                        </div>
+
+                        <div className="space-y-6 mt-6 max-w-2xl">
+                            <div>
+                                <label className="type-overline">Nome</label>
+                                <input data-testid="settings-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black focus:border-black/40 focus:bg-white focus:outline-none transition" />
                             </div>
                             <div>
-                                <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Conta privada</div>
-                                <div className="font-mono text-[11px] text-black/50 mt-0.5">apenas seguidores aprovados podem ver as publicações</div>
+                                <label className="type-overline">Bio</label>
+                                <textarea data-testid="settings-bio" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} maxLength={160} placeholder="Conta-nos algo em poucas palavras…" className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 focus:border-black/40 focus:bg-white focus:outline-none transition resize-none" />
+                                <div className="font-mono text-[10px] text-black/40 text-right mt-1 tracking-wider">{160 - (form.bio?.length || 0)} restantes</div>
+                            </div>
+
+                            <label className="flex items-center justify-between p-4 card-lux cursor-pointer transition hover:shadow-md" data-testid="privacy-toggle">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06]"><Lock size={15} className="text-black/70" /></div>
+                                    <div>
+                                        <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Conta privada</div>
+                                        <div className="font-mono text-[11px] text-black/50 mt-0.5">apenas seguidores aprovados podem ver as publicações</div>
+                                    </div>
+                                </div>
+                                <input type="checkbox" checked={form.private} onChange={(e) => setForm({ ...form, private: e.target.checked })} className="w-5 h-5 accent-black" />
+                            </label>
+
+                            <div className="flex justify-between items-center pb-10 gap-3 hairline-t pt-6">
+                                <button onClick={logout} data-testid="settings-logout" className="inline-flex items-center gap-2 px-4 py-3 text-[12px] font-mono uppercase tracking-[0.16em] text-black/55 hover:text-red-soft transition"><LogOut size={14} /> Terminar sessão</button>
+                                <button onClick={save} disabled={busy} data-testid="settings-save-btn" className="btn-obsidian px-7 py-3 text-[12px] disabled:opacity-50">{busy ? "A guardar…" : "Guardar"}</button>
                             </div>
                         </div>
-                        <input
-                            type="checkbox"
-                            checked={form.private}
-                            onChange={(e) => setForm({ ...form, private: e.target.checked })}
-                            className="w-5 h-5 accent-black"
-                        />
-                    </label>
+                    </div>
+                </>
+            )}
 
-                    <div className="flex justify-between items-center pb-10 gap-3 hairline-t pt-6">
-                        <button
-                            onClick={logout}
-                            data-testid="settings-logout"
-                            className="inline-flex items-center gap-2 px-4 py-3 text-[12px] font-mono uppercase tracking-[0.16em] text-black/55 hover:text-red-soft transition tap-shrink"
-                        >
-                            <LogOut size={14} strokeWidth={1.7} />
-                            Terminar sessão
-                        </button>
-                        <button
-                            onClick={save}
-                            disabled={busy}
-                            data-testid="settings-save-btn"
-                            className="btn-obsidian px-7 py-3 text-[12px] disabled:opacity-50"
-                        >
-                            {busy ? "A guardar…" : "Guardar"}
-                        </button>
+            {tab === "notif" && (
+                <div className="px-4 lg:px-6 py-5 space-y-3 max-w-2xl">
+                    <p className="type-overline">Receber notificações de…</p>
+                    <ToggleRow label="Gostos nas minhas publicações" sub="Quando alguém gosta de um post teu" k="notif_likes" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Comentários" sub="Respostas e fóruns" k="notif_comments" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Novos seguidores" k="notif_follows" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Menções" sub="Quando alguém te marca com @" k="notif_mentions" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Mensagens diretas" k="notif_dm" prefs={prefs} setPref={setPref} />
+                </div>
+            )}
+
+            {tab === "priv" && (
+                <div className="px-4 lg:px-6 py-5 space-y-3 max-w-2xl">
+                    <p className="type-overline">Privacidade</p>
+                    <ToggleRow label="Mostrar quando estou online" k="priv_show_online" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Mostrar indicador a escrever" k="priv_typing" prefs={prefs} setPref={setPref} />
+                    <ToggleRow label="Aparecer em pesquisas" k="priv_search" prefs={prefs} setPref={setPref} />
+                    <div className="hairline-t pt-5">
+                        <p className="type-overline mb-3">Os teus dados</p>
+                        <button onClick={downloadData} data-testid="download-data-btn" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium"><Download size={14} /> Descarregar os meus dados</button>
+                        <button className="ml-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-red-soft hover:bg-red-soft/10 text-[13px] font-medium" onClick={() => toast.info("Funcionalidade em breve")}><Trash2 size={14} /> Apagar conta</button>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {tab === "apar" && (
+                <div className="px-4 lg:px-6 py-5 space-y-4 max-w-2xl">
+                    <p className="type-overline">Tema</p>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[{ k: "light", l: "Claro", e: "☀️" }, { k: "sepia", l: "Sépia", e: "📜" }, { k: "auto", l: "Sistema", e: "💻" }].map((t) => (
+                            <button key={t.k} onClick={() => setPref("theme", t.k)} data-testid={`settings-theme-${t.k}`} className={`p-3 rounded-xl border text-center ${prefs.theme === t.k ? "border-black bg-black/[0.03]" : "border-black/[0.08] hover:bg-black/[0.02]"}`}>
+                                <div className="text-2xl">{t.e}</div>
+                                <div className="text-[12px] font-medium mt-1">{t.l}</div>
+                            </button>
+                        ))}
+                    </div>
+                    <p className="type-overline pt-3">Densidade</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {[{ k: "compact", l: "Compacta" }, { k: "comfortable", l: "Confortável" }].map((d) => (
+                            <button key={d.k} onClick={() => setPref("density", d.k)} className={`p-2.5 rounded-xl border text-[12px] font-medium ${prefs.density === d.k ? "border-black bg-black/[0.03]" : "border-black/[0.08]"}`}>{d.l}</button>
+                        ))}
+                    </div>
+                    <p className="type-overline pt-3">Idioma</p>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[{ k: "pt-PT", l: "PT 🇵🇹" }, { k: "pt-BR", l: "PT-BR 🇧🇷" }, { k: "en", l: "EN 🇬🇧" }].map((l) => (
+                            <button key={l.k} onClick={() => setPref("language", l.k)} data-testid={`settings-lang-${l.k}`} className={`p-2.5 rounded-xl border text-[12px] font-medium ${prefs.language === l.k ? "border-black bg-black/[0.03]" : "border-black/[0.08]"}`}>{l.l}</button>
+                        ))}
+                    </div>
+                    <ToggleRow label="Reduzir animações" sub="Útil se sentires tonturas com movimentos" k="reduce_motion" prefs={prefs} setPref={setPref} />
+                </div>
+            )}
         </div>
+    );
+}
+
+function ToggleRow({ label, sub, k, prefs, setPref }) {
+    return (
+        <label className="flex items-center justify-between p-4 card-lux cursor-pointer hover:shadow-md transition">
+            <div>
+                <div className="font-heading font-semibold text-[14px] tracking-tight text-black">{label}</div>
+                {sub && <div className="font-mono text-[11px] text-black/50 mt-0.5">{sub}</div>}
+            </div>
+            <input type="checkbox" checked={!!prefs[k]} onChange={(e) => setPref(k, e.target.checked)} className="w-5 h-5 accent-black" data-testid={`pref-${k}`} />
+        </label>
     );
 }

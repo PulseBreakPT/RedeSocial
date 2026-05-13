@@ -42,6 +42,91 @@ VALID_AUDIENCES = {"everyone", "following", "mentioned"}
 MAX_IMAGES_PER_POST = 4
 MAX_POLL_OPTIONS = 4
 
+# Fase 2: Portuguese flavour --------------------------------------------------
+PT_CITIES = {
+    # Distritos & locais PT (hashtag minúscula → nome bonito)
+    "lisboa": "Lisboa", "porto": "Porto", "coimbra": "Coimbra",
+    "braga": "Braga", "aveiro": "Aveiro", "faro": "Faro",
+    "funchal": "Funchal", "leiria": "Leiria", "setubal": "Setúbal",
+    "evora": "Évora", "viseu": "Viseu", "beja": "Beja",
+    "guarda": "Guarda", "vilareal": "Vila Real", "viana": "Viana do Castelo",
+    "santarem": "Santarém", "cascais": "Cascais", "sintra": "Sintra",
+    "oeiras": "Oeiras", "almada": "Almada", "nazare": "Nazaré",
+    "obidos": "Óbidos", "estoril": "Estoril", "belem": "Belém",
+    "ribeira": "Ribeira", "alfama": "Alfama", "bairroalto": "Bairro Alto",
+    "chiado": "Chiado", "matosinhos": "Matosinhos",
+    "gaia": "Vila Nova de Gaia", "algarve": "Algarve", "douro": "Douro",
+    "minho": "Minho", "alentejo": "Alentejo", "madeira": "Madeira",
+    "acores": "Açores", "bragança": "Bragança", "braganca": "Bragança",
+    "portalegre": "Portalegre", "castelobranco": "Castelo Branco",
+    "luanda": "Luanda",  # diáspora
+}
+
+# Mood = vibe / clima do post, classificado por palavras-chave
+MOODS = {
+    "saudade": {"label": "Saudade", "emoji": "🥹",
+                 "keywords": ["saudade", "saudades", "melancolia", "longe", "distância"]},
+    "tasca":   {"label": "Tasca",   "emoji": "🍷",
+                 "keywords": ["tasca", "bitoque", "vinho", "petisco", "sardinha",
+                              "sardinhas", "bacalhau", "tremoço", "azeitona", "ginjinha"]},
+    "festa":   {"label": "Festa",   "emoji": "🎉",
+                 "keywords": ["festa", "festival", "arraial", "sanjoao", "são joão",
+                              "saopedro", "são pedro", "carnaval", "fogo de artifício", "manjerico"]},
+    "cafe":    {"label": "Café",    "emoji": "☕",
+                 "keywords": ["café", "cafe", "bica", "pastel", "padaria", "torrada",
+                              "galão", "abatanado"]},
+    "praia":   {"label": "Praia",   "emoji": "🌊",
+                 "keywords": ["praia", " mar ", "surf", "ondas", "costa", "areia",
+                              "biquíni", "guarda-sol"]},
+    "fado":    {"label": "Fado",    "emoji": "🎙️",
+                 "keywords": ["fado", "fadista", "guitarra portuguesa", "tasca do chico"]},
+    "futebol": {"label": "Bola",    "emoji": "⚽",
+                 "keywords": ["benfica", "sporting", "slb", "fcp", "scp", "futebol",
+                              "estádio", "golo", "campeão", "liga portuguesa"]},
+    "cultura": {"label": "Cultura", "emoji": "🎭",
+                 "keywords": ["museu", "teatro", "cinemateca", "pessoa", "saramago",
+                              "exposição", "literatura", "azulejo"]},
+}
+
+COMMUNITY_CATEGORIES = [
+    "cidades", "musica", "desporto", "tasca", "cultura",
+    "tecnologia", "fotografia", "moda", "viagens", "outras",
+]
+
+EVENT_CATEGORIES = ["festa", "cultura", "concerto", "desporto", "tasca", "familia", "outros"]
+
+# Conquistas (badges) — atribuídas conforme regras em runtime
+PT_BADGES_DEFS = [
+    {"key": "verificado",   "emoji": "✓",  "label": "Verificado",
+     "desc": "Conta verificada"},
+    {"key": "embaixador",   "emoji": "🇵🇹", "label": "Embaixador",
+     "desc": "50+ seguidores"},
+    {"key": "popular",      "emoji": "⭐", "label": "Popular",
+     "desc": "100+ gostos recebidos"},
+    {"key": "maratonista",  "emoji": "🔥", "label": "Maratonista",
+     "desc": "Streak de 7 dias seguidos"},
+    {"key": "lenda",        "emoji": "🌟", "label": "Lenda",
+     "desc": "Streak de 30 dias seguidos"},
+    {"key": "veterano",     "emoji": "🗓", "label": "Veterano",
+     "desc": "1 ano ou mais na rede"},
+    {"key": "tasqueiro",    "emoji": "🍷", "label": "Tasqueiro",
+     "desc": "3+ posts sobre tasca"},
+    {"key": "fadista",      "emoji": "🎙️", "label": "Fadista",
+     "desc": "3+ posts sobre fado"},
+    {"key": "madrugador",   "emoji": "🌅", "label": "Madrugador",
+     "desc": "3+ posts entre as 5h e as 8h"},
+    {"key": "noctivago",    "emoji": "🌙", "label": "Noctívago",
+     "desc": "3+ posts entre as 0h e as 4h"},
+    {"key": "colecionador", "emoji": "📚", "label": "Colecionador",
+     "desc": "10+ publicações guardadas"},
+    {"key": "conversador",  "emoji": "💬", "label": "Conversador",
+     "desc": "20+ comentários feitos"},
+    {"key": "fotografo",    "emoji": "📸", "label": "Fotógrafo",
+     "desc": "5+ posts com imagem"},
+    {"key": "viajante",     "emoji": "🧭", "label": "Viajante",
+     "desc": "Posts em 3 ou mais cidades PT"},
+]
+
 
 def normalize_images(payload_images, single_image) -> List[str]:
     """Coalesce legacy `image` + new `images` array into a clean list."""
@@ -153,6 +238,59 @@ def compute_reputation(user: dict, likes_received: int, posts_count: int) -> dic
     rep = likes_received + posts_count * 2 + len(user.get("followers", [])) * 5
     level = int(math.floor(math.sqrt(max(rep, 0) / 10))) + 1
     return {"reputation": rep, "level": level}
+
+
+# Fase 2 helpers --------------------------------------------------------------
+def detect_mood(text: str) -> Optional[str]:
+    """Classify a post into one of the MOODS by keyword match. None if none match."""
+    if not text:
+        return None
+    low = text.lower()
+    for key, m in MOODS.items():
+        for kw in m["keywords"]:
+            if kw in low:
+                return key
+    return None
+
+
+def detect_cities(text: str, hashtags: Optional[list] = None) -> List[str]:
+    """Return PT cities mentioned, deduped, max 3."""
+    found: List[str] = []
+    low = (text or "").lower()
+    pool = set()
+    for tag in (hashtags or []):
+        if tag.lower() in PT_CITIES:
+            pool.add(tag.lower())
+    for key in PT_CITIES:
+        if key in low:
+            pool.add(key)
+    for k in pool:
+        found.append(PT_CITIES[k])
+        if len(found) >= 3:
+            break
+    return found
+
+
+def compute_velocity(curr: int, prev: int) -> int:
+    """Growth % from prev → curr. Caps -99..+999."""
+    if prev <= 0:
+        return 100 if curr > 0 else 0
+    pct = ((curr - prev) / prev) * 100
+    return max(-99, min(999, int(round(pct))))
+
+
+def hours_since(iso_str: Optional[str]) -> float:
+    if not iso_str:
+        return 1e9
+    try:
+        d = datetime.fromisoformat(iso_str)
+        return (datetime.now(timezone.utc) - d).total_seconds() / 3600
+    except Exception:
+        return 1e9
+
+
+def range_to_hours(rng: str) -> int:
+    return {"1h": 1, "24h": 24, "7d": 24 * 7, "30d": 24 * 30}.get(rng, 24 * 7)
 
 
 def is_online(last_seen_iso: Optional[str]) -> bool:
@@ -286,6 +424,7 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "edited_at": post.get("edited_at"),
         "edit_history": post.get("edit_history", []),
         "views": post.get("views", 0),
+        "shares": post.get("shares", 0),
         "likes_count": len(post.get("likes", [])),
         "reposts_count": len(post.get("reposts", [])),
         "comments_count": comments_count,
@@ -302,6 +441,8 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "reply_audience": post.get("reply_audience", "everyone"),
         "is_draft": bool(post.get("is_draft")),
         "scheduled_at": post.get("scheduled_at"),
+        "mood": detect_mood(post.get("content", "")),
+        "cities": detect_cities(post.get("content", ""), post.get("hashtags", [])),
     }
 
 
@@ -451,6 +592,7 @@ class StoryIn(BaseModel):
 class CommunityIn(BaseModel):
     name: str = Field(min_length=3, max_length=40)
     description: str = Field(default="", max_length=200)
+    category: str = Field(default="outras", max_length=20)
 
 
 class EventIn(BaseModel):
@@ -458,6 +600,7 @@ class EventIn(BaseModel):
     description: str = Field(default="", max_length=400)
     location: str = Field(default="", max_length=120)
     starts_at: str  # ISO
+    category: str = Field(default="outros", max_length=20)
 
 
 # ============================================================
@@ -977,31 +1120,41 @@ async def pin_post(post_id: str, user=Depends(get_current_user)):
 
 
 @api.get("/posts/feed")
-async def feed(user=Depends(get_current_user)):
+async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_user)):
     await auto_publish_due_posts()
     ids = user.get("following", []) + [user["id"]]
-    posts = await db.posts.find(
-        {
-            "author_id": {"$in": ids},
-            "is_draft": {"$ne": True},
-            "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
-        },
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(100)
+    query: dict = {
+        "author_id": {"$in": ids},
+        "is_draft": {"$ne": True},
+        "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+    }
+    if mood and mood in MOODS:
+        rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
+        query["content"] = {"$regex": rx, "$options": "i"}
+    posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    if sort == "top":
+        posts = sorted(
+            posts,
+            key=lambda p: len(p.get("likes", [])) * 2 + len(p.get("reposts", [])) * 3,
+            reverse=True,
+        )[:100]
+    else:
+        posts = posts[:100]
     return [await enrich_post(p, user) for p in posts]
 
 
 @api.get("/posts/explore")
-async def explore(sort: str = "trending", viewer: Optional[dict] = Depends(maybe_user)):
+async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict] = Depends(maybe_user)):
     await auto_publish_due_posts()
-    posts = await db.posts.find(
-        {
-            "repost_of": {"$exists": False},
-            "is_draft": {"$ne": True},
-            "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
-        },
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(300)
+    query: dict = {
+        "repost_of": {"$exists": False},
+        "is_draft": {"$ne": True},
+        "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+    }
+    if mood and mood in MOODS:
+        rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
+        query["content"] = {"$regex": rx, "$options": "i"}
+    posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
     if sort == "trending":
         # Score with time decay (half-life ~ 12h)
         now = datetime.now(timezone.utc)
@@ -1015,6 +1168,10 @@ async def explore(sort: str = "trending", viewer: Optional[dict] = Depends(maybe
             base = likes + reposts * 2
             return base * math.exp(-age_h / 12)
         posts = sorted(posts, key=score, reverse=True)[:100]
+    elif sort == "top":
+        posts = sorted(posts,
+                       key=lambda p: len(p.get("likes", [])) + len(p.get("reposts", [])) * 2,
+                       reverse=True)[:100]
     else:
         posts = posts[:100]
     return [await enrich_post(p, viewer) for p in posts]
@@ -1026,12 +1183,28 @@ async def explore_legacy_unused(viewer: Optional[dict] = Depends(maybe_user)):
 
 
 @api.get("/posts/bookmarks")
-async def bookmarks(user=Depends(get_current_user)):
-    posts = await db.posts.find(
-        {"bookmarks": user["id"], "is_draft": {"$ne": True}},
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, user) for p in posts]
+async def bookmarks(collection: str = "", user=Depends(get_current_user)):
+    query: dict = {"bookmarks": user["id"], "is_draft": {"$ne": True}}
+    if collection == "uncategorized":
+        query["$and"] = [{"$or": [
+            {"bookmark_collection_map": {"$exists": False}},
+            {"bookmark_collection_map": {"$not": {"$elemMatch": {"user_id": user["id"]}}}},
+        ]}]
+    elif collection:
+        query["bookmark_collection_map"] = {"$elemMatch": {"user_id": user["id"], "collection_id": collection}}
+    posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    out = []
+    for p in posts:
+        enriched = await enrich_post(p, user)
+        # surface collection id for this user
+        cid = None
+        for m in (p.get("bookmark_collection_map") or []):
+            if m.get("user_id") == user["id"]:
+                cid = m.get("collection_id")
+                break
+        enriched["bookmark_collection_id"] = cid
+        out.append(enriched)
+    return out
 
 
 @api.get("/posts/drafts")
@@ -1399,9 +1572,11 @@ async def create_community(payload: CommunityIn, user=Depends(get_current_user))
     slug = slugify(payload.name)
     if await db.communities.find_one({"slug": slug}):
         slug = f"{slug}-{str(uuid.uuid4())[:4]}"
+    cat = payload.category if payload.category in COMMUNITY_CATEGORIES else "outras"
     c = {
         "id": str(uuid.uuid4()), "name": payload.name, "slug": slug,
         "description": payload.description, "banner": "",
+        "category": cat,
         "owner_id": user["id"], "members": [user["id"]],
         "created_at": now_iso(),
     }
@@ -1455,6 +1630,7 @@ def _community_public(c: dict, viewer: Optional[dict]) -> dict:
     return {
         "id": c["id"], "name": c["name"], "slug": c["slug"],
         "description": c.get("description", ""), "banner": c.get("banner", ""),
+        "category": c.get("category", "outras"),
         "owner_id": c["owner_id"], "members_count": len(c.get("members", [])),
         "joined": bool(viewer and viewer["id"] in c.get("members", [])),
         "is_owner": bool(viewer and viewer["id"] == c["owner_id"]),
@@ -1467,10 +1643,12 @@ def _community_public(c: dict, viewer: Optional[dict]) -> dict:
 # ============================================================
 @api.post("/events")
 async def create_event(payload: EventIn, user=Depends(get_current_user)):
+    cat = payload.category if payload.category in EVENT_CATEGORIES else "outros"
     e = {
         "id": str(uuid.uuid4()), "title": payload.title,
         "description": payload.description, "location": payload.location,
         "starts_at": payload.starts_at, "created_by": user["id"],
+        "category": cat,
         "attendees": [user["id"]], "created_at": now_iso(),
     }
     await db.events.insert_one(e)
@@ -1479,8 +1657,29 @@ async def create_event(payload: EventIn, user=Depends(get_current_user)):
 
 
 @api.get("/events")
-async def list_events(viewer: Optional[dict] = Depends(maybe_user)):
-    items = await db.events.find({}, {"_id": 0}).sort("starts_at", 1).to_list(200)
+async def list_events(category: str = "", when: str = "upcoming", viewer: Optional[dict] = Depends(maybe_user)):
+    """when: upcoming | week | month | past | all. category: filter optional."""
+    query: dict = {}
+    if category and category != "all":
+        query["category"] = category
+    now = datetime.now(timezone.utc)
+    if when == "past":
+        query["starts_at"] = {"$lt": now.isoformat()}
+        sort_dir = -1
+    elif when == "week":
+        end = (now + timedelta(days=7)).isoformat()
+        query["starts_at"] = {"$gte": now.isoformat(), "$lte": end}
+        sort_dir = 1
+    elif when == "month":
+        end = (now + timedelta(days=30)).isoformat()
+        query["starts_at"] = {"$gte": now.isoformat(), "$lte": end}
+        sort_dir = 1
+    elif when == "all":
+        sort_dir = 1
+    else:  # upcoming default
+        query["starts_at"] = {"$gte": now.isoformat()}
+        sort_dir = 1
+    items = await db.events.find(query, {"_id": 0}).sort("starts_at", sort_dir).to_list(200)
     out = []
     for e in items:
         out.append(await _event_public_async(e, viewer))
@@ -1511,6 +1710,7 @@ def _event_public(e: dict, viewer: Optional[dict]) -> dict:
     return {
         "id": e["id"], "title": e["title"], "description": e["description"],
         "location": e.get("location", ""), "starts_at": e["starts_at"],
+        "category": e.get("category", "outros"),
         "attendees_count": len(e.get("attendees", [])),
         "attending": bool(viewer and viewer["id"] in e.get("attendees", [])),
         "is_owner": bool(viewer and viewer["id"] == e["created_by"]),
@@ -1530,7 +1730,13 @@ async def _event_public_async(e: dict, viewer: Optional[dict]) -> dict:
 # ============================================================
 @api.get("/notifications")
 async def list_notifications(user=Depends(get_current_user)):
-    items = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    now = now_iso()
+    items = await db.notifications.find(
+        {"user_id": user["id"],
+         "$or": [{"snoozed_until": {"$exists": False}}, {"snoozed_until": None},
+                 {"snoozed_until": {"$lte": now}}]},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(200)
     out = []
     for n in items:
         from_user = await db.users.find_one({"id": n["from_user_id"]}, {"_id": 0})
@@ -1538,6 +1744,8 @@ async def list_notifications(user=Depends(get_current_user)):
             "id": n["id"], "type": n["type"], "text": n["text"],
             "read": n["read"], "created_at": n["created_at"],
             "post_id": n.get("post_id"),
+            "starred": bool(n.get("starred")),
+            "snoozed_until": n.get("snoozed_until"),
             "from_user": public_user(from_user) if from_user else None,
         })
     return out
@@ -1559,8 +1767,9 @@ async def mark_read_all(user=Depends(get_current_user)):
 # Messages
 # ============================================================
 @api.get("/conversations")
-async def list_conversations(user=Depends(get_current_user)):
-    convs = await db.conversations.find({"participants": user["id"]}, {"_id": 0}).sort("last_at", -1).to_list(100)
+async def list_conversations(filter: str = "all", user=Depends(get_current_user)):
+    """filter: all | pinned | unread | archived"""
+    convs = await db.conversations.find({"participants": user["id"]}, {"_id": 0}).sort("last_at", -1).to_list(200)
     out = []
     for c in convs:
         other_id = next((p for p in c["participants"] if p != user["id"]), None)
@@ -1568,11 +1777,28 @@ async def list_conversations(user=Depends(get_current_user)):
         unread = await db.messages.count_documents({
             "conversation_key": c["key"], "sender_id": {"$ne": user["id"]}, "read": False,
         })
-        out.append({
+        pinned = user["id"] in c.get("pinned_by", [])
+        archived = user["id"] in c.get("archived_by", [])
+        item = {
             "key": c["key"], "other_user": public_user(other) if other else None,
             "last_message": c.get("last_message", ""), "last_at": c.get("last_at"),
-            "unread": unread,
-        })
+            "unread": unread, "pinned": pinned, "archived": archived,
+        }
+        if filter == "archived":
+            if not archived:
+                continue
+        elif filter == "pinned":
+            if not pinned or archived:
+                continue
+        elif filter == "unread":
+            if unread <= 0 or archived:
+                continue
+        else:  # all (default) hides archived
+            if archived:
+                continue
+        out.append(item)
+    # sort: pinned first, then last_at desc
+    out.sort(key=lambda x: (not x["pinned"], -(datetime.fromisoformat(x["last_at"]).timestamp() if x.get("last_at") else 0)))
     return out
 
 
@@ -1672,19 +1898,653 @@ async def send_message(payload: MessageIn, user=Depends(get_current_user)):
 
 
 # ============================================================
-# Trending
+# Trending — Fase 2 (range filters + velocity %)
 # ============================================================
 @api.get("/trending")
-async def trending():
+async def trending(range: str = "7d"):
+    """Top hashtags com taxa de crescimento (velocity %).
+    range: 1h | 24h | 7d | 30d (default 7d)."""
+    hours = range_to_hours(range)
+    now = datetime.now(timezone.utc)
+    curr_cut = (now - timedelta(hours=hours)).isoformat()
+    prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    curr_posts = await db.posts.find(
+        {"hashtags": {"$exists": True, "$ne": []},
+         "is_draft": {"$ne": True},
+         "created_at": {"$gte": curr_cut}},
+        {"_id": 0, "hashtags": 1},
+    ).to_list(800)
+    prev_posts = await db.posts.find(
+        {"hashtags": {"$exists": True, "$ne": []},
+         "is_draft": {"$ne": True},
+         "created_at": {"$gte": prev_cut, "$lt": curr_cut}},
+        {"_id": 0, "hashtags": 1},
+    ).to_list(800)
+    curr_counts: dict[str, int] = {}
+    prev_counts: dict[str, int] = {}
+    for p in curr_posts:
+        for t in p.get("hashtags", []):
+            curr_counts[t] = curr_counts.get(t, 0) + 1
+    for p in prev_posts:
+        for t in p.get("hashtags", []):
+            prev_counts[t] = prev_counts.get(t, 0) + 1
+    items = sorted(curr_counts.items(), key=lambda kv: kv[1], reverse=True)[:30]
+    out = []
+    for tag, cnt in items:
+        out.append({
+            "tag": tag, "count": cnt,
+            "previous": prev_counts.get(tag, 0),
+            "velocity": compute_velocity(cnt, prev_counts.get(tag, 0)),
+            "is_city": tag in PT_CITIES,
+        })
+    return out
+
+
+@api.get("/trending/pessoas")
+async def trending_people(range: str = "7d", viewer: Optional[dict] = Depends(maybe_user)):
+    """Pessoas mais ativas (mais posts + likes + follows ganhos no período)."""
+    hours = range_to_hours(range)
+    cut = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    # Posts no período por autor
     posts = await db.posts.find(
-        {"hashtags": {"$exists": True, "$ne": []}}, {"_id": 0, "hashtags": 1}
-    ).sort("created_at", -1).to_list(300)
+        {"created_at": {"$gte": cut}, "is_draft": {"$ne": True}, "repost_of": {"$exists": False}},
+        {"_id": 0, "author_id": 1, "likes": 1, "reposts": 1},
+    ).to_list(2000)
+    scores: dict[str, dict] = {}
+    for p in posts:
+        aid = p["author_id"]
+        s = scores.setdefault(aid, {"posts": 0, "likes": 0, "reposts": 0})
+        s["posts"] += 1
+        s["likes"] += len(p.get("likes", []))
+        s["reposts"] += len(p.get("reposts", []))
+    # Score formula
+    ranked = []
+    for aid, s in scores.items():
+        score = s["posts"] * 3 + s["likes"] + s["reposts"] * 2
+        ranked.append((score, aid, s))
+    ranked.sort(key=lambda x: x[0], reverse=True)
+    top = ranked[:15]
+    user_docs = await db.users.find({"id": {"$in": [r[1] for r in top]}}, {"_id": 0}).to_list(15)
+    by_id = {u["id"]: u for u in user_docs}
+    out = []
+    for score, aid, s in top:
+        u = by_id.get(aid)
+        if not u:
+            continue
+        pu = public_user(u, {
+            "is_following": bool(viewer and viewer["id"] in u.get("followers", [])),
+            "is_self": bool(viewer and viewer["id"] == u["id"]),
+            "trend_score": score,
+            "trend_posts": s["posts"],
+            "trend_likes": s["likes"],
+        })
+        out.append(pu)
+    return out
+
+
+@api.get("/trending/comunidades")
+async def trending_communities(range: str = "7d", viewer: Optional[dict] = Depends(maybe_user)):
+    """Comunidades mais ativas (mais posts no período)."""
+    hours = range_to_hours(range)
+    cut = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    posts = await db.posts.find(
+        {"community_id": {"$exists": True, "$ne": None},
+         "created_at": {"$gte": cut}, "is_draft": {"$ne": True}},
+        {"_id": 0, "community_id": 1, "likes": 1},
+    ).to_list(3000)
+    counts: dict[str, dict] = {}
+    for p in posts:
+        cid = p.get("community_id")
+        if not cid:
+            continue
+        s = counts.setdefault(cid, {"posts": 0, "likes": 0})
+        s["posts"] += 1
+        s["likes"] += len(p.get("likes", []))
+    ranked = sorted(counts.items(), key=lambda kv: kv[1]["posts"] * 2 + kv[1]["likes"], reverse=True)[:10]
+    out = []
+    for cid, s in ranked:
+        c = await db.communities.find_one({"id": cid}, {"_id": 0})
+        if not c:
+            continue
+        base = _community_public(c, viewer)
+        base["trend_posts"] = s["posts"]
+        base["trend_likes"] = s["likes"]
+        out.append(base)
+    return out
+
+
+@api.get("/trending/cidades")
+async def trending_cities(range: str = "30d"):
+    """Cidades portuguesas em alta — extraídas das hashtags + conteúdo."""
+    hours = range_to_hours(range)
+    cut = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+    prev_cut = (datetime.now(timezone.utc) - timedelta(hours=hours * 2)).isoformat()
+    curr_posts = await db.posts.find(
+        {"is_draft": {"$ne": True}, "created_at": {"$gte": cut}},
+        {"_id": 0, "hashtags": 1, "content": 1},
+    ).to_list(2000)
+    prev_posts = await db.posts.find(
+        {"is_draft": {"$ne": True}, "created_at": {"$gte": prev_cut, "$lt": cut}},
+        {"_id": 0, "hashtags": 1, "content": 1},
+    ).to_list(2000)
+
+    def _count(plist):
+        c: dict[str, int] = {}
+        for p in plist:
+            cities = detect_cities(p.get("content", ""), p.get("hashtags", []))
+            for city in cities:
+                c[city] = c.get(city, 0) + 1
+        return c
+
+    curr = _count(curr_posts)
+    prev = _count(prev_posts)
+    ranked = sorted(curr.items(), key=lambda kv: kv[1], reverse=True)[:12]
+    out = []
+    for city, n in ranked:
+        out.append({
+            "city": city,
+            "count": n,
+            "previous": prev.get(city, 0),
+            "velocity": compute_velocity(n, prev.get(city, 0)),
+        })
+    return out
+
+
+# ============================================================
+# Explore — mood / people
+# ============================================================
+@api.get("/explore/moods")
+async def list_moods():
+    """Static moods catalogue with counts (last 7 days)."""
+    cut = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    posts = await db.posts.find(
+        {"is_draft": {"$ne": True}, "created_at": {"$gte": cut}},
+        {"_id": 0, "content": 1},
+    ).to_list(2000)
     counts: dict[str, int] = {}
     for p in posts:
-        for t in p.get("hashtags", []):
-            counts[t] = counts.get(t, 0) + 1
-    items = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:20]
-    return [{"tag": k, "count": v} for k, v in items]
+        m = detect_mood(p.get("content", ""))
+        if m:
+            counts[m] = counts.get(m, 0) + 1
+    out = []
+    for key, m in MOODS.items():
+        out.append({
+            "key": key, "label": m["label"], "emoji": m["emoji"],
+            "count": counts.get(key, 0),
+        })
+    return out
+
+
+@api.get("/explore/by-mood")
+async def explore_by_mood(mood: str = "", viewer: Optional[dict] = Depends(maybe_user)):
+    if not mood or mood not in MOODS:
+        raise HTTPException(400, "Mood inválido")
+    await auto_publish_due_posts()
+    kws = MOODS[mood]["keywords"]
+    rx = "|".join(re.escape(k) for k in kws)
+    posts = await db.posts.find(
+        {"is_draft": {"$ne": True},
+         "repost_of": {"$exists": False},
+         "content": {"$regex": rx, "$options": "i"},
+         "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}},
+                  {"scheduled_at": {"$lte": now_iso()}}]},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
+    return [await enrich_post(p, viewer) for p in posts]
+
+
+@api.get("/explore/by-city")
+async def explore_by_city(city: str = "", viewer: Optional[dict] = Depends(maybe_user)):
+    """City filter by hashtag or content keyword."""
+    city_key = (city or "").lower().strip()
+    if not city_key or city_key not in PT_CITIES:
+        raise HTTPException(400, "Cidade inválida")
+    rx = re.escape(city_key)
+    posts = await db.posts.find(
+        {"is_draft": {"$ne": True},
+         "repost_of": {"$exists": False},
+         "$or": [{"hashtags": city_key}, {"content": {"$regex": rx, "$options": "i"}}]},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
+    return [await enrich_post(p, viewer) for p in posts]
+
+
+@api.get("/explore/people")
+async def explore_people(viewer=Depends(get_current_user)):
+    """Alias for suggestions but returns 15 instead of 5."""
+    following = set(viewer.get("following", []))
+    excluded = following | {viewer["id"]}
+    candidates = await db.users.find(
+        {"id": {"$nin": list(excluded)}}, {"_id": 0},
+    ).to_list(500)
+    scored = []
+    for c in candidates:
+        c_followers = set(c.get("followers", []))
+        mutual = len(c_followers & following)
+        followers_total = len(c.get("followers", []))
+        score = mutual * 10 + math.log1p(followers_total) + (2 if c.get("verified") else 0)
+        scored.append((score, mutual, c))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    out = []
+    for score, mutual, c in scored[:15]:
+        d = public_user(c)
+        d["mutual_count"] = mutual
+        d["reason"] = (
+            f"{mutual} em comum" if mutual > 0
+            else ("popular" if len(c.get("followers", [])) >= 3 else "novo")
+        )
+        out.append(d)
+    return out
+
+
+# ============================================================
+# Badges & Regions (profile)
+# ============================================================
+@api.get("/users/{username}/badges")
+async def user_badges(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not await can_view_profile(user, viewer):
+        return {"earned": [], "all": []}
+    posts = await db.posts.find(
+        {"author_id": user["id"], "repost_of": {"$exists": False}}, {"_id": 0},
+    ).to_list(2000)
+    posts_count = len(posts)
+    likes_received = sum(len(p.get("likes", [])) for p in posts)
+    image_posts = sum(1 for p in posts if (p.get("image") or (p.get("images") or [])))
+    # mood counters
+    tasca_n = sum(1 for p in posts if detect_mood(p.get("content", "")) == "tasca")
+    fado_n = sum(1 for p in posts if detect_mood(p.get("content", "")) == "fado")
+    morning = 0
+    night = 0
+    cities_set: set = set()
+    for p in posts:
+        try:
+            h = datetime.fromisoformat(p["created_at"]).hour
+            if 5 <= h < 8:
+                morning += 1
+            if 0 <= h < 4:
+                night += 1
+        except Exception:
+            pass
+        for c in detect_cities(p.get("content", ""), p.get("hashtags", [])):
+            cities_set.add(c)
+    # streak (reuse simple calc)
+    dates = sorted({p["created_at"][:10] for p in posts}, reverse=True)
+    streak = 0
+    today = datetime.now(timezone.utc).date()
+    for i, d in enumerate(dates):
+        try:
+            dt = datetime.fromisoformat(d).date()
+        except Exception:
+            break
+        if (today - dt).days == i:
+            streak += 1
+        else:
+            break
+    joined_days = (datetime.now(timezone.utc) - datetime.fromisoformat(user["created_at"])).days
+    comments_made = await db.comments.count_documents({"author_id": user["id"]})
+
+    rules = {
+        "verificado":   bool(user.get("verified")),
+        "embaixador":   len(user.get("followers", [])) >= 50,
+        "popular":      likes_received >= 100,
+        "maratonista":  streak >= 7,
+        "lenda":        streak >= 30,
+        "veterano":     joined_days >= 365,
+        "tasqueiro":    tasca_n >= 3,
+        "fadista":      fado_n >= 3,
+        "madrugador":   morning >= 3,
+        "noctivago":    night >= 3,
+        "colecionador": len(user.get("bookmarks", [])) >= 10,
+        "conversador":  comments_made >= 20,
+        "fotografo":    image_posts >= 5,
+        "viajante":     len(cities_set) >= 3,
+    }
+    all_badges = []
+    for b in PT_BADGES_DEFS:
+        all_badges.append({**b, "earned": bool(rules.get(b["key"]))})
+    return {
+        "earned": [b for b in all_badges if b["earned"]],
+        "all": all_badges,
+        "totals": {
+            "posts": posts_count, "likes_received": likes_received,
+            "streak": streak, "cities": len(cities_set),
+            "image_posts": image_posts, "comments_made": comments_made,
+            "joined_days": joined_days,
+        },
+    }
+
+
+@api.get("/users/{username}/regions")
+async def user_regions(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    """Map data — counts per PT city for the user's posts."""
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not await can_view_profile(user, viewer):
+        return []
+    posts = await db.posts.find(
+        {"author_id": user["id"], "repost_of": {"$exists": False}},
+        {"_id": 0, "content": 1, "hashtags": 1},
+    ).to_list(1000)
+    counts: dict[str, int] = {}
+    for p in posts:
+        for c in detect_cities(p.get("content", ""), p.get("hashtags", [])):
+            counts[c] = counts.get(c, 0) + 1
+    return [{"city": c, "count": n} for c, n in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)]
+
+
+# ============================================================
+# Tag stats (per-hashtag analytics)
+# ============================================================
+@api.get("/tags/{tag}/stats")
+async def tag_stats(tag: str):
+    t = tag.lower().strip().lstrip("#")
+    cut7 = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    cut14 = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    posts7 = await db.posts.find(
+        {"hashtags": t, "is_draft": {"$ne": True}, "created_at": {"$gte": cut7}},
+        {"_id": 0, "author_id": 1, "likes": 1, "hashtags": 1},
+    ).to_list(1000)
+    posts14 = await db.posts.find(
+        {"hashtags": t, "is_draft": {"$ne": True},
+         "created_at": {"$gte": cut14, "$lt": cut7}},
+        {"_id": 0, "author_id": 1},
+    ).to_list(1000)
+    total = await db.posts.count_documents({"hashtags": t, "is_draft": {"$ne": True}})
+    unique_authors = len({p["author_id"] for p in posts7})
+    likes_week = sum(len(p.get("likes", [])) for p in posts7)
+    velocity = compute_velocity(len(posts7), len(posts14))
+    # related tags from same posts
+    co: dict[str, int] = {}
+    for p in posts7:
+        for ht in p.get("hashtags", []):
+            if ht != t:
+                co[ht] = co.get(ht, 0) + 1
+    related = [{"tag": k, "count": v} for k, v in sorted(co.items(), key=lambda kv: kv[1], reverse=True)[:6]]
+    return {
+        "tag": t, "total": total,
+        "posts_week": len(posts7),
+        "posts_prev_week": len(posts14),
+        "unique_authors": unique_authors,
+        "likes_week": likes_week,
+        "velocity": velocity,
+        "is_city": t in PT_CITIES,
+        "city_label": PT_CITIES.get(t, ""),
+        "related": related,
+    }
+
+
+# ============================================================
+# Bookmark Collections
+# ============================================================
+class CollectionIn(BaseModel):
+    name: str = Field(min_length=1, max_length=30)
+
+
+class CollectionMoveIn(BaseModel):
+    collection_id: Optional[str] = None  # None = remove from any collection (default "Todos")
+
+
+@api.get("/bookmark-collections")
+async def list_collections(user=Depends(get_current_user)):
+    cols = await db.bookmark_collections.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", 1).to_list(200)
+    out = []
+    for c in cols:
+        n = await db.posts.count_documents({
+            "bookmarks": user["id"], "bookmark_collection_map": {"$elemMatch": {"user_id": user["id"], "collection_id": c["id"]}},
+        })
+        out.append({"id": c["id"], "name": c["name"], "count": n, "created_at": c["created_at"]})
+    return out
+
+
+@api.post("/bookmark-collections")
+async def create_collection(payload: CollectionIn, user=Depends(get_current_user)):
+    existing = await db.bookmark_collections.count_documents({"user_id": user["id"]})
+    if existing >= 20:
+        raise HTTPException(400, "Limite de 20 coleções atingido")
+    doc = {
+        "id": str(uuid.uuid4()), "user_id": user["id"],
+        "name": payload.name.strip(),
+        "created_at": now_iso(),
+    }
+    await db.bookmark_collections.insert_one(doc)
+    return {"id": doc["id"], "name": doc["name"], "count": 0, "created_at": doc["created_at"]}
+
+
+@api.patch("/bookmark-collections/{cid}")
+async def rename_collection(cid: str, payload: CollectionIn, user=Depends(get_current_user)):
+    c = await db.bookmark_collections.find_one({"id": cid, "user_id": user["id"]}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Coleção não encontrada")
+    await db.bookmark_collections.update_one({"id": cid}, {"$set": {"name": payload.name.strip()}})
+    return {"ok": True}
+
+
+@api.delete("/bookmark-collections/{cid}")
+async def delete_collection(cid: str, user=Depends(get_current_user)):
+    c = await db.bookmark_collections.find_one({"id": cid, "user_id": user["id"]}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Coleção não encontrada")
+    await db.bookmark_collections.delete_one({"id": cid})
+    # remove this collection from any post mapping for the user
+    await db.posts.update_many(
+        {"bookmark_collection_map": {"$elemMatch": {"user_id": user["id"], "collection_id": cid}}},
+        {"$pull": {"bookmark_collection_map": {"user_id": user["id"], "collection_id": cid}}},
+    )
+    return {"ok": True}
+
+
+@api.post("/posts/{post_id}/collection")
+async def move_bookmark(post_id: str, payload: CollectionMoveIn, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    # ensure the user has the post bookmarked
+    if user["id"] not in post.get("bookmarks", []):
+        await db.posts.update_one({"id": post_id}, {"$addToSet": {"bookmarks": user["id"]}})
+    # remove existing mapping for this user
+    await db.posts.update_one(
+        {"id": post_id},
+        {"$pull": {"bookmark_collection_map": {"user_id": user["id"]}}},
+    )
+    if payload.collection_id:
+        # validate collection
+        c = await db.bookmark_collections.find_one(
+            {"id": payload.collection_id, "user_id": user["id"]}, {"_id": 0},
+        )
+        if not c:
+            raise HTTPException(404, "Coleção não encontrada")
+        await db.posts.update_one(
+            {"id": post_id},
+            {"$addToSet": {
+                "bookmark_collection_map": {"user_id": user["id"], "collection_id": payload.collection_id},
+            }},
+        )
+    return {"ok": True}
+
+
+# ============================================================
+# Community members + stats
+# ============================================================
+@api.get("/communities/{slug}/members")
+async def community_members(slug: str, viewer: Optional[dict] = Depends(maybe_user)):
+    c = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comunidade não encontrada")
+    member_ids = c.get("members", [])[:200]
+    members = await db.users.find({"id": {"$in": member_ids}}, {"_id": 0}).to_list(200)
+    # contributions inside community
+    posts = await db.posts.find(
+        {"community_id": c["id"], "is_draft": {"$ne": True}},
+        {"_id": 0, "author_id": 1, "likes": 1},
+    ).to_list(2000)
+    counts: dict[str, dict] = {}
+    for p in posts:
+        s = counts.setdefault(p["author_id"], {"posts": 0, "likes": 0})
+        s["posts"] += 1
+        s["likes"] += len(p.get("likes", []))
+    out = []
+    for m in members:
+        s = counts.get(m["id"], {"posts": 0, "likes": 0})
+        pu = public_user(m, {
+            "posts_in_community": s["posts"],
+            "likes_in_community": s["likes"],
+            "is_owner": m["id"] == c["owner_id"],
+        })
+        out.append(pu)
+    out.sort(key=lambda x: (x["posts_in_community"] * 2 + x["likes_in_community"]), reverse=True)
+    return out
+
+
+@api.get("/communities/{slug}/stats")
+async def community_stats(slug: str):
+    c = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cut7 = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    cut14 = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    posts7 = await db.posts.find(
+        {"community_id": c["id"], "is_draft": {"$ne": True}, "created_at": {"$gte": cut7}},
+        {"_id": 0, "likes": 1, "author_id": 1, "created_at": 1},
+    ).to_list(2000)
+    posts14 = await db.posts.count_documents(
+        {"community_id": c["id"], "is_draft": {"$ne": True},
+         "created_at": {"$gte": cut14, "$lt": cut7}},
+    )
+    total = await db.posts.count_documents({"community_id": c["id"], "is_draft": {"$ne": True}})
+    likes_week = sum(len(p.get("likes", [])) for p in posts7)
+    velocity = compute_velocity(len(posts7), posts14)
+    # by-day buckets (7 days)
+    by_day: dict[str, int] = {}
+    for p in posts7:
+        d = p["created_at"][:10]
+        by_day[d] = by_day.get(d, 0) + 1
+    today = datetime.now(timezone.utc).date()
+    days = []
+    for i in range(6, -1, -1):
+        d = (today - timedelta(days=i)).isoformat()
+        days.append({"date": d, "count": by_day.get(d, 0)})
+    return {
+        "members_count": len(c.get("members", [])),
+        "total_posts": total,
+        "posts_week": len(posts7),
+        "posts_prev_week": posts14,
+        "likes_week": likes_week,
+        "unique_authors_week": len({p["author_id"] for p in posts7}),
+        "velocity": velocity,
+        "by_day": days,
+    }
+
+
+# ============================================================
+# Notifications — star + snooze
+# ============================================================
+@api.post("/notifications/{nid}/star")
+async def toggle_notification_star(nid: str, user=Depends(get_current_user)):
+    n = await db.notifications.find_one({"id": nid, "user_id": user["id"]}, {"_id": 0})
+    if not n:
+        raise HTTPException(404, "Notificação não encontrada")
+    new_val = not bool(n.get("starred"))
+    await db.notifications.update_one({"id": nid}, {"$set": {"starred": new_val}})
+    return {"starred": new_val}
+
+
+class NotifSnoozeIn(BaseModel):
+    hours: int = Field(default=24, ge=1, le=24 * 7)
+
+
+@api.post("/notifications/{nid}/snooze")
+async def snooze_notification(nid: str, payload: NotifSnoozeIn, user=Depends(get_current_user)):
+    n = await db.notifications.find_one({"id": nid, "user_id": user["id"]}, {"_id": 0})
+    if not n:
+        raise HTTPException(404, "Notificação não encontrada")
+    until = (datetime.now(timezone.utc) + timedelta(hours=payload.hours)).isoformat()
+    await db.notifications.update_one({"id": nid}, {"$set": {"snoozed_until": until, "read": True}})
+    return {"snoozed_until": until}
+
+
+@api.delete("/notifications/{nid}")
+async def delete_notification(nid: str, user=Depends(get_current_user)):
+    res = await db.notifications.delete_one({"id": nid, "user_id": user["id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Notificação não encontrada")
+    return {"ok": True}
+
+
+@api.delete("/notifications")
+async def clear_notifications(user=Depends(get_current_user)):
+    await db.notifications.delete_many({"user_id": user["id"], "read": True})
+    return {"ok": True}
+
+
+# ============================================================
+# Conversations — pin + archive
+# ============================================================
+@api.post("/conversations/{other_id}/pin")
+async def toggle_conv_pin(other_id: str, user=Depends(get_current_user)):
+    key = conv_key(user["id"], other_id)
+    c = await db.conversations.find_one({"key": key}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Conversa não encontrada")
+    pinned_by = set(c.get("pinned_by", []))
+    if user["id"] in pinned_by:
+        pinned_by.discard(user["id"])
+        new_state = False
+    else:
+        pinned_by.add(user["id"])
+        new_state = True
+    await db.conversations.update_one({"key": key}, {"$set": {"pinned_by": list(pinned_by)}})
+    return {"pinned": new_state}
+
+
+@api.post("/conversations/{other_id}/archive")
+async def toggle_conv_archive(other_id: str, user=Depends(get_current_user)):
+    key = conv_key(user["id"], other_id)
+    c = await db.conversations.find_one({"key": key}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Conversa não encontrada")
+    archived_by = set(c.get("archived_by", []))
+    if user["id"] in archived_by:
+        archived_by.discard(user["id"])
+        new_state = False
+    else:
+        archived_by.add(user["id"])
+        new_state = True
+    await db.conversations.update_one({"key": key}, {"$set": {"archived_by": list(archived_by)}})
+    return {"archived": new_state}
+
+
+# ============================================================
+# Posts — share counter
+# ============================================================
+@api.post("/posts/{post_id}/share")
+async def track_share(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    await db.posts.update_one({"id": post_id}, {"$inc": {"shares": 1}})
+    return {"ok": True}
+
+
+# ============================================================
+# Catalogue endpoints (categories etc.)
+# ============================================================
+@api.get("/catalog/community-categories")
+async def cat_community():
+    return [{"key": k, "label": k.capitalize()} for k in COMMUNITY_CATEGORIES]
+
+
+@api.get("/catalog/event-categories")
+async def cat_event():
+    return [{"key": k, "label": k.capitalize()} for k in EVENT_CATEGORIES]
+
+
+@api.get("/catalog/cities")
+async def cat_cities():
+    return [{"key": k, "label": v} for k, v in PT_CITIES.items()]
 
 
 # ============================================================

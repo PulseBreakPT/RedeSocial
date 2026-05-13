@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Clock, Trash2, Send, Image as ImageIcon, BarChart3, Calendar } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Clock, Trash2, Send, Image as ImageIcon, BarChart3, Calendar, Search, X, CheckSquare, Square } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { PostSkeletonList } from "../components/Skeleton";
 import { Avatar } from "../components/Avatar";
@@ -23,107 +23,128 @@ function untilLabel(iso) {
 export default function Scheduled() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [q, setQ] = useState("");
+    const [sort, setSort] = useState("soonest");
+    const [selected, setSelected] = useState(new Set());
     const navigate = useNavigate();
 
     const load = () => {
         setLoading(true);
-        api.get("/posts/scheduled")
-            .then((r) => setPosts(r.data))
-            .catch((e) => toast.error(formatApiError(e)))
-            .finally(() => setLoading(false));
+        api.get("/posts/scheduled").then((r) => setPosts(r.data)).catch((e) => toast.error(formatApiError(e))).finally(() => setLoading(false));
     };
-
     useEffect(() => { load(); }, []);
 
-    const publishNow = async (id) => {
-        try {
-            await api.post(`/posts/${id}/publish`);
-            setPosts((prev) => prev.filter((p) => p.id !== id));
-            toast.success("Publicado agora");
-        } catch (e) {
-            toast.error(formatApiError(e));
-        }
-    };
+    const filtered = useMemo(() => {
+        let list = posts.slice();
+        if (q.trim()) { const n = q.toLowerCase(); list = list.filter((p) => (p.content || "").toLowerCase().includes(n)); }
+        if (sort === "latest") list.sort((a, b) => (a.scheduled_at < b.scheduled_at ? 1 : -1));
+        else list.sort((a, b) => (a.scheduled_at < b.scheduled_at ? -1 : 1));
+        return list;
+    }, [posts, q, sort]);
 
+    const toggle = (id) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    const toggleAll = () => setSelected((prev) => prev.size === filtered.length ? new Set() : new Set(filtered.map((p) => p.id)));
+
+    const publishNow = async (id) => {
+        try { await api.post(`/posts/${id}/publish`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Publicado agora"); }
+        catch (e) { toast.error(formatApiError(e)); }
+    };
     const remove = async (id) => {
         if (!window.confirm("Cancelar agendamento e apagar?")) return;
-        try {
-            await api.delete(`/posts/${id}`);
-            setPosts((prev) => prev.filter((p) => p.id !== id));
-            toast.success("Agendamento cancelado");
-        } catch (e) {
-            toast.error(formatApiError(e));
-        }
+        try { await api.delete(`/posts/${id}`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Agendamento cancelado"); }
+        catch (e) { toast.error(formatApiError(e)); }
+    };
+    const reschedule = async (id, currentIso) => {
+        const def = currentIso ? currentIso.slice(0, 16) : "";
+        const input = window.prompt("Nova data (AAAA-MM-DD HH:MM):", def.replace("T", " "));
+        if (!input) return;
+        const iso = new Date(input.replace(" ", "T")).toISOString();
+        try { await api.patch(`/posts/${id}`, { scheduled_at: iso }); load(); toast.success("Reagendado"); }
+        catch (e) { toast.error(formatApiError(e)); }
+    };
+    const bulkPublish = async () => {
+        if (!selected.size) return;
+        if (!window.confirm(`Publicar ${selected.size} agora?`)) return;
+        for (const id of selected) { try { await api.post(`/posts/${id}/publish`); } catch {} }
+        setPosts((prev) => prev.filter((p) => !selected.has(p.id))); setSelected(new Set()); toast.success("Publicados");
+    };
+    const bulkCancel = async () => {
+        if (!selected.size) return;
+        if (!window.confirm(`Cancelar ${selected.size} agendamentos?`)) return;
+        for (const id of selected) { try { await api.delete(`/posts/${id}`); } catch {} }
+        setPosts((prev) => prev.filter((p) => !selected.has(p.id))); setSelected(new Set()); toast.success("Cancelados");
     };
 
     return (
         <div data-testid="scheduled-page">
-            <PageHeader title="Agendados" subtitle={`${posts.length} a aguardar`} back testid="scheduled-header" />
-            {loading ? (
-                <PostSkeletonList count={3} />
-            ) : posts.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-black/[0.04] grid place-items-center mx-auto mb-5 border border-black/[0.08]">
-                        <Clock size={28} className="text-black/40" />
+            <PageHeader title="Agendados" subtitle={`${posts.length} a aguardar`} back testid="scheduled-header">
+                <div className="px-3 lg:px-4 pb-2 flex items-center gap-2">
+                    <div className="flex-1 relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar nos agendados..." data-testid="scheduled-search" className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition" />
+                        {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
                     </div>
-                    <p className="text-black font-heading text-lg tracking-tight">Nenhum agendamento</p>
+                    <select value={sort} onChange={(e) => setSort(e.target.value)} data-testid="scheduled-sort" className="text-[12px] bg-black/[0.04] rounded-full px-3 py-2 font-medium text-black/65 outline-none">
+                        <option value="soonest">Mais próximo</option>
+                        <option value="latest">Mais distante</option>
+                    </select>
+                </div>
+                {selected.size > 0 && (
+                    <div className="px-3 lg:px-4 pb-2 flex items-center gap-2 hairline-t pt-2">
+                        <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
+                        <button onClick={bulkPublish} className="inline-flex items-center gap-1 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar já</button>
+                        <button onClick={bulkCancel} className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Cancelar</button>
+                        <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55">limpar</button>
+                    </div>
+                )}
+            </PageHeader>
+
+            {loading ? (<PostSkeletonList count={3} />) : filtered.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                    <div className="w-20 h-20 rounded-full bg-black/[0.04] grid place-items-center mx-auto mb-5 border border-black/[0.08]"><Clock size={28} className="text-black/40" /></div>
+                    <p className="text-black font-heading text-lg tracking-tight">{q ? "Sem resultados" : "Nenhum agendamento"}</p>
                     <p className="text-black/50 text-sm mt-1">Programa publicações futuras a partir do compositor.</p>
                 </div>
             ) : (
-                posts.map((p) => (
-                    <article
-                        key={p.id}
-                        data-testid={`scheduled-${p.id}`}
-                        className="px-4 lg:px-5 py-4 border-b border-black/[0.06] hover:bg-black/[0.015] transition"
-                    >
-                        <div className="flex gap-3">
-                            <Avatar user={p.author} size={40} />
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                    <span className="font-heading font-bold text-sm text-black">{p.author?.name}</span>
-                                    <span
-                                        className="font-mono text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-soft/15 text-blue-soft border border-blue-soft/30"
-                                        title={fullTime(p.scheduled_at)}
-                                    >
-                                        <Calendar size={10} /> {untilLabel(p.scheduled_at)}
-                                    </span>
-                                </div>
-                                <p className="text-[15px] text-black/85 whitespace-pre-wrap line-clamp-4">{p.content || <em className="text-black/40">sem texto</em>}</p>
-                                <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-black/40">
-                                    <span title={fullTime(p.scheduled_at)}>{smartTime(p.scheduled_at)}</span>
-                                    {p.images?.length > 0 && (
-                                        <span className="inline-flex items-center gap-1"><ImageIcon size={11} /> {p.images.length}</span>
-                                    )}
-                                    {p.poll && (
-                                        <span className="inline-flex items-center gap-1"><BarChart3 size={11} /> enquete</span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2 mt-3">
-                                    <button
-                                        onClick={() => publishNow(p.id)}
-                                        data-testid={`scheduled-publish-${p.id}`}
-                                        className="inline-flex items-center gap-1.5 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85 tap-shrink"
-                                    >
-                                        <Send size={12} /> Publicar agora
-                                    </button>
-                                    <button
-                                        onClick={() => navigate(`/post/${p.id}`)}
-                                        className="inline-flex items-center gap-1.5 text-xs font-mono text-black/60 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04] tap-shrink"
-                                    >
-                                        ver
-                                    </button>
-                                    <button
-                                        onClick={() => remove(p.id)}
-                                        data-testid={`scheduled-delete-${p.id}`}
-                                        className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full tap-shrink"
-                                    >
-                                        <Trash2 size={12} /> cancelar
-                                    </button>
+                <>
+                    <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-2">
+                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/55 hover:text-black">
+                            {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare size={13} /> : <Square size={13} />}
+                            selecionar todos
+                        </button>
+                        <span className="text-[11px] font-mono text-black/45 ml-auto">{filtered.length} visiveis</span>
+                    </div>
+                    {filtered.map((p) => (
+                        <article key={p.id} data-testid={`scheduled-${p.id}`} className="px-4 lg:px-5 py-4 border-b border-black/[0.06] hover:bg-black/[0.015] transition">
+                            <div className="flex gap-3">
+                                <button onClick={() => toggle(p.id)} className="flex-shrink-0 mt-1 text-black/40 hover:text-black">
+                                    {selected.has(p.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                                </button>
+                                <Avatar user={p.author} size={40} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <span className="font-heading font-bold text-sm text-black">{p.author?.name}</span>
+                                        <span className="font-mono text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-soft/15 text-blue-soft border border-blue-soft/30" title={fullTime(p.scheduled_at)}>
+                                            <Calendar size={10} /> {untilLabel(p.scheduled_at)}
+                                        </span>
+                                    </div>
+                                    <p className="text-[15px] text-black/85 whitespace-pre-wrap line-clamp-4">{p.content || <em className="text-black/40">sem texto</em>}</p>
+                                    <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-black/40">
+                                        <span title={fullTime(p.scheduled_at)}>{smartTime(p.scheduled_at)}</span>
+                                        {p.images?.length > 0 && (<span className="inline-flex items-center gap-1"><ImageIcon size={11} /> {p.images.length}</span>)}
+                                        {p.poll && (<span className="inline-flex items-center gap-1"><BarChart3 size={11} /> enquete</span>)}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-3">
+                                        <button onClick={() => publishNow(p.id)} data-testid={`scheduled-publish-${p.id}`} className="inline-flex items-center gap-1.5 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85"><Send size={12} /> Publicar agora</button>
+                                        <button onClick={() => reschedule(p.id, p.scheduled_at)} data-testid={`scheduled-reschedule-${p.id}`} className="inline-flex items-center gap-1.5 text-xs font-mono text-black/70 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]"><Calendar size={12} /> reagendar</button>
+                                        <button onClick={() => navigate(`/post/${p.id}`)} className="inline-flex items-center gap-1.5 text-xs font-mono text-black/60 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]">ver</button>
+                                        <button onClick={() => remove(p.id)} data-testid={`scheduled-delete-${p.id}`} className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={12} /> cancelar</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </article>
-                ))
+                        </article>
+                    ))}
+                </>
             )}
         </div>
     );

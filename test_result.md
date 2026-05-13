@@ -125,46 +125,117 @@ backend:
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Phase 1 — superseded by Phase 2 expansion. Don't retest unless Phase 2 changes broke something."
+
+  - task: "Fase 2 — PT social mechanics (trending velocity, moods, badges, regions, collections, members, stats, notif star/snooze, conv pin/archive, tag stats, categories)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: |
-            Implemented all Phase 1 endpoints. Need full integration test:
-            1. Create post with images[] (max 4), confirm enriched response includes images
-            2. Create post with poll (options >= 2, ends_in_minutes optional), vote (single + multiple), verify counts and viewer_voted_for, confirm /vote rejects after ends_at
-            3. Create scheduled post (scheduled_at > now), confirm hidden from /feed and /explore for other users but visible for self via /users/me/... and /posts/scheduled. Confirm auto_publish promotes once time passes (set scheduled_at to ~5s future, sleep, re-fetch /feed)
-            4. Create draft (is_draft=true), confirm appears in /posts/drafts but not /feed; call /posts/{id}/publish, confirm visible everywhere afterwards
-            5. Edit post within 24h, confirm edit_history populated and content updated; expect 400 after >24h (skip if not testable)
-            6. React with each emoji in ALLOWED_REACTIONS, confirm toggle behaviour, confirm 400 on invalid emoji like "🙈", confirm notifications row created for author
-            7. Reply audience: create post with reply_audience="following" as user A; user B (not followed by A) tries to comment → 403; A follows B → still 403 (rule: only people A follows); reply_audience="mentioned": only mentioned usernames in content can reply
-            8. Nested comments: POST comment with parent_id, confirm parent.replies_count increments; DELETE parent comment cascade deletes replies; deleting a leaf decrements parent.replies_count
-            9. Confirm normal flow unbroken: legacy "image" field still works, /like still toggles ❤️ counter, /repost still works, /comments without parent_id still works.
-            Credentials: admin@vermillion.app / admin123 (see /app/memory/test_credentials.md)
+            Implemented broad backend Phase 2 expansion. Endpoints to test (auth via admin@vermillion.app / admin123 — create a 2nd user only if cross-user behaviour is needed):
+
+            TRENDING (with range filter + velocity %):
+              GET /api/trending?range=1h|24h|7d|30d  → list of {tag,count,previous,velocity,is_city}
+              GET /api/trending/pessoas?range=7d  → list of public users with trend_score/trend_posts/trend_likes
+              GET /api/trending/comunidades?range=7d → list of communities with trend_posts/trend_likes
+              GET /api/trending/cidades?range=30d → list of {city,count,previous,velocity}
+
+            EXPLORE:
+              GET /api/explore/moods → static moods catalogue with last-7d counts
+              GET /api/explore/by-mood?mood=tasca|saudade|fado|festa|cafe|praia|futebol|cultura → posts matching that mood
+              GET /api/explore/by-city?city=lisboa|porto|... → posts mentioning that PT city
+              GET /api/explore/people (auth) → 15 suggested users with mutual_count + reason
+
+            FEED / EXPLORE filters (extended existing):
+              GET /api/posts/feed?mood=tasca&sort=recent|top
+              GET /api/posts/explore?mood=fado&sort=trending|recent|top
+              enrich_post now returns extra fields: mood (string|null), cities (string[]), shares (int)
+
+            PROFILE EXTRAS:
+              GET /api/users/{u}/badges → {earned, all, totals} where all[].earned reflects which of the 14 badge rules apply (verificado, embaixador, popular, maratonista, lenda, veterano, tasqueiro, fadista, madrugador, noctivago, colecionador, conversador, fotografo, viajante)
+              GET /api/users/{u}/regions → [{city,count}] aggregated from post hashtags+content
+
+            TAG ANALYTICS:
+              GET /api/tags/{tag}/stats → {tag,total,posts_week,posts_prev_week,unique_authors,likes_week,velocity,is_city,city_label,related[]}
+
+            BOOKMARK COLLECTIONS:
+              GET /api/bookmark-collections (auth)
+              POST /api/bookmark-collections (auth, body {name})
+              PATCH /api/bookmark-collections/{id} (rename)
+              DELETE /api/bookmark-collections/{id} (also unmaps posts)
+              POST /api/posts/{post_id}/collection (auth, body {collection_id|null}) → moves bookmark in/out of collection
+              GET /api/posts/bookmarks?collection=<id|uncategorized>  → filter by collection
+
+            COMMUNITIES:
+              CommunityIn now accepts optional category (one of cidades|musica|desporto|tasca|cultura|tecnologia|fotografia|moda|viagens|outras). _community_public returns category.
+              GET /api/communities/{slug}/members → leaderboard sorted by posts_in_community*2 + likes_in_community
+              GET /api/communities/{slug}/stats → {members_count,total_posts,posts_week,posts_prev_week,likes_week,unique_authors_week,velocity,by_day:[7 days]}
+
+            EVENTS:
+              EventIn now accepts category (festa|cultura|concerto|desporto|tasca|familia|outros). _event_public returns category.
+              GET /api/events?category=<key>&when=upcoming|week|month|past|all → filtered list, sorted by starts_at (asc except past=desc)
+
+            NOTIFICATIONS — star/snooze/delete:
+              GET /api/notifications now also returns starred (bool) and snoozed_until (iso|null) and hides currently-snoozed items
+              POST /api/notifications/{id}/star → toggles starred
+              POST /api/notifications/{id}/snooze {hours=24} → sets snoozed_until and marks as read
+              DELETE /api/notifications/{id}
+              DELETE /api/notifications (clears all *read* notifications for the user)
+
+            CONVERSATIONS — pin/archive:
+              GET /api/conversations?filter=all|pinned|unread|archived → returns pinned/archived flags; pinned conversations sort to top; archived hidden from "all"
+              POST /api/conversations/{other_id}/pin → toggle
+              POST /api/conversations/{other_id}/archive → toggle
+
+            POST SHARE:
+              POST /api/posts/{id}/share → increments shares; enrich_post returns shares count
+
+            CATALOGUE (no auth):
+              GET /api/catalog/community-categories
+              GET /api/catalog/event-categories
+              GET /api/catalog/cities
+
+            Sanity checks to confirm legacy flows still work:
+              - /api/posts (create/like/repost/bookmark/comment) unchanged in behaviour
+              - /api/posts/feed still works without mood/sort params
+              - /api/notifications still works for existing seeded notifications
+              - /api/conversations still works without filter param (defaults to all)
+              - /api/events works without when/category (defaults to upcoming)
+              - /api/trending without range works (defaults to 7d)
 
 frontend:
-  - task: "Posts Fase 1 — UI for rich content"
-    implemented: false
+  - task: "Fase 2 — UI redesign across all routes (tabs, filters, mood chips, categories, collections, badges, map, stats)"
+    implemented: true
     working: "NA"
-    file: "/app/frontend/src/components/Composer.js, PostCard.js, Feed.js"
+    file: "/app/frontend/src/pages/*.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Frontend will be built AFTER backend testing passes. Don't test frontend yet."
+          comment: "Frontend Phase 2 implemented; do NOT auto-test — wait for explicit user permission."
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
+  version: "2.0"
   test_sequence: 0
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Posts Fase 1 — rich content (images, poll, scheduled, drafts, reactions, audience, edit history)"
+    - "Fase 2 — PT social mechanics (trending velocity, moods, badges, regions, collections, members, stats, notif star/snooze, conv pin/archive, tag stats, categories)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -172,4 +243,5 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: |
-        Phase 1 backend implementation complete. Please test exclusively the new endpoints listed in the task description. Use admin@vermillion.app/admin123 to register/login and create a second user (e.g. testuser2@vermillion.app/test1234) for cross-user scenarios (reply audience, reactions notifying author, scheduled visibility). DO NOT test frontend yet.
+        Phase 2 backend complete — broad expansion. Please test ALL endpoints listed in the new "Fase 2" backend task description. Use admin@vermillion.app / admin123 (admin already seeded with PT demo data). Skip Phase 1 retest; only test Phase 2 + legacy sanity checks listed in the task. DO NOT test frontend yet.
+
