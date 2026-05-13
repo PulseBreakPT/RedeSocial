@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { PageHeader } from "../components/PageHeader";
@@ -83,7 +83,7 @@ export default function Notifications() {
         try { await api.post(`/notifications/${n.id}/star`); }
         catch (e) {
             setItems((prev) => prev.map((x) => x.id === n.id ? { ...x, starred: !x.starred } : x));
-            toast.error(formatApiError(e));
+            toastApiError(e);
         }
     };
     const snooze = async (n) => {
@@ -91,13 +91,13 @@ export default function Notifications() {
             await api.post(`/notifications/${n.id}/snooze`, { hours: 24 });
             setItems((prev) => prev.filter((x) => x.id !== n.id));
             toast.success("Silenciada por 24h");
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
     const remove = async (n) => {
         try {
             await api.delete(`/notifications/${n.id}`);
             setItems((prev) => prev.filter((x) => x.id !== n.id));
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
     const clearRead = async () => {
         if (!window.confirm("Apagar todas as notificações lidas?")) return;
@@ -105,11 +105,11 @@ export default function Notifications() {
             await api.delete("/notifications");
             await reload();
             toast.success("Limpas");
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
     const markAll = async () => {
         try { await api.post("/notifications/read-all"); await reload(); toast.success("Marcadas como lidas"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
 
     const unreadCount = items.filter((n) => !n.read).length;

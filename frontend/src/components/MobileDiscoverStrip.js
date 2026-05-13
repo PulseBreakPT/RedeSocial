@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { TrendingUp, Sparkles } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export function MobileDiscoverStrip() {
             setSuggestions((s) => s.filter((u) => u.username !== username));
             toast.success(`Começaste a seguir @${username}`);
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 

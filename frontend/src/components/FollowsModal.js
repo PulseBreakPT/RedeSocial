@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ export function FollowsModal({ username, type, onClose }) {
     useEffect(() => {
         api.get(`/users/${username}/${type}`)
             .then((r) => setUsers(r.data))
-            .catch((e) => toast.error(formatApiError(e)))
+            .catch((e) => toastApiError(e))
             .finally(() => setLoading(false));
     }, [username, type]);
 
@@ -29,7 +29,7 @@ export function FollowsModal({ username, type, onClose }) {
             await api.post(`/users/${u.username}/follow`);
             toast.success("Atualizado");
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 

@@ -3,7 +3,7 @@ import { Bookmark, Plus, FolderPlus, Pencil, Trash2, Search, X, Image as ImageIc
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 
@@ -53,13 +53,13 @@ export default function Bookmarks() {
             setNewName("");
             setShowNew(false);
             toast.success("Coleção criada");
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
     const renameCol = async (c) => {
         const name = window.prompt("Novo nome:", c.name);
         if (!name || name === c.name) return;
         try { await api.patch(`/bookmark-collections/${c.id}`, { name }); await loadCollections(); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const deleteCol = async (c) => {
         if (!window.confirm(`Apagar a coleção "${c.name}"?`)) return;
@@ -68,7 +68,7 @@ export default function Bookmarks() {
             await loadCollections();
             if (activeCol === c.id) setActiveCol("");
             toast.success("Apagada");
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
 
     return (

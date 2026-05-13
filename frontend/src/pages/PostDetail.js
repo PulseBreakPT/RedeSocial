@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
@@ -35,7 +35,7 @@ export default function PostDetail() {
             setPost(p.data);
             setComments(c.data);
         } catch (e) {
-            toast.error(formatApiError(e));
+            toastApiError(e);
             navigate("/");
         } finally {
             setLoading(false);
@@ -52,7 +52,7 @@ export default function PostDetail() {
             setPost((p) => ({ ...p, comments_count: (p.comments_count || 0) + 1 }));
             setText("");
         } catch (e) {
-            toast.error(formatApiError(e));
+            toastApiError(e);
         }
     };
 

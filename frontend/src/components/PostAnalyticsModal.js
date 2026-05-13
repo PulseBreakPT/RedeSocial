@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, BarChart3, Eye, Heart, Repeat2, MessageCircle, Bookmark, TrendingUp } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { fullTime } from "../lib/time";
 import { toast } from "sonner";
 
@@ -35,7 +35,7 @@ export function PostAnalyticsModal({ postId, onClose }) {
         api.get(`/posts/${postId}/analytics`)
             .then((r) => setData(r.data))
             .catch((e) => {
-                toast.error(formatApiError(e));
+                toastApiError(e);
                 onClose();
             });
         // eslint-disable-next-line

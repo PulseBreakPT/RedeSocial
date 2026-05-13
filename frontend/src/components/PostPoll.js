@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, BarChart3, Clock } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 
 function timeLeft(endsAt) {
@@ -46,7 +46,7 @@ export function PostPoll({ postId, poll, viewer, onUpdate }) {
             setLocal(data.poll);
             onUpdate?.(data.poll);
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         } finally {
             setBusy(false);
         }

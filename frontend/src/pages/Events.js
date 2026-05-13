@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, CalendarDays, MapPin, X, Share2, Search, Users as UsersIcon } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { EVENT_CATEGORIES, categoryLabel } from "../lib/portuguese";
@@ -41,7 +41,7 @@ export default function Events() {
         return events.filter((e) => (e.title + " " + (e.location || "") + " " + (e.description || "")).toLowerCase().includes(n));
     }, [events, q]);
 
-    const attend = async (id) => { try { await api.post(`/events/${id}/attend`); load(); } catch (e) { toast.error(formatApiError(e)); } };
+    const attend = async (id) => { try { await api.post(`/events/${id}/attend`); load(); } catch (e) { toastApiError(e); } };
     const share = async (e) => {
         try { await navigator.clipboard.writeText(`${window.location.origin}/events`); toast.success("Link copiado"); }
         catch { toast.error("Não consegui copiar"); }
@@ -49,7 +49,7 @@ export default function Events() {
     const create = async (e) => {
         e.preventDefault();
         try { const iso = new Date(form.starts_at).toISOString(); await api.post("/events", { ...form, starts_at: iso }); toast.success("Evento criado"); setCreating(false); setForm({ title: "", description: "", location: "", starts_at: "", category: "festa" }); load(); }
-        catch (err) { toast.error(formatApiError(err)); }
+        catch (err) { toastApiError(err); }
     };
 
     return (

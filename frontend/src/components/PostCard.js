@@ -13,7 +13,7 @@ import {
     Users as UsersIcon,
     AtSign,
 } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { RichText } from "./RichText";
@@ -106,7 +106,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             onChange?.({ ...post, liked: data.liked, likes_count: data.likes_count });
         } catch (err) {
             setLiked(prevLiked); setLikes(prevLikes);
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 
@@ -122,7 +122,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         } catch (err) {
             setReposted(prev);
             setRepublicações(prev ? reposts + 1 : reposts - 1);
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 
@@ -136,7 +136,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             toast.success(data.bookmarked ? "Guardado" : "Removido dos guardados");
         } catch (err) {
             setBookmarked(prev);
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 
@@ -153,7 +153,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             onDelete?.(post.id);
             toast.success("Publicação apagada");
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
     };
 

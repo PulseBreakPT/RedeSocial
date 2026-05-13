@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Plus, X, Search, Flame, Clock, TrendingUp } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ export default function Communities() {
             const map = {};
             for (const x of h.data) map[x.slug] = { posts: x.trend_posts || 0, likes: x.trend_likes || 0 };
             setHotMap(map);
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
         finally { setLoading(false); }
     };
     useEffect(() => { load(); }, []);
@@ -65,7 +65,7 @@ export default function Communities() {
 
     const join = async (slug) => {
         try { const { data } = await api.post(`/communities/${slug}/join`); toast.success(data.joined ? "Entraste" : "Saíste"); load(); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const create = async (e) => {
         e.preventDefault();
@@ -75,7 +75,7 @@ export default function Communities() {
             setCreating(false);
             setForm({ name: "", description: "", category: "outras" });
             navigate(`/c/${data.slug}`);
-        } catch (err) { toast.error(formatApiError(err)); }
+        } catch (err) { toastApiError(err); }
     };
 
     return (

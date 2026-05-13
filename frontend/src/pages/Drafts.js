@@ -3,7 +3,7 @@ import { FileText, Trash2, Send, Image as ImageIcon, BarChart3, Search, X, Check
 import { PageHeader } from "../components/PageHeader";
 import { PostSkeletonList } from "../components/Skeleton";
 import { Avatar } from "../components/Avatar";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime } from "../lib/time";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ export default function Drafts() {
 
     const load = () => {
         setLoading(true);
-        api.get("/posts/drafts").then((r) => setPosts(r.data)).catch((e) => toast.error(formatApiError(e))).finally(() => setLoading(false));
+        api.get("/posts/drafts").then((r) => setPosts(r.data)).catch((e) => toastApiError(e)).finally(() => setLoading(false));
     };
     useEffect(() => { load(); }, []);
 
@@ -42,12 +42,12 @@ export default function Drafts() {
 
     const publish = async (id) => {
         try { await api.post(`/posts/${id}/publish`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Publicado"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const remove = async (id) => {
         if (!window.confirm("Apagar este rascunho?")) return;
         try { await api.delete(`/posts/${id}`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Rascunho apagado"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const bulkPublish = async () => {
         if (selected.size === 0) return;

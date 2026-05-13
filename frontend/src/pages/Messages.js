@@ -4,7 +4,7 @@ import {
     Send, ArrowLeft, MessageCircle, Search, Pin, Archive, ArchiveRestore,
     X, Check, CheckCheck, Plus, Coffee, MoreHorizontal, MapPin,
 } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { ConvSkeleton } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
@@ -156,12 +156,12 @@ function ConversationList({ activeId, onSelect, onNew }) {
     const togglePin = async (c, e) => {
         e.stopPropagation();
         try { await api.post(`/conversations/${c.other_user.id}/pin`); load(); }
-        catch (e2) { toast.error(formatApiError(e2)); }
+        catch (e2) { toastApiError(e2); }
     };
     const toggleArchive = async (c, e) => {
         e.stopPropagation();
         try { await api.post(`/conversations/${c.other_user.id}/archive`); load(); }
-        catch (e2) { toast.error(formatApiError(e2)); }
+        catch (e2) { toastApiError(e2); }
     };
 
     return (
@@ -410,7 +410,7 @@ function ChatView({ other, onBack }) {
         } catch (e) {
             // Mark failed
             setMessages((m) => m.map((x) => (x.id === tempId ? { ...x, _pending: false, _failed: true } : x)));
-            toast.error(formatApiError(e));
+            toastApiError(e);
         } finally {
             setSending(false);
             inputRef.current?.focus();
@@ -421,14 +421,14 @@ function ChatView({ other, onBack }) {
         try {
             const { data } = await api.post(`/conversations/${other.id}/pin`);
             toast.success(data.pinned ? "Conversa fixada" : "Desafixada");
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
     const archive = async () => {
         try {
             const { data } = await api.post(`/conversations/${other.id}/archive`);
             toast.success(data.archived ? "Arquivada" : "Desarquivada");
             if (data.archived) onBack();
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
 
     const toggleCafe = () => {

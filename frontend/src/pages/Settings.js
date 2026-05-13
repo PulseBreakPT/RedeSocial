@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight, MapPin, Moon, Sun, ScrollText } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../context/AuthContext";
@@ -78,7 +78,7 @@ export default function Settings() {
     const save = async () => {
         setBusy(true);
         try { const { data } = await api.patch("/users/me", form); setUser({ ...user, ...data }); toast.success("Perfil atualizado"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
         finally { setBusy(false); }
     };
     const downloadData = () => {

@@ -15,7 +15,7 @@ import {
     Plus,
     Calendar,
 } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useLocalDraft } from "../hooks/useLocalDraft";
@@ -164,7 +164,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             toast.success(isDraft ? "Rascunho guardado" : isScheduled ? "Agendado" : "Publicado");
             onClose?.();
         } catch (e) {
-            toast.error(formatApiError(e));
+            toastApiError(e);
         } finally {
             setBusy(false);
         }

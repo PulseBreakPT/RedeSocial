@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CalendarDays, MessageCircle, Award, Lock, Users, Share2, MapPin, Trophy } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { FollowsModal } from "../components/FollowsModal";
@@ -47,7 +47,7 @@ export default function Profile() {
             ]);
             setProfile(p.data); setStats(s.data); setHeatmap(h.data);
             if (!p.data.is_self) api.get(`/users/${username}/mutual`).then((r) => setMutual(r.data)).catch(() => {});
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
         finally { setLoading(false); }
     };
     const loadPosts = async (which) => {
@@ -70,7 +70,7 @@ export default function Profile() {
         const prev = profile.is_following;
         setProfile({ ...profile, is_following: !prev, followers_count: profile.followers_count + (prev ? -1 : 1) });
         try { await api.post(`/users/${username}/follow`); }
-        catch (e) { setProfile({ ...profile, is_following: prev }); toast.error(formatApiError(e)); }
+        catch (e) { setProfile({ ...profile, is_following: prev }); toastApiError(e); }
     };
     const share = async () => {
         try { await navigator.clipboard.writeText(`${window.location.origin}/u/${username}`); toast.success("Link do perfil copiado"); }

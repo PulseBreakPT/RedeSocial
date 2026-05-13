@@ -3,7 +3,7 @@ import { Clock, Trash2, Send, Image as ImageIcon, BarChart3, Calendar, Search, X
 import { PageHeader } from "../components/PageHeader";
 import { PostSkeletonList } from "../components/Skeleton";
 import { Avatar } from "../components/Avatar";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +30,7 @@ export default function Scheduled() {
 
     const load = () => {
         setLoading(true);
-        api.get("/posts/scheduled").then((r) => setPosts(r.data)).catch((e) => toast.error(formatApiError(e))).finally(() => setLoading(false));
+        api.get("/posts/scheduled").then((r) => setPosts(r.data)).catch((e) => toastApiError(e)).finally(() => setLoading(false));
     };
     useEffect(() => { load(); }, []);
 
@@ -47,12 +47,12 @@ export default function Scheduled() {
 
     const publishNow = async (id) => {
         try { await api.post(`/posts/${id}/publish`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Publicado agora"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const remove = async (id) => {
         if (!window.confirm("Cancelar agendamento e apagar?")) return;
         try { await api.delete(`/posts/${id}`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Agendamento cancelado"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const reschedule = async (id, currentIso) => {
         const def = currentIso ? currentIso.slice(0, 16) : "";
@@ -60,7 +60,7 @@ export default function Scheduled() {
         if (!input) return;
         const iso = new Date(input.replace(" ", "T")).toISOString();
         try { await api.patch(`/posts/${id}`, { scheduled_at: iso }); load(); toast.success("Reagendado"); }
-        catch (e) { toast.error(formatApiError(e)); }
+        catch (e) { toastApiError(e); }
     };
     const bulkPublish = async () => {
         if (!selected.size) return;

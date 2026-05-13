@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { SmilePlus } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 
 /**
@@ -46,7 +46,7 @@ export function PostReactions({ postId, reactions, viewer, onUpdate }) {
             setLocal(data.reactions);
             onUpdate?.(data.reactions);
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         } finally {
             setBusy(false);
         }

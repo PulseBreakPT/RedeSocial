@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Pencil } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 
 export function EditPostModal({ post, onSave, onClose }) {
@@ -17,7 +17,7 @@ export function EditPostModal({ post, onSave, onClose }) {
             onSave?.(data);
             onClose();
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         } finally {
             setBusy(false);
         }

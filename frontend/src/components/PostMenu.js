@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3 } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 
 const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
@@ -24,7 +24,7 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
             toast.success(data.pinned ? "Publicação fixada no perfil" : "Publicação desafixada");
             onPinToggle?.(data.pinned);
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         }
         setOpen(false);
     };

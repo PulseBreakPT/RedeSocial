@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Users, BarChart3, Info, Crown, TrendingUp, Share2 } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { Composer } from "../components/Composer";
 import { VistaDaTasca } from "../components/PTPresence";
@@ -35,7 +35,7 @@ export default function Community() {
             ]);
             setCommunity(c.data);
             setPosts(p.data);
-        } catch (e) { toast.error(formatApiError(e)); navigate("/communities"); }
+        } catch (e) { toastApiError(e); navigate("/communities"); }
         finally { setLoading(false); }
     };
     const loadMembers = async () => { try { const { data } = await api.get(`/communities/${slug}/members`); setMembers(data); } catch {} };
@@ -48,7 +48,7 @@ export default function Community() {
         // eslint-disable-next-line
     }, [tab]);
 
-    const join = async () => { try { await api.post(`/communities/${slug}/join`); loadCore(); } catch (e) { toast.error(formatApiError(e)); } };
+    const join = async () => { try { await api.post(`/communities/${slug}/join`); loadCore(); } catch (e) { toastApiError(e); } };
     const share = async () => {
         try { await navigator.clipboard.writeText(`${window.location.origin}/c/${slug}`); toast.success("Link copiado"); }
         catch { toast.error("Não consegui copiar"); }

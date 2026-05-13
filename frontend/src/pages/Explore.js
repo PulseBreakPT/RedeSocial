@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X } from "lucide-react";
 import { MOOD_OPTIONS } from "../lib/portuguese";
@@ -64,7 +64,7 @@ export default function Explore() {
         try {
             await api.post(`/users/${username}/follow`);
             setPessoas((prev) => prev.map((p) => p.username === username ? { ...p, is_following: !p.is_following } : p));
-        } catch (e) { toast.error(formatApiError(e)); }
+        } catch (e) { toastApiError(e); }
     };
 
     return (

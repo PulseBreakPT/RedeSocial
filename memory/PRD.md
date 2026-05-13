@@ -43,20 +43,18 @@ Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Caf
 - `GET /api/messages/unread-count`
 
 ## Changelog
-- **2026-02-14** — **Messages overhaul (P0 bug fix + UX upgrade)**:
-  - **Bug crítico corrigido**: `ChatView` fazia `setMe(r.data)` quando `/auth/me` retorna `{user: ...}` (após o fix do 401 loop anterior). Resultado: `me.id` era undefined, todas as mensagens renderizavam à esquerda, indistinguíveis. Substituído por `useAuth().user`.
-  - **Optimistic send** — mensagem aparece imediatamente com estado `_pending`; substitui por dados reais ao receber resposta; marca `_failed` em erro.
-  - **Status indicator** — última mensagem própria mostra `a enviar…` / `enviado` (✓) / `visto` (CheckCheck coral) / `por enviar — toca para tentar`.
-  - **Day separators** — agrupa mensagens por dia (`Hoje`/`Ontem`/data localizada PT-PT).
-  - **New Conversation Modal** — botão `+` (gradiente coral) abre modal com `users/search` debounced, permite iniciar conversa sem se seguirem.
-  - **F3.2 Café receipt** — toggle opt-in por conversa (localStorage), ícone Coffee no header; respeita o manifesto (sem read receipts forçados).
-  - **Smart polling** — pausa quando `document.hidden`; throttle do typing ping para 1×/2s.
-  - **Auto-grow textarea** — composer expande até 5 linhas, Enter envia, Shift+Enter quebra linha.
-  - **Empty states melhorados** — quando sem conversas: CTA "Nova conversa"; quando chat vazio: avatar + bio + cidade do interlocutor com pin de localização.
-  - **Header clicável** — avatar/nome no header da conversa leva ao perfil.
-  - **Botão de enviar** — gradiente coral consistente com o design system.
-- **2026-02-14** — PT Engagement v2 + Mobile parity (F4.1 New Voices, F3.3 Vista da Tasca, F5.4 Diaspora Heatmap).
-- **2026-02-14** — PT Engagement v1 (15 features).
+- **2026-02-14** — **Fix definitivo "Não autenticado" (5 camadas de defesa)**:
+  - **Camada 1 — Backend**: mantida `HTTPException 401 "Não autenticado"` (já é o canónico); nunca chega ao utilizador.
+  - **Camada 2 — Interceptor axios global** (`/lib/api.js`): captura todos os 401, marca `err._isAuth`, classifica `_authReason` em `expired/missing/anonymous`, dispara `authListener`.
+  - **Camada 3 — `formatApiError`**: early-exit para erros auth → retorna `""`. Filtro defensivo contra qualquer "Não autenticado"/"Token inválido" residual.
+  - **Camada 4 — `toastApiError` helper**: drop-in para `toast.error(formatApiError(...))`. Suprime erros auth e erros vazios (sonner não mostra toast em branco). Refactor automatizado de 24 ficheiros (24 imports + 50+ call sites).
+  - **Camada 5 — `AuthContext` 401 listener**: reagiu por motivo:
+    - `anonymous` → downgrade silencioso (sem toast). Anonymous browsing é feature, não erro.
+    - `expired/missing` → 1 toast `id: "session-expired"` ("A tua sessão expirou. Volta a entrar para continuar."), dedupe via Sonner; limpa token; transita user → `false`.
+  - **Token backup em localStorage** (`vm_token`) + interceptor de request adiciona `Authorization: Bearer` automaticamente — defesa contra Safari ITP / cookie partitioning / cross-site cookie blocking.
+  - **Validação E2E**: navegação anónima ✅ · login + 5 páginas protegidas ✅ · token revogado + ações Settings ✅ — `document.body.innerText.match(/Não autenticado/)` = 0 em todos os cenários.
+- **2026-02-14** — Messages UX overhaul.
+- **2026-02-14** — PT Engagement v1 + v2 (18 features) + Mobile parity.
 - **2026-02-14** — **PT Engagement v1**: F2.1 Onboarding 60s, F2.4 Anel de identidade, F3.1 Reactions PT, F1.1 A Tarde, F1.4 Boa Noite, F2.2 Badges narrativos, F2.3 Bio slots, F4.2 Repost curado, F5.1 Place graph, F5.2 Sino do Bairro, F5.3 Calendário PT, F1.2 Cafezinho, MAN Manifesto, RGPD consent persistence.
 
 ## Roadmap (Backlog)

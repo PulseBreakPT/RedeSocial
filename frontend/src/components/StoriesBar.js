@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
@@ -78,7 +78,7 @@ function StoryViewer({ groups, startIndex, onClose }) {
                     <button data-testid="story-delete"
                         onClick={async () => {
                             try { await api.delete(`/stories/${story.id}`); toast.success("Story apagado"); onClose(); }
-                            catch (e) { toast.error(formatApiError(e)); }
+                            catch (e) { toastApiError(e); }
                         }}
                         className="absolute bottom-4 right-4 z-30 text-[10px] font-mono uppercase tracking-[0.16em] bg-white/10 hover:bg-red-soft/85 text-white px-3 py-1.5 rounded-full backdrop-blur-md transition">
                         Apagar
@@ -122,7 +122,7 @@ export function StoriesBar() {
                 await api.post("/stories", { image: ev.target.result });
                 toast.success("Story publicado por 24h");
                 load();
-            } catch (err) { toast.error(formatApiError(err)); }
+            } catch (err) { toastApiError(err); }
             finally { setUploading(false); }
         };
         reader.readAsDataURL(file);

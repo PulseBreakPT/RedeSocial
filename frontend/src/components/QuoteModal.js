@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Quote } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { useAuth } from "../context/AuthContext";
@@ -24,7 +24,7 @@ export function QuoteModal({ post, onClose, onQuoted }) {
             onQuoted?.(data);
             onClose();
         } catch (err) {
-            toast.error(formatApiError(err));
+            toastApiError(err);
         } finally {
             setBusy(false);
         }

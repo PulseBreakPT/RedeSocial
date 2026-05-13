@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, TrendingUp, Sparkles } from "lucide-react";
-import { api, formatApiError } from "../lib/api";
+import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
@@ -36,7 +36,7 @@ export function RightSidebar() {
             setSuggestions((s) => s.filter((u) => u.username !== username));
             toast.success(`Começaste a seguir @${username}`);
         } catch (e) {
-            toast.error(formatApiError(e));
+            toastApiError(e);
         }
     };
 
