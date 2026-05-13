@@ -317,9 +317,9 @@
     }
     .post-row:hover { background-color: rgba(44, 111, 209, 0.022); }
 
-    /* Premium obsidian CTA */
+    /* Premium CTA — Vermillion gradient (Atlantic → Coral) */
     .btn-obsidian {
-        background: #0a0a0a;
+        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 50%, var(--coral-500) 100%);
         color: #fff;
         border-radius: 9999px;
         font-family: "Inter", sans-serif;
@@ -328,40 +328,52 @@
         padding: 0.65rem 1.25rem;
         transition: transform 200ms var(--ease-out-soft),
                     box-shadow 360ms var(--ease-out-soft),
-                    background 240ms ease;
-        box-shadow: 0 6px 18px -8px rgba(13, 13, 16, 0.4),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+                    background-image 320ms ease,
+                    filter 240ms ease;
+        box-shadow: 0 8px 22px -8px rgba(30, 84, 170, 0.45),
+                    0 4px 14px -10px rgba(232, 93, 79, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
-    .btn-obsidian:hover { background: #1a1a1f; box-shadow: 0 10px 24px -8px rgba(13, 13, 16, 0.5); transform: translateY(-1px); }
+    .btn-obsidian:hover {
+        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 35%, var(--coral-500) 75%, var(--sun-500) 100%);
+        box-shadow: 0 14px 30px -8px rgba(30, 84, 170, 0.55),
+                    0 8px 22px -10px rgba(232, 93, 79, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        transform: translateY(-1px);
+        filter: saturate(1.12) brightness(1.04);
+    }
     .btn-obsidian:active { transform: scale(0.97); }
+    .btn-obsidian svg { color: #fff; }
 
     /* ============================================================
        chip-on — toggle/chip ACTIVATED state
        Vermillion gradient: atlantic blue → coral (Portugal: Tejo + telha)
-       Use INSTEAD of "bg-black text-white" on selected chips/filters.
+       Use INSTEAD of "bg-black text-white" on selected chips/filters
+       AND on action buttons that previously were solid black.
        ============================================================ */
     .chip-on {
-        background: linear-gradient(135deg, #0d0d10 0%, #1d1d22 100%);
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
         color: #ffffff;
-        box-shadow: 0 4px 14px -6px rgba(13, 13, 16, 0.35),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        box-shadow: 0 6px 18px -8px rgba(30, 84, 170, 0.45),
+                    0 3px 10px -8px rgba(232, 93, 79, 0.30),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.12);
         transition: background-image 320ms var(--ease-out-soft),
                     box-shadow 320ms var(--ease-out-soft),
                     transform 200ms var(--ease-out-soft),
                     filter 240ms ease;
     }
     .chip-on:hover {
-        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
-        box-shadow: 0 8px 22px -8px rgba(30, 84, 170, 0.5),
-                    0 4px 14px -8px rgba(232, 93, 79, 0.35),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 35%, var(--coral-500) 75%, var(--sun-500) 100%);
+        box-shadow: 0 12px 28px -8px rgba(30, 84, 170, 0.55),
+                    0 8px 22px -10px rgba(232, 93, 79, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.18);
         transform: translateY(-1px);
-        filter: saturate(1.1);
+        filter: saturate(1.15) brightness(1.04);
     }
     .chip-on:active { transform: scale(0.96); }
     .chip-on svg { color: #ffffff; }
 
-    /* Animated subtle shimmer for state CHANGE (when chip just became active) */
+    /* Animated subtle pop for state CHANGE (when chip just became active) */
     @keyframes chipPop {
         0% { transform: scale(0.92); }
         55% { transform: scale(1.04); }

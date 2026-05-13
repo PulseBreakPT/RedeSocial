@@ -92,7 +92,7 @@ export default function Scheduled() {
                 {selected.size > 0 && (
                     <div className="px-3 lg:px-4 pb-2 flex items-center gap-2 hairline-t pt-2">
                         <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
-                        <button onClick={bulkPublish} className="inline-flex items-center gap-1 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar já</button>
+                        <button onClick={bulkPublish} className="inline-flex items-center gap-1 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar já</button>
                         <button onClick={bulkCancel} className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Cancelar</button>
                         <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55">limpar</button>
                     </div>

@@ -88,7 +88,7 @@ export default function Drafts() {
                 {selected.size > 0 && (
                     <div className="px-3 lg:px-4 pb-2 flex items-center gap-2 hairline-t pt-2">
                         <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
-                        <button onClick={bulkPublish} data-testid="drafts-bulk-publish" className="inline-flex items-center gap-1 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85"><Send size={11} /> Publicar todos</button>
+                        <button onClick={bulkPublish} data-testid="drafts-bulk-publish" className="inline-flex items-center gap-1 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar todos</button>
                         <button onClick={bulkDelete} data-testid="drafts-bulk-delete" className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Apagar</button>
                         <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55 hover:text-black">limpar</button>
                     </div>
@@ -130,7 +130,7 @@ export default function Drafts() {
                                         {p.poll && (<span className="inline-flex items-center gap-1"><BarChart3 size={11} /> enquete</span>)}
                                     </div>
                                     <div className="flex items-center gap-2 mt-3">
-                                        <button onClick={() => publish(p.id)} data-testid={`draft-publish-${p.id}`} className="inline-flex items-center gap-1.5 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85"><Send size={12} /> Publicar</button>
+                                        <button onClick={() => publish(p.id)} data-testid={`draft-publish-${p.id}`} className="inline-flex items-center gap-1.5 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={12} /> Publicar</button>
                                         <button onClick={() => navigate(`/post/${p.id}`)} className="inline-flex items-center gap-1.5 text-xs font-mono text-black/60 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]">ver</button>
                                         <button onClick={() => remove(p.id)} data-testid={`draft-delete-${p.id}`} className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={12} /> apagar</button>
                                     </div>
