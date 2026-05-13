@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
-import { MessageCircle, Trash2, CornerDownRight, ChevronDown, ChevronRight, X } from "lucide-react";
+import { MessageCircle, Trash2, CornerDownRight, ChevronDown, ChevronRight, X, Pin } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
@@ -26,6 +26,13 @@ function buildTree(comments) {
         } else {
             roots.push(node);
         }
+    });
+    // pinned root comments float to top
+    roots.sort((a, b) => {
+        const pa = a.pinned_by_author ? 1 : 0;
+        const pb = b.pinned_by_author ? 1 : 0;
+        if (pa !== pb) return pb - pa;
+        return new Date(a.created_at) - new Date(b.created_at);
     });
     return roots;
 }
@@ -199,6 +206,24 @@ export default function PostDetail() {
         });
     };
 
+    const togglePin = async (commentId) => {
+        try {
+            const { data } = await api.post(`/comments/${commentId}/pin`);
+            setComments((c) =>
+                c.map((x) =>
+                    x.id === commentId
+                        ? { ...x, pinned_by_author: data.pinned }
+                        : (data.pinned && x.post_id === post.id && x.id !== commentId
+                            ? { ...x, pinned_by_author: false }
+                            : x),
+                ),
+            );
+            toast.success(data.pinned ? "Comentário fixado" : "Comentário libertado");
+        } catch (e) {
+            toastApiError(e);
+        }
+    };
+
     if (loading || !post) {
         return (
             <div className="p-12 text-center type-overline inline-flex items-center justify-center gap-2 w-full">
@@ -341,6 +366,15 @@ export default function PostDetail() {
                                                     autor
                                                 </span>
                                             )}
+                                            {node.pinned_by_author && (
+                                                <span
+                                                    className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700"
+                                                    data-testid={`comment-pinned-${node.id}`}
+                                                    title="Destacado pelo autor"
+                                                >
+                                                    <Pin size={9} /> destaque
+                                                </span>
+                                            )}
                                         </div>
 
                                         <RichText
@@ -377,6 +411,19 @@ export default function PostDetail() {
                                                     className="ml-auto inline-flex items-center gap-1 text-[12px] font-mono text-black/40 hover:text-red-soft px-2 py-1 rounded-full hover:bg-red-soft/10 tap-shrink transition"
                                                 >
                                                     <Trash2 size={12} /> apagar
+                                                </button>
+                                            )}
+                                            {user?.id === post.author?.id && (
+                                                <button
+                                                    onClick={() => togglePin(node.id)}
+                                                    data-testid={`comment-pin-${node.id}`}
+                                                    className={`${canDelete ? "" : "ml-auto"} inline-flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded-full tap-shrink transition ${
+                                                        node.pinned_by_author
+                                                            ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
+                                                            : "text-black/40 hover:text-black hover:bg-black/[0.04]"
+                                                    }`}
+                                                >
+                                                    <Pin size={12} /> {node.pinned_by_author ? "destacado" : "destacar"}
                                                 </button>
                                             )}
                                         </div>

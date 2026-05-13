@@ -2,11 +2,12 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
     LogOut, PenSquare, Users as UsersIcon, CalendarDays, TrendingUp,
-    FileText, Clock, ScrollText, Scale, Globe,
+    FileText, Clock, ScrollText, Scale, Globe, Eye, Gift,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { PresencePicker } from "./PresencePicker";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
@@ -16,9 +17,11 @@ const items = [
     { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "nav-trending" },
     { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "nav-communities" },
     { to: "/events", label: "Eventos", icon: CalendarDays, testid: "nav-events" },
+    { to: "/starter-packs", label: "Starter Packs", icon: Gift, testid: "nav-starter-packs" },
     { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications" },
     { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "nav-messages" },
     { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
+    { to: "/visitors", label: "Visitas", icon: Eye, testid: "nav-visitors" },
     { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
     { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
     { to: "/diaspora", label: "Diáspora", icon: Globe, testid: "nav-diaspora" },
@@ -150,6 +153,9 @@ export function Sidebar({ onCompose }) {
                     >
                         <LogOut size={16} />
                     </button>
+                </div>
+                <div className="mt-1 px-1" onClick={(e) => e.stopPropagation()}>
+                    <PresencePicker />
                 </div>
                 <div className="px-3 pt-3 pb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45">
                     <a href="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</a>

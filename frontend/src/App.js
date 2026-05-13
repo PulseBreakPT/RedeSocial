@@ -31,6 +31,9 @@ import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Glossary from "./pages/legal/Glossary";
 import Manifesto from "./pages/Manifesto";
 import Diaspora from "./pages/Diaspora";
+import Visitors from "./pages/Visitors";
+import StarterPacks from "./pages/StarterPacks";
+import SeriesPage from "./pages/SeriesPage";
 
 function App() {
     return (
@@ -86,6 +89,10 @@ function App() {
                             <Route path="/post/:postId" element={<PostDetail />} />
                             <Route path="/tag/:tag" element={<TagPage />} />
                             <Route path="/settings" element={<Settings />} />
+                            <Route path="/visitors" element={<Visitors />} />
+                            <Route path="/starter-packs" element={<StarterPacks />} />
+                            <Route path="/starter-packs/:packId" element={<StarterPacks />} />
+                            <Route path="/series/:seriesId" element={<SeriesPage />} />
                         </Route>
                     </Routes>
                     <CookieBanner />

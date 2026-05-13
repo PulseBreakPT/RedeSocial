@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3 } from "lucide-react";
+import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3, Users2 } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { toast } from "sonner";
+import { CollabModal } from "./CollabModal";
 
 const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
 
 export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalytics }) {
     const [open, setOpen] = useState(false);
+    const [collabOpen, setCollabOpen] = useState(false);
     const ref = useRef(null);
 
     useEffect(() => {
@@ -87,6 +89,15 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                         </button>
                     )}
                     {isOwn && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setCollabOpen(true); setOpen(false); }}
+                            data-testid={`collab-btn-${post.id}`}
+                            className={itemCls}
+                        >
+                            <Users2 size={14} strokeWidth={1.6} className="text-black/55" /> Colaboradores
+                        </button>
+                    )}
+                    {isOwn && (
                         <button onClick={handlePin} className={itemCls}>
                             {post.pinned ? (
                                 <><PinOff size={14} strokeWidth={1.6} className="text-black/55" /> Desafixar</>
@@ -129,6 +140,7 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                     )}
                 </div>
             )}
+            {collabOpen && <CollabModal postId={post.id} onClose={() => setCollabOpen(false)} />}
         </div>
     );
 }

@@ -47,7 +47,12 @@ export default function Explore() {
         if (mood) params.set("mood", mood);
         params.set("sort", sort);
         if (tab === "posts") {
-            api.get(`/posts/explore?${params}`).then((r) => { setPosts(r.data); setLoading(false); });
+            // when no mood filter, use the with-reasons endpoint for "Para ti" experience
+            if (!mood && sort === "trending") {
+                api.get(`/posts/explore/with-reasons`).then((r) => { setPosts(r.data); setLoading(false); });
+            } else {
+                api.get(`/posts/explore?${params}`).then((r) => { setPosts(r.data); setLoading(false); });
+            }
         } else if (tab === "pessoas") {
             api.get("/explore/people").then((r) => { setPessoas(r.data); setLoading(false); }).catch(() => setLoading(false));
         } else if (tab === "tags") {

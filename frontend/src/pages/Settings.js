@@ -4,6 +4,7 @@ import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, 
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
+import { CosmeticsPicker } from "../components/CosmeticsPicker";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
@@ -371,6 +372,10 @@ export default function Settings() {
                         ))}
                     </div>
                     <ToggleRow label="Reduzir animações" sub="Útil se sentires tonturas com movimentos" k="reduce_motion" prefs={prefs} setPref={setPref} />
+
+                    <div className="pt-5 mt-3 border-t border-black/[0.06]">
+                        <CosmeticsPicker />
+                    </div>
                 </div>
             )}
 

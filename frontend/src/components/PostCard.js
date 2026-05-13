@@ -27,6 +27,7 @@ import { PostAnalyticsModal } from "./PostAnalyticsModal";
 import { PostPoll } from "./PostPoll";
 import { PostReactions } from "./PostReactions";
 import { EditHistoryButton } from "./EditHistoryModal";
+import { ReasonChip } from "./ReasonChip";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
@@ -238,6 +239,21 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             )}
                         </div>
                         {content && <RichText text={content} className="mt-1 text-[15px] leading-relaxed text-black/90" />}
+
+                        {post.reason && <div className="mt-2"><ReasonChip reason={post.reason} /></div>}
+
+                        {/* Collaborators */}
+                        {(post.collaborators || []).length > 0 && (
+                            <div className="mt-2 flex items-center gap-1.5 flex-wrap" data-testid={`collab-${post.id}`}>
+                                <span className="text-[10px] font-mono text-black/50 uppercase tracking-wider">com</span>
+                                {(post.collaborators || []).map((c) => (
+                                    <Link key={c.id} to={`/u/${c.username}`} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] transition">
+                                        <Avatar user={c} size={14} />
+                                        <span className="text-[10px] font-mono text-black/70">@{c.username}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
 
                         {images.length > 0 && (
                             <ImageCarousel images={images} onOpen={(i) => setLightboxIdx(i)} />

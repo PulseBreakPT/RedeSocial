@@ -14,6 +14,9 @@ import { StatsCard } from "../components/StatsCard";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
+import { CharmsPanel } from "../components/CharmsPanel";
+import { RodaButton } from "../components/RodaButton";
+import { SeriesSection } from "../components/SeriesSection";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
@@ -242,6 +245,7 @@ export default function Profile() {
                                         Seguir
                                     </button>
                                 )}
+                                <RodaButton targetUsername={profile.username} />
                             </>
                         )}
                     </div>
@@ -418,6 +422,13 @@ export default function Profile() {
                     )}
 
                     <StatsCard stats={stats} completion={profile.is_self ? stats?.profile_completion : undefined} />
+
+                    {/* v2 — Charms + Series */}
+                    <div className="px-5 py-4 hairline-b grid sm:grid-cols-2 gap-3">
+                        <CharmsPanel username={profile.username} editable={profile.is_self} />
+                        <SeriesSection username={profile.username} isSelf={profile.is_self} />
+                    </div>
+
                     {heatmap?.length > 0 && (
                         <div className="px-5 py-5 hairline-b">
                             <ActivityHeatmap data={heatmap} />

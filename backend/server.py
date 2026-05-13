@@ -341,6 +341,11 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "boa_noite_enabled": user.get("boa_noite_enabled", True),
         "cafezinho_enabled": user.get("cafezinho_enabled", False),
         "feed_mix": user.get("feed_mix") or {"friends": 40, "interest": 30, "place": 30},
+        # v2 — modern social
+        "presence": user.get("presence") or {"status": "online", "emoji": "", "text": "", "until": None},
+        "charms_equipped": user.get("charms_equipped", []),
+        "cosmetics_equipped": user.get("cosmetics_equipped") or {"frame": "", "sticker": ""},
+        "track_visits": user.get("track_visits", True),
     }
     if extra:
         data.update(extra)
@@ -463,7 +468,16 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "scheduled_at": post.get("scheduled_at"),
         "mood": detect_mood(post.get("content", "")),
         "cities": detect_cities(post.get("content", ""), post.get("hashtags", [])),
+        # v2 — collaborators
+        "collaborators": await _enrich_collab_authors(post.get("collaborators", [])),
     }
+
+
+async def _enrich_collab_authors(ids: list) -> list:
+    if not ids:
+        return []
+    users = await db.users.find({"id": {"$in": list(ids)}}, {"_id": 0}).to_list(10)
+    return [public_user(u) for u in users]
 
 
 def _enriched_reactions(raw: dict, viewer_id: Optional[str]) -> dict:
@@ -816,6 +830,22 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
         raise HTTPException(404, "Utilizador não encontrado")
+    # v2: track profile visit (once per day per viewer→target)
+    if viewer and viewer["id"] != user["id"] and user.get("track_visits", True) is not False:
+        try:
+            today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            await db.profile_views.update_one(
+                {"viewer_id": viewer["id"], "target_id": user["id"], "day": today_key},
+                {"$set": {
+                    "viewer_id": viewer["id"],
+                    "target_id": user["id"],
+                    "day": today_key,
+                    "viewed_at": now_iso(),
+                }},
+                upsert=True,
+            )
+        except Exception as e:
+            logger.warning("profile visit track failed: %s", e)
     likes_received = await db.posts.aggregate([
         {"$match": {"author_id": user["id"]}},
         {"$project": {"n": {"$size": {"$ifNull": ["$likes", []]}}}},
@@ -1486,6 +1516,7 @@ async def _enrich_comment(c: dict) -> dict:
         "content": c["content"], "created_at": c["created_at"],
         "parent_id": c.get("parent_id"),
         "replies_count": c.get("replies_count", 0),
+        "pinned_by_author": bool(c.get("pinned_by_author")),
         "author": public_user(author) if author else None,
     }
 
@@ -3286,6 +3317,767 @@ async def user_communities(username: str, viewer: Optional[dict] = Depends(maybe
             "is_owner": c.get("owner_id") == user["id"],
         })
     out.sort(key=lambda x: x["members_count"], reverse=True)
+    return out
+
+
+# ============================================================
+# V2 Modern Social — 13 features
+# ============================================================
+CHARMS_CATALOG = [
+    {"key": "fundador",     "emoji": "🌱", "label": "Fundador",     "desc": "Entre os primeiros 1000"},
+    {"key": "madrugador",   "emoji": "🌅", "label": "Madrugador",   "desc": "Publicaste antes das 7h"},
+    {"key": "noctivago",    "emoji": "🌙", "label": "Noctívago",    "desc": "Publicaste depois das 2h"},
+    {"key": "conversador",  "emoji": "💬", "label": "Conversador",  "desc": "100 comentários feitos"},
+    {"key": "anfitriao",    "emoji": "🍷", "label": "Anfitrião",    "desc": "Criaste uma comunidade"},
+    {"key": "explorador",   "emoji": "🧭", "label": "Explorador",   "desc": "Posts em 5+ cidades"},
+    {"key": "saudosista",   "emoji": "🫶", "label": "Saudosista",   "desc": "10+ posts com mood saudade"},
+    {"key": "festeiro",     "emoji": "🎉", "label": "Festeiro",     "desc": "10+ posts com mood festa"},
+    {"key": "poeta",        "emoji": "✍️", "label": "Poeta",        "desc": "Post c/ 100+ reações"},
+    {"key": "viajante",     "emoji": "✈️", "label": "Viajante",     "desc": "Geo-tag em 3+ regiões"},
+    {"key": "pastelinho",   "emoji": "🥐", "label": "Pastelinho",   "desc": "Mood Café 5x"},
+    {"key": "bolacampea",   "emoji": "⚽", "label": "Bola Campeã",  "desc": "Mood Bola 5x"},
+]
+CHARMS_BY_KEY = {c["key"]: c for c in CHARMS_CATALOG}
+
+COSMETICS_CATALOG = [
+    {"id": "frame_classic",    "type": "frame",   "label": "Clássico",      "css": "ring-2 ring-white/20"},
+    {"id": "frame_coral",      "type": "frame",   "label": "Coral",         "css": "ring-2 ring-orange-400"},
+    {"id": "frame_azulejo",    "type": "frame",   "label": "Azulejo",       "css": "ring-2 ring-blue-400"},
+    {"id": "frame_ouro",       "type": "frame",   "label": "Ouro Alentejo", "css": "ring-2 ring-yellow-500"},
+    {"id": "frame_pinhal",     "type": "frame",   "label": "Pinhal",        "css": "ring-2 ring-emerald-500"},
+    {"id": "frame_tejo",       "type": "frame",   "label": "Tejo",          "css": "ring-2 ring-cyan-400"},
+    {"id": "frame_pixel",      "type": "frame",   "label": "Pixel",         "css": "ring-2 ring-pink-400"},
+    {"id": "sticker_pastel",   "type": "sticker", "label": "Pastel",        "emoji": "🥐"},
+    {"id": "sticker_bola",     "type": "sticker", "label": "Bola",          "emoji": "⚽"},
+    {"id": "sticker_galo",     "type": "sticker", "label": "Galo",          "emoji": "🐓"},
+    {"id": "sticker_sardinha", "type": "sticker", "label": "Sardinha",      "emoji": "🐟"},
+    {"id": "sticker_coracao",  "type": "sticker", "label": "Coração",       "emoji": "❤️"},
+    {"id": "sticker_estrela",  "type": "sticker", "label": "Estrela",       "emoji": "⭐"},
+    {"id": "sticker_cafe",     "type": "sticker", "label": "Café",          "emoji": "☕"},
+]
+COSMETICS_BY_ID = {c["id"]: c for c in COSMETICS_CATALOG}
+PRESENCE_STATES = {"online", "ausente", "ocupado", "invisivel"}
+HYPE_DURATION_MIN = 30
+HYPE_TARGET = 25
+
+
+# ---------- 1) Notes / Recado 24h ----------
+class NoteIn(BaseModel):
+    text: str = Field(min_length=1, max_length=60)
+    mood: Optional[str] = ""
+
+
+@api.post("/notes")
+async def create_note(payload: NoteIn, user=Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    await db.notes.delete_many({"user_id": user["id"]})
+    note = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "text": payload.text.strip(),
+        "mood": payload.mood or "",
+        "created_at": now.isoformat(),
+        "expires_at": (now + timedelta(hours=24)).isoformat(),
+    }
+    await db.notes.insert_one(note)
+    note.pop("_id", None)
+    return note
+
+
+@api.get("/notes/feed")
+async def notes_feed(user=Depends(get_current_user)):
+    now_iso_str = datetime.now(timezone.utc).isoformat()
+    following = list(user.get("following", [])) + [user["id"]]
+    raw = await db.notes.find(
+        {"user_id": {"$in": following}, "expires_at": {"$gt": now_iso_str}},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
+    user_ids = list({n["user_id"] for n in raw})
+    users = await db.users.find({"id": {"$in": user_ids}}, {"_id": 0}).to_list(100)
+    by_id = {u["id"]: public_user(u) for u in users}
+    out = []
+    for n in raw:
+        n["author"] = by_id.get(n["user_id"])
+        out.append(n)
+    return out
+
+
+@api.delete("/notes/{note_id}")
+async def delete_note(note_id: str, user=Depends(get_current_user)):
+    res = await db.notes.delete_one({"id": note_id, "user_id": user["id"]})
+    if not res.deleted_count:
+        raise HTTPException(404, "Recado não encontrado")
+    return {"ok": True}
+
+
+# ---------- 2) Presence Status ----------
+class PresenceIn(BaseModel):
+    status: str = Field(default="online")
+    emoji: Optional[str] = ""
+    text: Optional[str] = Field(default="", max_length=40)
+    minutes: Optional[int] = Field(default=0, ge=0, le=10080)
+
+
+@api.post("/users/me/presence")
+async def set_presence(payload: PresenceIn, user=Depends(get_current_user)):
+    if payload.status not in PRESENCE_STATES:
+        raise HTTPException(400, "Estado inválido")
+    until = None
+    if payload.minutes and payload.minutes > 0:
+        until = (datetime.now(timezone.utc) + timedelta(minutes=payload.minutes)).isoformat()
+    presence = {
+        "status": payload.status,
+        "emoji": (payload.emoji or "").strip()[:4],
+        "text": (payload.text or "").strip(),
+        "until": until,
+        "updated_at": now_iso(),
+    }
+    await db.users.update_one({"id": user["id"]}, {"$set": {"presence": presence}})
+    return presence
+
+
+@api.get("/users/{username}/presence")
+async def get_presence(username: str):
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "presence": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    p = u.get("presence") or {"status": "online", "emoji": "", "text": "", "until": None}
+    if p.get("until"):
+        try:
+            if datetime.fromisoformat(p["until"].replace("Z", "+00:00")) < datetime.now(timezone.utc):
+                p = {"status": "online", "emoji": "", "text": "", "until": None}
+        except Exception:
+            pass
+    return p
+
+
+# ---------- 3) Custom Community Reaction Emojis ----------
+class CommunityReactionsIn(BaseModel):
+    reactions: List[dict]
+
+
+@api.put("/communities/{slug}/reactions")
+async def set_community_reactions(slug: str, payload: CommunityReactionsIn, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    if comm.get("owner_id") != user["id"]:
+        raise HTTPException(403, "Só o owner pode editar reações")
+    cleaned = []
+    for r in payload.reactions[:8]:
+        key = (r.get("key") or "").strip().lower()[:24]
+        emoji = (r.get("emoji") or "").strip()[:4]
+        label = (r.get("label") or "").strip()[:32]
+        if key and emoji and label:
+            cleaned.append({"key": key, "emoji": emoji, "label": label})
+    await db.communities.update_one({"slug": slug}, {"$set": {"custom_reactions": cleaned}})
+    return {"reactions": cleaned}
+
+
+@api.get("/communities/{slug}/reactions")
+async def get_community_reactions(slug: str):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "custom_reactions": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    return {"reactions": comm.get("custom_reactions", [])}
+
+
+# ---------- 4) Pinned Comments ----------
+@api.post("/comments/{comment_id}/pin")
+async def toggle_pin_comment(comment_id: str, user=Depends(get_current_user)):
+    comment = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not comment:
+        raise HTTPException(404, "Comentário não encontrado")
+    post = await db.posts.find_one({"id": comment["post_id"]}, {"_id": 0, "author_id": 1})
+    if not post or post["author_id"] != user["id"]:
+        raise HTTPException(403, "Só o autor do post pode destacar")
+    new_state = not comment.get("pinned_by_author", False)
+    if new_state:
+        await db.comments.update_many(
+            {"post_id": comment["post_id"]}, {"$set": {"pinned_by_author": False}}
+        )
+    await db.comments.update_one({"id": comment_id}, {"$set": {"pinned_by_author": new_state}})
+    return {"pinned": new_state}
+
+
+# ---------- 5) Series / Coleções ----------
+class SeriesIn(BaseModel):
+    title: str = Field(min_length=2, max_length=60)
+    description: Optional[str] = Field(default="", max_length=240)
+    cover_emoji: Optional[str] = "📚"
+
+
+class SeriesPostIn(BaseModel):
+    post_id: str
+    action: str = Field(default="add")
+
+
+@api.post("/series")
+async def create_series(payload: SeriesIn, user=Depends(get_current_user)):
+    s = {
+        "id": str(uuid.uuid4()),
+        "owner_id": user["id"],
+        "title": payload.title.strip(),
+        "description": (payload.description or "").strip(),
+        "cover_emoji": payload.cover_emoji or "📚",
+        "post_ids": [],
+        "created_at": now_iso(),
+    }
+    await db.series.insert_one(s)
+    s.pop("_id", None)
+    return s
+
+
+@api.get("/series/{series_id}")
+async def get_series(series_id: str):
+    s = await db.series.find_one({"id": series_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Série não encontrada")
+    owner = await db.users.find_one({"id": s["owner_id"]}, {"_id": 0})
+    s["owner"] = public_user(owner) if owner else None
+    s["posts_count"] = len(s.get("post_ids", []))
+    return s
+
+
+@api.get("/users/{username}/series")
+async def list_user_series(username: str):
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
+    if not u:
+        return []
+    raw = await db.series.find({"owner_id": u["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    for s in raw:
+        s["posts_count"] = len(s.get("post_ids", []))
+    return raw
+
+
+@api.get("/series/{series_id}/posts")
+async def get_series_posts(series_id: str, viewer: Optional[dict] = Depends(maybe_user)):
+    s = await db.series.find_one({"id": series_id}, {"_id": 0, "post_ids": 1})
+    if not s:
+        raise HTTPException(404, "Série não encontrada")
+    ids = s.get("post_ids", [])
+    if not ids:
+        return []
+    raw = await db.posts.find({"id": {"$in": ids}}, {"_id": 0}).to_list(200)
+    by_id = {p["id"]: p for p in raw}
+    ordered = [by_id[pid] for pid in ids if pid in by_id]
+    return [await enrich_post(p, viewer) for p in ordered]
+
+
+@api.post("/series/{series_id}/posts")
+async def edit_series_posts(series_id: str, payload: SeriesPostIn, user=Depends(get_current_user)):
+    s = await db.series.find_one({"id": series_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Série não encontrada")
+    if s["owner_id"] != user["id"]:
+        raise HTTPException(403, "Não és o dono desta série")
+    if payload.action == "add":
+        await db.series.update_one({"id": series_id}, {"$addToSet": {"post_ids": payload.post_id}})
+    else:
+        await db.series.update_one({"id": series_id}, {"$pull": {"post_ids": payload.post_id}})
+    fresh = await db.series.find_one({"id": series_id}, {"_id": 0})
+    return fresh
+
+
+@api.delete("/series/{series_id}")
+async def delete_series(series_id: str, user=Depends(get_current_user)):
+    res = await db.series.delete_one({"id": series_id, "owner_id": user["id"]})
+    if not res.deleted_count:
+        raise HTTPException(404, "Série não encontrada")
+    return {"ok": True}
+
+
+# ---------- 6) Profile Visitors ----------
+@api.get("/users/me/visitors")
+async def list_my_visitors(user=Depends(get_current_user)):
+    if user.get("track_visits") is False:
+        return {"enabled": False, "visitors": []}
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    raw = await db.profile_views.find(
+        {"target_id": user["id"], "viewed_at": {"$gt": cutoff}},
+        {"_id": 0},
+    ).sort("viewed_at", -1).to_list(500)
+    seen = {}
+    for v in raw:
+        if v["viewer_id"] not in seen:
+            seen[v["viewer_id"]] = v
+    viewer_ids = list(seen.keys())
+    users = await db.users.find({"id": {"$in": viewer_ids}}, {"_id": 0}).to_list(500)
+    by_id = {u["id"]: public_user(u) for u in users}
+    visitors = []
+    for vid, v in seen.items():
+        if vid in by_id:
+            visitors.append({**by_id[vid], "viewed_at": v["viewed_at"]})
+    visitors.sort(key=lambda x: x["viewed_at"], reverse=True)
+    return {"enabled": True, "visitors": visitors[:50]}
+
+
+class VisitorOptIn(BaseModel):
+    track_visits: bool
+
+
+@api.post("/users/me/visitors/settings")
+async def toggle_visitor_tracking(payload: VisitorOptIn, user=Depends(get_current_user)):
+    await db.users.update_one({"id": user["id"]}, {"$set": {"track_visits": payload.track_visits}})
+    return {"track_visits": payload.track_visits}
+
+
+# ---------- 7) Charms ----------
+@api.get("/charms/catalog")
+async def charms_catalog():
+    return CHARMS_CATALOG
+
+
+async def _compute_unlocked_charms(user: dict) -> list:
+    uid = user["id"]
+    out = set()
+    earlier = await db.users.count_documents({"created_at": {"$lt": user.get("created_at", now_iso())}})
+    if earlier < 1000:
+        out.add("fundador")
+    comments = await db.comments.count_documents({"author_id": uid})
+    if comments >= 100:
+        out.add("conversador")
+    owns = await db.communities.count_documents({"owner_id": uid})
+    if owns >= 1:
+        out.add("anfitriao")
+    posts = await db.posts.find(
+        {"author_id": uid}, {"_id": 0, "created_at": 1, "hashtags": 1}
+    ).to_list(200)
+    cities = set()
+    moods = {}
+    for p in posts:
+        ts = p.get("created_at") or ""
+        try:
+            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            h = dt.hour
+            if h < 7:
+                out.add("madrugador")
+            if 2 <= h < 5:
+                out.add("noctivago")
+        except Exception:
+            pass
+        cities_in_post = detect_cities(p.get("content", "") if p.get("content") else "", p.get("hashtags", []))
+        for c in cities_in_post:
+            cities.add(c)
+        mood = detect_mood(p.get("content", "") if p.get("content") else "")
+        if mood:
+            moods[mood] = moods.get(mood, 0) + 1
+    if len(cities) >= 5:
+        out.add("explorador")
+    if len(cities) >= 3:
+        out.add("viajante")
+    if moods.get("saudade", 0) >= 10:
+        out.add("saudosista")
+    if moods.get("festa", 0) >= 10:
+        out.add("festeiro")
+    if moods.get("cafe", 0) >= 5:
+        out.add("pastelinho")
+    if moods.get("futebol", 0) >= 5:
+        out.add("bolacampea")
+    top = await db.posts.find_one({"author_id": uid, "reactions": {"$exists": True}}, {"_id": 0, "reactions": 1})
+    if top and top.get("reactions"):
+        total = sum(len(v) if isinstance(v, list) else 0 for v in top["reactions"].values())
+        if total >= 100:
+            out.add("poeta")
+    return [CHARMS_BY_KEY[k] for k in out if k in CHARMS_BY_KEY]
+
+
+@api.get("/users/{username}/charms")
+async def list_user_charms(username: str):
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    unlocked = await _compute_unlocked_charms(u)
+    equipped = u.get("charms_equipped", [])
+    return {
+        "unlocked": unlocked,
+        "equipped": [CHARMS_BY_KEY[k] for k in equipped if k in CHARMS_BY_KEY],
+    }
+
+
+class CharmsEquipIn(BaseModel):
+    keys: List[str] = Field(default_factory=list)
+
+
+@api.post("/users/me/charms/equip")
+async def equip_charms(payload: CharmsEquipIn, user=Depends(get_current_user)):
+    unlocked = {c["key"] for c in await _compute_unlocked_charms(user)}
+    final = [k for k in payload.keys[:3] if k in unlocked]
+    await db.users.update_one({"id": user["id"]}, {"$set": {"charms_equipped": final}})
+    return {"equipped": [CHARMS_BY_KEY[k] for k in final]}
+
+
+# ---------- 8) Roda (Inner Circle) ----------
+@api.get("/users/me/roda")
+async def get_roda(user=Depends(get_current_user)):
+    ids = user.get("roda", [])
+    if not ids:
+        return []
+    users = await db.users.find({"id": {"$in": ids}}, {"_id": 0}).to_list(50)
+    return [public_user(u) for u in users]
+
+
+@api.post("/users/me/roda/{user_id}")
+async def toggle_roda(user_id: str, user=Depends(get_current_user)):
+    if user_id == user["id"]:
+        raise HTTPException(400, "Não te podes adicionar à tua Roda")
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    current = list(user.get("roda", []))
+    if user_id in current:
+        current.remove(user_id)
+        action = "removed"
+    else:
+        if len(current) >= 25:
+            raise HTTPException(400, "Roda cheia (máx 25)")
+        current.append(user_id)
+        action = "added"
+    await db.users.update_one({"id": user["id"]}, {"$set": {"roda": current}})
+    return {"action": action, "roda": current}
+
+
+@api.get("/users/{username}/in-roda")
+async def is_in_my_roda(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
+    if not target:
+        return {"in_roda": False}
+    return {"in_roda": target["id"] in user.get("roda", [])}
+
+
+# ---------- 9) Starter Packs ----------
+class StarterPackIn(BaseModel):
+    title: str = Field(min_length=3, max_length=60)
+    description: Optional[str] = Field(default="", max_length=200)
+    user_ids: List[str] = Field(default_factory=list)
+    emoji: Optional[str] = "🎁"
+
+
+async def _enrich_pack(pack: dict, viewer_id: Optional[str] = None) -> dict:
+    owner = await db.users.find_one({"id": pack["owner_id"]}, {"_id": 0})
+    users = await db.users.find({"id": {"$in": pack.get("user_ids", [])}}, {"_id": 0}).to_list(20)
+    pack["owner"] = public_user(owner) if owner else None
+    pack["users"] = [public_user(u) for u in users]
+    pack["likes_count"] = len(pack.get("likes", []))
+    pack["liked_by_me"] = bool(viewer_id and viewer_id in pack.get("likes", []))
+    return pack
+
+
+@api.post("/starter-packs")
+async def create_starter_pack(payload: StarterPackIn, user=Depends(get_current_user)):
+    pack = {
+        "id": str(uuid.uuid4()),
+        "owner_id": user["id"],
+        "title": payload.title.strip(),
+        "description": (payload.description or "").strip(),
+        "user_ids": payload.user_ids[:20],
+        "emoji": payload.emoji or "🎁",
+        "likes": [],
+        "follows": 0,
+        "created_at": now_iso(),
+    }
+    await db.starter_packs.insert_one(pack)
+    pack.pop("_id", None)
+    return await _enrich_pack(pack, user["id"])
+
+
+@api.get("/starter-packs/discover")
+async def discover_starter_packs(viewer: Optional[dict] = Depends(maybe_user)):
+    raw = await db.starter_packs.find({}, {"_id": 0}).to_list(200)
+    raw.sort(key=lambda p: (len(p.get("likes", [])), p.get("follows", 0)), reverse=True)
+    out = []
+    for p in raw[:40]:
+        out.append(await _enrich_pack(p, viewer["id"] if viewer else None))
+    return out
+
+
+@api.get("/starter-packs/{pack_id}")
+async def get_starter_pack(pack_id: str, viewer: Optional[dict] = Depends(maybe_user)):
+    p = await db.starter_packs.find_one({"id": pack_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Pack não encontrado")
+    return await _enrich_pack(p, viewer["id"] if viewer else None)
+
+
+@api.get("/users/{username}/starter-packs")
+async def user_starter_packs(username: str):
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
+    if not u:
+        return []
+    raw = await db.starter_packs.find({"owner_id": u["id"]}, {"_id": 0}).to_list(50)
+    out = []
+    for p in raw:
+        out.append(await _enrich_pack(p, None))
+    return out
+
+
+@api.post("/starter-packs/{pack_id}/like")
+async def like_starter_pack(pack_id: str, user=Depends(get_current_user)):
+    p = await db.starter_packs.find_one({"id": pack_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Pack não encontrado")
+    likes = list(p.get("likes", []))
+    if user["id"] in likes:
+        likes.remove(user["id"])
+        action = "unliked"
+    else:
+        likes.append(user["id"])
+        action = "liked"
+    await db.starter_packs.update_one({"id": pack_id}, {"$set": {"likes": likes}})
+    return {"action": action, "likes_count": len(likes), "liked_by_me": action == "liked"}
+
+
+@api.post("/starter-packs/{pack_id}/follow-all")
+async def follow_all_in_pack(pack_id: str, user=Depends(get_current_user)):
+    p = await db.starter_packs.find_one({"id": pack_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Pack não encontrado")
+    followed = []
+    my_following = set(user.get("following", []))
+    for uid in p.get("user_ids", []):
+        if uid == user["id"] or uid in my_following:
+            continue
+        target = await db.users.find_one({"id": uid}, {"_id": 0, "id": 1})
+        if not target:
+            continue
+        await db.users.update_one({"id": user["id"]}, {"$addToSet": {"following": uid}})
+        await db.users.update_one({"id": uid}, {"$addToSet": {"followers": user["id"]}})
+        followed.append(uid)
+    await db.starter_packs.update_one({"id": pack_id}, {"$inc": {"follows": 1}})
+    return {"followed_count": len(followed), "followed": followed}
+
+
+@api.delete("/starter-packs/{pack_id}")
+async def delete_starter_pack(pack_id: str, user=Depends(get_current_user)):
+    res = await db.starter_packs.delete_one({"id": pack_id, "owner_id": user["id"]})
+    if not res.deleted_count:
+        raise HTTPException(404, "Pack não encontrado")
+    return {"ok": True}
+
+
+# ---------- 10) Hype Train ----------
+@api.post("/communities/{slug}/hype")
+async def join_hype_train(slug: str, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    now = datetime.now(timezone.utc)
+    active = await db.hype_trains.find_one(
+        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
+        {"_id": 0},
+    )
+    if not active:
+        active = {
+            "id": str(uuid.uuid4()),
+            "community_slug": slug,
+            "started_by": user["id"],
+            "participants": [user["id"]],
+            "expires_at": (now + timedelta(minutes=HYPE_DURATION_MIN)).isoformat(),
+            "started_at": now.isoformat(),
+            "target": HYPE_TARGET,
+        }
+        await db.hype_trains.insert_one(active)
+        active.pop("_id", None)
+    else:
+        if user["id"] not in active["participants"]:
+            active["participants"].append(user["id"])
+            await db.hype_trains.update_one(
+                {"id": active["id"]},
+                {"$addToSet": {"participants": user["id"]}},
+            )
+    active["count"] = len(active["participants"])
+    active["percent"] = min(100, int(100 * active["count"] / max(1, active["target"])))
+    return active
+
+
+@api.get("/communities/{slug}/hype/active")
+async def get_active_hype(slug: str):
+    now = datetime.now(timezone.utc)
+    active = await db.hype_trains.find_one(
+        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
+        {"_id": 0},
+    )
+    if not active:
+        return None
+    active["count"] = len(active["participants"])
+    active["percent"] = min(100, int(100 * active["count"] / max(1, active.get("target", HYPE_TARGET))))
+    return active
+
+
+# ---------- 11) Collab Posts ----------
+class CollabInviteIn(BaseModel):
+    user_id: str
+
+
+@api.post("/posts/{post_id}/collab/invite")
+async def invite_collab(post_id: str, payload: CollabInviteIn, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post não encontrado")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Só o autor pode convidar colaboradores")
+    target = await db.users.find_one({"id": payload.user_id}, {"_id": 0, "id": 1, "username": 1})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    invites = list(post.get("collab_invites", []))
+    accepted = list(post.get("collaborators", []))
+    if payload.user_id in accepted or payload.user_id in invites:
+        return {"ok": True, "already": True}
+    if len(accepted) + len(invites) >= 3:
+        raise HTTPException(400, "Máximo de 3 colaboradores")
+    invites.append(payload.user_id)
+    await db.posts.update_one({"id": post_id}, {"$set": {"collab_invites": invites}})
+    await create_notification(
+        payload.user_id, "collab_invite", user["id"], post_id,
+        f"@{user['username']} convidou-te para colaborar num post",
+    )
+    return {"ok": True}
+
+
+@api.post("/posts/{post_id}/collab/accept")
+async def accept_collab(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Post não encontrado")
+    invites = list(post.get("collab_invites", []))
+    if user["id"] not in invites:
+        raise HTTPException(403, "Não tens convite")
+    invites.remove(user["id"])
+    accepted = list(post.get("collaborators", []))
+    accepted.append(user["id"])
+    await db.posts.update_one(
+        {"id": post_id},
+        {"$set": {"collab_invites": invites, "collaborators": accepted}},
+    )
+    return {"ok": True, "collaborators": accepted}
+
+
+@api.post("/posts/{post_id}/collab/decline")
+async def decline_collab(post_id: str, user=Depends(get_current_user)):
+    await db.posts.update_one({"id": post_id}, {"$pull": {"collab_invites": user["id"]}})
+    return {"ok": True}
+
+
+@api.get("/posts/{post_id}/collab")
+async def list_collab(post_id: str):
+    post = await db.posts.find_one(
+        {"id": post_id},
+        {"_id": 0, "collaborators": 1, "collab_invites": 1, "author_id": 1},
+    )
+    if not post:
+        raise HTTPException(404, "Post não encontrado")
+    ids = list(post.get("collaborators", [])) + list(post.get("collab_invites", []))
+    if not ids:
+        return {"collaborators": [], "invites": []}
+    users = await db.users.find({"id": {"$in": ids}}, {"_id": 0}).to_list(10)
+    by_id = {u["id"]: public_user(u) for u in users}
+    return {
+        "collaborators": [by_id[i] for i in post.get("collaborators", []) if i in by_id],
+        "invites": [by_id[i] for i in post.get("collab_invites", []) if i in by_id],
+    }
+
+
+# ---------- 12) Avatar Cosmetics ----------
+@api.get("/cosmetics/catalog")
+async def cosmetics_catalog():
+    return [{**c, "tier": "free"} for c in COSMETICS_CATALOG]
+
+
+class CosmeticsEquipIn(BaseModel):
+    frame: Optional[str] = ""
+    sticker: Optional[str] = ""
+
+
+@api.post("/users/me/cosmetics/equip")
+async def equip_cosmetics(payload: CosmeticsEquipIn, user=Depends(get_current_user)):
+    frame_id = (payload.frame or "").strip()
+    sticker_id = (payload.sticker or "").strip()
+    if frame_id and frame_id not in COSMETICS_BY_ID:
+        raise HTTPException(400, "Frame inválida")
+    if sticker_id and sticker_id not in COSMETICS_BY_ID:
+        raise HTTPException(400, "Sticker inválido")
+    if frame_id and COSMETICS_BY_ID[frame_id]["type"] != "frame":
+        raise HTTPException(400, "Item não é uma frame")
+    if sticker_id and COSMETICS_BY_ID[sticker_id]["type"] != "sticker":
+        raise HTTPException(400, "Item não é um sticker")
+    cosmetics_equipped = {"frame": frame_id, "sticker": sticker_id}
+    await db.users.update_one(
+        {"id": user["id"]}, {"$set": {"cosmetics_equipped": cosmetics_equipped}}
+    )
+    return cosmetics_equipped
+
+
+@api.get("/users/{username}/cosmetics")
+async def get_user_cosmetics(username: str):
+    u = await db.users.find_one(
+        {"username": username.lower()},
+        {"_id": 0, "cosmetics_equipped": 1},
+    )
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    eq = u.get("cosmetics_equipped") or {"frame": "", "sticker": ""}
+    return {
+        "frame": COSMETICS_BY_ID.get(eq.get("frame"), None),
+        "sticker": COSMETICS_BY_ID.get(eq.get("sticker"), None),
+    }
+
+
+# ---------- 13) For You Reason Chips ----------
+async def compute_reason_for_post(post: dict, viewer: dict) -> Optional[dict]:
+    if not viewer:
+        return None
+    if post.get("community_id"):
+        comm = await db.communities.find_one(
+            {"id": post["community_id"]},
+            {"_id": 0, "name": 1, "members": 1, "slug": 1},
+        )
+        if comm and viewer["id"] in comm.get("members", []):
+            return {
+                "type": "community",
+                "label": f"Da comunidade {comm['name']}",
+                "emoji": "🏘️",
+                "slug": comm.get("slug"),
+            }
+    if post.get("author_id") in viewer.get("roda", []):
+        return {"type": "roda", "label": "Da tua Roda", "emoji": "🫂"}
+    cities_in_post = detect_cities(post.get("content", ""), post.get("hashtags", []))
+    if viewer.get("city") and viewer["city"] in cities_in_post:
+        return {"type": "city", "label": f"Popular em {viewer['city']}", "emoji": "📍"}
+    tags = post.get("hashtags") or []
+    if tags:
+        my_posts = await db.posts.find(
+            {"author_id": viewer["id"]}, {"_id": 0, "hashtags": 1}
+        ).limit(20).to_list(20)
+        my_tags = set()
+        for p in my_posts:
+            for t in (p.get("hashtags") or []):
+                my_tags.add(t)
+        overlap = my_tags & set(tags)
+        if overlap:
+            t = sorted(overlap)[0]
+            return {"type": "tag", "label": f"Sobre #{t}", "emoji": "🏷️"}
+    reactions = post.get("reactions") or {}
+    total = sum(len(v) if isinstance(v, list) else 0 for v in reactions.values())
+    if total >= 20:
+        return {"type": "trending", "label": "A bombar agora", "emoji": "🔥"}
+    if post.get("mood") and viewer.get("mood_initial") and post["mood"] == viewer["mood_initial"]:
+        return {"type": "mood", "label": "Combina com o teu mood", "emoji": "✨"}
+    return None
+
+
+@api.get("/posts/explore/with-reasons")
+async def explore_with_reasons(viewer: Optional[dict] = Depends(maybe_user)):
+    raw = await db.posts.find(
+        {"is_draft": {"$ne": True}, "scheduled_at": None, "repost_of": {"$exists": False}},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(40).to_list(40)
+    out = []
+    for p in raw:
+        enriched = await enrich_post(p, viewer)
+        reason = await compute_reason_for_post(p, viewer) if viewer else None
+        if reason:
+            enriched["reason"] = reason
+        out.append(enriched)
     return out
 
 
