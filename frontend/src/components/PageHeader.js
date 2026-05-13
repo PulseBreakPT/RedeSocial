@@ -24,14 +24,14 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
                     </button>
                 )}
                 <div className="flex-1 min-w-0">
-                    <h1 className="font-heading text-[18px] lg:text-[22px] font-bold tracking-tight truncate text-black">
-                        {title}
-                    </h1>
                     {subtitle && (
-                        <p className="font-mono text-[10px] lg:text-xs uppercase tracking-[0.18em] text-black/40 mt-0.5 truncate">
+                        <p className="type-overline truncate mb-1">
                             {subtitle}
                         </p>
                     )}
+                    <h1 className="font-display text-[26px] lg:text-[32px] italic font-light tracking-tight leading-[1.05] truncate text-black">
+                        {title}
+                    </h1>
                 </div>
                 {action && <div className="flex-shrink-0">{action}</div>}
             </div>

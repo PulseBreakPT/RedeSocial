@@ -412,9 +412,9 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 disabled={busy || (!content.trim() && images.length === 0 && !pollOpen) || remaining < 0}
                                 onClick={() => submit("publish")}
                                 data-testid="composer-publish-btn"
-                                className="bg-accent-vermillion text-white font-heading font-semibold text-[13px] tracking-tight px-5 py-2.5 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed tap-shrink glow-vermillion"
+                                className="btn-obsidian text-[13px] py-2.5 px-5 disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                {busy ? "..." : scheduledAt ? "Agendar" : "Publicar"}
+                                {busy ? "…" : scheduledAt ? "Agendar" : "Publicar"}
                             </button>
                         </div>
                     </div>

@@ -168,7 +168,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                         <span>Fixado no perfil</span>
                     </div>
                 )}
-                <div className="flex gap-3">
+                <div className="flex gap-3 lg:gap-4">
                     <Link to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()}>
                         <Avatar user={post.author} size={44} showOnline />
                     </Link>
@@ -177,17 +177,17 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             <Link
                                 to={`/u/${post.author?.username}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="font-heading font-bold hover:underline truncate text-black"
+                                className="font-heading font-semibold tracking-tight hover:underline underline-offset-2 truncate text-black"
                             >
                                 {post.author?.name}
                             </Link>
                             {post.author?.verified && <VerifiedBadge size={14} />}
-                            <span className="font-mono text-sm text-black/50 truncate">@{post.author?.username}</span>
-                            <span className="text-black/30">·</span>
-                            <span className="font-mono text-sm text-black/50" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
+                            <span className="font-mono text-[12px] text-black/45 truncate">@{post.author?.username}</span>
+                            <span className="text-black/20">·</span>
+                            <span className="font-mono text-[12px] text-black/45" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
                             {editedAt && (
-                                <span className="font-mono text-xs text-black/50 inline-flex items-center gap-0.5" title={`Editado em ${fullTime(editedAt)}`}>
-                                    <Pencil size={9} /> editado
+                                <span className="font-mono text-[10px] text-black/45 inline-flex items-center gap-0.5" title={`Editado em ${fullTime(editedAt)}`}>
+                                    <Pencil size={9} strokeWidth={1.6} /> editado
                                 </span>
                             )}
                             <EditHistoryButton history={editHistory} currentContent={content} />
@@ -266,16 +266,16 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             </div>
                         )}
 
-                        <div className="flex items-center gap-1 mt-3 -ml-2 text-black/50">
+                        <div className="flex items-center gap-1 mt-4 -ml-2 text-black/45">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     navigate(`/post/${post.id}`);
                                 }}
                                 data-testid={`comment-btn-${post.id}`}
-                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/15 hover:text-blue-soft transition tap-shrink"
+                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/12 hover:text-blue-soft transition tap-shrink"
                             >
-                                <MessageCircle size={17} />
+                                <MessageCircle size={17} strokeWidth={1.6} />
                                 <span className="font-mono text-xs">{formatNum(post.comments_count || 0)}</span>
                             </button>
                             <RepostMenu
@@ -289,31 +289,31 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             <button
                                 onClick={toggleLike}
                                 data-testid={`like-btn-${post.id}`}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-red-soft/15 hover:text-red-soft transition tap-shrink ${
+                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-red-soft/12 hover:text-red-soft transition tap-shrink ${
                                     liked ? "text-red-soft" : ""
                                 }`}
                             >
-                                <Heart size={17} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                <Heart size={17} strokeWidth={1.6} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
                                 <span className="font-mono text-xs">{formatNum(likes)}</span>
                             </button>
                             <button
                                 onClick={toggleBookmark}
                                 data-testid={`bookmark-btn-${post.id}`}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-yellow-500/15 hover:text-yellow-600 transition tap-shrink ${
+                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-yellow-500/12 hover:text-yellow-600 transition tap-shrink ${
                                     bookmarked ? "text-yellow-600" : ""
                                 }`}
                             >
-                                <Bookmark size={17} fill={bookmarked ? "currentColor" : "none"} />
+                                <Bookmark size={17} strokeWidth={1.6} fill={bookmarked ? "currentColor" : "none"} />
                             </button>
                             <button
                                 onClick={share}
                                 data-testid={`share-btn-${post.id}`}
-                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/15 hover:text-blue-soft transition tap-shrink"
+                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/12 hover:text-blue-soft transition tap-shrink"
                             >
-                                <Share2 size={17} />
+                                <Share2 size={17} strokeWidth={1.6} />
                             </button>
-                            <span className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-black/40" title="visualizações">
-                                <Eye size={13} /> {formatNum(views)}
+                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-black/40" title="visualizações">
+                                <Eye size={13} strokeWidth={1.6} /> {formatNum(views)}
                             </span>
                         </div>
                     </div>
@@ -350,11 +350,11 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
         return (
             <article
                 data-testid={`post-${post.id}`}
-                className="px-4 lg:px-5 pt-3 pb-5 border-b border-black/[0.06] active:bg-black/[0.02] lg:hover:bg-black/[0.015] transition-colors anim-fade-up"
+                className="px-4 lg:px-6 pt-4 pb-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up"
             >
-                <div className="flex items-center gap-2 text-xs font-mono text-black/50 ml-12 mb-1.5">
-                    <Repeat2 size={13} className="text-green-soft" />
-                    <Link to={`/u/${post.author?.username}`} className="hover:underline">
+                <div className="flex items-center gap-2 type-overline ml-12 mb-2 normal-case tracking-[0.16em]">
+                    <Repeat2 size={12} strokeWidth={1.6} className="text-green-soft" />
+                    <Link to={`/u/${post.author?.username}`} className="ink-link hover:text-black">
                         @{post.author?.username} republicou
                     </Link>
                 </div>
@@ -366,7 +366,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
     return (
         <article
             data-testid={`post-${post.id}`}
-            className="px-4 py-4 lg:p-5 border-b border-black/[0.06] active:bg-black/[0.02] lg:hover:bg-black/[0.015] transition-colors anim-fade-up"
+            className="px-4 py-5 lg:px-6 lg:py-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up"
         >
             <PostBody post={post} onChange={onChange} clickable={clickable} onDelete={onDelete} />
         </article>

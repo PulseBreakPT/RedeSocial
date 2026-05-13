@@ -24,40 +24,52 @@ export default function Login() {
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
-            <div
-                className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]"
-            >
+            {/* Left — editorial luxury panel */}
+            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden bg-paper grain isolate">
+                <div
+                    className="absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full opacity-50"
+                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
+                />
+                <div
+                    className="absolute -bottom-40 -right-32 w-[640px] h-[640px] rounded-full opacity-40"
+                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }}
+                />
                 <div className="relative">
-                    <h1 className="font-heading text-5xl font-bold tracking-tighter text-black flex items-center gap-2">
-                        <span className="text-silver">◆</span>
-                        <span className="text-silver">vermillion</span>
+                    <h1 className="font-display text-[44px] leading-none tracking-tight text-black flex items-baseline gap-2">
+                        <span className="silver-foil text-[32px] translate-y-[2px]">◆</span>
+                        <span className="italic font-light">vermillion</span>
                     </h1>
-                    <p className="font-mono text-xs uppercase tracking-widest text-black/60 mt-2">rede social</p>
+                    <p className="type-overline mt-3">une rede sociale · est. 2026</p>
                 </div>
                 <div className="relative max-w-md">
-                    <h2 className="font-heading text-4xl font-bold tracking-tight leading-tight text-black">
-                        Onde a tua voz<br />encontra um <span className="italic text-silver">eco</span>.
+                    <p className="type-overline mb-5">manifesto nº 01</p>
+                    <h2 className="font-display text-[58px] leading-[0.95] tracking-tight text-black">
+                        Onde a tua voz<br />encontra um <span className="italic silver-foil">eco</span>.
                     </h2>
-                    <p className="font-body text-black/70 mt-4 leading-relaxed">
+                    <p className="font-body text-black/65 mt-7 leading-relaxed text-[15px] max-w-sm">
                         Liga-te, descobre e conversa em tempo real. Um espaço refinado para ideias que importam.
                     </p>
                 </div>
+                <div className="relative type-overline">
+                    desenhado em portugal · pensado para o mundo
+                </div>
             </div>
 
-            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen">
+            {/* Right — form */}
+            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen bg-white">
                 <div className="max-w-sm w-full mx-auto">
-                    <div className="lg:hidden text-center mb-8">
-                        <h1 className="font-heading text-4xl font-bold tracking-tighter">
-                            <span className="text-accent-vermillion">◆</span> vermillion
+                    <div className="lg:hidden text-center mb-10">
+                        <h1 className="font-display text-[42px] leading-none italic font-light tracking-tight">
+                            <span className="silver-foil not-italic">◆</span> vermillion
                         </h1>
-                        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-500 mt-2">rede social</p>
+                        <p className="type-overline mt-3">une rede sociale</p>
                     </div>
-                    <h2 className="font-heading text-2xl lg:text-3xl font-bold tracking-tight">Bem-vindo de volta</h2>
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-500 mt-2">entra na tua conta</p>
+                    <p className="type-overline mb-3">acesso · membros</p>
+                    <h2 className="font-display text-[40px] lg:text-[48px] italic font-light tracking-tight leading-[0.95]">Bem-vindo<br />de volta.</h2>
 
-                    <form onSubmit={submit} className="mt-8 lg:mt-10 space-y-4 lg:space-y-5" data-testid="login-form">
+                    <form onSubmit={submit} className="mt-10 space-y-5" data-testid="login-form">
                         <div>
-                            <label className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">Email</label>
+                            <label className="type-overline">Email</label>
                             <input
                                 data-testid="login-email"
                                 type="email"
@@ -66,11 +78,17 @@ export default function Login() {
                                 required
                                 autoComplete="email"
                                 inputMode="email"
-                                className="mt-2 w-full bg-zinc-950 border border-white/[0.08] rounded-2xl px-4 py-3.5 text-white focus:border-accent-vermillion focus:outline-none transition"
+                                placeholder="tu@exemplo.com"
+                                className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">Palavra-passe</label>
+                            <div className="flex items-center justify-between">
+                                <label className="type-overline">Palavra-passe</label>
+                                <Link to="/forgot" data-testid="goto-forgot" className="font-mono text-[10px] tracking-wider text-black/50 ink-link">
+                                    esqueci-me
+                                </Link>
+                            </div>
                             <input
                                 data-testid="login-password"
                                 type="password"
@@ -78,32 +96,27 @@ export default function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 autoComplete="current-password"
-                                className="mt-2 w-full bg-zinc-950 border border-white/[0.08] rounded-2xl px-4 py-3.5 text-white focus:border-accent-vermillion focus:outline-none transition"
+                                placeholder="••••••••"
+                                className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
                         {error && (
-                            <div data-testid="login-error" className="text-sm text-accent-vermillion font-mono">{error}</div>
+                            <div data-testid="login-error" className="text-sm text-red-soft font-mono">{error}</div>
                         )}
                         <button
                             type="submit"
                             disabled={busy}
                             data-testid="login-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
+                            className="btn-obsidian w-full text-[14px] py-3.5 disabled:opacity-50"
                         >
-                            {busy ? "A entrar..." : "Entrar"}
+                            {busy ? "A entrar…" : "Entrar"}
                         </button>
                     </form>
 
-                    <p className="mt-7 lg:mt-8 font-mono text-sm text-zinc-500 text-center lg:text-left">
+                    <p className="mt-10 font-mono text-[12px] text-black/50 text-center lg:text-left">
                         Ainda não tens conta?{" "}
-                        <Link to="/register" data-testid="goto-register" className="text-accent-vermillion hover:underline">
+                        <Link to="/register" data-testid="goto-register" className="text-black ink-link font-medium">
                             Criar conta
-                        </Link>
-                    </p>
-                    <p className="mt-2 font-mono text-sm text-zinc-500 text-center lg:text-left">
-                        Esqueceste-te da palavra-passe?{" "}
-                        <Link to="/forgot" data-testid="goto-forgot" className="text-accent-vermillion hover:underline">
-                            Recuperar
                         </Link>
                     </p>
                 </div>

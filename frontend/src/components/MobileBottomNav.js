@@ -43,14 +43,14 @@ export function MobileBottomNav({ onCompose }) {
                                 <button
                                     onClick={onCompose}
                                     data-testid={it.testid}
-                                    className="-mt-7 w-14 h-14 rounded-full text-white grid place-items-center active:scale-90 transition ring-4 ring-white"
+                                    className="-mt-7 w-14 h-14 rounded-full text-white grid place-items-center active:scale-90 transition ring-[6px] ring-white"
                                     style={{
-                                        background: "linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%)",
-                                        boxShadow: "0 12px 32px -8px rgba(13,13,16,0.32), inset 0 1px 0 rgba(255,255,255,0.08)",
+                                        background: "radial-gradient(circle at 30% 30%, #2a2a32 0%, #0a0a0a 70%)",
+                                        boxShadow: "0 16px 36px -10px rgba(13,13,16,0.45), inset 0 1px 0 rgba(255,255,255,0.10)",
                                     }}
                                     aria-label="Nova publicação"
                                 >
-                                    <Icon size={26} strokeWidth={2.6} />
+                                    <Icon size={24} strokeWidth={2.2} />
                                 </button>
                             </div>
                         );
@@ -86,7 +86,7 @@ export function MobileBottomNav({ onCompose }) {
                                     <span className="relative">
                                         <Icon
                                             size={22}
-                                            strokeWidth={isActive ? 2.4 : 1.9}
+                                            strokeWidth={isActive ? 2 : 1.5}
                                             fill={isActive ? "currentColor" : "none"}
                                         />
                                         {isMsg && msgCount > 0 && (

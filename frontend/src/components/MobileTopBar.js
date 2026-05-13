@@ -36,27 +36,27 @@ export function MobileTopBar() {
                 >
                     <Avatar user={user} size={32} showOnline />
                 </button>
-                <Link to="/" className="flex items-center gap-1.5 mr-auto tap-shrink">
-                    <span className="font-heading text-[21px] font-bold tracking-tighter text-black flex items-center gap-1.5">
-                        <span className="text-silver">◆</span>
-                        <span className="text-silver">vermillion</span>
+                <Link to="/" className="flex items-center gap-1.5 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
+                    <span className="font-display text-[24px] leading-none tracking-tight text-black italic font-light flex items-baseline gap-1">
+                        <span className="silver-foil text-[20px] not-italic translate-y-[1px]">◆</span>
+                        vermillion
                     </span>
                 </Link>
                 <button
                     onClick={() => navigate("/explore")}
-                    className="w-10 h-10 rounded-full grid place-items-center text-black/70 hover:text-black active:bg-black/[0.06] tap-shrink"
+                    className="w-10 h-10 rounded-full grid place-items-center text-black/60 hover:text-black active:bg-black/[0.06] tap-shrink"
                     aria-label="buscar"
                     data-testid="mobile-search-btn"
                 >
-                    <Search size={20} strokeWidth={2} />
+                    <Search size={20} strokeWidth={1.6} />
                 </button>
                 <button
                     onClick={() => navigate("/notifications")}
                     data-testid="mobile-notif-btn"
-                    className="relative w-10 h-10 rounded-full grid place-items-center text-black/70 hover:text-black active:bg-black/[0.06] tap-shrink"
+                    className="relative w-10 h-10 rounded-full grid place-items-center text-black/60 hover:text-black active:bg-black/[0.06] tap-shrink"
                     aria-label="notificações"
                 >
-                    <Bell size={20} strokeWidth={2} />
+                    <Bell size={20} strokeWidth={1.6} />
                     {unread > 0 && (
                         <span
                             className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[10px] font-mono grid place-items-center text-white font-bold ring-2 ring-white"

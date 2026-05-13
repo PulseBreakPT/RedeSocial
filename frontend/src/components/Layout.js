@@ -63,15 +63,18 @@ export function Layout() {
                         <div className="lg:hidden flex justify-center pt-2 pb-1">
                             <span className="w-10 h-1 rounded-full bg-black/20" />
                         </div>
-                        <div className="flex items-center justify-between px-5 lg:px-6 py-3 lg:py-4 border-b border-black/[0.06]">
-                            <h2 className="font-heading text-lg lg:text-xl font-bold">Nova publicação</h2>
+                        <div className="flex items-center justify-between px-5 lg:px-6 py-3 lg:py-4 hairline-b">
+                            <div>
+                                <p className="type-overline">manuscrito</p>
+                                <h2 className="font-display italic text-[22px] lg:text-[26px] font-light tracking-tight leading-none mt-1">Nova publicação</h2>
+                            </div>
                             <button
                                 onClick={() => setComposeOpen(false)}
                                 data-testid="close-composer-modal"
                                 className="p-2 rounded-full hover:bg-black/[0.06] active:scale-90 tap-shrink"
                                 aria-label="fechar"
                             >
-                                <X size={18} />
+                                <X size={18} strokeWidth={1.6} />
                             </button>
                         </div>
                         <Composer asModal onClose={() => setComposeOpen(false)} onPosted={() => setComposeOpen(false)} />
