@@ -64,10 +64,7 @@ export function Layout() {
                             <span className="w-10 h-1 rounded-full bg-black/20" />
                         </div>
                         <div className="flex items-center justify-between px-5 lg:px-6 py-3 lg:py-4 hairline-b">
-                            <div>
-                                <p className="type-overline">manuscrito</p>
-                                <h2 className="font-display text-[22px] lg:text-[26px] font-light tracking-tight leading-none mt-1">Nova publicação</h2>
-                            </div>
+                                <h2 className="font-display text-[22px] lg:text-[26px] font-semibold tracking-tight leading-none">Nova publicação</h2>
                             <button
                                 onClick={() => setComposeOpen(false)}
                                 data-testid="close-composer-modal"

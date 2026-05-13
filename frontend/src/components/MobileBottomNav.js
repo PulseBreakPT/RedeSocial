@@ -45,8 +45,8 @@ export function MobileBottomNav({ onCompose }) {
                                     data-testid={it.testid}
                                     className="-mt-7 w-14 h-14 rounded-full text-white grid place-items-center active:scale-90 transition ring-[6px] ring-white"
                                     style={{
-                                        background: "radial-gradient(circle at 30% 30%, #2a2a32 0%, #0a0a0a 70%)",
-                                        boxShadow: "0 16px 36px -10px rgba(13,13,16,0.45), inset 0 1px 0 rgba(255,255,255,0.10)",
+                                        background: "linear-gradient(135deg, var(--atl-400) 0%, var(--atl-600) 100%)",
+                                        boxShadow: "0 16px 36px -10px rgba(44,111,209,0.55), inset 0 1px 0 rgba(255,255,255,0.20)",
                                     }}
                                     aria-label="Nova publicação"
                                 >
@@ -63,7 +63,7 @@ export function MobileBottomNav({ onCompose }) {
                                 className="flex flex-col items-center justify-center gap-0.5 h-full text-black/40 active:scale-95 transition"
                             >
                                 <Icon size={22} strokeWidth={1.9} />
-                                <span className="font-mono text-[9px] uppercase tracking-wide">{it.label}</span>
+                                <span className="text-[10px] tracking-tight font-medium">{it.label}</span>
                             </button>
                         );
                     }
@@ -77,16 +77,23 @@ export function MobileBottomNav({ onCompose }) {
                             data-testid={it.testid}
                             className={({ isActive }) =>
                                 `relative flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition-colors ${
-                                    isActive ? "text-black" : "text-black/40 hover:text-black/70"
+                                    isActive ? "text-[color:var(--atl-600)]" : "text-black/45 hover:text-black/70"
                                 }`
                             }
                         >
                             {({ isActive }) => (
                                 <>
+                                    {isActive && (
+                                        <span
+                                            aria-hidden
+                                            className="absolute top-1 w-8 h-[3px] rounded-full"
+                                            style={{ background: "var(--atl-500)" }}
+                                        />
+                                    )}
                                     <span className="relative">
                                         <Icon
                                             size={22}
-                                            strokeWidth={isActive ? 2 : 1.5}
+                                            strokeWidth={isActive ? 2.2 : 1.7}
                                             fill={isActive ? "currentColor" : "none"}
                                         />
                                         {isMsg && msgCount > 0 && (
@@ -99,8 +106,8 @@ export function MobileBottomNav({ onCompose }) {
                                         )}
                                     </span>
                                     <span
-                                        className={`font-mono text-[9px] uppercase tracking-wide ${
-                                            isActive ? "text-black font-bold" : ""
+                                        className={`text-[10px] tracking-tight ${
+                                            isActive ? "font-semibold" : "font-medium"
                                         }`}
                                     >
                                         {it.label}
