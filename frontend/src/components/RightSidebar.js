@@ -234,7 +234,7 @@ export function RightSidebar() {
                             >
                                 <span className="font-mono text-[10px] text-black/35 mt-1 w-4 tabular-nums">{String(idx + 1).padStart(2, "0")}</span>
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-heading text-[15px] font-semibold tracking-tight text-black group-hover:text-[color:var(--atl-700)] truncate transition-colors flex items-center gap-2">
+                                    <div className="font-heading text-[15px] font-semibold tracking-tight text-black group-hover:text-black/70 truncate transition-colors flex items-center gap-2">
                                         <span>#{t.tag}</span>
                                         <TrendingPulse tag={t.tag} width={48} height={16} />
                                     </div>

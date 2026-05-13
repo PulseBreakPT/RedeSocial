@@ -45,8 +45,8 @@ export function MobileBottomNav({ onCompose }) {
                                     data-testid={it.testid}
                                     className="-mt-7 w-14 h-14 rounded-full text-white grid place-items-center active:scale-90 transition ring-[6px] ring-white"
                                     style={{
-                                        background: "linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%)",
-                                        boxShadow: "0 14px 32px -10px rgba(74,123,191,0.40), 0 6px 18px -10px rgba(223,138,125,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
+                                        background: "linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%)",
+                                        boxShadow: "0 14px 32px -10px rgba(13,13,16,0.45), 0 6px 18px -10px rgba(13,13,16,0.30), inset 0 1px 0 rgba(255,255,255,0.12)",
                                     }}
                                     aria-label="Nova publicação"
                                 >
@@ -93,7 +93,7 @@ export function MobileBottomNav({ onCompose }) {
                                         <Icon
                                             size={22}
                                             strokeWidth={isActive ? 2.2 : 1.7}
-                                            color={isActive ? "#df8a7d" : undefined}
+                                            color={isActive ? "#0a0a0a" : undefined}
                                         />
                                         {isMsg && msgCount > 0 && (
                                             <span

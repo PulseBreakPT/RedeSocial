@@ -56,7 +56,7 @@ export function MobileDiscoverStrip() {
                         <p className="type-overline inline-flex items-center gap-1.5">
                             <span className="live-dot" /> Online agora
                         </p>
-                        <Link to="/explore" className="text-[11.5px] text-[color:var(--atl-600)] font-medium tap-shrink">
+                        <Link to="/explore" className="text-[11.5px] text-black/55 hover:text-black font-medium tap-shrink transition-colors">
                             ver todos →
                         </Link>
                     </div>
@@ -87,7 +87,7 @@ export function MobileDiscoverStrip() {
                         <TrendingUp size={11} strokeWidth={1.8} className="text-[color:var(--atl-500)]" />
                         Em alta · Portugal
                     </p>
-                    <Link to="/trending" className="text-[11.5px] text-[color:var(--atl-600)] font-medium tap-shrink">
+                    <Link to="/trending" className="text-[11.5px] text-black/55 hover:text-black font-medium tap-shrink transition-colors">
                         ver todas →
                     </Link>
                 </div>
