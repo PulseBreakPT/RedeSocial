@@ -14,6 +14,13 @@ import {
     AtSign as AtSignIcon,
     Plus,
     Calendar,
+    Trash2,
+    Copy,
+    Maximize2,
+    Minimize2,
+    Smartphone,
+    Monitor,
+    Check,
 } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
@@ -98,6 +105,11 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [scheduleOpen, setScheduleOpen] = useState(false);
     const [scheduledAt, setScheduledAt] = useState("");
 
+    // SSS-tier composer UX
+    const [fullscreen, setFullscreen] = useState(false);
+    const [previewMode, setPreviewMode] = useState("desktop"); /* "desktop" | "mobile" */
+    const [savedAt, setSavedAt] = useState(null);
+
     const fileRef = useRef(null);
     const textareaRef = useRef(null);
 
@@ -110,6 +122,42 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         if (content && content.trim().length > 0) setHadDraft(true);
         // eslint-disable-next-line
     }, []);
+
+    // Auto-save indicator (lightweight, useLocalDraft already persists on every change)
+    useEffect(() => {
+        if (!content) return;
+        const t = setTimeout(() => setSavedAt(Date.now()), 600);
+        return () => clearTimeout(t);
+    }, [content]);
+
+    const clearComposer = () => {
+        if (!content && images.length === 0 && !pollOpen && !scheduleOpen) {
+            toast.info("Já está vazio");
+            return;
+        }
+        if (!window.confirm("Limpar tudo do composer?")) return;
+        setContent("");
+        setImages([]);
+        setPollOpen(false);
+        setPollOptions(["", ""]);
+        setScheduleOpen(false);
+        setScheduledAt("");
+        clearDraft();
+        toast.success("Composer limpo");
+    };
+
+    const duplicateLast = () => {
+        try {
+            const last = localStorage.getItem("composer.lastPublished");
+            if (!last) return toast.info("Sem publicação recente para duplicar");
+            const obj = JSON.parse(last);
+            if (obj.content) setContent(obj.content);
+            if (Array.isArray(obj.images)) setImages(obj.images.slice(0, MAX_IMAGES));
+            if (obj.audience) setAudience(obj.audience);
+            if (obj.ring) setRing(obj.ring);
+            toast.success("Última publicação carregada — edita e publica");
+        } catch { toast.error("Falhou ao duplicar"); }
+    };
 
     const handleFiles = (files) => {
         const list = Array.from(files || []);
@@ -184,6 +232,12 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             }
             const { data } = await api.post("/posts", body);
             clearDraft();
+            /* Remember last published for "Duplicar" */
+            try {
+                localStorage.setItem("composer.lastPublished", JSON.stringify({
+                    content, images, audience, ring, savedAt: Date.now(),
+                }));
+            } catch {}
             setImages([]);
             setPollOpen(false);
             setPollOptions(["", ""]);
