@@ -34,7 +34,7 @@ export default function Register() {
                     backgroundPosition: "center",
                 }}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#8B5CF6]/20" />
+                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#9a9aa3]/30" />
                 <div className="relative">
                     <h1 className="font-heading text-5xl font-bold tracking-tighter">
                         <span className="text-accent-vermillion">▲</span> vermillion

@@ -86,7 +86,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         remaining < 0 ? "stroke-red-500" : remaining < 40 ? "stroke-accent-vermillion" : "stroke-emerald-500";
 
     return (
-        <div className={asModal ? "p-5" : "px-4 py-4 border-b border-white/[0.05]"}>
+        <div className={asModal ? "p-4 lg:p-5" : "hidden lg:block px-4 py-4 border-b border-white/[0.05]"}>
             <div className="flex gap-3">
                 <Avatar user={user} size={44} />
                 <div className="flex-1 min-w-0">

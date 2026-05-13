@@ -23,59 +23,62 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2">
+        <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
             <div
-                className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden"
-                style={{
-                    backgroundImage:
-                        "url('https://images.unsplash.com/photo-1646924378952-242c10c83506?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85')",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                }}
+                className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]"
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#8B5CF6]/20" />
                 <div className="relative">
-                    <h1 className="font-heading text-5xl font-bold tracking-tighter">
-                        <span className="text-accent-vermillion">▲</span> vermillion
+                    <h1 className="font-heading text-5xl font-bold tracking-tighter text-black flex items-center gap-2">
+                        <span className="text-silver">◆</span>
+                        <span className="text-silver">vermillion</span>
                     </h1>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-400 mt-2">rede social</p>
+                    <p className="font-mono text-xs uppercase tracking-widest text-black/60 mt-2">rede social</p>
                 </div>
                 <div className="relative max-w-md">
-                    <h2 className="font-heading text-4xl font-bold tracking-tight leading-tight">
-                        Onde sua voz<br />encontra um <span className="text-accent-vermillion italic">eco</span>.
+                    <h2 className="font-heading text-4xl font-bold tracking-tight leading-tight text-black">
+                        Onde a tua voz<br />encontra um <span className="italic text-silver">eco</span>.
                     </h2>
-                    <p className="font-body text-zinc-300 mt-4 leading-relaxed">
+                    <p className="font-body text-black/70 mt-4 leading-relaxed">
                         Liga-te, descobre e conversa em tempo real. Um espaço refinado para ideias que importam.
                     </p>
                 </div>
             </div>
 
-            <div className="flex flex-col justify-center p-8 lg:p-16">
+            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen">
                 <div className="max-w-sm w-full mx-auto">
-                    <h2 className="font-heading text-3xl font-bold tracking-tight">Entrar</h2>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">acesse a tua conta</p>
+                    <div className="lg:hidden text-center mb-8">
+                        <h1 className="font-heading text-4xl font-bold tracking-tighter">
+                            <span className="text-accent-vermillion">◆</span> vermillion
+                        </h1>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-500 mt-2">rede social</p>
+                    </div>
+                    <h2 className="font-heading text-2xl lg:text-3xl font-bold tracking-tight">Bem-vindo de volta</h2>
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-500 mt-2">entra na tua conta</p>
 
-                    <form onSubmit={submit} className="mt-10 space-y-5" data-testid="login-form">
+                    <form onSubmit={submit} className="mt-8 lg:mt-10 space-y-4 lg:space-y-5" data-testid="login-form">
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Email</label>
+                            <label className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">Email</label>
                             <input
                                 data-testid="login-email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none transition"
+                                autoComplete="email"
+                                inputMode="email"
+                                className="mt-2 w-full bg-zinc-950 border border-white/[0.08] rounded-2xl px-4 py-3.5 text-white focus:border-accent-vermillion focus:outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Palavra-passe</label>
+                            <label className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">Palavra-passe</label>
                             <input
                                 data-testid="login-password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none transition"
+                                autoComplete="current-password"
+                                className="mt-2 w-full bg-zinc-950 border border-white/[0.08] rounded-2xl px-4 py-3.5 text-white focus:border-accent-vermillion focus:outline-none transition"
                             />
                         </div>
                         {error && (
@@ -91,13 +94,13 @@ export default function Login() {
                         </button>
                     </form>
 
-                    <p className="mt-8 font-mono text-sm text-zinc-500">
+                    <p className="mt-7 lg:mt-8 font-mono text-sm text-zinc-500 text-center lg:text-left">
                         Ainda não tens conta?{" "}
                         <Link to="/register" data-testid="goto-register" className="text-accent-vermillion hover:underline">
                             Criar conta
                         </Link>
                     </p>
-                    <p className="mt-2 font-mono text-sm text-zinc-500">
+                    <p className="mt-2 font-mono text-sm text-zinc-500 text-center lg:text-left">
                         Esqueceste-te da palavra-passe?{" "}
                         <Link to="/forgot" data-testid="goto-forgot" className="text-accent-vermillion hover:underline">
                             Recuperar

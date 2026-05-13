@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Bookmark } from "lucide-react";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
+import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 
@@ -18,14 +20,17 @@ export default function Bookmarks() {
 
     return (
         <div data-testid="bookmarks-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight">Guardados</h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">o que guardaste</p>
-            </div>
+            <PageHeader title="Guardados" subtitle="o que guardaste" back testid="bookmarks-header" />
             {loading ? (
                 <PostSkeletonList count={3} />
             ) : posts.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nada salvo ainda.</div>
+                <div className="px-6 py-16 text-center">
+                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
+                        <Bookmark size={28} className="text-accent-vermillion" />
+                    </div>
+                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Nada guardado ainda</p>
+                    <p className="text-zinc-500 text-sm mt-1">Toca no marcador de uma publicação para guardá-la.</p>
+                </div>
             ) : (
                 posts.map((p) => (
                     <PostCard

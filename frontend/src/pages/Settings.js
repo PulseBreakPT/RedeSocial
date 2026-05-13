@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Camera, Lock } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
+import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
@@ -44,17 +45,15 @@ export default function Settings() {
 
     return (
         <div data-testid="settings-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight">Definições</h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">editar perfil e privacidade</p>
-            </div>
+            <PageHeader title="Definições" subtitle="editar perfil e privacidade" back testid="settings-header" />
 
-            <div className="relative h-44 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#8B5CF6]/30">
+            <div className="relative h-32 lg:h-44 bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]/40">
                 {form.banner && <img src={form.banner} alt="" className="w-full h-full object-cover" />}
                 <button
                     onClick={() => bannerRef.current?.click()}
                     data-testid="banner-upload-btn"
-                    className="absolute bottom-3 right-3 bg-black/70 hover:bg-black p-2.5 rounded-full text-white"
+                    className="absolute bottom-3 right-3 bg-black/70 hover:bg-black p-2.5 rounded-full text-white active:scale-90 tap-shrink"
+                    aria-label="alterar capa"
                 >
                     <Camera size={16} />
                 </button>
@@ -67,15 +66,16 @@ export default function Settings() {
                 />
             </div>
 
-            <div className="px-5 -mt-12 relative">
-                <div className="relative inline-block border-4 border-[#0A0A0A] rounded-full">
-                    <Avatar user={{ ...user, avatar: form.avatar }} size={96} />
+            <div className="px-4 lg:px-5 -mt-10 lg:-mt-12 relative">
+                <div className="relative inline-block border-4 border-[#0a0a10] rounded-full">
+                    <Avatar user={{ ...user, avatar: form.avatar }} size={80} />
                     <button
                         onClick={() => avatarRef.current?.click()}
                         data-testid="avatar-upload-btn"
-                        className="absolute bottom-0 right-0 bg-black/80 hover:bg-black p-2 rounded-full text-white border border-zinc-700"
+                        className="absolute bottom-0 right-0 bg-black/85 hover:bg-black p-1.5 rounded-full text-white border border-white/[0.12] active:scale-90 tap-shrink"
+                        aria-label="alterar avatar"
                     >
-                        <Camera size={14} />
+                        <Camera size={13} />
                     </button>
                     <input
                         ref={avatarRef}
@@ -86,7 +86,7 @@ export default function Settings() {
                     />
                 </div>
 
-                <div className="space-y-5 mt-6">
+                <div className="space-y-5 mt-5 lg:mt-6">
                     <div>
                         <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nome</label>
                         <input
@@ -125,11 +125,11 @@ export default function Settings() {
                         />
                     </label>
 
-                    <div className="flex justify-between items-center pb-10">
+                    <div className="flex justify-between items-center pb-10 gap-3">
                         <button
                             onClick={logout}
                             data-testid="settings-logout"
-                            className="px-5 py-3 text-sm font-mono text-zinc-500 hover:text-accent-vermillion transition"
+                            className="px-4 lg:px-5 py-3 text-sm font-mono text-zinc-500 hover:text-accent-vermillion transition tap-shrink"
                         >
                             Terminar sessão
                         </button>
@@ -137,7 +137,7 @@ export default function Settings() {
                             onClick={save}
                             disabled={busy}
                             data-testid="settings-save-btn"
-                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-7 py-3 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-95"
+                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-6 lg:px-7 py-3 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-95 glow-vermillion"
                         >
                             {busy ? "A guardar..." : "Guardar"}
                         </button>

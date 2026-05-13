@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
-import { Composer } from "../components/Composer";
+import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
@@ -65,14 +64,7 @@ export default function PostDetail() {
 
     return (
         <div data-testid="post-detail-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4 flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="p-1 hover:bg-white/5 rounded-full" data-testid="back-btn">
-                    <ArrowLeft size={18} />
-                </button>
-                <div>
-                    <h1 className="font-heading text-xl font-bold tracking-tight">Publicação</h1>
-                </div>
-            </div>
+            <PageHeader title="Publicação" back testid="postdetail-header" />
 
             <PostCard
                 post={post}
@@ -81,7 +73,7 @@ export default function PostDetail() {
                 onDelete={() => navigate("/")}
             />
 
-            <div className="p-5 border-b border-zinc-900">
+            <div className="px-4 lg:px-5 py-4 border-b border-white/[0.05]">
                 <div className="flex gap-3">
                     <Avatar user={user} size={36} />
                     <div className="flex-1">
@@ -91,7 +83,7 @@ export default function PostDetail() {
                             data-testid="comment-input"
                             placeholder="Adiciona um comentário..."
                             rows={2}
-                            className="w-full bg-transparent text-base focus:outline-none resize-none placeholder:text-zinc-600"
+                            className="w-full bg-transparent text-[15px] focus:outline-none resize-none placeholder:text-zinc-600"
                             maxLength={300}
                         />
                         <div className="flex justify-end">
@@ -99,7 +91,7 @@ export default function PostDetail() {
                                 onClick={submitComment}
                                 disabled={!text.trim()}
                                 data-testid="submit-comment-btn"
-                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-5 py-2 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-40 active:scale-95"
+                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-[11px] px-5 py-2 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-40 active:scale-95"
                             >
                                 Responder
                             </button>
@@ -112,7 +104,7 @@ export default function PostDetail() {
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">Sem comentários ainda. Sê o primeiro!</div>
             ) : (
                 comments.map((c) => (
-                    <div key={c.id} className="p-5 border-b border-zinc-900 flex gap-3 anim-fade-up" data-testid={`comment-${c.id}`}>
+                    <div key={c.id} className="px-4 lg:px-5 py-4 border-b border-white/[0.05] flex gap-3 anim-fade-up" data-testid={`comment-${c.id}`}>
                         <Link to={`/u/${c.author?.username}`}>
                             <Avatar user={c.author} size={36} />
                         </Link>

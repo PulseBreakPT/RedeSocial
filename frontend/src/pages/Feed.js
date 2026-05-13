@@ -5,6 +5,7 @@ import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
 import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { api } from "../lib/api";
 
 export default function Feed() {
@@ -48,15 +49,38 @@ export default function Feed() {
         return () => clearInterval(id);
     }, [tab]);
 
-    const refresh = () => {
+    const refresh = useCallback(async () => {
         setRefreshing(true);
-        load(tab, false);
+        await load(tab, false);
         window.scrollTo({ top: 0, behavior: "smooth" });
-    };
+    }, [load, tab]);
+
+    // Pull-to-refresh on touch devices
+    const { pull, refreshing: ptrRefreshing, threshold } = usePullToRefresh(refresh);
+    const showPtr = pull > 4 || ptrRefreshing;
+    const ptrProgress = Math.min(1, pull / threshold);
 
     return (
         <div data-testid="feed-page">
-            {/* Premium feed header — only on desktop because mobile has TopBar */}
+            {/* PTR indicator (mobile only) */}
+            <div
+                className="ptr-indicator lg:hidden"
+                style={{ height: ptrRefreshing ? 48 : pull }}
+                aria-hidden
+            >
+                {showPtr && (
+                    <RefreshCw
+                        size={20}
+                        className={`text-accent-vermillion ${ptrRefreshing ? "ptr-spin" : ""}`}
+                        style={{
+                            transform: ptrRefreshing ? "none" : `rotate(${ptrProgress * 270}deg)`,
+                            opacity: 0.4 + ptrProgress * 0.6,
+                        }}
+                    />
+                )}
+            </div>
+
+            {/* Desktop-only header */}
             <div className="hidden lg:block sticky top-0 z-30 glass border-b border-white/[0.05]">
                 <div className="px-5 py-4 flex items-center justify-between">
                     <div>
@@ -74,13 +98,14 @@ export default function Feed() {
                 </div>
             </div>
 
-            <div className="sticky top-[57px] lg:top-[73px] z-20 glass border-b border-white/[0.05]">
+            {/* Tabs — sticky below MobileTopBar on mobile, below feed header on desktop */}
+            <div className="sticky top-[var(--mobile-topbar-h)] lg:top-[73px] z-20 glass border-b border-white/[0.05]">
                 <div className="grid grid-cols-2">
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following"
-                        className={`py-3 font-heading font-semibold text-[14px] tracking-tight transition relative tap-shrink ${
-                            tab === "following" ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
+                        className={`py-3 font-heading font-semibold text-[14px] tracking-tight transition relative active:scale-[0.98] ${
+                            tab === "following" ? "text-white" : "text-zinc-500 active:bg-white/[0.04]"
                         }`}
                     >
                         Seguindo
@@ -91,8 +116,8 @@ export default function Feed() {
                     <button
                         onClick={() => setTab("foryou")}
                         data-testid="tab-foryou"
-                        className={`py-3 font-heading font-semibold text-[14px] tracking-tight transition relative tap-shrink ${
-                            tab === "foryou" ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
+                        className={`py-3 font-heading font-semibold text-[14px] tracking-tight transition relative active:scale-[0.98] ${
+                            tab === "foryou" ? "text-white" : "text-zinc-500 active:bg-white/[0.04]"
                         }`}
                     >
                         Para ti
@@ -104,11 +129,11 @@ export default function Feed() {
             </div>
 
             {newCount > 0 && (
-                <div className="sticky top-[105px] lg:top-[121px] z-20 flex justify-center pt-3">
+                <div className="sticky top-[calc(var(--mobile-topbar-h)+48px)] lg:top-[121px] z-20 flex justify-center pt-3">
                     <button
                         onClick={refresh}
                         data-testid="new-posts-pill"
-                        className="bg-accent-vermillion text-white font-heading font-semibold text-xs tracking-tight px-4 py-2 rounded-full hover:bg-[#A78BFA] tap-shrink flex items-center gap-1.5 anim-fade-up glow-vermillion"
+                        className="bg-accent-vermillion text-white font-heading font-semibold text-xs tracking-tight px-4 py-2 rounded-full hover:bg-[#A78BFA] active:scale-95 flex items-center gap-1.5 anim-fade-up glow-vermillion"
                     >
                         <Sparkles size={12} />
                         {newCount === 1 ? "1 nova publicação" : `${newCount} novas publicações`}
@@ -122,17 +147,17 @@ export default function Feed() {
             {loading ? (
                 <PostSkeletonList count={5} />
             ) : posts.length === 0 ? (
-                <div className="p-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <Sparkles size={26} className="text-accent-vermillion" />
+                <div className="px-6 py-16 text-center">
+                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
+                        <Sparkles size={32} className="text-accent-vermillion" />
                     </div>
-                    <p className="text-zinc-200 font-heading text-xl tracking-tight">
+                    <p className="text-zinc-100 font-heading text-xl tracking-tight">
                         {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
                     </p>
                     <p className="text-zinc-500 text-sm mt-2 max-w-xs mx-auto">
                         {tab === "following"
-                            ? "Segue pessoas ou troca para Para ti e descubra novidades."
-                            : "Nenhuma publicação ainda — comece a conversa."}
+                            ? "Segue pessoas ou troca para Para ti e descobre novidades."
+                            : "Nenhuma publicação ainda — começa a conversa."}
                     </p>
                 </div>
             ) : (

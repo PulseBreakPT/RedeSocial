@@ -289,7 +289,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
         return (
             <article
                 data-testid={`post-${post.id}`}
-                className="px-5 pt-3 pb-5 border-b border-zinc-900 hover:bg-white/[0.015] transition-colors anim-fade-up"
+                className="px-4 lg:px-5 pt-3 pb-5 border-b border-white/[0.05] active:bg-white/[0.03] lg:hover:bg-white/[0.015] transition-colors anim-fade-up"
             >
                 <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 ml-12 mb-1.5">
                     <Repeat2 size={13} className="text-emerald-400" />
@@ -305,7 +305,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
     return (
         <article
             data-testid={`post-${post.id}`}
-            className="p-5 border-b border-zinc-900 hover:bg-white/[0.015] transition-colors anim-fade-up"
+            className="px-4 py-4 lg:p-5 border-b border-white/[0.05] active:bg-white/[0.03] lg:hover:bg-white/[0.015] transition-colors anim-fade-up"
         >
             <PostBody post={post} onChange={onChange} clickable={clickable} onDelete={onDelete} />
         </article>

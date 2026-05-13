@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
+import { PageHeader } from "../components/PageHeader";
 import { api } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
+import { Compass } from "lucide-react";
 
 export default function Explore() {
     const [posts, setPosts] = useState([]);
@@ -18,14 +20,17 @@ export default function Explore() {
 
     return (
         <div data-testid="explore-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight">Explorar</h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">tudo o que está rolando</p>
-            </div>
+            <PageHeader title="Explorar" subtitle="tudo o que está rolando" testid="explore-header" />
             {loading ? (
                 <PostSkeletonList count={4} />
             ) : posts.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma publicação ainda. Sê o primeiro!</div>
+                <div className="px-6 py-16 text-center">
+                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
+                        <Compass size={28} className="text-accent-vermillion" />
+                    </div>
+                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Sem publicações</p>
+                    <p className="text-zinc-500 text-sm mt-1">Volta mais tarde para explorar.</p>
+                </div>
             ) : (
                 posts.map((p) => (
                     <PostCard

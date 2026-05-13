@@ -4,221 +4,328 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   LIGHT THEME — silver gradient primary, soft red/green/blue
+   ============================================================ */
+
 @layer base {
     :root {
-        --background: 240 10% 5%;
-        --foreground: 0 0% 96%;
-        --card: 240 9% 8%;
-        --card-foreground: 0 0% 96%;
-        --popover: 240 9% 8%;
-        --popover-foreground: 0 0% 96%;
-        --primary: 258 90% 66%;
-        --primary-foreground: 0 0% 100%;
-        --secondary: 240 5% 14%;
-        --secondary-foreground: 0 0% 96%;
-        --muted: 240 5% 14%;
-        --muted-foreground: 240 5% 65%;
-        --accent: 258 90% 66%;
-        --accent-foreground: 0 0% 100%;
-        --destructive: 0 80% 60%;
-        --destructive-foreground: 0 0% 100%;
-        --border: 240 5% 16%;
-        --input: 240 5% 16%;
-        --ring: 258 90% 66%;
+        /* Surfaces */
+        --bg: 0 0% 99%;                /* near white */
+        --bg-soft: 0 0% 97%;
+        --card: 0 0% 100%;
+        --ink: 240 8% 7%;              /* near black */
+        --ink-soft: 240 6% 22%;
+        --muted: 240 4% 46%;           /* zinc-500 equivalent */
+        --muted-light: 240 4% 65%;
+        --border: 240 6% 90%;
+        --border-strong: 240 6% 82%;
+
+        /* Silver palette (primary accent) */
+        --silver-50: #fafafd;
+        --silver-100: #f1f1f5;
+        --silver-200: #e0e0e6;
+        --silver-300: #c8c8d0;
+        --silver-400: #a8a8b3;
+        --silver-500: #8b8b96;
+        --silver-600: #6b6b75;
+        --silver-700: #4a4a52;
+        --silver-800: #2d2d34;
+
+        /* Soft semantic colors */
+        --red-soft: #e85d6c;
+        --red-soft-bg: #fdecee;
+        --green-soft: #56b677;
+        --green-soft-bg: #e7f5ec;
+        --blue-soft: #6aa8e6;
+        --blue-soft-bg: #ebf2fb;
+
+        /* Safe-area */
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+
+        --mobile-topbar-h: 56px;
+        --mobile-bottomnav-h: 72px;
+
         --radius: 1rem;
     }
 }
 
 @layer base {
     * {
-        @apply border-border;
+        border-color: hsl(var(--border));
+        -webkit-tap-highlight-color: transparent;
+    }
+    html {
+        overscroll-behavior-y: none;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
     html,
     body {
-        background: #0a0a10;
-        color: #f5f5f7;
+        background: #fafafa;
+        color: hsl(var(--ink));
         font-family: "Geist", system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        font-feature-settings:
-            "ss01" 1,
-            "cv11" 1;
+        font-feature-settings: "ss01" 1, "cv11" 1;
+        scroll-behavior: smooth;
     }
     body {
         background-image:
             radial-gradient(
-                circle at 50% 0%,
-                rgba(139, 92, 246, 0.08),
-                transparent 50%
+                circle at 50% -10%,
+                rgba(106, 168, 230, 0.08),
+                transparent 55%
             ),
             radial-gradient(
-                circle at 0% 100%,
-                rgba(124, 58, 237, 0.04),
-                transparent 40%
+                circle at 100% 100%,
+                rgba(200, 200, 208, 0.18),
+                transparent 50%
             );
         background-attachment: fixed;
+        touch-action: manipulation;
     }
-    h1,
-    h2,
-    h3,
-    h4,
-    h5 {
+    h1, h2, h3, h4, h5 {
         font-family: "Bricolage Grotesque", sans-serif;
         letter-spacing: -0.025em;
+        color: hsl(var(--ink));
     }
     ::selection {
-        background: rgba(139, 92, 246, 0.4);
-        color: #fff;
+        background: rgba(13, 13, 16, 0.92);
+        color: #ffffff;
     }
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--silver-300); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--silver-400); }
+    @media (max-width: 1024px) {
+        ::-webkit-scrollbar { width: 0; height: 0; }
+        body { scrollbar-width: none; }
     }
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #2a2a35;
-        border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #3f3f4a;
-    }
-    input,
-    textarea,
-    button {
-        font-family: inherit;
+    input, textarea, button { font-family: inherit; }
+    button, a { touch-action: manipulation; }
+    input, textarea, select { font-size: 16px; }
+    @media (min-width: 1024px) {
+        input, textarea, select { font-size: inherit; }
     }
 }
 
+/* ============================================================
+   Override Tailwind zinc-* classes so existing dark utilities
+   become light-theme equivalents without touching every file.
+   These come AFTER tailwind utilities so they win on equal specificity.
+   ============================================================ */
 @layer utilities {
-    .font-heading {
-        font-family: "Bricolage Grotesque", sans-serif;
-    }
-    .font-body {
-        font-family: "Geist", sans-serif;
-    }
-    .font-mono {
-        font-family: "JetBrains Mono", monospace;
-    }
-    /* Keep existing class names but redefine to premium purple */
+    /* Surfaces (formerly dark "page" / "card" backgrounds → now near-white) */
+    .bg-zinc-950 { background-color: #ffffff; }
+    .bg-zinc-900 { background-color: #f4f4f6; }
+    .bg-zinc-800 { background-color: #e8e8ec; }
+
+    /* Borders (formerly dark borders → now soft light borders) */
+    .border-zinc-950, .border-zinc-900 { border-color: rgba(13, 13, 16, 0.07); }
+    .border-zinc-800 { border-color: rgba(13, 13, 16, 0.10); }
+    .border-zinc-700 { border-color: rgba(13, 13, 16, 0.15); }
+    .divide-zinc-900 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(13, 13, 16, 0.07); }
+    .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(13, 13, 16, 0.10); }
+
+    /* Text (formerly light-on-dark hierarchy → flipped) */
+    .text-zinc-100 { color: hsl(var(--ink)); }
+    .text-zinc-200 { color: hsl(var(--ink)); }
+    .text-zinc-300 { color: hsl(var(--ink-soft)); }
+    .text-zinc-400 { color: var(--silver-600); }
+    .text-zinc-500 { color: var(--silver-500); }
+    .text-zinc-600 { color: var(--silver-400); }
+    .text-zinc-700 { color: var(--silver-400); }
+    .text-white { color: #ffffff; } /* keep white when on dark CTA buttons */
+
+    /* Hover surfaces (semi-dark hover on white pages now) */
+    .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(13, 13, 16, 0.03); }
+    .hover\:bg-white\/\[0\.015\]:hover { background-color: rgba(13, 13, 16, 0.02); }
+    .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(13, 13, 16, 0.035); }
+    .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(13, 13, 16, 0.045); }
+    .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(13, 13, 16, 0.06); }
+    .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(13, 13, 16, 0.08); }
+    .hover\:bg-white\/5:hover { background-color: rgba(13, 13, 16, 0.05); }
+    .hover\:bg-white\/10:hover { background-color: rgba(13, 13, 16, 0.07); }
+    .active\:bg-white\/\[0\.03\]:active { background-color: rgba(13, 13, 16, 0.035); }
+    .active\:bg-white\/\[0\.04\]:active { background-color: rgba(13, 13, 16, 0.045); }
+    .active\:bg-white\/\[0\.05\]:active { background-color: rgba(13, 13, 16, 0.06); }
+    .active\:bg-white\/\[0\.06\]:active { background-color: rgba(13, 13, 16, 0.07); }
+    .active\:bg-white\/\[0\.08\]:active { background-color: rgba(13, 13, 16, 0.09); }
+
+    /* White borders → soft ink borders */
+    .border-white\/\[0\.05\], .border-white\/\[0\.06\] { border-color: rgba(13, 13, 16, 0.06); }
+    .border-white\/\[0\.08\] { border-color: rgba(13, 13, 16, 0.09); }
+    .border-white\/\[0\.10\], .border-white\/\[0\.12\] { border-color: rgba(13, 13, 16, 0.12); }
+    .border-white\/10 { border-color: rgba(13, 13, 16, 0.10); }
+    .border-white\/20 { border-color: rgba(13, 13, 16, 0.15); }
+    .ring-white\/10 { --tw-ring-color: rgba(13, 13, 16, 0.10); }
+    .ring-\[\#0a0a10\] { --tw-ring-color: #ffffff; }
+}
+
+/* ============================================================
+   App-level utilities (silver + glass + animations + safe area)
+   ============================================================ */
+@layer utilities {
+    .font-heading { font-family: "Bricolage Grotesque", sans-serif; }
+    .font-body { font-family: "Geist", sans-serif; }
+    .font-mono { font-family: "JetBrains Mono", monospace; }
+
+    /* ----- Silver primary accent (replaces vermillion purple) ----- */
     .text-accent-vermillion {
-        color: #a78bfa;
+        background: linear-gradient(135deg, #2d2d34 0%, #6b6b75 50%, #2d2d34 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
     }
     .bg-accent-vermillion {
-        background-color: #8b5cf6;
+        background: linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%);
+        color: #ffffff;
+        position: relative;
     }
-    .border-accent-vermillion {
-        border-color: #8b5cf6;
+    .bg-accent-vermillion:hover {
+        background: linear-gradient(135deg, #0d0d10 0%, #2a2a32 50%, #0d0d10 100%);
     }
+    .border-accent-vermillion { border-color: var(--silver-400); }
+
+    .glow-vermillion {
+        box-shadow:
+            0 0 0 1px rgba(13, 13, 16, 0.04),
+            0 12px 32px -10px rgba(13, 13, 16, 0.25);
+    }
+
+    /* Hover overrides used across the app — make ex-purple hover stay silver/dark */
+    .hover\:bg-\[\#A78BFA\]:hover {
+        background: linear-gradient(135deg, #0d0d10 0%, #2a2a32 50%, #0d0d10 100%);
+    }
+    .hover\:text-accent-vermillion:hover {
+        color: var(--silver-700);
+        -webkit-background-clip: initial;
+        background-clip: initial;
+        background: transparent;
+    }
+    .hover\:border-accent-vermillion:hover { border-color: var(--silver-500); }
+    .hover\:bg-accent-vermillion\/10:hover { background-color: rgba(155, 155, 170, 0.10); }
+
+    /* Helpers for backgrounds previously using bg-accent-vermillion/10 etc */
+    .bg-accent-vermillion\/10 { background-color: rgba(155, 155, 170, 0.10); color: hsl(var(--ink)); }
+    .bg-accent-vermillion\/20 { background-color: rgba(155, 155, 170, 0.18); color: hsl(var(--ink)); }
+    .border-accent-vermillion\/30 { border-color: rgba(155, 155, 170, 0.45); }
+    .border-accent-vermillion\/50 { border-color: rgba(155, 155, 170, 0.6); }
+    .text-accent-vermillion\/50 { color: rgba(107, 107, 117, 0.5); -webkit-background-clip: initial; background-clip: initial; background: transparent; }
+
+    /* True silver gradient (use class .silver-grad on text or bg) */
+    .silver-grad {
+        background: linear-gradient(135deg, #f4f4f8 0%, #d4d4dc 30%, #9a9aa3 50%, #c8c8d0 70%, #ececf0 100%);
+    }
+    .text-silver {
+        background: linear-gradient(135deg, #6b6b75, #b8b8c0, #6b6b75);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* Soft semantic colors */
+    .text-red-soft { color: var(--red-soft); }
+    .bg-red-soft { background-color: var(--red-soft); color: #fff; }
+    .bg-red-soft-bg { background-color: var(--red-soft-bg); }
+    .text-green-soft { color: var(--green-soft); }
+    .bg-green-soft { background-color: var(--green-soft); color: #fff; }
+    .bg-green-soft-bg { background-color: var(--green-soft-bg); }
+    .text-blue-soft { color: var(--blue-soft); }
+    .bg-blue-soft { background-color: var(--blue-soft); color: #fff; }
+    .bg-blue-soft-bg { background-color: var(--blue-soft-bg); }
+
+    /* Repurpose lucide colored utilities used in PostCard (heart / repost / etc) */
+    .text-emerald-400, .text-emerald-500 { color: var(--green-soft); }
+    .text-rose-400, .text-rose-500, .text-red-400, .text-red-500 { color: var(--red-soft); }
+    .text-sky-400, .text-sky-500, .text-blue-400, .text-blue-500 { color: var(--blue-soft); }
+
+    /* ----- Glass surfaces (light) ----- */
     .glass {
-        background: rgba(14, 14, 22, 0.72);
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+    }
+    .glass-deep {
+        background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(28px) saturate(180%);
         -webkit-backdrop-filter: blur(28px) saturate(180%);
     }
-    .glass-deep {
-        background: rgba(20, 20, 28, 0.85);
-        backdrop-filter: blur(32px) saturate(180%);
-        -webkit-backdrop-filter: blur(32px) saturate(180%);
-    }
-    .glow-vermillion {
-        box-shadow:
-            0 0 0 1px rgba(139, 92, 246, 0.18),
-            0 10px 40px -10px rgba(139, 92, 246, 0.5);
-    }
     .card-premium {
-        background: linear-gradient(
-            180deg,
-            rgba(28, 28, 38, 0.6) 0%,
-            rgba(20, 20, 28, 0.6) 100%
-        );
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #ffffff;
+        border: 1px solid rgba(13, 13, 16, 0.07);
         box-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.02) inset,
-            0 24px 60px -30px rgba(0, 0, 0, 0.8);
+            0 1px 0 rgba(255, 255, 255, 0.6) inset,
+            0 24px 60px -28px rgba(13, 13, 16, 0.18);
     }
     .ring-gradient {
         background:
-            linear-gradient(#0a0a10, #0a0a10) padding-box,
+            linear-gradient(#fff, #fff) padding-box,
             conic-gradient(
                     from 0deg,
-                    #a78bfa,
-                    #8b5cf6,
-                    #6d28d9,
-                    #c4b5fd,
-                    #a78bfa
-                )
-                border-box;
+                    #d4d4dc,
+                    #9a9aa3,
+                    #6b6b75,
+                    #c8c8d0,
+                    #d4d4dc
+                ) border-box;
         border: 2.5px solid transparent;
     }
-    .anim-fade-up {
-        animation: fadeUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+    /* Safe-area utilities */
+    .pt-safe { padding-top: var(--safe-top); }
+    .pb-safe { padding-bottom: var(--safe-bottom); }
+    .pl-safe { padding-left: var(--safe-left); }
+    .pr-safe { padding-right: var(--safe-right); }
+    .mb-safe { margin-bottom: var(--safe-bottom); }
+    .h-safe-bottom { height: var(--safe-bottom); }
+    .top-safe { top: var(--safe-top); }
+
+    /* Mobile page helpers */
+    .page-px { padding-left: 1rem; padding-right: 1rem; }
+    @media (min-width: 1024px) { .page-px { padding-left: 1.25rem; padding-right: 1.25rem; } }
+    .pb-mobile-nav {
+        padding-bottom: calc(var(--mobile-bottomnav-h) + var(--safe-bottom) + 12px);
     }
-    @keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(8px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    @media (min-width: 1024px) { .pb-mobile-nav { padding-bottom: 0; } }
+
+    /* Tap feedback */
+    .tap-shrink {
+        transition: transform 120ms ease, background-color 200ms ease, color 200ms ease;
     }
-    .anim-pop {
-        animation: pop 280ms cubic-bezier(0.16, 1.5, 0.5, 1) both;
-    }
-    @keyframes pop {
-        0% {
-            transform: scale(0.85);
-        }
-        60% {
-            transform: scale(1.22);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-    @keyframes pulse-dot {
-        0%,
-        100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 0.6;
-            transform: scale(1.4);
-        }
-    }
-    .pulse-dot {
-        animation: pulse-dot 1.8s ease-in-out infinite;
-    }
-    @keyframes shimmer {
-        0% {
-            background-position: -200% 0;
-        }
-        100% {
-            background-position: 200% 0;
-        }
-    }
+    .tap-shrink:active { transform: scale(0.94); }
+    .tap-press { transition: transform 100ms ease, background-color 200ms ease; }
+    .tap-press:active { transform: scale(0.97); background-color: rgba(13, 13, 16, 0.04); }
+
+    .scroll-mom { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
+
+    .anim-fade-up { animation: fadeUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .anim-slide-up { animation: slideUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .anim-sheet-up { animation: sheetUp 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .anim-pop { animation: pop 280ms cubic-bezier(0.16, 1.5, 0.5, 1) both; }
+    @keyframes pop { 0% { transform: scale(0.85); } 60% { transform: scale(1.22); } 100% { transform: scale(1); } }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.4); } }
+    .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     .text-shimmer {
-        background: linear-gradient(
-            90deg,
-            #a78bfa 0%,
-            #f5f5f7 50%,
-            #a78bfa 100%
-        );
+        background: linear-gradient(90deg, #9a9aa3 0%, #1a1a1f 50%, #9a9aa3 100%);
         background-size: 200% 100%;
         animation: shimmer 3s linear infinite;
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
     }
-    .tap-shrink {
-        transition:
-            transform 120ms ease,
-            background-color 200ms ease;
-    }
-    .tap-shrink:active {
-        transform: scale(0.94);
-    }
+    .ptr-indicator { display: grid; place-items: center; overflow: hidden; transition: height 200ms ease; }
+    .ptr-spin { animation: ptrSpin 700ms linear infinite; }
+    @keyframes ptrSpin { to { transform: rotate(360deg); } }
 }

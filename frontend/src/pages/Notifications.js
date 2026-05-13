@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell } from "lucide-react";
 import { api } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
+import { PageHeader } from "../components/PageHeader";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 
@@ -46,19 +47,15 @@ export default function Notifications() {
 
     return (
         <div data-testid="notifications-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900">
-                <div className="px-5 py-4">
-                    <h1 className="font-heading text-xl font-bold tracking-tight">Notificações</h1>
-                    <p className="font-mono text-xs text-zinc-500 mt-0.5">o que dizem sobre ti</p>
-                </div>
-                <div className="grid grid-cols-4 border-t border-zinc-900">
+            <PageHeader title="Notificações" subtitle="o que dizem sobre ti" testid="notifications-header">
+                <div className="grid grid-cols-4 border-t border-white/[0.05] no-scrollbar">
                     {FILTERS.map((f) => (
                         <button
                             key={f.key}
                             onClick={() => setFilter(f.key)}
                             data-testid={`notif-filter-${f.key}`}
-                            className={`py-2.5 font-heading font-semibold text-xs uppercase tracking-wide transition relative ${
-                                filter === f.key ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
+                            className={`py-2.5 font-heading font-semibold text-[11px] uppercase tracking-wide transition relative active:scale-[0.97] ${
+                                filter === f.key ? "text-white" : "text-zinc-500 active:bg-white/[0.03]"
                             }`}
                         >
                             {f.label}
@@ -68,12 +65,18 @@ export default function Notifications() {
                         </button>
                     ))}
                 </div>
-            </div>
+            </PageHeader>
 
             {loading ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : filtered.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma notificação aqui.</div>
+                <div className="px-6 py-16 text-center">
+                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
+                        <Bell size={28} className="text-accent-vermillion" />
+                    </div>
+                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Tudo calmo por aqui</p>
+                    <p className="text-zinc-500 text-sm mt-1">Volta mais tarde para novidades.</p>
+                </div>
             ) : (
                 filtered.map((n) => {
                     const linkTo = n.post_id ? `/post/${n.post_id}` : `/u/${n.from_user?.username}`;

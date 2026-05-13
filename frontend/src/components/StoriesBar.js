@@ -144,7 +144,7 @@ export function StoriesBar() {
                         <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-white/15 grid place-items-center group-hover:border-accent-vermillion transition">
                             <Avatar user={user} size={62} />
                         </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 bg-accent-vermillion text-white rounded-full w-6 h-6 grid place-items-center border-[3px] border-[#0a0a10] shadow-lg shadow-[#8B5CF6]/40">
+                        <div className="absolute -bottom-0.5 -right-0.5 text-white rounded-full w-6 h-6 grid place-items-center border-[3px] border-white shadow-lg" style={{ background: "linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%)" }}>
                             <Plus size={13} strokeWidth={3} />
                         </div>
                     </div>

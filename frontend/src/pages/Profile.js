@@ -9,6 +9,7 @@ import { PostCard } from "../components/PostCard";
 import { StatsCard } from "../components/StatsCard";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
+import { PageHeader } from "../components/PageHeader";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 
@@ -98,28 +99,32 @@ export default function Profile() {
 
     return (
         <div data-testid="profile-page">
-            <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight flex items-center gap-1.5">
-                    {profile.name} {profile.verified && <VerifiedBadge size={16} />}
-                </h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">{stats?.posts_count ?? 0} publicações</p>
-            </div>
+            <PageHeader
+                title={
+                    <span className="inline-flex items-center gap-1.5">
+                        {profile.name} {profile.verified && <VerifiedBadge size={16} />}
+                    </span>
+                }
+                subtitle={`${stats?.posts_count ?? 0} publicações`}
+                back
+                testid="profile-header"
+            />
 
-            <div className="relative h-48 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#8B5CF6]/30">
+            <div className="relative h-32 lg:h-48 bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]/40">
                 {profile.banner && <img src={profile.banner} alt="" className="w-full h-full object-cover" />}
             </div>
 
-            <div className="px-5 -mt-12 relative">
-                <div className="flex items-end justify-between">
-                    <div className="border-4 border-[#0A0A0A] rounded-full">
-                        <Avatar user={profile} size={96} showOnline />
+            <div className="px-4 lg:px-5 -mt-10 lg:-mt-12 relative">
+                <div className="flex items-end justify-between gap-3">
+                    <div className="border-4 border-[#0a0a10] rounded-full">
+                        <Avatar user={profile} size={80} showOnline />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pb-1">
                         {profile.is_self ? (
                             <button
                                 onClick={() => navigate("/settings")}
                                 data-testid="edit-profile-btn"
-                                className="px-5 py-2 border border-zinc-700 hover:bg-zinc-900 rounded-full font-heading font-semibold text-sm uppercase tracking-wide transition active:scale-95"
+                                className="px-4 lg:px-5 py-2 border border-white/[0.12] hover:bg-white/[0.04] rounded-full font-heading font-semibold text-[12px] lg:text-sm uppercase tracking-wide transition active:scale-95"
                             >
                                 Editar perfil
                             </button>
@@ -128,16 +133,17 @@ export default function Profile() {
                                 <button
                                     onClick={() => navigate(`/messages/${profile.id}`)}
                                     data-testid="message-profile-btn"
-                                    className="p-2.5 border border-zinc-700 hover:bg-zinc-900 rounded-full transition active:scale-95"
+                                    className="p-2.5 border border-white/[0.12] hover:bg-white/[0.04] rounded-full transition active:scale-95"
+                                    aria-label="enviar mensagem"
                                 >
                                     <MessageCircle size={16} />
                                 </button>
                                 <button
                                     onClick={toggleFollow}
                                     data-testid="follow-profile-btn"
-                                    className={`px-5 py-2 rounded-full font-heading font-semibold text-sm uppercase tracking-wide transition active:scale-95 ${
+                                    className={`px-4 lg:px-5 py-2 rounded-full font-heading font-semibold text-[12px] lg:text-sm uppercase tracking-wide transition active:scale-95 ${
                                         profile.is_following
-                                            ? "border border-zinc-700 hover:bg-accent-vermillion/10 hover:border-accent-vermillion hover:text-accent-vermillion"
+                                            ? "border border-white/[0.12] hover:bg-accent-vermillion/10 hover:border-accent-vermillion hover:text-accent-vermillion"
                                             : "bg-white text-black hover:bg-zinc-200 glow-vermillion"
                                     }`}
                                 >
@@ -148,13 +154,13 @@ export default function Profile() {
                     </div>
                 </div>
 
-                <div className="mt-4">
-                    <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
+                <div className="mt-3 lg:mt-4">
+                    <h2 className="font-heading text-xl lg:text-2xl font-bold flex items-center gap-2">
                         {profile.name}
-                        {profile.verified && <VerifiedBadge size={20} />}
+                        {profile.verified && <VerifiedBadge size={18} />}
                         {profile.private && <Lock size={14} className="text-zinc-500" />}
                     </h2>
-                    <p className="font-mono text-sm text-zinc-500">@{profile.username}</p>
+                    <p className="font-mono text-[13px] lg:text-sm text-zinc-500">@{profile.username}</p>
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                         <div className="inline-flex items-center gap-1.5 bg-accent-vermillion/10 border border-accent-vermillion/30 rounded-full px-3 py-1" data-testid="reputation-badge">
