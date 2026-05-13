@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { PostCard } from "../components/PostCard";
+import { PostSkeletonList } from "../components/Skeleton";
 import { api } from "../lib/api";
+import { useLiveTime } from "../hooks/useLiveTime";
 
 export default function Bookmarks() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    useLiveTime(30000);
 
     useEffect(() => {
         api.get("/posts/bookmarks").then((r) => {
@@ -20,7 +23,7 @@ export default function Bookmarks() {
                 <p className="font-mono text-xs text-zinc-500 mt-0.5">o que você guardou</p>
             </div>
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <PostSkeletonList count={3} />
             ) : posts.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nada salvo ainda.</div>
             ) : (

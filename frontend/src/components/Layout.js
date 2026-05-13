@@ -4,22 +4,37 @@ import { Sidebar } from "./Sidebar";
 import { RightSidebar } from "./RightSidebar";
 import { Composer } from "./Composer";
 import { OnboardingModal } from "./OnboardingModal";
+import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileFAB } from "./MobileFAB";
+import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useGlobalNotifications } from "../hooks/useGlobalNotifications";
 import { X } from "lucide-react";
 
 export function Layout() {
     const [composeOpen, setComposeOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
+
+    useKeyboardShortcuts({
+        openCompose: () => setComposeOpen(true),
+        openHelp: () => setHelpOpen(true),
+    });
+    useGlobalNotifications();
 
     return (
         <div className="min-h-screen text-zinc-100">
             <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,640px)_340px] max-w-[1300px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
                 <Sidebar onCompose={() => setComposeOpen(true)} />
-                <main className="border-x border-zinc-900 min-h-screen pb-20 lg:pb-0">
+                <main className="border-x border-zinc-900 min-h-screen pb-24 lg:pb-0">
                     <Outlet context={{ openCompose: () => setComposeOpen(true) }} />
                 </main>
                 <RightSidebar />
             </div>
 
             <OnboardingModal />
+            <MobileBottomNav />
+            <MobileFAB onClick={() => setComposeOpen(true)} />
+            {helpOpen && <KeyboardShortcutsHelp onClose={() => setHelpOpen(false)} />}
 
             {composeOpen && (
                 <div

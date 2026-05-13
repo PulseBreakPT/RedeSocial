@@ -7,18 +7,8 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { RichText } from "./RichText";
 import { ImageLightbox } from "./ImageLightbox";
 import { useAuth } from "../context/AuthContext";
+import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
-
-function timeAgo(iso) {
-    if (!iso) return "";
-    const date = new Date(iso);
-    const diff = (Date.now() - date.getTime()) / 1000;
-    if (diff < 60) return "agora";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d`;
-    return date.toLocaleDateString("pt-BR");
-}
 
 function PostBody({ post, onChange, clickable, showRepostHeader }) {
     const { user } = useAuth();
@@ -123,7 +113,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                             {post.author?.verified && <VerifiedBadge size={14} />}
                             <span className="font-mono text-sm text-zinc-500 truncate">@{post.author?.username}</span>
                             <span className="text-zinc-700">·</span>
-                            <span className="font-mono text-sm text-zinc-500">{timeAgo(post.created_at)}</span>
+                            <span className="font-mono text-sm text-zinc-500" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
                             {isOwn && !showRepostHeader && (
                                 <button
                                     onClick={remove}

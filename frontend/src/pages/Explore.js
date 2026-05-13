@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { PostCard } from "../components/PostCard";
+import { PostSkeletonList } from "../components/Skeleton";
 import { api } from "../lib/api";
+import { useLiveTime } from "../hooks/useLiveTime";
 
 export default function Explore() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    useLiveTime(30000);
 
     useEffect(() => {
         api.get("/posts/explore").then((r) => {
@@ -20,7 +23,7 @@ export default function Explore() {
                 <p className="font-mono text-xs text-zinc-500 mt-0.5">tudo o que está rolando</p>
             </div>
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <PostSkeletonList count={4} />
             ) : posts.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma publicação ainda. Seja o primeiro!</div>
             ) : (

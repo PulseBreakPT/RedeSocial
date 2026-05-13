@@ -940,6 +940,30 @@ async def get_messages(other_user_id: str, user=Depends(get_current_user)):
     return {"other_user": public_user(other) if other else None, "messages": msgs}
 
 
+@api.post("/messages/{other_user_id}/typing")
+async def set_typing(other_user_id: str, user=Depends(get_current_user)):
+    expires = (datetime.now(timezone.utc) + timedelta(seconds=6)).isoformat()
+    await db.typing_state.update_one(
+        {"sender_id": user["id"], "recipient_id": other_user_id},
+        {"$set": {
+            "sender_id": user["id"], "recipient_id": other_user_id,
+            "expires_at": expires,
+        }},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@api.get("/messages/{other_user_id}/typing-status")
+async def get_typing(other_user_id: str, user=Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    rec = await db.typing_state.find_one(
+        {"sender_id": other_user_id, "recipient_id": user["id"], "expires_at": {"$gt": now}},
+        {"_id": 0},
+    )
+    return {"typing": bool(rec)}
+
+
 @api.post("/messages")
 async def send_message(payload: MessageIn, user=Depends(get_current_user)):
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})

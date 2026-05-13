@@ -3,16 +3,21 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Send, ArrowLeft } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
+import { ConvSkeleton } from "../components/Skeleton";
+import { smartTime } from "../lib/time";
+import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 
 function ConversationList({ activeId, onSelect }) {
     const [convs, setConvs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    useLiveTime(30000);
 
     const load = async () => {
         try {
             const { data } = await api.get("/conversations");
             setConvs(data);
-        } catch {}
+        } catch {} finally { setLoading(false); }
     };
 
     useEffect(() => {
@@ -20,6 +25,8 @@ function ConversationList({ activeId, onSelect }) {
         const id = setInterval(load, 5000);
         return () => clearInterval(id);
     }, []);
+
+    if (loading) return <ConvSkeleton />;
 
     return (
         <div className="divide-y divide-zinc-900" data-testid="conversations-list">
@@ -37,17 +44,20 @@ function ConversationList({ activeId, onSelect }) {
                             activeId === c.other_user?.id ? "bg-white/[0.04]" : ""
                         }`}
                     >
-                        <Avatar user={c.other_user} size={44} />
+                        <Avatar user={c.other_user} size={44} showOnline />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                                 <div className="font-heading font-semibold text-sm truncate">{c.other_user?.name}</div>
+                                <span className="font-mono text-[10px] text-zinc-500">{smartTime(c.last_at)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="font-mono text-xs text-zinc-500 truncate flex-1">{c.last_message || "—"}</div>
                                 {c.unread > 0 && (
                                     <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-accent-vermillion text-[10px] font-mono grid place-items-center text-white">
                                         {c.unread}
                                     </span>
                                 )}
                             </div>
-                            <div className="font-mono text-xs text-zinc-500 truncate">{c.last_message || "—"}</div>
                         </div>
                     </button>
                 ))
@@ -60,12 +70,21 @@ function ChatView({ other, onBack }) {
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const [me, setMe] = useState(null);
+    const [typing, setTyping] = useState(false);
     const scrollRef = useRef(null);
+    const typingTimerRef = useRef(null);
 
     const load = async () => {
         try {
             const { data } = await api.get(`/messages/${other.id}`);
             setMessages(data.messages);
+        } catch {}
+    };
+
+    const checkTyping = async () => {
+        try {
+            const { data } = await api.get(`/messages/${other.id}/typing-status`);
+            setTyping(data.typing);
         } catch {}
     };
 
@@ -75,13 +94,27 @@ function ChatView({ other, onBack }) {
 
     useEffect(() => {
         load();
-        const id = setInterval(load, 3000);
+        checkTyping();
+        const id = setInterval(() => {
+            load();
+            checkTyping();
+        }, 3000);
         return () => clearInterval(id);
+        // eslint-disable-next-line
     }, [other.id]);
 
     useEffect(() => {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }, [messages]);
+    }, [messages, typing]);
+
+    const handleType = (v) => {
+        setText(v);
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+        api.post(`/messages/${other.id}/typing`).catch(() => {});
+        typingTimerRef.current = setTimeout(() => {
+            // stop sending typing pings
+        }, 1500);
+    };
 
     const send = async () => {
         if (!text.trim()) return;
@@ -101,15 +134,17 @@ function ChatView({ other, onBack }) {
                 <button onClick={onBack} className="lg:hidden p-1 hover:bg-white/5 rounded-full">
                     <ArrowLeft size={18} />
                 </button>
-                <Avatar user={other} size={36} />
-                <div>
+                <Avatar user={other} size={36} showOnline />
+                <div className="flex-1">
                     <div className="font-heading font-semibold text-sm">{other.name}</div>
-                    <div className="font-mono text-xs text-zinc-500">@{other.username}</div>
+                    <div className="font-mono text-xs text-zinc-500">
+                        {other.online ? "online" : `@${other.username}`}
+                    </div>
                 </div>
             </div>
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.length === 0 && (
+                {messages.length === 0 && !typing && (
                     <div className="text-center text-zinc-600 font-mono text-sm py-10">Diga olá para {other.name} 👋</div>
                 )}
                 {messages.map((m) => {
@@ -122,18 +157,28 @@ function ChatView({ other, onBack }) {
                                         ? "bg-accent-vermillion text-white rounded-br-md"
                                         : "bg-zinc-900 text-zinc-100 rounded-bl-md border border-zinc-800"
                                 }`}
+                                title={new Date(m.created_at).toLocaleString("pt-BR")}
                             >
                                 {m.content}
                             </div>
                         </div>
                     );
                 })}
+                {typing && (
+                    <div className="flex justify-start" data-testid="typing-indicator">
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="border-t border-zinc-900 p-3 flex items-center gap-2">
                 <input
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => handleType(e.target.value)}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
