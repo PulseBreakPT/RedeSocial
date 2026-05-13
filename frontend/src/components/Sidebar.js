@@ -50,10 +50,9 @@ export function Sidebar({ onCompose }) {
             <div className="px-3 mb-7">
                 <h1 className="font-display text-[34px] leading-none tracking-tight text-black flex items-baseline gap-1.5">
                     <span className="silver-foil text-[26px] translate-y-[2px]">◆</span>
-                    <span className="italic font-light">vermillion</span>
+                    <span className="">vermillion</span>
                 </h1>
-                <p className="type-overline mt-2 ml-1">une rede sociale · est. 2026</p>
-            </div>
+                            </div>
 
             <nav className="flex flex-col gap-0.5">
                 {items.map(({ to, label, icon: Icon, testid }) => (

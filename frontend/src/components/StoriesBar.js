@@ -49,28 +49,28 @@ function StoryViewer({ groups, startIndex, onClose }) {
 
     return (
         <div className="fixed inset-0 z-[90] bg-black/95 grid place-items-center" onClick={onClose} data-testid="story-viewer">
-            <div className="relative w-full max-w-md aspect-[9/16] bg-zinc-950 rounded-3xl overflow-hidden border border-white/10" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-md aspect-[9/16] bg-black rounded-3xl overflow-hidden border border-white/10 shadow-[0_40px_100px_-10px_rgba(0,0,0,0.6)]" onClick={(e) => e.stopPropagation()}>
                 <div className="absolute top-0 left-0 right-0 flex gap-1 p-3 z-30">
                     {group.stories.map((_, i) => (
-                        <div key={i} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden">
+                        <div key={i} className="flex-1 h-[2px] bg-white/25 rounded-full overflow-hidden">
                             <div className="h-full bg-white transition-all"
                                 style={{ width: `${i < si ? 100 : i === si ? progress : 0}%` }} />
                         </div>
                     ))}
                 </div>
                 <div className="absolute top-7 left-3 right-3 flex items-center gap-3 z-30">
-                    <Avatar user={group.author} size={36} className="border-2 border-white" />
+                    <Avatar user={group.author} size={36} className="ring-2 ring-white/80" />
                     <div className="flex-1">
-                        <div className="text-white font-heading font-semibold text-sm">{group.author.name}</div>
-                        <div className="text-zinc-300 font-mono text-xs">@{group.author.username}</div>
+                        <div className="text-white font-heading font-medium text-[14px] tracking-tight">{group.author.name}</div>
+                        <div className="text-white/70 font-mono text-[11px]">@{group.author.username}</div>
                     </div>
-                    <button onClick={onClose} data-testid="story-close" className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
-                        <X size={16} />
+                    <button onClick={onClose} data-testid="story-close" className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md">
+                        <X size={16} strokeWidth={1.8} />
                     </button>
                 </div>
                 <img src={story.image} alt="" className="w-full h-full object-cover" />
                 {story.content && (
-                    <div className="absolute bottom-16 left-4 right-4 z-30 text-white text-lg font-heading font-semibold drop-shadow-lg">
+                    <div className="absolute bottom-16 left-4 right-4 z-30 text-white font-display text-[22px] font-light tracking-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
                         {story.content}
                     </div>
                 )}
@@ -80,7 +80,7 @@ function StoryViewer({ groups, startIndex, onClose }) {
                             try { await api.delete(`/stories/${story.id}`); toast.success("Story apagado"); onClose(); }
                             catch (e) { toast.error(formatApiError(e)); }
                         }}
-                        className="absolute bottom-4 right-4 z-30 text-xs font-mono uppercase tracking-wide bg-black/60 hover:bg-accent-vermillion text-white px-3 py-1.5 rounded-full">
+                        className="absolute bottom-4 right-4 z-30 text-[10px] font-mono uppercase tracking-[0.16em] bg-white/10 hover:bg-red-soft/85 text-white px-3 py-1.5 rounded-full backdrop-blur-md transition">
                         Apagar
                     </button>
                 )}
@@ -132,7 +132,7 @@ export function StoriesBar() {
     const others = groups.filter((g) => g.author.id !== user?.id);
 
     return (
-        <div className="border-b border-white/[0.05] px-4 py-4 overflow-x-auto scroll-smooth" data-testid="stories-bar">
+        <div className="hairline-b px-4 py-5 overflow-x-auto scroll-smooth no-scrollbar" data-testid="stories-bar">
             <div className="flex gap-4 items-start">
                 <button
                     onClick={() => fileRef.current?.click()}
@@ -141,14 +141,14 @@ export function StoriesBar() {
                     className="flex flex-col items-center gap-2 group flex-shrink-0 tap-shrink"
                 >
                     <div className="relative">
-                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-white/15 grid place-items-center group-hover:border-accent-vermillion transition">
+                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-black/40 transition">
                             <Avatar user={user} size={62} />
                         </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 text-white rounded-full w-6 h-6 grid place-items-center border-[3px] border-white shadow-lg" style={{ background: "linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%)" }}>
-                            <Plus size={13} strokeWidth={3} />
+                        <div className="absolute -bottom-0.5 -right-0.5 bg-black text-white rounded-full w-6 h-6 grid place-items-center border-[3px] border-white shadow-md">
+                            <Plus size={12} strokeWidth={2.5} />
                         </div>
                     </div>
-                    <span className="font-mono text-[10px] text-zinc-400 group-hover:text-white max-w-[72px] truncate">o teu story</span>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-black/45 group-hover:text-black max-w-[72px] truncate">novo story</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" data-testid="story-file-input" />
 
@@ -174,10 +174,12 @@ function StoryThumb({ group, label, onClick }) {
             data-testid={`story-thumb-${group.author.username}`}
             className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
         >
-            <div className={`p-[3px] rounded-full ${group.has_unseen ? "ring-gradient" : "bg-zinc-800"}`}>
-                <Avatar user={group.author} size={62} />
+            <div className={`p-[3px] rounded-full ${group.has_unseen ? "ring-gradient" : "bg-black/10"}`}>
+                <div className="p-[2px] rounded-full bg-white">
+                    <Avatar user={group.author} size={58} />
+                </div>
             </div>
-            <span className="font-mono text-[10px] text-zinc-400 group-hover:text-white max-w-[72px] truncate">{label}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-black/45 group-hover:text-black max-w-[72px] truncate">{label}</span>
         </button>
     );
 }

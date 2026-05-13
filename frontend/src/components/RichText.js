@@ -19,7 +19,7 @@ export function RichText({ text, className = "" }) {
                     key={key++}
                     to={`/tag/${token.slice(1).toLowerCase()}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-accent-vermillion hover:underline"
+                    className="text-black underline-offset-2 hover:underline decoration-black/30 font-medium"
                 >
                     {token}
                 </Link>,
@@ -30,7 +30,7 @@ export function RichText({ text, className = "" }) {
                     key={key++}
                     to={`/u/${token.slice(1).toLowerCase()}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-accent-vermillion hover:underline"
+                    className="text-black underline-offset-2 hover:underline decoration-black/30 font-medium"
                 >
                     {token}
                 </Link>,

@@ -9,13 +9,20 @@ import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 
 const iconFor = (type) => {
-    if (type === "like") return <Heart size={18} className="text-accent-vermillion" fill="currentColor" />;
-    if (type === "comment") return <MessageCircle size={18} className="text-blue-400" />;
-    if (type === "follow") return <UserPlus size={18} className="text-emerald-400" />;
-    if (type === "repost") return <Repeat2 size={18} className="text-emerald-400" />;
-    if (type === "quote") return <Quote size={18} className="text-cyan-400" />;
-    if (type === "mention") return <AtSign size={18} className="text-accent-vermillion" />;
+    if (type === "like") return <Heart size={16} strokeWidth={1.6} className="text-red-soft" fill="currentColor" />;
+    if (type === "comment") return <MessageCircle size={16} strokeWidth={1.6} className="text-blue-soft" />;
+    if (type === "follow") return <UserPlus size={16} strokeWidth={1.6} className="text-green-soft" />;
+    if (type === "repost") return <Repeat2 size={16} strokeWidth={1.6} className="text-green-soft" />;
+    if (type === "quote") return <Quote size={16} strokeWidth={1.6} className="text-blue-soft" />;
+    if (type === "mention") return <AtSign size={16} strokeWidth={1.6} className="text-black" />;
     return null;
+};
+
+const bgFor = (type) => {
+    if (type === "like") return "bg-red-soft-bg";
+    if (type === "follow" || type === "repost") return "bg-green-soft-bg";
+    if (type === "comment" || type === "quote") return "bg-blue-soft-bg";
+    return "bg-black/[0.04]";
 };
 
 const FILTERS = [
@@ -47,20 +54,20 @@ export default function Notifications() {
 
     return (
         <div data-testid="notifications-page">
-            <PageHeader title="Notificações" subtitle="o que dizem sobre ti" testid="notifications-header">
-                <div className="grid grid-cols-4 border-t border-white/[0.05] no-scrollbar">
+            <PageHeader title="Notificações" subtitle="Toda a tua atividade" testid="notifications-header">
+                <div className="grid grid-cols-4 hairline-t">
                     {FILTERS.map((f) => (
                         <button
                             key={f.key}
                             onClick={() => setFilter(f.key)}
                             data-testid={`notif-filter-${f.key}`}
-                            className={`py-2.5 font-heading font-semibold text-[11px] uppercase tracking-wide transition relative active:scale-[0.97] ${
-                                filter === f.key ? "text-white" : "text-zinc-500 active:bg-white/[0.03]"
+                            className={`py-3 font-mono text-[10px] uppercase tracking-[0.18em] transition relative active:scale-[0.97] ${
+                                filter === f.key ? "text-black" : "text-black/40 hover:text-black/70"
                             }`}
                         >
                             {f.label}
                             {filter === f.key && (
-                                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-accent-vermillion rounded-full" />
+                                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-black rounded-full" />
                             )}
                         </button>
                     ))}
@@ -68,14 +75,17 @@ export default function Notifications() {
             </PageHeader>
 
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
+                <div className="p-12 text-center type-overline">a carregar…</div>
             ) : filtered.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <Bell size={28} className="text-accent-vermillion" />
+                <div className="px-6 py-20 text-center anim-fade-up">
+                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
+                        <Bell size={24} strokeWidth={1.4} className="text-black/70" />
                     </div>
-                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Tudo calmo por aqui</p>
-                    <p className="text-zinc-500 text-sm mt-1">Volta mais tarde para novidades.</p>
+                    <p className="type-overline mb-2">Tudo lido</p>
+                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">
+                        Tudo calmo por aqui.
+                    </h3>
+                    <p className="text-black/55 text-sm mt-2">Volta mais tarde para novidades.</p>
                 </div>
             ) : (
                 filtered.map((n) => {
@@ -85,23 +95,28 @@ export default function Notifications() {
                             to={linkTo}
                             key={n.id}
                             data-testid={`notification-${n.id}`}
-                            className={`flex items-start gap-4 p-5 border-b border-zinc-900 transition-colors hover:bg-white/[0.02] ${
-                                n.read ? "" : "bg-accent-vermillion/[0.04]"
+                            className={`flex items-start gap-3 px-4 lg:px-5 py-4 hairline-b transition-colors hover:bg-black/[0.015] ${
+                                n.read ? "" : "bg-black/[0.02]"
                             }`}
                         >
-                            <div className="pt-1">{iconFor(n.type)}</div>
+                            <div className={`w-9 h-9 rounded-full grid place-items-center flex-shrink-0 ${bgFor(n.type)}`}>
+                                {iconFor(n.type)}
+                            </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <Avatar user={n.from_user} size={32} />
-                                    <div className="flex-1">
-                                        <span className="font-heading font-semibold text-sm flex items-center gap-1">
+                                    <Avatar user={n.from_user} size={28} />
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-heading font-medium text-[14px] tracking-tight flex items-center gap-1 text-black truncate">
                                             {n.from_user?.name}
-                                            {n.from_user?.verified && <VerifiedBadge size={12} />}
+                                            {n.from_user?.verified && <VerifiedBadge size={11} />}
                                         </span>
                                     </div>
-                                    <span className="font-mono text-xs text-zinc-500">{smartTime(n.created_at)}</span>
+                                    <span className="font-mono text-[10px] text-black/40 flex-shrink-0">{smartTime(n.created_at)}</span>
+                                    {!n.read && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" aria-label="não lida" />
+                                    )}
                                 </div>
-                                <p className="mt-2 text-sm text-zinc-300">{n.text}</p>
+                                <p className="mt-1.5 text-sm text-black/70 leading-relaxed line-clamp-2">{n.text}</p>
                             </div>
                         </Link>
                     );

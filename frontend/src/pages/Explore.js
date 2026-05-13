@@ -20,16 +20,17 @@ export default function Explore() {
 
     return (
         <div data-testid="explore-page">
-            <PageHeader title="Explorar" subtitle="tudo o que está rolando" testid="explore-header" />
+            <PageHeader title="Explorar" subtitle="Posts em destaque" testid="explore-header" />
             {loading ? (
                 <PostSkeletonList count={4} />
             ) : posts.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <Compass size={28} className="text-accent-vermillion" />
+                <div className="px-6 py-20 text-center anim-fade-up">
+                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
+                        <Compass size={26} strokeWidth={1.4} className="text-black/70" />
                     </div>
-                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Sem publicações</p>
-                    <p className="text-zinc-500 text-sm mt-1">Volta mais tarde para explorar.</p>
+                    <p className="type-overline mb-2">Nada por aqui</p>
+                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Sem publicações</h3>
+                    <p className="text-black/55 text-sm mt-2">Volta mais tarde para explorar.</p>
                 </div>
             ) : (
                 posts.map((p) => (

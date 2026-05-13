@@ -30,14 +30,15 @@ function ConversationList({ activeId, onSelect }) {
     if (loading) return <ConvSkeleton />;
 
     return (
-        <div className="divide-y divide-white/[0.05]" data-testid="conversations-list">
+        <div data-testid="conversations-list">
             {convs.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <MessageCircle size={28} className="text-accent-vermillion" />
+                <div className="px-6 py-20 text-center anim-fade-up">
+                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
+                        <MessageCircle size={26} strokeWidth={1.4} className="text-black/70" />
                     </div>
-                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Sem conversas ainda</p>
-                    <p className="text-zinc-500 text-sm mt-1">Abre o perfil de alguém e toca em mensagem para começar.</p>
+                    <p className="type-overline mb-2">Sem mensagens</p>
+                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Sem conversas ainda</h3>
+                    <p className="text-black/55 text-sm mt-2">Abre o perfil de alguém e toca em mensagem para começar.</p>
                 </div>
             ) : (
                 convs.map((c) => (
@@ -45,20 +46,22 @@ function ConversationList({ activeId, onSelect }) {
                         key={c.key}
                         onClick={() => onSelect(c.other_user)}
                         data-testid={`conversation-${c.other_user?.username}`}
-                        className={`w-full flex items-center gap-3 p-4 active:bg-white/[0.05] lg:hover:bg-white/[0.03] transition text-left ${
-                            activeId === c.other_user?.id ? "bg-white/[0.04]" : ""
+                        className={`w-full flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.015] transition text-left ${
+                            activeId === c.other_user?.id ? "bg-black/[0.025]" : ""
                         }`}
                     >
                         <Avatar user={c.other_user} size={48} showOnline />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                                <div className="font-heading font-semibold text-[15px] truncate">{c.other_user?.name}</div>
-                                <span className="font-mono text-[10px] text-zinc-500 flex-shrink-0">{smartTime(c.last_at)}</span>
+                                <div className="font-heading font-medium tracking-tight text-[15px] truncate text-black">{c.other_user?.name}</div>
+                                <span className="font-mono text-[10px] text-black/45 flex-shrink-0">{smartTime(c.last_at)}</span>
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <div className={`text-[13px] truncate flex-1 ${c.unread > 0 ? "text-white font-medium" : "text-zinc-500"}`}>{c.last_message || "—"}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                                <div className={`text-[13px] truncate flex-1 ${c.unread > 0 ? "text-black font-medium" : "text-black/55"}`}>
+                                    {c.last_message || "—"}
+                                </div>
                                 {c.unread > 0 && (
-                                    <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-accent-vermillion text-[10px] font-mono grid place-items-center text-white font-bold">
+                                    <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-black text-[10px] font-mono grid place-items-center text-white font-bold">
                                         {c.unread}
                                     </span>
                                 )}
@@ -116,9 +119,7 @@ function ChatView({ other, onBack }) {
         setText(v);
         if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
         api.post(`/messages/${other.id}/typing`).catch(() => {});
-        typingTimerRef.current = setTimeout(() => {
-            // stop sending typing pings
-        }, 1500);
+        typingTimerRef.current = setTimeout(() => {}, 1500);
     };
 
     const send = async () => {
@@ -135,30 +136,41 @@ function ChatView({ other, onBack }) {
 
     return (
         <div
-            className="fixed inset-0 lg:relative lg:inset-auto z-50 lg:z-auto flex flex-col bg-[#0a0a10] lg:h-screen"
+            className="fixed inset-0 lg:relative lg:inset-auto z-50 lg:z-auto flex flex-col bg-white lg:h-screen"
             data-testid="chat-view"
         >
-            <div className="glass border-b border-white/[0.06] px-3 lg:px-4 py-3 flex items-center gap-3 pt-safe">
+            <div className="glass border-b border-black/[0.06] px-3 lg:px-4 py-3 flex items-center gap-3 pt-safe">
                 <button
                     onClick={onBack}
-                    className="lg:hidden w-9 h-9 rounded-full grid place-items-center text-zinc-200 hover:bg-white/[0.06] active:scale-90 tap-shrink"
+                    className="lg:hidden w-9 h-9 rounded-full grid place-items-center text-black/70 hover:bg-black/[0.05] active:scale-90 tap-shrink"
                     aria-label="voltar"
                     data-testid="chat-back"
                 >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft size={18} strokeWidth={1.7} />
                 </button>
                 <Avatar user={other} size={38} showOnline />
                 <div className="flex-1 min-w-0">
-                    <div className="font-heading font-semibold text-sm truncate">{other.name}</div>
-                    <div className="font-mono text-[11px] text-zinc-500 truncate">
-                        {typing ? <span className="text-accent-vermillion">a escrever…</span> : other.online ? "online" : `@${other.username}`}
+                    <div className="font-heading font-medium text-[14px] tracking-tight truncate text-black">{other.name}</div>
+                    <div className="font-mono text-[11px] truncate">
+                        {typing ? (
+                            <span className="text-black/65 italic">a escrever…</span>
+                        ) : other.online ? (
+                            <span className="text-green-soft inline-flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-soft pulse-dot" /> online
+                            </span>
+                        ) : (
+                            <span className="text-black/45">@{other.username}</span>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 scroll-mom">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2 scroll-mom bg-paper grain isolate">
                 {messages.length === 0 && !typing && (
-                    <div className="text-center text-zinc-500 font-mono text-sm py-10">Diz olá a {other.name} 👋</div>
+                    <div className="text-center py-12">
+                        <p className="type-overline mb-2">Diz olá</p>
+                        <p className="font-display text-[22px] tracking-tight text-black/80">Diz olá a {other.name}.</p>
+                    </div>
                 )}
                 {messages.map((m) => {
                     const mine = me && m.sender_id === me.id;
@@ -167,8 +179,8 @@ function ChatView({ other, onBack }) {
                             <div
                                 className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-[15px] leading-snug anim-fade-up break-words ${
                                     mine
-                                        ? "bg-accent-vermillion text-white rounded-br-md"
-                                        : "bg-zinc-900 text-zinc-100 rounded-bl-md border border-white/[0.06]"
+                                        ? "bg-black text-white rounded-br-md shadow-sm"
+                                        : "bg-white text-black rounded-bl-md border border-black/[0.08] shadow-[0_2px_8px_-4px_rgba(13,13,16,0.08)]"
                                 }`}
                                 title={new Date(m.created_at).toLocaleString("pt-BR")}
                             >
@@ -179,16 +191,16 @@ function ChatView({ other, onBack }) {
                 })}
                 {typing && (
                     <div className="flex justify-start" data-testid="typing-indicator">
-                        <div className="bg-zinc-900 border border-white/[0.06] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <div className="bg-white border border-black/[0.08] rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-black/40 animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="border-t border-white/[0.06] p-2.5 lg:p-3 flex items-center gap-2 pb-safe bg-[#0a0a10]/95 backdrop-blur">
+            <div className="border-t border-black/[0.06] p-3 flex items-center gap-2 pb-safe bg-white/95 backdrop-blur">
                 <input
                     value={text}
                     onChange={(e) => handleType(e.target.value)}
@@ -198,18 +210,18 @@ function ChatView({ other, onBack }) {
                             send();
                         }
                     }}
-                    placeholder="Mensagem..."
+                    placeholder="Mensagem…"
                     data-testid="message-input"
-                    className="flex-1 bg-zinc-950 border border-white/[0.08] rounded-full px-5 py-3 text-[15px] focus:border-accent-vermillion outline-none"
+                    className="flex-1 bg-[#fafafa] border border-black/[0.08] rounded-full px-5 py-3 text-[15px] focus:border-black/30 focus:bg-white outline-none transition placeholder:text-black/35"
                 />
                 <button
                     onClick={send}
                     disabled={!text.trim()}
                     data-testid="send-message-btn"
-                    className="w-11 h-11 grid place-items-center rounded-full bg-accent-vermillion text-white hover:bg-[#A78BFA] active:scale-90 transition disabled:opacity-40"
+                    className="w-11 h-11 grid place-items-center rounded-full bg-black text-white hover:bg-black/85 active:scale-90 transition disabled:opacity-30 shadow-sm"
                     aria-label="enviar"
                 >
-                    <Send size={17} />
+                    <Send size={16} strokeWidth={1.7} />
                 </button>
             </div>
         </div>
@@ -233,7 +245,7 @@ export default function Messages() {
         <div data-testid="messages-page">
             {!active ? (
                 <>
-                    <PageHeader title="Mensagens" subtitle="suas conversas diretas" testid="messages-header" />
+                    <PageHeader title="Mensagens" subtitle="As tuas mensagens" testid="messages-header" />
                     <ConversationList
                         activeId={null}
                         onSelect={(u) => {

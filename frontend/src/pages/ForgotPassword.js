@@ -18,8 +18,8 @@ export default function ForgotPassword() {
         try {
             const { data } = await api.post("/auth/forgot-password", { email });
             setInfo(data.dev_token
-                ? `Token de redefinição: ${data.dev_token} (dev)`
-                : "Se o email existir, um link foi enviado.");
+                ? `Token de recuperação: ${data.dev_token} (dev)`
+                : "Se o email existir, recebes um link em instantes.");
             if (data.dev_token) setToken(data.dev_token);
             setStep("reset");
         } catch (err) {
@@ -35,7 +35,7 @@ export default function ForgotPassword() {
         setError("");
         try {
             await api.post("/auth/reset-password", { token, password });
-            setInfo("Palavra-passe redefinida com sucesso. Podes entrar.");
+            setInfo("Palavra-passe alterada. Já podes entrar.");
             setStep("done");
         } catch (err) {
             setError(formatApiError(err));
@@ -45,81 +45,106 @@ export default function ForgotPassword() {
     };
 
     return (
-        <div className="min-h-screen grid place-items-center p-8">
-            <div className="max-w-sm w-full">
-                <h1 className="font-heading text-3xl font-bold tracking-tight">Recuperar palavra-passe</h1>
-                <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">redefinir acesso</p>
+        <div className="min-h-screen grid place-items-center bg-paper grain isolate relative p-6 lg:p-12 overflow-hidden">
+            <div
+                className="absolute -top-32 -right-24 w-[520px] h-[520px] rounded-full opacity-40 pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
+            />
+            <div
+                className="absolute -bottom-40 -left-32 w-[640px] h-[640px] rounded-full opacity-30 pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }}
+            />
+            <div className="max-w-sm w-full relative">
+                <div className="text-center lg:text-left mb-10">
+                    <h1 className="font-display text-[36px] leading-none tracking-tight">
+                        <span className="silver-foil">◆</span> vermillion
+                    </h1>
+                </div>
+                <h2 className="font-display text-[34px] tracking-tight leading-[1.05]">Recuperar acesso</h2>
+                <p className="text-black/55 text-[14px] mt-2">
+                    {step === "request" && "Indica o email da tua conta para receberes um link."}
+                    {step === "reset" && "Define uma nova palavra-passe."}
+                    {step === "done" && "Tudo pronto."}
+                </p>
 
                 {step === "request" && (
-                    <form onSubmit={request} className="mt-8 space-y-5" data-testid="forgot-form">
+                    <form onSubmit={request} className="mt-8 space-y-4" data-testid="forgot-form">
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Email</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Email</label>
                             <input
                                 data-testid="forgot-email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 focus:border-accent-vermillion outline-none"
+                                placeholder="tu@exemplo.com"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
-                        {error && <div className="text-sm text-accent-vermillion font-mono">{error}</div>}
+                        {error && <div className="text-sm text-red-soft font-medium">{error}</div>}
                         <button
                             type="submit" disabled={busy}
                             data-testid="forgot-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
+                            className="btn-obsidian w-full text-[14px] py-3.5 disabled:opacity-50 mt-2"
                         >
-                            {busy ? "A enviar..." : "Enviar"}
+                            {busy ? "A enviar…" : "Enviar link"}
                         </button>
                     </form>
                 )}
 
                 {step === "reset" && (
-                    <form onSubmit={reset} className="mt-8 space-y-5" data-testid="reset-form">
-                        {info && <div className="text-xs font-mono text-emerald-400 break-all">{info}</div>}
+                    <form onSubmit={reset} className="mt-8 space-y-4" data-testid="reset-form">
+                        {info && (
+                            <div className="text-xs text-green-soft break-all bg-green-soft-bg border border-green-soft/30 rounded-lg px-3 py-2 font-medium">
+                                {info}
+                            </div>
+                        )}
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Token</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Token</label>
                             <input
                                 data-testid="reset-token"
                                 value={token}
                                 onChange={(e) => setToken(e.target.value)}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 focus:border-accent-vermillion outline-none font-mono text-xs"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition font-mono text-xs"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nova palavra-passe</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Nova palavra-passe</label>
                             <input
                                 data-testid="reset-password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required minLength={6}
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 focus:border-accent-vermillion outline-none"
+                                placeholder="Mínimo 6 caracteres"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
-                        {error && <div className="text-sm text-accent-vermillion font-mono">{error}</div>}
+                        {error && <div className="text-sm text-red-soft font-medium">{error}</div>}
                         <button
                             type="submit" disabled={busy}
                             data-testid="reset-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
+                            className="btn-obsidian w-full text-[14px] py-3.5 disabled:opacity-50 mt-2"
                         >
-                            {busy ? "A redefinir..." : "Redefinir"}
+                            {busy ? "A guardar…" : "Definir nova palavra-passe"}
                         </button>
                     </form>
                 )}
 
                 {step === "done" && (
                     <div className="mt-8 space-y-4">
-                        <p className="text-emerald-400 font-mono text-sm">{info}</p>
-                        <Link to="/login" className="block text-center w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition">
-                            Ir para login
+                        <div className="text-sm text-green-soft bg-green-soft-bg border border-green-soft/30 rounded-lg px-3 py-3 font-medium">
+                            {info}
+                        </div>
+                        <Link to="/login" className="btn-obsidian w-full text-[14px] py-3.5 inline-flex items-center justify-center">
+                            Ir para entrar
                         </Link>
                     </div>
                 )}
 
-                <p className="mt-8 font-mono text-sm text-zinc-500">
-                    <Link to="/login" className="text-accent-vermillion hover:underline">← Voltar para entrar</Link>
+                <p className="mt-8 text-[13px] text-black/55 text-center lg:text-left">
+                    <Link to="/login" className="text-black ink-link font-semibold">← Voltar para entrar</Link>
                 </p>
             </div>
         </div>

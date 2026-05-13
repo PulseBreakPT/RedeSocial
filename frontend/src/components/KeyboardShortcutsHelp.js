@@ -24,37 +24,37 @@ export function KeyboardShortcutsHelp({ onClose }) {
 
     return (
         <div
-            className="fixed inset-0 z-[95] bg-black/85 backdrop-blur-sm grid place-items-center p-4"
+            className="fixed inset-0 z-[95] bg-black/30 backdrop-blur-sm grid place-items-center p-4"
             onClick={onClose}
             data-testid="shortcuts-help"
         >
             <div
-                className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden"
+                className="w-full max-w-md bg-white border border-black/[0.08] rounded-2xl overflow-hidden shadow-[0_30px_80px_-20px_rgba(13,13,16,0.3)] anim-fade-up"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-900">
+                <div className="flex items-center justify-between px-6 py-4 hairline-b">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-accent-vermillion/10 grid place-items-center border border-accent-vermillion/30">
-                            <Keyboard size={16} className="text-accent-vermillion" />
+                        <div className="w-9 h-9 rounded-full ring-silver grid place-items-center">
+                            <Keyboard size={14} strokeWidth={1.5} className="text-black/70" />
                         </div>
                         <div>
-                            <h2 className="font-heading text-lg font-bold">Atalhos do teclado</h2>
-                            <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">navegue mais rápido</p>
+                            <h2 className="font-display text-[22px] tracking-tight leading-none text-black">Atalhos</h2>
+                            <p className="type-overline mt-1">Atalhos de teclado</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5" data-testid="shortcuts-close">
-                        <X size={16} />
+                    <button onClick={onClose} className="w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.04] text-black/55" data-testid="shortcuts-close">
+                        <X size={16} strokeWidth={1.7} />
                     </button>
                 </div>
-                <ul className="divide-y divide-zinc-900">
+                <ul>
                     {SHORTCUTS.map((s) => (
-                        <li key={s.label} className="flex items-center justify-between px-6 py-3">
-                            <span className="text-sm">{s.label}</span>
+                        <li key={s.label} className="flex items-center justify-between px-6 py-3 hairline-b last:border-b-0">
+                            <span className="text-[13.5px] font-body text-black/80">{s.label}</span>
                             <span className="flex gap-1">
                                 {s.keys.map((k) => (
                                     <kbd
                                         key={k}
-                                        className="font-mono text-[11px] uppercase px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 min-w-[22px] text-center"
+                                        className="font-mono text-[10px] uppercase px-2 py-1 rounded-md bg-[#fafafa] border border-black/[0.10] text-black/75 min-w-[24px] text-center shadow-[inset_0_-1px_0_rgba(13,13,16,0.06)]"
                                     >
                                         {k}
                                     </kbd>

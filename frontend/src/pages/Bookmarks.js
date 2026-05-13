@@ -20,16 +20,17 @@ export default function Bookmarks() {
 
     return (
         <div data-testid="bookmarks-page">
-            <PageHeader title="Guardados" subtitle="o que guardaste" back testid="bookmarks-header" />
+            <PageHeader title="Guardados" subtitle="Posts que guardaste" back testid="bookmarks-header" />
             {loading ? (
                 <PostSkeletonList count={3} />
             ) : posts.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <Bookmark size={28} className="text-accent-vermillion" />
+                <div className="px-6 py-20 text-center anim-fade-up">
+                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
+                        <Bookmark size={26} strokeWidth={1.4} className="text-black/70" />
                     </div>
-                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Nada guardado ainda</p>
-                    <p className="text-zinc-500 text-sm mt-1">Toca no marcador de uma publicação para guardá-la.</p>
+                    <p className="type-overline mb-2">Sem nada guardado</p>
+                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Nada guardado ainda</h3>
+                    <p className="text-black/55 text-sm mt-2">Toca no marcador de uma publicação para guardá-la.</p>
                 </div>
             ) : (
                 posts.map((p) => (

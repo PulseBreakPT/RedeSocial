@@ -3,6 +3,8 @@ import { MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChar
 import { api, formatApiError } from "../lib/api";
 import { toast } from "sonner";
 
+const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
+
 export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalytics }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -58,35 +60,39 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                     setOpen(!open);
                 }}
                 data-testid={`post-menu-${post.id}`}
-                className="text-zinc-600 hover:text-accent-vermillion p-1.5 rounded-full hover:bg-white/5"
+                className="text-black/45 hover:text-black p-1.5 rounded-full hover:bg-black/[0.04] transition"
             >
-                <MoreHorizontal size={16} />
+                <MoreHorizontal size={16} strokeWidth={1.7} />
             </button>
             {open && (
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-1 z-30 bg-zinc-950 border border-zinc-800 rounded-xl py-1.5 min-w-[180px] shadow-xl"
+                    className="absolute right-0 top-full mt-1.5 z-30 bg-white border border-black/[0.08] rounded-xl py-1.5 min-w-[200px] shadow-[0_20px_50px_-12px_rgba(13,13,16,0.18)] anim-fade-up"
                 >
-                    <button onClick={handleCopy} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
-                        <Link2 size={14} /> Copiar link
+                    <button onClick={handleCopy} className={itemCls}>
+                        <Link2 size={14} strokeWidth={1.6} className="text-black/55" /> Copiar link
                     </button>
                     {post.content && (
-                        <button onClick={handleCopyText} data-testid={`copy-text-${post.id}`} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
-                            <Type size={14} /> Copiar texto
+                        <button onClick={handleCopyText} data-testid={`copy-text-${post.id}`} className={itemCls}>
+                            <Type size={14} strokeWidth={1.6} className="text-black/55" /> Copiar texto
                         </button>
                     )}
                     {isOwn && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onAnalytics?.(); setOpen(false); }}
                             data-testid={`analytics-${post.id}`}
-                            className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5"
+                            className={itemCls}
                         >
-                            <BarChart3 size={14} /> Analytics
+                            <BarChart3 size={14} strokeWidth={1.6} className="text-black/55" /> Analytics
                         </button>
                     )}
                     {isOwn && (
-                        <button onClick={handlePin} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5">
-                            {post.pinned ? <><PinOff size={14} /> Desafixar</> : <><Pin size={14} /> Fixar no perfil</>}
+                        <button onClick={handlePin} className={itemCls}>
+                            {post.pinned ? (
+                                <><PinOff size={14} strokeWidth={1.6} className="text-black/55" /> Desafixar</>
+                            ) : (
+                                <><Pin size={14} strokeWidth={1.6} className="text-black/55" /> Fixar no perfil</>
+                            )}
                         </button>
                     )}
                     {canEdit && (
@@ -97,25 +103,28 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                                 setOpen(false);
                             }}
                             data-testid={`edit-post-${post.id}`}
-                            className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5"
+                            className={itemCls}
                         >
-                            <Pencil size={14} /> Editar
+                            <Pencil size={14} strokeWidth={1.6} className="text-black/55" /> Editar
                         </button>
                     )}
                     {isOwn ? (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete?.();
-                                setOpen(false);
-                            }}
-                            className="w-full px-4 py-2 text-sm text-left hover:bg-accent-vermillion/10 text-accent-vermillion flex items-center gap-2.5"
-                        >
-                            <Trash2 size={14} /> Apagar
-                        </button>
+                        <>
+                            <div className="hairline-t my-1" />
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete?.();
+                                    setOpen(false);
+                                }}
+                                className="w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-red-soft-bg text-red-soft flex items-center gap-3 transition"
+                            >
+                                <Trash2 size={14} strokeWidth={1.6} /> Apagar
+                            </button>
+                        </>
                     ) : (
-                        <button onClick={handleReport} className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 text-zinc-300 flex items-center gap-2.5">
-                            <Flag size={14} /> Reportar
+                        <button onClick={handleReport} className={itemCls}>
+                            <Flag size={14} strokeWidth={1.6} className="text-black/55" /> Reportar
                         </button>
                     )}
                 </div>

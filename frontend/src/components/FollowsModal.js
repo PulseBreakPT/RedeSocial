@@ -34,43 +34,49 @@ export function FollowsModal({ username, type, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm grid place-items-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm grid place-items-center p-4" onClick={onClose}>
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl max-h-[80vh] flex flex-col"
+                className="w-full max-w-md bg-white border border-black/[0.08] rounded-2xl shadow-[0_30px_80px_-20px_rgba(13,13,16,0.3)] max-h-[80vh] flex flex-col overflow-hidden anim-fade-up"
                 data-testid="follows-modal"
             >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-900">
-                    <h2 className="font-heading text-xl font-bold">
-                        {type === "followers" ? "Seguidores" : "A seguir"}
-                    </h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5" data-testid="follows-modal-close">
-                        <X size={18} />
+                <div className="flex items-center justify-between px-6 py-4 hairline-b">
+                    <div>
+                        <p className="type-overline mb-0.5">{type === "followers" ? "Seguidores" : "A seguir"}</p>
+                        <h2 className="font-display text-[22px] tracking-tight leading-none text-black">
+                            {type === "followers" ? "Seguidores" : "A seguir"}
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.04] text-black/55" data-testid="follows-modal-close">
+                        <X size={16} strokeWidth={1.7} />
                     </button>
                 </div>
-                <div className="overflow-y-auto flex-1 divide-y divide-zinc-900">
+                <div className="overflow-y-auto flex-1">
                     {loading ? (
-                        <div className="p-8 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
+                        <div className="p-10 text-center type-overline">a carregar…</div>
                     ) : users.length === 0 ? (
-                        <div className="p-8 text-center text-zinc-500 font-mono text-sm">Ninguém aqui ainda.</div>
+                        <div className="p-12 text-center">
+                            <p className="type-overline mb-1">Vazio</p>
+                            <p className="text-black/55 font-mono text-sm">Ninguém aqui ainda.</p>
+                        </div>
                     ) : (
                         users.map((u) => (
                             <div
                                 key={u.id}
                                 onClick={() => goto(u)}
                                 data-testid={`follows-user-${u.username}`}
-                                className="flex items-center gap-3 p-4 hover:bg-white/[0.03] cursor-pointer transition"
+                                className="flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.02] cursor-pointer transition"
                             >
                                 <Avatar user={u} size={42} />
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1 font-heading font-semibold text-sm">
+                                    <div className="flex items-center gap-1 font-heading font-medium text-[14px] tracking-tight text-black">
                                         {u.name} {u.verified && <VerifiedBadge size={12} />}
                                     </div>
-                                    <div className="font-mono text-xs text-zinc-500">@{u.username}</div>
+                                    <div className="font-mono text-[11px] text-black/45">@{u.username}</div>
                                 </div>
                                 <button
                                     onClick={(e) => handleFollow(e, u)}
-                                    className="text-xs font-heading font-semibold uppercase tracking-wide bg-white text-black hover:bg-zinc-200 rounded-full px-3 py-1.5 transition active:scale-95"
+                                    className="btn-silver text-[11px] px-3.5 py-1.5"
                                 >
                                     Seguir
                                 </button>

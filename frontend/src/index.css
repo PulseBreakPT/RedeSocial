@@ -1,112 +1,120 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Geist:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   LIGHT THEME — silver gradient primary, soft red/green/blue
-   ============================================================ */
+/* ===================================================================
+   VERMILLION · rede social portuguesa moderna
+   Identidade visual:
+     · base mediterrânica off-white (alvenaria caiada)
+     · azul Atlântico/Tejo como acento primário
+     · coral suave (telha portuguesa) como reaction/love
+     · padrão azulejo geométrico reinterpretado (subtil)
+     · tipografia Inter — App Store/Linear quality
+   =================================================================== */
 
 @layer base {
     :root {
-        /* Surfaces */
-        --bg: 0 0% 99%;                /* near white */
-        --bg-soft: 0 0% 97%;
+        /* Surfaces (alvenaria caiada) */
+        --bg: 36 30% 98.5%;             /* warm off-white #FBFAF7 */
+        --bg-soft: 36 24% 96%;          /* #F6F4EF */
         --card: 0 0% 100%;
-        --ink: 240 8% 7%;              /* near black */
-        --ink-soft: 240 6% 22%;
-        --muted: 240 4% 46%;           /* zinc-500 equivalent */
-        --muted-light: 240 4% 65%;
-        --border: 240 6% 90%;
-        --border-strong: 240 6% 82%;
+        --ink: 222 18% 9%;              /* near-black with cool tint */
+        --ink-soft: 222 14% 24%;
+        --muted: 222 8% 46%;
+        --muted-light: 222 8% 64%;
+        --border: 222 10% 90%;
+        --border-strong: 222 10% 82%;
 
-        /* Silver palette (primary accent) */
+        /* Atlantic Blue (acento primário — azul Tejo/azulejo) */
+        --atl-50:  #eef5ff;
+        --atl-100: #d7e8ff;
+        --atl-200: #b3d0ff;
+        --atl-300: #80b1f7;
+        --atl-400: #4f8fe8;
+        --atl-500: #2c6fd1;          /* main */
+        --atl-600: #1e54aa;
+        --atl-700: #163e80;
+        --atl-800: #102c5a;
+
+        /* Coral / telha (love/reaction) */
+        --coral-500: #e85d4f;
+        --coral-50:  #fdecea;
+
+        /* Eucalipto (success) */
+        --eu-500: #2f9e6e;
+        --eu-50:  #e2f4eb;
+
+        /* Sol / ouro suave (warning/highlight) */
+        --sun-500: #d9a23e;
+        --sun-50:  #fbf2dd;
+
+        /* Aliases for legacy soft classes (kept) */
+        --red-soft: var(--coral-500);
+        --red-soft-bg: var(--coral-50);
+        --green-soft: var(--eu-500);
+        --green-soft-bg: var(--eu-50);
+        --blue-soft: var(--atl-500);
+        --blue-soft-bg: var(--atl-50);
+
         --silver-50: #fafafd;
         --silver-100: #f1f1f5;
-        --silver-200: #e0e0e6;
-        --silver-300: #c8c8d0;
-        --silver-400: #a8a8b3;
-        --silver-500: #8b8b96;
-        --silver-600: #6b6b75;
-        --silver-700: #4a4a52;
-        --silver-800: #2d2d34;
+        --silver-200: #e5e5ec;
+        --silver-300: #cdcdd6;
+        --silver-400: #a5a5b0;
+        --silver-500: #757583;
+        --silver-600: #51515c;
+        --silver-700: #34343c;
+        --silver-800: #1d1d22;
 
-        /* Soft semantic colors */
-        --red-soft: #e85d6c;
-        --red-soft-bg: #fdecee;
-        --green-soft: #56b677;
-        --green-soft-bg: #e7f5ec;
-        --blue-soft: #6aa8e6;
-        --blue-soft-bg: #ebf2fb;
-
-        /* Safe-area */
         --safe-top: env(safe-area-inset-top, 0px);
         --safe-bottom: env(safe-area-inset-bottom, 0px);
         --safe-left: env(safe-area-inset-left, 0px);
         --safe-right: env(safe-area-inset-right, 0px);
 
         --mobile-topbar-h: 56px;
-        --mobile-bottomnav-h: 72px;
+        --mobile-bottomnav-h: 76px;
 
         --radius: 1rem;
+        --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-}
 
-@layer base {
-    * {
-        border-color: hsl(var(--border));
-        -webkit-tap-highlight-color: transparent;
-    }
-    html {
-        overscroll-behavior-y: none;
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-    }
-    html,
-    body {
-        background: #fafafa;
+    * { border-color: hsl(var(--border)); -webkit-tap-highlight-color: transparent; }
+    html { overscroll-behavior-y: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    html, body {
+        background: hsl(var(--bg));
         color: hsl(var(--ink));
-        font-family: "Geist", system-ui, sans-serif;
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-feature-settings: "cv11" 1, "ss01" 1, "ss03" 1;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        font-feature-settings: "ss01" 1, "cv11" 1;
         scroll-behavior: smooth;
     }
     body {
         background-image:
-            radial-gradient(
-                circle at 50% -10%,
-                rgba(106, 168, 230, 0.08),
-                transparent 55%
-            ),
-            radial-gradient(
-                circle at 100% 100%,
-                rgba(200, 200, 208, 0.18),
-                transparent 50%
-            );
+            radial-gradient(circle at 12% -5%, rgba(44, 111, 209, 0.06), transparent 45%),
+            radial-gradient(circle at 92% 100%, rgba(232, 93, 79, 0.05), transparent 50%);
         background-attachment: fixed;
         touch-action: manipulation;
     }
     h1, h2, h3, h4, h5 {
-        font-family: "Bricolage Grotesque", sans-serif;
-        letter-spacing: -0.025em;
+        font-family: "Inter", system-ui, sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.024em;
         color: hsl(var(--ink));
     }
-    ::selection {
-        background: rgba(13, 13, 16, 0.92);
-        color: #ffffff;
-    }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::selection { background: var(--atl-500); color: #fff; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--silver-300); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--silver-400); }
+    ::-webkit-scrollbar-thumb { background: rgba(13, 13, 16, 0.10); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(13, 13, 16, 0.18); }
     @media (max-width: 1024px) {
         ::-webkit-scrollbar { width: 0; height: 0; }
         body { scrollbar-width: none; }
     }
     input, textarea, button { font-family: inherit; }
-    button, a { touch-action: manipulation; }
     input, textarea, select { font-size: 16px; }
     @media (min-width: 1024px) {
         input, textarea, select { font-size: inherit; }
@@ -114,80 +122,67 @@
 }
 
 /* ============================================================
-   Override Tailwind zinc-* classes so existing dark utilities
-   become light-theme equivalents without touching every file.
-   These come AFTER tailwind utilities so they win on equal specificity.
+   Legacy dark utility remappings (kept for back-compat)
    ============================================================ */
 @layer utilities {
-    /* Surfaces (formerly dark "page" / "card" backgrounds → now near-white) */
     .bg-zinc-950 { background-color: #ffffff; }
-    .bg-zinc-900 { background-color: #f4f4f6; }
-    .bg-zinc-800 { background-color: #e8e8ec; }
-
-    /* Borders (formerly dark borders → now soft light borders) */
+    .bg-zinc-900 { background-color: hsl(var(--bg-soft)); }
+    .bg-zinc-800 { background-color: hsl(var(--bg-soft)); }
     .border-zinc-950, .border-zinc-900 { border-color: rgba(13, 13, 16, 0.07); }
     .border-zinc-800 { border-color: rgba(13, 13, 16, 0.10); }
-    .border-zinc-700 { border-color: rgba(13, 13, 16, 0.15); }
-    .divide-zinc-900 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(13, 13, 16, 0.07); }
-    .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(13, 13, 16, 0.10); }
+    .border-zinc-700 { border-color: rgba(13, 13, 16, 0.12); }
+    .border-white\/\[0\.05\] { border-color: rgba(13, 13, 16, 0.06); }
+    .border-white\/\[0\.06\] { border-color: rgba(13, 13, 16, 0.06); }
+    .border-white\/\[0\.08\] { border-color: rgba(13, 13, 16, 0.08); }
+    .border-white\/\[0\.10\] { border-color: rgba(13, 13, 16, 0.10); }
+    .bg-white\/\[0\.02\] { background-color: rgba(13, 13, 16, 0.02); }
+    .bg-white\/\[0\.04\] { background-color: rgba(13, 13, 16, 0.04); }
+    .bg-white\/5 { background-color: rgba(13, 13, 16, 0.04); }
+    .bg-white\/10 { background-color: rgba(13, 13, 16, 0.06); }
+    .bg-zinc-950\/50 { background-color: rgba(255, 255, 255, 0.65); }
+    .bg-zinc-950\/70 { background-color: rgba(255, 255, 255, 0.75); }
+    .bg-zinc-900\/30 { background-color: rgba(13, 13, 16, 0.025); }
 
-    /* Text (formerly light-on-dark hierarchy → flipped) */
+    /* Text colors → light theme equivalents */
+    .text-white { color: hsl(var(--ink)); }
     .text-zinc-100 { color: hsl(var(--ink)); }
-    .text-zinc-200 { color: hsl(var(--ink)); }
+    .text-zinc-200 { color: hsl(var(--ink-soft)); }
     .text-zinc-300 { color: hsl(var(--ink-soft)); }
-    .text-zinc-400 { color: var(--silver-600); }
-    .text-zinc-500 { color: var(--silver-500); }
-    .text-zinc-600 { color: var(--silver-400); }
-    .text-zinc-700 { color: var(--silver-400); }
-    .text-white { color: #ffffff; } /* keep white when on dark CTA buttons */
+    .text-zinc-400 { color: hsl(var(--muted)); }
+    .text-zinc-500 { color: hsl(var(--muted)); }
+    .text-zinc-600 { color: hsl(var(--muted-light)); }
+    .placeholder\:text-zinc-500::placeholder { color: hsl(var(--muted-light)); }
+    .placeholder\:text-zinc-600::placeholder { color: rgba(13, 13, 16, 0.3); }
 
-    /* Hover surfaces (semi-dark hover on white pages now) */
-    .hover\:bg-white\/\[0\.02\]:hover { background-color: rgba(13, 13, 16, 0.03); }
-    .hover\:bg-white\/\[0\.015\]:hover { background-color: rgba(13, 13, 16, 0.02); }
-    .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(13, 13, 16, 0.035); }
-    .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(13, 13, 16, 0.045); }
-    .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(13, 13, 16, 0.06); }
-    .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(13, 13, 16, 0.08); }
-    .hover\:bg-white\/5:hover { background-color: rgba(13, 13, 16, 0.05); }
-    .hover\:bg-white\/10:hover { background-color: rgba(13, 13, 16, 0.07); }
-    .active\:bg-white\/\[0\.03\]:active { background-color: rgba(13, 13, 16, 0.035); }
-    .active\:bg-white\/\[0\.04\]:active { background-color: rgba(13, 13, 16, 0.045); }
-    .active\:bg-white\/\[0\.05\]:active { background-color: rgba(13, 13, 16, 0.06); }
-    .active\:bg-white\/\[0\.06\]:active { background-color: rgba(13, 13, 16, 0.07); }
-    .active\:bg-white\/\[0\.08\]:active { background-color: rgba(13, 13, 16, 0.09); }
-
-    /* White borders → soft ink borders */
-    .border-white\/\[0\.05\], .border-white\/\[0\.06\] { border-color: rgba(13, 13, 16, 0.06); }
-    .border-white\/\[0\.08\] { border-color: rgba(13, 13, 16, 0.09); }
-    .border-white\/\[0\.10\], .border-white\/\[0\.12\] { border-color: rgba(13, 13, 16, 0.12); }
-    .border-white\/10 { border-color: rgba(13, 13, 16, 0.10); }
-    .border-white\/20 { border-color: rgba(13, 13, 16, 0.15); }
-    .ring-white\/10 { --tw-ring-color: rgba(13, 13, 16, 0.10); }
-    .ring-\[\#0a0a10\] { --tw-ring-color: #ffffff; }
+    /* Hover overrides */
+    .hover\:text-white:hover { color: hsl(var(--ink)); }
+    .hover\:bg-zinc-900:hover { background-color: rgba(13, 13, 16, 0.04); }
+    .hover\:bg-zinc-800:hover { background-color: rgba(13, 13, 16, 0.06); }
+    .hover\:bg-white\/5:hover { background-color: rgba(13, 13, 16, 0.04); }
+    .hover\:bg-white\/10:hover { background-color: rgba(13, 13, 16, 0.06); }
 }
 
 /* ============================================================
-   App-level utilities (silver + glass + animations + safe area)
+   FONT TOKENS (modern social-network)
    ============================================================ */
 @layer utilities {
-    .font-heading { font-family: "Bricolage Grotesque", sans-serif; }
-    .font-body { font-family: "Geist", sans-serif; }
-    .font-mono { font-family: "JetBrains Mono", monospace; }
-    .font-display { font-family: "Cormorant Garamond", "Bricolage Grotesque", serif; font-feature-settings: "lnum" 1; }
+    .font-heading { font-family: "Inter", system-ui, sans-serif; letter-spacing: -0.02em; }
+    .font-body    { font-family: "Inter", system-ui, sans-serif; }
+    .font-mono    { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-ligatures: none; }
+    .font-display { font-family: "Inter", system-ui, sans-serif; font-weight: 800; letter-spacing: -0.032em; }
 
-    /* ----- Premium type tokens ----- */
     .type-hero {
-        font-family: "Cormorant Garamond", serif;
-        font-weight: 400;
-        letter-spacing: -0.02em;
-        line-height: 0.95;
+        font-family: "Inter", system-ui, sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.032em;
+        line-height: 1.0;
     }
     .type-overline {
-        font-family: "JetBrains Mono", monospace;
-        font-size: 10px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: var(--silver-500);
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: hsl(var(--muted));
     }
     .ink-link {
         position: relative;
@@ -195,67 +190,66 @@
         background-size: 0 1px;
         background-position: 0 100%;
         background-repeat: no-repeat;
-        transition: background-size 360ms cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background-size 360ms var(--ease-out-soft);
     }
     .ink-link:hover { background-size: 100% 1px; }
 
-    /* ----- Premium silver wordmark (used on logo) ----- */
+    /* Brand wordmark — silver shimmer kept (subtle) */
     .silver-foil {
         background: linear-gradient(135deg, #0a0a0a 0%, #5a5a62 40%, #0a0a0a 60%, #6b6b75 100%);
         background-size: 200% 100%;
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        transition: background-position 800ms cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background-position 800ms var(--ease-out-soft);
     }
     .silver-foil:hover { background-position: 100% 0; }
+}
 
-    /* ----- Silver primary accent (replaces vermillion purple) ----- */
-    .text-accent-vermillion {
-        background: linear-gradient(135deg, #2d2d34 0%, #6b6b75 50%, #2d2d34 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
+/* ============================================================
+   ATLANTIC ACCENT — replaces old "vermillion" purple system
+   ============================================================ */
+@layer utilities {
+    .text-accent-vermillion { color: var(--atl-500); }
     .bg-accent-vermillion {
-        background: linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%);
+        background: var(--atl-500);
         color: #ffffff;
-        position: relative;
     }
-    .bg-accent-vermillion:hover {
-        background: linear-gradient(135deg, #0d0d10 0%, #2a2a32 50%, #0d0d10 100%);
-    }
-    .border-accent-vermillion { border-color: var(--silver-400); }
-
+    .bg-accent-vermillion:hover { background: var(--atl-600); }
+    .border-accent-vermillion { border-color: var(--atl-500); }
     .glow-vermillion {
-        box-shadow:
-            0 0 0 1px rgba(13, 13, 16, 0.04),
-            0 12px 32px -10px rgba(13, 13, 16, 0.25);
+        box-shadow: 0 0 0 1px rgba(44, 111, 209, 0.10), 0 12px 32px -10px rgba(44, 111, 209, 0.35);
     }
+    .hover\:bg-\[\#A78BFA\]:hover { background: var(--atl-600); }
+    .hover\:text-accent-vermillion:hover { color: var(--atl-500); }
+    .hover\:border-accent-vermillion:hover { border-color: var(--atl-500); }
+    .hover\:bg-accent-vermillion\/10:hover { background-color: rgba(44, 111, 209, 0.08); }
+    .bg-accent-vermillion\/10 { background-color: rgba(44, 111, 209, 0.08); color: var(--atl-700); }
+    .bg-accent-vermillion\/20 { background-color: rgba(44, 111, 209, 0.16); color: var(--atl-700); }
+    .border-accent-vermillion\/30 { border-color: rgba(44, 111, 209, 0.30); }
+    .border-accent-vermillion\/50 { border-color: rgba(44, 111, 209, 0.50); }
+    .text-accent-vermillion\/50 { color: rgba(44, 111, 209, 0.55); }
 
-    /* Hover overrides used across the app — make ex-purple hover stay silver/dark */
-    .hover\:bg-\[\#A78BFA\]:hover {
-        background: linear-gradient(135deg, #0d0d10 0%, #2a2a32 50%, #0d0d10 100%);
-    }
-    .hover\:text-accent-vermillion:hover {
-        color: var(--silver-700);
-        -webkit-background-clip: initial;
-        background-clip: initial;
-        background: transparent;
-    }
-    .hover\:border-accent-vermillion:hover { border-color: var(--silver-500); }
-    .hover\:bg-accent-vermillion\/10:hover { background-color: rgba(155, 155, 170, 0.10); }
+    /* Soft semantic colors */
+    .text-red-soft   { color: var(--coral-500); }
+    .bg-red-soft     { background-color: var(--coral-500); color: #fff; }
+    .bg-red-soft-bg  { background-color: var(--coral-50); }
+    .text-green-soft { color: var(--eu-500); }
+    .bg-green-soft   { background-color: var(--eu-500); color: #fff; }
+    .bg-green-soft-bg{ background-color: var(--eu-50); }
+    .text-blue-soft  { color: var(--atl-500); }
+    .bg-blue-soft    { background-color: var(--atl-500); color: #fff; }
+    .bg-blue-soft-bg { background-color: var(--atl-50); }
+    .text-sun-soft   { color: var(--sun-500); }
+    .bg-sun-soft-bg  { background-color: var(--sun-50); }
 
-    /* Helpers for backgrounds previously using bg-accent-vermillion/10 etc */
-    .bg-accent-vermillion\/10 { background-color: rgba(155, 155, 170, 0.10); color: hsl(var(--ink)); }
-    .bg-accent-vermillion\/20 { background-color: rgba(155, 155, 170, 0.18); color: hsl(var(--ink)); }
-    .border-accent-vermillion\/30 { border-color: rgba(155, 155, 170, 0.45); }
-    .border-accent-vermillion\/50 { border-color: rgba(155, 155, 170, 0.6); }
-    .text-accent-vermillion\/50 { color: rgba(107, 107, 117, 0.5); -webkit-background-clip: initial; background-clip: initial; background: transparent; }
+    /* Lucide remap */
+    .text-emerald-400, .text-emerald-500 { color: var(--eu-500); }
+    .text-rose-400, .text-rose-500, .text-red-400, .text-red-500 { color: var(--coral-500); }
+    .text-sky-400, .text-sky-500, .text-blue-400, .text-blue-500 { color: var(--atl-500); }
 
-    /* True silver gradient (use class .silver-grad on text or bg) */
     .silver-grad {
-        background: linear-gradient(135deg, #f4f4f8 0%, #d4d4dc 30%, #9a9aa3 50%, #c8c8d0 70%, #ececf0 100%);
+        background: linear-gradient(135deg, #f8f5ef 0%, #e6e1d5 40%, #cdc6b6 60%, #ede9df 100%);
     }
     .text-silver {
         background: linear-gradient(135deg, #6b6b75, #b8b8c0, #6b6b75);
@@ -264,85 +258,113 @@
         background-clip: text;
         color: transparent;
     }
+}
 
-    /* Soft semantic colors */
-    .text-red-soft { color: var(--red-soft); }
-    .bg-red-soft { background-color: var(--red-soft); color: #fff; }
-    .bg-red-soft-bg { background-color: var(--red-soft-bg); }
-    .text-green-soft { color: var(--green-soft); }
-    .bg-green-soft { background-color: var(--green-soft); color: #fff; }
-    .bg-green-soft-bg { background-color: var(--green-soft-bg); }
-    .text-blue-soft { color: var(--blue-soft); }
-    .bg-blue-soft { background-color: var(--blue-soft); color: #fff; }
-    .bg-blue-soft-bg { background-color: var(--blue-soft-bg); }
-
-    /* Repurpose lucide colored utilities used in PostCard (heart / repost / etc) */
-    .text-emerald-400, .text-emerald-500 { color: var(--green-soft); }
-    .text-rose-400, .text-rose-500, .text-red-400, .text-red-500 { color: var(--red-soft); }
-    .text-sky-400, .text-sky-500, .text-blue-400, .text-blue-500 { color: var(--blue-soft); }
-
-    /* ----- Glass surfaces (light) ----- */
+/* ============================================================
+   SURFACES · glass · cards · hairlines
+   ============================================================ */
+@layer utilities {
     .glass {
-        background: rgba(255, 255, 255, 0.82);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        background: rgba(255, 255, 254, 0.78);
+        backdrop-filter: blur(22px) saturate(180%);
+        -webkit-backdrop-filter: blur(22px) saturate(180%);
     }
     .glass-deep {
-        background: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 254, 0.92);
         backdrop-filter: blur(28px) saturate(180%);
         -webkit-backdrop-filter: blur(28px) saturate(180%);
     }
+    .glass-nav {
+        background: rgba(255, 255, 254, 0.82);
+        backdrop-filter: blur(28px) saturate(200%);
+        -webkit-backdrop-filter: blur(28px) saturate(200%);
+        border: 1px solid rgba(13, 13, 16, 0.05);
+        box-shadow: 0 -4px 30px -10px rgba(13, 13, 16, 0.08);
+    }
     .card-premium {
         background: #ffffff;
-        border: 1px solid rgba(13, 13, 16, 0.07);
+        border: 1px solid rgba(13, 13, 16, 0.06);
+        border-radius: 22px;
         box-shadow:
             0 1px 0 rgba(255, 255, 255, 0.6) inset,
-            0 24px 60px -28px rgba(13, 13, 16, 0.18);
+            0 20px 50px -28px rgba(13, 13, 16, 0.14);
     }
     .card-lux {
         background: #ffffff;
-        border: 1px solid rgba(13, 13, 16, 0.06);
-        border-radius: 24px;
-        box-shadow: 0 8px 30px -12px rgba(13, 13, 16, 0.05);
-        transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
-                    box-shadow 360ms cubic-bezier(0.16, 1, 0.3, 1),
+        border: 1px solid rgba(13, 13, 16, 0.05);
+        border-radius: 20px;
+        box-shadow: 0 6px 24px -12px rgba(13, 13, 16, 0.06);
+        transition: transform 360ms var(--ease-out-soft),
+                    box-shadow 360ms var(--ease-out-soft),
                     border-color 240ms ease;
     }
     .card-lux:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 40px -16px rgba(13, 13, 16, 0.10);
-        border-color: rgba(13, 13, 16, 0.10);
+        transform: translateY(-1px);
+        box-shadow: 0 16px 36px -14px rgba(13, 13, 16, 0.10);
+        border-color: rgba(13, 13, 16, 0.08);
+    }
+    .card-elev {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid rgba(13, 13, 16, 0.06);
+        box-shadow: 0 2px 8px -2px rgba(13, 13, 16, 0.04),
+                    0 12px 28px -16px rgba(13, 13, 16, 0.10);
     }
     .hairline-t { border-top: 1px solid rgba(13, 13, 16, 0.06); }
     .hairline-b { border-bottom: 1px solid rgba(13, 13, 16, 0.06); }
 
-    /* Premium obsidian CTA button — replaces previous .bg-accent-vermillion behaviour where used as CTA */
+    /* Post hover row (subtle Twitter/Linear feel) */
+    .post-row {
+        transition: background-color 200ms ease;
+    }
+    .post-row:hover { background-color: rgba(44, 111, 209, 0.022); }
+
+    /* Premium obsidian CTA */
     .btn-obsidian {
         background: #0a0a0a;
         color: #fff;
         border-radius: 9999px;
-        font-family: "Bricolage Grotesque", sans-serif;
-        font-weight: 500;
-        letter-spacing: -0.01em;
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.005em;
         padding: 0.65rem 1.25rem;
-        transition: transform 200ms ease, box-shadow 360ms ease, background 240ms ease;
-        box-shadow: 0 8px 24px -10px rgba(13, 13, 16, 0.35),
+        transition: transform 200ms var(--ease-out-soft),
+                    box-shadow 360ms var(--ease-out-soft),
+                    background 240ms ease;
+        box-shadow: 0 6px 18px -8px rgba(13, 13, 16, 0.4),
                     inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .btn-obsidian:hover { background: #1a1a1f; box-shadow: 0 12px 28px -8px rgba(13, 13, 16, 0.45); }
+    .btn-obsidian:hover { background: #1a1a1f; box-shadow: 0 10px 24px -8px rgba(13, 13, 16, 0.5); transform: translateY(-1px); }
     .btn-obsidian:active { transform: scale(0.97); }
 
-    .btn-silver {
-        background: linear-gradient(135deg, #f4f4f8 0%, #e0e0e6 50%, #f4f4f8 100%);
-        color: #0a0a0a;
-        border: 1px solid rgba(13, 13, 16, 0.08);
+    /* Atlantic primary CTA (new — for follow buttons etc) */
+    .btn-atl {
+        background: var(--atl-500);
+        color: #ffffff;
         border-radius: 9999px;
-        font-family: "Bricolage Grotesque", sans-serif;
-        font-weight: 500;
-        padding: 0.55rem 1.1rem;
-        transition: box-shadow 240ms ease, transform 200ms ease;
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        padding: 0.6rem 1.2rem;
+        transition: transform 200ms var(--ease-out-soft),
+                    box-shadow 360ms var(--ease-out-soft),
+                    background 240ms ease;
+        box-shadow: 0 6px 16px -6px rgba(44, 111, 209, 0.55);
     }
-    .btn-silver:hover { box-shadow: 0 6px 16px -8px rgba(13, 13, 16, 0.18); }
+    .btn-atl:hover { background: var(--atl-600); box-shadow: 0 10px 22px -6px rgba(44, 111, 209, 0.65); transform: translateY(-1px); }
+    .btn-atl:active { transform: scale(0.97); }
+
+    .btn-silver {
+        background: #ffffff;
+        color: #0a0a0a;
+        border: 1px solid rgba(13, 13, 16, 0.12);
+        border-radius: 9999px;
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        padding: 0.55rem 1.1rem;
+        transition: box-shadow 240ms ease, transform 200ms ease, border-color 200ms ease, background 200ms ease;
+    }
+    .btn-silver:hover { box-shadow: 0 4px 14px -6px rgba(13, 13, 16, 0.14); border-color: rgba(13, 13, 16, 0.22); }
     .btn-silver:active { transform: scale(0.97); }
 
     .btn-ghost-lux {
@@ -350,49 +372,90 @@
         color: rgba(13, 13, 16, 0.7);
         border-radius: 9999px;
         padding: 0.55rem 1.05rem;
-        font-weight: 500;
+        font-weight: 600;
         transition: background-color 200ms ease, color 200ms ease;
     }
     .btn-ghost-lux:hover { background: rgba(13, 13, 16, 0.04); color: #0a0a0a; }
 
-    /* Silver gradient ring for avatars / pickers */
+    /* Atlantic gradient ring (story ring — unseen) */
+    .ring-atl {
+        background:
+            linear-gradient(#fff, #fff) padding-box,
+            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--coral-500), var(--sun-500), var(--atl-400)) border-box;
+        border: 2.5px solid transparent;
+    }
     .ring-silver {
         background:
             linear-gradient(#fff, #fff) padding-box,
             linear-gradient(135deg, #d4d4dc, #6b6b75 50%, #ececf0) border-box;
         border: 2px solid transparent;
     }
-    /* Subtle paper noise to add tactile premium feel — applied via class */
+    .ring-gradient { /* legacy alias — now uses atl */
+        background:
+            linear-gradient(#fff, #fff) padding-box,
+            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--coral-500), var(--sun-500), var(--atl-400)) border-box;
+        border: 2.5px solid transparent;
+    }
+
+    /* Pill / chip for trending, mutuals, badges */
+    .chip {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        padding: 0.25rem 0.65rem; border-radius: 999px;
+        font-size: 11px; font-weight: 600; letter-spacing: -0.005em;
+        background: rgba(13, 13, 16, 0.04); color: hsl(var(--ink-soft));
+        border: 1px solid rgba(13, 13, 16, 0.04);
+    }
+    .chip-atl { background: var(--atl-50); color: var(--atl-700); border-color: rgba(44, 111, 209, 0.18); }
+    .chip-coral { background: var(--coral-50); color: var(--coral-500); border-color: rgba(232, 93, 79, 0.20); }
+    .chip-eu { background: var(--eu-50); color: var(--eu-500); border-color: rgba(47, 158, 110, 0.20); }
+    .chip-sun { background: var(--sun-50); color: #8a6420; border-color: rgba(217, 162, 62, 0.25); }
+
+    /* Live dot */
+    .live-dot {
+        width: 6px; height: 6px; border-radius: 999px; background: var(--coral-500);
+        box-shadow: 0 0 0 0 rgba(232, 93, 79, 0.55);
+        animation: pulse-live 1.8s ease-out infinite;
+    }
+    @keyframes pulse-live {
+        0%   { box-shadow: 0 0 0 0 rgba(232, 93, 79, 0.55); }
+        70%  { box-shadow: 0 0 0 8px rgba(232, 93, 79, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(232, 93, 79, 0); }
+    }
+
+    /* Bg surfaces */
     .bg-paper {
         background:
-            radial-gradient(circle at 0% 0%, rgba(212, 212, 220, 0.18), transparent 45%),
-            radial-gradient(circle at 100% 100%, rgba(106, 168, 230, 0.10), transparent 50%),
+            radial-gradient(circle at 0% 0%, rgba(44, 111, 209, 0.05), transparent 45%),
+            radial-gradient(circle at 100% 100%, rgba(232, 93, 79, 0.04), transparent 50%),
             #ffffff;
     }
+    .bg-canvas { background-color: hsl(var(--bg)); }
+
+    /* Subtle azulejo geometric pattern (modernized) — opacity tuned for backgrounds */
+    .bg-azulejo {
+        background-color: hsl(var(--bg));
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%232c6fd1' stroke-width='0.7' opacity='0.18'><path d='M40 5 L75 40 L40 75 L5 40 Z'/><circle cx='40' cy='40' r='14'/><path d='M40 26 L54 40 L40 54 L26 40 Z'/><path d='M0 40 L80 40 M40 0 L40 80'/></g></svg>");
+        background-size: 80px 80px;
+    }
+    .azulejo-band {
+        position: relative;
+        background-color: hsl(var(--bg-soft));
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='none' stroke='%232c6fd1' stroke-width='0.6' opacity='0.25'><path d='M30 4 L56 30 L30 56 L4 30 Z'/><circle cx='30' cy='30' r='10'/><path d='M30 20 L40 30 L30 40 L20 30 Z'/></g></svg>");
+        background-size: 60px 60px;
+    }
+
+    /* Grain noise overlay (very subtle) */
     .grain::after {
         content: "";
         position: absolute;
         inset: 0;
         pointer-events: none;
-        opacity: 0.035;
+        opacity: 0.028;
         mix-blend-mode: multiply;
         background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
     }
-    .ring-gradient {
-        background:
-            linear-gradient(#fff, #fff) padding-box,
-            conic-gradient(
-                    from 0deg,
-                    #d4d4dc,
-                    #9a9aa3,
-                    #6b6b75,
-                    #c8c8d0,
-                    #d4d4dc
-                ) border-box;
-        border: 2.5px solid transparent;
-    }
 
-    /* Safe-area utilities */
+    /* Safe areas */
     .pt-safe { padding-top: var(--safe-top); }
     .pb-safe { padding-bottom: var(--safe-bottom); }
     .pl-safe { padding-left: var(--safe-left); }
@@ -401,30 +464,51 @@
     .h-safe-bottom { height: var(--safe-bottom); }
     .top-safe { top: var(--safe-top); }
 
-    /* Mobile page helpers */
+    /* Pages */
     .page-px { padding-left: 1rem; padding-right: 1rem; }
     @media (min-width: 1024px) { .page-px { padding-left: 1.25rem; padding-right: 1.25rem; } }
-    .pb-mobile-nav {
-        padding-bottom: calc(var(--mobile-bottomnav-h) + var(--safe-bottom) + 12px);
-    }
+    .pb-mobile-nav { padding-bottom: calc(var(--mobile-bottomnav-h) + var(--safe-bottom) + 16px); }
     @media (min-width: 1024px) { .pb-mobile-nav { padding-bottom: 0; } }
 
-    /* Tap feedback */
+    /* Tap feedback (Apple-like) */
     .tap-shrink {
-        transition: transform 120ms ease, background-color 200ms ease, color 200ms ease;
+        transition: transform 140ms var(--ease-out-soft), background-color 200ms ease, color 200ms ease;
     }
     .tap-shrink:active { transform: scale(0.94); }
-    .tap-press { transition: transform 100ms ease, background-color 200ms ease; }
+    .tap-press {
+        transition: transform 100ms ease, background-color 200ms ease;
+    }
     .tap-press:active { transform: scale(0.97); background-color: rgba(13, 13, 16, 0.04); }
+
+    /* Engagement icon button — bigger tap target */
+    .eng-btn {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.5rem 0.65rem; border-radius: 999px;
+        font-size: 13px; font-weight: 500;
+        color: hsl(var(--muted));
+        transition: background-color 200ms ease, color 200ms ease, transform 140ms var(--ease-out-soft);
+        margin: -0.4rem -0.55rem;
+    }
+    .eng-btn:hover { background-color: rgba(13, 13, 16, 0.05); color: hsl(var(--ink)); }
+    .eng-btn:active { transform: scale(0.94); }
+    .eng-btn.is-liked { color: var(--coral-500); }
+    .eng-btn.is-liked:hover { background-color: var(--coral-50); }
+    .eng-btn.is-reposted { color: var(--eu-500); }
+    .eng-btn.is-reposted:hover { background-color: var(--eu-50); }
+    .eng-btn.is-commented:hover { background-color: var(--atl-50); color: var(--atl-500); }
+    .eng-btn.is-bookmarked { color: var(--sun-500); }
+    .eng-btn.is-bookmarked:hover { background-color: var(--sun-50); }
 
     .scroll-mom { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { scrollbar-width: none; }
+    .snap-x-stories { scroll-snap-type: x mandatory; }
+    .snap-start-x { scroll-snap-align: start; }
 
-    .anim-fade-up { animation: fadeUp 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    /* Staggered children: apply .anim-stagger to a parent — children get progressive delay */
-    .anim-stagger > * { animation: fadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    /* Animations */
+    .anim-fade-up { animation: fadeUp 520ms var(--ease-out-soft) both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .anim-stagger > * { animation: fadeUp 560ms var(--ease-out-soft) both; }
     .anim-stagger > *:nth-child(1) { animation-delay: 0ms; }
     .anim-stagger > *:nth-child(2) { animation-delay: 60ms; }
     .anim-stagger > *:nth-child(3) { animation-delay: 120ms; }
@@ -432,17 +516,17 @@
     .anim-stagger > *:nth-child(5) { animation-delay: 240ms; }
     .anim-stagger > *:nth-child(6) { animation-delay: 300ms; }
     .anim-stagger > *:nth-child(n+7) { animation-delay: 360ms; }
-    .anim-slide-up { animation: slideUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .anim-slide-up { animation: slideUp 320ms var(--ease-out-soft) both; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .anim-sheet-up { animation: sheetUp 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .anim-sheet-up { animation: sheetUp 360ms var(--ease-out-soft) both; }
     @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .anim-pop { animation: pop 280ms cubic-bezier(0.16, 1.5, 0.5, 1) both; }
-    @keyframes pop { 0% { transform: scale(0.85); } 60% { transform: scale(1.22); } 100% { transform: scale(1); } }
+    .anim-pop { animation: pop 360ms var(--ease-pop) both; }
+    @keyframes pop { 0% { transform: scale(0.6); opacity: 0.4; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
     @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.4); } }
     .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     .text-shimmer {
-        background: linear-gradient(90deg, #9a9aa3 0%, #1a1a1f 50%, #9a9aa3 100%);
+        background: linear-gradient(90deg, var(--atl-600) 0%, var(--atl-400) 50%, var(--atl-600) 100%);
         background-size: 200% 100%;
         animation: shimmer 3s linear infinite;
         -webkit-background-clip: text;

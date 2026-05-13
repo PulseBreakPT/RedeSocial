@@ -25,29 +25,34 @@ export function ActivityTicker() {
     if (items.length === 0) return null;
 
     return (
-        <div className="bg-zinc-950/50 border border-white/[0.05] rounded-2xl p-5" data-testid="activity-ticker">
-            <div className="flex items-center gap-2 mb-3">
-                <Activity size={14} className="text-accent-vermillion" />
-                <h3 className="font-heading text-lg font-bold">Atividade ao vivo</h3>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot ml-auto" />
+        <div className="card-lux p-5" data-testid="activity-ticker">
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <p className="type-overline mb-0.5">Em direto</p>
+                    <h3 className="font-display text-[22px] leading-none tracking-tight text-black flex items-center gap-2">
+                        Ao vivo
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-soft pulse-dot" />
+                    </h3>
+                </div>
+                <Activity size={15} strokeWidth={1.5} className="text-black/40" />
             </div>
             <ul className="space-y-3">
                 {items.map((a) => (
-                    <li key={a.id} className="flex items-start gap-2.5 text-sm" data-testid={`activity-${a.id}`}>
-                        <Link to={`/u/${a.actor?.username}`}>
+                    <li key={a.id} className="flex items-start gap-2.5 text-[13px] leading-tight" data-testid={`activity-${a.id}`}>
+                        <Link to={`/u/${a.actor?.username}`} className="mt-0.5">
                             <Avatar user={a.actor} size={26} />
                         </Link>
-                        <div className="flex-1 min-w-0 leading-tight">
-                            <span className="text-zinc-300">
-                                <Link to={`/u/${a.actor?.username}`} className="font-heading font-semibold text-white hover:underline">
+                        <div className="flex-1 min-w-0">
+                            <span className="text-black/75">
+                                <Link to={`/u/${a.actor?.username}`} className="font-heading font-medium tracking-tight text-black hover:underline">
                                     {a.actor?.name}
                                 </Link>{" "}
-                                <span className="text-zinc-400">{a.verb}</span>{" "}
-                                <Link to={`/u/${a.target_username}`} className="font-heading font-semibold text-accent-vermillion hover:underline">
+                                <span className="text-black/55">{a.verb}</span>{" "}
+                                <Link to={`/u/${a.target_username}`} className="font-heading font-medium text-black hover:underline">
                                     @{a.target_username}
                                 </Link>
                             </span>
-                            <div className="font-mono text-[10px] text-zinc-600 mt-0.5">{smartTime(a.created_at)}</div>
+                            <div className="font-mono text-[10px] text-black/40 mt-1 uppercase tracking-wider">{smartTime(a.created_at)}</div>
                         </div>
                     </li>
                 ))}

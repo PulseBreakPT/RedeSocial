@@ -31,49 +31,59 @@ export function QuoteModal({ post, onClose, onQuoted }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm grid place-items-center p-4" onClick={onClose} data-testid="quote-modal">
-            <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-900">
-                    <div className="flex items-center gap-2">
-                        <Quote size={16} className="text-emerald-400" />
-                        <h2 className="font-heading text-lg font-bold">Citar publicação</h2>
+        <div className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm grid place-items-center p-4" onClick={onClose} data-testid="quote-modal">
+            <div
+                className="w-full max-w-lg bg-white border border-black/[0.08] rounded-2xl shadow-[0_30px_80px_-20px_rgba(13,13,16,0.3)] anim-fade-up overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between px-6 py-4 hairline-b">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06]">
+                            <Quote size={14} strokeWidth={1.6} className="text-black/65" />
+                        </div>
+                        <div>
+                            <h2 className="font-display text-[22px] tracking-tight leading-none text-black">Citar publicação</h2>
+                            <p className="type-overline mt-1">Adiciona um comentário</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5">
-                        <X size={16} />
+                    <button onClick={onClose} className="w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.04] text-black/55">
+                        <X size={16} strokeWidth={1.7} />
                     </button>
                 </div>
-                <div className="p-5">
+                <div className="p-6">
                     <div className="flex gap-3">
                         <Avatar user={user} size={40} />
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder="Adiciona um comentário..."
+                            placeholder="Adiciona um comentário…"
                             maxLength={500}
                             rows={3}
                             autoFocus
                             data-testid="quote-textarea"
-                            className="flex-1 bg-transparent text-base focus:outline-none resize-none placeholder:text-zinc-600"
+                            className="flex-1 bg-transparent text-[16px] focus:outline-none resize-none placeholder:text-black/35 font-body"
                         />
                     </div>
-                    <div className="mt-3 ml-12 p-3 border border-zinc-800 rounded-xl bg-zinc-900/50">
+                    <div className="mt-4 ml-[52px] p-4 hairline rounded-2xl bg-paper">
                         <div className="flex items-center gap-2 text-sm">
-                            <Avatar user={post.author} size={24} />
-                            <span className="font-heading font-semibold">{post.author?.name}</span>
+                            <Avatar user={post.author} size={22} />
+                            <span className="font-heading font-medium text-[13px] tracking-tight">{post.author?.name}</span>
                             {post.author?.verified && <VerifiedBadge size={11} />}
-                            <span className="font-mono text-xs text-zinc-500">@{post.author?.username}</span>
+                            <span className="font-mono text-[11px] text-black/45">@{post.author?.username}</span>
                         </div>
-                        <p className="mt-2 text-sm text-zinc-300 line-clamp-3">{post.content}</p>
+                        <p className="mt-2 text-[13.5px] text-black/70 line-clamp-3 leading-relaxed">{post.content}</p>
                     </div>
-                    <div className="flex items-center justify-between mt-4">
-                        <span className={`font-mono text-xs ${remaining < 40 ? "text-accent-vermillion" : "text-zinc-500"}`}>{remaining}</span>
+                    <div className="flex items-center justify-between mt-5">
+                        <span className={`font-mono text-[10px] uppercase tracking-[0.16em] ${remaining < 40 ? "text-red-soft" : "text-black/40"}`}>
+                            {remaining} restantes
+                        </span>
                         <button
                             onClick={submit}
                             disabled={busy || !content.trim()}
                             data-testid="submit-quote-btn"
-                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-6 py-2.5 rounded-full hover:bg-[#A78BFA] disabled:opacity-40 active:scale-95"
+                            className="btn-obsidian text-[11px] px-6 py-2.5 disabled:opacity-40"
                         >
-                            {busy ? "..." : "Citar"}
+                            {busy ? "…" : "Citar"}
                         </button>
                     </div>
                 </div>

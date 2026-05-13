@@ -22,23 +22,24 @@ export default function TagPage() {
         <div data-testid="tag-page">
             <PageHeader
                 title={
-                    <span className="inline-flex items-center gap-1">
-                        <Hash size={18} className="text-accent-vermillion" /> {tag}
+                    <span className="inline-flex items-center gap-1.5">
+                        <Hash size={16} strokeWidth={1.6} className="text-black/55" /> {tag}
                     </span>
                 }
-                subtitle={`${posts.length} publicações`}
+                subtitle={`${posts.length} ${posts.length === 1 ? "publicação" : "publicações"}`}
                 back
                 testid="tag-header"
             />
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
+                <div className="p-12 text-center type-overline">a carregar…</div>
             ) : posts.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-accent-vermillion/10 grid place-items-center mx-auto mb-5 border border-accent-vermillion/30">
-                        <Hash size={28} className="text-accent-vermillion" />
+                <div className="px-6 py-20 text-center anim-fade-up">
+                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
+                        <Hash size={26} strokeWidth={1.4} className="text-black/70" />
                     </div>
-                    <p className="text-zinc-100 font-heading text-lg tracking-tight">Sem publicações</p>
-                    <p className="text-zinc-500 text-sm mt-1">Nenhuma publicação com #{tag} ainda.</p>
+                    <p className="type-overline mb-2">Sem posts</p>
+                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Sem publicações</h3>
+                    <p className="text-black/55 text-sm mt-2">Nenhuma publicação com #{tag} ainda.</p>
                 </div>
             ) : (
                 posts.map((p) => (

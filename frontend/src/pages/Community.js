@@ -45,7 +45,7 @@ export default function Community() {
     };
 
     if (loading || !community) {
-        return <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>;
+        return <div className="p-12 text-center type-overline">a carregar…</div>;
     }
 
     return (
@@ -57,24 +57,31 @@ export default function Community() {
                 testid="community-header"
             />
 
-            <div className="relative h-28 lg:h-40 bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]/40 grid place-items-center">
-                <Users size={42} className="text-accent-vermillion/50" />
+            <div className="relative h-32 lg:h-44 overflow-hidden grid place-items-center">
+                <div className="absolute inset-0 silver-grad" />
+                <div
+                    className="absolute inset-0 opacity-60 mix-blend-multiply"
+                    style={{
+                        background:
+                            "radial-gradient(circle at 30% 35%, rgba(106,168,230,0.16), transparent 55%), radial-gradient(circle at 75% 70%, rgba(232,93,108,0.10), transparent 55%)",
+                    }}
+                />
+                <Users size={38} strokeWidth={1.3} className="relative text-black/45" />
             </div>
 
-            <div className="px-4 lg:px-5 py-4 lg:py-5 border-b border-white/[0.05]">
+            <div className="px-4 lg:px-6 py-5 hairline-b">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                        <h2 className="font-heading text-xl lg:text-2xl font-bold truncate">{community.name}</h2>
-                        <p className="font-mono text-[11px] text-zinc-500 mt-1">/c/{community.slug}</p>
-                        {community.description && <p className="mt-3 text-sm lg:text-base text-zinc-200">{community.description}</p>}
+                        <p className="type-overline mb-1">{community.members_count} membros</p>
+                        <h2 className="font-display text-[30px] lg:text-[34px] tracking-tight leading-none truncate text-black">{community.name}</h2>
+                        <p className="font-mono text-[11px] text-black/45 mt-2">/c/{community.slug}</p>
+                        {community.description && <p className="mt-4 text-[15px] text-black/75 leading-relaxed max-w-2xl">{community.description}</p>}
                     </div>
                     <button
                         onClick={join}
                         data-testid="community-join-btn"
-                        className={`text-[11px] font-heading font-semibold uppercase tracking-wide rounded-full px-4 lg:px-5 py-2 transition active:scale-95 flex-shrink-0 ${
-                            community.joined
-                                ? "border border-white/[0.12] hover:bg-accent-vermillion/10 hover:text-accent-vermillion"
-                                : "bg-white text-black hover:bg-zinc-200"
+                        className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-5 py-2.5 transition active:scale-95 flex-shrink-0 ${
+                            community.joined ? "btn-silver" : "btn-obsidian"
                         }`}
                     >
                         {community.joined ? "Sair" : "Entrar"}
@@ -88,13 +95,17 @@ export default function Community() {
                     communityId={community.id}
                 />
             ) : (
-                <div className="p-5 text-center text-zinc-500 font-mono text-sm border-b border-white/[0.05]">
-                    Entre na comunidade para publicar
+                <div className="p-6 text-center hairline-b">
+                    <p className="type-overline mb-1">Restrito a membros</p>
+                    <p className="text-black/60 font-mono text-sm">Entra na comunidade para publicar.</p>
                 </div>
             )}
 
             {posts.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Sem publicações nesta comunidade ainda.</div>
+                <div className="p-14 text-center">
+                    <p className="type-overline mb-2">Sem posts</p>
+                    <p className="text-black/55 font-mono text-sm">Sem publicações nesta comunidade ainda.</p>
+                </div>
             ) : (
                 posts.map((p) => (
                     <PostCard

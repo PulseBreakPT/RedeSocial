@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Lock } from "lucide-react";
+import { Camera, Lock, LogOut } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
@@ -45,17 +45,26 @@ export default function Settings() {
 
     return (
         <div data-testid="settings-page">
-            <PageHeader title="Definições" subtitle="editar perfil e privacidade" back testid="settings-header" />
+            <PageHeader title="Definições" subtitle="Perfil e privacidade" back testid="settings-header" />
 
-            <div className="relative h-32 lg:h-44 bg-gradient-to-br from-[#f4f4f8] via-[#e0e0e6] to-[#9a9aa3]/40">
-                {form.banner && <img src={form.banner} alt="" className="w-full h-full object-cover" />}
+            {/* Banner */}
+            <div className="relative h-32 lg:h-44 overflow-hidden">
+                <div className="absolute inset-0 silver-grad" />
+                <div
+                    className="absolute inset-0 opacity-50 mix-blend-multiply"
+                    style={{
+                        background:
+                            "radial-gradient(circle at 25% 35%, rgba(106,168,230,0.15), transparent 55%), radial-gradient(circle at 80% 70%, rgba(232,93,108,0.10), transparent 55%)",
+                    }}
+                />
+                {form.banner && <img src={form.banner} alt="" className="relative w-full h-full object-cover" />}
                 <button
                     onClick={() => bannerRef.current?.click()}
                     data-testid="banner-upload-btn"
-                    className="absolute bottom-3 right-3 bg-black/70 hover:bg-black p-2.5 rounded-full text-white active:scale-90 tap-shrink"
+                    className="absolute bottom-3 right-3 bg-black/80 hover:bg-black p-2.5 rounded-full text-white active:scale-90 tap-shrink shadow-lg"
                     aria-label="alterar capa"
                 >
-                    <Camera size={16} />
+                    <Camera size={15} strokeWidth={1.7} />
                 </button>
                 <input
                     ref={bannerRef}
@@ -66,16 +75,16 @@ export default function Settings() {
                 />
             </div>
 
-            <div className="px-4 lg:px-5 -mt-10 lg:-mt-12 relative">
-                <div className="relative inline-block border-4 border-[#0a0a10] rounded-full">
-                    <Avatar user={{ ...user, avatar: form.avatar }} size={80} />
+            <div className="px-4 lg:px-6 -mt-10 lg:-mt-12 relative">
+                <div className="relative inline-block rounded-full p-1 bg-white shadow-[0_8px_24px_-12px_rgba(13,13,16,0.25)]">
+                    <Avatar user={{ ...user, avatar: form.avatar }} size={84} />
                     <button
                         onClick={() => avatarRef.current?.click()}
                         data-testid="avatar-upload-btn"
-                        className="absolute bottom-0 right-0 bg-black/85 hover:bg-black p-1.5 rounded-full text-white border border-white/[0.12] active:scale-90 tap-shrink"
+                        className="absolute bottom-1 right-1 bg-black/85 hover:bg-black p-1.5 rounded-full text-white active:scale-90 tap-shrink shadow-md"
                         aria-label="alterar avatar"
                     >
-                        <Camera size={13} />
+                        <Camera size={12} strokeWidth={1.7} />
                     </button>
                     <input
                         ref={avatarRef}
@@ -86,60 +95,67 @@ export default function Settings() {
                     />
                 </div>
 
-                <div className="space-y-5 mt-5 lg:mt-6">
+                <div className="space-y-6 mt-6 max-w-2xl">
                     <div>
-                        <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nome</label>
+                        <label className="type-overline">Nome</label>
                         <input
                             data-testid="settings-name"
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 focus:border-accent-vermillion outline-none"
+                            className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition"
                         />
                     </div>
                     <div>
-                        <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Bio</label>
+                        <label className="type-overline">Bio</label>
                         <textarea
                             data-testid="settings-bio"
                             value={form.bio}
                             onChange={(e) => setForm({ ...form, bio: e.target.value })}
                             rows={3}
                             maxLength={160}
-                            className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 focus:border-accent-vermillion outline-none resize-none"
+                            placeholder="Conta-nos algo em poucas palavras…"
+                            className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 text-black placeholder:text-black/30 focus:border-black/40 focus:bg-white focus:outline-none transition resize-none"
                         />
-                        <div className="font-mono text-xs text-zinc-500 text-right mt-1">{160 - (form.bio?.length || 0)}</div>
+                        <div className="font-mono text-[10px] text-black/40 text-right mt-1 tracking-wider">{160 - (form.bio?.length || 0)} restantes</div>
                     </div>
 
-                    <label className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition" data-testid="privacy-toggle">
+                    <label
+                        className="flex items-center justify-between p-4 card-lux cursor-pointer transition hover:shadow-md"
+                        data-testid="privacy-toggle"
+                    >
                         <div className="flex items-start gap-3">
-                            <Lock size={18} className="text-accent-vermillion mt-0.5" />
+                            <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06]">
+                                <Lock size={15} strokeWidth={1.7} className="text-black/70" />
+                            </div>
                             <div>
-                                <div className="font-heading font-semibold text-sm">Conta privada</div>
-                                <div className="font-mono text-xs text-zinc-500 mt-0.5">apenas seguidores aprovados podem ver suas publicações</div>
+                                <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Conta privada</div>
+                                <div className="font-mono text-[11px] text-black/50 mt-0.5">apenas seguidores aprovados podem ver as publicações</div>
                             </div>
                         </div>
                         <input
                             type="checkbox"
                             checked={form.private}
                             onChange={(e) => setForm({ ...form, private: e.target.checked })}
-                            className="w-5 h-5 accent-[#8B5CF6]"
+                            className="w-5 h-5 accent-black"
                         />
                     </label>
 
-                    <div className="flex justify-between items-center pb-10 gap-3">
+                    <div className="flex justify-between items-center pb-10 gap-3 hairline-t pt-6">
                         <button
                             onClick={logout}
                             data-testid="settings-logout"
-                            className="px-4 lg:px-5 py-3 text-sm font-mono text-zinc-500 hover:text-accent-vermillion transition tap-shrink"
+                            className="inline-flex items-center gap-2 px-4 py-3 text-[12px] font-mono uppercase tracking-[0.16em] text-black/55 hover:text-red-soft transition tap-shrink"
                         >
+                            <LogOut size={14} strokeWidth={1.7} />
                             Terminar sessão
                         </button>
                         <button
                             onClick={save}
                             disabled={busy}
                             data-testid="settings-save-btn"
-                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-6 lg:px-7 py-3 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-95 glow-vermillion"
+                            className="btn-obsidian px-7 py-3 text-[12px] disabled:opacity-50"
                         >
-                            {busy ? "A guardar..." : "Guardar"}
+                            {busy ? "A guardar…" : "Guardar"}
                         </button>
                     </div>
                 </div>

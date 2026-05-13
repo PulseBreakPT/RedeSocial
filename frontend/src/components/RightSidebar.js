@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, TrendingUp, Sparkles } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
@@ -41,31 +41,32 @@ export function RightSidebar() {
     };
 
     return (
-        <aside className="hidden lg:flex flex-col gap-5 py-6 pl-2 sticky top-0 h-screen overflow-y-auto" data-testid="right-sidebar">
+        <aside className="hidden lg:flex flex-col gap-5 py-6 pl-2 sticky top-0 h-screen overflow-y-auto no-scrollbar" data-testid="right-sidebar">
+            {/* Search */}
             <div className="relative">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search size={15} strokeWidth={1.7} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
                 <input
                     data-testid="search-input"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Pesquisar utilizadores..."
-                    className="w-full bg-zinc-900/50 rounded-full pl-10 pr-4 py-3 text-sm border border-white/[0.05] focus:border-accent-vermillion/60 focus:bg-zinc-950 outline-none transition placeholder:text-zinc-600"
+                    placeholder="Pesquisar utilizadores…"
+                    className="w-full bg-white border border-black/[0.08] rounded-full pl-10 pr-4 py-3 text-[13px] focus:border-black/30 focus:bg-white outline-none transition placeholder:text-black/35"
                 />
                 {q && results.length > 0 && (
-                    <div className="absolute z-30 left-0 right-0 mt-2 bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden">
+                    <div className="absolute z-30 left-0 right-0 mt-2 card-premium rounded-2xl overflow-hidden">
                         {results.map((u) => (
                             <div
                                 key={u.id}
                                 onClick={() => { navigate(`/u/${u.username}`); setQ(""); }}
-                                className="flex items-center gap-3 p-3 hover:bg-white/5 cursor-pointer"
+                                className="flex items-center gap-3 p-3 hover:bg-black/[0.03] cursor-pointer tap-shrink"
                                 data-testid={`search-result-${u.username}`}
                             >
                                 <Avatar user={u} size={36} />
                                 <div>
-                                    <div className="text-sm font-heading font-semibold flex items-center gap-1">
+                                    <div className="text-sm font-heading font-semibold flex items-center gap-1 text-black">
                                         {u.name} {u.verified && <VerifiedBadge size={11} />}
                                     </div>
-                                    <div className="text-xs font-mono text-zinc-500">@{u.username}</div>
+                                    <div className="text-xs font-mono text-black/50">@{u.username}</div>
                                 </div>
                             </div>
                         ))}
@@ -75,50 +76,74 @@ export function RightSidebar() {
 
             <ActivityTicker />
 
-            <div className="bg-zinc-950/50 border border-white/[0.05] rounded-2xl p-5">
-                <h3 className="font-heading text-lg font-bold mb-3">Assuntos do momento</h3>
+            {/* Trending */}
+            <div className="card-lux p-5">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <p className="type-overline mb-0.5">Em alta</p>
+                        <h3 className="font-display text-[22px] leading-none tracking-tight text-black">Tendências</h3>
+                    </div>
+                    <TrendingUp size={16} strokeWidth={1.5} className="text-black/40" />
+                </div>
                 {trending.length === 0 ? (
-                    <p className="text-zinc-500 text-sm">Sem trending. Usa <span className="text-accent-vermillion">#hashtag</span>.</p>
+                    <p className="text-black/55 text-sm">Sem tendências. Usa uma <span className="text-black font-medium">#hashtag</span>.</p>
                 ) : (
-                    <ul className="space-y-3">
-                        {trending.map((t) => (
+                    <ul className="space-y-3.5">
+                        {trending.map((t, idx) => (
                             <li
                                 key={t.tag}
                                 onClick={() => navigate(`/tag/${t.tag}`)}
                                 data-testid={`trending-${t.tag}`}
-                                className="group cursor-pointer tap-shrink"
+                                className="group cursor-pointer flex items-start gap-3 tap-press rounded-lg -mx-2 px-2 py-1"
                             >
-                                <div className="font-heading text-[15px] font-semibold group-hover:text-accent-vermillion transition">#{t.tag}</div>
-                                <div className="font-mono text-xs text-zinc-500">{t.count} publicações</div>
+                                <span className="font-mono text-[10px] text-black/35 mt-1 w-4">{String(idx + 1).padStart(2, "0")}</span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-heading text-[15px] font-medium tracking-tight text-black group-hover:text-black truncate">
+                                        #{t.tag}
+                                    </div>
+                                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/40 mt-0.5">
+                                        {t.count} publicações
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>
                 )}
+                <Link to="/trending" className="mt-4 block text-center type-overline ink-link text-black/60 hover:text-black">
+                    ver tudo →
+                </Link>
             </div>
 
-            <div className="bg-zinc-950/50 border border-white/[0.05] rounded-2xl p-5">
-                <h3 className="font-heading text-lg font-bold mb-3">Quem seguir</h3>
+            {/* Suggestions */}
+            <div className="card-lux p-5">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <p className="type-overline mb-0.5">Sugestões</p>
+                        <h3 className="font-display text-[22px] leading-none tracking-tight text-black">Quem seguir</h3>
+                    </div>
+                    <Sparkles size={16} strokeWidth={1.5} className="text-black/40" />
+                </div>
                 {suggestions.length === 0 ? (
-                    <p className="text-zinc-500 text-sm">Sem sugestões agora.</p>
+                    <p className="text-black/55 text-sm">Sem sugestões agora.</p>
                 ) : (
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                         {suggestions.map((u) => (
                             <li key={u.id} className="flex items-center gap-3" data-testid={`suggestion-${u.username}`}>
                                 <Link to={`/u/${u.username}`}>
                                     <Avatar user={u} size={42} />
                                 </Link>
                                 <div className="flex-1 min-w-0">
-                                    <Link to={`/u/${u.username}`} className="block font-heading font-semibold text-sm truncate hover:underline flex items-center gap-1">
+                                    <Link to={`/u/${u.username}`} className="font-heading font-medium text-[14px] tracking-tight truncate hover:underline flex items-center gap-1 text-black">
                                         {u.name} {u.verified && <VerifiedBadge size={11} />}
                                     </Link>
-                                    <div className="font-mono text-[10px] text-zinc-500 truncate">
+                                    <div className="font-mono text-[10px] text-black/45 truncate mt-0.5">
                                         @{u.username} · {u.reason}
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => handleFollow(u.username)}
                                     data-testid={`follow-suggestion-${u.username}`}
-                                    className="px-4 py-1.5 text-xs font-heading font-semibold tracking-tight bg-white text-black rounded-full hover:bg-zinc-200 tap-shrink"
+                                    className="btn-silver px-3.5 py-1.5 text-[11px] tracking-tight"
                                 >
                                     Seguir
                                 </button>
@@ -128,8 +153,8 @@ export function RightSidebar() {
                 )}
             </div>
 
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest px-2">
-                © vermillion · {new Date().getFullYear()}
+            <p className="type-overline px-2 mt-auto pt-2">
+                © vermillion · {new Date().getFullYear()} · feito à mão
             </p>
         </aside>
     );

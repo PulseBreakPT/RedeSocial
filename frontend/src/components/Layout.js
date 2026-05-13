@@ -66,7 +66,7 @@ export function Layout() {
                         <div className="flex items-center justify-between px-5 lg:px-6 py-3 lg:py-4 hairline-b">
                             <div>
                                 <p className="type-overline">manuscrito</p>
-                                <h2 className="font-display italic text-[22px] lg:text-[26px] font-light tracking-tight leading-none mt-1">Nova publicação</h2>
+                                <h2 className="font-display text-[22px] lg:text-[26px] font-light tracking-tight leading-none mt-1">Nova publicação</h2>
                             </div>
                             <button
                                 onClick={() => setComposeOpen(false)}

@@ -164,7 +164,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             <div ref={articleRef} onClick={openDetail} className={clickable ? "cursor-pointer" : ""}>
                 {pinned && (
                     <div className="flex items-center gap-1.5 text-xs font-mono text-black/50 ml-12 mb-1.5" data-testid={`pinned-${post.id}`}>
-                        <Pin size={12} className="text-accent-vermillion" />
+                        <Pin size={11} strokeWidth={1.7} className="text-black/55" />
                         <span>Fixado no perfil</span>
                     </div>
                 )}

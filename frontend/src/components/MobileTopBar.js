@@ -37,7 +37,7 @@ export function MobileTopBar() {
                     <Avatar user={user} size={32} showOnline />
                 </button>
                 <Link to="/" className="flex items-center gap-1.5 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
-                    <span className="font-display text-[24px] leading-none tracking-tight text-black italic font-light flex items-baseline gap-1">
+                    <span className="font-display text-[24px] leading-none tracking-tight text-black flex items-baseline gap-1">
                         <span className="silver-foil text-[20px] not-italic translate-y-[1px]">◆</span>
                         vermillion
                     </span>

@@ -24,49 +24,60 @@ export default function Register() {
     const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
     return (
-        <div className="min-h-screen grid lg:grid-cols-2">
-            <div
-                className="hidden lg:flex relative flex-col justify-between p-12 overflow-hidden"
-                style={{
-                    backgroundImage:
-                        "url('https://images.unsplash.com/photo-1767893609884-622503897e53?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85')",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                }}
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#9a9aa3]/30" />
+        <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
+            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden bg-paper grain isolate">
+                <div
+                    className="absolute -top-32 -right-24 w-[520px] h-[520px] rounded-full opacity-50"
+                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
+                />
+                <div
+                    className="absolute -bottom-40 -left-32 w-[640px] h-[640px] rounded-full opacity-40"
+                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }}
+                />
                 <div className="relative">
-                    <h1 className="font-heading text-5xl font-bold tracking-tighter">
-                        <span className="text-accent-vermillion">▲</span> vermillion
+                    <h1 className="font-display text-[36px] leading-none tracking-tight text-black flex items-baseline gap-2">
+                        <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
+                        <span>vermillion</span>
                     </h1>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-400 mt-2">rede social</p>
                 </div>
                 <div className="relative max-w-md">
-                    <h2 className="font-heading text-4xl font-bold tracking-tight leading-tight">
-                        O teu lugar para<br />contar uma <span className="text-accent-vermillion italic">história</span>.
+                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-black">
+                        Junta-te à <span className="silver-foil">conversa</span>.
                     </h2>
+                    <p className="font-body text-black/60 mt-6 leading-relaxed text-[15px] max-w-sm">
+                        Conta criada em segundos. Sem ruído, sem ads, sem algoritmos opacos — apenas pessoas a falar.
+                    </p>
+                </div>
+                <div className="relative text-[12px] text-black/40 font-medium">
+                    © vermillion · {new Date().getFullYear()}
                 </div>
             </div>
 
-            <div className="flex flex-col justify-center p-8 lg:p-16">
+            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen bg-white">
                 <div className="max-w-sm w-full mx-auto">
-                    <h2 className="font-heading text-3xl font-bold tracking-tight">Criar conta</h2>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">começa em 30 segundos</p>
+                    <div className="lg:hidden text-center mb-10">
+                        <h1 className="font-display text-[36px] leading-none tracking-tight">
+                            <span className="silver-foil">◆</span> vermillion
+                        </h1>
+                    </div>
+                    <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Criar conta</h2>
+                    <p className="text-black/55 text-[14px] mt-2">É grátis e demora menos de um minuto.</p>
 
                     <form onSubmit={submit} className="mt-8 space-y-4" data-testid="register-form">
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nome</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Nome</label>
                             <input
                                 data-testid="register-name"
                                 type="text"
                                 value={form.name}
                                 onChange={update("name")}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none"
+                                placeholder="O teu nome"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Username</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Username</label>
                             <input
                                 data-testid="register-username"
                                 type="text"
@@ -75,22 +86,24 @@ export default function Register() {
                                 required
                                 minLength={3}
                                 pattern="[a-zA-Z0-9_]+"
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none"
+                                placeholder="o_teu_user"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Email</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Email</label>
                             <input
                                 data-testid="register-email"
                                 type="email"
                                 value={form.email}
                                 onChange={update("email")}
                                 required
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none"
+                                placeholder="tu@exemplo.com"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Palavra-passe</label>
+                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Palavra-passe</label>
                             <input
                                 data-testid="register-password"
                                 type="password"
@@ -98,23 +111,24 @@ export default function Register() {
                                 onChange={update("password")}
                                 required
                                 minLength={6}
-                                className="mt-2 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-accent-vermillion focus:outline-none"
+                                placeholder="Mínimo 6 caracteres"
+                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
                             />
                         </div>
-                        {error && <div data-testid="register-error" className="text-sm text-accent-vermillion font-mono">{error}</div>}
+                        {error && <div data-testid="register-error" className="text-sm text-red-soft font-medium">{error}</div>}
                         <button
                             type="submit"
                             disabled={busy}
                             data-testid="register-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
+                            className="btn-obsidian w-full text-[14px] py-3.5 disabled:opacity-50 mt-2"
                         >
-                            {busy ? "A criar..." : "Criar conta"}
+                            {busy ? "A criar conta…" : "Criar conta"}
                         </button>
                     </form>
 
-                    <p className="mt-8 font-mono text-sm text-zinc-500">
+                    <p className="mt-8 text-[13px] text-black/55 text-center lg:text-left">
                         Já tens conta?{" "}
-                        <Link to="/login" data-testid="goto-login" className="text-accent-vermillion hover:underline">
+                        <Link to="/login" data-testid="goto-login" className="text-black ink-link font-semibold">
                             Entrar
                         </Link>
                     </p>

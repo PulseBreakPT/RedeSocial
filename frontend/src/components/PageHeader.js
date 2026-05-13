@@ -2,8 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 /**
- * Sticky page header that adapts to mobile (compact, with optional back arrow)
- * and desktop (taller). Sits BELOW the MobileTopBar on mobile and at the top on desktop.
+ * Sticky page header used across most pages.
+ * Sits below the MobileTopBar on mobile and at the top on desktop.
+ * Modern social-network style: bold title + small subtitle.
  */
 export function PageHeader({ title, subtitle, action, back = false, children, sticky = true, testid }) {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
             data-testid={testid}
             className={`${sticky ? "sticky" : ""} top-[var(--mobile-topbar-h)] lg:top-0 z-30 glass border-b border-black/[0.06]`}
         >
-            <div className="flex items-center gap-3 px-4 lg:px-5 py-3 lg:py-4 min-h-[52px]">
+            <div className="flex items-center gap-3 px-4 lg:px-5 py-3 lg:py-4 min-h-[56px]">
                 {back && (
                     <button
                         onClick={() => navigate(-1)}
@@ -24,14 +25,14 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
                     </button>
                 )}
                 <div className="flex-1 min-w-0">
+                    <h1 className="font-display text-[20px] lg:text-[22px] font-bold tracking-tight leading-tight truncate text-black">
+                        {title}
+                    </h1>
                     {subtitle && (
-                        <p className="type-overline truncate mb-1">
+                        <p className="text-[12px] text-black/50 truncate mt-0.5 font-medium">
                             {subtitle}
                         </p>
                     )}
-                    <h1 className="font-display text-[26px] lg:text-[32px] italic font-light tracking-tight leading-[1.05] truncate text-black">
-                        {title}
-                    </h1>
                 </div>
                 {action && <div className="flex-shrink-0">{action}</div>}
             </div>
