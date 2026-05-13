@@ -1,5 +1,20 @@
 import { useRef, useState, useEffect } from "react";
-import { Image as ImageIcon, X, Smile, FileText, Hash, AtSign } from "lucide-react";
+import {
+    Image as ImageIcon,
+    X,
+    Smile,
+    FileText,
+    Hash,
+    AtSign,
+    BarChart3,
+    Clock,
+    Save,
+    Globe,
+    Users as UsersIcon,
+    AtSign as AtSignIcon,
+    Plus,
+    Calendar,
+} from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
@@ -7,15 +22,34 @@ import { useLocalDraft } from "../hooks/useLocalDraft";
 import { toast } from "sonner";
 
 const EMOJIS = ["🔥", "✨", "🚀", "❤️", "👀", "💯", "😂", "🙌", "⚡", "🌙"];
+const AUDIENCES = [
+    { id: "everyone", label: "Toda a gente", Icon: Globe },
+    { id: "following", label: "Quem sigo", Icon: UsersIcon },
+    { id: "mentioned", label: "Apenas mencionados", Icon: AtSignIcon },
+];
+const MAX_IMAGES = 4;
 
-export function Composer({ onPosted, asModal = false, onClose, communityId = null }) {
+export function Composer({ onPosted, asModal = false, onClose, communityId = null, initialPost = null }) {
     const { user } = useAuth();
     const draftKey = communityId ? `draft:c:${communityId}` : "draft:global";
-    const [content, setContent, clearDraft] = useLocalDraft(draftKey, "");
-    const [image, setImage] = useState("");
+    const [content, setContent, clearDraft] = useLocalDraft(draftKey, initialPost?.content || "");
+    const [images, setImages] = useState(initialPost?.images || []);
     const [busy, setBusy] = useState(false);
     const [hadDraft, setHadDraft] = useState(false);
     const [emojiOpen, setEmojiOpen] = useState(false);
+    const [audOpen, setAudOpen] = useState(false);
+    const [audience, setAudience] = useState("everyone");
+
+    // Poll state
+    const [pollOpen, setPollOpen] = useState(false);
+    const [pollOptions, setPollOptions] = useState(["", ""]);
+    const [pollDuration, setPollDuration] = useState(1440); // minutes (1 day)
+    const [pollMultiple, setPollMultiple] = useState(false);
+
+    // Schedule state
+    const [scheduleOpen, setScheduleOpen] = useState(false);
+    const [scheduledAt, setScheduledAt] = useState("");
+
     const fileRef = useRef(null);
     const textareaRef = useRef(null);
 
@@ -24,13 +58,23 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         // eslint-disable-next-line
     }, []);
 
-    const handleFile = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (file.size > 2 * 1024 * 1024) { toast.error("Imagem não pode exceder 2MB"); return; }
-        const reader = new FileReader();
-        reader.onload = (ev) => setImage(ev.target.result);
-        reader.readAsDataURL(file);
+    const handleFiles = (files) => {
+        const list = Array.from(files || []);
+        if (!list.length) return;
+        const slots = MAX_IMAGES - images.length;
+        if (slots <= 0) {
+            toast.error(`Máximo ${MAX_IMAGES} imagens`);
+            return;
+        }
+        list.slice(0, slots).forEach((file) => {
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error("Cada imagem deve ter no máximo 2MB");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (ev) => setImages((prev) => (prev.length < MAX_IMAGES ? [...prev, ev.target.result] : prev));
+            reader.readAsDataURL(file);
+        });
     };
 
     const handlePaste = (e) => {
@@ -40,10 +84,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             if (item.type.startsWith("image/")) {
                 const file = item.getAsFile();
                 if (file && file.size <= 2 * 1024 * 1024) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => setImage(ev.target.result);
-                    reader.readAsDataURL(file);
-                    toast.success("Imagem colada");
+                    handleFiles([file]);
                     e.preventDefault();
                     return;
                 }
@@ -51,20 +92,57 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         }
     };
 
-    const submit = async () => {
-        if (!content.trim()) { toast.error("Escreve algo antes de publicar"); return; }
+    const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
+
+    const submit = async (mode = "publish") => {
+        const isDraft = mode === "draft";
+        const isScheduled = mode === "publish" && scheduledAt;
+        if (!isDraft && !content.trim() && images.length === 0 && !pollOpen) {
+            toast.error("Escreve algo, adiciona imagem ou cria uma enquete");
+            return;
+        }
+        if (pollOpen) {
+            const cleaned = pollOptions.map((s) => s.trim()).filter(Boolean);
+            if (cleaned.length < 2) {
+                toast.error("Enquete precisa de pelo menos 2 opções");
+                return;
+            }
+        }
         setBusy(true);
         try {
-            const body = { content, image };
+            const body = {
+                content,
+                images,
+                reply_audience: audience,
+                is_draft: isDraft,
+            };
             if (communityId) body.community_id = communityId;
+            if (pollOpen) {
+                body.poll = {
+                    options: pollOptions.map((s) => s.trim()).filter(Boolean),
+                    allow_multiple: pollMultiple,
+                    ends_in_minutes: pollDuration,
+                };
+            }
+            if (isScheduled) {
+                const iso = new Date(scheduledAt).toISOString();
+                body.scheduled_at = iso;
+            }
             const { data } = await api.post("/posts", body);
             clearDraft();
-            setImage("");
+            setImages([]);
+            setPollOpen(false);
+            setPollOptions(["", ""]);
+            setScheduledAt("");
+            setScheduleOpen(false);
             onPosted?.(data);
-            toast.success("Publicado");
+            toast.success(isDraft ? "Rascunho guardado" : isScheduled ? "Agendado" : "Publicado");
             onClose?.();
-        } catch (e) { toast.error(formatApiError(e)); }
-        finally { setBusy(false); }
+        } catch (e) {
+            toast.error(formatApiError(e));
+        } finally {
+            setBusy(false);
+        }
     };
 
     const insertText = (s) => {
@@ -83,18 +161,59 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const remaining = 500 - content.length;
     const progress = Math.min(100, (content.length / 500) * 100);
     const progressColor =
-        remaining < 0 ? "stroke-red-500" : remaining < 40 ? "stroke-accent-vermillion" : "stroke-emerald-500";
+        remaining < 0 ? "stroke-red-soft" : remaining < 40 ? "stroke-black" : "stroke-green-soft";
+    const AudienceIcon = AUDIENCES.find((a) => a.id === audience)?.Icon || Globe;
+    const audienceLabel = AUDIENCES.find((a) => a.id === audience)?.label;
 
     return (
-        <div className={asModal ? "p-4 lg:p-5" : "hidden lg:block px-4 py-4 border-b border-white/[0.05]"}>
+        <div className={asModal ? "p-4 lg:p-5" : "hidden lg:block px-4 py-4 border-b border-black/[0.06]"}>
             <div className="flex gap-3">
                 <Avatar user={user} size={44} />
                 <div className="flex-1 min-w-0">
                     {hadDraft && content && (
-                        <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-2" data-testid="draft-restored">
+                        <div className="flex items-center gap-2 text-xs font-mono text-green-soft mb-2" data-testid="draft-restored">
                             <FileText size={12} /> Rascunho restaurado
                         </div>
                     )}
+
+                    {/* Audience selector */}
+                    <div className="mb-2 relative inline-block">
+                        <button
+                            onClick={() => setAudOpen((v) => !v)}
+                            data-testid="composer-audience-btn"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
+                        >
+                            <AudienceIcon size={12} />
+                            {audienceLabel}
+                        </button>
+                        {audOpen && (
+                            <div
+                                onMouseLeave={() => setAudOpen(false)}
+                                className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[200px]"
+                            >
+                                {AUDIENCES.map((a) => {
+                                    const I = a.Icon;
+                                    return (
+                                        <button
+                                            key={a.id}
+                                            onClick={() => {
+                                                setAudience(a.id);
+                                                setAudOpen(false);
+                                            }}
+                                            data-testid={`composer-audience-${a.id}`}
+                                            className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-black/[0.04] text-sm text-left ${
+                                                audience === a.id ? "text-black font-semibold" : "text-black/70"
+                                            }`}
+                                        >
+                                            <I size={14} />
+                                            {a.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
                     <textarea
                         ref={textareaRef}
                         data-testid="composer-textarea"
@@ -104,64 +223,158 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         placeholder={communityId ? "Partilha algo com a comunidade..." : "O que está a acontecer?"}
                         rows={asModal ? 4 : 2}
                         maxLength={500}
-                        className="w-full bg-transparent text-[17px] font-body placeholder:text-zinc-500 focus:outline-none resize-none leading-snug"
+                        className="w-full bg-transparent text-[17px] font-body placeholder:text-black/40 focus:outline-none resize-none leading-snug text-black"
                     />
-                    {image && (
-                        <div className="relative inline-block mt-3 group">
-                            <img src={image} alt="preview" className="max-h-72 rounded-2xl border border-white/10" />
-                            <button
-                                onClick={() => setImage("")}
-                                data-testid="composer-remove-image"
-                                className="absolute top-2 right-2 bg-black/80 hover:bg-black rounded-full p-1.5 text-white opacity-100 lg:opacity-0 group-hover:opacity-100 transition"
-                            >
+
+                    {/* Images carousel preview */}
+                    {images.length > 0 && (
+                        <div
+                            className={`mt-3 grid gap-1.5 ${
+                                images.length === 1
+                                    ? "grid-cols-1"
+                                    : images.length === 2
+                                    ? "grid-cols-2"
+                                    : "grid-cols-2"
+                            }`}
+                            data-testid="composer-images"
+                        >
+                            {images.map((src, i) => (
+                                <div key={i} className="relative group rounded-2xl overflow-hidden border border-black/[0.08]">
+                                    <img src={src} alt="" className={`w-full ${images.length === 1 ? "max-h-72 object-cover" : "h-32 object-cover"}`} />
+                                    <button
+                                        onClick={() => removeImage(i)}
+                                        data-testid={`composer-remove-image-${i}`}
+                                        className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-black rounded-full p-1.5 text-white"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            {images.length < MAX_IMAGES && (
+                                <button
+                                    onClick={() => fileRef.current?.click()}
+                                    className="rounded-2xl border-2 border-dashed border-black/[0.12] hover:border-black/30 hover:bg-black/[0.02] grid place-items-center h-32 text-black/50"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Poll editor */}
+                    {pollOpen && (
+                        <div className="mt-3 p-3 lg:p-4 rounded-2xl border border-black/[0.08] bg-black/[0.02] space-y-2" data-testid="composer-poll">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-heading text-sm font-bold">Enquete</h4>
+                                <button onClick={() => setPollOpen(false)} className="text-black/50 hover:text-black tap-shrink" data-testid="composer-poll-close">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            {pollOptions.map((opt, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <input
+                                        value={opt}
+                                        onChange={(e) => setPollOptions((prev) => prev.map((p, i) => (i === idx ? e.target.value : p)))}
+                                        maxLength={60}
+                                        data-testid={`composer-poll-option-${idx}`}
+                                        placeholder={`Opção ${idx + 1}`}
+                                        className="flex-1 bg-white border border-black/[0.08] rounded-full px-4 py-2 text-sm focus:border-black/40 outline-none"
+                                    />
+                                    {pollOptions.length > 2 && (
+                                        <button
+                                            onClick={() => setPollOptions((prev) => prev.filter((_, i) => i !== idx))}
+                                            className="text-black/40 hover:text-red-soft tap-shrink"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {pollOptions.length < 4 && (
+                                <button
+                                    onClick={() => setPollOptions((prev) => [...prev, ""])}
+                                    data-testid="composer-poll-add-option"
+                                    className="text-xs font-mono text-black/60 hover:text-black flex items-center gap-1 tap-shrink"
+                                >
+                                    <Plus size={12} /> adicionar opção
+                                </button>
+                            )}
+                            <div className="flex items-center justify-between pt-2 border-t border-black/[0.06] gap-3 flex-wrap">
+                                <label className="flex items-center gap-2 text-xs font-mono text-black/70">
+                                    <input
+                                        type="checkbox"
+                                        checked={pollMultiple}
+                                        onChange={(e) => setPollMultiple(e.target.checked)}
+                                        data-testid="composer-poll-multi"
+                                    />
+                                    múltipla escolha
+                                </label>
+                                <select
+                                    value={pollDuration}
+                                    onChange={(e) => setPollDuration(parseInt(e.target.value, 10))}
+                                    data-testid="composer-poll-duration"
+                                    className="bg-white border border-black/[0.08] rounded-full px-3 py-1 text-xs font-mono"
+                                >
+                                    <option value={60}>1 hora</option>
+                                    <option value={360}>6 horas</option>
+                                    <option value={1440}>1 dia</option>
+                                    <option value={4320}>3 dias</option>
+                                    <option value={10080}>7 dias</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Schedule editor */}
+                    {scheduleOpen && (
+                        <div className="mt-3 p-3 rounded-2xl border border-black/[0.08] bg-black/[0.02] flex items-center gap-2" data-testid="composer-schedule">
+                            <Calendar size={16} className="text-black/60" />
+                            <input
+                                type="datetime-local"
+                                value={scheduledAt}
+                                onChange={(e) => setScheduledAt(e.target.value)}
+                                data-testid="composer-schedule-input"
+                                className="flex-1 bg-white border border-black/[0.08] rounded-full px-3 py-1.5 text-sm"
+                                min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                            />
+                            <button onClick={() => { setScheduleOpen(false); setScheduledAt(""); }} className="text-black/50 hover:text-black tap-shrink" data-testid="composer-schedule-close">
                                 <X size={14} />
                             </button>
                         </div>
                     )}
-                    <div className="flex items-center justify-between mt-4 gap-2">
-                        <div className="flex items-center gap-1">
-                            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" data-testid="composer-file-input" />
-                            <button
-                                onClick={() => fileRef.current?.click()}
-                                data-testid="composer-image-btn"
-                                className="w-9 h-9 rounded-full grid place-items-center text-accent-vermillion hover:bg-accent-vermillion/10 transition tap-shrink"
-                                aria-label="imagem"
-                            >
+
+                    <div className="flex items-center justify-between mt-4 gap-2 flex-wrap">
+                        <div className="flex items-center gap-0.5 flex-wrap">
+                            <input ref={fileRef} type="file" accept="image/*" multiple onChange={(e) => handleFiles(e.target.files)} className="hidden" data-testid="composer-file-input" />
+                            <ComposerIconBtn onClick={() => fileRef.current?.click()} disabled={images.length >= MAX_IMAGES} data-testid="composer-image-btn" label="imagem">
                                 <ImageIcon size={18} />
-                            </button>
-                            <button
-                                onClick={() => insertText("#")}
-                                className="w-9 h-9 rounded-full grid place-items-center text-accent-vermillion hover:bg-accent-vermillion/10 transition tap-shrink"
-                                aria-label="hashtag"
-                            >
+                            </ComposerIconBtn>
+                            <ComposerIconBtn onClick={() => setPollOpen((v) => !v)} active={pollOpen} disabled={!!scheduleOpen} data-testid="composer-poll-btn" label="enquete">
+                                <BarChart3 size={18} />
+                            </ComposerIconBtn>
+                            <ComposerIconBtn onClick={() => setScheduleOpen((v) => !v)} active={scheduleOpen} disabled={pollOpen} data-testid="composer-schedule-btn" label="agendar">
+                                <Clock size={18} />
+                            </ComposerIconBtn>
+                            <ComposerIconBtn onClick={() => insertText("#")} label="hashtag">
                                 <Hash size={18} />
-                            </button>
-                            <button
-                                onClick={() => insertText("@")}
-                                className="w-9 h-9 rounded-full grid place-items-center text-accent-vermillion hover:bg-accent-vermillion/10 transition tap-shrink"
-                                aria-label="menção"
-                            >
+                            </ComposerIconBtn>
+                            <ComposerIconBtn onClick={() => insertText("@")} label="menção">
                                 <AtSign size={18} />
-                            </button>
+                            </ComposerIconBtn>
                             <div className="relative">
-                                <button
-                                    onClick={() => setEmojiOpen((v) => !v)}
-                                    data-testid="composer-emoji-btn"
-                                    className="w-9 h-9 rounded-full grid place-items-center text-accent-vermillion hover:bg-accent-vermillion/10 transition tap-shrink"
-                                    aria-label="emoji"
-                                >
+                                <ComposerIconBtn onClick={() => setEmojiOpen((v) => !v)} data-testid="composer-emoji-btn" label="emoji">
                                     <Smile size={18} />
-                                </button>
+                                </ComposerIconBtn>
                                 {emojiOpen && (
                                     <div
                                         onMouseLeave={() => setEmojiOpen(false)}
-                                        className="absolute left-0 top-full mt-1 flex bg-zinc-950 border border-white/10 rounded-2xl px-2 py-1.5 gap-0.5 z-30 shadow-2xl"
+                                        className="absolute left-0 top-full mt-1 flex bg-white border border-black/[0.08] rounded-2xl px-2 py-1.5 gap-0.5 z-30 shadow-xl"
                                     >
                                         {EMOJIS.map((emj) => (
                                             <button
                                                 key={emj}
                                                 onClick={() => { insertText(emj); setEmojiOpen(false); }}
-                                                className="hover:bg-white/10 rounded-full w-8 h-8 grid place-items-center text-base tap-shrink"
+                                                className="hover:bg-black/[0.05] rounded-full w-8 h-8 grid place-items-center text-base tap-shrink"
                                             >
                                                 {emj}
                                             </button>
@@ -170,34 +383,59 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 )}
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             {content.length > 0 && (
                                 <div className="relative w-6 h-6">
                                     <svg viewBox="0 0 24 24" className="w-full h-full -rotate-90">
-                                        <circle cx="12" cy="12" r="10" className="stroke-white/10 fill-none" strokeWidth="2.5" />
+                                        <circle cx="12" cy="12" r="10" className="stroke-black/10 fill-none" strokeWidth="2.5" />
                                         <circle cx="12" cy="12" r="10" fill="none" strokeWidth="2.5"
                                             className={progressColor} strokeLinecap="round"
                                             strokeDasharray={`${(progress / 100) * 62.83} 62.83`} />
                                     </svg>
                                     {remaining < 40 && (
-                                        <span className={`absolute inset-0 grid place-items-center font-mono text-[9px] ${remaining < 0 ? "text-red-500" : "text-accent-vermillion"}`}>
+                                        <span className={`absolute inset-0 grid place-items-center font-mono text-[9px] ${remaining < 0 ? "text-red-soft" : "text-black"}`}>
                                             {remaining}
                                         </span>
                                     )}
                                 </div>
                             )}
                             <button
-                                disabled={busy || !content.trim() || remaining < 0}
-                                onClick={submit}
-                                data-testid="composer-publish-btn"
-                                className="bg-accent-vermillion text-white font-heading font-semibold text-[13px] tracking-tight px-5 py-2.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-30 disabled:cursor-not-allowed tap-shrink glow-vermillion"
+                                onClick={() => submit("draft")}
+                                disabled={busy || (!content.trim() && images.length === 0)}
+                                data-testid="composer-draft-btn"
+                                className="font-mono text-[11px] uppercase tracking-wide text-black/60 hover:text-black px-3 py-2 tap-shrink disabled:opacity-40 inline-flex items-center gap-1.5"
+                                title="Guardar rascunho"
                             >
-                                {busy ? "..." : "Publicar"}
+                                <Save size={13} /> rascunho
+                            </button>
+                            <button
+                                disabled={busy || (!content.trim() && images.length === 0 && !pollOpen) || remaining < 0}
+                                onClick={() => submit("publish")}
+                                data-testid="composer-publish-btn"
+                                className="bg-accent-vermillion text-white font-heading font-semibold text-[13px] tracking-tight px-5 py-2.5 rounded-full transition disabled:opacity-30 disabled:cursor-not-allowed tap-shrink glow-vermillion"
+                            >
+                                {busy ? "..." : scheduledAt ? "Agendar" : "Publicar"}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+function ComposerIconBtn({ onClick, children, active = false, disabled = false, label, ...rest }) {
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={label}
+            className={`w-9 h-9 rounded-full grid place-items-center transition tap-shrink ${
+                active ? "bg-black/[0.08] text-black" : "text-black/60 hover:bg-black/[0.04] hover:text-black"
+            } disabled:opacity-30`}
+            {...rest}
+        >
+            {children}
+        </button>
     );
 }
