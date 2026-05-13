@@ -27,6 +27,7 @@ const bgFor = (type) => {
 
 const FILTERS = [
     { key: "all", label: "Tudo" },
+    { key: "priority", label: "Prioridade" },
     { key: "unread", label: "Não lidas" },
     { key: "star", label: "Importantes" },
     { key: "mention", label: "Menções" },
@@ -54,6 +55,7 @@ function dayLabel(d) {
 
 export default function Notifications() {
     const [items, setItems] = useState([]);
+    const [priorityGroups, setPriorityGroups] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
     useLiveTime(30000);
@@ -62,9 +64,16 @@ export default function Notifications() {
         const { data } = await api.get("/notifications");
         setItems(data);
     };
+    const reloadPriority = async () => {
+        try {
+            const { data } = await api.get("/notifications/priority");
+            setPriorityGroups(data);
+        } catch { setPriorityGroups(null); }
+    };
 
     useEffect(() => {
         reload().finally(() => setLoading(false));
+        reloadPriority();
         api.post("/notifications/read-all").catch(() => {});
     }, []);
 
@@ -153,6 +162,41 @@ export default function Notifications() {
 
             {loading ? (
                 <div className="p-12 text-center type-overline">a carregar…</div>
+            ) : filter === "priority" && priorityGroups ? (
+                <div data-testid="notif-priority-view">
+                    {[
+                        { key: "urgent", label: "Urgente · Menções & Convites", color: "text-red-600 bg-red-50 border-red-200" },
+                        { key: "high", label: "Mesa & Roda", color: "text-orange-700 bg-orange-50 border-orange-200" },
+                        { key: "normal", label: "Pessoas que segues", color: "text-black bg-black/[0.04] border-black/10" },
+                        { key: "low", label: "Outros", color: "text-black/55 bg-black/[0.02] border-black/[0.06]" },
+                    ].map((grp) => {
+                        const list = priorityGroups[grp.key] || [];
+                        if (list.length === 0) return null;
+                        return (
+                            <div key={grp.key} className="hairline-b">
+                                <div className={`px-4 py-2 border-l-4 ${grp.color}`}>
+                                    <span className="type-overline">{grp.label} · {list.length}</span>
+                                </div>
+                                {list.map((n) => {
+                                    const linkTo = n.post_id ? `/post/${n.post_id}` : `/u/${n.from?.username}`;
+                                    return (
+                                        <Link key={n.id} to={linkTo} className="flex items-start gap-3 px-4 lg:px-5 py-3 hover:bg-black/[0.02] transition hairline-b" data-testid={`notif-priority-item-${n.id}`}>
+                                            <div className={`w-8 h-8 rounded-full grid place-items-center flex-shrink-0 ${bgFor(n.type)}`}>{iconFor(n.type)}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar user={n.from} size={22} />
+                                                    <span className="font-heading font-medium text-[13px] truncate">{n.from?.name}</span>
+                                                    <span className="font-mono text-[10px] text-black/40 ml-auto">{smartTime(n.created_at)}</span>
+                                                </div>
+                                                <p className="mt-1 text-xs text-black/65 line-clamp-2">{n.text}</p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
+                </div>
             ) : filtered.length === 0 ? (
                 <div className="px-6 py-20 text-center anim-fade-up">
                     <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">

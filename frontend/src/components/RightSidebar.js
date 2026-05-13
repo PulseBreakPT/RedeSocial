@@ -6,6 +6,7 @@ import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
 import { Spinner } from "./Spinner";
+import { TrendingPulse } from "./TrendingPulse";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { toast } from "sonner";
 
@@ -233,8 +234,9 @@ export function RightSidebar() {
                             >
                                 <span className="font-mono text-[10px] text-black/35 mt-1 w-4 tabular-nums">{String(idx + 1).padStart(2, "0")}</span>
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-heading text-[15px] font-semibold tracking-tight text-black group-hover:text-[color:var(--atl-700)] truncate transition-colors">
-                                        #{t.tag}
+                                    <div className="font-heading text-[15px] font-semibold tracking-tight text-black group-hover:text-[color:var(--atl-700)] truncate transition-colors flex items-center gap-2">
+                                        <span>#{t.tag}</span>
+                                        <TrendingPulse tag={t.tag} width={48} height={16} />
                                     </div>
                                     <div className="text-[11px] tracking-tight text-black/45 mt-0.5">
                                         {t.count} publicações

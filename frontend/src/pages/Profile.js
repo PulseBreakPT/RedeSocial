@@ -15,8 +15,11 @@ import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { CharmsPanel } from "../components/CharmsPanel";
+import { CharmsProgressPanel } from "../components/CharmsProgressPanel";
 import { RodaButton } from "../components/RodaButton";
 import { SeriesSection } from "../components/SeriesSection";
+import { StreakCard } from "../components/StreakCard";
+import { MesaPanel } from "../components/MesaPanel";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
@@ -423,10 +426,17 @@ export default function Profile() {
 
                     <StatsCard stats={stats} completion={profile.is_self ? stats?.profile_completion : undefined} />
 
-                    {/* v2 — Charms + Series */}
-                    <div className="px-5 py-4 hairline-b grid sm:grid-cols-2 gap-3">
-                        <CharmsPanel username={profile.username} editable={profile.is_self} />
-                        <SeriesSection username={profile.username} isSelf={profile.is_self} />
+                    {/* v2 — Streak + Mesa + Charms + Series */}
+                    <div className="px-5 py-4 hairline-b space-y-3">
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            <StreakCard username={profile.username} />
+                            {profile.is_self && <MesaPanel />}
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            <CharmsPanel username={profile.username} editable={profile.is_self} />
+                            <SeriesSection username={profile.username} isSelf={profile.is_self} />
+                        </div>
+                        {profile.is_self && <CharmsProgressPanel username={profile.username} />}
                     </div>
 
                     {heatmap?.length > 0 && (

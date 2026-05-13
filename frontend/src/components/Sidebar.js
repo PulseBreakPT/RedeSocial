@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { PresencePicker } from "./PresencePicker";
+import { ConnectionIndicator } from "./WebSocketProvider";
+import { StreakCard } from "./StreakCard";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
@@ -156,6 +158,10 @@ export function Sidebar({ onCompose }) {
                 </div>
                 <div className="mt-1 px-1" onClick={(e) => e.stopPropagation()}>
                     <PresencePicker />
+                </div>
+                <div className="mt-2 px-1 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                    {user?.username && <StreakCard username={user.username} compact />}
+                    <ConnectionIndicator className="ml-auto" />
                 </div>
                 <div className="px-3 pt-3 pb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45">
                     <a href="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</a>

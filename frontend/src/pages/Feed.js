@@ -39,7 +39,15 @@ export default function Feed() {
                 const params = new URLSearchParams();
                 if (mood) params.set("mood", mood);
                 params.set("sort", sort);
-                const url = which === "following" ? `/posts/feed?${params}` : `/posts/explore?${params}`;
+                // V2: For You uses the new ranking engine, Following stays chronological
+                let url;
+                if (which === "foryou") {
+                    url = `/feed/v2${mood ? `?mood=${mood}` : ""}`;
+                } else if (which === "following") {
+                    url = `/posts/feed?${params}`;
+                } else {
+                    url = `/posts/explore?${params}`;
+                }
                 const { data } = await api.get(url);
                 setPosts(data);
                 knownIdsRef.current = new Set(data.map((p) => p.id));

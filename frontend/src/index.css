@@ -917,6 +917,20 @@
     @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.4); } }
     .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    @keyframes slideUpFade {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-slide-up-fade { animation: slideUpFade 0.4s ease-out both; }
+    /* V3 — Identity ring gradients (animated borders per mood) */
+    .ring-gradient-saudade { box-shadow: 0 0 0 2px #6a91cc, 0 0 14px rgba(106, 145, 204, 0.6); }
+    .ring-gradient-tasca   { box-shadow: 0 0 0 2px #c2410c, 0 0 14px rgba(194, 65, 12, 0.6); }
+    .ring-gradient-festa   { box-shadow: 0 0 0 2px #ec4899, 0 0 14px rgba(236, 72, 153, 0.6); }
+    .ring-gradient-cafe    { box-shadow: 0 0 0 2px #92400e, 0 0 14px rgba(146, 64, 14, 0.5); }
+    .ring-gradient-praia   { box-shadow: 0 0 0 2px #06b6d4, 0 0 14px rgba(6, 182, 212, 0.6); }
+    .ring-gradient-fado    { box-shadow: 0 0 0 2px #7c2d12, 0 0 14px rgba(124, 45, 18, 0.6); }
+    .ring-gradient-futebol { box-shadow: 0 0 0 2px #dc2626, 0 0 14px rgba(220, 38, 38, 0.6); }
+    .ring-gradient-cultura { box-shadow: 0 0 0 2px #7c3aed, 0 0 14px rgba(124, 58, 237, 0.6); }
     .text-shimmer {
         background: linear-gradient(90deg, var(--atl-600) 0%, var(--atl-400) 50%, var(--atl-600) 100%);
         background-size: 200% 100%;

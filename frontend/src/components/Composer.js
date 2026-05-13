@@ -21,7 +21,29 @@ import { useAuth } from "../context/AuthContext";
 import { useLocalDraft } from "../hooks/useLocalDraft";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { Spinner } from "./Spinner";
+import { HashtagSuggester } from "./HashtagSuggester";
 import { toast } from "sonner";
+
+// Lightweight mood detection mirroring backend logic
+const MOOD_KEYWORDS = {
+    saudade: ["saudade", "saudades", "melancolia", "longe", "distância"],
+    tasca:   ["tasca", "bitoque", "vinho", "petisco", "sardinha", "bacalhau", "tremoço", "azeitona", "ginjinha"],
+    festa:   ["festa", "festival", "arraial", "sanjoao", "são joão", "carnaval", "manjerico"],
+    cafe:    ["café", "cafe", "bica", "pastel", "padaria", "torrada", "galão", "abatanado"],
+    praia:   ["praia", "mar", "surf", "ondas", "costa", "areia", "biquíni"],
+    fado:    ["fado", "fadista", "guitarra portuguesa"],
+    futebol: ["benfica", "sporting", "porto", "futebol", "estádio", "golo"],
+    cultura: ["museu", "teatro", "pessoa", "saramago", "exposição", "literatura", "azulejo"],
+};
+const MOOD_LABEL = { saudade: "Saudade 🥹", tasca: "Tasca 🍷", festa: "Festa 🎉", cafe: "Café ☕", praia: "Praia 🌊", fado: "Fado 🎙️", futebol: "Bola ⚽", cultura: "Cultura 🎭" };
+function detectMoodClient(text) {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    for (const [mood, kws] of Object.entries(MOOD_KEYWORDS)) {
+        if (kws.some((k) => lower.includes(k))) return mood;
+    }
+    return null;
+}
 
 const EMOJIS = ["🔥", "✨", "🚀", "❤️", "👀", "💯", "😂", "🙌", "⚡", "🌙"];
 const AUDIENCES = [
@@ -311,6 +333,32 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         rows={asModal ? 4 : 2}
                         maxLength={500}
                         className="w-full bg-transparent text-[17px] font-body placeholder:text-black/40 focus:outline-none resize-none leading-snug text-black"
+                    />
+
+                    {/* Mood auto-tag */}
+                    {(() => {
+                        const detected = detectMoodClient(content);
+                        if (!detected) return null;
+                        return (
+                            <div className="flex items-center gap-1.5 mt-1" data-testid="composer-mood-detected">
+                                <span className="text-[10px] font-mono uppercase tracking-wider text-black/45">mood detetado</span>
+                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-[11px] font-mono text-orange-700">
+                                    {MOOD_LABEL[detected]}
+                                </span>
+                            </div>
+                        );
+                    })()}
+
+                    {/* Hashtag suggester */}
+                    <HashtagSuggester
+                        text={content}
+                        onInsert={(tag, partial) => {
+                            const lastIdx = content.lastIndexOf("#" + partial);
+                            if (lastIdx === -1) return;
+                            const newText = content.slice(0, lastIdx) + "#" + tag + " " + content.slice(lastIdx + 1 + partial.length);
+                            setContent(newText);
+                            textareaRef.current?.focus();
+                        }}
                     />
 
                     {/* Images carousel preview */}

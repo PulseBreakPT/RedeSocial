@@ -8,6 +8,8 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileTopBar } from "./MobileTopBar";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
 import { ScrollToTop } from "./ScrollToTop";
+import { WebSocketProvider } from "./WebSocketProvider";
+import { ActivityTickerLive } from "./ActivityTickerLive";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useGlobalNotifications } from "../hooks/useGlobalNotifications";
 import { useEscapeKey } from "../hooks/useClickOutside";
@@ -41,6 +43,7 @@ export function Layout() {
     }, [composeOpen]);
 
     return (
+        <WebSocketProvider>
         <div className="min-h-screen text-black">
             <MobileTopBar />
             <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,640px)_340px] max-w-[1300px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
@@ -54,6 +57,7 @@ export function Layout() {
             <OnboardingModal />
             <MobileBottomNav onCompose={() => setComposeOpen(true)} />
             <ScrollToTop />
+            <ActivityTickerLive />
             {helpOpen && <KeyboardShortcutsHelp onClose={() => setHelpOpen(false)} />}
 
             {composeOpen && (
@@ -86,5 +90,6 @@ export function Layout() {
                 </div>
             )}
         </div>
+        </WebSocketProvider>
     );
 }

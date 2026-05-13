@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight, MapPin, Moon, Sun, ScrollText } from "lucide-react";
+import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight, MapPin, Moon, Sun, ScrollText, Sliders } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { CosmeticsPicker } from "../components/CosmeticsPicker";
+import { ForYouTuner } from "../components/ForYouTuner";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
@@ -17,6 +18,7 @@ const TABS = [
     { key: "notif", label: "Notificações", icon: Bell },
     { key: "priv", label: "Privacidade", icon: Shield },
     { key: "apar", label: "Aparência", icon: Palette },
+    { key: "foryou", label: "Para Ti", icon: Sliders },
     { key: "legal", label: "Legal", icon: FileText },
 ];
 
@@ -376,6 +378,12 @@ export default function Settings() {
                     <div className="pt-5 mt-3 border-t border-black/[0.06]">
                         <CosmeticsPicker />
                     </div>
+                </div>
+            )}
+
+            {tab === "foryou" && (
+                <div className="px-4 lg:px-6 py-5 max-w-2xl">
+                    <ForYouTuner />
                 </div>
             )}
 
