@@ -18,6 +18,15 @@ Cria uma rede social completa e complexa ultra refinada. Sem erros, todos os bot
 
 ## Roadmap
 
+### Phase 0 – Identidade visual PT moderna ✅ COMPLETO (2026-02-13)
+- `index.css`: paleta atlântica (#2c6fd1) + coral telha (#e85d4f) + eucalipto + sol; padrão azulejo SVG; tipografia Inter
+- `PostCard`: avatares 44px, engagement pills (`eng-btn`), micro-anim heart pop, views tabular
+- `StoriesBar`: avatares 80px, anel gradient atlântico, scroll-snap, label primeiro nome
+- `Sidebar`: indicador lateral atlântico no item ativo, fundo `bg-accent-vermillion/10`, CTA `btn-atl`
+- `RightSidebar`: widget "Online agora · Comunidade ativa", trending "Em alta · Portugal" com fallback (#Lisboa #Porto #Fado #Benfica #BairroAlto)
+- Seed PT: 12 utilizadores realistas (Beatriz, Tiago, Inês, Mariana, João, Rui, Catarina, Diogo, Filipa, Pedro, Sofia, Miguel) + 24 publicações em PT com hashtags (#Lisboa #Porto #Fado #BairroAlto #Alfama #Cerâmica #Bacalhau #Surf #Benfica…) + relações de follow cruzadas; admin auto-segue utilizadores verificados
+- Bug fix: ordem das rotas FastAPI — `/users/suggestions` movido para antes de `/users/{username}` (estava a colidir e devolver 404 "Utilizador não encontrado")
+
 ### Phase 1 – Rich Posts ✅ COMPLETO (2026-02-13)
 - Backend (`server.py`):
   - `images: [str]` (multi-imagem), `poll`, `reactions`, `is_draft`, `scheduled_at`, `reply_audience`, `edit_history`
@@ -52,6 +61,8 @@ Cria uma rede social completa e complexa ultra refinada. Sem erros, todos os bot
 
 ## Test Credentials
 admin@vermillion.app / admin123 (verified, onboarded)
+Demo PT crew (12 utilizadores) seeded automaticamente; todos com password `demo123` e emails do tipo `{username sem pontos}@vermillion.demo` (ex.: `bealx@vermillion.demo`, `inesfado@vermillion.demo`).
+Detalhes completos em `/app/memory/test_credentials.md`.
 
 ## Notes for Next Agent
 - O utilizador pediu para avançar **SEM** chamar testing agent. Manter esse modo até nova instrução.

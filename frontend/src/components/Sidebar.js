@@ -62,17 +62,24 @@ export function Sidebar({ onCompose }) {
                         end={to === "/"}
                         data-testid={testid}
                         className={({ isActive }) =>
-                            `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
+                            `relative group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
                                 isActive
-                                    ? "bg-black/[0.04] text-black"
-                                    : "text-black/55 hover:bg-black/[0.025] hover:text-black"
+                                    ? "bg-accent-vermillion/10 text-[color:var(--atl-700)]"
+                                    : "text-black/55 hover:bg-black/[0.035] hover:text-black"
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
+                                {isActive && (
+                                    <span
+                                        aria-hidden
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                        style={{ background: "var(--atl-500)" }}
+                                    />
+                                )}
                                 <span className="relative">
-                                    <Icon size={20} strokeWidth={isActive ? 1.9 : 1.5} />
+                                    <Icon size={20} strokeWidth={isActive ? 2 : 1.55} />
                                     {to === "/notifications" && counts.notif > 0 && (
                                         <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[9px] font-mono grid place-items-center text-white ring-2 ring-white">
                                             {counts.notif}
@@ -84,7 +91,7 @@ export function Sidebar({ onCompose }) {
                                         </span>
                                     )}
                                 </span>
-                                <span className={`text-[15px] ${isActive ? "font-medium tracking-tight" : "tracking-tight"}`}>{label}</span>
+                                <span className={`text-[15px] tracking-tight ${isActive ? "font-semibold" : ""}`}>{label}</span>
                             </>
                         )}
                     </NavLink>
@@ -93,15 +100,22 @@ export function Sidebar({ onCompose }) {
                     to={`/u/${user?.username}`}
                     data-testid="nav-profile"
                     className={({ isActive }) =>
-                        `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
-                            isActive ? "bg-black/[0.04] text-black" : "text-black/55 hover:bg-black/[0.025] hover:text-black"
+                        `relative group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
+                            isActive ? "bg-accent-vermillion/10 text-[color:var(--atl-700)]" : "text-black/55 hover:bg-black/[0.035] hover:text-black"
                         }`
                     }
                 >
                     {({ isActive }) => (
                         <>
-                            <User size={20} strokeWidth={isActive ? 1.9 : 1.5} />
-                            <span className={`text-[15px] ${isActive ? "font-medium tracking-tight" : "tracking-tight"}`}>Perfil</span>
+                            {isActive && (
+                                <span
+                                    aria-hidden
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                    style={{ background: "var(--atl-500)" }}
+                                />
+                            )}
+                            <User size={20} strokeWidth={isActive ? 2 : 1.55} />
+                            <span className={`text-[15px] tracking-tight ${isActive ? "font-semibold" : ""}`}>Perfil</span>
                         </>
                     )}
                 </NavLink>
@@ -110,7 +124,7 @@ export function Sidebar({ onCompose }) {
             <button
                 onClick={onCompose}
                 data-testid="sidebar-compose-btn"
-                className="btn-obsidian mt-5 mx-2 text-[15px] py-3 flex items-center justify-center gap-2 tracking-tight"
+                className="btn-atl mt-5 mx-2 text-[15px] py-3 flex items-center justify-center gap-2 tracking-tight"
             >
                 <PenSquare size={16} strokeWidth={2.1} /> Publicar
             </button>

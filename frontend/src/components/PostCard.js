@@ -266,54 +266,54 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             </div>
                         )}
 
-                        <div className="flex items-center gap-1 mt-4 -ml-2 text-black/45">
+                        <div className="flex items-center justify-between gap-1 mt-4 pr-1">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     navigate(`/post/${post.id}`);
                                 }}
                                 data-testid={`comment-btn-${post.id}`}
-                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/12 hover:text-blue-soft transition tap-shrink"
+                                className="eng-btn is-commented"
                             >
-                                <MessageCircle size={17} strokeWidth={1.6} />
-                                <span className="font-mono text-xs">{formatNum(post.comments_count || 0)}</span>
+                                <MessageCircle size={18} strokeWidth={1.7} />
+                                <span className="text-[12.5px] tabular-nums">{formatNum(post.comments_count || 0)}</span>
                             </button>
-                            <RepostMenu
-                                reposted={reposted}
-                                onRepost={doRepost}
-                                onQuote={() => setQuoting(true)}
-                            />
-                            <span data-testid={`repost-count-${post.id}`} className={`font-mono text-xs -ml-2 mr-2 ${reposted ? "text-green-soft" : ""}`}>
-                                {formatNum(reposts)}
-                            </span>
+                            <div className="flex items-center">
+                                <RepostMenu
+                                    reposted={reposted}
+                                    onRepost={doRepost}
+                                    onQuote={() => setQuoting(true)}
+                                />
+                                <span data-testid={`repost-count-${post.id}`} className={`-ml-1 text-[12.5px] tabular-nums ${reposted ? "text-green-soft font-medium" : "text-black/55"}`}>
+                                    {formatNum(reposts)}
+                                </span>
+                            </div>
                             <button
                                 onClick={toggleLike}
                                 data-testid={`like-btn-${post.id}`}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-red-soft/12 hover:text-red-soft transition tap-shrink ${
-                                    liked ? "text-red-soft" : ""
-                                }`}
+                                className={`eng-btn ${liked ? "is-liked" : ""}`}
                             >
-                                <Heart size={17} strokeWidth={1.6} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
-                                <span className="font-mono text-xs">{formatNum(likes)}</span>
+                                <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                <span className="text-[12.5px] tabular-nums">{formatNum(likes)}</span>
                             </button>
                             <button
                                 onClick={toggleBookmark}
                                 data-testid={`bookmark-btn-${post.id}`}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-yellow-500/12 hover:text-yellow-600 transition tap-shrink ${
-                                    bookmarked ? "text-yellow-600" : ""
-                                }`}
+                                className={`eng-btn ${bookmarked ? "is-bookmarked" : ""}`}
+                                aria-label="Guardar"
                             >
-                                <Bookmark size={17} strokeWidth={1.6} fill={bookmarked ? "currentColor" : "none"} />
+                                <Bookmark size={18} strokeWidth={1.7} fill={bookmarked ? "currentColor" : "none"} />
                             </button>
                             <button
                                 onClick={share}
                                 data-testid={`share-btn-${post.id}`}
-                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-soft/12 hover:text-blue-soft transition tap-shrink"
+                                className="eng-btn is-commented"
+                                aria-label="Partilhar"
                             >
-                                <Share2 size={17} strokeWidth={1.6} />
+                                <Share2 size={18} strokeWidth={1.7} />
                             </button>
-                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-black/40" title="visualizações">
-                                <Eye size={13} strokeWidth={1.6} /> {formatNum(views)}
+                            <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45" title="visualizações">
+                                <Eye size={14} strokeWidth={1.6} /> {formatNum(views)}
                             </span>
                         </div>
                     </div>

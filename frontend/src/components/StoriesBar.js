@@ -132,23 +132,26 @@ export function StoriesBar() {
     const others = groups.filter((g) => g.author.id !== user?.id);
 
     return (
-        <div className="hairline-b px-4 py-5 overflow-x-auto scroll-smooth no-scrollbar" data-testid="stories-bar">
-            <div className="flex gap-4 items-start">
+        <div className="hairline-b px-4 py-5 overflow-x-auto scroll-smooth no-scrollbar snap-x-stories" data-testid="stories-bar">
+            <div className="flex gap-5 items-start">
                 <button
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
                     data-testid="add-story-btn"
-                    className="flex flex-col items-center gap-2 group flex-shrink-0 tap-shrink"
+                    className="flex flex-col items-center gap-2 group flex-shrink-0 tap-shrink snap-start-x"
                 >
                     <div className="relative">
-                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-black/40 transition">
-                            <Avatar user={user} size={62} />
+                        <div className="w-[80px] h-[80px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-[color:var(--atl-500)] transition">
+                            <Avatar user={user} size={68} />
                         </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 bg-black text-white rounded-full w-6 h-6 grid place-items-center border-[3px] border-white shadow-md">
-                            <Plus size={12} strokeWidth={2.5} />
+                        <div
+                            className="absolute -bottom-0.5 -right-0.5 rounded-full w-7 h-7 grid place-items-center border-[3px] border-white shadow-md"
+                            style={{ background: "var(--atl-500)", color: "#fff" }}
+                        >
+                            <Plus size={14} strokeWidth={2.6} />
                         </div>
                     </div>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-black/45 group-hover:text-black max-w-[72px] truncate">novo story</span>
+                    <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[80px] truncate">O teu story</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" data-testid="story-file-input" />
 
@@ -156,7 +159,7 @@ export function StoriesBar() {
                     <StoryThumb group={myGroup} label="tu" onClick={() => setViewerIdx(groups.indexOf(myGroup))} />
                 )}
                 {others.map((g) => (
-                    <StoryThumb key={g.author.id} group={g} label={`@${g.author.username}`} onClick={() => setViewerIdx(groups.indexOf(g))} />
+                    <StoryThumb key={g.author.id} group={g} label={g.author.name?.split(" ")[0] || `@${g.author.username}`} onClick={() => setViewerIdx(groups.indexOf(g))} />
                 ))}
             </div>
 
@@ -172,14 +175,14 @@ function StoryThumb({ group, label, onClick }) {
         <button
             onClick={onClick}
             data-testid={`story-thumb-${group.author.username}`}
-            className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
+            className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink snap-start-x"
         >
-            <div className={`p-[3px] rounded-full ${group.has_unseen ? "ring-gradient" : "bg-black/10"}`}>
-                <div className="p-[2px] rounded-full bg-white">
-                    <Avatar user={group.author} size={58} />
+            <div className={`p-[3px] rounded-full transition ${group.has_unseen ? "ring-atl" : "bg-black/10"}`}>
+                <div className="p-[2.5px] rounded-full bg-white">
+                    <Avatar user={group.author} size={68} />
                 </div>
             </div>
-            <span className="font-mono text-[10px] uppercase tracking-wider text-black/45 group-hover:text-black max-w-[72px] truncate">{label}</span>
+            <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[80px] truncate">{label}</span>
         </button>
     );
 }
