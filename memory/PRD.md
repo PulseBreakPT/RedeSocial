@@ -43,11 +43,20 @@ Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Caf
 - `GET /api/messages/unread-count`
 
 ## Changelog
-- **2026-02-14** — **PT Engagement v2 + Mobile parity (P0)**:
-  - **F4.1 Middle-class boost** — endpoint `GET /api/discover/new_voices` (creators < 30d, < 500 followers, place-affinity scoring); strip `NewVoicesStrip` no Feed.
-  - **F3.3 Vista da Tasca** — endpoint `GET /api/communities/{slug}/active`; componente `VistaDaTasca` em `Community.js` mostra membros activos (24h) com presence dots.
-  - **F5.4 Heat map saudade** — endpoint `GET /api/diaspora/heatmap` + nova rota `/diaspora` (8 regiões, intensidade visual com gradientes coral/azul-tejo proporcional a posts/7d).
-  - **Mobile parity**: Sidebar desktop e MobileMenuDrawer ambos contêm agora `Diáspora`, `Manifesto`, `Centro Legal`; footer ambos com Centro Legal + Manifesto. Todas as features (banners, ring selector, reactions PT, onboarding 60s, Settings Identidade) validadas em 390×844.
+- **2026-02-14** — **Messages overhaul (P0 bug fix + UX upgrade)**:
+  - **Bug crítico corrigido**: `ChatView` fazia `setMe(r.data)` quando `/auth/me` retorna `{user: ...}` (após o fix do 401 loop anterior). Resultado: `me.id` era undefined, todas as mensagens renderizavam à esquerda, indistinguíveis. Substituído por `useAuth().user`.
+  - **Optimistic send** — mensagem aparece imediatamente com estado `_pending`; substitui por dados reais ao receber resposta; marca `_failed` em erro.
+  - **Status indicator** — última mensagem própria mostra `a enviar…` / `enviado` (✓) / `visto` (CheckCheck coral) / `por enviar — toca para tentar`.
+  - **Day separators** — agrupa mensagens por dia (`Hoje`/`Ontem`/data localizada PT-PT).
+  - **New Conversation Modal** — botão `+` (gradiente coral) abre modal com `users/search` debounced, permite iniciar conversa sem se seguirem.
+  - **F3.2 Café receipt** — toggle opt-in por conversa (localStorage), ícone Coffee no header; respeita o manifesto (sem read receipts forçados).
+  - **Smart polling** — pausa quando `document.hidden`; throttle do typing ping para 1×/2s.
+  - **Auto-grow textarea** — composer expande até 5 linhas, Enter envia, Shift+Enter quebra linha.
+  - **Empty states melhorados** — quando sem conversas: CTA "Nova conversa"; quando chat vazio: avatar + bio + cidade do interlocutor com pin de localização.
+  - **Header clicável** — avatar/nome no header da conversa leva ao perfil.
+  - **Botão de enviar** — gradiente coral consistente com o design system.
+- **2026-02-14** — PT Engagement v2 + Mobile parity (F4.1 New Voices, F3.3 Vista da Tasca, F5.4 Diaspora Heatmap).
+- **2026-02-14** — PT Engagement v1 (15 features).
 - **2026-02-14** — **PT Engagement v1**: F2.1 Onboarding 60s, F2.4 Anel de identidade, F3.1 Reactions PT, F1.1 A Tarde, F1.4 Boa Noite, F2.2 Badges narrativos, F2.3 Bio slots, F4.2 Repost curado, F5.1 Place graph, F5.2 Sino do Bairro, F5.3 Calendário PT, F1.2 Cafezinho, MAN Manifesto, RGPD consent persistence.
 
 ## Roadmap (Backlog)
