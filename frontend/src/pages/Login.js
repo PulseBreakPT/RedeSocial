@@ -116,6 +116,23 @@ export default function Login() {
                             Criar conta
                         </Link>
                     </p>
+
+                    {/* Legal footer */}
+                    <div className="mt-10 pt-6 border-t border-black/[0.06]">
+                        <p className="text-[11px] text-black/45 leading-relaxed text-center lg:text-left">
+                            Ao entrar concordas com os{" "}
+                            <Link to="/legal/terms" className="underline underline-offset-2 hover:text-black">Termos</Link>{" "}
+                            e a{" "}
+                            <Link to="/legal/privacy" className="underline underline-offset-2 hover:text-black">Política de Privacidade</Link>.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45 justify-center lg:justify-start">
+                            <Link to="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
+                            <Link to="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</Link>
+                            <Link to="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
+                            <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
+                            <Link to="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</Link>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

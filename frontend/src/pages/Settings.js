@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
-import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
+import { openCookiePreferences } from "../components/CookieBanner";
 import { toast } from "sonner";
 
 const TABS = [
@@ -12,6 +14,7 @@ const TABS = [
     { key: "notif", label: "Notificações", icon: Bell },
     { key: "priv", label: "Privacidade", icon: Shield },
     { key: "apar", label: "Aparência", icon: Palette },
+    { key: "legal", label: "Legal", icon: FileText },
 ];
 
 export default function Settings() {
@@ -170,7 +173,89 @@ export default function Settings() {
                     <ToggleRow label="Reduzir animações" sub="Útil se sentires tonturas com movimentos" k="reduce_motion" prefs={prefs} setPref={setPref} />
                 </div>
             )}
+
+            {tab === "legal" && (
+                <div className="px-4 lg:px-6 py-5 space-y-4 max-w-2xl">
+                    <p className="type-overline">Documentos legais</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <LegalLinkRow to="/legal/terms" icon={FileText} title="Termos e Condições" desc="O contrato entre ti e o Vermillion." />
+                        <LegalLinkRow to="/legal/privacy" icon={Shield} title="Política de Privacidade" desc="Como tratamos os teus dados (RGPD)." />
+                        <LegalLinkRow to="/legal/cookies" icon={Cookie} title="Política de Cookies" desc="Cookies e tecnologias semelhantes." />
+                        <LegalLinkRow to="/legal/community" icon={Sparkle} title="Diretrizes da Comunidade" desc="O que é permitido e o que não é." />
+                    </div>
+
+                    <div className="hairline-t pt-5">
+                        <p className="type-overline mb-3">Consentimento</p>
+                        <button
+                            type="button"
+                            onClick={openCookiePreferences}
+                            data-testid="open-cookie-prefs"
+                            className="w-full sm:w-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium"
+                        >
+                            <Cookie size={14} /> Centro de Preferências de Cookies
+                        </button>
+                        <p className="text-[11px] text-black/55 mt-2 leading-relaxed">
+                            Altera as tuas escolhas de cookies funcionais, analíticos e de marketing a qualquer momento.
+                        </p>
+                    </div>
+
+                    <div className="hairline-t pt-5">
+                        <p className="type-overline mb-3">Os teus direitos (RGPD)</p>
+                        <p className="text-[13px] text-black/70 leading-relaxed">
+                            Tens direito de acesso, retificação, apagamento, portabilidade, limitação e oposição ao
+                            tratamento dos teus dados. Para os exercer, contacta o nosso Encarregado de Proteção de
+                            Dados (DPO):
+                        </p>
+                        <a
+                            href="mailto:dpo@vermillion.pt"
+                            className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium"
+                        >
+                            dpo@vermillion.pt
+                        </a>
+                        <p className="text-[11px] text-black/50 mt-3 leading-relaxed">
+                            Podes ainda apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD) em{" "}
+                            <a
+                                href="https://www.cnpd.pt"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2 hover:text-black"
+                            >
+                                www.cnpd.pt
+                            </a>.
+                        </p>
+                    </div>
+
+                    <div className="hairline-t pt-5 text-[11px] text-black/45 leading-relaxed">
+                        <p>
+                            Vermillion © {new Date().getFullYear()}. Operado por{" "}
+                            <span className="font-mono bg-black/[0.04] px-1.5 py-0.5 rounded">[Vermillion, Lda.]</span>,
+                            NIPC <span className="font-mono bg-black/[0.04] px-1.5 py-0.5 rounded">[a indicar]</span>.
+                            Sujeito à lei portuguesa e à União Europeia.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+function LegalLinkRow({ to, icon: Icon, title, desc }) {
+    return (
+        <Link
+            to={to}
+            className="group flex items-start gap-3 p-3.5 rounded-xl border border-black/[0.08] hover:border-black/25 hover:bg-black/[0.02] transition"
+        >
+            <div className="w-9 h-9 rounded-full bg-black/[0.04] grid place-items-center shrink-0 text-black">
+                <Icon size={15} strokeWidth={1.7} />
+            </div>
+            <div className="flex-1 min-w-0">
+                <div className="font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1">
+                    {title}
+                    <ChevronRight size={13} className="opacity-0 group-hover:opacity-60 -ml-0.5 transition" />
+                </div>
+                <p className="text-[11.5px] text-black/55 leading-snug mt-0.5">{desc}</p>
+            </div>
+        </Link>
     );
 }
 
