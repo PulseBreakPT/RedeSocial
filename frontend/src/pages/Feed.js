@@ -143,7 +143,7 @@ export default function Feed() {
                 </div>
             </div>
 
-            <div className="sticky top-[var(--mobile-topbar-h)] lg:top-[81px] z-20 glass border-b border-black/[0.06]">
+            <div className="glass border-b border-black/[0.06]">
                 <div className="grid grid-cols-2">
                     <button
                         onClick={() => setTab("following")}
@@ -190,7 +190,7 @@ export default function Feed() {
             </div>
 
             {newCount > 0 && (
-                <div className="sticky top-[calc(var(--mobile-topbar-h)+92px)] lg:top-[173px] z-20 flex justify-center pt-3">
+                <div className="flex justify-center pt-3">
                     <button
                         onClick={refresh}
                         data-testid="new-posts-pill"

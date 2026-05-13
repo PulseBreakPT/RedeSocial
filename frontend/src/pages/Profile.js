@@ -171,6 +171,7 @@ export default function Profile() {
                 }
                 subtitle={`${stats?.posts_count ?? 0} publicações`}
                 back
+                sticky={false}
                 testid="profile-header"
             />
 
