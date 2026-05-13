@@ -106,7 +106,7 @@ export default function Explore() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 data-testid={`explore-tab-${t.key}`}
-                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "border-black text-black" : "border-transparent text-black hover:text-black"}`}
+                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "tab-grad-on" : "border-transparent text-black hover:text-black"}`}
                             >
                                 <Icon size={14} strokeWidth={1.6} /> {t.label}
                             </button>

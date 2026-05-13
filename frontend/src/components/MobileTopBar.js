@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Bell, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
@@ -9,8 +9,11 @@ import { MobileMenuDrawer } from "./MobileMenuDrawer";
 export function MobileTopBar() {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [unread, setUnread] = useState(0);
     const [menuOpen, setMenuOpen] = useState(false);
+    const isExplore = location.pathname.startsWith("/explore");
+    const isNotif = location.pathname.startsWith("/notifications");
 
     useEffect(() => {
         const tick = async () => {
@@ -99,19 +102,23 @@ export function MobileTopBar() {
                     </Link>
                     <button
                         onClick={() => navigate("/explore")}
-                        className="w-10 h-10 rounded-full grid place-items-center text-black/60 hover:text-black active:bg-black/[0.06] tap-shrink"
+                        className={`w-10 h-10 rounded-full grid place-items-center tap-shrink transition ${
+                            isExplore ? "icon-grad-on" : "text-black hover:bg-black/[0.06] active:bg-black/[0.08]"
+                        }`}
                         aria-label="buscar"
                         data-testid="mobile-search-btn"
                     >
-                        <Search size={20} strokeWidth={1.6} />
+                        <Search size={20} strokeWidth={1.7} color={isExplore ? "#df8a7d" : undefined} />
                     </button>
                     <button
                         onClick={() => navigate("/notifications")}
                         data-testid="mobile-notif-btn"
-                        className="relative w-10 h-10 rounded-full grid place-items-center text-black/60 hover:text-black active:bg-black/[0.06] tap-shrink"
+                        className={`relative w-10 h-10 rounded-full grid place-items-center tap-shrink transition ${
+                            isNotif ? "icon-grad-on" : "text-black hover:bg-black/[0.06] active:bg-black/[0.08]"
+                        }`}
                         aria-label="notificações"
                     >
-                        <Bell size={20} strokeWidth={1.6} />
+                        <Bell size={20} strokeWidth={1.7} color={isNotif ? "#df8a7d" : undefined} />
                         {unread > 0 && (
                             <span
                                 className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[10px] font-mono grid place-items-center text-white font-bold ring-2 ring-white"

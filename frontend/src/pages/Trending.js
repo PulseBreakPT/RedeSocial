@@ -120,7 +120,7 @@ export default function Trending() {
                                 data-testid={`trending-tab-${t.key}`}
                                 className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${
                                     active
-                                        ? "border-black text-black"
+                                        ? "tab-grad-on"
                                         : "border-transparent text-black hover:text-black"
                                 }`}
                             >

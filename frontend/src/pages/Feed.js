@@ -137,18 +137,18 @@ export default function Feed() {
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following"
-                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-black font-medium" : "text-black/45 hover:text-black/70"}`}
+                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Seguindo
-                        {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-black rounded-full" />)}
+                        {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
                     </button>
                     <button
                         onClick={() => setTab("foryou")}
                         data-testid="tab-foryou"
-                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-black font-medium" : "text-black/45 hover:text-black/70"}`}
+                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Para ti
-                        {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-black rounded-full" />)}
+                        {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
                     </button>
                 </div>
                 {/* Mood chips */}

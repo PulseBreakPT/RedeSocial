@@ -69,7 +69,7 @@ export default function Events() {
                 </div>
                 <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
                     {WHEN_TABS.map((t) => (
-                        <button key={t.key} onClick={() => setWhen(t.key)} data-testid={`events-when-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${when === t.key ? "border-black text-black" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
+                        <button key={t.key} onClick={() => setWhen(t.key)} data-testid={`events-when-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${when === t.key ? "tab-grad-on" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
                     ))}
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
