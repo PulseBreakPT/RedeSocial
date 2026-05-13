@@ -192,7 +192,7 @@ function ChatView({ other, onBack }) {
                 <button
                     onClick={send}
                     data-testid="send-message-btn"
-                    className="p-3 rounded-full bg-accent-vermillion text-white hover:bg-[#FF7A50] active:scale-95 transition"
+                    className="p-3 rounded-full bg-accent-vermillion text-white hover:bg-[#A78BFA] active:scale-95 transition"
                 >
                     <Send size={16} />
                 </button>

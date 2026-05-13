@@ -34,7 +34,7 @@ export default function Register() {
                     backgroundPosition: "center",
                 }}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#FF5722]/20" />
+                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-[#8B5CF6]/20" />
                 <div className="relative">
                     <h1 className="font-heading text-5xl font-bold tracking-tighter">
                         <span className="text-accent-vermillion">▲</span> vermillion
@@ -106,7 +106,7 @@ export default function Register() {
                             type="submit"
                             disabled={busy}
                             data-testid="register-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
+                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
                         >
                             {busy ? "Criando..." : "Criar conta"}
                         </button>

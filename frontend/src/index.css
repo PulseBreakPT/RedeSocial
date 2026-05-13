@@ -6,26 +6,26 @@
 
 @layer base {
     :root {
-        --background: 0 0% 4%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 7%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 7%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 14 100% 57%;
+        --background: 240 10% 5%;
+        --foreground: 0 0% 96%;
+        --card: 240 9% 8%;
+        --card-foreground: 0 0% 96%;
+        --popover: 240 9% 8%;
+        --popover-foreground: 0 0% 96%;
+        --primary: 258 90% 66%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 240 4% 16%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 4% 16%;
+        --secondary: 240 5% 14%;
+        --secondary-foreground: 0 0% 96%;
+        --muted: 240 5% 14%;
         --muted-foreground: 240 5% 65%;
-        --accent: 14 100% 57%;
+        --accent: 258 90% 66%;
         --accent-foreground: 0 0% 100%;
-        --destructive: 0 84% 60%;
+        --destructive: 0 80% 60%;
         --destructive-foreground: 0 0% 100%;
-        --border: 240 4% 16%;
-        --input: 240 4% 16%;
-        --ring: 14 100% 57%;
-        --radius: 0.75rem;
+        --border: 240 5% 16%;
+        --input: 240 5% 16%;
+        --ring: 258 90% 66%;
+        --radius: 1rem;
     }
 }
 
@@ -35,26 +35,27 @@
     }
     html,
     body {
-        background: #0a0a0a;
-        color: #fafafa;
+        background: #0a0a10;
+        color: #f5f5f7;
         font-family: "Geist", system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        font-feature-settings:
+            "ss01" 1,
+            "cv11" 1;
     }
     body {
-        background-image: radial-gradient(
-                circle at 1px 1px,
-                rgba(255, 255, 255, 0.025) 1px,
-                transparent 0
-            ),
+        background-image:
             radial-gradient(
                 circle at 50% 0%,
-                rgba(255, 87, 34, 0.06),
+                rgba(139, 92, 246, 0.08),
                 transparent 50%
+            ),
+            radial-gradient(
+                circle at 0% 100%,
+                rgba(124, 58, 237, 0.04),
+                transparent 40%
             );
-        background-size:
-            24px 24px,
-            100% 100%;
         background-attachment: fixed;
     }
     h1,
@@ -63,10 +64,10 @@
     h4,
     h5 {
         font-family: "Bricolage Grotesque", sans-serif;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
     }
     ::selection {
-        background: rgba(255, 87, 34, 0.35);
+        background: rgba(139, 92, 246, 0.4);
         color: #fff;
     }
     ::-webkit-scrollbar {
@@ -77,11 +78,11 @@
         background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-        background: #27272a;
+        background: #2a2a35;
         border-radius: 10px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #3f3f46;
+        background: #3f3f4a;
     }
     input,
     textarea,
@@ -100,22 +101,58 @@
     .font-mono {
         font-family: "JetBrains Mono", monospace;
     }
+    /* Keep existing class names but redefine to premium purple */
     .text-accent-vermillion {
-        color: #ff5722;
+        color: #a78bfa;
     }
     .bg-accent-vermillion {
-        background-color: #ff5722;
+        background-color: #8b5cf6;
+    }
+    .border-accent-vermillion {
+        border-color: #8b5cf6;
     }
     .glass {
-        background: rgba(10, 10, 10, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        background: rgba(14, 14, 22, 0.72);
+        backdrop-filter: blur(28px) saturate(180%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+    }
+    .glass-deep {
+        background: rgba(20, 20, 28, 0.85);
+        backdrop-filter: blur(32px) saturate(180%);
+        -webkit-backdrop-filter: blur(32px) saturate(180%);
     }
     .glow-vermillion {
-        box-shadow: 0 0 24px rgba(255, 87, 34, 0.25);
+        box-shadow:
+            0 0 0 1px rgba(139, 92, 246, 0.18),
+            0 10px 40px -10px rgba(139, 92, 246, 0.5);
+    }
+    .card-premium {
+        background: linear-gradient(
+            180deg,
+            rgba(28, 28, 38, 0.6) 0%,
+            rgba(20, 20, 28, 0.6) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.02) inset,
+            0 24px 60px -30px rgba(0, 0, 0, 0.8);
+    }
+    .ring-gradient {
+        background:
+            linear-gradient(#0a0a10, #0a0a10) padding-box,
+            conic-gradient(
+                    from 0deg,
+                    #a78bfa,
+                    #8b5cf6,
+                    #6d28d9,
+                    #c4b5fd,
+                    #a78bfa
+                )
+                border-box;
+        border: 2.5px solid transparent;
     }
     .anim-fade-up {
-        animation: fadeUp 400ms ease-out both;
+        animation: fadeUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
     @keyframes fadeUp {
         from {
@@ -128,17 +165,60 @@
         }
     }
     .anim-pop {
-        animation: pop 280ms ease-out both;
+        animation: pop 280ms cubic-bezier(0.16, 1.5, 0.5, 1) both;
     }
     @keyframes pop {
         0% {
             transform: scale(0.85);
         }
         60% {
-            transform: scale(1.18);
+            transform: scale(1.22);
         }
         100% {
             transform: scale(1);
         }
+    }
+    @keyframes pulse-dot {
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.6;
+            transform: scale(1.4);
+        }
+    }
+    .pulse-dot {
+        animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+    .text-shimmer {
+        background: linear-gradient(
+            90deg,
+            #a78bfa 0%,
+            #f5f5f7 50%,
+            #a78bfa 100%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 3s linear infinite;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .tap-shrink {
+        transition:
+            transform 120ms ease,
+            background-color 200ms ease;
+    }
+    .tap-shrink:active {
+        transform: scale(0.94);
     }
 }

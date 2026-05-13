@@ -50,7 +50,7 @@ export function EditPostModal({ post, onSave, onClose }) {
                             onClick={save}
                             disabled={busy || !content.trim() || content === post.content}
                             data-testid="save-edit-btn"
-                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-6 py-2.5 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-40 active:scale-95"
+                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-6 py-2.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-40 active:scale-95"
                         >
                             {busy ? "..." : "Salvar"}
                         </button>

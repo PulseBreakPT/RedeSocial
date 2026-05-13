@@ -99,7 +99,7 @@ export default function PostDetail() {
                                 onClick={submitComment}
                                 disabled={!text.trim()}
                                 data-testid="submit-comment-btn"
-                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-5 py-2 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-40 active:scale-95"
+                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-5 py-2 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-40 active:scale-95"
                             >
                                 Responder
                             </button>

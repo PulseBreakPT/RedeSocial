@@ -39,19 +39,16 @@ export function Sidebar({ onCompose }) {
         };
         tick();
         const id = setInterval(tick, 8000);
-        return () => {
-            cancelled = true;
-            clearInterval(id);
-        };
+        return () => { cancelled = true; clearInterval(id); };
     }, []);
 
     return (
-        <aside className="hidden lg:flex flex-col gap-1 sticky top-0 h-screen py-6 pr-3 border-r border-zinc-900 overflow-y-auto" data-testid="sidebar">
-            <div className="px-3 mb-6">
-                <h1 className="font-heading text-2xl font-bold tracking-tighter">
-                    <span className="text-accent-vermillion">▲</span> vermillion
+        <aside className="hidden lg:flex flex-col gap-1 sticky top-0 h-screen py-6 pr-3 overflow-y-auto" data-testid="sidebar">
+            <div className="px-3 mb-7">
+                <h1 className="font-heading text-[26px] font-bold tracking-tighter leading-none">
+                    <span className="text-accent-vermillion">◆</span> vermillion
                 </h1>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 mt-1">rede social</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-1.5">rede social</p>
             </div>
 
             <nav className="flex flex-col gap-0.5">
@@ -62,57 +59,65 @@ export function Sidebar({ onCompose }) {
                         end={to === "/"}
                         data-testid={testid}
                         className={({ isActive }) =>
-                            `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all ${
+                            `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all tap-shrink ${
                                 isActive
                                     ? "bg-white/[0.06] text-white"
                                     : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
                             }`
                         }
                     >
-                        <span className="relative">
-                            <Icon size={20} strokeWidth={1.75} />
-                            {to === "/notifications" && counts.notif > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
-                                    {counts.notif}
+                        {({ isActive }) => (
+                            <>
+                                <span className="relative">
+                                    <Icon size={21} strokeWidth={isActive ? 2.2 : 1.75} className={isActive ? "text-accent-vermillion" : ""} />
+                                    {to === "/notifications" && counts.notif > 0 && (
+                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
+                                            {counts.notif}
+                                        </span>
+                                    )}
+                                    {to === "/messages" && counts.msg > 0 && (
+                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
+                                            {counts.msg}
+                                        </span>
+                                    )}
                                 </span>
-                            )}
-                            {to === "/messages" && counts.msg > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
-                                    {counts.msg}
-                                </span>
-                            )}
-                        </span>
-                        <span className="font-heading text-[15px]">{label}</span>
+                                <span className={`font-heading text-[15px] ${isActive ? "font-semibold" : ""}`}>{label}</span>
+                            </>
+                        )}
                     </NavLink>
                 ))}
                 <NavLink
                     to={`/u/${user?.username}`}
                     data-testid="nav-profile"
                     className={({ isActive }) =>
-                        `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all ${
+                        `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all tap-shrink ${
                             isActive ? "bg-white/[0.06] text-white" : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
                         }`
                     }
                 >
-                    <User size={20} strokeWidth={1.75} />
-                    <span className="font-heading text-[15px]">Perfil</span>
+                    {({ isActive }) => (
+                        <>
+                            <User size={21} strokeWidth={isActive ? 2.2 : 1.75} className={isActive ? "text-accent-vermillion" : ""} />
+                            <span className={`font-heading text-[15px] ${isActive ? "font-semibold" : ""}`}>Perfil</span>
+                        </>
+                    )}
                 </NavLink>
             </nav>
 
             <button
                 onClick={onCompose}
                 data-testid="sidebar-compose-btn"
-                className="mt-4 mx-2 bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3 rounded-full hover:bg-[#FF7A50] transition-all hover:scale-[1.02] active:scale-95 glow-vermillion flex items-center justify-center gap-2"
+                className="mt-5 mx-2 bg-accent-vermillion text-white font-heading font-semibold text-[15px] tracking-tight py-3 rounded-full hover:bg-[#A78BFA] transition-all hover:scale-[1.015] tap-shrink glow-vermillion flex items-center justify-center gap-2"
             >
-                <PenSquare size={16} /> Publicar
+                <PenSquare size={17} strokeWidth={2.4} /> Publicar
             </button>
 
             <div className="mt-auto px-2 pt-4">
                 <div
-                    className="flex items-center gap-3 p-3 rounded-full hover:bg-white/[0.04] cursor-pointer transition"
+                    className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] cursor-pointer transition tap-shrink"
                     onClick={() => navigate(`/u/${user?.username}`)}
                 >
-                    <Avatar user={user} size={40} />
+                    <Avatar user={user} size={40} showOnline />
                     <div className="flex-1 min-w-0">
                         <div className="font-heading font-semibold truncate text-sm flex items-center gap-1">
                             {user?.name} {user?.verified && <VerifiedBadge size={12} />}
@@ -120,10 +125,7 @@ export function Sidebar({ onCompose }) {
                         <div className="font-mono text-xs text-zinc-500 truncate">@{user?.username}</div>
                     </div>
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            logout();
-                        }}
+                        onClick={(e) => { e.stopPropagation(); logout(); }}
                         data-testid="logout-btn"
                         className="text-zinc-500 hover:text-accent-vermillion p-2 rounded-full hover:bg-white/5"
                         title="Sair"

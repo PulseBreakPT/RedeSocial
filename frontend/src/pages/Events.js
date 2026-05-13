@@ -63,7 +63,7 @@ export default function Events() {
                 <button
                     onClick={() => setCreating(true)}
                     data-testid="new-event-btn"
-                    className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-4 py-2 rounded-full hover:bg-[#FF7A50] active:scale-95 flex items-center gap-1.5"
+                    className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-4 py-2 rounded-full hover:bg-[#A78BFA] active:scale-95 flex items-center gap-1.5"
                 >
                     <Plus size={14} /> Criar
                 </button>
@@ -126,7 +126,7 @@ export default function Events() {
                             <button
                                 type="submit"
                                 data-testid="submit-event-btn"
-                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-5 py-2 rounded-full hover:bg-[#FF7A50] active:scale-95"
+                                className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-5 py-2 rounded-full hover:bg-[#A78BFA] active:scale-95"
                             >
                                 Criar
                             </button>

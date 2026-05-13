@@ -59,7 +59,7 @@ export default function Community() {
                 </div>
             </div>
 
-            <div className="relative h-40 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#FF5722]/30 grid place-items-center">
+            <div className="relative h-40 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#8B5CF6]/30 grid place-items-center">
                 <Users size={48} className="text-accent-vermillion/50" />
             </div>
 

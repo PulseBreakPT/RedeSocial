@@ -49,7 +49,7 @@ export default function Settings() {
                 <p className="font-mono text-xs text-zinc-500 mt-0.5">editar perfil e privacidade</p>
             </div>
 
-            <div className="relative h-44 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#FF5722]/30">
+            <div className="relative h-44 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#8B5CF6]/30">
                 {form.banner && <img src={form.banner} alt="" className="w-full h-full object-cover" />}
                 <button
                     onClick={() => bannerRef.current?.click()}
@@ -121,7 +121,7 @@ export default function Settings() {
                             type="checkbox"
                             checked={form.private}
                             onChange={(e) => setForm({ ...form, private: e.target.checked })}
-                            className="w-5 h-5 accent-[#FF5722]"
+                            className="w-5 h-5 accent-[#8B5CF6]"
                         />
                     </label>
 
@@ -137,7 +137,7 @@ export default function Settings() {
                             onClick={save}
                             disabled={busy}
                             data-testid="settings-save-btn"
-                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-7 py-3 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-50 active:scale-95"
+                            className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-7 py-3 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-95"
                         >
                             {busy ? "Salvando..." : "Salvar"}
                         </button>

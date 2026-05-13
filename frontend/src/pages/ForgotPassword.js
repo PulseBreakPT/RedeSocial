@@ -67,7 +67,7 @@ export default function ForgotPassword() {
                         <button
                             type="submit" disabled={busy}
                             data-testid="forgot-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
                         >
                             {busy ? "Enviando..." : "Enviar"}
                         </button>
@@ -102,7 +102,7 @@ export default function ForgotPassword() {
                         <button
                             type="submit" disabled={busy}
                             data-testid="reset-submit"
-                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#FF7A50] transition disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
                         >
                             {busy ? "Redefinindo..." : "Redefinir"}
                         </button>
@@ -112,7 +112,7 @@ export default function ForgotPassword() {
                 {step === "done" && (
                     <div className="mt-8 space-y-4">
                         <p className="text-emerald-400 font-mono text-sm">{info}</p>
-                        <Link to="/login" className="block text-center w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#FF7A50] transition">
+                        <Link to="/login" className="block text-center w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition">
                             Ir para login
                         </Link>
                     </div>

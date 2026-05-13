@@ -105,7 +105,7 @@ export default function Profile() {
                 <p className="font-mono text-xs text-zinc-500 mt-0.5">{stats?.posts_count ?? 0} publicações</p>
             </div>
 
-            <div className="relative h-48 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#FF5722]/30">
+            <div className="relative h-48 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#8B5CF6]/30">
                 {profile.banner && <img src={profile.banner} alt="" className="w-full h-full object-cover" />}
             </div>
 

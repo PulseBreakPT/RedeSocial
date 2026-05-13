@@ -96,7 +96,7 @@ export function OnboardingModal() {
                     <button
                         onClick={finish}
                         data-testid="finish-onboarding"
-                        className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-6 py-2.5 rounded-full hover:bg-[#FF7A50] active:scale-95 flex items-center gap-2"
+                        className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-6 py-2.5 rounded-full hover:bg-[#A78BFA] active:scale-95 flex items-center gap-2"
                     >
                         <UserPlus size={14} /> Tudo pronto
                     </button>
