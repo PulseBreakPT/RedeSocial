@@ -105,7 +105,7 @@ export default function Bookmarks() {
                             const Icon = t.I;
                             const active = type === t.k;
                             return (
-                                <button key={t.k} onClick={() => setType(t.k)} data-testid={`bookmarks-type-${t.k}`} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${active ? "chip-on" : "text-black/55 hover:text-black"}`}>
+                                <button key={t.k} onClick={() => setType(t.k)} data-testid={`bookmarks-type-${t.k}`} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition ${active ? "chip-on" : "text-black hover:text-black"}`}>
                                     <Icon size={11} /> {t.l}
                                 </button>
                             );
@@ -113,15 +113,15 @@ export default function Bookmarks() {
                     </div>
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide hairline-t pt-2">
-                    <button onClick={() => setActiveCol("")} data-testid="bookmarks-col-all" className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${activeCol === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                    <button onClick={() => setActiveCol("")} data-testid="bookmarks-col-all" className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${activeCol === "" ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                         Todos
                     </button>
-                    <button onClick={() => setActiveCol("uncategorized")} className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${activeCol === "uncategorized" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                    <button onClick={() => setActiveCol("uncategorized")} className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${activeCol === "uncategorized" ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                         Sem coleção
                     </button>
                     {collections.map((c) => (
                         <div key={c.id} className="shrink-0 inline-flex items-center gap-0.5">
-                            <button onClick={() => setActiveCol(c.id)} data-testid={`bookmarks-col-${c.id}`} className={`px-3 py-1.5 rounded-l-full text-[12px] font-medium ${activeCol === c.id ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                            <button onClick={() => setActiveCol(c.id)} data-testid={`bookmarks-col-${c.id}`} className={`px-3 py-1.5 rounded-l-full text-[12px] font-medium ${activeCol === c.id ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                                 {c.name} <span className="opacity-60">{c.count}</span>
                             </button>
                             <button onClick={() => renameCol(c)} title="Renomear" className={`w-7 h-7 grid place-items-center text-[11px] ${activeCol === c.id ? "bg-black text-white/70" : "bg-black/[0.04] text-black/45 hover:text-black"}`}>

@@ -108,7 +108,7 @@ export default function Scheduled() {
             ) : (
                 <>
                     <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-2">
-                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/55 hover:text-black">
+                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black hover:text-black">
                             {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare size={13} /> : <Square size={13} />}
                             selecionar todos
                         </button>

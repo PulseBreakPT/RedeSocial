@@ -90,7 +90,7 @@ export default function Drafts() {
                         <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
                         <button onClick={bulkPublish} data-testid="drafts-bulk-publish" className="inline-flex items-center gap-1 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar todos</button>
                         <button onClick={bulkDelete} data-testid="drafts-bulk-delete" className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Apagar</button>
-                        <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55 hover:text-black">limpar</button>
+                        <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black hover:text-black">limpar</button>
                     </div>
                 )}
             </PageHeader>
@@ -104,7 +104,7 @@ export default function Drafts() {
             ) : (
                 <>
                     <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-2">
-                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/55 hover:text-black">
+                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black hover:text-black">
                             {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare size={13} /> : <Square size={13} />}
                             selecionar todos
                         </button>

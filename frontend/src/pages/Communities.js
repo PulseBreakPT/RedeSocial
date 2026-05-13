@@ -98,7 +98,7 @@ export default function Communities() {
                     </div>
                     <div className="flex items-center gap-1">
                         {SORTS.map((s) => { const Icon = s.icon; const active = sort === s.key; return (
-                            <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-on" : "text-black hover:bg-black/[0.06]"}`}>
                                 <Icon size={13} />
                             </button>
                         ); })}
@@ -106,13 +106,13 @@ export default function Communities() {
                 </div>
                 <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
                     {TABS.map((t) => (
-                        <button key={t.key} onClick={() => setTab(t.key)} data-testid={`communities-tab-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${tab === t.key ? "border-black text-black" : "border-transparent text-black/55 hover:text-black"}`}>{t.label}</button>
+                        <button key={t.key} onClick={() => setTab(t.key)} data-testid={`communities-tab-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${tab === t.key ? "border-black text-black" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
                     ))}
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas categorias</button>
+                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todas categorias</button>
                     {COMMUNITY_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`communities-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`communities-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                             <span>{c.emoji}</span> {c.label}
                         </button>
                     ))}
@@ -188,7 +188,7 @@ export default function Communities() {
                                     </Link>
                                     {c.description && <p className="mt-2 text-[14px] text-black/70 line-clamp-2 leading-relaxed">{c.description}</p>}
                                 </div>
-                                <button onClick={() => join(c.slug)} data-testid={`join-${c.slug}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 flex-shrink-0 ${c.joined ? "btn-silver" : "btn-obsidian"}`}>
+                                <button onClick={() => join(c.slug)} data-testid={`join-${c.slug}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 flex-shrink-0 ${c.joined ? "chip-on" : "btn-obsidian"}`}>
                                     {c.joined ? "Sair" : "Entrar"}
                                 </button>
                             </div>

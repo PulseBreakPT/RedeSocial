@@ -431,7 +431,7 @@ function ComposerIconBtn({ onClick, children, active = false, disabled = false, 
             disabled={disabled}
             aria-label={label}
             className={`w-9 h-9 rounded-full grid place-items-center transition tap-shrink ${
-                active ? "bg-black/[0.08] text-black" : "text-black/60 hover:bg-black/[0.04] hover:text-black"
+                active ? "bg-black/[0.08] text-black" : "text-black hover:bg-black/[0.06]"
             } disabled:opacity-30`}
             {...rest}
         >

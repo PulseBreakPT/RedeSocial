@@ -203,7 +203,7 @@ export function RightSidebar() {
                                 <button
                                     onClick={() => handleFollow(u.username)}
                                     data-testid={`follow-suggestion-${u.username}`}
-                                    className="btn-silver px-3.5 py-1.5 text-[11px] tracking-tight"
+                                    className="btn-obsidian px-3.5 py-1.5 text-[11px] tracking-tight"
                                 >
                                     Seguir
                                 </button>

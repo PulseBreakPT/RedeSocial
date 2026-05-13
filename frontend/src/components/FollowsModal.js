@@ -76,7 +76,7 @@ export function FollowsModal({ username, type, onClose }) {
                                 </div>
                                 <button
                                     onClick={(e) => handleFollow(e, u)}
-                                    className="btn-silver text-[11px] px-3.5 py-1.5"
+                                    className="btn-obsidian text-[11px] px-3.5 py-1.5"
                                 >
                                     Seguir
                                 </button>

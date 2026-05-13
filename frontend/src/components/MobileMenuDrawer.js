@@ -77,7 +77,7 @@ export function MobileMenuDrawer({ open, onClose }) {
                         <button
                             onClick={onClose}
                             data-testid="mdrawer-close"
-                            className="p-2 -mr-1 -mt-1 rounded-full text-black/55 hover:bg-black/[0.05] active:scale-90"
+                            className="p-2 -mr-1 -mt-1 rounded-full text-black hover:bg-black/[0.06] active:scale-90"
                             aria-label="Fechar"
                         >
                             <X size={20} strokeWidth={1.7} />

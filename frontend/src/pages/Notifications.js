@@ -122,13 +122,13 @@ export default function Notifications() {
                 testid="notifications-header"
                 action={
                     <div className="flex items-center gap-1">
-                        <button onClick={markAll} data-testid="notif-mark-all" title="Marcar todas como lidas" className="w-9 h-9 rounded-full grid place-items-center text-black/55 hover:bg-black/[0.05] tap-shrink">
+                        <button onClick={markAll} data-testid="notif-mark-all" title="Marcar todas como lidas" className="w-9 h-9 rounded-full grid place-items-center text-black hover:bg-black/[0.06] tap-shrink">
                             <CheckCheck size={15} />
                         </button>
-                        <button onClick={clearRead} data-testid="notif-clear" title="Apagar lidas" className="w-9 h-9 rounded-full grid place-items-center text-black/55 hover:bg-black/[0.05] tap-shrink">
+                        <button onClick={clearRead} data-testid="notif-clear" title="Apagar lidas" className="w-9 h-9 rounded-full grid place-items-center text-black hover:bg-black/[0.06] tap-shrink">
                             <Trash2 size={14} />
                         </button>
-                        <Link to="/settings" title="Definições de notificações" className="w-9 h-9 rounded-full grid place-items-center text-black/55 hover:bg-black/[0.05] tap-shrink">
+                        <Link to="/settings" title="Definições de notificações" className="w-9 h-9 rounded-full grid place-items-center text-black hover:bg-black/[0.06] tap-shrink">
                             <Cog size={15} />
                         </Link>
                     </div>
@@ -142,7 +142,7 @@ export default function Notifications() {
                                 key={f.key}
                                 onClick={() => setFilter(f.key)}
                                 data-testid={`notif-filter-${f.key}`}
-                                className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition ${active ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}
+                                className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition ${active ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}
                             >
                                 {f.label}
                             </button>

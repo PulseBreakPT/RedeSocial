@@ -82,7 +82,7 @@ export default function Login() {
                         <div>
                             <div className="flex items-center justify-between mb-1.5">
                                 <label className="text-[12px] font-medium text-black/65">Palavra-passe</label>
-                                <Link to="/forgot" data-testid="goto-forgot" className="text-[12px] text-black/55 hover:text-black ink-link font-medium">
+                                <Link to="/forgot" data-testid="goto-forgot" className="text-[12px] text-black hover:text-black ink-link font-medium">
                                     Esqueci-me
                                 </Link>
                             </div>

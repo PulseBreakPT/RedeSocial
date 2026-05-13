@@ -45,8 +45,8 @@ export function MobileBottomNav({ onCompose }) {
                                     data-testid={it.testid}
                                     className="-mt-7 w-14 h-14 rounded-full text-white grid place-items-center active:scale-90 transition ring-[6px] ring-white"
                                     style={{
-                                        background: "linear-gradient(135deg, var(--atl-400) 0%, var(--atl-600) 100%)",
-                                        boxShadow: "0 16px 36px -10px rgba(44,111,209,0.55), inset 0 1px 0 rgba(255,255,255,0.20)",
+                                        background: "linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%)",
+                                        boxShadow: "0 16px 36px -10px rgba(44,111,209,0.50), 0 8px 20px -10px rgba(232,93,79,0.40), inset 0 1px 0 rgba(255,255,255,0.20)",
                                     }}
                                     aria-label="Nova publicação"
                                 >
@@ -60,7 +60,7 @@ export function MobileBottomNav({ onCompose }) {
                             <button
                                 key={idx}
                                 onClick={() => navigate("/login")}
-                                className="flex flex-col items-center justify-center gap-0.5 h-full text-black/40 active:scale-95 transition"
+                                className="flex flex-col items-center justify-center gap-0.5 h-full text-black active:scale-95 transition"
                             >
                                 <Icon size={22} strokeWidth={1.9} />
                                 <span className="text-[10px] tracking-tight font-medium">{it.label}</span>
@@ -77,7 +77,7 @@ export function MobileBottomNav({ onCompose }) {
                             data-testid={it.testid}
                             className={({ isActive }) =>
                                 `relative flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition-colors ${
-                                    isActive ? "text-[color:var(--atl-600)]" : "text-black/45 hover:text-black/70"
+                                    isActive ? "text-grad-active" : "text-black"
                                 }`
                             }
                         >
@@ -86,15 +86,14 @@ export function MobileBottomNav({ onCompose }) {
                                     {isActive && (
                                         <span
                                             aria-hidden
-                                            className="absolute top-1 w-8 h-[3px] rounded-full"
-                                            style={{ background: "var(--atl-500)" }}
+                                            className="absolute top-1 w-8 h-[3px] rounded-full grad-bar"
                                         />
                                     )}
                                     <span className="relative">
                                         <Icon
                                             size={22}
                                             strokeWidth={isActive ? 2.2 : 1.7}
-                                            fill={isActive ? "currentColor" : "none"}
+                                            style={isActive ? { color: "var(--coral-500)" } : undefined}
                                         />
                                         {isMsg && msgCount > 0 && (
                                             <span

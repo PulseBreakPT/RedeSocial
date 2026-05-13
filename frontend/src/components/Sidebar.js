@@ -64,8 +64,8 @@ export function Sidebar({ onCompose }) {
                         className={({ isActive }) =>
                             `relative group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
                                 isActive
-                                    ? "bg-accent-vermillion/10 text-[color:var(--atl-700)]"
-                                    : "text-black/55 hover:bg-black/[0.035] hover:text-black"
+                                    ? "chip-on"
+                                    : "text-black hover:bg-black/[0.045]"
                             }`
                         }
                     >
@@ -74,8 +74,7 @@ export function Sidebar({ onCompose }) {
                                 {isActive && (
                                     <span
                                         aria-hidden
-                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                                        style={{ background: "var(--atl-500)" }}
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full grad-bar"
                                     />
                                 )}
                                 <span className="relative">
@@ -101,7 +100,7 @@ export function Sidebar({ onCompose }) {
                     data-testid="nav-profile"
                     className={({ isActive }) =>
                         `relative group flex items-center gap-3.5 px-3.5 py-2.5 rounded-full transition-all tap-shrink ${
-                            isActive ? "bg-accent-vermillion/10 text-[color:var(--atl-700)]" : "text-black/55 hover:bg-black/[0.035] hover:text-black"
+                            isActive ? "chip-on" : "text-black hover:bg-black/[0.045]"
                         }`
                     }
                 >
@@ -110,8 +109,7 @@ export function Sidebar({ onCompose }) {
                             {isActive && (
                                 <span
                                     aria-hidden
-                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                                    style={{ background: "var(--atl-500)" }}
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full grad-bar"
                                 />
                             )}
                             <User size={20} strokeWidth={isActive ? 2 : 1.55} />

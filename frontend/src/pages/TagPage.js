@@ -62,7 +62,7 @@ export default function TagPage() {
                         <button onClick={share} title="Partilhar" className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55">
                             <Share2 size={14} />
                         </button>
-                        <button onClick={toggleFollow} data-testid="tag-follow-btn" className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 inline-flex items-center gap-1.5 ${followed ? "btn-silver" : "btn-obsidian"}`}>
+                        <button onClick={toggleFollow} data-testid="tag-follow-btn" className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 inline-flex items-center gap-1.5 ${followed ? "chip-on" : "btn-obsidian"}`}>
                             {followed ? <BellOff size={11} /> : <BellRing size={11} />} {followed ? "A seguir" : "Seguir"}
                         </button>
                     </div>
@@ -93,7 +93,7 @@ export default function TagPage() {
 
             <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-1">
                 {SORTS.map((s) => (
-                    <button key={s.key} onClick={() => setSort(s.key)} className={`px-3 py-1 rounded-full text-[12px] font-medium ${sort === s.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                    <button key={s.key} onClick={() => setSort(s.key)} className={`px-3 py-1 rounded-full text-[12px] font-medium ${sort === s.key ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                         {s.label}
                     </button>
                 ))}

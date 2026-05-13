@@ -77,7 +77,7 @@ export default function Community() {
                         <button onClick={share} title="Partilhar" data-testid="community-share-btn" className="w-9 h-9 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition">
                             <Share2 size={14} />
                         </button>
-                        <button onClick={join} data-testid="community-join-btn" className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-5 py-2.5 transition active:scale-95 ${community.joined ? "btn-silver" : "btn-obsidian"}`}>
+                        <button onClick={join} data-testid="community-join-btn" className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-5 py-2.5 transition active:scale-95 ${community.joined ? "chip-on" : "btn-obsidian"}`}>
                             {community.joined ? "Sair" : "Entrar"}
                         </button>
                     </div>

@@ -69,13 +69,13 @@ export default function Events() {
                 </div>
                 <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
                     {WHEN_TABS.map((t) => (
-                        <button key={t.key} onClick={() => setWhen(t.key)} data-testid={`events-when-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${when === t.key ? "border-black text-black" : "border-transparent text-black/55 hover:text-black"}`}>{t.label}</button>
+                        <button key={t.key} onClick={() => setWhen(t.key)} data-testid={`events-when-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${when === t.key ? "border-black text-black" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
                     ))}
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas</button>
+                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todas</button>
                     {EVENT_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`events-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`events-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                             <span>{c.emoji}</span> {c.label}
                         </button>
                     ))}
@@ -166,10 +166,10 @@ export default function Events() {
                                     </div>
                                 </div>
                                 <div className="flex flex-col gap-2 flex-shrink-0">
-                                    <button onClick={() => attend(e.id)} data-testid={`attend-${e.id}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 ${e.attending ? "btn-silver" : "btn-obsidian"}`}>
+                                    <button onClick={() => attend(e.id)} data-testid={`attend-${e.id}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 ${e.attending ? "chip-on" : "btn-obsidian"}`}>
                                         {e.attending ? "Vou" : "Participar"}
                                     </button>
-                                    <button onClick={() => share(e)} title="Partilhar" data-testid={`event-share-${e.id}`} className="w-full text-[10px] font-mono uppercase tracking-[0.14em] text-black/55 hover:text-black inline-flex items-center justify-center gap-1">
+                                    <button onClick={() => share(e)} title="Partilhar" data-testid={`event-share-${e.id}`} className="w-full text-[10px] font-mono uppercase tracking-[0.14em] text-black hover:text-black inline-flex items-center justify-center gap-1">
                                         <Share2 size={11} /> partilhar
                                     </button>
                                 </div>

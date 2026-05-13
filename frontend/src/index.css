@@ -317,9 +317,9 @@
     }
     .post-row:hover { background-color: rgba(44, 111, 209, 0.022); }
 
-    /* Premium CTA — Vermillion gradient (Atlantic → Coral) */
+    /* Premium CTA — BLACK by default, Vermillion gradient (Atlantic → Coral) on hover/active */
     .btn-obsidian {
-        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 50%, var(--coral-500) 100%);
+        background: #0a0a0a;
         color: #fff;
         border-radius: 9999px;
         font-family: "Inter", sans-serif;
@@ -328,21 +328,26 @@
         padding: 0.65rem 1.25rem;
         transition: transform 200ms var(--ease-out-soft),
                     box-shadow 360ms var(--ease-out-soft),
+                    background 320ms ease,
                     background-image 320ms ease,
                     filter 240ms ease;
-        box-shadow: 0 8px 22px -8px rgba(30, 84, 170, 0.45),
-                    0 4px 14px -10px rgba(232, 93, 79, 0.35),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        box-shadow: 0 6px 18px -8px rgba(13, 13, 16, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
     }
-    .btn-obsidian:hover {
-        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 35%, var(--coral-500) 75%, var(--sun-500) 100%);
-        box-shadow: 0 14px 30px -8px rgba(30, 84, 170, 0.55),
+    .btn-obsidian:hover,
+    .btn-obsidian:focus-visible,
+    .btn-obsidian.is-active {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+        box-shadow: 0 12px 28px -8px rgba(30, 84, 170, 0.50),
                     0 8px 22px -10px rgba(232, 93, 79, 0.45),
                     inset 0 1px 0 rgba(255, 255, 255, 0.18);
         transform: translateY(-1px);
-        filter: saturate(1.12) brightness(1.04);
+        filter: saturate(1.10) brightness(1.03);
     }
-    .btn-obsidian:active { transform: scale(0.97); }
+    .btn-obsidian:active {
+        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 35%, var(--coral-500) 75%, var(--sun-500) 100%);
+        transform: scale(0.97);
+    }
     .btn-obsidian svg { color: #fff; }
 
     /* ============================================================
@@ -381,9 +386,43 @@
     }
     .chip-on { animation: chipPop 280ms var(--ease-pop); }
 
-    /* Atlantic primary CTA (new — for follow buttons etc) */
+    /* ============================================================
+       Gradient text — for nav links / inline links when ACTIVE
+       Uses background-clip so the text itself becomes gradient.
+       ============================================================ */
+    .text-grad-active {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
+    .text-grad-active svg {
+        color: var(--coral-500);
+        stroke: url(#vermillionGrad);
+    }
+    /* Hover variant: subtle gradient text on hover (for inline links) */
+    .link-grad {
+        color: #0a0a0a;
+        transition: color 200ms ease, background 200ms ease;
+    }
+    .link-grad:hover,
+    .link-grad.is-active {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Indicator bar / dot used by nav as ACTIVE marker */
+    .grad-bar {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+    }
+
+    /* Atlantic primary CTA — BLACK by default, gradient on hover/active */
     .btn-atl {
-        background: var(--atl-500);
+        background: #0a0a0a;
         color: #ffffff;
         border-radius: 9999px;
         font-family: "Inter", sans-serif;
@@ -392,11 +431,23 @@
         padding: 0.6rem 1.2rem;
         transition: transform 200ms var(--ease-out-soft),
                     box-shadow 360ms var(--ease-out-soft),
-                    background 240ms ease;
-        box-shadow: 0 6px 16px -6px rgba(44, 111, 209, 0.55);
+                    background 320ms ease;
+        box-shadow: 0 6px 16px -8px rgba(13, 13, 16, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .btn-atl:hover { background: var(--atl-600); box-shadow: 0 10px 22px -6px rgba(44, 111, 209, 0.65); transform: translateY(-1px); }
-    .btn-atl:active { transform: scale(0.97); }
+    .btn-atl:hover,
+    .btn-atl:focus-visible,
+    .btn-atl.is-active {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+        box-shadow: 0 12px 26px -8px rgba(30, 84, 170, 0.45),
+                    0 6px 18px -10px rgba(232, 93, 79, 0.40),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        transform: translateY(-1px);
+    }
+    .btn-atl:active {
+        background: linear-gradient(135deg, var(--atl-700) 0%, var(--atl-500) 35%, var(--coral-500) 75%, var(--sun-500) 100%);
+        transform: scale(0.97);
+    }
 
     .btn-silver {
         background: #ffffff;
@@ -529,19 +580,19 @@
         display: inline-flex; align-items: center; gap: 0.4rem;
         padding: 0.5rem 0.65rem; border-radius: 999px;
         font-size: 13px; font-weight: 500;
-        color: hsl(var(--muted));
+        color: #0a0a0a;
         transition: background-color 200ms ease, color 200ms ease, transform 140ms var(--ease-out-soft);
         margin: -0.4rem -0.55rem;
     }
-    .eng-btn:hover { background-color: rgba(13, 13, 16, 0.05); color: hsl(var(--ink)); }
+    .eng-btn:hover { background-color: rgba(13, 13, 16, 0.05); color: #0a0a0a; }
     .eng-btn:active { transform: scale(0.94); }
     .eng-btn.is-liked { color: var(--coral-500); }
-    .eng-btn.is-liked:hover { background-color: var(--coral-50); }
+    .eng-btn.is-liked:hover { background-color: var(--coral-50); color: var(--coral-500); }
     .eng-btn.is-reposted { color: var(--eu-500); }
-    .eng-btn.is-reposted:hover { background-color: var(--eu-50); }
+    .eng-btn.is-reposted:hover { background-color: var(--eu-50); color: var(--eu-500); }
     .eng-btn.is-commented:hover { background-color: var(--atl-50); color: var(--atl-500); }
     .eng-btn.is-bookmarked { color: var(--sun-500); }
-    .eng-btn.is-bookmarked:hover { background-color: var(--sun-50); }
+    .eng-btn.is-bookmarked:hover { background-color: var(--sun-50); color: var(--sun-500); }
 
     .scroll-mom { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .no-scrollbar::-webkit-scrollbar { display: none; }

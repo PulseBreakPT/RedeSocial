@@ -88,10 +88,10 @@ export default function Explore() {
                     </div>
                     {tab === "posts" && (
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setSort("trending")} title="Tendências" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "trending" ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button onClick={() => setSort("trending")} title="Tendências" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "trending" ? "chip-on" : "text-black hover:bg-black/[0.06]"}`}>
                                 <Flame size={14} />
                             </button>
-                            <button onClick={() => setSort("recent")} title="Recentes" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "recent" ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button onClick={() => setSort("recent")} title="Recentes" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "recent" ? "chip-on" : "text-black hover:bg-black/[0.06]"}`}>
                                 <Clock size={14} />
                             </button>
                         </div>
@@ -106,7 +106,7 @@ export default function Explore() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 data-testid={`explore-tab-${t.key}`}
-                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "border-black text-black" : "border-transparent text-black/55 hover:text-black"}`}
+                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "border-black text-black" : "border-transparent text-black hover:text-black"}`}
                             >
                                 <Icon size={14} strokeWidth={1.6} /> {t.label}
                             </button>
@@ -115,9 +115,9 @@ export default function Explore() {
                 </div>
                 {tab === "posts" && (
                     <div className="flex gap-1.5 px-3 lg:px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-                        <button onClick={() => setMood("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${mood === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todos</button>
+                        <button onClick={() => setMood("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${mood === "" ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todos</button>
                         {MOOD_OPTIONS.map((m) => (
-                            <button key={m.key} onClick={() => setMood(m.key)} data-testid={`explore-mood-${m.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${mood === m.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                            <button key={m.key} onClick={() => setMood(m.key)} data-testid={`explore-mood-${m.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${mood === m.key ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
                                 <span>{m.emoji}</span> {m.label}
                             </button>
                         ))}
@@ -143,7 +143,7 @@ export default function Explore() {
                         <button
                             onClick={() => followUser(u.username)}
                             data-testid={`explore-follow-${u.username}`}
-                            className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-1.5 transition active:scale-95 ${u.is_following ? "btn-silver" : "btn-obsidian"}`}
+                            className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-1.5 transition active:scale-95 ${u.is_following ? "chip-on" : "btn-obsidian"}`}
                         >
                             {u.is_following ? "Seguindo" : "Seguir"}
                         </button>

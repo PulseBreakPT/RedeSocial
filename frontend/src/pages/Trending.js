@@ -99,7 +99,7 @@ export default function Trending() {
                             className={`px-3 py-1 rounded-full text-[12px] font-medium tap-shrink transition ${
                                 range === r.key
                                     ? "chip-on"
-                                    : "bg-black/[0.04] text-black/65 hover:bg-black/[0.07]"
+                                    : "bg-black/[0.04] text-black hover:bg-black/[0.08]"
                             }`}
                         >
                             {r.label}
@@ -121,7 +121,7 @@ export default function Trending() {
                                 className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${
                                     active
                                         ? "border-black text-black"
-                                        : "border-transparent text-black/55 hover:text-black"
+                                        : "border-transparent text-black hover:text-black"
                                 }`}
                             >
                                 <Icon size={14} strokeWidth={1.6} /> {t.label}

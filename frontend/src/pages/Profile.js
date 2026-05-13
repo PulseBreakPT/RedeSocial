@@ -100,7 +100,7 @@ export default function Profile() {
                         ) : (<>
                             <button onClick={() => navigate(`/messages/${profile.id}`)} data-testid="message-profile-btn" className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition"><MessageCircle size={16} /></button>
                             {profile.is_following ? (
-                                <button onClick={toggleFollow} data-testid="follow-profile-btn" className="btn-silver px-5 py-2 text-[12px] hover:bg-red-soft-bg">Seguindo</button>
+                                <button onClick={toggleFollow} data-testid="follow-profile-btn" className="chip-on px-5 py-2 text-[12px] text-[11px] font-heading font-medium tracking-tight rounded-full">Seguindo</button>
                             ) : (
                                 <button onClick={toggleFollow} data-testid="follow-profile-btn" className="btn-obsidian px-5 py-2 text-[12px]">Seguir</button>
                             )}
