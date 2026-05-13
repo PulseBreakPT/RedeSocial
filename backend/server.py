@@ -200,9 +200,21 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         c = await db.communities.find_one({"id": post["community_id"]}, {"_id": 0})
         if c:
             community = {"id": c["id"], "name": c["name"], "slug": c["slug"]}
+    quote_origin = None
+    if post.get("quote_of"):
+        q = await db.posts.find_one({"id": post["quote_of"]}, {"_id": 0})
+        if q:
+            q_author = await db.users.find_one({"id": q["author_id"]}, {"_id": 0})
+            quote_origin = {
+                "id": q["id"], "content": q["content"], "image": q.get("image", ""),
+                "created_at": q["created_at"],
+                "author": public_user(q_author) if q_author else None,
+            }
     return {
         "id": post["id"], "content": post["content"], "image": post.get("image", ""),
         "created_at": post["created_at"],
+        "edited_at": post.get("edited_at"),
+        "views": post.get("views", 0),
         "likes_count": len(post.get("likes", [])),
         "reposts_count": len(post.get("reposts", [])),
         "comments_count": comments_count,
@@ -211,7 +223,9 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "reposted": viewer_id in post.get("reposts", []) if viewer_id else False,
         "author": public_user(author) if author else None,
         "repost_of": repost_origin,
+        "quote_of": quote_origin,
         "community": community,
+        "pinned": bool(post.get("pinned")),
     }
 
 
@@ -276,6 +290,15 @@ class PostIn(BaseModel):
     content: str = Field(min_length=1, max_length=500)
     image: Optional[str] = ""
     community_id: Optional[str] = None
+    quote_of: Optional[str] = None
+
+
+class PostEditIn(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class MessageReactIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=4)
 
 
 class CommentIn(BaseModel):
@@ -461,8 +484,98 @@ async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] =
         query = {"likes": user["id"]}
     else:
         query = {"author_id": user["id"]}
-    posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    # pinned first then by created_at desc
+    posts = await db.posts.find(query, {"_id": 0}).sort([("pinned", -1), ("created_at", -1)]).to_list(100)
     return [await enrich_post(p, viewer) for p in posts]
+
+
+@api.get("/users/{username}/stats")
+async def user_stats(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Usuário não encontrado")
+    if not await can_view_profile(user, viewer):
+        return {}
+    posts = await db.posts.find(
+        {"author_id": user["id"], "repost_of": {"$exists": False}}, {"_id": 0}
+    ).to_list(1000)
+    posts_count = len(posts)
+    likes_received = sum(len(p.get("likes", [])) for p in posts)
+    reposts_received = sum(len(p.get("reposts", [])) for p in posts)
+    comments_received = 0
+    for p in posts:
+        comments_received += await db.comments.count_documents({"post_id": p["id"]})
+    avg_likes = likes_received / posts_count if posts_count else 0
+    followers = len(user.get("followers", []))
+    # Engagement rate formula: (likes + reposts*2 + comments*3) / max(followers,1) / posts
+    eng_raw = likes_received + reposts_received * 2 + comments_received * 3
+    engagement_rate = (eng_raw / max(followers, 1) / max(posts_count, 1)) * 100 if posts_count else 0
+    # Streak: consecutive days with at least one post
+    dates = sorted({p["created_at"][:10] for p in posts}, reverse=True)
+    streak = 0
+    today = datetime.now(timezone.utc).date()
+    for i, d in enumerate(dates):
+        dt = datetime.fromisoformat(d).date()
+        if (today - dt).days == i:
+            streak += 1
+        else:
+            break
+    joined_days = (datetime.now(timezone.utc) - datetime.fromisoformat(user["created_at"])).days
+    # Profile completion: bio(20)+avatar(20)+banner(15)+verified(10)+>=1 post(20)+>=3 following(15)
+    completion = 0
+    if user.get("bio"): completion += 20
+    if user.get("avatar"): completion += 20
+    if user.get("banner"): completion += 15
+    if user.get("verified"): completion += 10
+    if posts_count >= 1: completion += 20
+    if len(user.get("following", [])) >= 3: completion += 15
+    return {
+        "posts_count": posts_count,
+        "likes_received": likes_received,
+        "reposts_received": reposts_received,
+        "comments_received": comments_received,
+        "avg_likes": round(avg_likes, 1),
+        "engagement_rate": round(engagement_rate, 2),
+        "streak": streak,
+        "joined_days": joined_days,
+        "profile_completion": completion,
+    }
+
+
+@api.get("/users/{username}/heatmap")
+async def user_heatmap(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Usuário não encontrado")
+    if not await can_view_profile(user, viewer):
+        return []
+    now = datetime.now(timezone.utc).date()
+    start = now - timedelta(days=29)
+    cutoff = datetime(start.year, start.month, start.day, tzinfo=timezone.utc).isoformat()
+    posts = await db.posts.find(
+        {"author_id": user["id"], "created_at": {"$gte": cutoff}}, {"_id": 0, "created_at": 1}
+    ).to_list(1000)
+    buckets: dict[str, int] = {}
+    for p in posts:
+        d = p["created_at"][:10]
+        buckets[d] = buckets.get(d, 0) + 1
+    out = []
+    for i in range(30):
+        d = (start + timedelta(days=i)).isoformat()
+        out.append({"date": d, "count": buckets.get(d, 0)})
+    return out
+
+
+@api.get("/users/{username}/mutual")
+async def user_mutual(username: str, viewer=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Usuário não encontrado")
+    if target["id"] == viewer["id"]:
+        return {"count": 0, "users": []}
+    mutual_ids = set(target.get("followers", [])) & set(viewer.get("following", []))
+    users = await db.users.find({"id": {"$in": list(mutual_ids)[:3]}}, {"_id": 0}).to_list(3)
+    return {"count": len(mutual_ids), "users": [public_user(u) for u in users]}
 
 
 @api.get("/users/{username}/followers")
@@ -531,17 +644,79 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         if not c or user["id"] not in c.get("members", []):
             raise HTTPException(403, "Você precisa entrar na comunidade primeiro")
         community_id = c["id"]
+    if payload.quote_of:
+        q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
+        if not q:
+            raise HTTPException(404, "Publicação citada não encontrada")
     post = {
         "id": str(uuid.uuid4()), "author_id": user["id"],
         "content": payload.content, "image": payload.image or "",
         "likes": [], "bookmarks": [], "reposts": [],
         "hashtags": extract_hashtags(payload.content),
         "community_id": community_id,
+        "quote_of": payload.quote_of,
+        "views": 0,
         "created_at": now_iso(),
     }
     await db.posts.insert_one(post)
     await handle_mentions(payload.content, user, post["id"])
+    if payload.quote_of:
+        q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
+        if q and q["author_id"] != user["id"]:
+            await create_notification(q["author_id"], "quote", user["id"], post["id"],
+                                       f"@{user['username']} citou sua publicação")
     return await enrich_post(post, user)
+
+
+@api.patch("/posts/{post_id}")
+async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    age = datetime.now(timezone.utc) - datetime.fromisoformat(post["created_at"])
+    if age > timedelta(minutes=15):
+        raise HTTPException(400, "Janela de edição expirada (15 min)")
+    await db.posts.update_one(
+        {"id": post_id},
+        {"$set": {
+            "content": payload.content,
+            "hashtags": extract_hashtags(payload.content),
+            "edited_at": now_iso(),
+        }},
+    )
+    fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    return await enrich_post(fresh, user)
+
+
+@api.post("/posts/{post_id}/view")
+async def view_post(post_id: str, viewer: Optional[dict] = Depends(maybe_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        return {"views": 0}
+    if viewer and post["author_id"] == viewer["id"]:
+        return {"views": post.get("views", 0)}
+    await db.posts.update_one({"id": post_id}, {"$inc": {"views": 1}})
+    return {"views": post.get("views", 0) + 1}
+
+
+@api.post("/posts/{post_id}/pin")
+async def pin_post(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    if user.get("pinned_post_id") == post_id:
+        await db.users.update_one({"id": user["id"]}, {"$unset": {"pinned_post_id": ""}})
+        await db.posts.update_one({"id": post_id}, {"$unset": {"pinned": ""}})
+        return {"pinned": False}
+    if user.get("pinned_post_id"):
+        await db.posts.update_one({"id": user["pinned_post_id"]}, {"$unset": {"pinned": ""}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"pinned_post_id": post_id}})
+    await db.posts.update_one({"id": post_id}, {"$set": {"pinned": True}})
+    return {"pinned": True}
 
 
 @api.get("/posts/feed")
@@ -951,6 +1126,35 @@ async def set_typing(other_user_id: str, user=Depends(get_current_user)):
         }},
         upsert=True,
     )
+    return {"ok": True}
+
+
+@api.post("/messages/{message_id}/react")
+async def react_message(message_id: str, payload: MessageReactIn, user=Depends(get_current_user)):
+    msg = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(404, "Mensagem não encontrada")
+    if user["id"] not in [msg["sender_id"], msg["recipient_id"]]:
+        raise HTTPException(403, "Sem permissão")
+    reactions = msg.get("reactions", {})
+    current = reactions.get(user["id"])
+    if current == payload.emoji:
+        # toggle off
+        reactions.pop(user["id"], None)
+    else:
+        reactions[user["id"]] = payload.emoji
+    await db.messages.update_one({"id": message_id}, {"$set": {"reactions": reactions}})
+    return {"reactions": reactions}
+
+
+@api.delete("/messages/{message_id}")
+async def delete_message(message_id: str, user=Depends(get_current_user)):
+    msg = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(404, "Mensagem não encontrada")
+    if msg["sender_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    await db.messages.delete_one({"id": message_id})
     return {"ok": True}
 
 

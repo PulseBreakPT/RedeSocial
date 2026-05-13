@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, MessageCircle, Award, Lock } from "lucide-react";
+import { CalendarDays, MessageCircle, Award, Lock, Users } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { FollowsModal } from "../components/FollowsModal";
 import { PostCard } from "../components/PostCard";
+import { StatsCard } from "../components/StatsCard";
+import { ActivityHeatmap } from "../components/ActivityHeatmap";
+import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
+import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 
 const TABS = [
@@ -19,15 +23,29 @@ export default function Profile() {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
+    const [stats, setStats] = useState(null);
+    const [heatmap, setHeatmap] = useState([]);
+    const [mutual, setMutual] = useState(null);
     const [tab, setTab] = useState("posts");
     const [loading, setLoading] = useState(true);
-    const [modal, setModal] = useState(null); // 'followers' | 'following' | null
+    const [postsLoading, setPostsLoading] = useState(false);
+    const [modal, setModal] = useState(null);
+    useLiveTime(30000);
 
-    const loadProfile = async () => {
+    const loadAll = async () => {
         setLoading(true);
         try {
-            const { data } = await api.get(`/users/${username}`);
-            setProfile(data);
+            const [p, s, h] = await Promise.all([
+                api.get(`/users/${username}`),
+                api.get(`/users/${username}/stats`).catch(() => ({ data: null })),
+                api.get(`/users/${username}/heatmap`).catch(() => ({ data: [] })),
+            ]);
+            setProfile(p.data);
+            setStats(s.data);
+            setHeatmap(h.data);
+            if (!p.data.is_self) {
+                api.get(`/users/${username}/mutual`).then((r) => setMutual(r.data)).catch(() => {});
+            }
         } catch (e) {
             toast.error(formatApiError(e));
         } finally {
@@ -36,14 +54,17 @@ export default function Profile() {
     };
 
     const loadPosts = async (which = tab) => {
+        setPostsLoading(true);
         try {
             const { data } = await api.get(`/users/${username}/posts?tab=${which}`);
             setPosts(data);
-        } catch {}
+        } catch {} finally {
+            setPostsLoading(false);
+        }
     };
 
     useEffect(() => {
-        loadProfile();
+        loadAll();
         loadPosts("posts");
         setTab("posts");
         // eslint-disable-next-line
@@ -69,11 +90,7 @@ export default function Profile() {
         }
     };
 
-    if (loading || !profile) {
-        return (
-            <div className="p-10 text-center text-zinc-500 font-mono text-sm" data-testid="profile-loading">carregando perfil...</div>
-        );
-    }
+    if (loading || !profile) return <ProfileSkeleton />;
 
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
@@ -85,7 +102,7 @@ export default function Profile() {
                 <h1 className="font-heading text-xl font-bold tracking-tight flex items-center gap-1.5">
                     {profile.name} {profile.verified && <VerifiedBadge size={16} />}
                 </h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">@{profile.username}</p>
+                <p className="font-mono text-xs text-zinc-500 mt-0.5">{stats?.posts_count ?? 0} publicações</p>
             </div>
 
             <div className="relative h-48 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#FF5722]/30">
@@ -153,27 +170,45 @@ export default function Profile() {
                                 <span className="font-mono text-xs text-emerald-400">online</span>
                             </div>
                         )}
+                        {stats?.streak > 0 && (
+                            <div className="inline-flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/30 rounded-full px-3 py-1" data-testid="streak-badge">
+                                <span className="font-mono text-xs text-orange-400">🔥 {stats.streak}d</span>
+                            </div>
+                        )}
                     </div>
 
                     {profile.bio && <p className="mt-3 text-zinc-200">{profile.bio}</p>}
                     <div className="flex items-center gap-2 mt-3 text-zinc-500 font-mono text-xs">
                         <CalendarDays size={14} />
                         <span>Entrou em {joined}</span>
+                        {stats?.joined_days !== undefined && (
+                            <>
+                                <span className="text-zinc-700">·</span>
+                                <span>{stats.joined_days}d na rede</span>
+                            </>
+                        )}
                     </div>
+
+                    {mutual && mutual.count > 0 && (
+                        <div className="flex items-center gap-2 mt-3 text-xs font-mono text-zinc-400" data-testid="mutual-followers">
+                            <div className="flex -space-x-2">
+                                {mutual.users.map((u) => (
+                                    <Avatar key={u.id} user={u} size={20} className="border-2 border-[#0A0A0A]" />
+                                ))}
+                            </div>
+                            <Users size={12} />
+                            <span>
+                                Seguido por <span className="text-white">{mutual.count}</span> pessoa{mutual.count > 1 ? "s" : ""} que você segue
+                            </span>
+                        </div>
+                    )}
+
                     <div className="flex gap-5 mt-4">
-                        <button
-                            onClick={() => setModal("following")}
-                            data-testid="following-count"
-                            className="hover:underline"
-                        >
+                        <button onClick={() => setModal("following")} data-testid="following-count" className="hover:underline">
                             <span className="font-heading font-bold text-white">{profile.following_count}</span>
                             <span className="ml-1.5 font-mono text-sm text-zinc-500">a seguir</span>
                         </button>
-                        <button
-                            onClick={() => setModal("followers")}
-                            data-testid="followers-count"
-                            className="hover:underline"
-                        >
+                        <button onClick={() => setModal("followers")} data-testid="followers-count" className="hover:underline">
                             <span className="font-heading font-bold text-white">{profile.followers_count}</span>
                             <span className="ml-1.5 font-mono text-sm text-zinc-500">seguidores</span>
                         </button>
@@ -189,7 +224,15 @@ export default function Profile() {
                 </div>
             ) : (
                 <>
-                    <div className="mt-6 grid grid-cols-3 border-t border-b border-zinc-900">
+                    <StatsCard stats={stats} completion={profile.is_self ? stats?.profile_completion : undefined} />
+
+                    {heatmap?.length > 0 && (
+                        <div className="px-5 py-4 border-b border-zinc-900">
+                            <ActivityHeatmap data={heatmap} />
+                        </div>
+                    )}
+
+                    <div className="mt-2 grid grid-cols-3 border-t border-b border-zinc-900">
                         {TABS.map((t) => (
                             <button
                                 key={t.key}
@@ -207,7 +250,9 @@ export default function Profile() {
                         ))}
                     </div>
 
-                    {posts.length === 0 ? (
+                    {postsLoading ? (
+                        <PostSkeletonList count={3} />
+                    ) : posts.length === 0 ? (
                         <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nada por aqui ainda.</div>
                     ) : (
                         posts.map((p) => (

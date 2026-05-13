@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Bookmark, Share2, Trash2, Repeat2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, Repeat2, Eye, Pin, Pencil } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { RichText } from "./RichText";
 import { ImageLightbox } from "./ImageLightbox";
+import { PostMenu } from "./PostMenu";
+import { EditPostModal } from "./EditPostModal";
+import { QuoteModal } from "./QuoteModal";
+import { RepostMenu } from "./RepostMenu";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
 
-function PostBody({ post, onChange, clickable, showRepostHeader }) {
+function formatNum(n) {
+    if (n < 1000) return String(n);
+    if (n < 1000000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
+    return `${(n / 1000000).toFixed(1).replace(".0", "")}M`;
+}
+
+function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [liked, setLiked] = useState(post.liked);
@@ -18,13 +28,40 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
     const [reposts, setReposts] = useState(post.reposts_count || 0);
     const [reposted, setReposted] = useState(!!post.reposted);
     const [bookmarked, setBookmarked] = useState(!!post.bookmarked);
+    const [views, setViews] = useState(post.views || 0);
+    const [pinned, setPinned] = useState(!!post.pinned);
+    const [editedAt, setEditedAt] = useState(post.edited_at);
+    const [content, setContent] = useState(post.content);
     const [animLike, setAnimLike] = useState(false);
     const [lightbox, setLightbox] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [quoting, setQuoting] = useState(false);
+    const viewedRef = useRef(false);
+    const isOwn = user?.id === post.author?.id;
+
+    // Track view once per mount via IntersectionObserver
+    const articleRef = useRef(null);
+    useEffect(() => {
+        if (!articleRef.current || viewedRef.current) return;
+        const obs = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !viewedRef.current) {
+                    viewedRef.current = true;
+                    api.post(`/posts/${post.id}/view`)
+                        .then((r) => setViews(r.data.views))
+                        .catch(() => {});
+                    obs.disconnect();
+                }
+            },
+            { threshold: 0.6 },
+        );
+        obs.observe(articleRef.current);
+        return () => obs.disconnect();
+    }, [post.id]);
 
     const toggleLike = async (e) => {
         e.stopPropagation();
-        const prevLiked = liked;
-        const prevLikes = likes;
+        const prevLiked = liked, prevLikes = likes;
         setLiked(!prevLiked);
         setLikes(prevLiked ? prevLikes - 1 : prevLikes + 1);
         setAnimLike(true);
@@ -35,14 +72,12 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
             setLikes(data.likes_count);
             onChange?.({ ...post, liked: data.liked, likes_count: data.likes_count });
         } catch (err) {
-            setLiked(prevLiked);
-            setLikes(prevLikes);
+            setLiked(prevLiked); setLikes(prevLikes);
             toast.error(formatApiError(err));
         }
     };
 
-    const toggleRepost = async (e) => {
-        e.stopPropagation();
+    const doRepost = async () => {
         const prev = reposted;
         setReposted(!prev);
         setReposts(prev ? reposts - 1 : reposts + 1);
@@ -74,32 +109,35 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
 
     const share = (e) => {
         e.stopPropagation();
-        const url = `${window.location.origin}/post/${post.id}`;
-        navigator.clipboard.writeText(url);
+        navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
         toast.success("Link copiado");
     };
 
-    const remove = async (e) => {
-        e.stopPropagation();
+    const remove = async () => {
         if (!window.confirm("Apagar esta publicação?")) return;
         try {
             await api.delete(`/posts/${post.id}`);
+            onDelete?.(post.id);
             toast.success("Publicação apagada");
-            window.location.reload();
         } catch (err) {
             toast.error(formatApiError(err));
         }
     };
 
     const openDetail = () => clickable && navigate(`/post/${post.id}`);
-    const isOwn = user?.id === post.author?.id;
 
     return (
         <>
-            <div onClick={openDetail} className={clickable ? "cursor-pointer" : ""}>
+            <div ref={articleRef} onClick={openDetail} className={clickable ? "cursor-pointer" : ""}>
+                {pinned && (
+                    <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 ml-12 mb-1.5" data-testid={`pinned-${post.id}`}>
+                        <Pin size={12} className="text-accent-vermillion" />
+                        <span>Fixado no perfil</span>
+                    </div>
+                )}
                 <div className="flex gap-3">
                     <Link to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()}>
-                        <Avatar user={post.author} size={44} />
+                        <Avatar user={post.author} size={44} showOnline />
                     </Link>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -114,17 +152,24 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                             <span className="font-mono text-sm text-zinc-500 truncate">@{post.author?.username}</span>
                             <span className="text-zinc-700">·</span>
                             <span className="font-mono text-sm text-zinc-500" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
-                            {isOwn && !showRepostHeader && (
-                                <button
-                                    onClick={remove}
-                                    data-testid={`delete-post-${post.id}`}
-                                    className="ml-auto text-zinc-600 hover:text-accent-vermillion p-1.5 rounded-full hover:bg-white/5"
-                                >
-                                    <Trash2 size={15} />
-                                </button>
+                            {editedAt && (
+                                <span className="font-mono text-xs text-zinc-600 inline-flex items-center gap-0.5" title={`Editado em ${fullTime(editedAt)}`}>
+                                    <Pencil size={9} /> editado
+                                </span>
+                            )}
+                            {!showRepostHeader && (
+                                <div className="ml-auto">
+                                    <PostMenu
+                                        post={{ ...post, content, pinned }}
+                                        isOwn={isOwn}
+                                        onEdit={() => setEditing(true)}
+                                        onDelete={remove}
+                                        onPinToggle={setPinned}
+                                    />
+                                </div>
                             )}
                         </div>
-                        {post.content && <RichText text={post.content} className="mt-1 text-[15px] leading-relaxed" />}
+                        {content && <RichText text={content} className="mt-1 text-[15px] leading-relaxed" />}
                         {post.image && (
                             <button
                                 onClick={(e) => {
@@ -140,6 +185,26 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                                 />
                             </button>
                         )}
+                        {post.quote_of && (
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/post/${post.quote_of.id}`);
+                                }}
+                                className="mt-3 p-3 border border-zinc-800 rounded-xl hover:bg-white/[0.02] cursor-pointer transition"
+                                data-testid={`quote-ref-${post.id}`}
+                            >
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Avatar user={post.quote_of.author} size={20} />
+                                    <span className="font-heading font-semibold">{post.quote_of.author?.name}</span>
+                                    {post.quote_of.author?.verified && <VerifiedBadge size={11} />}
+                                    <span className="font-mono text-xs text-zinc-500">@{post.quote_of.author?.username}</span>
+                                    <span className="text-zinc-700">·</span>
+                                    <span className="font-mono text-xs text-zinc-500">{smartTime(post.quote_of.created_at)}</span>
+                                </div>
+                                <p className="mt-1.5 text-sm text-zinc-300 line-clamp-3">{post.quote_of.content}</p>
+                            </div>
+                        )}
                         <div className="flex items-center gap-1 mt-3 -ml-2 text-zinc-500">
                             <button
                                 onClick={(e) => {
@@ -150,18 +215,16 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                                 className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-blue-500/10 hover:text-blue-400 transition"
                             >
                                 <MessageCircle size={17} />
-                                <span className="font-mono text-xs">{post.comments_count || 0}</span>
+                                <span className="font-mono text-xs">{formatNum(post.comments_count || 0)}</span>
                             </button>
-                            <button
-                                onClick={toggleRepost}
-                                data-testid={`repost-btn-${post.id}`}
-                                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-emerald-500/10 hover:text-emerald-400 transition ${
-                                    reposted ? "text-emerald-400" : ""
-                                }`}
-                            >
-                                <Repeat2 size={17} />
-                                <span className="font-mono text-xs">{reposts}</span>
-                            </button>
+                            <RepostMenu
+                                reposted={reposted}
+                                onRepost={doRepost}
+                                onQuote={() => setQuoting(true)}
+                            />
+                            <span data-testid={`repost-count-${post.id}`} className={`font-mono text-xs -ml-2 mr-2 ${reposted ? "text-emerald-400" : ""}`}>
+                                {formatNum(reposts)}
+                            </span>
                             <button
                                 onClick={toggleLike}
                                 data-testid={`like-btn-${post.id}`}
@@ -170,7 +233,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                                 }`}
                             >
                                 <Heart size={17} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
-                                <span className="font-mono text-xs">{likes}</span>
+                                <span className="font-mono text-xs">{formatNum(likes)}</span>
                             </button>
                             <button
                                 onClick={toggleBookmark}
@@ -188,17 +251,33 @@ function PostBody({ post, onChange, clickable, showRepostHeader }) {
                             >
                                 <Share2 size={17} />
                             </button>
+                            <span className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-zinc-600" title="visualizações">
+                                <Eye size={13} /> {formatNum(views)}
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
             {lightbox && post.image && <ImageLightbox src={post.image} onClose={() => setLightbox(false)} />}
+            {editing && (
+                <EditPostModal
+                    post={{ ...post, content }}
+                    onClose={() => setEditing(false)}
+                    onSave={(np) => {
+                        setContent(np.content);
+                        setEditedAt(np.edited_at);
+                        onChange?.(np);
+                    }}
+                />
+            )}
+            {quoting && (
+                <QuoteModal post={{ ...post, content }} onClose={() => setQuoting(false)} />
+            )}
         </>
     );
 }
 
 export function PostCard({ post, onChange, onDelete, clickable = true }) {
-    // If this is a repost entry, the visible body is the original post
     if (post.repost_of) {
         const inner = post.repost_of;
         return (
@@ -212,7 +291,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
                         @{post.author?.username} repostou
                     </Link>
                 </div>
-                <PostBody post={inner} onChange={onChange} clickable={clickable} showRepostHeader />
+                <PostBody post={inner} onChange={onChange} clickable={clickable} showRepostHeader onDelete={onDelete} />
             </article>
         );
     }
@@ -222,7 +301,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
             data-testid={`post-${post.id}`}
             className="p-5 border-b border-zinc-900 hover:bg-white/[0.015] transition-colors anim-fade-up"
         >
-            <PostBody post={post} onChange={onChange} clickable={clickable} />
+            <PostBody post={post} onChange={onChange} clickable={clickable} onDelete={onDelete} />
         </article>
     );
 }
