@@ -131,7 +131,7 @@ export function MobileMenuDrawer({ open, onClose }) {
                         className={({ isActive }) =>
                             `relative flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15px] tap-shrink transition ${
                                 isActive
-                                    ? "bg-accent-vermillion/10 text-[color:var(--atl-700)] font-semibold"
+                                    ? "bg-black/[0.06] text-black font-semibold"
                                     : "text-black/70 hover:bg-black/[0.04]"
                             }`
                         }
@@ -157,7 +157,7 @@ export function MobileMenuDrawer({ open, onClose }) {
                                     className={({ isActive }) =>
                                         `relative flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15px] tap-shrink transition ${
                                             isActive
-                                                ? "bg-accent-vermillion/10 text-[color:var(--atl-700)] font-semibold"
+                                                ? "bg-black/[0.06] text-black font-semibold"
                                                 : "text-black/70 hover:bg-black/[0.04]"
                                         }`
                                     }
@@ -168,7 +168,7 @@ export function MobileMenuDrawer({ open, onClose }) {
                                                 <span
                                                     aria-hidden
                                                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                                                    style={{ background: "var(--atl-500)" }}
+                                                    style={{ background: "#0a0a0a" }}
                                                 />
                                             )}
                                             <Icon size={20} strokeWidth={isActive ? 2 : 1.6} />

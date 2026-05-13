@@ -94,8 +94,8 @@
     }
     body {
         background-image:
-            radial-gradient(circle at 12% -5%, rgba(44, 111, 209, 0.06), transparent 45%),
-            radial-gradient(circle at 92% 100%, rgba(30, 84, 170, 0.05), transparent 50%);
+            radial-gradient(circle at 12% -5%, rgba(13, 13, 16, 0.035), transparent 45%),
+            radial-gradient(circle at 92% 100%, rgba(13, 13, 16, 0.025), transparent 50%);
         background-attachment: fixed;
         touch-action: manipulation;
     }
@@ -337,44 +337,43 @@
     .btn-obsidian:hover,
     .btn-obsidian:focus-visible,
     .btn-obsidian.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
-        box-shadow: 0 10px 24px -8px rgba(74, 123, 191, 0.40),
-                    0 6px 18px -10px rgba(30, 61, 128, 0.35),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
+        box-shadow: 0 10px 24px -8px rgba(13, 13, 16, 0.45),
+                    0 6px 18px -10px rgba(13, 13, 16, 0.30),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
         transform: translateY(-1px);
-        filter: saturate(1.05);
+        filter: saturate(1.02);
     }
     .btn-obsidian:active {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
+        background: linear-gradient(135deg, #1f1f23 0%, #0f0f12 50%, #000000 100%);
         transform: scale(0.97);
     }
     .btn-obsidian svg { color: #fff; }
 
     /* ============================================================
        chip-on — toggle/chip ACTIVATED state
-       Atlantic monochrome gradient (deep ocean): atl mid → light → navy
-       Saturação reduzida (~30%) para tom mais suave.
+       Obsidian gradient (charcoal → black): premium, neutral, calm.
        Use INSTEAD of "bg-black text-white" on selected chips/filters
        AND on action buttons that previously were solid black.
        ============================================================ */
     .chip-on {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
         color: #ffffff;
-        box-shadow: 0 5px 14px -8px rgba(74, 123, 191, 0.40),
-                    0 3px 10px -8px rgba(30, 61, 128, 0.30),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        box-shadow: 0 5px 14px -8px rgba(13, 13, 16, 0.45),
+                    0 3px 10px -8px rgba(13, 13, 16, 0.30),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.12);
         transition: background-image 320ms var(--ease-out-soft),
                     box-shadow 320ms var(--ease-out-soft),
                     transform 200ms var(--ease-out-soft),
                     filter 240ms ease;
     }
     .chip-on:hover {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
-        box-shadow: 0 10px 22px -8px rgba(74, 123, 191, 0.45),
-                    0 6px 18px -10px rgba(30, 61, 128, 0.35),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, #1f1f23 0%, #0f0f12 50%, #000000 100%);
+        box-shadow: 0 10px 22px -8px rgba(13, 13, 16, 0.50),
+                    0 6px 18px -10px rgba(13, 13, 16, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.16);
         transform: translateY(-1px);
-        filter: saturate(1.05);
+        filter: saturate(1.02);
     }
     .chip-on:active { transform: scale(0.96); }
     .chip-on svg { color: #ffffff; }
@@ -422,7 +421,7 @@
        Saturação reduzida (~30%).
        ============================================================ */
     .text-grad-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -430,9 +429,9 @@
     }
     .text-grad-active > svg,
     .text-grad-active svg {
-        color: #1e3d80;
-        -webkit-text-fill-color: #1e3d80;
-        stroke: #1e3d80;
+        color: #0a0a0a;
+        -webkit-text-fill-color: #0a0a0a;
+        stroke: #0a0a0a;
     }
     /* Hover variant: subtle gradient text on hover (for inline links) */
     .link-grad {
@@ -441,7 +440,7 @@
     }
     .link-grad:hover,
     .link-grad.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -449,14 +448,14 @@
     }
     .link-grad:hover > svg,
     .link-grad.is-active > svg {
-        color: #1e3d80;
-        -webkit-text-fill-color: #1e3d80;
-        stroke: #1e3d80;
+        color: #0a0a0a;
+        -webkit-text-fill-color: #0a0a0a;
+        stroke: #0a0a0a;
     }
 
     /* Indicator bar / dot used by nav as ACTIVE marker */
     .grad-bar {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
     }
 
     /* ============================================================
@@ -584,7 +583,7 @@
         content: ""; width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.45);
     }
     .prose-legal .legal-callout.is-key {
-        background: linear-gradient(135deg, rgba(74,123,191,0.06) 0%, rgba(30,61,128,0.08) 100%);
+        background: linear-gradient(135deg, rgba(13,13,16,0.03) 0%, rgba(13,13,16,0.06) 100%);
         border-color: rgba(74,123,191,0.20);
     }
     .prose-legal .legal-callout.is-key > strong:first-child { color: #1e54aa; }
@@ -690,31 +689,31 @@
        Ícones a azul profundo sólido.
        ============================================================ */
     .tab-grad-on {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
         -webkit-text-fill-color: transparent;
         border-bottom-color: transparent !important;
-        border-image: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%) 1;
+        border-image: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%) 1;
         font-weight: 600;
     }
     .tab-grad-on > svg,
     .tab-grad-on svg {
-        color: #1e3d80;
-        -webkit-text-fill-color: #1e3d80;
-        stroke: #1e3d80;
+        color: #0a0a0a;
+        -webkit-text-fill-color: #0a0a0a;
+        stroke: #0a0a0a;
     }
 
     /* Subtle background ring for icon buttons in active state (top bar) */
     .icon-grad-on {
-        background: linear-gradient(135deg, rgba(74, 123, 191, 0.12) 0%, rgba(30, 61, 128, 0.16) 100%);
-        color: #1e3d80;
+        background: linear-gradient(135deg, rgba(13, 13, 16, 0.05) 0%, rgba(13, 13, 16, 0.10) 100%);
+        color: #0a0a0a;
     }
     .icon-grad-on > svg,
     .icon-grad-on svg {
-        color: #1e3d80;
-        stroke: #1e3d80;
+        color: #0a0a0a;
+        stroke: #0a0a0a;
     }
 
     /* Atlantic primary CTA — BLACK by default, gradient on hover/active */
@@ -735,14 +734,14 @@
     .btn-atl:hover,
     .btn-atl:focus-visible,
     .btn-atl.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
-        box-shadow: 0 10px 22px -8px rgba(74, 123, 191, 0.35),
-                    0 5px 16px -10px rgba(30, 61, 128, 0.32),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        background: linear-gradient(135deg, #2a2a2e 0%, #18181b 50%, #050505 100%);
+        box-shadow: 0 10px 22px -8px rgba(13, 13, 16, 0.45),
+                    0 5px 16px -10px rgba(13, 13, 16, 0.32),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
         transform: translateY(-1px);
     }
     .btn-atl:active {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
+        background: linear-gradient(135deg, #1f1f23 0%, #0f0f12 50%, #000000 100%);
         transform: scale(0.97);
     }
 
@@ -817,8 +816,8 @@
     /* Bg surfaces */
     .bg-paper {
         background:
-            radial-gradient(circle at 0% 0%, rgba(44, 111, 209, 0.05), transparent 45%),
-            radial-gradient(circle at 100% 100%, rgba(30, 84, 170, 0.04), transparent 50%),
+            radial-gradient(circle at 0% 0%, rgba(13, 13, 16, 0.03), transparent 45%),
+            radial-gradient(circle at 100% 100%, rgba(13, 13, 16, 0.02), transparent 50%),
             #ffffff;
     }
     .bg-canvas { background-color: hsl(var(--bg)); }
@@ -826,13 +825,13 @@
     /* Subtle azulejo geometric pattern (modernized) — opacity tuned for backgrounds */
     .bg-azulejo {
         background-color: hsl(var(--bg));
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%232c6fd1' stroke-width='0.7' opacity='0.18'><path d='M40 5 L75 40 L40 75 L5 40 Z'/><circle cx='40' cy='40' r='14'/><path d='M40 26 L54 40 L40 54 L26 40 Z'/><path d='M0 40 L80 40 M40 0 L40 80'/></g></svg>");
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><g fill='none' stroke='%231a1a1a' stroke-width='0.7' opacity='0.10'><path d='M40 5 L75 40 L40 75 L5 40 Z'/><circle cx='40' cy='40' r='14'/><path d='M40 26 L54 40 L40 54 L26 40 Z'/><path d='M0 40 L80 40 M40 0 L40 80'/></g></svg>");
         background-size: 80px 80px;
     }
     .azulejo-band {
         position: relative;
         background-color: hsl(var(--bg-soft));
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='none' stroke='%232c6fd1' stroke-width='0.6' opacity='0.25'><path d='M30 4 L56 30 L30 56 L4 30 Z'/><circle cx='30' cy='30' r='10'/><path d='M30 20 L40 30 L30 40 L20 30 Z'/></g></svg>");
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='none' stroke='%231a1a1a' stroke-width='0.6' opacity='0.14'><path d='M30 4 L56 30 L30 56 L4 30 Z'/><circle cx='30' cy='30' r='10'/><path d='M30 20 L40 30 L30 40 L20 30 Z'/></g></svg>");
         background-size: 60px 60px;
     }
 
