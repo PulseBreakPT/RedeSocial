@@ -1,152 +1,129 @@
 {
-  "theme": "dark",
-  "archetype": "5",
-  "archetype_name": "Jewel & Luxury / High-Contrast Editorial Tech",
-  "design_philosophy": "Ultra-refined modern dark UI. Avoids typical 'Twitter blue' or generic AI-slop purple/teal. Employs asymmetric card layouts, glass-morphism overlays, and subtle grain textures. A 3-column architecture (Left Sticky Nav, Center Feed, Right Widgets). Focus on micro-interactions, custom aesthetics, and typographic tension.",
-  "colors": {
-    "background": {
-      "hex": "#0A0A0A",
-      "hsl": "0 0% 4%",
-      "description": "Deep obsidian core background"
-    },
-    "surface": {
-      "hex": "#121212",
-      "hsl": "0 0% 7%",
-      "description": "Primary card and feed background. 1px solid white/5 border to detach from background."
-    },
-    "surface_glass": {
-      "hex": "#1A1A1AA6",
-      "hsl": "0 0% 10% / 0.65",
-      "description": "For sticky headers and overlays. Must be used with backdrop-blur-xl."
-    },
-    "accent_primary": {
-      "hex": "#FF5722",
-      "hsl": "14 100% 57%",
-      "description": "Neon Vermilion. Distinctive, energetic, high-contrast. Used for primary CTAs and active states."
-    },
-    "accent_hover": {
-      "hex": "#FF7A50",
-      "hsl": "14 100% 66%",
-      "description": "Lighter variant for hover states."
-    },
-    "text_primary": {
-      "hex": "#FAFAFA",
-      "hsl": "0 0% 98%",
-      "description": "Pure white for max legibility."
-    },
-    "text_secondary": {
-      "hex": "#A1A1AA",
-      "hsl": "240 5% 65%",
-      "description": "Zinc-400 for handles, dates, and metadata."
-    },
-    "border": {
-      "hex": "#27272A",
-      "hsl": "240 4% 16%",
-      "description": "Subtle zinc border for separating feed items."
+  "project_name": "Vermillion",
+  "design_philosophy": "Premium Luxury Light Design (Hermès × Twitter × Apple Notes). Zero noise, absolute typographic clarity, and sophisticated silver metallic accents on a pristine white canvas.",
+  "theme": "light",
+  "archetype": "High-Contrast Minimalist Luxury",
+  "brand_identity": {
+    "logo_concept": {
+      "symbol": "◆",
+      "wordmark": "vermillion",
+      "typography": "Cormorant Garamond (Italic/Regular mix)",
+      "color": "Obsidian (#0A0A0A) with a subtle silver foil gradient hover state",
+      "layout": "Symbol slightly smaller than x-height, tightly kerned wordmark"
     }
   },
-  "typography": {
-    "font_imports": [
-      "@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap');"
-    ],
-    "families": {
-      "heading": "'Bricolage Grotesque', sans-serif",
-      "body": "'Geist', sans-serif",
-      "mono": "'JetBrains Mono', monospace"
+  "design_tokens": {
+    "colors": {
+      "background": "#FFFFFF",
+      "surface": "#FAFAFA",
+      "surface_elevated": "#FFFFFF",
+      "border_hairline": "#E5E5E5",
+      "text_primary": "#0A0A0A",
+      "text_secondary": "#737373",
+      "text_tertiary": "#A3A3A3",
+      "primary_silver_gradient": "linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 40%, #9CA3AF 60%, #F3F4F6 100%)",
+      "primary_silver_solid": "#D1D5DB",
+      "accent_red_soft": "#EF4444",
+      "accent_green_soft": "#10B981",
+      "accent_blue_soft": "#3B82F6"
     },
-    "rules": {
-      "h1": "text-4xl tracking-tighter font-heading font-bold text-white",
-      "h2": "text-2xl tracking-tight font-heading font-bold text-white",
-      "body": "text-base font-body leading-relaxed text-zinc-100",
-      "meta": "text-sm font-mono tracking-tight text-zinc-400",
-      "button_text": "text-sm font-heading font-semibold tracking-wide uppercase"
+    "typography": {
+      "font_families": {
+        "display": "'Cormorant Garamond', serif",
+        "sans_primary": "'Bricolage Grotesque', sans-serif",
+        "body": "'Geist', sans-serif",
+        "mono": "'JetBrains Mono', monospace"
+      },
+      "scale": {
+        "h1": "text-4xl tracking-tighter leading-none font-light",
+        "h2": "text-2xl tracking-tight leading-tight font-medium",
+        "h3": "text-lg tracking-tight font-medium",
+        "body": "text-base leading-relaxed text-text_primary",
+        "caption": "text-sm text-text_secondary",
+        "overline": "text-xs tracking-[0.2em] uppercase font-mono text-text_tertiary"
+      }
+    },
+    "spacing_and_radius": {
+      "spacing_scale": "Tailwind default (p-2, p-4, p-6, p-8, p-12)",
+      "radius_card": "rounded-[24px]",
+      "radius_button": "rounded-full",
+      "radius_pill": "rounded-full"
+    },
+    "elevation": {
+      "shadow_soft": "0 8px 30px rgba(0, 0, 0, 0.04)",
+      "shadow_hover": "0 20px 40px rgba(0, 0, 0, 0.08)",
+      "glassmorphism": "backdrop-blur-xl bg-white/70 backdrop-saturate-150"
+    },
+    "motion": {
+      "easing_elegant": "cubic-bezier(0.16, 1, 0.3, 1)",
+      "duration_fast": "150ms",
+      "duration_smooth": "400ms",
+      "page_reveal": "opacity 0 to 1, transform translateY(10px) to 0 over 600ms"
     }
   },
-  "layout_and_spacing": {
-    "desktop": "grid grid-cols-1 lg:grid-cols-[280px_minmax(600px,1fr)_350px] max-w-[1300px] mx-auto gap-0 lg:gap-8",
-    "mobile": "flex flex-col-reverse",
-    "feed_container": "border-x border-zinc-800 min-h-screen pb-20 lg:pb-0",
-    "card": "p-5 border-b border-zinc-800 hover:bg-white/[0.02] transition-colors duration-200",
-    "glass_header": "sticky top-0 z-50 bg-[#0A0A0A]/70 backdrop-blur-xl border-b border-zinc-800 px-5 py-3"
-  },
-  "ui_components": {
+  "components_blueprints": {
+    "post_card": {
+      "container": "bg-white border border-[#E5E5E5] rounded-[24px] p-5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
+      "avatar_ring": "p-[2px] rounded-full bg-gradient-to-br from-[#F3F4F6] via-[#9CA3AF] to-[#F3F4F6]",
+      "verified_badge": "text-[#3B82F6] fill-current w-4 h-4 ml-1",
+      "action_bar": "flex justify-between items-center mt-4 pt-4 border-t border-[#E5E5E5]/50",
+      "action_button": "text-[#737373] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] rounded-full p-2 transition-colors",
+      "reactions_row": "flex gap-1 bg-[#FAFAFA] rounded-full px-2 py-1 border border-[#E5E5E5]"
+    },
     "buttons": {
-      "primary": "rounded-full bg-[#FF5722] text-white px-6 py-2.5 hover:bg-[#FF7A50] transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(255,87,34,0.2)]",
-      "secondary": "rounded-none border border-zinc-700 bg-transparent text-white px-4 py-2 hover:bg-zinc-800 transition-all active:scale-95",
-      "icon": "rounded-full p-2.5 text-zinc-400 hover:text-[#FF5722] hover:bg-[#FF5722]/10 transition-all"
+      "primary": "bg-[#0A0A0A] text-white rounded-full px-6 py-2.5 font-medium text-sm hover:opacity-90 transition-opacity active:scale-[0.98]",
+      "secondary_silver": "bg-gradient-to-r from-[#F3F4F6] to-[#E5E7EB] text-[#0A0A0A] border border-[#D1D5DB] rounded-full px-6 py-2.5 font-medium text-sm hover:shadow-sm transition-all",
+      "ghost": "bg-transparent text-[#737373] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] rounded-full px-4 py-2 text-sm transition-colors",
+      "text_link": "text-[#0A0A0A] font-medium underline decoration-[#E5E5E5] underline-offset-4 hover:decoration-[#0A0A0A] transition-colors"
     },
     "inputs": {
-      "composer": "w-full bg-transparent text-xl font-body text-white placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden",
-      "search": "w-full bg-zinc-900 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-zinc-500 border border-transparent focus:border-[#FF5722]/50 focus:bg-black transition-all"
-    },
-    "textures_and_globals": {
-      "grain": "Use an SVG noise filter or a CSS repeating radial gradient over the main background at 2% opacity to add depth and avoid a flat look.",
-      "scrollbar": "Custom scrollbars in CSS: ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 10px; }",
-      "selection": "::selection { background: rgba(255,87,34,0.3); color: #FFF; }"
+      "text_field": "w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-[16px] px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#0A0A0A] focus:bg-white transition-all text-sm",
+      "composer": "w-full bg-transparent resize-none text-lg placeholder:text-[#A3A3A3] focus:outline-none"
     }
   },
-  "microcopy_pt_br": {
-    "navigation": {
-      "home": "Início",
-      "explore": "Explorar",
-      "notifications": "Notificações",
-      "messages": "Mensagens",
-      "bookmarks": "Salvos",
-      "profile": "Perfil",
-      "settings": "Configurações"
+  "layout_specifications": {
+    "desktop": {
+      "grid": "grid-cols-1 lg:grid-cols-12 max-w-[1400px] mx-auto gap-8 px-4 lg:px-8",
+      "left_sidebar": "lg:col-span-3 sticky top-0 h-screen py-8 flex flex-col justify-between",
+      "main_feed": "lg:col-span-6 min-h-screen border-l border-r border-[#E5E5E5] pb-24",
+      "right_rail": "lg:col-span-3 sticky top-0 h-screen py-8"
     },
-    "composer": {
-      "placeholder": "O que está acontecendo?",
-      "submit": "Publicar"
-    },
-    "actions": {
-      "reply": "Responder",
-      "repost": "Repostar",
-      "like": "Curtir",
-      "share": "Compartilhar",
-      "follow": "Seguir",
-      "unfollow": "Deixar de seguir",
-      "login": "Entrar",
-      "register": "Criar conta",
-      "edit_profile": "Editar perfil"
-    },
-    "widgets": {
-      "search": "Buscar no feed...",
-      "trending": "Assuntos do momento",
-      "who_to_follow": "Quem seguir"
+    "mobile": {
+      "top_bar": "fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-xl border-b border-[#E5E5E5] z-50 flex items-center justify-between px-4",
+      "bottom_nav": "fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-[#E5E5E5] z-50 flex items-center justify-around pb-safe",
+      "center_fab": "absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-[#0A0A0A] text-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 transition-transform",
+      "bottom_sheet": "fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-[32px] shadow-[0_-20px_40px_rgba(0,0,0,0.1)] p-6 transform transition-transform"
     }
   },
-  "images": {
-    "avatars": [
-      "https://images.unsplash.com/photo-1614010966237-74489a16848b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwyfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
-      "https://images.unsplash.com/photo-1611111082664-534b2cd71d6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwxfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
-      "https://images.unsplash.com/photo-1639503213523-11973c0b029c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwzfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85"
-    ],
-    "banners": [
-      "https://images.unsplash.com/photo-1646924378952-242c10c83506?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
-      "https://images.unsplash.com/photo-1767893609884-622503897e53?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85"
-    ],
-    "feed_posts": [
-      "https://images.unsplash.com/photo-1670782128811-c722d51d3d67?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHw0fHxhZXN0aGV0aWMlMjB1cmJhbiUyMG5pZ2h0JTIwcGhvdG9ncmFwaHl8ZW58MHx8fHwxNzc4NjM5MzIyfDA&ixlib=rb-4.1.0&q=85",
-      "https://images.unsplash.com/photo-1723482255697-90683021a0db?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxhZXN0aGV0aWMlMjB1cmJhbiUyMG5pZ2h0JTIwcGhvdG9ncmFwaHl8ZW58MHx8fHwxNzc4NjM5MzIyfDA&ixlib=rb-4.1.0&q=85"
-    ]
+  "page_blueprints": {
+    "feed": "Top bar fixed with blur. Stories bar sits below top bar, using silver avatar rings. Feed items have ample spacing (gap-6) and 1px hairline borders. Pull-to-refresh spinner is a minimalist silver ring.",
+    "profile": "Hero banner is a soft noise gradient or uploaded image with 30% white overlay. Avatar overlaps banner with pure white 4px border. Stats card uses Japandi minimalism (FAFAFA background). Heatmap uses silver/grey shades for streaks.",
+    "composer_bottom_sheet": "Opens with smooth spring physics. Large typography for input. Multi-image carousel shows images with 16px radius. Action bar at bottom has minimalist lucide icons.",
+    "messages": "Conversations list uses pure white with hover:bg-FAFAFA. Chat view has sticky header. Bubbles are #0A0A0A (sent) and #F3F4F6 (received) with 20px radius.",
+    "communities": "Grid layout (bento style) for communities. Silver borders, soft shadows on hover.",
+    "auth": "Split screen on desktop. Left side: subtle silver aurora gradient with brand symbol. Right side: minimalist form. Mobile: clean white screen, large serif welcome text."
   },
-  "animations": {
-    "hover_like": "scale up by 1.2, change color to #FF5722, add subtle drop-shadow",
-    "card_entry": "fade in, translate-y-4 to 0, ease-out duration 400ms",
-    "modals": "backdrop blur entry, scale 0.95 to 1, fade in"
+  "iconography": {
+    "library": "lucide-react",
+    "stroke_weight": "1.25px to 1.5px (keeps it light and elegant)",
+    "style": "Outlined by default. Filled ONLY for active states (e.g., active tab in bottom nav, liked heart)",
+    "brand_mark": "Use the diamond (◆) in pure black, or apply the silver gradient via CSS text-fill-color for premium touch."
   },
-  "specific_instructions_for_main_agent": [
-    "Ensure the split-screen auth uses one of the abstract texture banners for the visual half.",
-    "Do not use generic Shadcn cards for posts; build custom HTML/Tailwind posts with asymmetric borders or distinct hover states.",
-    "Implement real-time features using state or context with clear UI feedback (loading spinners, optimistic updates).",
-    "Apply global styles for custom scrollbars and custom text selection as defined in textures_and_globals.",
-    "Make sure all icons are Phosphor Icons or Lucide, styled sharply to match Bricolage Grotesque.",
-    "Add 'data-testid' attributes to all buttons, links, and forms as required for testing.",
-    "In the feed, use CSS grid or flexbox carefully. The central feed column should have 'border-x border-zinc-800'.",
-    "For the image upload base64 logic, use a hidden file input and a FileReader in standard React (.js files).",
-    "Use Bricolage Grotesque for headings, Geist for body, and JetBrains Mono for metadata (dates/handles).",
-    "Strictly follow PT-BR translations for the entire UI.",
-    "No AI functionalities in this project as per requirements."
-  ]
+  "motion_choreography": {
+    "page_load": "Staggered fade-in (opacity 0->1, translateY 10px->0) with 50ms delay per feed item.",
+    "hover_lifts": "Card hovers move Y by -2px and increase shadow spread softly.",
+    "ink_links": "Underline scales from width 0 to 100% on hover, originating from left.",
+    "reaction_burst": "Clicking like triggers a micro-scale (0.8 -> 1.2 -> 1.0) and a subtle flash of the soft red/green accent color."
+  },
+  "css_variables_snippet": ":root {\n  --background: 0 0% 100%;\n  --foreground: 0 0% 4%;\n  --card: 0 0% 100%;\n  --card-foreground: 0 0% 4%;\n  --popover: 0 0% 100%;\n  --popover-foreground: 0 0% 4%;\n  --primary: 0 0% 4%;\n  --primary-foreground: 0 0% 100%;\n  --secondary: 210 20% 96%;\n  --secondary-foreground: 0 0% 4%;\n  --muted: 210 20% 98%;\n  --muted-foreground: 0 0% 45%;\n  --accent: 210 20% 98%;\n  --accent-foreground: 0 0% 4%;\n  --destructive: 0 84.2% 60.2%;\n  --destructive-foreground: 0 0% 100%;\n  --border: 0 0% 90%;\n  --input: 0 0% 90%;\n  --ring: 0 0% 4%;\n  --radius: 1.5rem;\n}\n\n.silver-gradient-text {\n  background: linear-gradient(135deg, #A3A3A3 0%, #E5E5E5 50%, #A3A3A3 100%);\n  -webkit-background-clip: text;\n  -webkit-text-fill-color: transparent;\n}",
+  "tailwind_classes": {
+    "text_hero": "font-display text-4xl lg:text-5xl tracking-tighter text-[#0A0A0A] font-light",
+    "section_label": "font-mono text-xs tracking-[0.2em] uppercase text-[#A3A3A3]",
+    "card_premium": "bg-white border border-[#E5E5E5] rounded-[24px] p-6 shadow-sm hover:shadow-md transition-all duration-300",
+    "nav_item": "flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#FAFAFA] text-[#0A0A0A] transition-colors group",
+    "glass_header": "bg-white/70 backdrop-blur-xl border-b border-[#E5E5E5]/50 supports-[backdrop-filter]:bg-white/60"
+  },
+  "testing_attributes": {
+    "instruction": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case."
+  }
 }
