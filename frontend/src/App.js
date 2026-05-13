@@ -4,6 +4,7 @@ import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
+import { CookieBanner } from "./components/CookieBanner";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -22,6 +23,11 @@ import Events from "./pages/Events";
 import Trending from "./pages/Trending";
 import Drafts from "./pages/Drafts";
 import Scheduled from "./pages/Scheduled";
+import LegalIndex from "./pages/legal/LegalIndex";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
+import Cookies from "./pages/legal/Cookies";
+import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 
 function App() {
     return (
@@ -45,6 +51,12 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot" element={<ForgotPassword />} />
+                        {/* Public legal pages — accessible without auth */}
+                        <Route path="/legal" element={<LegalIndex />} />
+                        <Route path="/legal/terms" element={<Terms />} />
+                        <Route path="/legal/privacy" element={<Privacy />} />
+                        <Route path="/legal/cookies" element={<Cookies />} />
+                        <Route path="/legal/community" element={<CommunityGuidelines />} />
                         <Route
                             element={
                                 <ProtectedRoute>
@@ -70,6 +82,7 @@ function App() {
                             <Route path="/settings" element={<Settings />} />
                         </Route>
                     </Routes>
+                    <CookieBanner />
                 </BrowserRouter>
             </AuthProvider>
         </div>

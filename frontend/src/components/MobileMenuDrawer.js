@@ -153,6 +153,12 @@ export function MobileMenuDrawer({ open, onClose }) {
                     >
                         <LogOut size={16} strokeWidth={1.8} /> Terminar sessão
                     </button>
+                    <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-black/45 justify-center">
+                        <a href="/legal/terms" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Termos</a>
+                        <a href="/legal/privacy" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
+                        <a href="/legal/cookies" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Cookies</a>
+                        <a href="/legal/community" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Diretrizes</a>
+                    </div>
                 </div>
             </aside>
         </div>

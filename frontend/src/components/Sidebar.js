@@ -148,6 +148,13 @@ export function Sidebar({ onCompose }) {
                         <LogOut size={16} />
                     </button>
                 </div>
+                <div className="px-3 pt-3 pb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45">
+                    <a href="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</a>
+                    <a href="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
+                    <a href="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</a>
+                    <a href="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</a>
+                    <span className="font-mono text-black/35">© Vermillion</span>
+                </div>
             </div>
         </aside>
     );
