@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Clock, Trash2, Send, Image as ImageIcon, BarChart3, Calendar, Search, X, CheckSquare, Square } from "lucide-react";
-import { PageHeader } from "../components/PageHeader";
+import { PageShell, PageHero, Grid, Empty } from "../components/PageShell";
 import { PostSkeletonList } from "../components/Skeleton";
 import { Avatar } from "../components/Avatar";
 import { api, formatApiError, toastApiError } from "../lib/api";
@@ -77,85 +77,80 @@ export default function Scheduled() {
     };
 
     return (
-        <div data-testid="scheduled-page">
-            <PageHeader title="Agendados" subtitle={`${posts.length} a aguardar`} back testid="scheduled-header">
-                <div className="px-3 lg:px-4 pb-2 flex items-center gap-2">
-                    <div className="flex-1 relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar nos agendados..." data-testid="scheduled-search" className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition" />
-                        {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
-                    </div>
-                    <select value={sort} onChange={(e) => setSort(e.target.value)} data-testid="scheduled-sort" className="text-[12px] bg-black/[0.04] rounded-full px-3 py-2 font-medium text-black/65 outline-none">
-                        <option value="soonest">Mais próximo</option>
-                        <option value="latest">Mais distante</option>
-                    </select>
+        <PageShell max="max-w-5xl">
+            <PageHero icon={Clock} title="Agendados" subtitle={`${posts.length} a aguardar`} />
+
+            <div className="flex items-center gap-2 mb-4">
+                <div className="flex-1 relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar nos agendados..." data-testid="scheduled-search" className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition" />
+                    {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
                 </div>
-                {selected.size > 0 && (
-                    <div className="px-3 lg:px-4 pb-2 flex items-center gap-2 hairline-t pt-2">
-                        <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
-                        <button onClick={bulkPublish} className="inline-flex items-center gap-1 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar já</button>
-                        <button onClick={bulkCancel} className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Cancelar</button>
-                        <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55">limpar</button>
-                    </div>
-                )}
-            </PageHeader>
+                <select value={sort} onChange={(e) => setSort(e.target.value)} data-testid="scheduled-sort" className="text-[12px] bg-black/[0.04] rounded-full px-3 py-2 font-medium text-black/65 outline-none">
+                    <option value="soonest">Mais próximo</option>
+                    <option value="latest">Mais distante</option>
+                </select>
+            </div>
+
+            {selected.size > 0 && (
+                <div className="mb-3 px-3 py-2 rounded-xl bg-black/[0.04] flex items-center gap-2">
+                    <span className="text-[12px] font-mono text-black/65">{selected.size} selecionados</span>
+                    <button onClick={bulkPublish} className="inline-flex items-center gap-1 chip-on text-xs font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar já</button>
+                    <button onClick={bulkCancel} className="inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={11} /> Cancelar</button>
+                    <button onClick={() => setSelected(new Set())} className="ml-auto text-[11px] font-mono text-black/55">limpar</button>
+                </div>
+            )}
 
             {loading ? (<PostSkeletonList count={3} />) : filtered.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                    <div className="w-20 h-20 rounded-full bg-black/[0.04] grid place-items-center mx-auto mb-5 border border-black/[0.08]"><Clock size={28} className="text-black/40" /></div>
-                    <p className="text-black font-heading text-lg tracking-tight">{q ? "Sem resultados" : "Nenhum agendamento"}</p>
-                    <p className="text-black/50 text-sm mt-1 mb-6">Programa publicações futuras a partir do compositor.</p>
-                    {!q && (
-                        <button
-                            onClick={() => (openCompose ? openCompose() : navigate("/"))}
-                            data-testid="scheduled-empty-cta"
-                            className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]"
-                        >
-                            <Calendar size={13} /> Agendar publicação
-                        </button>
-                    )}
-                </div>
+                <Empty
+                    icon={Clock}
+                    title={q ? "Sem resultados" : "Nenhum agendamento"}
+                    body="Programa publicações futuras a partir do compositor."
+                    cta={!q ? "Agendar publicação" : null}
+                    ctaOnClick={() => (openCompose ? openCompose() : navigate("/"))}
+                />
             ) : (
                 <>
-                    <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-2">
-                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black hover:text-black">
+                    <div className="mb-3 flex items-center gap-2">
+                        <button onClick={toggleAll} className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/65 hover:text-black">
                             {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare size={13} /> : <Square size={13} />}
                             selecionar todos
                         </button>
-                        <span className="text-[11px] font-mono text-black/45 ml-auto">{filtered.length} visiveis</span>
+                        <span className="text-[11px] font-mono text-black/45 ml-auto">{filtered.length} visíveis</span>
                     </div>
-                    {filtered.map((p) => (
-                        <article key={p.id} data-testid={`scheduled-${p.id}`} className="px-4 lg:px-5 py-4 border-b border-black/[0.06] hover:bg-black/[0.015] transition">
-                            <div className="flex gap-3">
-                                <button onClick={() => toggle(p.id)} className="flex-shrink-0 mt-1 text-black/40 hover:text-black">
-                                    {selected.has(p.id) ? <CheckSquare size={16} /> : <Square size={16} />}
-                                </button>
-                                <Avatar user={p.author} size={40} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                        <span className="font-heading font-bold text-sm text-black">{p.author?.name}</span>
-                                        <span className="font-mono text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-soft/15 text-blue-soft border border-blue-soft/30" title={fullTime(p.scheduled_at)}>
-                                            <Calendar size={10} /> {untilLabel(p.scheduled_at)}
+                    <Grid cols={2} gap={3}>
+                        {filtered.map((p) => (
+                            <article key={p.id} data-testid={`scheduled-${p.id}`} className="rounded-2xl border border-black/[0.08] bg-white p-4 hover:border-black/25 transition">
+                                <div className="flex items-start gap-2 mb-2">
+                                    <button onClick={() => toggle(p.id)} className="mt-0.5 text-black/40 hover:text-black flex-shrink-0">
+                                        {selected.has(p.id) ? <CheckSquare size={14} /> : <Square size={14} />}
+                                    </button>
+                                    <Avatar user={p.author} size={28} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-heading font-semibold text-[12px] truncate">{p.author?.name}</div>
+                                        <span className="font-mono text-[10px] inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-soft/15 text-blue-soft border border-blue-soft/30" title={fullTime(p.scheduled_at)}>
+                                            <Calendar size={9} /> {untilLabel(p.scheduled_at)}
                                         </span>
                                     </div>
-                                    <p className="text-[15px] text-black/85 whitespace-pre-wrap line-clamp-4">{p.content || <em className="text-black/40">sem texto</em>}</p>
-                                    <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-black/40">
-                                        <span title={fullTime(p.scheduled_at)}>{smartTime(p.scheduled_at)}</span>
-                                        {p.images?.length > 0 && (<span className="inline-flex items-center gap-1"><ImageIcon size={11} /> {p.images.length}</span>)}
-                                        {p.poll && (<span className="inline-flex items-center gap-1"><BarChart3 size={11} /> enquete</span>)}
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-3">
-                                        <button onClick={() => publishNow(p.id)} data-testid={`scheduled-publish-${p.id}`} className="inline-flex items-center gap-1.5 bg-black text-white text-xs font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85"><Send size={12} /> Publicar agora</button>
-                                        <button onClick={() => reschedule(p.id, p.scheduled_at)} data-testid={`scheduled-reschedule-${p.id}`} className="inline-flex items-center gap-1.5 text-xs font-mono text-black/70 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]"><Calendar size={12} /> reagendar</button>
-                                        <button onClick={() => navigate(`/post/${p.id}`)} className="inline-flex items-center gap-1.5 text-xs font-mono text-black/60 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]">ver</button>
-                                        <button onClick={() => remove(p.id)} data-testid={`scheduled-delete-${p.id}`} className="ml-auto inline-flex items-center gap-1 text-xs font-mono text-red-soft hover:bg-red-soft/10 px-3 py-1.5 rounded-full"><Trash2 size={12} /> cancelar</button>
-                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    ))}
+                                <p className="text-[13px] text-black/80 whitespace-pre-wrap line-clamp-3 min-h-[3.6em]">
+                                    {p.content || <em className="text-black/40">sem texto</em>}
+                                </p>
+                                <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-black/40">
+                                    <span title={fullTime(p.scheduled_at)}>{smartTime(p.scheduled_at)}</span>
+                                    {p.images?.length > 0 && (<span className="inline-flex items-center gap-1"><ImageIcon size={11} /> {p.images.length}</span>)}
+                                    {p.poll && (<span className="inline-flex items-center gap-1"><BarChart3 size={11} /> enquete</span>)}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-3">
+                                    <button onClick={() => publishNow(p.id)} data-testid={`scheduled-publish-${p.id}`} className="inline-flex items-center gap-1.5 bg-black text-white text-[11px] font-heading font-semibold px-3 py-1.5 rounded-full hover:bg-black/85"><Send size={11} /> Publicar já</button>
+                                    <button onClick={() => reschedule(p.id, p.scheduled_at)} data-testid={`scheduled-reschedule-${p.id}`} className="inline-flex items-center gap-1 text-[11px] font-mono text-black/65 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04]"><Calendar size={11} /></button>
+                                    <button onClick={() => remove(p.id)} data-testid={`scheduled-delete-${p.id}`} className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-red-soft hover:bg-red-soft/10 px-2 py-1 rounded-full"><Trash2 size={11} /></button>
+                                </div>
+                            </article>
+                        ))}
+                    </Grid>
                 </>
             )}
-        </div>
+        </PageShell>
     );
 }

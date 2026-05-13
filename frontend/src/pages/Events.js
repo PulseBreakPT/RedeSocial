@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, CalendarDays, MapPin, X, Share2, Search, Users as UsersIcon } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
-import { PageHeader } from "../components/PageHeader";
+import { PageShell, PageHero, FilterBar, Chip, Grid, Empty } from "../components/PageShell";
 import { EVENT_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { toast } from "sonner";
 
@@ -53,34 +53,46 @@ export default function Events() {
     };
 
     return (
-        <div data-testid="events-page">
-            <PageHeader
+        <PageShell max="max-w-6xl">
+            <PageHero
+                icon={CalendarDays}
                 title="Eventos"
-                subtitle={`${events.length} eventos`}
-                testid="events-header"
-                action={<button onClick={() => setCreating(true)} data-testid="new-event-btn" className="btn-obsidian px-4 py-2 text-[11px] flex items-center gap-1.5"><Plus size={13} /> Criar</button>}
-            >
-                <div className="px-3 lg:px-4 pb-2 flex items-center gap-2">
-                    <div className="flex-1 relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar eventos..." data-testid="events-search" className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition" />
-                        {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
-                    </div>
+                subtitle={`${events.length} eventos · do arraial ao fado, passa pela tasca`}
+                actions={
+                    <button onClick={() => setCreating(true)} data-testid="new-event-btn" className="btn-obsidian px-4 py-2 text-[11px] flex items-center gap-1.5">
+                        <Plus size={13} /> Criar
+                    </button>
+                }
+            />
+
+            <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Pesquisar eventos..."
+                        data-testid="events-search"
+                        className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition"
+                    />
+                    {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
                 </div>
-                <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
-                    {WHEN_TABS.map((t) => (
-                        <button key={t.key} onClick={() => setWhen(t.key)} data-testid={`events-when-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${when === t.key ? "tab-grad-on" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
-                    ))}
-                </div>
-                <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todas</button>
-                    {EVENT_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`events-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
-                            <span>{c.emoji}</span> {c.label}
-                        </button>
-                    ))}
-                </div>
-            </PageHeader>
+            </div>
+
+            <FilterBar>
+                {WHEN_TABS.map((t) => (
+                    <Chip key={t.key} active={when === t.key} onClick={() => setWhen(t.key)} testid={`events-when-${t.key}`}>
+                        {t.label}
+                    </Chip>
+                ))}
+                <span className="text-black/15 mx-1">·</span>
+                <Chip active={cat === ""} onClick={() => setCat("")}>Todas</Chip>
+                {EVENT_CATEGORIES.map((c) => (
+                    <Chip key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} testid={`events-cat-${c.key}`}>
+                        {c.emoji} {c.label}
+                    </Chip>
+                ))}
+            </FilterBar>
 
             {creating && (
                 <div className="fixed inset-0 z-[70] bg-black/30 backdrop-blur-sm flex items-end lg:items-center lg:justify-center p-0 lg:p-4" onClick={() => setCreating(false)}>
@@ -130,54 +142,70 @@ export default function Events() {
             {loading ? (
                 <div className="p-12 text-center type-overline">a carregar…</div>
             ) : filtered.length === 0 ? (
-                <div className="px-6 py-20 text-center anim-fade-up">
-                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                        <CalendarDays size={26} strokeWidth={1.4} className="text-black/70" />
-                    </div>
-                    <p className="type-overline mb-2">Sem eventos</p>
-                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Nenhum evento neste filtro</h3>
-                    <p className="text-black/55 text-sm mt-2">Cria o primeiro para reunir a comunidade.</p>
-                </div>
+                <Empty
+                    icon={CalendarDays}
+                    title="Nenhum evento neste filtro"
+                    body="Cria o primeiro para reunir a comunidade."
+                    cta="Criar evento"
+                    ctaOnClick={() => setCreating(true)}
+                />
             ) : (
-                <div>
+                <Grid cols={2} gap={4} data-testid="events-grid">
                     {filtered.map((e) => (
-                        <div key={e.id} className="px-4 lg:px-5 py-5 hairline-b hover:bg-black/[0.015] transition" data-testid={`event-${e.id}`}>
-                            <div className="flex items-start gap-4">
-                                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl silver-grad text-black flex-shrink-0 shadow-sm">
-                                    <span className="font-mono text-[9px] uppercase tracking-widest text-black/55">{new Date(e.starts_at).toLocaleString("pt-PT", { month: "short" })}</span>
-                                    <span className="font-display text-[22px] leading-none">{new Date(e.starts_at).getDate()}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-display text-[22px] tracking-tight truncate leading-tight text-black">{e.title}</h3>
-                                    <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mt-2 flex-wrap">
-                                        <span className="flex items-center gap-1"><CalendarDays size={11} /> {fmtDate(e.starts_at)}</span>
-                                        {e.location && (<span className="flex items-center gap-1"><MapPin size={11} /> {e.location}</span>)}
-                                        <span className="bg-black/[0.05] px-1.5 py-0.5 rounded text-black/65 normal-case tracking-normal">{categoryLabel(EVENT_CATEGORIES, e.category)}</span>
+                        <div
+                            key={e.id}
+                            data-testid={`event-${e.id}`}
+                            className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden hover:border-black/25 hover:shadow-md transition"
+                        >
+                            <div className="p-4">
+                                <div className="flex items-start gap-3 mb-3">
+                                    <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl silver-grad text-black flex-shrink-0 shadow-sm">
+                                        <span className="font-mono text-[9px] uppercase tracking-widest text-black/55">{new Date(e.starts_at).toLocaleString("pt-PT", { month: "short" })}</span>
+                                        <span className="font-display text-[22px] leading-none">{new Date(e.starts_at).getDate()}</span>
                                     </div>
-                                    {e.description && <p className="mt-2 text-[14px] text-black/70 line-clamp-2 leading-relaxed">{e.description}</p>}
-                                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                        {e.creator && (
-                                            <div className="flex items-center gap-1.5 text-[11px] text-black/50 font-mono">
-                                                <Avatar user={e.creator} size={18} /> @{e.creator.username}
-                                            </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-display text-[18px] tracking-tight leading-tight text-black truncate">{e.title}</h3>
+                                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-black/50 mt-1 truncate">
+                                            {fmtDate(e.starts_at)}
+                                        </p>
+                                        {e.location && (
+                                            <p className="font-mono text-[10px] text-black/55 mt-0.5 flex items-center gap-1 truncate">
+                                                <MapPin size={10} /> {e.location}
+                                            </p>
                                         )}
-                                        <span className="text-black/20">·</span>
-                                        <span className="text-[11px] font-mono text-black/55 inline-flex items-center gap-1"><UsersIcon size={11} /> {e.attendees_count} confirmados</span>
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-2 flex-shrink-0">
-                                    <button onClick={() => attend(e.id)} data-testid={`attend-${e.id}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 ${e.attending ? "chip-on" : "btn-obsidian"}`}>
-                                        {e.attending ? "Vou" : "Participar"}
+                                <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                                    <span className="bg-black/[0.05] px-1.5 py-0.5 rounded text-[10px] font-mono text-black/65">
+                                        {categoryLabel(EVENT_CATEGORIES, e.category)}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-black/55 inline-flex items-center gap-1">
+                                        <UsersIcon size={10} /> {e.attendees_count}
+                                    </span>
+                                </div>
+                                {e.description && <p className="text-[13px] text-black/65 line-clamp-2 mb-3">{e.description}</p>}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => attend(e.id)}
+                                        data-testid={`attend-${e.id}`}
+                                        className={`flex-1 text-[11px] font-heading font-medium rounded-full px-3 py-1.5 transition ${e.attending ? "chip-on" : "btn-obsidian"}`}
+                                    >
+                                        {e.attending ? "Vou ✓" : "Participar"}
                                     </button>
-                                    <button onClick={() => share(e)} title="Partilhar" data-testid={`event-share-${e.id}`} className="w-full text-[10px] font-mono uppercase tracking-[0.14em] text-black hover:text-black inline-flex items-center justify-center gap-1">
-                                        <Share2 size={11} /> partilhar
+                                    <button
+                                        onClick={() => share(e)}
+                                        title="Partilhar"
+                                        data-testid={`event-share-${e.id}`}
+                                        className="px-3 py-1.5 rounded-full border border-black/15 text-black/65 hover:border-black/40 hover:text-black transition"
+                                    >
+                                        <Share2 size={11} />
                                     </button>
                                 </div>
                             </div>
                         </div>
                     ))}
-                </div>
+                </Grid>
             )}
-        </div>
+        </PageShell>
     );
 }

@@ -79,45 +79,57 @@ export default function Communities() {
     };
 
     return (
-        <div data-testid="communities-page">
-            <PageHeader
+        <PageShell max="max-w-6xl">
+            <PageHero
+                icon={Users}
                 title="Comunidades"
-                subtitle={`${communities.length} grupos · ${communities.filter((c) => c.joined).length} as tuas`}
-                testid="communities-header"
-                action={
-                    <button onClick={() => setCreating(true)} data-testid="new-community-btn" className="btn-obsidian px-4 py-2 text-[11px] flex items-center gap-1.5">
+                subtitle={`${communities.length} grupos · ${communities.filter((c) => c.joined).length} são tuas`}
+                actions={
+                    <button
+                        onClick={() => setCreating(true)}
+                        data-testid="new-community-btn"
+                        className="btn-obsidian px-4 py-2 text-[11px] flex items-center gap-1.5"
+                    >
                         <Plus size={13} strokeWidth={2} /> Criar
                     </button>
                 }
-            >
-                <div className="px-3 lg:px-4 pb-2 flex items-center gap-2">
-                    <div className="flex-1 relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar comunidades..." data-testid="communities-search" className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition" />
-                        {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {SORTS.map((s) => { const Icon = s.icon; const active = sort === s.key; return (
-                            <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"}`}>
-                                <Icon size={13} />
-                            </button>
-                        ); })}
-                    </div>
+            />
+
+            <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Pesquisar comunidades..."
+                        data-testid="communities-search"
+                        className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition"
+                    />
+                    {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
                 </div>
-                <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
-                    {TABS.map((t) => (
-                        <button key={t.key} onClick={() => setTab(t.key)} data-testid={`communities-tab-${t.key}`} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${tab === t.key ? "tab-grad-on" : "border-transparent text-black hover:text-black"}`}>{t.label}</button>
-                    ))}
-                </div>
-                <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todas categorias</button>
-                    {COMMUNITY_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`communities-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
-                            <span>{c.emoji}</span> {c.label}
+                <div className="flex items-center gap-1">
+                    {SORTS.map((s) => { const Icon = s.icon; const active = sort === s.key; return (
+                        <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"}`}>
+                            <Icon size={13} />
                         </button>
-                    ))}
+                    ); })}
                 </div>
-            </PageHeader>
+            </div>
+
+            <FilterBar>
+                {TABS.map((t) => (
+                    <Chip key={t.key} active={tab === t.key} onClick={() => setTab(t.key)} testid={`communities-tab-${t.key}`}>
+                        {t.label}
+                    </Chip>
+                ))}
+                <span className="text-black/15 mx-1">·</span>
+                <Chip active={cat === ""} onClick={() => setCat("")}>Todas</Chip>
+                {COMMUNITY_CATEGORIES.map((c) => (
+                    <Chip key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} testid={`communities-cat-${c.key}`}>
+                        {c.emoji} {c.label}
+                    </Chip>
+                ))}
+            </FilterBar>
 
             {creating && (
                 <div className="fixed inset-0 z-[70] bg-black/30 backdrop-blur-sm flex items-end lg:items-center lg:justify-center p-0 lg:p-4" onClick={() => setCreating(false)}>
@@ -159,52 +171,53 @@ export default function Communities() {
             {loading ? (
                 <div className="p-12 text-center type-overline">a carregar…</div>
             ) : filtered.length === 0 ? (
-                <div className="px-6 py-20 text-center anim-fade-up">
-                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                        <Users size={26} strokeWidth={1.4} className="text-black/70" />
-                    </div>
-                    <p className="type-overline mb-2">Sem comunidades</p>
-                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">{q || cat ? "Sem resultados" : "Nenhuma comunidade ainda"}</h3>
-                    <p className="text-black/55 text-sm mt-2 mb-6">{q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}</p>
-                    {!q && !cat && (
-                        <button
-                            onClick={() => setCreating(true)}
-                            data-testid="communities-empty-cta"
-                            className="btn-obsidian inline-flex items-center gap-2 px-5 py-2.5 text-[12px]"
-                        >
-                            <Plus size={13} /> Criar comunidade
-                        </button>
-                    )}
-                </div>
+                <Empty
+                    icon={Users}
+                    title={q || cat ? "Sem resultados" : "Nenhuma comunidade ainda"}
+                    body={q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}
+                    cta={q || cat ? null : "Criar comunidade"}
+                    ctaOnClick={() => setCreating(true)}
+                />
             ) : (
-                <div>
+                <Grid cols={2} gap={4} data-testid="communities-grid">
                     {filtered.map((c) => (
-                        <div key={c.id} className="px-4 lg:px-5 py-5 hairline-b hover:bg-black/[0.015] transition" data-testid={`community-${c.slug}`}>
-                            <div className="flex items-start gap-4">
-                                <div className="w-14 h-14 rounded-2xl silver-grad grid place-items-center flex-shrink-0 shadow-sm">
-                                    <Users size={20} strokeWidth={1.5} className="text-black/70" />
+                        <Link
+                            key={c.id}
+                            to={`/c/${c.slug}`}
+                            data-testid={`community-${c.slug}`}
+                            className="group block rounded-2xl border border-black/[0.08] bg-white p-4 hover:border-black/25 hover:shadow-md transition"
+                        >
+                            <div className="flex items-start gap-3 mb-2">
+                                <div className="w-12 h-12 rounded-2xl silver-grad grid place-items-center flex-shrink-0 shadow-sm">
+                                    <Users size={18} strokeWidth={1.5} className="text-black/70" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <Link to={`/c/${c.slug}`} className="block">
-                                        <h3 className="font-display text-[22px] tracking-tight leading-tight hover:underline text-black truncate">{c.name}</h3>
-                                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-black/45 mt-1 flex items-center gap-2 flex-wrap">
-                                            {c.members_count} membros
-                                            <span className="bg-black/[0.05] px-1.5 py-0.5 rounded text-black/65 normal-case tracking-normal">{categoryLabel(COMMUNITY_CATEGORIES, c.category)}</span>
-                                            {hotMap[c.slug]?.posts > 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-emerald-700 normal-case tracking-normal"><TrendingUp size={10} /> {hotMap[c.slug].posts}p/sem</span>
-                                            )}
-                                        </p>
-                                    </Link>
-                                    {c.description && <p className="mt-2 text-[14px] text-black/70 line-clamp-2 leading-relaxed">{c.description}</p>}
+                                    <h3 className="font-display text-[18px] tracking-tight leading-tight text-black truncate group-hover:underline">{c.name}</h3>
+                                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-black/45 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                        {c.members_count} membros
+                                        {hotMap[c.slug]?.posts > 0 && (
+                                            <span className="inline-flex items-center gap-0.5 text-emerald-700 normal-case tracking-normal">
+                                                <TrendingUp size={10} /> {hotMap[c.slug].posts}/sem
+                                            </span>
+                                        )}
+                                    </p>
                                 </div>
-                                <button onClick={() => join(c.slug)} data-testid={`join-${c.slug}`} className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 flex-shrink-0 ${c.joined ? "chip-on" : "btn-obsidian"}`}>
-                                    {c.joined ? "Sair" : "Entrar"}
-                                </button>
                             </div>
-                        </div>
+                            <span className="inline-block text-[10px] font-mono text-black/55 bg-black/[0.04] px-1.5 py-0.5 rounded mb-2">
+                                {categoryLabel(COMMUNITY_CATEGORIES, c.category)}
+                            </span>
+                            {c.description && <p className="text-[13px] text-black/65 line-clamp-2 leading-relaxed mb-3">{c.description}</p>}
+                            <button
+                                onClick={(e) => { e.preventDefault(); join(c.slug); }}
+                                data-testid={`join-${c.slug}`}
+                                className={`w-full text-[11px] font-heading font-medium tracking-tight rounded-full px-3 py-1.5 transition ${c.joined ? "chip-on" : "btn-obsidian"}`}
+                            >
+                                {c.joined ? "Sair" : "Entrar"}
+                            </button>
+                        </Link>
                     ))}
-                </div>
+                </Grid>
             )}
-        </div>
+        </PageShell>
     );
 }

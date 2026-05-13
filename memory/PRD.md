@@ -1,76 +1,103 @@
-# Vermillion — Rede Social Portuguesa (PT-PT)
+# Vermillion — Product Requirements (Living)
 
-## Original problem statement
-"Atribui mais lógica, fórmulas, botões e estrutura a todas as rotas e abas. Quero todas as rotas repletas de mecânicas novas, botões novos. Lembra te que é uma rede social portuguesa ("Vermillion"). Não fujas do tema."
+> Última atualização: 14 Fev 2026
 
-Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Café, Praia, Bola, Cultura, regiões PT).
+## Visão
+"A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
 
 ## Stack
-- Frontend: React + Tailwind + Shadcn UI (lucide-react)
-- Backend: FastAPI (monolítico em `/app/backend/server.py`, 2752 linhas)
-- DB: MongoDB
-- Auth: JWT em cookie httpOnly + interceptor Axios `withCredentials: true`
+- **Frontend:** React 19 + Tailwind + Shadcn UI + Sonner + Lucide
+- **Backend:** FastAPI + Motor (MongoDB async)
+- **Realtime:** WebSocket (`/ws`) gateway
+- **Auth:** JWT em cookie httpOnly + localStorage fallback
 
-## Conta admin
-- `admin@vermillion.app` / `admin123`
-- Demo PT: ver `/app/memory/test_credentials.md`
+## Core Principles
+- **PT-PT first** — toda a UI, microcopy, mood, cidades, badges
+- **Slow social** — conversa > engagement viral
+- **Identity layer fortíssima** — bio slots PT, cosméticos, charms, streak, presença
+- **Diversidade algorítmica** — diversity penalty + hidden gems + tuner
+- **Sem AI gerativa** (excluído explicitamente)
 
-## Routes / Páginas (14)
-| Rota | Página | Mecânicas PT atuais |
-|---|---|---|
-| `/` | Feed | Tabs Seguindo/Para ti · Mood chips (Saudade/Tasca/Festa/Café/Praia/Fado/Bola/Cultura) · Sort Recente/Top · Refresh · Pull-to-refresh · localStorage persist |
-| `/explore` | Explore | 5 abas: Posts/Pessoas/Tags/Comunidades/Cidades 🇵🇹 · Mood chips · Pesquisa |
-| `/trending` | Trending | Range 1h/24h/7D/30 dias · 4 abas (Hashtags/Pessoas/Comunidades/Cidades) · velocity% |
-| `/notifications` | Notifications | Lista + marcar todas como lidas |
-| `/messages` | Messages | Filtros Tudo/Não lidas/Fixadas/Arquivadas |
-| `/bookmarks` | Bookmarks | Coleções |
-| `/drafts` | Drafts | CRUD rascunhos |
-| `/scheduled` | Scheduled | Posts agendados |
-| `/communities` | Communities | Categorias PT (Cidades 🇵🇹, Música, Desporto, Tasca, Cultura, Tecnologia, Fotografia, Moda, Viagens, Outras) |
-| `/c/:slug` | Community | Feed da comunidade |
-| `/events` | Events | Categorias (Festa/Cultura/Concerto/Desporto/Tasca/Família/Outros) |
-| `/u/:username` | Profile | Badges PT (NÍVEL/REP/ONLINE/streak), regiões |
-| `/tag/:tag` | TagPage | Posts por hashtag |
-| `/settings` | Settings | 4 abas: Conta, Notificações, Privacidade, Aparência |
+## Sprints Concluídos
 
-## Endpoints chave
-- `GET /api/auth/me` → **200 `{user: null | obj}`** (corrigido — já não devolve 401 anónimo)
-- `POST /api/auth/login|register|logout`
-- `GET /api/trending?range=1h|24h|7d|30d`
-- `GET /api/explore/by-mood?mood=saudade|tasca|...`
-- `GET /api/users/{u}/badges`
-- `GET /api/notifications/unread-count`
-- `GET /api/messages/unread-count`
+### Sprint 1 — UX Foundations (Jan 2026)
+- Click-outside global + ESC para modais
+- Loading Spinners em ações
+- Empty states com CTAs em cada página
+- Bookmarks instant removal
+- Comentários Reddit-style (nested infinite + collapse + cascade delete)
+- Bio chips clicáveis no Profile
 
-## Changelog
-- **2026-02-14** — **Profile SSS-tier (P0)** — reescrita completa de `Profile.js`:
-  - **Region-aware banner** — gradiente do banner adapta-se à região (Lisboa = azul-tejo, Algarve = azul-mar, Alentejo = ouro, Norte = verde-pinhal, etc.) com nameplate editorial.
-  - **Identity Fingerprint Strip** (novo, signature da página) — endpoint `GET /users/{username}/fingerprint` agrega dos posts: top hashtag, top mood, top reaction dada/recebida, comunidade preferida, hora-pico de publicação. Renderiza 3-6 cards "Como {Nome} aparece aqui · Análise de N posts" com eyebrow + headline + detalhe.
-  - **Identity pills row** — Level/REP · Online · Streak · Região (com emoji) · Mood · Time (não-default).
-  - **Bio slots** como chips semânticos com ícones — `Mood do dia: saudade · Banda sonora: José Afonso · A ler: Saramago · Lugar favorito: Miradouro da Graça · Frase do mês · Bairro/Freguesia`.
-  - **6 tabs** (era 5): adicionado **"Comunidades"** com endpoint novo `GET /users/{username}/communities` (badge "moderador" para owners).
-  - **Tabs sticky** com `backdrop-blur` + indicador coral grad-bar (era preto liso).
-  - **Empty states premium** — ícone + título + sub específicos por tab (não genérico).
-  - **Tudo mobile-first** validado em 390×844: identity pills wrap, fingerprint 2-col, banner com region-emoji.
-  - **2 novos endpoints backend** + ~600 linhas frontend.
-- **2026-02-14** — Fix definitivo "Não autenticado" (5 camadas).
-- **2026-02-14** — Messages overhaul.
-- **2026-02-14** — PT Engagement v1 + v2 (18 features) + Mobile parity.
-- **2026-02-14** — **PT Engagement v1**: F2.1 Onboarding 60s, F2.4 Anel de identidade, F3.1 Reactions PT, F1.1 A Tarde, F1.4 Boa Noite, F2.2 Badges narrativos, F2.3 Bio slots, F4.2 Repost curado, F5.1 Place graph, F5.2 Sino do Bairro, F5.3 Calendário PT, F1.2 Cafezinho, MAN Manifesto, RGPD consent persistence.
+### Sprint 2 — V2 Modern Social (Fev 2026)
+13 features full-stack:
+- Recados 24h, Presence Status, Custom Community Reactions
+- Pinned Comments, Series/Coleções, Profile Visitors
+- Charms (12 colecionáveis), Roda (close friends PT, 25 max)
+- Starter Packs, Hype Train, Collab Posts
+- Avatar Cosmetics (free tier, 7 frames + 7 stickers)
+- For You Reason Chips
 
-## Roadmap (Backlog)
-**P1**
-- **Backend: tracking de consentimento no registo** — Atualizar `POST /api/auth/register` para receber e gravar `terms_accepted_at`, `privacy_accepted_at`, `age_confirmed` no documento de utilizador (compliance RGPD).
-- Ampliar mecânicas em rotas mais leves (Drafts, Scheduled, TagPage, Settings — ex.: filtros por mood/cidade, atalhos de teclado, ações em massa).
-- Profile: estatísticas por região/mood, mural de badges PT.
+### Sprint 3 — V3 Identity + Realtime + Ranking (Fev 2026)
+- **Ranking Engine v2** com diversity penalty, hidden gems, time-of-day mood mixing
+- **For You Tuner** (3 sliders + 4 presets)
+- **Streak Engine** (daily streak + 2 freezes/mês + milestones)
+- **Mesa** (inner-inner circle, 5 max, sub-Roda)
+- **WebSocket Gateway** com presence broadcast, typing, activity ticker
+- **ActivityTickerLive** real-time
+- **ConnectionIndicator** (live/reconnecting/offline)
+- **Hashtag Suggester** inline no composer
+- **Mood Auto-tag** no composer (8 moods PT)
+- **Notifications Priority** view (urgent > Mesa/Roda > following > strangers)
+- **Trending Pulse** SVG sparkline 7d
+- **Charms Progress** (locked com % e contagem)
+- **Identity Ring** CSS per-mood (8 gradients)
+- **Custom Community Emoji Pack** (10 emojis upload)
 
-**P2**
-- Substituir placeholders legais (`[NIPC]`, `[Morada]`, `[DPO]`, `[Cidade]`, `[data da última versão]`) por dados reais da entidade antes de produção.
-- Imagens externas para badges/categorias (via `vision_expert_agent`).
-- Refactor de `server.py` (2752 linhas) em módulos: `auth.py`, `posts.py`, `users.py`, `communities.py`, `events.py`, `trending.py`.
-- Stripe/PayPal para "tasca premium" (subscrições opcionais).
-- Real-time DMs via WebSocket.
+### Sprint 4 — Avatar PT + Page Hierarchy (Fev 2026)
+- **Avatar Premium** com 10 cores PT determinísticas (coral, tejo, pinhal, ouro, vinho, saudade, azulejo, granito, mar, sardinha)
+  - Iniciais brancas (primeiro + último nome)
+  - Hash determinístico por user.id/username
+  - **NamePill** component (background tinted matching avatar)
+- **PageShell** primitivas reutilizáveis:
+  - `PageShell` (max-width + padding consistente)
+  - `PageHero` (icon + title + subtitle + badge + actions)
+  - `PageSection` (overline + title + count + cta)
+  - `Grid` (1/2/3/4/5 cols responsive)
+  - `FilterBar` (sticky tabs)
+  - `Chip` (pill segmented)
+  - `Empty` (icon + body + cta)
+- **Refactor estrutural** (sem scroll infinito, hierarquia visual):
+  - `/communities` → grid 2-col, hero hierárquico, FilterBar sticky
+  - `/events` → grid 2-col com data cards
+  - `/drafts` → grid 2-col compacta
+  - `/scheduled` → grid 2-col
+  - `/visitors` → grid 3-col
 
-## Testes
-- `/app/backend/tests/test_vermillion.py` + `test_portuguese_features.py` + `test_new_features.py` (50/50 PASS)
-- `/app/test_reports/iteration_1.json` (último relatório — 100%)
+## Backlog Prioritizado
+
+### P0 — Refactor estrutural restante
+- `/bookmarks` → grid + drawer de coleções
+- `/trending` → grid + sparklines
+- `/explore` → unified discovery layout
+- `/messages` → 2-pane desktop + drawer mobile
+
+### P1 — Novas rotas pendentes
+- `/mesa` — feed exclusivo (backend `/api/feed/mesa` já existe)
+- `/charms` — galeria pública de charms
+- `/search` — pesquisa dedicada
+
+### P2 — Profundidade
+- Polls v2 (sentiment + scale + ranking)
+- Community roles & moderation
+- Realtime DM (WS já tem typing, falta delivery states)
+- RGPD consent tracking no registo
+- Refactor `server.py` (~4600 linhas) em módulos
+
+### P3 — Backlog longo
+- Vermillion+ (Stripe — quando user fornecer API key)
+- Sub-communities (Mesas dentro de comunidades)
+- Cosmetics drops sazonais (Sto António, Natal)
+- Public Identity Card exportável SVG/PNG
+
+## Endpoints / Coleções
+Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints, 16 coleções MongoDB).
