@@ -379,6 +379,34 @@
     .chip-on:active { transform: scale(0.96); }
     .chip-on svg { color: #ffffff; }
 
+    /* ============================================================
+       chip-filter-on — FILTER chip ACTIVATED state (mood / category /
+       sort / range filters). Dark silver → black smooth gradient.
+       Use INSTEAD of chip-on on filters/categories, mantém chip-on
+       reservado para CTAs / nav active / actions.
+       ============================================================ */
+    .chip-filter-on {
+        background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 50%, #0a0a0a 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.40),
+                    0 1px 3px -1px rgba(0, 0, 0, 0.25),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+        transition: background-image 320ms var(--ease-out-soft),
+                    box-shadow 320ms var(--ease-out-soft),
+                    transform 200ms var(--ease-out-soft),
+                    filter 240ms ease;
+        animation: chipPop 280ms var(--ease-pop);
+    }
+    .chip-filter-on:hover {
+        background: linear-gradient(135deg, #555555 0%, #2f2f2f 50%, #0a0a0a 100%);
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45),
+                    0 2px 6px -2px rgba(0, 0, 0, 0.30),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        transform: translateY(-1px);
+    }
+    .chip-filter-on:active { transform: scale(0.96); }
+    .chip-filter-on svg { color: #ffffff; }
+
     /* Animated subtle pop for state CHANGE (when chip just became active) */
     @keyframes chipPop {
         0% { transform: scale(0.92); }

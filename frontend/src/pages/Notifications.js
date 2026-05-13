@@ -142,7 +142,7 @@ export default function Notifications() {
                                 key={f.key}
                                 onClick={() => setFilter(f.key)}
                                 data-testid={`notif-filter-${f.key}`}
-                                className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition ${active ? "chip-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}
+                                className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition ${active ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}
                             >
                                 {f.label}
                             </button>
