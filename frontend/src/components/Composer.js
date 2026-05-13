@@ -27,6 +27,27 @@ const AUDIENCES = [
     { id: "following", label: "Quem sigo", Icon: UsersIcon },
     { id: "mentioned", label: "Apenas mencionados", Icon: AtSignIcon },
 ];
+// F2.4 — Anel de identidade. Three rings with distinct PT colors.
+const RINGS = [
+    {
+        id: "publico",
+        label: "Público",
+        hint: "Todos podem ver. Anel amarelo-mar.",
+        dot: "linear-gradient(135deg, #f6c25f 0%, #d99a3a 100%)",
+    },
+    {
+        id: "amigos",
+        label: "Amigos",
+        hint: "Apenas quem te segue. Anel azul-tejo.",
+        dot: "linear-gradient(135deg, #6a91cc 0%, #2c6fd1 100%)",
+    },
+    {
+        id: "tasca",
+        label: "Tasca",
+        hint: "Grupo íntimo (< 12). Anel terracota.",
+        dot: "linear-gradient(135deg, #df8a7d 0%, #c64a3d 100%)",
+    },
+];
 const MAX_IMAGES = 4;
 
 export function Composer({ onPosted, asModal = false, onClose, communityId = null, initialPost = null }) {
@@ -39,6 +60,9 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [emojiOpen, setEmojiOpen] = useState(false);
     const [audOpen, setAudOpen] = useState(false);
     const [audience, setAudience] = useState("everyone");
+    // F2.4 — Identity ring (publico | amigos | tasca)
+    const [ring, setRing] = useState("publico");
+    const [ringOpen, setRingOpen] = useState(false);
 
     // Poll state
     const [pollOpen, setPollOpen] = useState(false);
@@ -114,6 +138,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                 content,
                 images,
                 reply_audience: audience,
+                audience_ring: ring,
                 is_draft: isDraft,
             };
             if (communityId) body.community_id = communityId;
@@ -176,42 +201,99 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         </div>
                     )}
 
-                    {/* Audience selector */}
-                    <div className="mb-2 relative inline-block">
-                        <button
-                            onClick={() => setAudOpen((v) => !v)}
-                            data-testid="composer-audience-btn"
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
-                        >
-                            <AudienceIcon size={12} />
-                            {audienceLabel}
-                        </button>
-                        {audOpen && (
-                            <div
-                                onMouseLeave={() => setAudOpen(false)}
-                                className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[200px]"
+                    {/* Audience + Identity Ring selectors */}
+                    <div className="mb-2 flex items-center gap-2 flex-wrap">
+                        <div className="relative inline-block">
+                            <button
+                                onClick={() => setAudOpen((v) => !v)}
+                                data-testid="composer-audience-btn"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
                             >
-                                {AUDIENCES.map((a) => {
-                                    const I = a.Icon;
-                                    return (
+                                <AudienceIcon size={12} />
+                                {audienceLabel}
+                            </button>
+                            {audOpen && (
+                                <div
+                                    onMouseLeave={() => setAudOpen(false)}
+                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[200px]"
+                                >
+                                    {AUDIENCES.map((a) => {
+                                        const I = a.Icon;
+                                        return (
+                                            <button
+                                                key={a.id}
+                                                onClick={() => {
+                                                    setAudience(a.id);
+                                                    setAudOpen(false);
+                                                }}
+                                                data-testid={`composer-audience-${a.id}`}
+                                                className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-black/[0.04] text-sm text-left ${
+                                                    audience === a.id ? "text-black font-semibold" : "text-black/70"
+                                                }`}
+                                            >
+                                                <I size={14} />
+                                                {a.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* F2.4 Identity Ring */}
+                        <div className="relative inline-block">
+                            <button
+                                onClick={() => setRingOpen((v) => !v)}
+                                data-testid="composer-ring-btn"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
+                                title="Anel de identidade — quem vê este post"
+                            >
+                                <span
+                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                    style={{ background: RINGS.find((r) => r.id === ring)?.dot }}
+                                />
+                                {RINGS.find((r) => r.id === ring)?.label || "Público"}
+                            </button>
+                            {ringOpen && (
+                                <div
+                                    onMouseLeave={() => setRingOpen(false)}
+                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[260px]"
+                                >
+                                    {RINGS.map((r) => (
                                         <button
-                                            key={a.id}
+                                            key={r.id}
                                             onClick={() => {
-                                                setAudience(a.id);
-                                                setAudOpen(false);
+                                                setRing(r.id);
+                                                setRingOpen(false);
                                             }}
-                                            data-testid={`composer-audience-${a.id}`}
-                                            className={`w-full flex items-center gap-2 px-4 py-2 hover:bg-black/[0.04] text-sm text-left ${
-                                                audience === a.id ? "text-black font-semibold" : "text-black/70"
+                                            data-testid={`composer-ring-${r.id}`}
+                                            className={`w-full flex items-start gap-3 px-4 py-2.5 hover:bg-black/[0.04] text-left ${
+                                                ring === r.id ? "bg-black/[0.025]" : ""
                                             }`}
                                         >
-                                            <I size={14} />
-                                            {a.label}
+                                            <span
+                                                className="w-3 h-3 rounded-full mt-1 shrink-0"
+                                                style={{ background: r.dot }}
+                                            />
+                                            <span className="flex-1 min-w-0">
+                                                <span
+                                                    className={`block text-sm ${
+                                                        ring === r.id
+                                                            ? "text-black font-semibold"
+                                                            : "text-black/80"
+                                                    }`}
+                                                >
+                                                    {r.label}
+                                                </span>
+                                                <span className="block text-[11.5px] text-black/55 leading-snug mt-0.5">
+                                                    {r.hint}
+                                                </span>
+                                            </span>
                                         </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <textarea

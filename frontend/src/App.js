@@ -29,6 +29,7 @@ import Privacy from "./pages/legal/Privacy";
 import Cookies from "./pages/legal/Cookies";
 import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Glossary from "./pages/legal/Glossary";
+import Manifesto from "./pages/Manifesto";
 
 function App() {
     return (
@@ -59,6 +60,7 @@ function App() {
                         <Route path="/legal/cookies" element={<Cookies />} />
                         <Route path="/legal/community" element={<CommunityGuidelines />} />
                         <Route path="/legal/glossary" element={<Glossary />} />
+                        <Route path="/manifesto" element={<Manifesto />} />
                         <Route
                             element={
                                 <ProtectedRoute>

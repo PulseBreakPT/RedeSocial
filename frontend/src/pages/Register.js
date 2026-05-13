@@ -1,16 +1,53 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { ArrowRight, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
 
+/**
+ * F2.1 — Onboarding 60s.
+ * 3 steps: credentials → identity (city/region/mood/team) → consent.
+ * Total time-to-account ~60s. Each answer is investment (Eyal) → makes exit costlier.
+ */
 export default function Register() {
     const { user, register } = useAuth();
     const navigate = useNavigate();
+    const [step, setStep] = useState(1);
+
+    // Step 1 — credentials
     const [form, setForm] = useState({ name: "", username: "", email: "", password: "" });
+    // Step 2 — PT identity
+    const [identity, setIdentity] = useState({ city: "", region: "", mood_initial: "", team: "" });
+    // Step 3 — consent
     const [consent, setConsent] = useState({ age: false, terms: false, marketing: false });
+
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
     if (user) return <Navigate to="/" replace />;
+
+    const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+    const setIdField = (k, v) => setIdentity({ ...identity, [k]: v });
+    const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
+
+    const canStep1 =
+        form.name.trim().length >= 1 &&
+        form.username.trim().length >= 3 &&
+        /^[a-zA-Z0-9_]+$/.test(form.username) &&
+        /\S+@\S+\.\S+/.test(form.email) &&
+        form.password.length >= 6;
+    const canStep2 = true; // identity is optional (but encouraged); allow skipping
+    const canSubmit = consent.age && consent.terms && !busy;
+
+    const next = () => {
+        setError("");
+        if (step === 1 && !canStep1) {
+            setError("Confirma o nome, username (≥3, letras/números/_), email e password (≥6).");
+            return;
+        }
+        setStep((s) => Math.min(3, s + 1));
+    };
+    const back = () => setStep((s) => Math.max(1, s - 1));
 
     const submit = async (e) => {
         e.preventDefault();
@@ -24,43 +61,45 @@ export default function Register() {
             return;
         }
         setBusy(true);
-        const res = await register(form);
+        const res = await register({
+            ...form,
+            city: identity.city || null,
+            region: identity.region || null,
+            mood_initial: identity.mood_initial || null,
+            team: identity.team || null,
+            terms_accepted: consent.terms,
+            age_confirmed: consent.age,
+            marketing_opt_in: consent.marketing,
+        });
         setBusy(false);
-        if (!res.ok) setError(res.error);
-        else {
-            // Persist consent record locally (audit trail). Backend persistence is optional.
-            try {
-                const record = {
+        if (!res.ok) {
+            setError(res.error);
+            return;
+        }
+        try {
+            localStorage.setItem(
+                "vm_signup_consent",
+                JSON.stringify({
                     timestamp: new Date().toISOString(),
                     age_confirmed: consent.age,
                     terms_accepted: consent.terms,
                     marketing_opt_in: consent.marketing,
                     terms_version: 1,
                     privacy_version: 1,
-                };
-                localStorage.setItem("vm_signup_consent", JSON.stringify(record));
-            } catch {
-                // ignore
-            }
-            navigate("/");
-        }
+                }),
+            );
+        } catch { /* ignore */ }
+        navigate("/");
     };
-
-    const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-    const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
-    const canSubmit = consent.age && consent.terms && !busy;
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
+            {/* Left aesthetic panel */}
             <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden bg-paper grain isolate">
-                <div
-                    className="absolute -top-32 -right-24 w-[520px] h-[520px] rounded-full opacity-50"
-                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
-                />
-                <div
-                    className="absolute -bottom-40 -left-32 w-[640px] h-[640px] rounded-full opacity-40"
-                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }}
-                />
+                <div className="absolute -top-32 -right-24 w-[520px] h-[520px] rounded-full opacity-50"
+                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }} />
+                <div className="absolute -bottom-40 -left-32 w-[640px] h-[640px] rounded-full opacity-40"
+                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }} />
                 <div className="relative">
                     <h1 className="font-display text-[36px] leading-none tracking-tight text-black flex items-baseline gap-2">
                         <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
@@ -69,10 +108,10 @@ export default function Register() {
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-display text-[52px] leading-[1] tracking-tight text-black">
-                        Junta-te à <span className="silver-foil">conversa</span>.
+                        Senta-te <span className="silver-foil">à mesa</span>.
                     </h2>
                     <p className="font-body text-black/60 mt-6 leading-relaxed text-[15px] max-w-sm">
-                        Conta criada em segundos. Sem ruído, sem ads, sem algoritmos opacos — apenas pessoas a falar.
+                        Conta criada em 60 segundos. Cinco perguntas para a tua casa ficar tua — todas saltáveis.
                     </p>
                 </div>
                 <div className="relative text-[12px] text-black/40 font-medium">
@@ -80,121 +119,193 @@ export default function Register() {
                 </div>
             </div>
 
+            {/* Right form panel */}
             <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen bg-white">
                 <div className="max-w-sm w-full mx-auto">
-                    <div className="lg:hidden text-center mb-10">
+                    <div className="lg:hidden text-center mb-8">
                         <h1 className="font-display text-[36px] leading-none tracking-tight">
                             <span className="silver-foil">◆</span> vermillion
                         </h1>
                     </div>
-                    <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Criar conta</h2>
-                    <p className="text-black/55 text-[14px] mt-2">É grátis e demora menos de um minuto.</p>
 
-                    <form onSubmit={submit} className="mt-8 space-y-4" data-testid="register-form">
-                        <div>
-                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Nome</label>
-                            <input
-                                data-testid="register-name"
-                                type="text"
-                                value={form.name}
-                                onChange={update("name")}
-                                required
-                                placeholder="O teu nome"
-                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
+                    {/* Step indicator */}
+                    <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
+                        {[1, 2, 3].map((n) => (
+                            <div
+                                key={n}
+                                className={`h-1 flex-1 rounded-full transition-colors ${
+                                    step >= n ? "grad-bar" : "bg-black/10"
+                                }`}
                             />
-                        </div>
-                        <div>
-                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Username</label>
-                            <input
-                                data-testid="register-username"
-                                type="text"
-                                value={form.username}
-                                onChange={update("username")}
-                                required
-                                minLength={3}
-                                pattern="[a-zA-Z0-9_]+"
-                                placeholder="o_teu_user"
-                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Email</label>
-                            <input
-                                data-testid="register-email"
-                                type="email"
-                                value={form.email}
-                                onChange={update("email")}
-                                required
-                                placeholder="tu@exemplo.com"
-                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">Palavra-passe</label>
-                            <input
-                                data-testid="register-password"
-                                type="password"
-                                value={form.password}
-                                onChange={update("password")}
-                                required
-                                minLength={6}
-                                placeholder="Mínimo 6 caracteres"
-                                className="w-full bg-[#fafafa] border border-black/[0.10] rounded-xl px-4 py-3 text-[15px] text-black placeholder:text-black/35 focus:border-black/40 focus:bg-white focus:outline-none transition"
-                            />
-                        </div>
-                        {error && <div data-testid="register-error" className="text-sm text-red-soft font-medium">{error}</div>}
+                        ))}
+                    </div>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-black/45 font-mono mb-2">
+                        Passo {step} de 3
+                    </p>
+                    <h2 className="font-display text-[30px] lg:text-[36px] tracking-tight leading-[1.05]">
+                        {step === 1 && "Cria a tua conta"}
+                        {step === 2 && "De onde escreves?"}
+                        {step === 3 && "Última coisa, juramos"}
+                    </h2>
+                    <p className="text-black/55 text-[14px] mt-2 leading-relaxed">
+                        {step === 1 && "Nome, email, password. Depois entramos no resto."}
+                        {step === 2 && "Estas perguntas são todas opcionais — podes saltar tudo."}
+                        {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
+                    </p>
 
-                        {/* Consent block — GDPR Art. 7 / Lei 58/2019 Art. 16 */}
-                        <div className="space-y-2.5 pt-1">
-                            <ConsentCheckbox
-                                id="consent-age"
-                                checked={consent.age}
-                                onChange={() => toggleConsent("age")}
-                                testid="consent-age"
-                                required
-                            >
-                                Confirmo que tenho <strong>16 anos ou mais</strong>.
-                                <span className="block text-[11px] text-black/50 mt-0.5">
-                                    Exigido pela Lei n.º 58/2019, art. 16.º. Menores podem usar com autorização dos representantes legais.
-                                </span>
-                            </ConsentCheckbox>
-                            <ConsentCheckbox
-                                id="consent-terms"
-                                checked={consent.terms}
-                                onChange={() => toggleConsent("terms")}
-                                testid="consent-terms"
-                                required
-                            >
-                                Li e aceito os{" "}
-                                <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
-                                    Termos e Condições
-                                </Link>{" "}
-                                e a{" "}
-                                <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
-                                    Política de Privacidade
-                                </Link>.
-                            </ConsentCheckbox>
-                            <ConsentCheckbox
-                                id="consent-marketing"
-                                checked={consent.marketing}
-                                onChange={() => toggleConsent("marketing")}
-                                testid="consent-marketing"
-                            >
-                                <span className="text-black/70">Opcional</span> — quero receber novidades, sugestões e comunicações ocasionais por e-mail.
-                                <span className="block text-[11px] text-black/50 mt-0.5">
-                                    Podes revogar a qualquer momento nas Definições. Base legal: consentimento (RGPD art. 6.º, n.º 1, al. a)).
-                                </span>
-                            </ConsentCheckbox>
-                        </div>
+                    <form onSubmit={submit} className="mt-7" data-testid="register-form">
+                        {step === 1 && (
+                            <div className="space-y-4">
+                                <Field label="Nome">
+                                    <input
+                                        data-testid="register-name"
+                                        type="text" value={form.name} onChange={update("name")} required
+                                        placeholder="O teu nome"
+                                        className="vm-input"
+                                    />
+                                </Field>
+                                <Field label="Username">
+                                    <input
+                                        data-testid="register-username"
+                                        type="text" value={form.username} onChange={update("username")} required
+                                        minLength={3} pattern="[a-zA-Z0-9_]+"
+                                        placeholder="o_teu_user"
+                                        className="vm-input"
+                                    />
+                                </Field>
+                                <Field label="Email">
+                                    <input
+                                        data-testid="register-email"
+                                        type="email" value={form.email} onChange={update("email")} required
+                                        placeholder="tu@exemplo.com"
+                                        className="vm-input"
+                                    />
+                                </Field>
+                                <Field label="Palavra-passe">
+                                    <input
+                                        data-testid="register-password"
+                                        type="password" value={form.password} onChange={update("password")} required
+                                        minLength={6} placeholder="Mínimo 6 caracteres"
+                                        className="vm-input"
+                                    />
+                                </Field>
+                            </div>
+                        )}
 
-                        <button
-                            type="submit"
-                            disabled={!canSubmit}
-                            data-testid="register-submit"
-                            className="btn-obsidian w-full text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-                        >
-                            {busy ? "A criar conta…" : "Criar conta"}
-                        </button>
+                        {step === 2 && (
+                            <div className="space-y-5">
+                                <Field label="Cidade (opcional)">
+                                    <input
+                                        data-testid="register-city"
+                                        type="text" value={identity.city}
+                                        onChange={(e) => setIdField("city", e.target.value)}
+                                        placeholder="Ex: Lisboa, Porto, Évora…"
+                                        className="vm-input"
+                                    />
+                                </Field>
+
+                                <ChipGroup
+                                    label="Região"
+                                    testid="register-region"
+                                    options={PT_REGIONS}
+                                    value={identity.region}
+                                    onChange={(v) => setIdField("region", v)}
+                                />
+
+                                <ChipGroup
+                                    label="O teu mood agora"
+                                    testid="register-mood"
+                                    options={PT_MOODS}
+                                    value={identity.mood_initial}
+                                    onChange={(v) => setIdField("mood_initial", v)}
+                                />
+
+                                <ChipGroup
+                                    label="Time"
+                                    testid="register-team"
+                                    options={PT_TEAMS}
+                                    value={identity.team}
+                                    onChange={(v) => setIdField("team", v)}
+                                />
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="space-y-3 pt-1">
+                                <ConsentCheckbox
+                                    id="consent-age" checked={consent.age}
+                                    onChange={() => toggleConsent("age")}
+                                    testid="consent-age" required
+                                >
+                                    Confirmo que tenho <strong>16 anos ou mais</strong>.
+                                    <span className="block text-[11px] text-black/50 mt-0.5">
+                                        Exigido pela Lei n.º 58/2019, art. 16.º. Menores com autorização dos representantes legais.
+                                    </span>
+                                </ConsentCheckbox>
+                                <ConsentCheckbox
+                                    id="consent-terms" checked={consent.terms}
+                                    onChange={() => toggleConsent("terms")}
+                                    testid="consent-terms" required
+                                >
+                                    Li e aceito os{" "}
+                                    <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
+                                        Termos e Condições
+                                    </Link>{" "}
+                                    e a{" "}
+                                    <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
+                                        Política de Privacidade
+                                    </Link>.
+                                </ConsentCheckbox>
+                                <ConsentCheckbox
+                                    id="consent-marketing" checked={consent.marketing}
+                                    onChange={() => toggleConsent("marketing")}
+                                    testid="consent-marketing"
+                                >
+                                    <span className="text-black/70">Opcional</span> — quero novidades por e-mail.
+                                    <span className="block text-[11px] text-black/50 mt-0.5">
+                                        Revogável a qualquer momento nas Definições.
+                                    </span>
+                                </ConsentCheckbox>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div data-testid="register-error" className="text-sm text-red-soft font-medium mt-4">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="mt-7 flex items-center gap-3">
+                            {step > 1 && (
+                                <button
+                                    type="button" onClick={back}
+                                    data-testid="register-back"
+                                    className="btn-silver text-[13px] py-3 px-4"
+                                >
+                                    Voltar
+                                </button>
+                            )}
+                            {step < 3 ? (
+                                <button
+                                    type="button" onClick={next}
+                                    data-testid="register-next"
+                                    disabled={step === 1 && !canStep1}
+                                    className="btn-obsidian flex-1 text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                                >
+                                    {step === 2 ? "Continuar" : "Seguinte"} <ArrowRight size={15} />
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit" disabled={!canSubmit}
+                                    data-testid="register-submit"
+                                    className="btn-obsidian flex-1 text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                                >
+                                    {busy ? "A criar conta…" : (
+                                        <>Criar conta <Check size={15} /></>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </form>
 
                     <p className="mt-8 text-[13px] text-black/55 text-center lg:text-left">
@@ -204,22 +315,61 @@ export default function Register() {
                         </Link>
                     </p>
 
-                    {/* Legal footer */}
                     <div className="mt-10 pt-6 border-t border-black/[0.06]">
                         <p className="text-[11px] text-black/45 leading-relaxed text-center lg:text-left">
-                            Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Podes exercer os teus direitos
-                            (acesso, retificação, apagamento, portabilidade, oposição) escrevendo para{" "}
-                            <a href="mailto:dpo@vermillion.pt" className="underline underline-offset-2 hover:text-black">dpo@vermillion.pt</a>.
+                            Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Lê o nosso{" "}
+                            <Link to="/manifesto" className="underline underline-offset-2 hover:text-black font-medium">
+                                manifesto
+                            </Link>{" "}
+                            — declaramos publicamente o que não fazemos.
                         </p>
                         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45 justify-center lg:justify-start">
                             <Link to="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
                             <Link to="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</Link>
                             <Link to="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
                             <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
-                            <Link to="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</Link>
+                            <Link to="/manifesto" className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+function Field({ label, children }) {
+    return (
+        <div>
+            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">{label}</label>
+            {children}
+        </div>
+    );
+}
+
+function ChipGroup({ label, options, value, onChange, testid }) {
+    return (
+        <div>
+            <p className="text-[12px] font-medium text-black/65 mb-2">{label}</p>
+            <div className="flex flex-wrap gap-1.5" data-testid={testid}>
+                {options.map((opt) => {
+                    const active = value === opt.key;
+                    return (
+                        <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => onChange(active ? "" : opt.key)}
+                            data-testid={`${testid}-${opt.key}`}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] tracking-tight border transition tap-shrink ${
+                                active
+                                    ? "chip-on border-transparent !text-white font-semibold"
+                                    : "border-black/[0.10] hover:border-black/30 hover:bg-black/[0.03] text-black/75"
+                            }`}
+                        >
+                            <span aria-hidden>{opt.emoji}</span>
+                            {opt.label}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
@@ -230,14 +380,13 @@ function ConsentCheckbox({ id, checked, onChange, testid, required, children }) 
         <label
             htmlFor={id}
             className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none ${
-                checked ? "border-black/30 bg-black/[0.02]" : "border-black/[0.08] hover:border-black/20 hover:bg-black/[0.015]"
+                checked
+                    ? "border-black/30 bg-black/[0.02]"
+                    : "border-black/[0.08] hover:border-black/20 hover:bg-black/[0.015]"
             }`}
         >
             <input
-                id={id}
-                type="checkbox"
-                checked={checked}
-                onChange={onChange}
+                id={id} type="checkbox" checked={checked} onChange={onChange}
                 data-testid={testid}
                 className="mt-0.5 w-4 h-4 accent-black shrink-0 cursor-pointer"
             />

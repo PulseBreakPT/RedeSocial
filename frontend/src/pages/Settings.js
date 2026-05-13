@@ -1,26 +1,53 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight } from "lucide-react";
+import { Camera, Lock, LogOut, User as UserIcon, Bell, Shield, Palette, Trash2, Download, FileText, Cookie, Sparkle, ChevronRight, MapPin, Moon, Sun, ScrollText } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
+import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
 import { openCookiePreferences } from "../components/CookieBanner";
 import { toast } from "sonner";
 
 const TABS = [
     { key: "conta", label: "Conta", icon: UserIcon },
+    { key: "ident", label: "Identidade", icon: MapPin },
     { key: "notif", label: "Notificações", icon: Bell },
     { key: "priv", label: "Privacidade", icon: Shield },
     { key: "apar", label: "Aparência", icon: Palette },
     { key: "legal", label: "Legal", icon: FileText },
 ];
 
+const BIO_SLOTS = [
+    { key: "mood_today",       label: "Mood do dia",     placeholder: "saudade · tasca · festa…" },
+    { key: "soundtrack",       label: "Banda sonora",    placeholder: "O que andas a ouvir?" },
+    { key: "reading",          label: "Livro/série",     placeholder: "Sebastião Salgado, Glória…" },
+    { key: "favourite_place",  label: "Lugar favorito",  placeholder: "Praça do Comércio, Pena, Foz…" },
+    { key: "quote_of_month",   label: "Frase do mês",    placeholder: "Uma linha que te define agora" },
+    { key: "city_extra",       label: "Bairro/Freguesia",placeholder: "Alvalade, Cedofeita…" },
+];
+
 export default function Settings() {
     const { user, setUser, logout } = useAuth();
     const [tab, setTab] = useState("conta");
-    const [form, setForm] = useState({ name: user?.name || "", bio: user?.bio || "", avatar: user?.avatar || "", banner: user?.banner || "", private: !!user?.private });
+    const [form, setForm] = useState({
+        name: user?.name || "",
+        bio: user?.bio || "",
+        avatar: user?.avatar || "",
+        banner: user?.banner || "",
+        private: !!user?.private,
+        // PT identity / place graph
+        city: user?.city || "",
+        freguesia: user?.freguesia || "",
+        region: user?.region || "",
+        mood_initial: user?.mood_initial || "",
+        team: user?.team || "",
+        bio_slots: user?.bio_slots || {},
+        // Healthy modes
+        boa_noite_enabled: user?.boa_noite_enabled !== false,
+        cafezinho_enabled: !!user?.cafezinho_enabled,
+    });
     const [busy, setBusy] = useState(false);
     // Local prefs
     const [prefs, setPrefs] = useState(() => ({
@@ -122,9 +149,182 @@ export default function Settings() {
                 </>
             )}
 
+            {tab === "ident" && (
+                <div className="px-4 lg:px-6 py-5 space-y-6 max-w-2xl">
+                    <div>
+                        <p className="type-overline mb-1">Identidade portuguesa</p>
+                        <p className="text-[12.5px] text-black/55 leading-relaxed">
+                            Estes campos alimentam o <em>place graph</em>: o teu feed passa a refletir
+                            também a tua geografia. Tudo opcional.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="type-overline">Cidade</label>
+                            <input
+                                data-testid="settings-city"
+                                value={form.city}
+                                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                                placeholder="Lisboa, Porto, Évora…"
+                                className="mt-2 vm-input"
+                            />
+                        </div>
+                        <div>
+                            <label className="type-overline">Freguesia/Bairro</label>
+                            <input
+                                data-testid="settings-freguesia"
+                                value={form.freguesia}
+                                onChange={(e) => setForm({ ...form, freguesia: e.target.value })}
+                                placeholder="Alvalade, Cedofeita…"
+                                className="mt-2 vm-input"
+                            />
+                        </div>
+                    </div>
+
+                    <SettingsChipGroup
+                        label="Região"
+                        testid="settings-region"
+                        options={PT_REGIONS}
+                        value={form.region}
+                        onChange={(v) => setForm({ ...form, region: v })}
+                    />
+                    <SettingsChipGroup
+                        label="Mood inicial"
+                        testid="settings-mood"
+                        options={PT_MOODS}
+                        value={form.mood_initial}
+                        onChange={(v) => setForm({ ...form, mood_initial: v })}
+                    />
+                    <SettingsChipGroup
+                        label="Time"
+                        testid="settings-team"
+                        options={PT_TEAMS}
+                        value={form.team}
+                        onChange={(v) => setForm({ ...form, team: v })}
+                    />
+
+                    <div className="pt-4 hairline-t">
+                        <p className="type-overline mb-1">Bio · 6 slots</p>
+                        <p className="text-[12.5px] text-black/55 leading-relaxed mb-3">
+                            Em vez de uma bio livre, 6 campos curtos. Reduz a “página em branco” e
+                            torna o perfil mais legível.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {BIO_SLOTS.map((slot) => (
+                                <div key={slot.key}>
+                                    <label className="type-overline">{slot.label}</label>
+                                    <input
+                                        data-testid={`settings-slot-${slot.key}`}
+                                        value={form.bio_slots?.[slot.key] || ""}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                bio_slots: { ...(form.bio_slots || {}), [slot.key]: e.target.value },
+                                            })
+                                        }
+                                        maxLength={60}
+                                        placeholder={slot.placeholder}
+                                        className="mt-2 vm-input"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-3">
+                        <button
+                            onClick={save}
+                            disabled={busy}
+                            data-testid="settings-ident-save"
+                            className="btn-obsidian px-7 py-3 text-[12px] disabled:opacity-50"
+                        >
+                            {busy ? "A guardar…" : "Guardar identidade"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {tab === "notif" && (
                 <div className="px-4 lg:px-6 py-5 space-y-3 max-w-2xl">
-                    <p className="type-overline">Receber notificações de…</p>
+                    <p className="type-overline">Modos saudáveis</p>
+                    <label className="flex items-center justify-between p-4 card-lux cursor-pointer hover:shadow-md transition" data-testid="boa-noite-toggle">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06] text-black/70">
+                                <Moon size={15} />
+                            </div>
+                            <div>
+                                <div className="font-heading font-semibold text-[14px] tracking-tight text-black">
+                                    Modo Boa Noite
+                                </div>
+                                <div className="font-mono text-[11px] text-black/50 mt-0.5">
+                                    Silencia notificações e suaviza UI entre as 23h00 e as 08h00. Ativo por defeito.
+                                </div>
+                            </div>
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={!!form.boa_noite_enabled}
+                            onChange={(e) => setForm({ ...form, boa_noite_enabled: e.target.checked })}
+                            className="w-5 h-5 accent-black"
+                            data-testid="boa-noite-checkbox"
+                        />
+                    </label>
+                    <label className="flex items-center justify-between p-4 card-lux cursor-pointer hover:shadow-md transition" data-testid="cafezinho-toggle">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06] text-black/70">
+                                <Sun size={15} />
+                            </div>
+                            <div>
+                                <div className="font-heading font-semibold text-[14px] tracking-tight text-black">
+                                    Cafezinho da manhã
+                                </div>
+                                <div className="font-mono text-[11px] text-black/50 mt-0.5">
+                                    Sessão curta de 60s entre as 7h00 e as 9h00 com 3 cards. Sem scroll infinito de manhã.
+                                </div>
+                            </div>
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={!!form.cafezinho_enabled}
+                            onChange={(e) => setForm({ ...form, cafezinho_enabled: e.target.checked })}
+                            className="w-5 h-5 accent-black"
+                            data-testid="cafezinho-checkbox"
+                        />
+                    </label>
+                    <div className="flex justify-end pt-2">
+                        <button
+                            onClick={save}
+                            disabled={busy}
+                            data-testid="settings-modes-save"
+                            className="btn-silver text-[12px] px-5 py-2.5 disabled:opacity-50"
+                        >
+                            {busy ? "A guardar…" : "Guardar modos"}
+                        </button>
+                    </div>
+
+                    <div className="hairline-t pt-5">
+                        <Link
+                            to="/manifesto"
+                            data-testid="settings-manifesto-link"
+                            className="flex items-center gap-3 p-3.5 rounded-xl border border-black/[0.10] hover:border-black/30 transition group"
+                        >
+                            <div className="w-9 h-9 rounded-full bg-black/[0.04] grid place-items-center shrink-0 text-black">
+                                <ScrollText size={15} strokeWidth={1.7} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1">
+                                    O nosso Manifesto
+                                    <ChevronRight size={13} className="opacity-0 group-hover:opacity-60 -ml-0.5 transition" />
+                                </div>
+                                <p className="text-[11.5px] text-black/55 leading-snug mt-0.5">
+                                    6 promessas anti-dark-pattern. O que não fazemos aqui.
+                                </p>
+                            </div>
+                        </Link>
+                    </div>
+
+                    <p className="type-overline pt-3">Tipos de notificação</p>
                     <ToggleRow label="Gostos nas minhas publicações" sub="Quando alguém gosta de um post teu" k="notif_likes" prefs={prefs} setPref={setPref} />
                     <ToggleRow label="Comentários" sub="Respostas e fóruns" k="notif_comments" prefs={prefs} setPref={setPref} />
                     <ToggleRow label="Novos seguidores" k="notif_follows" prefs={prefs} setPref={setPref} />
@@ -268,5 +468,34 @@ function ToggleRow({ label, sub, k, prefs, setPref }) {
             </div>
             <input type="checkbox" checked={!!prefs[k]} onChange={(e) => setPref(k, e.target.checked)} className="w-5 h-5 accent-black" data-testid={`pref-${k}`} />
         </label>
+    );
+}
+
+function SettingsChipGroup({ label, options, value, onChange, testid }) {
+    return (
+        <div>
+            <p className="type-overline mb-2">{label}</p>
+            <div className="flex flex-wrap gap-1.5" data-testid={testid}>
+                {options.map((opt) => {
+                    const active = value === opt.key;
+                    return (
+                        <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => onChange(active ? "" : opt.key)}
+                            data-testid={`${testid}-${opt.key}`}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] tracking-tight border transition tap-shrink ${
+                                active
+                                    ? "chip-on border-transparent !text-white font-semibold"
+                                    : "border-black/[0.10] hover:border-black/30 hover:bg-black/[0.03] text-black/75"
+                            }`}
+                        >
+                            <span aria-hidden>{opt.emoji}</span>
+                            {opt.label}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
     );
 }

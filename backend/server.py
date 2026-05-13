@@ -37,7 +37,15 @@ MENTION_RE = re.compile(r"@([a-zA-Z0-9_]+)")
 ONLINE_WINDOW = timedelta(minutes=2)
 
 # Fase 1: rich posts ----------------------------------------------------------
-ALLOWED_REACTIONS = {"❤️", "🔥", "👏", "😂", "💯", "😢"}
+ALLOWED_REACTIONS = {"saudade", "comove", "tasca", "bombou", "cafe", "orgulho"}
+REACTION_EMOJI = {
+    "saudade": "🫶",
+    "comove": "🥲",
+    "tasca": "😂",
+    "bombou": "🔥",
+    "cafe": "☕",
+    "orgulho": "🇵🇹",
+}
 VALID_AUDIENCES = {"everyone", "following", "mentioned"}
 MAX_IMAGES_PER_POST = 4
 MAX_POLL_OPTIONS = 4
@@ -322,6 +330,17 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "last_seen": user.get("last_seen"),
         "online": is_online(user.get("last_seen")),
         "created_at": user.get("created_at"),
+        # PT identity / place graph
+        "city": user.get("city", ""),
+        "freguesia": user.get("freguesia", ""),
+        "region": user.get("region", ""),
+        "mood_initial": user.get("mood_initial", ""),
+        "team": user.get("team", ""),
+        "bio_slots": user.get("bio_slots", {}) or {},
+        # Healthy-mode preferences
+        "boa_noite_enabled": user.get("boa_noite_enabled", True),
+        "cafezinho_enabled": user.get("cafezinho_enabled", False),
+        "feed_mix": user.get("feed_mix") or {"friends": 40, "interest": 30, "place": 30},
     }
     if extra:
         data.update(extra)
@@ -439,6 +458,7 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "reactions": _enriched_reactions(post.get("reactions", {}), viewer_id),
         "poll": _enriched_poll(post.get("poll"), viewer_id),
         "reply_audience": post.get("reply_audience", "everyone"),
+        "audience_ring": post.get("audience_ring", "publico"),
         "is_draft": bool(post.get("is_draft")),
         "scheduled_at": post.get("scheduled_at"),
         "mood": detect_mood(post.get("content", "")),
@@ -447,13 +467,15 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
 
 
 def _enriched_reactions(raw: dict, viewer_id: Optional[str]) -> dict:
-    """Convert raw reactions dict to {emoji: {count, reacted}}."""
+    """Convert raw reactions dict to {key: {count, reacted, emoji}}.
+    Backwards compatible — strips legacy emoji keys silently."""
     out = {}
-    for emoji in ALLOWED_REACTIONS:
-        users = raw.get(emoji, []) if isinstance(raw, dict) else []
-        out[emoji] = {
+    for key in ALLOWED_REACTIONS:
+        users = raw.get(key, []) if isinstance(raw, dict) else []
+        out[key] = {
             "count": len(users),
             "reacted": (viewer_id in users) if viewer_id else False,
+            "emoji": REACTION_EMOJI.get(key, ""),
         }
     return out
 
@@ -522,6 +544,16 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=6)
     username: str = Field(min_length=3, max_length=20)
     name: str = Field(min_length=1, max_length=50)
+    # PT identity (onboarding 60s) — all optional, may be set later in /onboarding step
+    city: Optional[str] = None
+    freguesia: Optional[str] = None
+    region: Optional[str] = None  # norte | centro | lisboa | alentejo | algarve | madeira | acores | emigrante
+    mood_initial: Optional[str] = None  # saudade | festa | tasca | fado | bola | cafe | praia | cultura
+    team: Optional[str] = None  # slb | fcp | scp | outro | nenhum
+    # consent (RGPD audit trail)
+    terms_accepted: Optional[bool] = False
+    age_confirmed: Optional[bool] = False
+    marketing_opt_in: Optional[bool] = False
 
 
 class LoginIn(BaseModel):
@@ -544,6 +576,18 @@ class UpdateProfileIn(BaseModel):
     avatar: Optional[str] = None
     banner: Optional[str] = None
     private: Optional[bool] = None
+    # PT identity / place graph
+    city: Optional[str] = None
+    freguesia: Optional[str] = None
+    region: Optional[str] = None
+    mood_initial: Optional[str] = None
+    team: Optional[str] = None
+    # Bio slots (semantic profile fields, all optional)
+    bio_slots: Optional[dict] = None  # {city, mood_today, soundtrack, reading, favourite_place, quote_of_month}
+    # Healthy-mode preferences
+    boa_noite_enabled: Optional[bool] = None  # silence push 23h-08h
+    cafezinho_enabled: Optional[bool] = None  # morning 60s session
+    feed_mix: Optional[dict] = None  # {friends: 40, interest: 30, place: 30}
 
 
 class PostIn(BaseModel):
@@ -556,6 +600,7 @@ class PostIn(BaseModel):
     scheduled_at: Optional[str] = None  # ISO future date → scheduled
     is_draft: Optional[bool] = False
     reply_audience: Optional[str] = "everyone"  # everyone | following | mentioned
+    audience_ring: Optional[str] = "publico"  # publico | amigos | tasca
 
 
 class PostEditIn(BaseModel):
@@ -614,13 +659,34 @@ async def register(payload: RegisterIn, response: Response):
         raise HTTPException(400, "Email já registado")
     if await db.users.find_one({"username": username}):
         raise HTTPException(400, "Username já em uso")
+    now = now_iso()
     user = {
         "id": str(uuid.uuid4()), "email": email, "username": username,
         "name": payload.name, "password_hash": hash_password(payload.password),
         "bio": "", "avatar": "", "banner": "",
         "verified": False, "private": False, "onboarded": False,
         "followers": [], "following": [], "bookmarks": [],
-        "last_seen": now_iso(), "created_at": now_iso(),
+        "last_seen": now, "created_at": now,
+        # PT identity
+        "city": (payload.city or "").strip(),
+        "freguesia": (payload.freguesia or "").strip(),
+        "region": (payload.region or "").lower().strip(),
+        "mood_initial": (payload.mood_initial or "").lower().strip(),
+        "team": (payload.team or "").lower().strip(),
+        "bio_slots": {},
+        # Healthy-mode defaults (anti-dark-pattern)
+        "boa_noite_enabled": True,
+        "cafezinho_enabled": False,
+        "feed_mix": {"friends": 40, "interest": 30, "place": 30},
+        # RGPD consent audit trail (Lei 58/2019 art. 16)
+        "consent": {
+            "terms_accepted": bool(payload.terms_accepted),
+            "age_confirmed": bool(payload.age_confirmed),
+            "marketing_opt_in": bool(payload.marketing_opt_in),
+            "terms_version": 1,
+            "privacy_version": 1,
+            "accepted_at": now,
+        },
     }
     await db.users.insert_one(user)
     token = create_access_token(user["id"], email)
@@ -1019,11 +1085,15 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
         if not q:
             raise HTTPException(404, "Publicação citada não encontrada")
+        # F4.2 — repost curado: requires meaningful context to reduce viral spam
+        if len((payload.content or "").strip()) < 5:
+            raise HTTPException(400, "Acrescenta pelo menos uma frase ao repostar (5+ caracteres). É a regra da casa: republicar exige contexto.")
     images = normalize_images(payload.images, payload.image)
     poll = build_poll(payload.poll) if payload.poll else None
     if not payload.content.strip() and not images and not poll and not payload.quote_of:
         raise HTTPException(400, "Publicação vazia")
     audience = payload.reply_audience if payload.reply_audience in VALID_AUDIENCES else "everyone"
+    audience_ring = payload.audience_ring if payload.audience_ring in {"publico", "amigos", "tasca"} else "publico"
 
     # Scheduled / draft handling
     scheduled_at = None
@@ -1049,6 +1119,7 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         "quote_of": payload.quote_of,
         "poll": poll,
         "reply_audience": audience,
+        "audience_ring": audience_ring,
         "is_draft": bool(payload.is_draft),
         "scheduled_at": scheduled_at,
         "edit_history": [],
@@ -2739,6 +2810,221 @@ async def seed_pt_demo():
 @app.on_event("shutdown")
 async def shutdown():
     client.close()
+
+
+# ============================================================
+# PT-NATIVE FEATURES — Calendário, A Tarde, Sino do Bairro, Badges narrativos
+# ============================================================
+
+# Static PT cultural calendar — events that drive emotional engagement
+PT_CALENDAR_EVENTS = [
+    # date format: "MM-DD" recurring yearly; or "YYYY-MM-DD" for one-off
+    {"date": "01-01", "key": "ano_novo",       "label": "Ano Novo",                "emoji": "🎆", "theme": "festa"},
+    {"date": "04-25", "key": "25_abril",       "label": "25 de Abril",             "emoji": "🌹", "theme": "cultura"},
+    {"date": "05-01", "key": "dia_trabalhador","label": "Dia do Trabalhador",      "emoji": "✊", "theme": "cultura"},
+    {"date": "06-10", "key": "dia_portugal",   "label": "Dia de Portugal",         "emoji": "🇵🇹", "theme": "orgulho"},
+    {"date": "06-13", "key": "santo_antonio",  "label": "Santo António (Lisboa)",  "emoji": "🌿", "theme": "festa"},
+    {"date": "06-24", "key": "sao_joao",       "label": "S. João (Porto)",         "emoji": "🔨", "theme": "festa"},
+    {"date": "06-29", "key": "sao_pedro",      "label": "S. Pedro",                "emoji": "🐟", "theme": "festa"},
+    {"date": "10-05", "key": "republica",      "label": "Implantação da República","emoji": "🇵🇹", "theme": "cultura"},
+    {"date": "11-01", "key": "todos_santos",   "label": "Todos os Santos",         "emoji": "🕯️", "theme": "saudade"},
+    {"date": "12-01", "key": "restauracao",    "label": "Restauração",             "emoji": "🇵🇹", "theme": "cultura"},
+    {"date": "12-08", "key": "imaculada",      "label": "Imaculada Conceição",     "emoji": "⛪", "theme": "cultura"},
+    {"date": "12-24", "key": "consoada",       "label": "Consoada",                "emoji": "🎄", "theme": "saudade"},
+    {"date": "12-25", "key": "natal",          "label": "Natal",                   "emoji": "🎄", "theme": "saudade"},
+    {"date": "12-31", "key": "passagem",       "label": "Passagem de Ano",         "emoji": "🎇", "theme": "festa"},
+    # Soft events — academic / fiscal calendar
+    {"date": "06-01", "key": "exames",         "label": "Época de exames",         "emoji": "📚", "theme": "tasca"},
+    {"date": "06-30", "key": "irs",            "label": "Último dia IRS",          "emoji": "💸", "theme": "tasca"},
+    {"date": "09-15", "key": "regresso_aulas", "label": "Regresso às aulas",       "emoji": "✏️", "theme": "saudade"},
+]
+
+
+def _pt_today_event(today: Optional[datetime] = None) -> Optional[dict]:
+    """Returns event matching today's date, or the nearest within 1 day."""
+    today = today or datetime.now(timezone.utc)
+    today_md = today.strftime("%m-%d")
+    for ev in PT_CALENDAR_EVENTS:
+        if ev["date"] == today_md:
+            return {**ev, "is_today": True}
+    # Soft window: tomorrow
+    tomorrow = (today + timedelta(days=1)).strftime("%m-%d")
+    for ev in PT_CALENDAR_EVENTS:
+        if ev["date"] == tomorrow:
+            return {**ev, "is_today": False, "is_tomorrow": True}
+    return None
+
+
+@api.get("/calendar/pt")
+async def calendar_pt(viewer: Optional[dict] = Depends(maybe_user)):
+    """Returns today's PT cultural event (if any) + the next 3 upcoming.
+    Powers the F5.3 Calendário PT banner on the Feed."""
+    today = datetime.now(timezone.utc)
+    current = _pt_today_event(today)
+    # Next 3 upcoming within 60 days
+    upcoming = []
+    for offset in range(1, 61):
+        d = today + timedelta(days=offset)
+        md = d.strftime("%m-%d")
+        for ev in PT_CALENDAR_EVENTS:
+            if ev["date"] == md:
+                upcoming.append({**ev, "days_until": offset, "iso_date": d.strftime("%Y-%m-%d")})
+                break
+        if len(upcoming) >= 3:
+            break
+    return {"today": current, "upcoming": upcoming}
+
+
+@api.get("/daily/digest")
+async def daily_digest(viewer: Optional[dict] = Depends(maybe_user)):
+    """F1.1 — A Tarde. Single curated daily digest.
+    Returns the top 3 posts of the last 24h, weighted by:
+      · reactions count
+      · place affinity (same city/region as viewer)
+      · author diversity (avoids single creator dominating)
+    Healthy by design: only one digest per day, fixed shape."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    raw = await db.posts.find(
+        {
+            "created_at": {"$gte": cutoff},
+            "repost_of": {"$exists": False},
+            "is_draft": {"$ne": True},
+            "$or": [
+                {"scheduled_at": None},
+                {"scheduled_at": {"$exists": False}},
+                {"scheduled_at": {"$lte": now_iso()}},
+            ],
+            "audience_ring": {"$in": ["publico", None]},  # only public posts in digest
+        },
+        {"_id": 0},
+    ).to_list(200)
+
+    viewer_city = (viewer or {}).get("city", "").lower() if viewer else ""
+    viewer_region = (viewer or {}).get("region", "").lower() if viewer else ""
+
+    def score(p: dict) -> float:
+        reactions = p.get("reactions", {}) or {}
+        rc = sum(len(v) if isinstance(v, list) else 0 for v in reactions.values())
+        likes = len(p.get("likes", []))
+        s = rc * 1.4 + likes * 0.8 + len(p.get("bookmarks", [])) * 1.6
+        # Place affinity boost (the unique PT differentiator)
+        content_lower = (p.get("content", "") + " ".join(p.get("hashtags", []))).lower()
+        if viewer_city and viewer_city in content_lower:
+            s *= 1.5
+        if viewer_region and viewer_region in content_lower:
+            s *= 1.2
+        return s
+
+    ranked = sorted(raw, key=score, reverse=True)
+    seen_authors = set()
+    picked = []
+    for p in ranked:
+        if p["author_id"] in seen_authors:
+            continue
+        seen_authors.add(p["author_id"])
+        picked.append(p)
+        if len(picked) >= 3:
+            break
+
+    enriched = [await enrich_post(p, viewer) for p in picked]
+    return {
+        "digest": enriched,
+        "generated_at": now_iso(),
+        "headline": "A Tarde · 3 momentos da comunidade nas últimas 24h",
+    }
+
+
+@api.get("/bairro/events")
+async def bairro_events(viewer=Depends(get_current_user)):
+    """F5.2 — Sino do Bairro. Returns the nearest event in viewer's city/region
+    happening in the next 7 days. Rate-limited via client (max 1 visible bell per week)."""
+    city = (viewer.get("city", "") or "").strip().lower()
+    region = (viewer.get("region", "") or "").strip().lower()
+    if not city and not region:
+        return {"event": None, "reason": "Indica a tua cidade no perfil para receberes o Sino do Bairro."}
+    now = datetime.now(timezone.utc)
+    horizon = (now + timedelta(days=7)).isoformat()
+    cur = await db.events.find(
+        {
+            "starts_at": {"$gte": now.isoformat(), "$lte": horizon},
+        },
+        {"_id": 0},
+    ).to_list(50)
+    # Score events by city/region match in location text
+    def ev_score(e):
+        loc = (e.get("location", "") or "").lower()
+        s = 0
+        if city and city in loc:
+            s += 10
+        if region and region in loc:
+            s += 4
+        return s
+    cur = [e for e in cur if ev_score(e) > 0]
+    cur.sort(key=ev_score, reverse=True)
+    if not cur:
+        return {"event": None}
+    return {"event": cur[0]}
+
+
+@api.get("/badges/narrative")
+async def narrative_badges(user=Depends(get_current_user)):
+    """F2.2 — Badges narrativos. Computes seasonal/ritual badges on-the-fly.
+    Cheap to call (under 50ms) — used in profile and notifications."""
+    badges = []
+    user_id = user["id"]
+
+    # Café das 7h32 — published 5+ days before 08:00 UTC
+    early_count = await db.posts.count_documents({
+        "author_id": user_id,
+        "$expr": {"$lt": [{"$hour": {"$dateFromString": {"dateString": "$created_at"}}}, 8]},
+    })
+    if early_count >= 5:
+        badges.append({"key": "cafe_das_732", "label": "Café das 7h32", "emoji": "☕", "desc": "Publicas antes das 8h. Madrugador."})
+
+    # Tasca-mestre — owns/moderates community with 50+ members
+    big_comm = await db.communities.find_one({"owner_id": user_id, "members": {"$size": 50}}, {"_id": 0})
+    if not big_comm:
+        big_comm = await db.communities.find_one({"owner_id": user_id}, {"_id": 0})
+        if big_comm and len(big_comm.get("members", [])) >= 50:
+            badges.append({"key": "tasca_mestre", "label": "Tasca-mestre", "emoji": "🍷", "desc": "Comunidade com 50+ pessoas. Sentas pessoas à mesa."})
+    else:
+        badges.append({"key": "tasca_mestre", "label": "Tasca-mestre", "emoji": "🍷", "desc": "Comunidade com 50+ pessoas. Sentas pessoas à mesa."})
+
+    # Saudade verificada — at least one post with mood "saudade" and 20+ reactions
+    saudade_posts = await db.posts.find(
+        {"author_id": user_id, "audience_ring": {"$in": ["publico", None]}},
+        {"_id": 0},
+    ).to_list(50)
+    for p in saudade_posts:
+        if "saudade" in (p.get("content", "") + " ".join(p.get("hashtags", []))).lower():
+            rc = sum(len(v) if isinstance(v, list) else 0 for v in (p.get("reactions") or {}).values())
+            if rc >= 20 or len(p.get("likes", [])) >= 20:
+                badges.append({"key": "saudade_verificada", "label": "Saudade verificada", "emoji": "🫶", "desc": "20+ pessoas comoveram-se com um post teu."})
+                break
+
+    # Maré viva — published in 7+ consecutive days during summer (Jun-Sep)
+    if datetime.now(timezone.utc).month in (6, 7, 8, 9):
+        # rough check — last 7 days have at least 1 post each
+        days_with_posts = set()
+        recent = await db.posts.find(
+            {"author_id": user_id, "created_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()}},
+            {"_id": 0, "created_at": 1},
+        ).to_list(200)
+        for p in recent:
+            try:
+                d = datetime.fromisoformat(p["created_at"].replace("Z", "+00:00")).date()
+                days_with_posts.add(d)
+            except Exception:
+                pass
+        if len(days_with_posts) >= 7:
+            badges.append({"key": "mare_viva", "label": "Maré viva", "emoji": "🌊", "desc": "7 dias seguidos a publicar no verão."})
+
+    # Voz da [região] — most engaged author from the user's region this month (informational)
+    region = (user.get("region") or "").strip().lower()
+    if region:
+        badges.append({"key": f"voz_{region}", "label": f"Voz d{'a' if region != 'algarve' else 'o'} {region.title()}", "emoji": "📣", "desc": f"A escrever a partir d{'a' if region != 'algarve' else 'o'} {region.title()}.", "soft": True})
+
+    return {"badges": badges}
 
 
 app.include_router(api)

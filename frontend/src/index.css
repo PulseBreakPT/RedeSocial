@@ -530,6 +530,24 @@
     }
     .prose-legal hr { border: 0; height: 1px; background: rgba(0,0,0,0.08); margin: 2.5rem 0; }
 
+    /* Form input — reusable across auth/settings */
+    .vm-input {
+        width: 100%;
+        background-color: #fafafa;
+        border: 1px solid rgba(13, 13, 16, 0.10);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 15px;
+        color: #0a0a0a;
+        transition: background-color 200ms ease, border-color 200ms ease;
+    }
+    .vm-input::placeholder { color: rgba(13, 13, 16, 0.35); }
+    .vm-input:focus {
+        background-color: #ffffff;
+        border-color: rgba(13, 13, 16, 0.40);
+        outline: none;
+    }
+
     /* not-prose escape — reset typography inside cards/widgets nested in .prose-legal */
     .prose-legal .not-prose,
     .prose-legal .not-prose * { color: inherit; }

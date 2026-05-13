@@ -191,6 +191,29 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                 </span>
                             )}
                             <EditHistoryButton history={editHistory} currentContent={content} />
+                            {/* F2.4 — identity ring badge (only when not publico, since publico is the default) */}
+                            {post.audience_ring && post.audience_ring !== "publico" && (
+                                <span
+                                    className="inline-flex items-center gap-1 font-mono text-[10px] text-black/55 px-1.5 py-0.5 rounded-full border border-black/[0.08]"
+                                    title={
+                                        post.audience_ring === "amigos"
+                                            ? "Anel azul-tejo — apenas seguidores"
+                                            : "Anel terracota — grupo íntimo (Tasca)"
+                                    }
+                                    data-testid={`ring-${post.id}`}
+                                >
+                                    <span
+                                        className="w-2 h-2 rounded-full"
+                                        style={{
+                                            background:
+                                                post.audience_ring === "amigos"
+                                                    ? "linear-gradient(135deg, #6a91cc 0%, #2c6fd1 100%)"
+                                                    : "linear-gradient(135deg, #df8a7d 0%, #c64a3d 100%)",
+                                        }}
+                                    />
+                                    {post.audience_ring === "amigos" ? "Amigos" : "Tasca"}
+                                </span>
+                            )}
                             {audience !== "everyone" && (
                                 <span
                                     className="inline-flex items-center gap-0.5 font-mono text-[10px] text-black/40 px-1.5 py-0.5 rounded-full border border-black/[0.08]"

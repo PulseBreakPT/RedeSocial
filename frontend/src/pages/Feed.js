@@ -9,6 +9,7 @@ import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
+import { CalendarPTBanner, ATardeBanner, SinoBairroBanner } from "../components/PTBanners";
 
 const SORTS = [
     { key: "recent", label: "Recente", icon: Clock },
@@ -194,6 +195,12 @@ export default function Feed() {
             <StoriesBar />
             <MobileDiscoverStrip />
             <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} />
+
+            <div className="px-4 lg:px-5 pt-3">
+                <CalendarPTBanner />
+                <ATardeBanner />
+                <SinoBairroBanner />
+            </div>
 
             {loading ? (
                 <PostSkeletonList count={5} />
