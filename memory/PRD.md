@@ -43,17 +43,18 @@ Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Caf
 - `GET /api/messages/unread-count`
 
 ## Changelog
-- **2026-02-14** — **Fix definitivo "Não autenticado" (5 camadas de defesa)**:
-  - **Camada 1 — Backend**: mantida `HTTPException 401 "Não autenticado"` (já é o canónico); nunca chega ao utilizador.
-  - **Camada 2 — Interceptor axios global** (`/lib/api.js`): captura todos os 401, marca `err._isAuth`, classifica `_authReason` em `expired/missing/anonymous`, dispara `authListener`.
-  - **Camada 3 — `formatApiError`**: early-exit para erros auth → retorna `""`. Filtro defensivo contra qualquer "Não autenticado"/"Token inválido" residual.
-  - **Camada 4 — `toastApiError` helper**: drop-in para `toast.error(formatApiError(...))`. Suprime erros auth e erros vazios (sonner não mostra toast em branco). Refactor automatizado de 24 ficheiros (24 imports + 50+ call sites).
-  - **Camada 5 — `AuthContext` 401 listener**: reagiu por motivo:
-    - `anonymous` → downgrade silencioso (sem toast). Anonymous browsing é feature, não erro.
-    - `expired/missing` → 1 toast `id: "session-expired"` ("A tua sessão expirou. Volta a entrar para continuar."), dedupe via Sonner; limpa token; transita user → `false`.
-  - **Token backup em localStorage** (`vm_token`) + interceptor de request adiciona `Authorization: Bearer` automaticamente — defesa contra Safari ITP / cookie partitioning / cross-site cookie blocking.
-  - **Validação E2E**: navegação anónima ✅ · login + 5 páginas protegidas ✅ · token revogado + ações Settings ✅ — `document.body.innerText.match(/Não autenticado/)` = 0 em todos os cenários.
-- **2026-02-14** — Messages UX overhaul.
+- **2026-02-14** — **Profile SSS-tier (P0)** — reescrita completa de `Profile.js`:
+  - **Region-aware banner** — gradiente do banner adapta-se à região (Lisboa = azul-tejo, Algarve = azul-mar, Alentejo = ouro, Norte = verde-pinhal, etc.) com nameplate editorial.
+  - **Identity Fingerprint Strip** (novo, signature da página) — endpoint `GET /users/{username}/fingerprint` agrega dos posts: top hashtag, top mood, top reaction dada/recebida, comunidade preferida, hora-pico de publicação. Renderiza 3-6 cards "Como {Nome} aparece aqui · Análise de N posts" com eyebrow + headline + detalhe.
+  - **Identity pills row** — Level/REP · Online · Streak · Região (com emoji) · Mood · Time (não-default).
+  - **Bio slots** como chips semânticos com ícones — `Mood do dia: saudade · Banda sonora: José Afonso · A ler: Saramago · Lugar favorito: Miradouro da Graça · Frase do mês · Bairro/Freguesia`.
+  - **6 tabs** (era 5): adicionado **"Comunidades"** com endpoint novo `GET /users/{username}/communities` (badge "moderador" para owners).
+  - **Tabs sticky** com `backdrop-blur` + indicador coral grad-bar (era preto liso).
+  - **Empty states premium** — ícone + título + sub específicos por tab (não genérico).
+  - **Tudo mobile-first** validado em 390×844: identity pills wrap, fingerprint 2-col, banner com region-emoji.
+  - **2 novos endpoints backend** + ~600 linhas frontend.
+- **2026-02-14** — Fix definitivo "Não autenticado" (5 camadas).
+- **2026-02-14** — Messages overhaul.
 - **2026-02-14** — PT Engagement v1 + v2 (18 features) + Mobile parity.
 - **2026-02-14** — **PT Engagement v1**: F2.1 Onboarding 60s, F2.4 Anel de identidade, F3.1 Reactions PT, F1.1 A Tarde, F1.4 Boa Noite, F2.2 Badges narrativos, F2.3 Bio slots, F4.2 Repost curado, F5.1 Place graph, F5.2 Sino do Bairro, F5.3 Calendário PT, F1.2 Cafezinho, MAN Manifesto, RGPD consent persistence.
 

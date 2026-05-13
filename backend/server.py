@@ -3162,6 +3162,133 @@ async def diaspora_heatmap(viewer: Optional[dict] = Depends(maybe_user)):
     }
 
 
+# ============================================================
+# F: SSS-tier Profile — identity fingerprint endpoint
+# ============================================================
+@api.get("/users/{username}/fingerprint")
+async def user_fingerprint(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    """Returns the 'PT identity signature' of a user, aggregated from their posts:
+      · top hashtags (voice)
+      · top mood detected
+      · top reaction emoji given out
+      · top reaction emoji received
+      · top community
+      · most-active hour (when do they post?)
+    Powers the editorial Profile hero strip."""
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not await can_view_profile(user, viewer):
+        return {"available": False}
+
+    posts = await db.posts.find(
+        {"author_id": user["id"], "is_draft": {"$ne": True}, "repost_of": {"$exists": False}},
+        {"_id": 0},
+    ).to_list(500)
+
+    # Top hashtags
+    htag_counts: dict[str, int] = {}
+    for p in posts:
+        for t in p.get("hashtags", []):
+            htag_counts[t] = htag_counts.get(t, 0) + 1
+    top_hashtags = sorted(htag_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    # Top mood
+    mood_counts: dict[str, int] = {}
+    for p in posts:
+        m = detect_mood(p.get("content", ""))
+        if m:
+            mood_counts[m] = mood_counts.get(m, 0) + 1
+    top_mood = max(mood_counts.items(), key=lambda x: x[1])[0] if mood_counts else None
+
+    # Reactions received (aggregate by key)
+    react_recv: dict[str, int] = {}
+    for p in posts:
+        for k, lst in (p.get("reactions") or {}).items():
+            if isinstance(lst, list):
+                react_recv[k] = react_recv.get(k, 0) + len(lst)
+    top_react_recv = max(react_recv.items(), key=lambda x: x[1])[0] if react_recv else None
+
+    # Reactions given — search posts where this user appears in any reaction list
+    user_id = user["id"]
+    given_cur = await db.posts.find(
+        {"$or": [{f"reactions.{k}": user_id} for k in ALLOWED_REACTIONS]},
+        {"_id": 0, "reactions": 1},
+    ).to_list(1000)
+    react_given: dict[str, int] = {}
+    for p in given_cur:
+        for k, lst in (p.get("reactions") or {}).items():
+            if isinstance(lst, list) and user_id in lst:
+                react_given[k] = react_given.get(k, 0) + 1
+    top_react_given = max(react_given.items(), key=lambda x: x[1])[0] if react_given else None
+
+    # Top community
+    comm_counts: dict[str, int] = {}
+    for p in posts:
+        cid = p.get("community_id")
+        if cid:
+            comm_counts[cid] = comm_counts.get(cid, 0) + 1
+    top_comm = None
+    if comm_counts:
+        cid = max(comm_counts.items(), key=lambda x: x[1])[0]
+        c = await db.communities.find_one({"id": cid}, {"_id": 0})
+        if c:
+            top_comm = {"id": c["id"], "slug": c.get("slug"), "name": c.get("name"), "posts": comm_counts[cid]}
+
+    # Most-active hour (UTC; rough proxy)
+    hour_counts: dict[int, int] = {}
+    for p in posts:
+        try:
+            h = datetime.fromisoformat(p["created_at"].replace("Z", "+00:00")).hour
+            hour_counts[h] = hour_counts.get(h, 0) + 1
+        except Exception:
+            pass
+    peak_hour = max(hour_counts.items(), key=lambda x: x[1])[0] if hour_counts else None
+
+    return {
+        "available": True,
+        "top_hashtags": [{"tag": t, "count": c} for t, c in top_hashtags],
+        "top_mood": top_mood,
+        "top_react_received": (
+            {"key": top_react_recv, "emoji": REACTION_EMOJI.get(top_react_recv, ""), "count": react_recv[top_react_recv]}
+            if top_react_recv else None
+        ),
+        "top_react_given": (
+            {"key": top_react_given, "emoji": REACTION_EMOJI.get(top_react_given, ""), "count": react_given[top_react_given]}
+            if top_react_given else None
+        ),
+        "top_community": top_comm,
+        "peak_hour": peak_hour,
+        "posts_analyzed": len(posts),
+    }
+
+
+@api.get("/users/{username}/communities")
+async def user_communities(username: str, viewer: Optional[dict] = Depends(maybe_user)):
+    """All communities the user is a member of, ordered by member count."""
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not await can_view_profile(user, viewer):
+        return []
+    raw = await db.communities.find(
+        {"members": user["id"]},
+        {"_id": 0},
+    ).to_list(50)
+    out = []
+    for c in raw:
+        out.append({
+            "id": c["id"],
+            "slug": c.get("slug"),
+            "name": c.get("name"),
+            "category": c.get("category"),
+            "members_count": len(c.get("members", [])),
+            "is_owner": c.get("owner_id") == user["id"],
+        })
+    out.sort(key=lambda x: x["members_count"], reverse=True)
+    return out
+
+
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
