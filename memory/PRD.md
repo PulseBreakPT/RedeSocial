@@ -43,15 +43,18 @@ Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Caf
 - `GET /api/messages/unread-count`
 
 ## Changelog
+- **2026-02-14** — **Legal Hub redesign (P0)**: `LegalShell.js` reescrito com layout editorial a 3 colunas, sticky TOC com scroll-spy, barra de progresso de leitura, badges de secção auto-numerados (`01`, `02`…), botões partilhar/imprimir, índice colapsável em mobile. Nova rota `/legal/glossary` com 7 secções (autoridades, papéis, fundamentos RGPD, termos da plataforma, cookies, direitos, convenções). CSS `prose-legal` reforçado com escape hatch `.not-prose` para componentes embutidos.
 - **2026-02-13** — Phase 2 Portuguese backend (trending velocity, explore by mood, badges, region mapping, bookmark collections) + 14 frontend pages reescritas com mecânicas PT.
 - **2026-02-13** — **Fix P0**: 401 loop no boot anónimo. `/api/auth/me` agora usa `maybe_user()` e devolve `{user: null}` em vez de 401. `AuthContext` consome `data.user`. Validado por testing agent (50/50 backend, 14/14 frontend).
 
 ## Roadmap (Backlog)
 **P1**
+- **Backend: tracking de consentimento no registo** — Atualizar `POST /api/auth/register` para receber e gravar `terms_accepted_at`, `privacy_accepted_at`, `age_confirmed` no documento de utilizador (compliance RGPD).
 - Ampliar mecânicas em rotas mais leves (Drafts, Scheduled, TagPage, Settings — ex.: filtros por mood/cidade, atalhos de teclado, ações em massa).
 - Profile: estatísticas por região/mood, mural de badges PT.
 
 **P2**
+- Substituir placeholders legais (`[NIPC]`, `[Morada]`, `[DPO]`, `[Cidade]`, `[data da última versão]`) por dados reais da entidade antes de produção.
 - Imagens externas para badges/categorias (via `vision_expert_agent`).
 - Refactor de `server.py` (2752 linhas) em módulos: `auth.py`, `posts.py`, `users.py`, `communities.py`, `events.py`, `trending.py`.
 - Stripe/PayPal para "tasca premium" (subscrições opcionais).
