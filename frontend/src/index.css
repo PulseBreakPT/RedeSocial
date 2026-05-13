@@ -95,7 +95,7 @@
     body {
         background-image:
             radial-gradient(circle at 12% -5%, rgba(44, 111, 209, 0.06), transparent 45%),
-            radial-gradient(circle at 92% 100%, rgba(232, 93, 79, 0.05), transparent 50%);
+            radial-gradient(circle at 92% 100%, rgba(30, 84, 170, 0.05), transparent 50%);
         background-attachment: fixed;
         touch-action: manipulation;
     }
@@ -337,31 +337,31 @@
     .btn-obsidian:hover,
     .btn-obsidian:focus-visible,
     .btn-obsidian.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         box-shadow: 0 10px 24px -8px rgba(74, 123, 191, 0.40),
-                    0 6px 18px -10px rgba(223, 138, 125, 0.35),
+                    0 6px 18px -10px rgba(30, 61, 128, 0.35),
                     inset 0 1px 0 rgba(255, 255, 255, 0.16);
         transform: translateY(-1px);
         filter: saturate(1.05);
     }
     .btn-obsidian:active {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #db8378 100%);
+        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
         transform: scale(0.97);
     }
     .btn-obsidian svg { color: #fff; }
 
     /* ============================================================
        chip-on — toggle/chip ACTIVATED state
-       Vermillion gradient: atlantic blue → coral (Portugal: Tejo + telha)
+       Atlantic monochrome gradient (deep ocean): atl mid → light → navy
        Saturação reduzida (~30%) para tom mais suave.
        Use INSTEAD of "bg-black text-white" on selected chips/filters
        AND on action buttons that previously were solid black.
        ============================================================ */
     .chip-on {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         color: #ffffff;
         box-shadow: 0 5px 14px -8px rgba(74, 123, 191, 0.40),
-                    0 3px 10px -8px rgba(223, 138, 125, 0.30),
+                    0 3px 10px -8px rgba(30, 61, 128, 0.30),
                     inset 0 1px 0 rgba(255, 255, 255, 0.14);
         transition: background-image 320ms var(--ease-out-soft),
                     box-shadow 320ms var(--ease-out-soft),
@@ -369,9 +369,9 @@
                     filter 240ms ease;
     }
     .chip-on:hover {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #db8378 100%);
+        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
         box-shadow: 0 10px 22px -8px rgba(74, 123, 191, 0.45),
-                    0 6px 18px -10px rgba(223, 138, 125, 0.35),
+                    0 6px 18px -10px rgba(30, 61, 128, 0.35),
                     inset 0 1px 0 rgba(255, 255, 255, 0.18);
         transform: translateY(-1px);
         filter: saturate(1.05);
@@ -418,11 +418,11 @@
     /* ============================================================
        Gradient text — for nav links / inline links / tabs when ACTIVE
        Uses background-clip so the text itself becomes gradient.
-       Icons inside fall back to solid coral (avoid invisibility).
+       Icons inside fall back to solid deep blue (avoid invisibility).
        Saturação reduzida (~30%).
        ============================================================ */
     .text-grad-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -430,9 +430,9 @@
     }
     .text-grad-active > svg,
     .text-grad-active svg {
-        color: #df8a7d;
-        -webkit-text-fill-color: #df8a7d;
-        stroke: #df8a7d;
+        color: #1e3d80;
+        -webkit-text-fill-color: #1e3d80;
+        stroke: #1e3d80;
     }
     /* Hover variant: subtle gradient text on hover (for inline links) */
     .link-grad {
@@ -441,7 +441,7 @@
     }
     .link-grad:hover,
     .link-grad.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -449,14 +449,14 @@
     }
     .link-grad:hover > svg,
     .link-grad.is-active > svg {
-        color: #df8a7d;
-        -webkit-text-fill-color: #df8a7d;
-        stroke: #df8a7d;
+        color: #1e3d80;
+        -webkit-text-fill-color: #1e3d80;
+        stroke: #1e3d80;
     }
 
     /* Indicator bar / dot used by nav as ACTIVE marker */
     .grad-bar {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
     }
 
     /* ============================================================
@@ -584,7 +584,7 @@
         content: ""; width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.45);
     }
     .prose-legal .legal-callout.is-key {
-        background: linear-gradient(135deg, rgba(74,123,191,0.06) 0%, rgba(223,138,125,0.07) 100%);
+        background: linear-gradient(135deg, rgba(74,123,191,0.06) 0%, rgba(30,61,128,0.08) 100%);
         border-color: rgba(74,123,191,0.20);
     }
     .prose-legal .legal-callout.is-key > strong:first-child { color: #1e54aa; }
@@ -687,34 +687,34 @@
     /* ============================================================
        tab-grad-on — tabs com underline (border-b-2) ACTIVE state.
        Texto a gradiente + border bottom a gradiente (border-image).
-       Ícones a coral sólido.
+       Ícones a azul profundo sólido.
        ============================================================ */
     .tab-grad-on {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
         -webkit-text-fill-color: transparent;
         border-bottom-color: transparent !important;
-        border-image: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%) 1;
+        border-image: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%) 1;
         font-weight: 600;
     }
     .tab-grad-on > svg,
     .tab-grad-on svg {
-        color: #df8a7d;
-        -webkit-text-fill-color: #df8a7d;
-        stroke: #df8a7d;
+        color: #1e3d80;
+        -webkit-text-fill-color: #1e3d80;
+        stroke: #1e3d80;
     }
 
     /* Subtle background ring for icon buttons in active state (top bar) */
     .icon-grad-on {
-        background: linear-gradient(135deg, rgba(74, 123, 191, 0.12) 0%, rgba(223, 138, 125, 0.14) 100%);
-        color: #df8a7d;
+        background: linear-gradient(135deg, rgba(74, 123, 191, 0.12) 0%, rgba(30, 61, 128, 0.16) 100%);
+        color: #1e3d80;
     }
     .icon-grad-on > svg,
     .icon-grad-on svg {
-        color: #df8a7d;
-        stroke: #df8a7d;
+        color: #1e3d80;
+        stroke: #1e3d80;
     }
 
     /* Atlantic primary CTA — BLACK by default, gradient on hover/active */
@@ -735,14 +735,14 @@
     .btn-atl:hover,
     .btn-atl:focus-visible,
     .btn-atl.is-active {
-        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%);
+        background: linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #1e3d80 100%);
         box-shadow: 0 10px 22px -8px rgba(74, 123, 191, 0.35),
-                    0 5px 16px -10px rgba(223, 138, 125, 0.32),
+                    0 5px 16px -10px rgba(30, 61, 128, 0.32),
                     inset 0 1px 0 rgba(255, 255, 255, 0.16);
         transform: translateY(-1px);
     }
     .btn-atl:active {
-        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #db8378 100%);
+        background: linear-gradient(135deg, #4072b6 0%, #5e87c4 45%, #163566 100%);
         transform: scale(0.97);
     }
 
@@ -773,7 +773,7 @@
     .ring-atl {
         background:
             linear-gradient(#fff, #fff) padding-box,
-            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--coral-500), var(--sun-500), var(--atl-400)) border-box;
+            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--atl-700), var(--sun-500), var(--atl-400)) border-box;
         border: 2.5px solid transparent;
     }
     .ring-silver {
@@ -785,7 +785,7 @@
     .ring-gradient { /* legacy alias — now uses atl */
         background:
             linear-gradient(#fff, #fff) padding-box,
-            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--coral-500), var(--sun-500), var(--atl-400)) border-box;
+            conic-gradient(from 200deg, var(--atl-400), var(--atl-600), var(--atl-700), var(--sun-500), var(--atl-400)) border-box;
         border: 2.5px solid transparent;
     }
 
@@ -818,7 +818,7 @@
     .bg-paper {
         background:
             radial-gradient(circle at 0% 0%, rgba(44, 111, 209, 0.05), transparent 45%),
-            radial-gradient(circle at 100% 100%, rgba(232, 93, 79, 0.04), transparent 50%),
+            radial-gradient(circle at 100% 100%, rgba(30, 84, 170, 0.04), transparent 50%),
             #ffffff;
     }
     .bg-canvas { background-color: hsl(var(--bg)); }
