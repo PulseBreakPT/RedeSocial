@@ -1,0 +1,38 @@
+{
+  "summary": "Comprehensive Playwright frontend testing of the Settings 'SSS tier' refactor. Logged in as admin, verified Settings page loads with all 11 sidebar tabs, Hub dashboard, Security tab (2FA toggle, password validations & strength meter, session revoke, provider connect/disconnect), Data tab (storage breakdown, JSON/CSV/ZIP exports, clear cache, delete account prompt), Shortcuts tab (4 sections), global search filter (palavra/csv/teclado all matched), and mobile chip-tab navigation under <1024px viewport. Found 2 minor functional issues: (1) settings-search-clear button doesn't appear to reset the input value reliably; (2) the '/' keyboard shortcut does not focus the search input. Unsaved bar test was blocked by the search filter not being reset (cascading from issue 1). Obsidian palette preserved on desktop & mobile screenshots — no coral or dominant blue observed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Settings - sidebar search clear", "issue": "Clicking [data-testid=\"settings-search-clear\"] does not consistently reset the search input value to empty (verified via input_value()=='' === false right after click).", "selector": "[data-testid=\"settings-search-clear\"]", "priority": "MEDIUM"},
+      {"component": "Settings - global '/' shortcut", "issue": "Pressing '/' on the settings page (when body is focused) does not focus the search input as expected. document.activeElement does not become the search input.", "selector": "[data-testid=\"settings-search\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Unsaved bar (Conta tab name edit)", "issue": "Could not be verified end-to-end during this run because the search filter from the prior step (auto-selected atalhos and kept the sidebar narrowed) prevented navigation back to Conta via settings-side-conta. Suggest fixing search-clear first then re-test unsaved bar. Manual reading of /pages/Settings.js confirms unsaved-bar, unsaved-discard, and unsaved-save selectors exist and are conditionally rendered when isDirty is true.", "affected_selectors": ["[data-testid=\"unsaved-bar\"]","[data-testid=\"unsaved-save\"]","[data-testid=\"unsaved-discard\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": [
+    "Investigate settings-search-clear button: ensure onClick={() => setSearch('')} actually fires; perhaps the button is being recreated on each render and React event handler is stale, or the input is controlled in a way that requires explicit re-blur. Quick sanity check: add a small test or console.log inside the onClick.",
+    "Investigate the '/' keyboard shortcut: the listener in useEffect checks document.activeElement?.tagName not in INPUT/TEXTAREA but when the cookie banner or another global handler captures the key first (or stopPropagation in an outer keydown), the search input isn't focused. Verify by disabling all other window keydown listeners and by re-trying after the cookie banner is dismissed (we did dismiss it in our test).",
+    "Once search-clear is fixed, re-test the unsaved bar (Conta tab name/bio edit → unsaved-bar visible → save/discard removes it)."
+  ],
+  "critical_code_review_comments": [
+    "Settings.js is ~840 lines and combines orchestrator + 6 subtab components (Conta/Ident/Notif/Priv/Apar/Legal). Consider extracting each subtab into its own file under /pages/settings/ for parity with HubTab/SecurityTab/DataTab/ShortcutsTab and to keep files <700 lines.",
+    "useAuth().setUser is called after PATCH but the `initialForm` useState((init)) snapshot is never updated after a successful save — meaning after Save the Conta form still shows isDirty=true if user object is updated server-side but initialForm stays stale. Either reset initialForm on save success or compare to user directly.",
+    "Connected providers in SecurityTab.js: the `apple` and `google` providers both use the Globe icon — minor visual inconsistency; consider adding brand-correct icons.",
+    "HubTab.js computeSecurityScore uses `!!prefs.priv_search === false` which is always `false` (boolean negation then comparison) — likely intended to be `prefs.priv_search === false`. This currently never contributes to the score.",
+    "DataTab.js onClearCache: caches.keys().then(...) is fire-and-forget without await; if it fails, the user still sees a success toast immediately. Minor UX issue, low priority."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only review)", "frontend": "~88% (most flows verified; 2 minor functional issues + 1 blocked test)"},
+  "test_credentials": "admin@vermillion.app / admin123 (loaded from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Settings page lives at /settings. Use the admin creds. Cookie banner ('Aceitar todos') overlays on first visit; dismiss it before testing. The 11 sidebar tabs use selectors [data-testid='settings-side-{key}'] on desktop (>=1024px) and [data-testid='settings-tab-{key}'] in mobile chip-tabs (<1024px). After fixing search-clear, do retest the unsaved bar flow: switch to Conta tab, edit settings-name, assert [data-testid='unsaved-bar'] visible, click [data-testid='unsaved-discard'], assert it disappears. Already-verified working: all 11 sidebar tabs render, Hub action buttons (hub-edit-profile, hub-improve-security, hub-action-foryou/apar/ident/notif), Security 2FA toggle + password flow (empty/short/mismatch/valid all behaved correctly), session revoke, provider toggle, Data tab exports JSON/CSV/ZIP + clear cache + delete account prompt ('APAGAR'), Shortcuts 4 sections, search filter for 'palavra'/'csv'/'teclado'. Obsidian palette is preserved (no coral, no blue dominance) in both desktop and mobile screenshots.",
+  "rca of the issue": "Issue 1 (clear search button doesn't reset): clicking [data-testid='settings-search-clear'] should fire setSearch(''), but the input_value remained non-empty in our test. Possible causes: (a) React StrictMode double-render shenanigans; (b) the X button onClick captured by an ancestor listener; (c) the input being controlled by a value that's not React state. Most likely (b) — recommend adding e.stopPropagation() in the clear button onClick and an explicit searchRef.current?.blur() or .focus() after clearing. Issue 2 ('/' shortcut): the window keydown listener uses preventDefault when activeElement is not INPUT/TEXTAREA, but if Sonner toaster or another global hotkey handler (e.g., from Lexical/Tiptap or react-hotkeys-hook) intercepts the '/' key first with stopImmediatePropagation, our handler never fires. Recommend testing with the dev tools `getEventListeners(window)` to confirm and possibly attach with `{ capture: true }`."
+}
