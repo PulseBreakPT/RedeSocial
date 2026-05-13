@@ -3,27 +3,50 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
     LogOut, Users as UsersIcon, CalendarDays, TrendingUp,
-    FileText, Clock, X, ScrollText, Scale,
+    FileText, Clock, X, ScrollText, Scale, Globe, Eye, Gift,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 
-const items = [
-    { to: "/", label: "Início", icon: Home, testid: "mdrawer-home", end: true },
-    { to: "/explore", label: "Explorar", icon: Compass, testid: "mdrawer-explore" },
-    { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "mdrawer-trending" },
-    { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "mdrawer-communities" },
-    { to: "/events", label: "Eventos", icon: CalendarDays, testid: "mdrawer-events" },
-    { to: "/notifications", label: "Notificações", icon: Bell, testid: "mdrawer-notifications" },
-    { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "mdrawer-messages" },
-    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "mdrawer-bookmarks" },
-    { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "mdrawer-drafts" },
-    { to: "/scheduled", label: "Agendados", icon: Clock, testid: "mdrawer-scheduled" },
-    { to: "/diaspora", label: "Diáspora", icon: UsersIcon, testid: "mdrawer-diaspora" },
-    { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "mdrawer-manifesto" },
-    { to: "/legal", label: "Centro Legal", icon: Scale, testid: "mdrawer-legal" },
-    { to: "/settings", label: "Definições", icon: Settings, testid: "mdrawer-settings" },
+// Grouped nav — clearer mental model on mobile
+const groups = [
+    {
+        label: null,
+        items: [
+            { to: "/", label: "Início", icon: Home, testid: "mdrawer-home", end: true },
+            { to: "/explore", label: "Explorar", icon: Compass, testid: "mdrawer-explore" },
+            { to: "/notifications", label: "Notificações", icon: Bell, testid: "mdrawer-notifications" },
+            { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "mdrawer-messages" },
+            { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "mdrawer-communities" },
+            { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "mdrawer-bookmarks" },
+        ],
+    },
+    {
+        label: "Descobrir",
+        items: [
+            { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "mdrawer-trending" },
+            { to: "/events", label: "Eventos", icon: CalendarDays, testid: "mdrawer-events" },
+            { to: "/starter-packs", label: "Starter Packs", icon: Gift, testid: "mdrawer-starter-packs" },
+            { to: "/diaspora", label: "Diáspora", icon: Globe, testid: "mdrawer-diaspora" },
+        ],
+    },
+    {
+        label: "A minha actividade",
+        items: [
+            { to: "/visitors", label: "Visitas", icon: Eye, testid: "mdrawer-visitors" },
+            { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "mdrawer-drafts" },
+            { to: "/scheduled", label: "Agendados", icon: Clock, testid: "mdrawer-scheduled" },
+        ],
+    },
+    {
+        label: "Sobre",
+        items: [
+            { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "mdrawer-manifesto" },
+            { to: "/legal", label: "Centro Legal", icon: Scale, testid: "mdrawer-legal" },
+            { to: "/settings", label: "Definições", icon: Settings, testid: "mdrawer-settings" },
+        ],
+    },
 ];
 
 export function MobileMenuDrawer({ open, onClose }) {
@@ -98,38 +121,9 @@ export function MobileMenuDrawer({ open, onClose }) {
                     </div>
                 </div>
 
-                {/* Nav items */}
+                {/* Grouped nav */}
                 <nav className="flex-1 overflow-y-auto py-3 px-2">
-                    {items.map(({ to, label, icon: Icon, testid, end }) => (
-                        <NavLink
-                            key={to}
-                            to={to}
-                            end={end}
-                            onClick={onClose}
-                            data-testid={testid}
-                            className={({ isActive }) =>
-                                `relative flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15px] tap-shrink transition ${
-                                    isActive
-                                        ? "bg-accent-vermillion/10 text-[color:var(--atl-700)] font-semibold"
-                                        : "text-black/70 hover:bg-black/[0.04]"
-                                }`
-                            }
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    {isActive && (
-                                        <span
-                                            aria-hidden
-                                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                                            style={{ background: "var(--atl-500)" }}
-                                        />
-                                    )}
-                                    <Icon size={20} strokeWidth={isActive ? 2 : 1.6} />
-                                    <span className="tracking-tight">{label}</span>
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
+                    {/* Profile shortcut sits at the very top of the primary group */}
                     <NavLink
                         to={`/u/${user?.username}`}
                         onClick={onClose}
@@ -145,6 +139,46 @@ export function MobileMenuDrawer({ open, onClose }) {
                         <User size={20} strokeWidth={1.6} />
                         <span className="tracking-tight">Perfil</span>
                     </NavLink>
+
+                    {groups.map((group, gi) => (
+                        <div key={gi} className={gi === 0 ? "" : "mt-3 pt-3 hairline-t"}>
+                            {group.label && (
+                                <div className="px-3.5 pb-1.5 text-[11px] uppercase tracking-[0.12em] font-mono text-black/40">
+                                    {group.label}
+                                </div>
+                            )}
+                            {group.items.map(({ to, label, icon: Icon, testid, end }) => (
+                                <NavLink
+                                    key={to}
+                                    to={to}
+                                    end={end}
+                                    onClick={onClose}
+                                    data-testid={testid}
+                                    className={({ isActive }) =>
+                                        `relative flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-[15px] tap-shrink transition ${
+                                            isActive
+                                                ? "bg-accent-vermillion/10 text-[color:var(--atl-700)] font-semibold"
+                                                : "text-black/70 hover:bg-black/[0.04]"
+                                        }`
+                                    }
+                                >
+                                    {({ isActive }) => (
+                                        <>
+                                            {isActive && (
+                                                <span
+                                                    aria-hidden
+                                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                                                    style={{ background: "var(--atl-500)" }}
+                                                />
+                                            )}
+                                            <Icon size={20} strokeWidth={isActive ? 2 : 1.6} />
+                                            <span className="tracking-tight">{label}</span>
+                                        </>
+                                    )}
+                                </NavLink>
+                            ))}
+                        </div>
+                    ))}
                 </nav>
 
                 {/* Logout */}
@@ -157,12 +191,9 @@ export function MobileMenuDrawer({ open, onClose }) {
                         <LogOut size={16} strokeWidth={1.8} /> Terminar sessão
                     </button>
                     <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-black/45 justify-center">
-                        <a href="/legal" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Centro Legal</a>
                         <a href="/legal/terms" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Termos</a>
                         <a href="/legal/privacy" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
                         <a href="/legal/cookies" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Cookies</a>
-                        <a href="/legal/community" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Diretrizes</a>
-                        <a href="/manifesto" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Manifesto</a>
                     </div>
                 </div>
             </aside>
