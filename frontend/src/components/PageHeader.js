@@ -10,7 +10,7 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
     return (
         <div
             data-testid={testid}
-            className={`${sticky ? "sticky" : ""} top-[var(--mobile-topbar-h)] lg:top-0 z-30 glass border-b border-white/[0.05]`}
+            className={`${sticky ? "sticky" : ""} top-[var(--mobile-topbar-h)] lg:top-0 z-30 glass border-b border-black/[0.06]`}
         >
             <div className="flex items-center gap-3 px-4 lg:px-5 py-3 lg:py-4 min-h-[52px]">
                 {back && (
@@ -18,17 +18,17 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
                         onClick={() => navigate(-1)}
                         data-testid="page-back"
                         aria-label="voltar"
-                        className="lg:hidden -ml-1 w-9 h-9 rounded-full grid place-items-center text-zinc-300 hover:bg-white/[0.06] tap-shrink"
+                        className="lg:hidden -ml-1 w-9 h-9 rounded-full grid place-items-center text-black/70 hover:bg-black/[0.04] tap-shrink"
                     >
                         <ArrowLeft size={20} />
                     </button>
                 )}
                 <div className="flex-1 min-w-0">
-                    <h1 className="font-heading text-[18px] lg:text-[22px] font-bold tracking-tight truncate">
+                    <h1 className="font-heading text-[18px] lg:text-[22px] font-bold tracking-tight truncate text-black">
                         {title}
                     </h1>
                     {subtitle && (
-                        <p className="font-mono text-[10px] lg:text-xs uppercase tracking-[0.18em] text-zinc-500 mt-0.5 truncate">
+                        <p className="font-mono text-[10px] lg:text-xs uppercase tracking-[0.18em] text-black/40 mt-0.5 truncate">
                             {subtitle}
                         </p>
                     )}

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
     LogOut, PenSquare, Users as UsersIcon, CalendarDays, TrendingUp,
+    FileText, Clock,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -18,6 +19,8 @@ const items = [
     { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications" },
     { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "nav-messages" },
     { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
+    { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
+    { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
     { to: "/settings", label: "Definições", icon: Settings, testid: "nav-settings" },
 ];
 
@@ -45,10 +48,13 @@ export function Sidebar({ onCompose }) {
     return (
         <aside className="hidden lg:flex flex-col gap-1 sticky top-0 h-screen py-6 pr-3 overflow-y-auto" data-testid="sidebar">
             <div className="px-3 mb-7">
-                <h1 className="font-heading text-[26px] font-bold tracking-tighter leading-none">
-                    <span className="text-accent-vermillion">◆</span> vermillion
+                <h1 className="font-heading text-[26px] font-bold tracking-tighter leading-none text-black">
+                    <span
+                        className="bg-clip-text text-transparent"
+                        style={{ backgroundImage: "linear-gradient(135deg, #8b8b96, #1a1a1f 60%, #4a4a52)" }}
+                    >◆</span> vermillion
                 </h1>
-                <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-1.5">rede social</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-black/40 mt-1.5">rede social</p>
             </div>
 
             <nav className="flex flex-col gap-0.5">
@@ -61,22 +67,22 @@ export function Sidebar({ onCompose }) {
                         className={({ isActive }) =>
                             `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all tap-shrink ${
                                 isActive
-                                    ? "bg-white/[0.06] text-white"
-                                    : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                                    ? "bg-black/[0.05] text-black"
+                                    : "text-black/60 hover:bg-black/[0.03] hover:text-black"
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
                                 <span className="relative">
-                                    <Icon size={21} strokeWidth={isActive ? 2.2 : 1.75} className={isActive ? "text-accent-vermillion" : ""} />
+                                    <Icon size={21} strokeWidth={isActive ? 2.2 : 1.75} />
                                     {to === "/notifications" && counts.notif > 0 && (
-                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
+                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[9px] font-mono grid place-items-center text-white ring-2 ring-white">
                                             {counts.notif}
                                         </span>
                                     )}
                                     {to === "/messages" && counts.msg > 0 && (
-                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-accent-vermillion text-[9px] font-mono grid place-items-center text-white">
+                                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[9px] font-mono grid place-items-center text-white ring-2 ring-white">
                                             {counts.msg}
                                         </span>
                                     )}
@@ -91,13 +97,13 @@ export function Sidebar({ onCompose }) {
                     data-testid="nav-profile"
                     className={({ isActive }) =>
                         `group flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl transition-all tap-shrink ${
-                            isActive ? "bg-white/[0.06] text-white" : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
+                            isActive ? "bg-black/[0.05] text-black" : "text-black/60 hover:bg-black/[0.03] hover:text-black"
                         }`
                     }
                 >
                     {({ isActive }) => (
                         <>
-                            <User size={21} strokeWidth={isActive ? 2.2 : 1.75} className={isActive ? "text-accent-vermillion" : ""} />
+                            <User size={21} strokeWidth={isActive ? 2.2 : 1.75} />
                             <span className={`font-heading text-[15px] ${isActive ? "font-semibold" : ""}`}>Perfil</span>
                         </>
                     )}
@@ -107,27 +113,31 @@ export function Sidebar({ onCompose }) {
             <button
                 onClick={onCompose}
                 data-testid="sidebar-compose-btn"
-                className="mt-5 mx-2 bg-accent-vermillion text-white font-heading font-semibold text-[15px] tracking-tight py-3 rounded-full hover:bg-[#A78BFA] transition-all hover:scale-[1.015] tap-shrink glow-vermillion flex items-center justify-center gap-2"
+                className="mt-5 mx-2 text-white font-heading font-semibold text-[15px] tracking-tight py-3 rounded-full transition-all hover:scale-[1.015] tap-shrink flex items-center justify-center gap-2"
+                style={{
+                    background: "linear-gradient(135deg, #1a1a1f 0%, #3a3a42 50%, #1a1a1f 100%)",
+                    boxShadow: "0 12px 32px -10px rgba(13,13,16,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
+                }}
             >
                 <PenSquare size={17} strokeWidth={2.4} /> Publicar
             </button>
 
             <div className="mt-auto px-2 pt-4">
                 <div
-                    className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/[0.04] cursor-pointer transition tap-shrink"
+                    className="flex items-center gap-3 p-3 rounded-2xl hover:bg-black/[0.03] cursor-pointer transition tap-shrink border border-transparent hover:border-black/[0.06]"
                     onClick={() => navigate(`/u/${user?.username}`)}
                 >
                     <Avatar user={user} size={40} showOnline />
                     <div className="flex-1 min-w-0">
-                        <div className="font-heading font-semibold truncate text-sm flex items-center gap-1">
+                        <div className="font-heading font-semibold truncate text-sm flex items-center gap-1 text-black">
                             {user?.name} {user?.verified && <VerifiedBadge size={12} />}
                         </div>
-                        <div className="font-mono text-xs text-zinc-500 truncate">@{user?.username}</div>
+                        <div className="font-mono text-xs text-black/50 truncate">@{user?.username}</div>
                     </div>
                     <button
                         onClick={(e) => { e.stopPropagation(); logout(); }}
                         data-testid="logout-btn"
-                        className="text-zinc-500 hover:text-accent-vermillion p-2 rounded-full hover:bg-white/5"
+                        className="text-black/40 hover:text-red-soft p-2 rounded-full hover:bg-red-soft/10"
                         title="Sair"
                     >
                         <LogOut size={16} />

@@ -20,6 +20,8 @@ import Communities from "./pages/Communities";
 import Community from "./pages/Community";
 import Events from "./pages/Events";
 import Trending from "./pages/Trending";
+import Drafts from "./pages/Drafts";
+import Scheduled from "./pages/Scheduled";
 
 function App() {
     return (
@@ -27,14 +29,15 @@ function App() {
             <AuthProvider>
                 <BrowserRouter>
                     <Toaster
-                        theme="dark"
+                        theme="light"
                         position="bottom-right"
                         toastOptions={{
                             style: {
-                                background: "#121212",
-                                border: "1px solid #27272a",
-                                color: "#fafafa",
+                                background: "#ffffff",
+                                border: "1px solid rgba(0,0,0,0.08)",
+                                color: "#0d0d10",
                                 fontFamily: "Geist, sans-serif",
+                                boxShadow: "0 8px 24px -8px rgba(0,0,0,0.12)",
                             },
                         }}
                     />
@@ -56,6 +59,8 @@ function App() {
                             <Route path="/messages" element={<Messages />} />
                             <Route path="/messages/:userId" element={<Messages />} />
                             <Route path="/bookmarks" element={<Bookmarks />} />
+                            <Route path="/drafts" element={<Drafts />} />
+                            <Route path="/scheduled" element={<Scheduled />} />
                             <Route path="/communities" element={<Communities />} />
                             <Route path="/c/:slug" element={<Community />} />
                             <Route path="/events" element={<Events />} />
