@@ -101,3 +101,75 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Phase 1 of major feature expansion: rich posts. Backend additions to /app/backend/server.py:
+    - PostIn extended: images[], poll, scheduled_at, is_draft, reply_audience
+    - New constants ALLOWED_REACTIONS = {❤️,🔥,👏,😂,💯,😢}, VALID_AUDIENCES = {everyone,following,mentioned}
+    - Helper functions: normalize_images, build_poll, post_is_published, auto_publish_due_posts
+    - enrich_post returns: images, edit_history, reactions (per-emoji counts + viewer reacted), poll (with viewer vote), reply_audience, is_draft, scheduled_at
+    - POST /api/posts now accepts new fields, creates draft/scheduled when requested, defers mentions/notifications until publish
+    - PATCH /api/posts/{id} edit window extended to 24h, pushes edit_history snapshot (last 10)
+    - GET /api/posts/drafts (own drafts)
+    - GET /api/posts/scheduled (own scheduled future posts)
+    - POST /api/posts/{id}/publish (publish a draft / publish-now a scheduled post)
+    - POST /api/posts/{id}/vote {option_ids: [str]} — supports allow_multiple, toggles vote
+    - POST /api/posts/{id}/react {emoji} — toggles emoji reaction, notifies author
+    - Feed/explore/tag/user_posts now filter out drafts and future-scheduled posts (user sees own, others don't)
+    - auto_publish_due_posts runs on feed/explore/tag/user_posts to promote scheduled posts
+    - Comments: parent_id for nested replies, replies_count maintained, DELETE /api/comments/{id} with recursive cascade, reply_audience enforced on POST /api/posts/{id}/comments
+
+backend:
+  - task: "Posts Fase 1 — rich content (images, poll, scheduled, drafts, reactions, audience, edit history)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Implemented all Phase 1 endpoints. Need full integration test:
+            1. Create post with images[] (max 4), confirm enriched response includes images
+            2. Create post with poll (options >= 2, ends_in_minutes optional), vote (single + multiple), verify counts and viewer_voted_for, confirm /vote rejects after ends_at
+            3. Create scheduled post (scheduled_at > now), confirm hidden from /feed and /explore for other users but visible for self via /users/me/... and /posts/scheduled. Confirm auto_publish promotes once time passes (set scheduled_at to ~5s future, sleep, re-fetch /feed)
+            4. Create draft (is_draft=true), confirm appears in /posts/drafts but not /feed; call /posts/{id}/publish, confirm visible everywhere afterwards
+            5. Edit post within 24h, confirm edit_history populated and content updated; expect 400 after >24h (skip if not testable)
+            6. React with each emoji in ALLOWED_REACTIONS, confirm toggle behaviour, confirm 400 on invalid emoji like "🙈", confirm notifications row created for author
+            7. Reply audience: create post with reply_audience="following" as user A; user B (not followed by A) tries to comment → 403; A follows B → still 403 (rule: only people A follows); reply_audience="mentioned": only mentioned usernames in content can reply
+            8. Nested comments: POST comment with parent_id, confirm parent.replies_count increments; DELETE parent comment cascade deletes replies; deleting a leaf decrements parent.replies_count
+            9. Confirm normal flow unbroken: legacy "image" field still works, /like still toggles ❤️ counter, /repost still works, /comments without parent_id still works.
+            Credentials: admin@vermillion.app / admin123 (see /app/memory/test_credentials.md)
+
+frontend:
+  - task: "Posts Fase 1 — UI for rich content"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/components/Composer.js, PostCard.js, Feed.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Frontend will be built AFTER backend testing passes. Don't test frontend yet."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Posts Fase 1 — rich content (images, poll, scheduled, drafts, reactions, audience, edit history)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: |
+        Phase 1 backend implementation complete. Please test exclusively the new endpoints listed in the task description. Use admin@vermillion.app/admin123 to register/login and create a second user (e.g. testuser2@vermillion.app/test1234) for cross-user scenarios (reply audience, reactions notifying author, scheduled visibility). DO NOT test frontend yet.

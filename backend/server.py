@@ -36,6 +36,75 @@ HASHTAG_RE = re.compile(r"#([\wáéíóúâêîôûãõçÁÉÍÓÚÂÊÎÔÛÃ�
 MENTION_RE = re.compile(r"@([a-zA-Z0-9_]+)")
 ONLINE_WINDOW = timedelta(minutes=2)
 
+# Fase 1: rich posts ----------------------------------------------------------
+ALLOWED_REACTIONS = {"❤️", "🔥", "👏", "😂", "💯", "😢"}
+VALID_AUDIENCES = {"everyone", "following", "mentioned"}
+MAX_IMAGES_PER_POST = 4
+MAX_POLL_OPTIONS = 4
+
+
+def normalize_images(payload_images, single_image) -> List[str]:
+    """Coalesce legacy `image` + new `images` array into a clean list."""
+    out: List[str] = []
+    if payload_images:
+        for s in payload_images:
+            if isinstance(s, str) and s.strip():
+                out.append(s.strip())
+    if single_image and isinstance(single_image, str) and single_image.strip() and single_image not in out:
+        out.append(single_image.strip())
+    return out[:MAX_IMAGES_PER_POST]
+
+
+def build_poll(raw: Optional[dict]) -> Optional[dict]:
+    if not raw:
+        return None
+    options_in = raw.get("options") or []
+    options: List[dict] = []
+    for text in options_in:
+        if not isinstance(text, str):
+            continue
+        text = text.strip()
+        if not text:
+            continue
+        options.append({"id": str(uuid.uuid4())[:8], "text": text[:60]})
+        if len(options) >= MAX_POLL_OPTIONS:
+            break
+    if len(options) < 2:
+        raise HTTPException(400, "Enquete precisa de pelo menos 2 opções")
+    ends_in = int(raw.get("ends_in_minutes") or 0)
+    ends_at = None
+    if ends_in > 0:
+        ends_at = (datetime.now(timezone.utc) + timedelta(minutes=min(ends_in, 60 * 24 * 7))).isoformat()
+    return {
+        "options": options,
+        "votes": {o["id"]: [] for o in options},
+        "allow_multiple": bool(raw.get("allow_multiple")),
+        "ends_at": ends_at,
+    }
+
+
+def post_is_published(p: dict) -> bool:
+    """A post is visible if not draft and (no scheduled_at OR scheduled_at in past)."""
+    if p.get("is_draft"):
+        return False
+    sched = p.get("scheduled_at")
+    if not sched:
+        return True
+    try:
+        return datetime.fromisoformat(sched) <= datetime.now(timezone.utc)
+    except Exception:
+        return True
+
+
+async def auto_publish_due_posts() -> None:
+    """Promote any scheduled post whose time has come."""
+    now = now_iso()
+    await db.posts.update_many(
+        {"scheduled_at": {"$ne": None, "$lte": now}, "is_draft": {"$ne": True}},
+        {"$unset": {"scheduled_at": ""}, "$set": {"created_at": now}},
+    )
+
+
 
 # ============================================================
 # Helpers
@@ -212,8 +281,10 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
             }
     return {
         "id": post["id"], "content": post["content"], "image": post.get("image", ""),
+        "images": post.get("images", []) or ([post["image"]] if post.get("image") else []),
         "created_at": post["created_at"],
         "edited_at": post.get("edited_at"),
+        "edit_history": post.get("edit_history", []),
         "views": post.get("views", 0),
         "likes_count": len(post.get("likes", [])),
         "reposts_count": len(post.get("reposts", [])),
@@ -226,6 +297,54 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         "quote_of": quote_origin,
         "community": community,
         "pinned": bool(post.get("pinned")),
+        "reactions": _enriched_reactions(post.get("reactions", {}), viewer_id),
+        "poll": _enriched_poll(post.get("poll"), viewer_id),
+        "reply_audience": post.get("reply_audience", "everyone"),
+        "is_draft": bool(post.get("is_draft")),
+        "scheduled_at": post.get("scheduled_at"),
+    }
+
+
+def _enriched_reactions(raw: dict, viewer_id: Optional[str]) -> dict:
+    """Convert raw reactions dict to {emoji: {count, reacted}}."""
+    out = {}
+    for emoji in ALLOWED_REACTIONS:
+        users = raw.get(emoji, []) if isinstance(raw, dict) else []
+        out[emoji] = {
+            "count": len(users),
+            "reacted": (viewer_id in users) if viewer_id else False,
+        }
+    return out
+
+
+def _enriched_poll(poll: Optional[dict], viewer_id: Optional[str]) -> Optional[dict]:
+    if not poll:
+        return None
+    options = poll.get("options", [])
+    votes = poll.get("votes", {}) or {}
+    user_choice: List[str] = []
+    total = 0
+    enriched_options = []
+    for o in options:
+        v = votes.get(o["id"], [])
+        total += len(v)
+        if viewer_id and viewer_id in v:
+            user_choice.append(o["id"])
+        enriched_options.append({"id": o["id"], "text": o["text"], "votes": len(v)})
+    ends_at = poll.get("ends_at")
+    closed = False
+    if ends_at:
+        try:
+            closed = datetime.fromisoformat(ends_at) <= datetime.now(timezone.utc)
+        except Exception:
+            closed = False
+    return {
+        "options": enriched_options,
+        "total_votes": total,
+        "allow_multiple": bool(poll.get("allow_multiple")),
+        "ends_at": ends_at,
+        "closed": closed,
+        "user_voted_for": user_choice,
     }
 
 
@@ -287,14 +406,27 @@ class UpdateProfileIn(BaseModel):
 
 
 class PostIn(BaseModel):
-    content: str = Field(min_length=1, max_length=500)
+    content: str = Field(min_length=0, max_length=500)
     image: Optional[str] = ""
+    images: Optional[List[str]] = None  # multi-image (up to 4)
     community_id: Optional[str] = None
     quote_of: Optional[str] = None
+    poll: Optional[dict] = None  # { options: [str], allow_multiple: bool, ends_in_minutes: int }
+    scheduled_at: Optional[str] = None  # ISO future date → scheduled
+    is_draft: Optional[bool] = False
+    reply_audience: Optional[str] = "everyone"  # everyone | following | mentioned
 
 
 class PostEditIn(BaseModel):
-    content: str = Field(min_length=1, max_length=500)
+    content: str = Field(min_length=0, max_length=500)
+
+
+class PostVoteIn(BaseModel):
+    option_ids: List[str]
+
+
+class PostReactIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=8)
 
 
 class MessageReactIn(BaseModel):
@@ -303,6 +435,7 @@ class MessageReactIn(BaseModel):
 
 class CommentIn(BaseModel):
     content: str = Field(min_length=1, max_length=300)
+    parent_id: Optional[str] = None  # for nested replies
 
 
 class MessageIn(BaseModel):
@@ -556,13 +689,21 @@ async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] =
         raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return []
+    await auto_publish_due_posts()
+    is_self = viewer and viewer["id"] == user["id"]
+    visibility = {} if is_self else {
+        "is_draft": {"$ne": True},
+        "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+    }
     if tab == "media":
-        query = {"author_id": user["id"], "image": {"$ne": ""}}
+        query = {"author_id": user["id"], "$and": [{"$or": [{"image": {"$ne": ""}}, {"images.0": {"$exists": True}}]}, visibility or {}]}
     elif tab == "likes":
-        query = {"likes": user["id"]}
+        query = {"likes": user["id"], **visibility}
+    elif tab == "replies":
+        # posts authored that are themselves replies — we don't model that yet; return regular posts
+        query = {"author_id": user["id"], **visibility}
     else:
-        query = {"author_id": user["id"]}
-    # pinned first then by created_at desc
+        query = {"author_id": user["id"], **visibility}
     posts = await db.posts.find(query, {"_id": 0}).sort([("pinned", -1), ("created_at", -1)]).to_list(100)
     return [await enrich_post(p, viewer) for p in posts]
 
@@ -732,23 +873,51 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
         if not q:
             raise HTTPException(404, "Publicação citada não encontrada")
+    images = normalize_images(payload.images, payload.image)
+    poll = build_poll(payload.poll) if payload.poll else None
+    if not payload.content.strip() and not images and not poll and not payload.quote_of:
+        raise HTTPException(400, "Publicação vazia")
+    audience = payload.reply_audience if payload.reply_audience in VALID_AUDIENCES else "everyone"
+
+    # Scheduled / draft handling
+    scheduled_at = None
+    if payload.scheduled_at:
+        try:
+            dt = datetime.fromisoformat(payload.scheduled_at.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            if dt > datetime.now(timezone.utc) + timedelta(seconds=30):
+                scheduled_at = dt.astimezone(timezone.utc).isoformat()
+        except Exception:
+            pass
+
     post = {
         "id": str(uuid.uuid4()), "author_id": user["id"],
-        "content": payload.content, "image": payload.image or "",
+        "content": payload.content,
+        "image": images[0] if images else "",
+        "images": images,
         "likes": [], "bookmarks": [], "reposts": [],
+        "reactions": {},
         "hashtags": extract_hashtags(payload.content),
         "community_id": community_id,
         "quote_of": payload.quote_of,
+        "poll": poll,
+        "reply_audience": audience,
+        "is_draft": bool(payload.is_draft),
+        "scheduled_at": scheduled_at,
+        "edit_history": [],
         "views": 0,
         "created_at": now_iso(),
     }
     await db.posts.insert_one(post)
-    await handle_mentions(payload.content, user, post["id"])
-    if payload.quote_of:
-        q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
-        if q and q["author_id"] != user["id"]:
-            await create_notification(q["author_id"], "quote", user["id"], post["id"],
-                                       f"@{user['username']} citou a tua publicação")
+    # Mentions/notifications only when published
+    if not post["is_draft"] and not scheduled_at:
+        await handle_mentions(payload.content, user, post["id"])
+        if payload.quote_of:
+            q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
+            if q and q["author_id"] != user["id"]:
+                await create_notification(q["author_id"], "quote", user["id"], post["id"],
+                                           f"@{user['username']} citou a tua publicação")
     return await enrich_post(post, user)
 
 
@@ -760,14 +929,18 @@ async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_
     if post["author_id"] != user["id"]:
         raise HTTPException(403, "Sem permissão")
     age = datetime.now(timezone.utc) - datetime.fromisoformat(post["created_at"])
-    if age > timedelta(minutes=15):
-        raise HTTPException(400, "Janela de edição expirada (15 min)")
+    if age > timedelta(hours=24):
+        raise HTTPException(400, "Janela de edição expirada (24 h)")
+    history = post.get("edit_history") or []
+    history.append({"content": post["content"], "edited_at": now_iso()})
+    history = history[-10:]  # keep last 10 revisions only
     await db.posts.update_one(
         {"id": post_id},
         {"$set": {
             "content": payload.content,
             "hashtags": extract_hashtags(payload.content),
             "edited_at": now_iso(),
+            "edit_history": history,
         }},
     )
     fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
@@ -805,14 +978,30 @@ async def pin_post(post_id: str, user=Depends(get_current_user)):
 
 @api.get("/posts/feed")
 async def feed(user=Depends(get_current_user)):
+    await auto_publish_due_posts()
     ids = user.get("following", []) + [user["id"]]
-    posts = await db.posts.find({"author_id": {"$in": ids}}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    posts = await db.posts.find(
+        {
+            "author_id": {"$in": ids},
+            "is_draft": {"$ne": True},
+            "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+        },
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
     return [await enrich_post(p, user) for p in posts]
 
 
 @api.get("/posts/explore")
 async def explore(sort: str = "trending", viewer: Optional[dict] = Depends(maybe_user)):
-    posts = await db.posts.find({"repost_of": {"$exists": False}}, {"_id": 0}).sort("created_at", -1).to_list(300)
+    await auto_publish_due_posts()
+    posts = await db.posts.find(
+        {
+            "repost_of": {"$exists": False},
+            "is_draft": {"$ne": True},
+            "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+        },
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(300)
     if sort == "trending":
         # Score with time decay (half-life ~ 12h)
         now = datetime.now(timezone.utc)
@@ -838,14 +1027,131 @@ async def explore_legacy_unused(viewer: Optional[dict] = Depends(maybe_user)):
 
 @api.get("/posts/bookmarks")
 async def bookmarks(user=Depends(get_current_user)):
-    posts = await db.posts.find({"bookmarks": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    posts = await db.posts.find(
+        {"bookmarks": user["id"], "is_draft": {"$ne": True}},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
     return [await enrich_post(p, user) for p in posts]
+
+
+@api.get("/posts/drafts")
+async def list_drafts(user=Depends(get_current_user)):
+    posts = await db.posts.find(
+        {"author_id": user["id"], "is_draft": True},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
+    return [await enrich_post(p, user) for p in posts]
+
+
+@api.get("/posts/scheduled")
+async def list_scheduled(user=Depends(get_current_user)):
+    posts = await db.posts.find(
+        {"author_id": user["id"], "is_draft": {"$ne": True}, "scheduled_at": {"$gt": now_iso()}},
+        {"_id": 0},
+    ).sort("scheduled_at", 1).to_list(100)
+    return [await enrich_post(p, user) for p in posts]
+
+
+@api.post("/posts/{post_id}/publish")
+async def publish_draft(post_id: str, user=Depends(get_current_user)):
+    """Publish a draft or a scheduled post immediately."""
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    if not post.get("is_draft") and not post.get("scheduled_at"):
+        raise HTTPException(400, "Publicação já está publicada")
+    await db.posts.update_one(
+        {"id": post_id},
+        {"$set": {"is_draft": False, "created_at": now_iso()},
+         "$unset": {"scheduled_at": ""}},
+    )
+    fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    await handle_mentions(fresh["content"], user, post_id)
+    if fresh.get("quote_of"):
+        q = await db.posts.find_one({"id": fresh["quote_of"]}, {"_id": 0})
+        if q and q["author_id"] != user["id"]:
+            await create_notification(q["author_id"], "quote", user["id"], post_id,
+                                       f"@{user['username']} citou a tua publicação")
+    return await enrich_post(fresh, user)
+
+
+@api.post("/posts/{post_id}/vote")
+async def vote_poll(post_id: str, payload: PostVoteIn, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post or not post.get("poll"):
+        raise HTTPException(404, "Enquete não encontrada")
+    poll = post["poll"]
+    # closed?
+    if poll.get("ends_at"):
+        try:
+            if datetime.fromisoformat(poll["ends_at"]) <= datetime.now(timezone.utc):
+                raise HTTPException(400, "Enquete encerrada")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+    valid_ids = {o["id"] for o in poll.get("options", [])}
+    chosen = [oid for oid in payload.option_ids if oid in valid_ids]
+    if not chosen:
+        raise HTTPException(400, "Opção inválida")
+    allow_multiple = bool(poll.get("allow_multiple"))
+    if not allow_multiple:
+        chosen = chosen[:1]
+    votes = poll.get("votes", {}) or {}
+    # Remove previous votes from this user across all options first (toggle behaviour)
+    for oid in list(votes.keys()):
+        if user["id"] in (votes.get(oid) or []):
+            votes[oid] = [u for u in votes[oid] if u != user["id"]]
+    # Add new
+    for oid in chosen:
+        votes.setdefault(oid, [])
+        if user["id"] not in votes[oid]:
+            votes[oid].append(user["id"])
+    await db.posts.update_one({"id": post_id}, {"$set": {"poll.votes": votes}})
+    fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    return await enrich_post(fresh, user)
+
+
+@api.post("/posts/{post_id}/react")
+async def react_post(post_id: str, payload: PostReactIn, user=Depends(get_current_user)):
+    if payload.emoji not in ALLOWED_REACTIONS:
+        raise HTTPException(400, "Reação inválida")
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    reactions = post.get("reactions") or {}
+    users = list(reactions.get(payload.emoji, []))
+    if user["id"] in users:
+        users.remove(user["id"])
+        active = False
+    else:
+        users.append(user["id"])
+        active = True
+        if post["author_id"] != user["id"]:
+            await create_notification(
+                post["author_id"], "reaction", user["id"], post_id,
+                f"@{user['username']} reagiu {payload.emoji} à tua publicação",
+                extra={"emoji": payload.emoji},
+            )
+    reactions[payload.emoji] = users
+    await db.posts.update_one({"id": post_id}, {"$set": {"reactions": reactions}})
+    fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    enriched = await enrich_post(fresh, user)
+    return {"reactions": enriched["reactions"], "active": active, "emoji": payload.emoji}
 
 
 @api.get("/posts/tag/{tag}")
 async def posts_by_tag(tag: str, viewer: Optional[dict] = Depends(maybe_user)):
+    await auto_publish_due_posts()
     posts = await db.posts.find(
-        {"hashtags": tag.lower(), "repost_of": {"$exists": False}}, {"_id": 0}
+        {
+            "hashtags": tag.lower(),
+            "repost_of": {"$exists": False},
+            "is_draft": {"$ne": True},
+            "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
+        }, {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     return [await enrich_post(p, viewer) for p in posts]
 
@@ -924,19 +1230,23 @@ async def repost(post_id: str, user=Depends(get_current_user)):
 
 
 # ============================================================
-# Comments
+# Comments (with nested replies)
 # ============================================================
+async def _enrich_comment(c: dict) -> dict:
+    author = await db.users.find_one({"id": c["author_id"]}, {"_id": 0})
+    return {
+        "id": c["id"], "post_id": c.get("post_id"),
+        "content": c["content"], "created_at": c["created_at"],
+        "parent_id": c.get("parent_id"),
+        "replies_count": c.get("replies_count", 0),
+        "author": public_user(author) if author else None,
+    }
+
+
 @api.get("/posts/{post_id}/comments")
 async def list_comments(post_id: str):
     cs = await db.comments.find({"post_id": post_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
-    out = []
-    for c in cs:
-        author = await db.users.find_one({"id": c["author_id"]}, {"_id": 0})
-        out.append({
-            "id": c["id"], "content": c["content"], "created_at": c["created_at"],
-            "author": public_user(author) if author else None,
-        })
-    return out
+    return [await _enrich_comment(c) for c in cs]
 
 
 @api.post("/posts/{post_id}/comments")
@@ -944,17 +1254,82 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
+    # Reply audience enforcement
+    audience = post.get("reply_audience", "everyone")
+    author_id = post["author_id"]
+    if user["id"] != author_id:
+        if audience == "following":
+            # only people the post author follows can reply
+            author_doc = await db.users.find_one({"id": author_id}, {"_id": 0})
+            allowed = set((author_doc or {}).get("following", []))
+            if user["id"] not in allowed:
+                raise HTTPException(403, "Só pessoas que o autor segue podem responder")
+        elif audience == "mentioned":
+            mentioned = extract_mentions(post.get("content", ""))
+            if user["username"] not in mentioned:
+                raise HTTPException(403, "Apenas pessoas mencionadas podem responder")
+
+    parent = None
+    if payload.parent_id:
+        parent = await db.comments.find_one({"id": payload.parent_id, "post_id": post_id}, {"_id": 0})
+        if not parent:
+            raise HTTPException(404, "Comentário pai não encontrado")
+
     comment = {
         "id": str(uuid.uuid4()), "post_id": post_id, "author_id": user["id"],
         "content": payload.content, "created_at": now_iso(),
+        "parent_id": parent["id"] if parent else None,
+        "replies_count": 0,
     }
     await db.comments.insert_one(comment)
-    await create_notification(post["author_id"], "comment", user["id"], post_id, f"@{user['username']} comentou na tua publicação")
+    # Bump parent replies_count
+    if parent:
+        await db.comments.update_one(
+            {"id": parent["id"]},
+            {"$inc": {"replies_count": 1}},
+        )
+        if parent["author_id"] != user["id"]:
+            await create_notification(
+                parent["author_id"], "reply", user["id"], post_id,
+                f"@{user['username']} respondeu ao teu comentário",
+                extra={"parent_id": parent["id"]},
+            )
+    else:
+        if post["author_id"] != user["id"]:
+            await create_notification(
+                post["author_id"], "comment", user["id"], post_id,
+                f"@{user['username']} comentou na tua publicação",
+            )
     await handle_mentions(payload.content, user, post_id)
-    return {
-        "id": comment["id"], "content": comment["content"],
-        "created_at": comment["created_at"], "author": public_user(user),
-    }
+    return await _enrich_comment(comment)
+
+
+@api.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: str, user=Depends(get_current_user)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comentário não encontrado")
+    if c["author_id"] != user["id"]:
+        # Allow post author to delete comments on their own post
+        post = await db.posts.find_one({"id": c["post_id"]}, {"_id": 0})
+        if not post or post["author_id"] != user["id"]:
+            raise HTTPException(403, "Sem permissão")
+    # Recursive delete of replies
+    descendants = [comment_id]
+    queue = [comment_id]
+    while queue:
+        new_q = []
+        async for child in db.comments.find({"parent_id": {"$in": queue}}, {"_id": 0, "id": 1}):
+            descendants.append(child["id"])
+            new_q.append(child["id"])
+        queue = new_q
+    await db.comments.delete_many({"id": {"$in": descendants}})
+    if c.get("parent_id"):
+        await db.comments.update_one(
+            {"id": c["parent_id"]},
+            {"$inc": {"replies_count": -1}},
+        )
+    return {"ok": True, "deleted": len(descendants)}
 
 
 # ============================================================
