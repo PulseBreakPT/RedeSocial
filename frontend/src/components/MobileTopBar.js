@@ -24,6 +24,51 @@ export function MobileTopBar() {
         return () => clearInterval(id);
     }, []);
 
+    // Swipe-from-left-edge to open drawer (mobile only).
+    // Detects pointer-down within 20px of the left edge, then opens when dragged >60px right.
+    useEffect(() => {
+        if (window.matchMedia("(min-width: 1024px)").matches) return;
+        let startX = 0;
+        let startY = 0;
+        let tracking = false;
+        let opened = false;
+
+        const onDown = (e) => {
+            if (e.clientX <= 22 && !menuOpen) {
+                startX = e.clientX;
+                startY = e.clientY;
+                tracking = true;
+                opened = false;
+            }
+        };
+        const onMove = (e) => {
+            if (!tracking || opened) return;
+            const dx = e.clientX - startX;
+            const dy = Math.abs(e.clientY - startY);
+            // Open once the horizontal drag dominates and passes the threshold
+            if (dx > 56 && dy < 40) {
+                setMenuOpen(true);
+                opened = true;
+                tracking = false;
+            } else if (dy > 60) {
+                // user is scrolling vertically — abort
+                tracking = false;
+            }
+        };
+        const onUp = () => { tracking = false; };
+
+        window.addEventListener("pointerdown", onDown, { passive: true });
+        window.addEventListener("pointermove", onMove, { passive: true });
+        window.addEventListener("pointerup", onUp, { passive: true });
+        window.addEventListener("pointercancel", onUp, { passive: true });
+        return () => {
+            window.removeEventListener("pointerdown", onDown);
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
+        };
+    }, [menuOpen]);
+
     return (
         <>
             <header
