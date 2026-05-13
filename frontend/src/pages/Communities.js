@@ -98,7 +98,7 @@ export default function Communities() {
                     </div>
                     <div className="flex items-center gap-1">
                         {SORTS.map((s) => { const Icon = s.icon; const active = sort === s.key; return (
-                            <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "bg-black text-white" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
                                 <Icon size={13} />
                             </button>
                         ); })}
@@ -110,9 +110,9 @@ export default function Communities() {
                     ))}
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas categorias</button>
+                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas categorias</button>
                     {COMMUNITY_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`communities-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`communities-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
                             <span>{c.emoji}</span> {c.label}
                         </button>
                     ))}
@@ -138,7 +138,7 @@ export default function Communities() {
                             <label className="type-overline">Categoria</label>
                             <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                 {COMMUNITY_CATEGORIES.map((c) => (
-                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} data-testid={`community-form-cat-${c.key}`} className={`px-2.5 py-2 rounded-xl text-[12px] font-medium border transition ${form.category === c.key ? "bg-black text-white border-black" : "bg-white border-black/[0.10] text-black/70 hover:border-black/30"}`}>
+                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} data-testid={`community-form-cat-${c.key}`} className={`px-2.5 py-2 rounded-xl text-[12px] font-medium border transition ${form.category === c.key ? "chip-on border-transparent" : "bg-white border-black/[0.10] text-black/70 hover:border-black/30"}`}>
                                         <span className="mr-1">{c.emoji}</span>{c.label}
                                     </button>
                                 ))}

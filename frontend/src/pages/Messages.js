@@ -70,7 +70,7 @@ function ConversationList({ activeId, onSelect }) {
             </div>
             <div className="px-3 lg:px-4 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
                 {FILTERS.map((f) => (
-                    <button key={f.key} onClick={() => setFilter(f.key)} data-testid={`messages-filter-${f.key}`} className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${filter === f.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>{f.label}</button>
+                    <button key={f.key} onClick={() => setFilter(f.key)} data-testid={`messages-filter-${f.key}`} className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium ${filter === f.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>{f.label}</button>
                 ))}
             </div>
             {loading ? <ConvSkeleton /> : filtered.length === 0 ? (

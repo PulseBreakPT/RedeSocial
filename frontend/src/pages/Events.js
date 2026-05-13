@@ -73,9 +73,9 @@ export default function Events() {
                     ))}
                 </div>
                 <div className="px-3 lg:px-4 pb-2.5 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas</button>
+                    <button onClick={() => setCat("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${cat === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todas</button>
                     {EVENT_CATEGORIES.map((c) => (
-                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`events-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                        <button key={c.key} onClick={() => setCat(c.key)} data-testid={`events-cat-${c.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${cat === c.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
                             <span>{c.emoji}</span> {c.label}
                         </button>
                     ))}
@@ -101,7 +101,7 @@ export default function Events() {
                             <label className="type-overline">Categoria</label>
                             <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                 {EVENT_CATEGORIES.map((c) => (
-                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} className={`px-2.5 py-2 rounded-xl text-[12px] font-medium border transition ${form.category === c.key ? "bg-black text-white border-black" : "bg-white border-black/[0.10] text-black/70 hover:border-black/30"}`}>
+                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} className={`px-2.5 py-2 rounded-xl text-[12px] font-medium border transition ${form.category === c.key ? "chip-on border-transparent" : "bg-white border-black/[0.10] text-black/70 hover:border-black/30"}`}>
                                         <span className="mr-1">{c.emoji}</span>{c.label}
                                     </button>
                                 ))}

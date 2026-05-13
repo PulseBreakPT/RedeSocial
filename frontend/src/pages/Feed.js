@@ -113,7 +113,7 @@ export default function Feed() {
                                     data-testid={`feed-sort-${s.key}`}
                                     title={s.label}
                                     className={`w-9 h-9 rounded-full grid place-items-center transition tap-shrink ${
-                                        active ? "bg-black text-white" : "text-black/60 hover:bg-black/[0.05]"
+                                        active ? "chip-on" : "text-black/60 hover:bg-black/[0.05]"
                                     }`}
                                 >
                                     <Icon size={15} strokeWidth={1.7} />
@@ -156,7 +156,7 @@ export default function Feed() {
                     <button
                         onClick={() => setMood("")}
                         data-testid="feed-mood-all"
-                        className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === "" ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}
+                        className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}
                     >
                         Tudo
                     </button>
@@ -165,7 +165,7 @@ export default function Feed() {
                             key={m.key}
                             onClick={() => setMood(m.key)}
                             data-testid={`feed-mood-${m.key}`}
-                            className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === m.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}
+                            className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === m.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}
                         >
                             <span>{m.emoji}</span> {m.label}
                         </button>

@@ -144,7 +144,6 @@
     .bg-zinc-900\/30 { background-color: rgba(13, 13, 16, 0.025); }
 
     /* Text colors → light theme equivalents */
-    .text-white { color: hsl(var(--ink)); }
     .text-zinc-100 { color: hsl(var(--ink)); }
     .text-zinc-200 { color: hsl(var(--ink-soft)); }
     .text-zinc-300 { color: hsl(var(--ink-soft)); }
@@ -155,7 +154,6 @@
     .placeholder\:text-zinc-600::placeholder { color: rgba(13, 13, 16, 0.3); }
 
     /* Hover overrides */
-    .hover\:text-white:hover { color: hsl(var(--ink)); }
     .hover\:bg-zinc-900:hover { background-color: rgba(13, 13, 16, 0.04); }
     .hover\:bg-zinc-800:hover { background-color: rgba(13, 13, 16, 0.06); }
     .hover\:bg-white\/5:hover { background-color: rgba(13, 13, 16, 0.04); }
@@ -336,6 +334,40 @@
     }
     .btn-obsidian:hover { background: #1a1a1f; box-shadow: 0 10px 24px -8px rgba(13, 13, 16, 0.5); transform: translateY(-1px); }
     .btn-obsidian:active { transform: scale(0.97); }
+
+    /* ============================================================
+       chip-on — toggle/chip ACTIVATED state
+       Vermillion gradient: atlantic blue → coral (Portugal: Tejo + telha)
+       Use INSTEAD of "bg-black text-white" on selected chips/filters.
+       ============================================================ */
+    .chip-on {
+        background: linear-gradient(135deg, #0d0d10 0%, #1d1d22 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 14px -6px rgba(13, 13, 16, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        transition: background-image 320ms var(--ease-out-soft),
+                    box-shadow 320ms var(--ease-out-soft),
+                    transform 200ms var(--ease-out-soft),
+                    filter 240ms ease;
+    }
+    .chip-on:hover {
+        background: linear-gradient(135deg, var(--atl-600) 0%, var(--atl-500) 45%, var(--coral-500) 100%);
+        box-shadow: 0 8px 22px -8px rgba(30, 84, 170, 0.5),
+                    0 4px 14px -8px rgba(232, 93, 79, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        transform: translateY(-1px);
+        filter: saturate(1.1);
+    }
+    .chip-on:active { transform: scale(0.96); }
+    .chip-on svg { color: #ffffff; }
+
+    /* Animated subtle shimmer for state CHANGE (when chip just became active) */
+    @keyframes chipPop {
+        0% { transform: scale(0.92); }
+        55% { transform: scale(1.04); }
+        100% { transform: scale(1); }
+    }
+    .chip-on { animation: chipPop 280ms var(--ease-pop); }
 
     /* Atlantic primary CTA (new — for follow buttons etc) */
     .btn-atl {

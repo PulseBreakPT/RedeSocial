@@ -93,7 +93,7 @@ export default function TagPage() {
 
             <div className="px-4 lg:px-5 py-2 hairline-b flex items-center gap-1">
                 {SORTS.map((s) => (
-                    <button key={s.key} onClick={() => setSort(s.key)} className={`px-3 py-1 rounded-full text-[12px] font-medium ${sort === s.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                    <button key={s.key} onClick={() => setSort(s.key)} className={`px-3 py-1 rounded-full text-[12px] font-medium ${sort === s.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
                         {s.label}
                     </button>
                 ))}

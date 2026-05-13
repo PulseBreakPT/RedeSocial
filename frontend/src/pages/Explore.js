@@ -88,10 +88,10 @@ export default function Explore() {
                     </div>
                     {tab === "posts" && (
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setSort("trending")} title="Tendências" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "trending" ? "bg-black text-white" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button onClick={() => setSort("trending")} title="Tendências" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "trending" ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
                                 <Flame size={14} />
                             </button>
-                            <button onClick={() => setSort("recent")} title="Recentes" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "recent" ? "bg-black text-white" : "text-black/55 hover:bg-black/[0.05]"}`}>
+                            <button onClick={() => setSort("recent")} title="Recentes" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "recent" ? "chip-on" : "text-black/55 hover:bg-black/[0.05]"}`}>
                                 <Clock size={14} />
                             </button>
                         </div>
@@ -115,9 +115,9 @@ export default function Explore() {
                 </div>
                 {tab === "posts" && (
                     <div className="flex gap-1.5 px-3 lg:px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-                        <button onClick={() => setMood("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${mood === "" ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todos</button>
+                        <button onClick={() => setMood("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${mood === "" ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>Todos</button>
                         {MOOD_OPTIONS.map((m) => (
-                            <button key={m.key} onClick={() => setMood(m.key)} data-testid={`explore-mood-${m.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${mood === m.key ? "bg-black text-white" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
+                            <button key={m.key} onClick={() => setMood(m.key)} data-testid={`explore-mood-${m.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${mood === m.key ? "chip-on" : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"}`}>
                                 <span>{m.emoji}</span> {m.label}
                             </button>
                         ))}

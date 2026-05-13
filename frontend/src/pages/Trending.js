@@ -98,7 +98,7 @@ export default function Trending() {
                             onClick={() => setRange(r.key)}
                             className={`px-3 py-1 rounded-full text-[12px] font-medium tap-shrink transition ${
                                 range === r.key
-                                    ? "bg-black text-white"
+                                    ? "chip-on"
                                     : "bg-black/[0.04] text-black/65 hover:bg-black/[0.07]"
                             }`}
                         >
