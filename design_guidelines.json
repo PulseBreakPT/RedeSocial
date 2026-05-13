@@ -1,0 +1,152 @@
+{
+  "theme": "dark",
+  "archetype": "5",
+  "archetype_name": "Jewel & Luxury / High-Contrast Editorial Tech",
+  "design_philosophy": "Ultra-refined modern dark UI. Avoids typical 'Twitter blue' or generic AI-slop purple/teal. Employs asymmetric card layouts, glass-morphism overlays, and subtle grain textures. A 3-column architecture (Left Sticky Nav, Center Feed, Right Widgets). Focus on micro-interactions, custom aesthetics, and typographic tension.",
+  "colors": {
+    "background": {
+      "hex": "#0A0A0A",
+      "hsl": "0 0% 4%",
+      "description": "Deep obsidian core background"
+    },
+    "surface": {
+      "hex": "#121212",
+      "hsl": "0 0% 7%",
+      "description": "Primary card and feed background. 1px solid white/5 border to detach from background."
+    },
+    "surface_glass": {
+      "hex": "#1A1A1AA6",
+      "hsl": "0 0% 10% / 0.65",
+      "description": "For sticky headers and overlays. Must be used with backdrop-blur-xl."
+    },
+    "accent_primary": {
+      "hex": "#FF5722",
+      "hsl": "14 100% 57%",
+      "description": "Neon Vermilion. Distinctive, energetic, high-contrast. Used for primary CTAs and active states."
+    },
+    "accent_hover": {
+      "hex": "#FF7A50",
+      "hsl": "14 100% 66%",
+      "description": "Lighter variant for hover states."
+    },
+    "text_primary": {
+      "hex": "#FAFAFA",
+      "hsl": "0 0% 98%",
+      "description": "Pure white for max legibility."
+    },
+    "text_secondary": {
+      "hex": "#A1A1AA",
+      "hsl": "240 5% 65%",
+      "description": "Zinc-400 for handles, dates, and metadata."
+    },
+    "border": {
+      "hex": "#27272A",
+      "hsl": "240 4% 16%",
+      "description": "Subtle zinc border for separating feed items."
+    }
+  },
+  "typography": {
+    "font_imports": [
+      "@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap');"
+    ],
+    "families": {
+      "heading": "'Bricolage Grotesque', sans-serif",
+      "body": "'Geist', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "rules": {
+      "h1": "text-4xl tracking-tighter font-heading font-bold text-white",
+      "h2": "text-2xl tracking-tight font-heading font-bold text-white",
+      "body": "text-base font-body leading-relaxed text-zinc-100",
+      "meta": "text-sm font-mono tracking-tight text-zinc-400",
+      "button_text": "text-sm font-heading font-semibold tracking-wide uppercase"
+    }
+  },
+  "layout_and_spacing": {
+    "desktop": "grid grid-cols-1 lg:grid-cols-[280px_minmax(600px,1fr)_350px] max-w-[1300px] mx-auto gap-0 lg:gap-8",
+    "mobile": "flex flex-col-reverse",
+    "feed_container": "border-x border-zinc-800 min-h-screen pb-20 lg:pb-0",
+    "card": "p-5 border-b border-zinc-800 hover:bg-white/[0.02] transition-colors duration-200",
+    "glass_header": "sticky top-0 z-50 bg-[#0A0A0A]/70 backdrop-blur-xl border-b border-zinc-800 px-5 py-3"
+  },
+  "ui_components": {
+    "buttons": {
+      "primary": "rounded-full bg-[#FF5722] text-white px-6 py-2.5 hover:bg-[#FF7A50] transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(255,87,34,0.2)]",
+      "secondary": "rounded-none border border-zinc-700 bg-transparent text-white px-4 py-2 hover:bg-zinc-800 transition-all active:scale-95",
+      "icon": "rounded-full p-2.5 text-zinc-400 hover:text-[#FF5722] hover:bg-[#FF5722]/10 transition-all"
+    },
+    "inputs": {
+      "composer": "w-full bg-transparent text-xl font-body text-white placeholder:text-zinc-600 focus:outline-none resize-none overflow-hidden",
+      "search": "w-full bg-zinc-900 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-zinc-500 border border-transparent focus:border-[#FF5722]/50 focus:bg-black transition-all"
+    },
+    "textures_and_globals": {
+      "grain": "Use an SVG noise filter or a CSS repeating radial gradient over the main background at 2% opacity to add depth and avoid a flat look.",
+      "scrollbar": "Custom scrollbars in CSS: ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 10px; }",
+      "selection": "::selection { background: rgba(255,87,34,0.3); color: #FFF; }"
+    }
+  },
+  "microcopy_pt_br": {
+    "navigation": {
+      "home": "Início",
+      "explore": "Explorar",
+      "notifications": "Notificações",
+      "messages": "Mensagens",
+      "bookmarks": "Salvos",
+      "profile": "Perfil",
+      "settings": "Configurações"
+    },
+    "composer": {
+      "placeholder": "O que está acontecendo?",
+      "submit": "Publicar"
+    },
+    "actions": {
+      "reply": "Responder",
+      "repost": "Repostar",
+      "like": "Curtir",
+      "share": "Compartilhar",
+      "follow": "Seguir",
+      "unfollow": "Deixar de seguir",
+      "login": "Entrar",
+      "register": "Criar conta",
+      "edit_profile": "Editar perfil"
+    },
+    "widgets": {
+      "search": "Buscar no feed...",
+      "trending": "Assuntos do momento",
+      "who_to_follow": "Quem seguir"
+    }
+  },
+  "images": {
+    "avatars": [
+      "https://images.unsplash.com/photo-1614010966237-74489a16848b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwyfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1611111082664-534b2cd71d6f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwxfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1639503213523-11973c0b029c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwzfHxwb3J0cmFpdCUyMHBlcnNvbiUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85"
+    ],
+    "banners": [
+      "https://images.unsplash.com/photo-1646924378952-242c10c83506?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1767893609884-622503897e53?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA0MTJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRhcmslMjB0ZXh0dXJlJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc3ODYzOTMyMnww&ixlib=rb-4.1.0&q=85"
+    ],
+    "feed_posts": [
+      "https://images.unsplash.com/photo-1670782128811-c722d51d3d67?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHw0fHxhZXN0aGV0aWMlMjB1cmJhbiUyMG5pZ2h0JTIwcGhvdG9ncmFwaHl8ZW58MHx8fHwxNzc4NjM5MzIyfDA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1723482255697-90683021a0db?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxhZXN0aGV0aWMlMjB1cmJhbiUyMG5pZ2h0JTIwcGhvdG9ncmFwaHl8ZW58MHx8fHwxNzc4NjM5MzIyfDA&ixlib=rb-4.1.0&q=85"
+    ]
+  },
+  "animations": {
+    "hover_like": "scale up by 1.2, change color to #FF5722, add subtle drop-shadow",
+    "card_entry": "fade in, translate-y-4 to 0, ease-out duration 400ms",
+    "modals": "backdrop blur entry, scale 0.95 to 1, fade in"
+  },
+  "specific_instructions_for_main_agent": [
+    "Ensure the split-screen auth uses one of the abstract texture banners for the visual half.",
+    "Do not use generic Shadcn cards for posts; build custom HTML/Tailwind posts with asymmetric borders or distinct hover states.",
+    "Implement real-time features using state or context with clear UI feedback (loading spinners, optimistic updates).",
+    "Apply global styles for custom scrollbars and custom text selection as defined in textures_and_globals.",
+    "Make sure all icons are Phosphor Icons or Lucide, styled sharply to match Bricolage Grotesque.",
+    "Add 'data-testid' attributes to all buttons, links, and forms as required for testing.",
+    "In the feed, use CSS grid or flexbox carefully. The central feed column should have 'border-x border-zinc-800'.",
+    "For the image upload base64 logic, use a hidden file input and a FileReader in standard React (.js files).",
+    "Use Bricolage Grotesque for headings, Geist for body, and JetBrains Mono for metadata (dates/handles).",
+    "Strictly follow PT-BR translations for the entire UI.",
+    "No AI functionalities in this project as per requirements."
+  ]
+}
