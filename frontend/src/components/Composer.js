@@ -5,7 +5,7 @@ import { Avatar } from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
-export function Composer({ onPosted, asModal = false, onClose }) {
+export function Composer({ onPosted, asModal = false, onClose, communityId = null }) {
     const { user } = useAuth();
     const [content, setContent] = useState("");
     const [image, setImage] = useState("");
@@ -31,7 +31,9 @@ export function Composer({ onPosted, asModal = false, onClose }) {
         }
         setBusy(true);
         try {
-            const { data } = await api.post("/posts", { content, image });
+            const body = { content, image };
+            if (communityId) body.community_id = communityId;
+            const { data } = await api.post("/posts", body);
             setContent("");
             setImage("");
             onPosted?.(data);
@@ -54,7 +56,7 @@ export function Composer({ onPosted, asModal = false, onClose }) {
                     data-testid="composer-textarea"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="O que está acontecendo?"
+                    placeholder={communityId ? "Compartilhe algo com a comunidade..." : "O que está acontecendo?"}
                     rows={asModal ? 4 : 2}
                     maxLength={500}
                     className="w-full bg-transparent text-lg font-body placeholder:text-zinc-600 focus:outline-none resize-none"

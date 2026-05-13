@@ -97,6 +97,12 @@ export default function Login() {
                             Criar conta
                         </Link>
                     </p>
+                    <p className="mt-2 font-mono text-sm text-zinc-500">
+                        Esqueceu a senha?{" "}
+                        <Link to="/forgot" data-testid="goto-forgot" className="text-accent-vermillion hover:underline">
+                            Recuperar
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

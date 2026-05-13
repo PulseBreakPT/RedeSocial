@@ -45,7 +45,7 @@ def user_a():
     s = requests.Session()
     uid = uuid.uuid4().hex[:8]
     payload = {
-        "email": f"test_a_{uid}@vermillion.test",
+        "email": f"test_a_{uid}@vermillion-test.com",
         "password": "passw0rd!",
         "username": f"test_a_{uid}",
         "name": "Test A",
@@ -60,7 +60,7 @@ def user_b():
     s = requests.Session()
     uid = uuid.uuid4().hex[:8]
     payload = {
-        "email": f"test_b_{uid}@vermillion.test",
+        "email": f"test_b_{uid}@vermillion-test.com",
         "password": "passw0rd!",
         "username": f"test_b_{uid}",
         "name": "Test B",

@@ -1,17 +1,18 @@
 import { useRef, useState } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Lock } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
 export default function Settings() {
-    const { user, setUser } = useAuth();
+    const { user, setUser, logout } = useAuth();
     const [form, setForm] = useState({
         name: user?.name || "",
         bio: user?.bio || "",
         avatar: user?.avatar || "",
         banner: user?.banner || "",
+        private: !!user?.private,
     });
     const [busy, setBusy] = useState(false);
     const avatarRef = useRef(null);
@@ -45,7 +46,7 @@ export default function Settings() {
         <div data-testid="settings-page">
             <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
                 <h1 className="font-heading text-xl font-bold tracking-tight">Configurações</h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">editar perfil</p>
+                <p className="font-mono text-xs text-zinc-500 mt-0.5">editar perfil e privacidade</p>
             </div>
 
             <div className="relative h-44 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#FF5722]/30">
@@ -107,7 +108,31 @@ export default function Settings() {
                         />
                         <div className="font-mono text-xs text-zinc-500 text-right mt-1">{160 - (form.bio?.length || 0)}</div>
                     </div>
-                    <div className="flex justify-end pb-10">
+
+                    <label className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition" data-testid="privacy-toggle">
+                        <div className="flex items-start gap-3">
+                            <Lock size={18} className="text-accent-vermillion mt-0.5" />
+                            <div>
+                                <div className="font-heading font-semibold text-sm">Conta privada</div>
+                                <div className="font-mono text-xs text-zinc-500 mt-0.5">apenas seguidores aprovados podem ver suas publicações</div>
+                            </div>
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={form.private}
+                            onChange={(e) => setForm({ ...form, private: e.target.checked })}
+                            className="w-5 h-5 accent-[#FF5722]"
+                        />
+                    </label>
+
+                    <div className="flex justify-between items-center pb-10">
+                        <button
+                            onClick={logout}
+                            data-testid="settings-logout"
+                            className="px-5 py-3 text-sm font-mono text-zinc-500 hover:text-accent-vermillion transition"
+                        >
+                            Sair da conta
+                        </button>
                         <button
                             onClick={save}
                             disabled={busy}

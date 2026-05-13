@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CalendarDays, MessageCircle } from "lucide-react";
+import { CalendarDays, MessageCircle, Award, Lock } from "lucide-react";
 import { api, formatApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
+import { FollowsModal } from "../components/FollowsModal";
 import { PostCard } from "../components/PostCard";
-import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
 const TABS = [
@@ -17,11 +17,11 @@ const TABS = [
 export default function Profile() {
     const { username } = useParams();
     const navigate = useNavigate();
-    const { user: me } = useAuth();
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [tab, setTab] = useState("posts");
     const [loading, setLoading] = useState(true);
+    const [modal, setModal] = useState(null); // 'followers' | 'following' | null
 
     const loadProfile = async () => {
         setLoading(true);
@@ -95,7 +95,7 @@ export default function Profile() {
             <div className="px-5 -mt-12 relative">
                 <div className="flex items-end justify-between">
                     <div className="border-4 border-[#0A0A0A] rounded-full">
-                        <Avatar user={profile} size={96} />
+                        <Avatar user={profile} size={96} showOnline />
                     </div>
                     <div className="flex gap-2">
                         {profile.is_self ? (
@@ -135,56 +135,94 @@ export default function Profile() {
                     <h2 className="font-heading text-2xl font-bold flex items-center gap-2">
                         {profile.name}
                         {profile.verified && <VerifiedBadge size={20} />}
+                        {profile.private && <Lock size={14} className="text-zinc-500" />}
                     </h2>
                     <p className="font-mono text-sm text-zinc-500">@{profile.username}</p>
+
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <div className="inline-flex items-center gap-1.5 bg-accent-vermillion/10 border border-accent-vermillion/30 rounded-full px-3 py-1" data-testid="reputation-badge">
+                            <Award size={12} className="text-accent-vermillion" />
+                            <span className="font-mono text-xs">
+                                <span className="text-accent-vermillion font-semibold">Nível {profile.level}</span>
+                                <span className="text-zinc-500 ml-1">· {profile.reputation} rep</span>
+                            </span>
+                        </div>
+                        {profile.online && (
+                            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1" data-testid="online-badge">
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                                <span className="font-mono text-xs text-emerald-400">online</span>
+                            </div>
+                        )}
+                    </div>
+
                     {profile.bio && <p className="mt-3 text-zinc-200">{profile.bio}</p>}
                     <div className="flex items-center gap-2 mt-3 text-zinc-500 font-mono text-xs">
                         <CalendarDays size={14} />
                         <span>Entrou em {joined}</span>
                     </div>
                     <div className="flex gap-5 mt-4">
-                        <div data-testid="following-count">
+                        <button
+                            onClick={() => setModal("following")}
+                            data-testid="following-count"
+                            className="hover:underline"
+                        >
                             <span className="font-heading font-bold text-white">{profile.following_count}</span>
-                            <span className="ml-1.5 font-mono text-sm text-zinc-500">seguindo</span>
-                        </div>
-                        <div data-testid="followers-count">
+                            <span className="ml-1.5 font-mono text-sm text-zinc-500">a seguir</span>
+                        </button>
+                        <button
+                            onClick={() => setModal("followers")}
+                            data-testid="followers-count"
+                            className="hover:underline"
+                        >
                             <span className="font-heading font-bold text-white">{profile.followers_count}</span>
                             <span className="ml-1.5 font-mono text-sm text-zinc-500">seguidores</span>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 border-t border-b border-zinc-900">
-                {TABS.map((t) => (
-                    <button
-                        key={t.key}
-                        onClick={() => setTab(t.key)}
-                        data-testid={`profile-tab-${t.key}`}
-                        className={`py-3 font-heading font-semibold text-sm transition relative ${
-                            tab === t.key ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
-                        }`}
-                    >
-                        {t.label}
-                        {tab === t.key && (
-                            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-accent-vermillion rounded-full" />
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {posts.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nada por aqui ainda.</div>
+            {profile.can_view === false ? (
+                <div className="mt-10 p-10 text-center border-t border-zinc-900">
+                    <Lock size={36} className="mx-auto text-zinc-700" />
+                    <h3 className="mt-4 font-heading text-lg font-bold">Perfil privado</h3>
+                    <p className="font-mono text-xs text-zinc-500 mt-1">Siga para ver as publicações</p>
+                </div>
             ) : (
-                posts.map((p) => (
-                    <PostCard
-                        key={p.id}
-                        post={p}
-                        onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
-                        onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
-                    />
-                ))
+                <>
+                    <div className="mt-6 grid grid-cols-3 border-t border-b border-zinc-900">
+                        {TABS.map((t) => (
+                            <button
+                                key={t.key}
+                                onClick={() => setTab(t.key)}
+                                data-testid={`profile-tab-${t.key}`}
+                                className={`py-3 font-heading font-semibold text-sm transition relative ${
+                                    tab === t.key ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
+                                }`}
+                            >
+                                {t.label}
+                                {tab === t.key && (
+                                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-accent-vermillion rounded-full" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+
+                    {posts.length === 0 ? (
+                        <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nada por aqui ainda.</div>
+                    ) : (
+                        posts.map((p) => (
+                            <PostCard
+                                key={p.id}
+                                post={p}
+                                onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                                onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
+                            />
+                        ))
+                    )}
+                </>
             )}
+
+            {modal && <FollowsModal username={username} type={modal} onClose={() => setModal(null)} />}
         </div>
     );
 }

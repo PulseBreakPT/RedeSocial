@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Feed from "./pages/Feed";
 import Explore from "./pages/Explore";
 import Notifications from "./pages/Notifications";
@@ -15,6 +16,10 @@ import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
 import Settings from "./pages/Settings";
 import TagPage from "./pages/TagPage";
+import Communities from "./pages/Communities";
+import Community from "./pages/Community";
+import Events from "./pages/Events";
+import Trending from "./pages/Trending";
 
 function App() {
     return (
@@ -36,6 +41,7 @@ function App() {
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/forgot" element={<ForgotPassword />} />
                         <Route
                             element={
                                 <ProtectedRoute>
@@ -45,10 +51,14 @@ function App() {
                         >
                             <Route index element={<Feed />} />
                             <Route path="/explore" element={<Explore />} />
+                            <Route path="/trending" element={<Trending />} />
                             <Route path="/notifications" element={<Notifications />} />
                             <Route path="/messages" element={<Messages />} />
                             <Route path="/messages/:userId" element={<Messages />} />
                             <Route path="/bookmarks" element={<Bookmarks />} />
+                            <Route path="/communities" element={<Communities />} />
+                            <Route path="/c/:slug" element={<Community />} />
+                            <Route path="/events" element={<Events />} />
                             <Route path="/u/:username" element={<Profile />} />
                             <Route path="/post/:postId" element={<PostDetail />} />
                             <Route path="/tag/:tag" element={<TagPage />} />

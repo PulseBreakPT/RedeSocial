@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { RightSidebar } from "./RightSidebar";
 import { Composer } from "./Composer";
+import { OnboardingModal } from "./OnboardingModal";
 import { X } from "lucide-react";
 
 export function Layout() {
@@ -10,13 +11,15 @@ export function Layout() {
 
     return (
         <div className="min-h-screen text-zinc-100">
-            <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,640px)_340px] max-w-[1300px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,640px)_340px] max-w-[1300px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
                 <Sidebar onCompose={() => setComposeOpen(true)} />
                 <main className="border-x border-zinc-900 min-h-screen pb-20 lg:pb-0">
                     <Outlet context={{ openCompose: () => setComposeOpen(true) }} />
                 </main>
                 <RightSidebar />
             </div>
+
+            <OnboardingModal />
 
             {composeOpen && (
                 <div
