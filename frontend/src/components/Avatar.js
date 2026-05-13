@@ -1,3 +1,5 @@
+import { paletteFor, initialsFor } from "../lib/avatarPalette";
+
 const FRAME_CSS = {
     frame_classic: "ring-2 ring-white/20",
     frame_coral: "ring-2 ring-orange-400",
@@ -18,12 +20,8 @@ const STICKER_EMOJI = {
 };
 
 export function Avatar({ user, size = 40, className = "", showOnline = false, showCosmetics = true }) {
-    const initials = (user?.name || user?.username || "?")
-        .split(" ")
-        .map((s) => s[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase();
+    const palette = paletteFor(user);
+    const initials = initialsFor(user);
     const dotSize = Math.max(8, Math.round(size * 0.22));
     const presence = user?.presence;
     const isOnlineDot = showOnline && (user?.online || presence?.status === "online");
@@ -52,11 +50,12 @@ export function Avatar({ user, size = 40, className = "", showOnline = false, sh
                     style={{
                         width: size,
                         height: size,
-                        background: "linear-gradient(135deg, #f4f4f8 0%, #d4d4dc 50%, #b8b8c0 100%)",
+                        background: `linear-gradient(135deg, ${palette.from} 0%, ${palette.to} 100%)`,
                     }}
-                    className={`rounded-full border border-black/10 grid place-items-center text-zinc-700 font-mono font-semibold shadow-inner ${frameClass} ${className}`}
+                    className={`rounded-full border border-black/10 grid place-items-center text-white font-heading font-semibold tracking-tight shadow-inner select-none ${frameClass} ${className}`}
+                    data-palette={palette.name}
                 >
-                    <span style={{ fontSize: size * 0.4, color: "#3a3a42" }}>{initials}</span>
+                    <span style={{ fontSize: size * 0.42, lineHeight: 1, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{initials}</span>
                 </div>
             )}
             {stickerEmoji && size >= 40 && (
@@ -70,5 +69,25 @@ export function Avatar({ user, size = 40, className = "", showOnline = false, sh
             )}
             {dot}
         </div>
+    );
+}
+
+// Inline pill that places the name on a soft-tinted background matching the user's palette.
+// Useful in cards, lists, stickers, notification rows.
+export function NamePill({ user, className = "", showAt = true, children }) {
+    const palette = paletteFor(user);
+    return (
+        <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-heading font-semibold text-[12px] ${className}`}
+            style={{ background: palette.soft, color: palette.softText }}
+            data-testid={`name-pill-${user?.username || "anon"}`}
+        >
+            {children ?? (
+                <>
+                    {showAt && <span className="opacity-60 font-mono">@</span>}
+                    <span>{user?.username || user?.name || "anon"}</span>
+                </>
+            )}
+        </span>
     );
 }

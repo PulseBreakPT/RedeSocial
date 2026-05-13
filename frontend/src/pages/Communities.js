@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Plus, X, Search, Flame, Clock, TrendingUp } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
-import { PageHeader } from "../components/PageHeader";
+import { PageShell, PageHero, FilterBar, Chip, Grid, Empty } from "../components/PageShell";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { toast } from "sonner";
 
