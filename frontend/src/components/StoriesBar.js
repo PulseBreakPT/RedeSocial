@@ -114,7 +114,7 @@ export function StoriesBar() {
     const handleFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) { toast.error("Imagem deve ter no máximo 2MB"); return; }
+        if (file.size > 2 * 1024 * 1024) { toast.error("Imagem não pode exceder 2MB"); return; }
         const reader = new FileReader();
         reader.onload = async (ev) => {
             setUploading(true);
@@ -148,12 +148,12 @@ export function StoriesBar() {
                             <Plus size={13} strokeWidth={3} />
                         </div>
                     </div>
-                    <span className="font-mono text-[10px] text-zinc-400 group-hover:text-white max-w-[72px] truncate">seu story</span>
+                    <span className="font-mono text-[10px] text-zinc-400 group-hover:text-white max-w-[72px] truncate">o teu story</span>
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" data-testid="story-file-input" />
 
                 {myGroup && (
-                    <StoryThumb group={myGroup} label="você" onClick={() => setViewerIdx(groups.indexOf(myGroup))} />
+                    <StoryThumb group={myGroup} label="tu" onClick={() => setViewerIdx(groups.indexOf(myGroup))} />
                 )}
                 {others.map((g) => (
                     <StoryThumb key={g.author.id} group={g} label={`@${g.author.username}`} onClick={() => setViewerIdx(groups.indexOf(g))} />

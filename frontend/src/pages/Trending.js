@@ -24,7 +24,7 @@ export default function Trending() {
             </div>
 
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : tags.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">
                     Nenhuma tendência ainda. Publique com <span className="text-accent-vermillion">#hashtag</span>!

@@ -29,7 +29,7 @@ export function EditPostModal({ post, onSave, onClose }) {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-900">
                     <div>
                         <h2 className="font-heading text-lg font-bold">Editar publicação</h2>
-                        <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">você tem 15 min após publicar</p>
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">tens 15 min após publicar</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5">
                         <X size={16} />
@@ -52,7 +52,7 @@ export function EditPostModal({ post, onSave, onClose }) {
                             data-testid="save-edit-btn"
                             className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-xs px-6 py-2.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-40 active:scale-95"
                         >
-                            {busy ? "..." : "Salvar"}
+                            {busy ? "..." : "Guardar"}
                         </button>
                     </div>
                 </div>

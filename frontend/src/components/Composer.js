@@ -27,7 +27,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const handleFile = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) { toast.error("Imagem deve ter no máximo 2MB"); return; }
+        if (file.size > 2 * 1024 * 1024) { toast.error("Imagem não pode exceder 2MB"); return; }
         const reader = new FileReader();
         reader.onload = (ev) => setImage(ev.target.result);
         reader.readAsDataURL(file);
@@ -52,7 +52,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     };
 
     const submit = async () => {
-        if (!content.trim()) { toast.error("Escreva algo antes de publicar"); return; }
+        if (!content.trim()) { toast.error("Escreve algo antes de publicar"); return; }
         setBusy(true);
         try {
             const body = { content, image };
@@ -101,7 +101,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         onPaste={handlePaste}
-                        placeholder={communityId ? "Compartilhe algo com a comunidade..." : "O que está acontecendo?"}
+                        placeholder={communityId ? "Partilha algo com a comunidade..." : "O que está a acontecer?"}
                         rows={asModal ? 4 : 2}
                         maxLength={500}
                         className="w-full bg-transparent text-[17px] font-body placeholder:text-zinc-500 focus:outline-none resize-none leading-snug"

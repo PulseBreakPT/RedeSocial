@@ -25,7 +25,7 @@ export default function Communities() {
     const join = async (slug) => {
         try {
             const { data } = await api.post(`/communities/${slug}/join`);
-            toast.success(data.joined ? "Entrou na comunidade" : "Saiu da comunidade");
+            toast.success(data.joined ? "Entraste na comunidade" : "Saíste da comunidade");
             load();
         } catch (e) {
             toast.error(formatApiError(e));
@@ -110,10 +110,10 @@ export default function Communities() {
             )}
 
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : communities.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">
-                    Nenhuma comunidade ainda. Crie a primeira!
+                    Nenhuma comunidade ainda. Cria a primeira!
                 </div>
             ) : (
                 <div className="divide-y divide-zinc-900">

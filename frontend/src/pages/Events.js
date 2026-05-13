@@ -136,7 +136,7 @@ export default function Events() {
             )}
 
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : events.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhum evento agendado.</div>
             ) : (
@@ -185,7 +185,7 @@ export default function Events() {
                                             : "bg-white text-black hover:bg-zinc-200"
                                     }`}
                                 >
-                                    {e.attending ? "Indo" : "Participar"}
+                                    {e.attending ? "Vou" : "Participar"}
                                 </button>
                             </div>
                         </div>

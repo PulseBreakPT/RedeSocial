@@ -95,7 +95,7 @@ export default function Feed() {
                             tab === "foryou" ? "text-white" : "text-zinc-500 hover:bg-white/[0.02]"
                         }`}
                     >
-                        Para você
+                        Para ti
                         {tab === "foryou" && (
                             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[3px] bg-accent-vermillion rounded-full" />
                         )}
@@ -127,11 +127,11 @@ export default function Feed() {
                         <Sparkles size={26} className="text-accent-vermillion" />
                     </div>
                     <p className="text-zinc-200 font-heading text-xl tracking-tight">
-                        {tab === "following" ? "Seu feed está calmo." : "Seja o primeiro."}
+                        {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
                     </p>
                     <p className="text-zinc-500 text-sm mt-2 max-w-xs mx-auto">
                         {tab === "following"
-                            ? "Siga pessoas ou troque para Para você e descubra novidades."
+                            ? "Segue pessoas ou troca para Para ti e descubra novidades."
                             : "Nenhuma publicação ainda — comece a conversa."}
                     </p>
                 </div>

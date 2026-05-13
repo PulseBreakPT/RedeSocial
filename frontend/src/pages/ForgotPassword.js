@@ -35,7 +35,7 @@ export default function ForgotPassword() {
         setError("");
         try {
             await api.post("/auth/reset-password", { token, password });
-            setInfo("Senha redefinida com sucesso. Você pode entrar.");
+            setInfo("Palavra-passe redefinida com sucesso. Podes entrar.");
             setStep("done");
         } catch (err) {
             setError(formatApiError(err));
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
     return (
         <div className="min-h-screen grid place-items-center p-8">
             <div className="max-w-sm w-full">
-                <h1 className="font-heading text-3xl font-bold tracking-tight">Recuperar senha</h1>
+                <h1 className="font-heading text-3xl font-bold tracking-tight">Recuperar palavra-passe</h1>
                 <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">redefinir acesso</p>
 
                 {step === "request" && (
@@ -69,7 +69,7 @@ export default function ForgotPassword() {
                             data-testid="forgot-submit"
                             className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
                         >
-                            {busy ? "Enviando..." : "Enviar"}
+                            {busy ? "A enviar..." : "Enviar"}
                         </button>
                     </form>
                 )}
@@ -88,7 +88,7 @@ export default function ForgotPassword() {
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nova senha</label>
+                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Nova palavra-passe</label>
                             <input
                                 data-testid="reset-password"
                                 type="password"
@@ -104,7 +104,7 @@ export default function ForgotPassword() {
                             data-testid="reset-submit"
                             className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98]"
                         >
-                            {busy ? "Redefinindo..." : "Redefinir"}
+                            {busy ? "A redefinir..." : "Redefinir"}
                         </button>
                     </form>
                 )}

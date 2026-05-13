@@ -20,7 +20,7 @@ const iconFor = (type) => {
 const FILTERS = [
     { key: "all", label: "Tudo" },
     { key: "mention", label: "Menções" },
-    { key: "like", label: "Curtidas" },
+    { key: "like", label: "Gostos" },
     { key: "follow", label: "Seguidores" },
 ];
 
@@ -49,7 +49,7 @@ export default function Notifications() {
             <div className="sticky top-0 z-30 glass border-b border-zinc-900">
                 <div className="px-5 py-4">
                     <h1 className="font-heading text-xl font-bold tracking-tight">Notificações</h1>
-                    <p className="font-mono text-xs text-zinc-500 mt-0.5">o que estão dizendo de você</p>
+                    <p className="font-mono text-xs text-zinc-500 mt-0.5">o que dizem sobre ti</p>
                 </div>
                 <div className="grid grid-cols-4 border-t border-zinc-900">
                     {FILTERS.map((f) => (
@@ -71,7 +71,7 @@ export default function Notifications() {
             </div>
 
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : filtered.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma notificação aqui.</div>
             ) : (

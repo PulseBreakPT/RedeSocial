@@ -60,7 +60,7 @@ export default function PostDetail() {
     };
 
     if (loading || !post) {
-        return <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>;
+        return <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>;
     }
 
     return (
@@ -89,7 +89,7 @@ export default function PostDetail() {
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             data-testid="comment-input"
-                            placeholder="Adicione um comentário..."
+                            placeholder="Adiciona um comentário..."
                             rows={2}
                             className="w-full bg-transparent text-base focus:outline-none resize-none placeholder:text-zinc-600"
                             maxLength={300}
@@ -109,7 +109,7 @@ export default function PostDetail() {
             </div>
 
             {comments.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Sem comentários ainda. Seja o primeiro!</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Sem comentários ainda. Sê o primeiro!</div>
             ) : (
                 comments.map((c) => (
                     <div key={c.id} className="p-5 border-b border-zinc-900 flex gap-3 anim-fade-up" data-testid={`comment-${c.id}`}>

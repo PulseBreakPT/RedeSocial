@@ -15,7 +15,7 @@ import { toast } from "sonner";
 const TABS = [
     { key: "posts", label: "Publicações" },
     { key: "media", label: "Mídia" },
-    { key: "likes", label: "Curtidas" },
+    { key: "likes", label: "Gostos" },
 ];
 
 export default function Profile() {
@@ -180,7 +180,7 @@ export default function Profile() {
                     {profile.bio && <p className="mt-3 text-zinc-200">{profile.bio}</p>}
                     <div className="flex items-center gap-2 mt-3 text-zinc-500 font-mono text-xs">
                         <CalendarDays size={14} />
-                        <span>Entrou em {joined}</span>
+                        <span>Membro desde {joined}</span>
                         {stats?.joined_days !== undefined && (
                             <>
                                 <span className="text-zinc-700">·</span>
@@ -198,7 +198,7 @@ export default function Profile() {
                             </div>
                             <Users size={12} />
                             <span>
-                                Seguido por <span className="text-white">{mutual.count}</span> pessoa{mutual.count > 1 ? "s" : ""} que você segue
+                                Seguido por <span className="text-white">{mutual.count}</span> pessoa{mutual.count > 1 ? "s" : ""} que segues
                             </span>
                         </div>
                     )}
@@ -220,7 +220,7 @@ export default function Profile() {
                 <div className="mt-10 p-10 text-center border-t border-zinc-900">
                     <Lock size={36} className="mx-auto text-zinc-700" />
                     <h3 className="mt-4 font-heading text-lg font-bold">Perfil privado</h3>
-                    <p className="font-mono text-xs text-zinc-500 mt-1">Siga para ver as publicações</p>
+                    <p className="font-mono text-xs text-zinc-500 mt-1">Segue para ver as publicações</p>
                 </div>
             ) : (
                 <>

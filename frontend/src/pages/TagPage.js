@@ -32,7 +32,7 @@ export default function TagPage() {
                 </div>
             </div>
             {loading ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
             ) : posts.length === 0 ? (
                 <div className="p-10 text-center text-zinc-500 font-mono text-sm">
                     Nenhuma publicação com <span className="text-accent-vermillion">#{tag}</span> ainda.

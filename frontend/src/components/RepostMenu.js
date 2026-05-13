@@ -39,7 +39,7 @@ export function RepostMenu({ reposted, onRepost, onQuote }) {
                         }}
                         className="w-full px-4 py-2 text-sm text-left hover:bg-white/5 flex items-center gap-2.5"
                     >
-                        <Repeat2 size={14} /> {reposted ? "Desfazer repost" : "Repostar"}
+                        <Repeat2 size={14} /> {reposted ? "Desfazer republicação" : "Republicar"}
                     </button>
                     <button
                         onClick={() => {

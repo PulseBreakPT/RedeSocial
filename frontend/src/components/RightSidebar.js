@@ -35,7 +35,7 @@ export function RightSidebar() {
         try {
             await api.post(`/users/${username}/follow`);
             setSuggestions((s) => s.filter((u) => u.username !== username));
-            toast.success(`Você seguiu @${username}`);
+            toast.success(`Seguiste @${username}`);
         } catch (e) {
             toast.error(formatApiError(e));
         }
@@ -49,7 +49,7 @@ export function RightSidebar() {
                     data-testid="search-input"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Buscar usuários..."
+                    placeholder="Pesquisar utilizadores..."
                     className="w-full bg-zinc-900/60 rounded-full pl-10 pr-4 py-3 text-sm border border-zinc-800 focus:border-accent-vermillion/60 focus:bg-black outline-none transition placeholder:text-zinc-600"
                 />
                 {q && results.length > 0 && (
@@ -78,7 +78,7 @@ export function RightSidebar() {
             <div className="bg-zinc-950/50 border border-zinc-900 rounded-2xl p-5">
                 <h3 className="font-heading text-lg font-bold mb-3">Assuntos do momento</h3>
                 {trending.length === 0 ? (
-                    <p className="text-zinc-600 text-sm font-mono">Nenhum trending ainda. Use #hashtag.</p>
+                    <p className="text-zinc-600 text-sm font-mono">Nenhum trending ainda. Usa #hashtag.</p>
                 ) : (
                     <ul className="space-y-3">
                         {trending.map((t) => (

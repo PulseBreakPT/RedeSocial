@@ -50,7 +50,7 @@ export function FollowsModal({ username, type, onClose }) {
                 </div>
                 <div className="overflow-y-auto flex-1 divide-y divide-zinc-900">
                     {loading ? (
-                        <div className="p-8 text-center text-zinc-500 font-mono text-sm">carregando...</div>
+                        <div className="p-8 text-center text-zinc-500 font-mono text-sm">a carregar...</div>
                     ) : users.length === 0 ? (
                         <div className="p-8 text-center text-zinc-500 font-mono text-sm">Ninguém aqui ainda.</div>
                     ) : (

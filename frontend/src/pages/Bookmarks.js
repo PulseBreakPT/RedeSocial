@@ -19,8 +19,8 @@ export default function Bookmarks() {
     return (
         <div data-testid="bookmarks-page">
             <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight">Salvos</h1>
-                <p className="font-mono text-xs text-zinc-500 mt-0.5">o que você guardou</p>
+                <h1 className="font-heading text-xl font-bold tracking-tight">Guardados</h1>
+                <p className="font-mono text-xs text-zinc-500 mt-0.5">o que guardaste</p>
             </div>
             {loading ? (
                 <PostSkeletonList count={3} />

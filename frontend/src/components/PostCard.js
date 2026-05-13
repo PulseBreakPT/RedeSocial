@@ -25,12 +25,12 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const navigate = useNavigate();
     const [liked, setLiked] = useState(post.liked);
     const [likes, setLikes] = useState(post.likes_count);
-    const [reposts, setReposts] = useState(post.reposts_count || 0);
+    const [reposts, setRepublicações] = useState(post.reposts_count || 0);
     const [reposted, setReposted] = useState(!!post.reposted);
     const [bookmarked, setBookmarked] = useState(!!post.bookmarked);
     const [views, setViews] = useState(post.views || 0);
     const [pinned, setPinned] = useState(!!post.pinned);
-    const [editedAt, setEditedAt] = useState(post.edited_at);
+    const [editedAt, setEditadAt] = useState(post.edited_at);
     const [content, setContent] = useState(post.content);
     const [animLike, setAnimLike] = useState(false);
     const [lightbox, setLightbox] = useState(false);
@@ -80,15 +80,15 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const doRepost = async () => {
         const prev = reposted;
         setReposted(!prev);
-        setReposts(prev ? reposts - 1 : reposts + 1);
+        setRepublicações(prev ? reposts - 1 : reposts + 1);
         try {
             const { data } = await api.post(`/posts/${post.id}/repost`);
             setReposted(data.reposted);
-            setReposts(data.reposts_count);
-            toast.success(data.reposted ? "Repostado" : "Repost desfeito");
+            setRepublicações(data.reposts_count);
+            toast.success(data.reposted ? "Republicado" : "Republicação desfeita");
         } catch (err) {
             setReposted(prev);
-            setReposts(prev ? reposts + 1 : reposts - 1);
+            setRepublicações(prev ? reposts + 1 : reposts - 1);
             toast.error(formatApiError(err));
         }
     };
@@ -100,7 +100,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         try {
             const { data } = await api.post(`/posts/${post.id}/bookmark`);
             setBookmarked(data.bookmarked);
-            toast.success(data.bookmarked ? "Salvo" : "Removido dos salvos");
+            toast.success(data.bookmarked ? "Guardado" : "Removido dos guardados");
         } catch (err) {
             setBookmarked(prev);
             toast.error(formatApiError(err));
@@ -265,7 +265,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                     onClose={() => setEditing(false)}
                     onSave={(np) => {
                         setContent(np.content);
-                        setEditedAt(np.edited_at);
+                        setEditadAt(np.edited_at);
                         onChange?.(np);
                     }}
                 />
@@ -288,7 +288,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
                 <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 ml-12 mb-1.5">
                     <Repeat2 size={13} className="text-emerald-400" />
                     <Link to={`/u/${post.author?.username}`} className="hover:underline">
-                        @{post.author?.username} repostou
+                        @{post.author?.username} republicou
                     </Link>
                 </div>
                 <PostBody post={inner} onChange={onChange} clickable={clickable} showRepostHeader onDelete={onDelete} />

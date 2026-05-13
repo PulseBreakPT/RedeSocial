@@ -44,7 +44,7 @@ export default function Community() {
     };
 
     if (loading || !community) {
-        return <div className="p-10 text-center text-zinc-500 font-mono text-sm">carregando...</div>;
+        return <div className="p-10 text-center text-zinc-500 font-mono text-sm">a carregar...</div>;
     }
 
     return (

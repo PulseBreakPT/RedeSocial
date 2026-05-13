@@ -29,7 +29,7 @@ export function useGlobalNotifications() {
 
                 if (lastNotifRef.current !== null && notif > lastNotifRef.current) {
                     toast("Nova notificação", {
-                        description: "Você tem uma nova interação",
+                        description: "Tens uma nova interação",
                         action: { label: "Ver", onClick: () => navigate("/notifications") },
                     });
                 }

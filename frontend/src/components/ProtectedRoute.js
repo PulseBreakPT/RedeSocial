@@ -6,7 +6,7 @@ export function ProtectedRoute({ children }) {
     if (checking) {
         return (
             <div className="min-h-screen grid place-items-center">
-                <div className="text-zinc-500 font-mono text-sm" data-testid="loading-state">carregando...</div>
+                <div className="text-zinc-500 font-mono text-sm" data-testid="loading-state">a carregar...</div>
             </div>
         );
     }

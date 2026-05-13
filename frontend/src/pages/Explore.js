@@ -25,7 +25,7 @@ export default function Explore() {
             {loading ? (
                 <PostSkeletonList count={4} />
             ) : posts.length === 0 ? (
-                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma publicação ainda. Seja o primeiro!</div>
+                <div className="p-10 text-center text-zinc-500 font-mono text-sm">Nenhuma publicação ainda. Sê o primeiro!</div>
             ) : (
                 posts.map((p) => (
                     <PostCard

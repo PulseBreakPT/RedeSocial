@@ -43,7 +43,7 @@ export default function Register() {
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-heading text-4xl font-bold tracking-tight leading-tight">
-                        Seu lugar para<br />contar uma <span className="text-accent-vermillion italic">história</span>.
+                        O teu lugar para<br />contar uma <span className="text-accent-vermillion italic">história</span>.
                     </h2>
                 </div>
             </div>
@@ -51,7 +51,7 @@ export default function Register() {
             <div className="flex flex-col justify-center p-8 lg:p-16">
                 <div className="max-w-sm w-full mx-auto">
                     <h2 className="font-heading text-3xl font-bold tracking-tight">Criar conta</h2>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">comece em 30 segundos</p>
+                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">começa em 30 segundos</p>
 
                     <form onSubmit={submit} className="mt-8 space-y-4" data-testid="register-form">
                         <div>
@@ -90,7 +90,7 @@ export default function Register() {
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Senha</label>
+                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Palavra-passe</label>
                             <input
                                 data-testid="register-password"
                                 type="password"
@@ -108,12 +108,12 @@ export default function Register() {
                             data-testid="register-submit"
                             className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
                         >
-                            {busy ? "Criando..." : "Criar conta"}
+                            {busy ? "A criar..." : "Criar conta"}
                         </button>
                     </form>
 
                     <p className="mt-8 font-mono text-sm text-zinc-500">
-                        Já tem uma conta?{" "}
+                        Já tens conta?{" "}
                         <Link to="/login" data-testid="goto-login" className="text-accent-vermillion hover:underline">
                             Entrar
                         </Link>

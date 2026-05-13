@@ -45,7 +45,7 @@ export default function Login() {
                         Onde sua voz<br />encontra um <span className="text-accent-vermillion italic">eco</span>.
                     </h2>
                     <p className="font-body text-zinc-300 mt-4 leading-relaxed">
-                        Conecte, descubra e converse em tempo real. Um espaço refinado para ideias que importam.
+                        Liga-te, descobre e conversa em tempo real. Um espaço refinado para ideias que importam.
                     </p>
                 </div>
             </div>
@@ -53,7 +53,7 @@ export default function Login() {
             <div className="flex flex-col justify-center p-8 lg:p-16">
                 <div className="max-w-sm w-full mx-auto">
                     <h2 className="font-heading text-3xl font-bold tracking-tight">Entrar</h2>
-                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">acesse sua conta</p>
+                    <p className="font-mono text-xs uppercase tracking-widest text-zinc-500 mt-2">acesse a tua conta</p>
 
                     <form onSubmit={submit} className="mt-10 space-y-5" data-testid="login-form">
                         <div>
@@ -68,7 +68,7 @@ export default function Login() {
                             />
                         </div>
                         <div>
-                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Senha</label>
+                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500">Palavra-passe</label>
                             <input
                                 data-testid="login-password"
                                 type="password"
@@ -87,18 +87,18 @@ export default function Login() {
                             data-testid="login-submit"
                             className="w-full bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm py-3.5 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-[0.98] glow-vermillion"
                         >
-                            {busy ? "Entrando..." : "Entrar"}
+                            {busy ? "A entrar..." : "Entrar"}
                         </button>
                     </form>
 
                     <p className="mt-8 font-mono text-sm text-zinc-500">
-                        Não tem uma conta?{" "}
+                        Ainda não tens conta?{" "}
                         <Link to="/register" data-testid="goto-register" className="text-accent-vermillion hover:underline">
                             Criar conta
                         </Link>
                     </p>
                     <p className="mt-2 font-mono text-sm text-zinc-500">
-                        Esqueceu a senha?{" "}
+                        Esqueceste-te da palavra-passe?{" "}
                         <Link to="/forgot" data-testid="goto-forgot" className="text-accent-vermillion hover:underline">
                             Recuperar
                         </Link>

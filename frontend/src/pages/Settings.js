@@ -21,7 +21,7 @@ export default function Settings() {
     const readFile = (file, cb) => {
         if (!file) return;
         if (file.size > 2 * 1024 * 1024) {
-            toast.error("Imagem deve ter no máximo 2MB");
+            toast.error("Imagem não pode exceder 2MB");
             return;
         }
         const reader = new FileReader();
@@ -45,7 +45,7 @@ export default function Settings() {
     return (
         <div data-testid="settings-page">
             <div className="sticky top-0 z-30 glass border-b border-zinc-900 px-5 py-4">
-                <h1 className="font-heading text-xl font-bold tracking-tight">Configurações</h1>
+                <h1 className="font-heading text-xl font-bold tracking-tight">Definições</h1>
                 <p className="font-mono text-xs text-zinc-500 mt-0.5">editar perfil e privacidade</p>
             </div>
 
@@ -131,7 +131,7 @@ export default function Settings() {
                             data-testid="settings-logout"
                             className="px-5 py-3 text-sm font-mono text-zinc-500 hover:text-accent-vermillion transition"
                         >
-                            Sair da conta
+                            Terminar sessão
                         </button>
                         <button
                             onClick={save}
@@ -139,7 +139,7 @@ export default function Settings() {
                             data-testid="settings-save-btn"
                             className="bg-accent-vermillion text-white font-heading font-semibold uppercase tracking-wide text-sm px-7 py-3 rounded-full hover:bg-[#A78BFA] transition disabled:opacity-50 active:scale-95"
                         >
-                            {busy ? "Salvando..." : "Salvar"}
+                            {busy ? "A guardar..." : "Guardar"}
                         </button>
                     </div>
                 </div>

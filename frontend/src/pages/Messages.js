@@ -32,7 +32,7 @@ function ConversationList({ activeId, onSelect }) {
         <div className="divide-y divide-zinc-900" data-testid="conversations-list">
             {convs.length === 0 ? (
                 <p className="p-6 text-center text-zinc-500 font-mono text-sm">
-                    Nenhuma conversa ainda. Abra o perfil de alguém e clique em mensagem.
+                    Nenhuma conversa ainda. Abre o perfil de alguém e clica em mensagem.
                 </p>
             ) : (
                 convs.map((c) => (
@@ -145,7 +145,7 @@ function ChatView({ other, onBack }) {
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.length === 0 && !typing && (
-                    <div className="text-center text-zinc-600 font-mono text-sm py-10">Diga olá para {other.name} 👋</div>
+                    <div className="text-center text-zinc-600 font-mono text-sm py-10">Diz olá a {other.name} 👋</div>
                 )}
                 {messages.map((m) => {
                     const mine = me && m.sender_id === me.id;
@@ -185,7 +185,7 @@ function ChatView({ other, onBack }) {
                             send();
                         }
                     }}
-                    placeholder="Escreva uma mensagem..."
+                    placeholder="Escreve uma mensagem..."
                     data-testid="message-input"
                     className="flex-1 bg-zinc-950 border border-zinc-800 rounded-full px-5 py-3 text-sm focus:border-accent-vermillion outline-none"
                 />

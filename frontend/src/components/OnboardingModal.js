@@ -48,7 +48,7 @@ export function OnboardingModal() {
                     </div>
                     <div>
                         <h2 className="font-heading text-2xl font-bold">Bem-vindo, {user.name?.split(" ")[0]}!</h2>
-                        <p className="font-mono text-xs text-zinc-500">vamos preparar seu feed</p>
+                        <p className="font-mono text-xs text-zinc-500">vamos preparar o teu feed</p>
                     </div>
                     <button onClick={finish} data-testid="skip-onboarding" className="ml-auto p-2 rounded-full hover:bg-white/5 text-zinc-400">
                         <X size={18} />
@@ -57,7 +57,7 @@ export function OnboardingModal() {
 
                 <div className="p-6">
                     <h3 className="font-heading text-lg font-bold mb-1">Siga algumas pessoas para começar</h3>
-                    <p className="font-mono text-xs text-zinc-500 mb-5">selecione pelo menos um para popular seu feed</p>
+                    <p className="font-mono text-xs text-zinc-500 mb-5">seleciona pelo menos um para popular o teu feed</p>
 
                     {suggestions.length === 0 ? (
                         <p className="text-zinc-500 font-mono text-sm py-6 text-center">Nenhuma sugestão disponível agora.</p>

@@ -17,8 +17,8 @@ const items = [
     { to: "/events", label: "Eventos", icon: CalendarDays, testid: "nav-events" },
     { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications" },
     { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "nav-messages" },
-    { to: "/bookmarks", label: "Salvos", icon: Bookmark, testid: "nav-bookmarks" },
-    { to: "/settings", label: "Configurações", icon: Settings, testid: "nav-settings" },
+    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
+    { to: "/settings", label: "Definições", icon: Settings, testid: "nav-settings" },
 ];
 
 export function Sidebar({ onCompose }) {

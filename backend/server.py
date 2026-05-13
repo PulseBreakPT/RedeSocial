@@ -135,7 +135,7 @@ async def get_current_user(request: Request) -> dict:
             raise HTTPException(status_code=401, detail="Token inválido")
         user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
         if not user:
-            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+            raise HTTPException(status_code=401, detail="Utilizador não encontrado")
         # update last seen (best-effort)
         await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
         return user
@@ -250,7 +250,7 @@ async def handle_mentions(text: str, author: dict, post_id: str) -> None:
         if target and target["id"] != author["id"]:
             await create_notification(
                 target["id"], "mention", author["id"], post_id,
-                f"@{author['username']} mencionou você"
+                f"@{author['username']} mencionou-te"
             )
 
 
@@ -335,7 +335,7 @@ async def register(payload: RegisterIn, response: Response):
     email = payload.email.lower()
     username = payload.username.lower().strip()
     if await db.users.find_one({"email": email}):
-        raise HTTPException(400, "Email já cadastrado")
+        raise HTTPException(400, "Email já registado")
     if await db.users.find_one({"username": username}):
         raise HTTPException(400, "Username já em uso")
     user = {
@@ -450,7 +450,7 @@ async def global_search(q: str = "", viewer: Optional[dict] = Depends(maybe_user
 async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     likes_received = await db.posts.aggregate([
         {"$match": {"author_id": user["id"]}},
         {"$project": {"n": {"$size": {"$ifNull": ["$likes", []]}}}},
@@ -475,7 +475,7 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
 async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] = Depends(maybe_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return []
     if tab == "media":
@@ -493,7 +493,7 @@ async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] =
 async def user_stats(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return {}
     posts = await db.posts.find(
@@ -546,7 +546,7 @@ async def user_stats(username: str, viewer: Optional[dict] = Depends(maybe_user)
 async def user_heatmap(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return []
     now = datetime.now(timezone.utc).date()
@@ -570,7 +570,7 @@ async def user_heatmap(username: str, viewer: Optional[dict] = Depends(maybe_use
 async def user_mutual(username: str, viewer=Depends(get_current_user)):
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if target["id"] == viewer["id"]:
         return {"count": 0, "users": []}
     mutual_ids = set(target.get("followers", [])) & set(viewer.get("following", []))
@@ -582,7 +582,7 @@ async def user_mutual(username: str, viewer=Depends(get_current_user)):
 async def list_followers(username: str, viewer=Depends(get_current_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return []
     fls = await db.users.find({"id": {"$in": user.get("followers", [])}}, {"_id": 0}).to_list(500)
@@ -593,7 +593,7 @@ async def list_followers(username: str, viewer=Depends(get_current_user)):
 async def list_following(username: str, viewer=Depends(get_current_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not user:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if not await can_view_profile(user, viewer):
         return []
     fls = await db.users.find({"id": {"$in": user.get("following", [])}}, {"_id": 0}).to_list(500)
@@ -604,9 +604,9 @@ async def list_following(username: str, viewer=Depends(get_current_user)):
 async def follow_user(username: str, user=Depends(get_current_user)):
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     if target["id"] == user["id"]:
-        raise HTTPException(400, "Não é possível seguir a si mesmo")
+        raise HTTPException(400, "Não te podes seguir a ti próprio")
     is_following = user["id"] in target.get("followers", [])
     if is_following:
         await db.users.update_one({"id": target["id"]}, {"$pull": {"followers": user["id"]}})
@@ -614,7 +614,7 @@ async def follow_user(username: str, user=Depends(get_current_user)):
         return {"following": False}
     await db.users.update_one({"id": target["id"]}, {"$addToSet": {"followers": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$addToSet": {"following": target["id"]}})
-    await create_notification(target["id"], "follow", user["id"], None, f"@{user['username']} começou a seguir você")
+    await create_notification(target["id"], "follow", user["id"], None, f"@{user['username']} começou a seguir-te")
     return {"following": True}
 
 
@@ -642,7 +642,7 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     if payload.community_id:
         c = await db.communities.find_one({"id": payload.community_id}, {"_id": 0})
         if not c or user["id"] not in c.get("members", []):
-            raise HTTPException(403, "Você precisa entrar na comunidade primeiro")
+            raise HTTPException(403, "Tens de entrar na comunidade primeiro")
         community_id = c["id"]
     if payload.quote_of:
         q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
@@ -664,7 +664,7 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
         if q and q["author_id"] != user["id"]:
             await create_notification(q["author_id"], "quote", user["id"], post["id"],
-                                       f"@{user['username']} citou sua publicação")
+                                       f"@{user['username']} citou a tua publicação")
     return await enrich_post(post, user)
 
 
@@ -777,7 +777,7 @@ async def like_post(post_id: str, user=Depends(get_current_user)):
         await db.posts.update_one({"id": post_id}, {"$pull": {"likes": user["id"]}})
         return {"liked": False, "likes_count": len(post.get("likes", [])) - 1}
     await db.posts.update_one({"id": post_id}, {"$addToSet": {"likes": user["id"]}})
-    await create_notification(post["author_id"], "like", user["id"], post_id, f"@{user['username']} curtiu sua publicação")
+    await create_notification(post["author_id"], "like", user["id"], post_id, f"@{user['username']} gostou da tua publicação")
     return {"liked": True, "likes_count": len(post.get("likes", [])) + 1}
 
 
@@ -815,7 +815,7 @@ async def repost(post_id: str, user=Depends(get_current_user)):
         "likes": [], "bookmarks": [], "reposts": [], "hashtags": [],
         "repost_of": origin["id"], "created_at": now_iso(),
     })
-    await create_notification(origin["author_id"], "repost", user["id"], origin["id"], f"@{user['username']} repostou sua publicação")
+    await create_notification(origin["author_id"], "repost", user["id"], origin["id"], f"@{user['username']} republicou a tua publicação")
     return {"reposted": True, "reposts_count": len(origin.get("reposts", [])) + 1}
 
 
@@ -845,7 +845,7 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
         "content": payload.content, "created_at": now_iso(),
     }
     await db.comments.insert_one(comment)
-    await create_notification(post["author_id"], "comment", user["id"], post_id, f"@{user['username']} comentou em sua publicação")
+    await create_notification(post["author_id"], "comment", user["id"], post_id, f"@{user['username']} comentou na tua publicação")
     await handle_mentions(payload.content, user, post_id)
     return {
         "id": comment["id"], "content": comment["content"],
@@ -1172,7 +1172,7 @@ async def get_typing(other_user_id: str, user=Depends(get_current_user)):
 async def send_message(payload: MessageIn, user=Depends(get_current_user)):
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
     if not other:
-        raise HTTPException(404, "Usuário não encontrado")
+        raise HTTPException(404, "Utilizador não encontrado")
     key = conv_key(user["id"], other["id"])
     msg = {
         "id": str(uuid.uuid4()), "conversation_key": key,

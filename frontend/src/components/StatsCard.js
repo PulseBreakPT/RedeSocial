@@ -19,11 +19,11 @@ export function StatsCard({ stats, completion }) {
     return (
         <div className="px-5 py-4 border-b border-zinc-900 space-y-3" data-testid="stats-card">
             <div className="grid grid-cols-2 gap-2.5">
-                <Stat icon={Heart} label="Curtidas recebidas" value={stats.likes_received ?? 0} color="text-accent-vermillion" />
-                <Stat icon={Repeat2} label="Reposts" value={stats.reposts_received ?? 0} color="text-emerald-400" />
+                <Stat icon={Heart} label="Gostos recebidas" value={stats.likes_received ?? 0} color="text-accent-vermillion" />
+                <Stat icon={Repeat2} label="Republicações" value={stats.reposts_received ?? 0} color="text-emerald-400" />
                 <Stat icon={MessageCircle} label="Respostas" value={stats.comments_received ?? 0} color="text-blue-400" />
                 <Stat icon={TrendingUp} label="Taxa engaj." value={`${stats.engagement_rate ?? 0}%`} color="text-yellow-400" />
-                <Stat icon={Eye} label="Média curtidas/post" value={stats.avg_likes ?? 0} color="text-purple-400" />
+                <Stat icon={Eye} label="Média gostos/post" value={stats.avg_likes ?? 0} color="text-purple-400" />
                 <Stat icon={Flame} label="Sequência" value={`${stats.streak ?? 0} ${stats.streak === 1 ? "dia" : "dias"}`} color="text-orange-400" />
             </div>
             {completion !== undefined && completion < 100 && (

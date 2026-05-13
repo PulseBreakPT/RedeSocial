@@ -14,7 +14,7 @@ export function QuoteModal({ post, onClose, onQuoted }) {
 
     const submit = async () => {
         if (!content.trim()) {
-            toast.error("Escreva um comentário para citar");
+            toast.error("Escreve um comentário para citar");
             return;
         }
         setBusy(true);
@@ -48,7 +48,7 @@ export function QuoteModal({ post, onClose, onQuoted }) {
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder="Adicione um comentário..."
+                            placeholder="Adiciona um comentário..."
                             maxLength={500}
                             rows={3}
                             autoFocus
