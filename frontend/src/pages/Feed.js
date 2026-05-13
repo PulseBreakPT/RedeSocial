@@ -3,6 +3,7 @@ import { RefreshCw, Sparkles } from "lucide-react";
 import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
+import { MobileDiscoverStrip } from "../components/MobileDiscoverStrip";
 import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -144,6 +145,7 @@ export default function Feed() {
             )}
 
             <StoriesBar />
+            <MobileDiscoverStrip />
             <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} />
 
             {loading ? (
