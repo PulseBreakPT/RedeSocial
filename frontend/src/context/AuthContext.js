@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
     const refresh = useCallback(async () => {
         try {
             const { data } = await api.get("/auth/me");
-            setUser(data);
+            setUser(data?.user || false);
         } catch {
             setUser(false);
         } finally {

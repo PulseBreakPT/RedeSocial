@@ -647,8 +647,11 @@ async def logout(response: Response):
 
 
 @api.get("/auth/me")
-async def me(user=Depends(get_current_user)):
-    return public_user(user)
+async def me(request: Request):
+    user = await maybe_user(request)
+    if not user:
+        return {"user": None}
+    return {"user": public_user(user)}
 
 
 @api.post("/auth/forgot-password")

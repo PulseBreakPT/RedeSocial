@@ -82,14 +82,18 @@ class TestAuth:
         assert body["user"]["username"] == "admin"
         assert "access_token" in s.cookies
 
-    def test_me_requires_auth(self):
+    def test_me_anonymous_returns_user_null(self):
+        # Anonymous boot must NOT 401 — it should return 200 {user: null}
         r = requests.get(f"{API}/auth/me")
-        assert r.status_code == 401
+        assert r.status_code == 200, f"anon /auth/me should be 200, got {r.status_code}"
+        assert r.json() == {"user": None}
 
     def test_me_with_session(self, admin_session):
         r = admin_session.get(f"{API}/auth/me")
         assert r.status_code == 200
-        assert r.json()["username"] == "admin"
+        body = r.json()
+        assert "user" in body and body["user"] is not None
+        assert body["user"]["username"] == "admin"
 
     def test_invalid_login(self):
         r = requests.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "wrong"})
@@ -103,10 +107,9 @@ class TestAuth:
         s.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "admin123"})
         s.post(f"{API}/auth/logout")
         r = s.get(f"{API}/auth/me")
-        # cookie cleared on server, browser session may still send token
-        # Accept either 200 (cookie not actually cleared) or 401
-        # If 200, that's a bug
-        assert r.status_code == 401, f"logout should invalidate session: {r.status_code}"
+        # After logout, /auth/me now returns 200 {user: null}
+        assert r.status_code == 200
+        assert r.json().get("user") is None
 
 
 # ---------- Users ----------
