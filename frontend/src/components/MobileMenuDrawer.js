@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
     LogOut, Users as UsersIcon, CalendarDays, TrendingUp,
-    FileText, Clock, X,
+    FileText, Clock, X, ScrollText, Scale,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -20,6 +20,9 @@ const items = [
     { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "mdrawer-bookmarks" },
     { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "mdrawer-drafts" },
     { to: "/scheduled", label: "Agendados", icon: Clock, testid: "mdrawer-scheduled" },
+    { to: "/diaspora", label: "Diáspora", icon: UsersIcon, testid: "mdrawer-diaspora" },
+    { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "mdrawer-manifesto" },
+    { to: "/legal", label: "Centro Legal", icon: Scale, testid: "mdrawer-legal" },
     { to: "/settings", label: "Definições", icon: Settings, testid: "mdrawer-settings" },
 ];
 
@@ -154,10 +157,12 @@ export function MobileMenuDrawer({ open, onClose }) {
                         <LogOut size={16} strokeWidth={1.8} /> Terminar sessão
                     </button>
                     <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-[11px] text-black/45 justify-center">
+                        <a href="/legal" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Centro Legal</a>
                         <a href="/legal/terms" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Termos</a>
                         <a href="/legal/privacy" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
                         <a href="/legal/cookies" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Cookies</a>
                         <a href="/legal/community" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Diretrizes</a>
+                        <a href="/manifesto" onClick={onClose} className="hover:text-black hover:underline underline-offset-2">Manifesto</a>
                     </div>
                 </div>
             </aside>

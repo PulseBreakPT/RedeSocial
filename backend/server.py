@@ -3027,6 +3027,141 @@ async def narrative_badges(user=Depends(get_current_user)):
     return {"badges": badges}
 
 
+# ============================================================
+# F4.1 — Middle-class creator boost / F3.3 — Vista da Tasca / F5.4 — Heat map saudade
+# ============================================================
+
+@api.get("/discover/new_voices")
+async def new_voices(viewer: Optional[dict] = Depends(maybe_user)):
+    """F4.1 — Middle-class creator program.
+    Surfaces creators registered in the last 30 days with at least 1 post,
+    ordered by region affinity to viewer (if any) + activity.
+    Anti-power-law: caps users with > 500 followers so we promote the "middle class"."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    candidates = await db.users.find(
+        {"created_at": {"$gte": cutoff}},
+        {"_id": 0, "password_hash": 0},
+    ).to_list(200)
+    # Filter middle-class: < 500 followers (avoid already-massive accounts)
+    candidates = [u for u in candidates if len(u.get("followers", [])) < 500]
+    viewer_region = ((viewer or {}).get("region") or "").lower()
+    viewer_city = ((viewer or {}).get("city") or "").lower()
+
+    out = []
+    for u in candidates:
+        post_count = await db.posts.count_documents({"author_id": u["id"], "is_draft": {"$ne": True}})
+        if post_count < 1:
+            continue
+        score = post_count * 1.0 + len(u.get("followers", [])) * 0.2
+        # Place affinity boost (the differentiator)
+        if viewer_region and (u.get("region") or "").lower() == viewer_region:
+            score *= 1.8
+        if viewer_city and (u.get("city") or "").lower() == viewer_city:
+            score *= 2.2
+        out.append({
+            "user": public_user(u),
+            "post_count": post_count,
+            "score": round(score, 2),
+        })
+    out.sort(key=lambda x: x["score"], reverse=True)
+    return {"voices": out[:8]}
+
+
+@api.get("/communities/{slug}/active")
+async def community_active_members(slug: str, viewer: Optional[dict] = Depends(maybe_user)):
+    """F3.3 — Vista da Tasca. Shows recently-active members of a community
+    (posted or seen in last 24h). Creates a "we're all here" presence signal."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    # Members who posted in this community recently
+    recent_authors = await db.posts.distinct(
+        "author_id",
+        {"community_id": comm["id"], "created_at": {"$gte": cutoff}},
+    )
+    # Plus members seen recently
+    seen_members = await db.users.find(
+        {"id": {"$in": comm.get("members", [])}, "last_seen": {"$gte": cutoff}},
+        {"_id": 0, "password_hash": 0},
+    ).to_list(50)
+    seen_ids = {u["id"] for u in seen_members}
+    # Combine: authors first (more relevant), then seen
+    active_ids = []
+    for aid in recent_authors:
+        if aid not in active_ids:
+            active_ids.append(aid)
+    for uid in seen_ids:
+        if uid not in active_ids:
+            active_ids.append(uid)
+    users_lookup = {u["id"]: u for u in seen_members}
+    # Fetch any missing authors
+    missing = [aid for aid in active_ids if aid not in users_lookup]
+    if missing:
+        extra = await db.users.find(
+            {"id": {"$in": missing}},
+            {"_id": 0, "password_hash": 0},
+        ).to_list(50)
+        for u in extra:
+            users_lookup[u["id"]] = u
+    enriched = [public_user(users_lookup[uid]) for uid in active_ids[:12] if uid in users_lookup]
+    return {
+        "active": enriched,
+        "total_members": len(comm.get("members", [])),
+        "active_count": len(active_ids),
+    }
+
+
+@api.get("/diaspora/heatmap")
+async def diaspora_heatmap(viewer: Optional[dict] = Depends(maybe_user)):
+    """F5.4 — Heat map da diáspora portuguesa.
+    Aggregates emigrant users by inferred destination country and active posts.
+    Returns counts by region (the 8 PT regions including 'emigrante')."""
+    # Count by region
+    pipeline = [
+        {"$match": {"region": {"$nin": [None, ""]}}},
+        {"$group": {"_id": "$region", "count": {"$sum": 1}}},
+    ]
+    counts = {}
+    async for doc in db.users.aggregate(pipeline):
+        if doc["_id"]:
+            counts[doc["_id"].lower()] = doc["count"]
+    # Per-region recent activity (posts last 7 days)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    region_keys = ["norte", "centro", "lisboa", "alentejo", "algarve", "madeira", "acores", "emigrante"]
+    activity = {k: 0 for k in region_keys}
+    # Bring all post authors with region from last 7 days
+    recent_posts = await db.posts.find(
+        {"created_at": {"$gte": cutoff}, "is_draft": {"$ne": True}},
+        {"_id": 0, "author_id": 1},
+    ).to_list(2000)
+    author_ids = list({p["author_id"] for p in recent_posts})
+    if author_ids:
+        author_users = await db.users.find(
+            {"id": {"$in": author_ids}, "region": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "id": 1, "region": 1},
+        ).to_list(2000)
+        u_region = {u["id"]: (u.get("region") or "").lower() for u in author_users}
+        for p in recent_posts:
+            r = u_region.get(p["author_id"])
+            if r in activity:
+                activity[r] += 1
+    # Build response
+    regions_out = []
+    for key in region_keys:
+        regions_out.append({
+            "key": key,
+            "users": counts.get(key, 0),
+            "posts_7d": activity.get(key, 0),
+        })
+    # Diaspora-specific: also include the emigrant figure first
+    return {
+        "regions": regions_out,
+        "total_users": sum(counts.values()),
+        "diaspora_count": counts.get("emigrante", 0),
+    }
+
+
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,

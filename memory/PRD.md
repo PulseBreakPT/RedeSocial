@@ -43,24 +43,12 @@ Idioma: **PT-PT obrigatório**. Tema: Portugal (Saudade, Tasca, Festa, Fado, Caf
 - `GET /api/messages/unread-count`
 
 ## Changelog
-- **2026-02-14** — **PT Engagement & Retention v1 (P0 massivo)**: implementação concreta da STRATEGY.md (15 features):
-  - **F2.1 Onboarding 60s** — `Register.js` reescrito em 3 passos (credenciais → identidade PT → consentimento). Chips coral para região (8), mood (8), time (5).
-  - **F2.4 Anel de identidade** — Composer com selector `publico/amigos/tasca`; PostCard mostra badge colorida (azul-tejo / terracota); `audience_ring` em PostIn + enrich_post.
-  - **F3.1 Reactions PT** — substituídos `❤️🔥👏😂💯😢` por `saudade · comove · tasca · bombou · cafe · orgulho` com semântica cultural; `ALLOWED_REACTIONS` + `REACTION_EMOJI`.
-  - **F1.1 A Tarde** — `GET /api/daily/digest` com scoring por reactions + place affinity; banner no Feed (18-22h window).
-  - **F1.4 Modo Boa Noite** — toggle Settings, default ON; persistido no User.
-  - **F1.2 Cafezinho** — toggle Settings (utility `isCafezinhoHour`).
-  - **F2.2 Badges narrativos** — `GET /api/badges/narrative` com Café das 7h32, Tasca-mestre, Saudade verificada, Maré viva, Voz da região.
-  - **F2.3 Bio slots** — 6 campos semânticos (mood_today, soundtrack, reading, favourite_place, quote_of_month, city_extra) em Settings/Identidade.
-  - **F4.2 Repost curado** — backend rejeita quote com < 5 chars (HTTP 400).
-  - **F5.1 Place graph** — `city/freguesia/region` no User + public_user; influencia scoring do digest.
-  - **F5.2 Sino do Bairro** — `GET /api/bairro/events`; banner rate-limited 1×/semana via localStorage ISO-week.
-  - **F5.3 Calendário PT** — backend `GET /api/calendar/pt` (15 eventos: Santo António, S. João, Dia de Portugal, Carnaval, IRS, exames, regresso às aulas, Natal, etc); banner dismissible.
-  - **MAN Manifesto** — nova rota pública `/manifesto` com 6 promessas anti-dark-pattern; linkada do `/legal` e Settings.
-  - **RGPD consent persistence** — registo agora grava `consent.terms_accepted_at`, `consent.age_confirmed`, `consent.marketing_opt_in`, `consent.privacy_version` no User.
-  - **Backend**: lint clean, 5 novos endpoints, RegisterIn/UpdateProfileIn/PostIn expandidos; modelo User com 12 campos novos.
-- **2026-02-14** — Legal Hub redesign editorial (anterior).
-- **2026-02-13** — Phase 2 Portuguese backend + 14 frontend pages.
+- **2026-02-14** — **PT Engagement v2 + Mobile parity (P0)**:
+  - **F4.1 Middle-class boost** — endpoint `GET /api/discover/new_voices` (creators < 30d, < 500 followers, place-affinity scoring); strip `NewVoicesStrip` no Feed.
+  - **F3.3 Vista da Tasca** — endpoint `GET /api/communities/{slug}/active`; componente `VistaDaTasca` em `Community.js` mostra membros activos (24h) com presence dots.
+  - **F5.4 Heat map saudade** — endpoint `GET /api/diaspora/heatmap` + nova rota `/diaspora` (8 regiões, intensidade visual com gradientes coral/azul-tejo proporcional a posts/7d).
+  - **Mobile parity**: Sidebar desktop e MobileMenuDrawer ambos contêm agora `Diáspora`, `Manifesto`, `Centro Legal`; footer ambos com Centro Legal + Manifesto. Todas as features (banners, ring selector, reactions PT, onboarding 60s, Settings Identidade) validadas em 390×844.
+- **2026-02-14** — **PT Engagement v1**: F2.1 Onboarding 60s, F2.4 Anel de identidade, F3.1 Reactions PT, F1.1 A Tarde, F1.4 Boa Noite, F2.2 Badges narrativos, F2.3 Bio slots, F4.2 Repost curado, F5.1 Place graph, F5.2 Sino do Bairro, F5.3 Calendário PT, F1.2 Cafezinho, MAN Manifesto, RGPD consent persistence.
 
 ## Roadmap (Backlog)
 **P1**

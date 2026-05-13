@@ -77,18 +77,21 @@ Legenda: ✅ implementado · 🟡 em curso · ⬜ planeado · ❌ descartado · 
 ### Loop 4 — Creator
 | ID | Feature | Estado | Notas |
 |---|---|---|---|
-| F4.1 | **Middle-class boost** — 1.º post geo-boost + recompensa moderadores | ⬜ | Trending/feed weighting |
-| F4.2 | **Repost curado** — mínimo 5 chars no repost | ⬜ | Backend validation |
+| F4.1 | **Middle-class boost** — 1.º post geo-boost + recompensa moderadores | ✅ | `/api/discover/new_voices` + `NewVoicesStrip` no Feed |
+| F4.2 | **Repost curado** — mínimo 5 chars no repost | ✅ | Backend validation |
 | F4.3 | Tasca premium (Stripe) | ❌ | Descartado nesta sprint (sem payment) |
 
 ### Loop 5 — Belonging
 | ID | Feature | Estado | Notas |
 |---|---|---|---|
-| F5.1 | **Place graph** — city/freguesia/região no perfil; feed mixed-mode | ⬜ | Campos no user + ponderação |
-| F5.2 | **Sino do bairro** — evento local 1×/semana | ⬜ | Notification logic |
-| F5.3 | **Calendário PT** — Santo António, S.João, Carnaval, derbys, exames, IRS | ⬜ | Utility + banner Feed |
-| F5.4 | Heat map saudade (diáspora) | ⬜ P2 | Backlog |
+| F5.1 | **Place graph** — city/freguesia/região no perfil; feed mixed-mode | ✅ | Campos no user + ponderação |
+| F5.2 | **Sino do bairro** — evento local 1×/semana | ✅ | Notification logic |
+| F5.3 | **Calendário PT** — Santo António, S.João, Carnaval, derbys, exames, IRS | ✅ | Utility + banner Feed |
+| F5.4 | **Heat map saudade (diáspora)** | ✅ | `/api/diaspora/heatmap` + rota `/diaspora` |
 | F5.5 | Salas de voz minuto | 🔇 | **EXCLUÍDO pelo utilizador** |
+
+### Loop 3 (cont.) e Vista da Tasca
+| F3.3 | **Vista da Tasca** — avatares em comunidade | ✅ | `/api/communities/{slug}/active` + componente em Community.js |
 
 ### Bonus — Manifesto público
 | ID | Feature | Estado | Notas |

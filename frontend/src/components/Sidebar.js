@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
     LogOut, PenSquare, Users as UsersIcon, CalendarDays, TrendingUp,
-    FileText, Clock,
+    FileText, Clock, ScrollText, Scale, Globe,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -21,6 +21,9 @@ const items = [
     { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
     { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
     { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
+    { to: "/diaspora", label: "Diáspora", icon: Globe, testid: "nav-diaspora" },
+    { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "nav-manifesto" },
+    { to: "/legal", label: "Centro Legal", icon: Scale, testid: "nav-legal" },
     { to: "/settings", label: "Definições", icon: Settings, testid: "nav-settings" },
 ];
 
@@ -149,10 +152,11 @@ export function Sidebar({ onCompose }) {
                     </button>
                 </div>
                 <div className="px-3 pt-3 pb-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45">
+                    <a href="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</a>
                     <a href="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</a>
                     <a href="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
                     <a href="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</a>
-                    <a href="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</a>
+                    <a href="/manifesto" className="hover:text-black hover:underline underline-offset-2">Manifesto</a>
                     <span className="font-mono text-black/35">© Vermillion</span>
                 </div>
             </div>

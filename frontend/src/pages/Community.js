@@ -4,6 +4,7 @@ import { Users, BarChart3, Info, Crown, TrendingUp, Share2 } from "lucide-react"
 import { api, formatApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { Composer } from "../components/Composer";
+import { VistaDaTasca } from "../components/PTPresence";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
@@ -103,6 +104,11 @@ export default function Community() {
                             <p className="text-black/60 font-mono text-sm">Entra na comunidade para publicar.</p>
                         </div>
                     )}
+
+                    <div className="px-4 lg:px-5 pt-3">
+                        <VistaDaTasca slug={slug} />
+                    </div>
+
                     {posts.length === 0 ? (
                         <div className="p-14 text-center">
                             <p className="type-overline mb-2">Sem posts</p>

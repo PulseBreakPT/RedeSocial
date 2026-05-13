@@ -10,6 +10,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
 import { CalendarPTBanner, ATardeBanner, SinoBairroBanner } from "../components/PTBanners";
+import { NewVoicesStrip } from "../components/PTPresence";
 
 const SORTS = [
     { key: "recent", label: "Recente", icon: Clock },
@@ -200,6 +201,7 @@ export default function Feed() {
                 <CalendarPTBanner />
                 <ATardeBanner />
                 <SinoBairroBanner />
+                <NewVoicesStrip />
             </div>
 
             {loading ? (
