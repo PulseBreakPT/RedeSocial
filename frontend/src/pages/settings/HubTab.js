@@ -29,7 +29,7 @@ function computeSecurityScore(prefs, form) {
         !!prefs.two_fa_enabled,
         !!prefs.login_alerts,
         !!form.private,
-        !!prefs.priv_search === false,
+        prefs.priv_search === false,
         !!prefs.last_password_change_ok,
         !!prefs.recovery_email,
     ];

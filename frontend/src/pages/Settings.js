@@ -90,7 +90,7 @@ export default function Settings() {
         boa_noite_enabled: user?.boa_noite_enabled !== false,
         cafezinho_enabled: !!user?.cafezinho_enabled,
     });
-    const [initialForm] = useState(() => ({ ...form }));
+    const [initialForm, setInitialForm] = useState(() => ({ ...form }));
     const [busy, setBusy] = useState(false);
 
     /* Local prefs */
@@ -158,6 +158,7 @@ export default function Settings() {
         try {
             const { data } = await api.patch("/users/me", form);
             setUser({ ...user, ...data });
+            setInitialForm({ ...form });
             toast.success("Perfil atualizado");
         }
         catch (e) { toastApiError(e); }
@@ -240,7 +241,7 @@ export default function Settings() {
                             />
                             {search ? (
                                 <button
-                                    onClick={() => setSearch("")}
+                                    onClick={() => { setSearch(""); searchRef.current?.focus(); }}
                                     data-testid="settings-search-clear"
                                     className="absolute right-2 top-1/2 -translate-y-1/2 text-black/40 hover:text-black/80 p-1"
                                     aria-label="Limpar pesquisa"
