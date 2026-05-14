@@ -1208,8 +1208,27 @@ async def view_post(post_id: str, viewer: Optional[dict] = Depends(maybe_user)):
         return {"views": 0}
     if viewer and post["author_id"] == viewer["id"]:
         return {"views": post.get("views", 0)}
-    await db.posts.update_one({"id": post_id}, {"$inc": {"views": 1}})
+    update = {"$inc": {"views": 1}}
+    if viewer:
+        update["$addToSet"] = {"viewers": viewer["id"]}
+    await db.posts.update_one({"id": post_id}, update)
     return {"views": post.get("views", 0) + 1}
+
+
+@api.get("/posts/{post_id}/viewers")
+async def post_viewers(post_id: str, user=Depends(get_current_user)):
+    """List of distinct registered viewers (owner-only, last 50)."""
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post["author_id"] != user["id"]:
+        raise HTTPException(403, "Apenas o autor vê quem viu")
+    ids = list(post.get("viewers", []))[-50:]
+    if not ids:
+        return {"viewers": [], "total_distinct": 0, "views": post.get("views", 0)}
+    users = await db.users.find({"id": {"$in": ids}}, {"_id": 0}).to_list(50)
+    out = [public_user(u) for u in users]
+    return {"viewers": out, "total_distinct": len(post.get("viewers", [])), "views": post.get("views", 0)}
 
 
 @api.post("/posts/{post_id}/pin")
@@ -1516,22 +1535,44 @@ async def repost(post_id: str, user=Depends(get_current_user)):
 # ============================================================
 # Comments (with nested replies)
 # ============================================================
-async def _enrich_comment(c: dict) -> dict:
+async def _enrich_comment(c: dict, viewer: Optional[dict] = None) -> dict:
     author = await db.users.find_one({"id": c["author_id"]}, {"_id": 0})
+    viewer_id = viewer["id"] if viewer else None
+    likes = c.get("likes", []) or []
+    raw_react = c.get("reactions") or {}
+    enriched_react = {
+        k: {"count": len(v), "reacted": (viewer_id in v) if viewer_id else False}
+        for k, v in raw_react.items() if isinstance(v, list) and len(v) > 0
+    }
     return {
         "id": c["id"], "post_id": c.get("post_id"),
         "content": c["content"], "created_at": c["created_at"],
+        "edited_at": c.get("edited_at"),
         "parent_id": c.get("parent_id"),
         "replies_count": c.get("replies_count", 0),
         "pinned_by_author": bool(c.get("pinned_by_author")),
+        "likes_count": len(likes),
+        "liked": (viewer_id in likes) if viewer_id else False,
+        "reactions": enriched_react,
         "author": public_user(author) if author else None,
     }
 
 
 @api.get("/posts/{post_id}/comments")
-async def list_comments(post_id: str):
+async def list_comments(post_id: str, sort: str = "new", viewer: Optional[dict] = Depends(maybe_user)):
     cs = await db.comments.find({"post_id": post_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
-    return [await _enrich_comment(c) for c in cs]
+    enriched = [await _enrich_comment(c, viewer) for c in cs]
+    # Server-side sort hint; client may also sort. For 'best' we score by likes + replies.
+    if sort == "best":
+        def score(c):
+            return (c.get("likes_count", 0) * 2) + (c.get("replies_count", 0) * 1.5)
+        # Stable: pinned first, then by score desc, then by date asc
+        enriched.sort(key=lambda c: (not c.get("pinned_by_author"), -score(c), c.get("created_at", "")))
+    elif sort == "old":
+        enriched.sort(key=lambda c: (not c.get("pinned_by_author"), c.get("created_at", "")))
+    else:  # new
+        enriched.sort(key=lambda c: (not c.get("pinned_by_author"), c.get("created_at", "")), reverse=False)
+    return enriched
 
 
 @api.post("/posts/{post_id}/comments")
@@ -1586,7 +1627,7 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
                 f"@{user['username']} comentou na tua publicação",
             )
     await handle_mentions(payload.content, user, post_id)
-    return await _enrich_comment(comment)
+    return await _enrich_comment(comment, user)
 
 
 @api.delete("/comments/{comment_id}")
@@ -4757,4 +4798,514 @@ async def tag_pulse(tag: str):
 # Wrap react_post to also broadcast WS event for "live reactions"
 # (Already exists at line ~1395; we add a side-effect by patching via monkey hook)
 # Skipped — done via existing notifications.
+
+
+# ============================================================
+# SSS — Comments interactions (like, react, edit, report)
+# ============================================================
+class CommentEditIn(BaseModel):
+    content: str = Field(min_length=1, max_length=300)
+
+
+class CommentReactIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=8)
+
+
+class ReportIn(BaseModel):
+    reason: Optional[str] = "outro"
+    detail: Optional[str] = Field(default="", max_length=400)
+
+
+@api2.post("/posts/{post_id}/report")
+async def report_post(post_id: str, payload: ReportIn, user=Depends(get_current_user)):
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Publicação não encontrada")
+    await db.reports.insert_one({
+        "id": str(uuid.uuid4()), "kind": "post", "target_id": post_id,
+        "reporter_id": user["id"], "reason": (payload.reason or "outro")[:40],
+        "detail": (payload.detail or "")[:400], "created_at": now_iso(), "status": "open",
+    })
+    return {"ok": True}
+
+
+@api2.post("/comments/{comment_id}/like")
+async def like_comment(comment_id: str, user=Depends(get_current_user)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comentário não encontrado")
+    likes = list(c.get("likes", []) or [])
+    if user["id"] in likes:
+        await db.comments.update_one({"id": comment_id}, {"$pull": {"likes": user["id"]}})
+        return {"liked": False, "likes_count": len(likes) - 1}
+    await db.comments.update_one({"id": comment_id}, {"$addToSet": {"likes": user["id"]}})
+    if c["author_id"] != user["id"]:
+        await create_notification(
+            c["author_id"], "like", user["id"], c.get("post_id"),
+            f"@{user['username']} gostou do teu comentário",
+            extra={"comment_id": comment_id},
+        )
+    return {"liked": True, "likes_count": len(likes) + 1}
+
+
+@api2.post("/comments/{comment_id}/react")
+async def react_comment(comment_id: str, payload: CommentReactIn, user=Depends(get_current_user)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comentário não encontrado")
+    reactions = dict(c.get("reactions") or {})
+    emoji = payload.emoji.strip()[:8]
+    # One reaction per user — remove from all other emojis first
+    for k in list(reactions.keys()):
+        if isinstance(reactions[k], list):
+            reactions[k] = [u for u in reactions[k] if u != user["id"]]
+    arr = list(reactions.get(emoji, []) or [])
+    active = False
+    if user["id"] in arr:
+        arr = [u for u in arr if u != user["id"]]
+    else:
+        arr.append(user["id"])
+        active = True
+    if arr:
+        reactions[emoji] = arr
+    else:
+        reactions.pop(emoji, None)
+    # Clean empties
+    reactions = {k: v for k, v in reactions.items() if v}
+    await db.comments.update_one({"id": comment_id}, {"$set": {"reactions": reactions}})
+    enriched = {k: {"count": len(v), "reacted": user["id"] in v} for k, v in reactions.items()}
+    return {"reactions": enriched, "active": active, "emoji": emoji}
+
+
+@api2.patch("/comments/{comment_id}")
+async def edit_comment(comment_id: str, payload: CommentEditIn, user=Depends(get_current_user)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comentário não encontrado")
+    if c["author_id"] != user["id"]:
+        raise HTTPException(403, "Só podes editar os teus comentários")
+    try:
+        created = datetime.fromisoformat(c["created_at"].replace("Z", "+00:00"))
+    except Exception:
+        created = datetime.now(timezone.utc)
+    if (datetime.now(timezone.utc) - created) > timedelta(minutes=15):
+        raise HTTPException(400, "Janela de edição expirou (15 min)")
+    await db.comments.update_one(
+        {"id": comment_id},
+        {"$set": {"content": payload.content, "edited_at": now_iso()}},
+    )
+    fresh = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    return await _enrich_comment(fresh, user)
+
+
+@api2.post("/comments/{comment_id}/report")
+async def report_comment(comment_id: str, payload: ReportIn, user=Depends(get_current_user)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comentário não encontrado")
+    await db.reports.insert_one({
+        "id": str(uuid.uuid4()),
+        "kind": "comment", "target_id": comment_id,
+        "reporter_id": user["id"], "reason": (payload.reason or "outro")[:40],
+        "detail": (payload.detail or "")[:400], "created_at": now_iso(),
+        "status": "open",
+    })
+    return {"ok": True}
+
+
+# ============================================================
+# SSS — Discussion follow/mute (per post)
+# Reuses notifications for "follow_thread"; stored on user doc
+# ============================================================
+@api2.post("/posts/{post_id}/follow-thread")
+async def toggle_follow_thread(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    followed = list(user.get("followed_threads", []) or [])
+    if post_id in followed:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"followed_threads": post_id}})
+        return {"following": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"followed_threads": post_id}})
+    return {"following": True}
+
+
+@api2.post("/posts/{post_id}/mute-thread")
+async def toggle_mute_thread(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    muted = list(user.get("muted_threads", []) or [])
+    if post_id in muted:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"muted_threads": post_id}})
+        return {"muted": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"muted_threads": post_id}})
+    return {"muted": True}
+
+
+@api2.get("/posts/{post_id}/relation")
+async def post_relation(post_id: str, user=Depends(get_current_user)):
+    return {
+        "thread_followed": post_id in (user.get("followed_threads") or []),
+        "thread_muted": post_id in (user.get("muted_threads") or []),
+    }
+
+
+# ============================================================
+# SSS — Messages: edit, mark unread, forward, send v2 (image/location/vibe), reply_to
+# ============================================================
+class MessageEditIn(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class MessageInV2(BaseModel):
+    to_user_id: str
+    content: Optional[str] = Field(default="", max_length=2000)
+    reply_to: Optional[str] = None
+    kind: Optional[str] = "text"  # text | image | location | vibe | gif
+    image: Optional[str] = ""
+    location: Optional[dict] = None  # {label, lat?, lng?}
+    vibe: Optional[str] = ""  # quick emoji vibe
+
+
+class ForwardIn(BaseModel):
+    to_user_id: str
+    message_id: str
+
+
+@api2.patch("/messages/{message_id}")
+async def edit_message(message_id: str, payload: MessageEditIn, user=Depends(get_current_user)):
+    msg = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(404, "Mensagem não encontrada")
+    if msg["sender_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    try:
+        created = datetime.fromisoformat(msg["created_at"].replace("Z", "+00:00"))
+    except Exception:
+        created = datetime.now(timezone.utc)
+    if (datetime.now(timezone.utc) - created) > timedelta(minutes=15):
+        raise HTTPException(400, "Janela de edição expirou (15 min)")
+    await db.messages.update_one(
+        {"id": message_id},
+        {"$set": {"content": payload.content, "edited_at": now_iso()}},
+    )
+    fresh = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    return fresh
+
+
+@api2.post("/conversations/{other_user_id}/mark-unread")
+async def mark_conv_unread(other_user_id: str, user=Depends(get_current_user)):
+    key = conv_key(user["id"], other_user_id)
+    last = await db.messages.find_one(
+        {"conversation_key": key, "sender_id": other_user_id},
+        {"_id": 0}, sort=[("created_at", -1)],
+    )
+    if last:
+        await db.messages.update_one({"id": last["id"]}, {"$set": {"read": False}})
+        return {"ok": True, "marked": True}
+    return {"ok": True, "marked": False}
+
+
+@api2.post("/messages/v2")
+async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
+    other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
+    if not other:
+        raise HTTPException(404, "Utilizador não encontrado")
+    # Block check — if either side blocked the other, reject
+    if user["id"] in (other.get("blocked") or []) or other["id"] in (user.get("blocked") or []):
+        raise HTTPException(403, "Bloqueado")
+    key = conv_key(user["id"], other["id"])
+    kind = (payload.kind or "text").lower()
+    content = (payload.content or "").strip()
+    if kind == "vibe" and payload.vibe:
+        content = payload.vibe.strip()[:8]
+    elif kind == "location" and payload.location:
+        content = (payload.location.get("label") or "📍 Localização")[:200]
+    elif kind == "image" and not content:
+        content = "📷 Imagem"
+    if not content and kind == "text":
+        raise HTTPException(400, "Mensagem vazia")
+    msg = {
+        "id": str(uuid.uuid4()), "conversation_key": key,
+        "sender_id": user["id"], "recipient_id": other["id"],
+        "content": content, "kind": kind,
+        "image": (payload.image or "")[:200000] if kind == "image" else "",
+        "location": payload.location if kind == "location" else None,
+        "reply_to": payload.reply_to,
+        "read": False, "created_at": now_iso(),
+    }
+    await db.messages.insert_one(msg)
+    await db.conversations.update_one(
+        {"key": key},
+        {"$set": {
+            "key": key, "participants": sorted([user["id"], other["id"]]),
+            "last_message": content[:140], "last_at": msg["created_at"],
+        }},
+        upsert=True,
+    )
+    msg.pop("_id", None)
+    return msg
+
+
+@api2.post("/messages/forward")
+async def forward_message(payload: ForwardIn, user=Depends(get_current_user)):
+    src = await db.messages.find_one({"id": payload.message_id}, {"_id": 0})
+    if not src:
+        raise HTTPException(404, "Mensagem não encontrada")
+    if user["id"] not in [src["sender_id"], src["recipient_id"]]:
+        raise HTTPException(403, "Sem permissão")
+    other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
+    if not other:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if user["id"] in (other.get("blocked") or []) or other["id"] in (user.get("blocked") or []):
+        raise HTTPException(403, "Bloqueado")
+    key = conv_key(user["id"], payload.to_user_id)
+    msg = {
+        "id": str(uuid.uuid4()), "conversation_key": key,
+        "sender_id": user["id"], "recipient_id": payload.to_user_id,
+        "content": src.get("content", ""),
+        "kind": src.get("kind", "text"),
+        "image": src.get("image", ""),
+        "forwarded_from_user_id": src["sender_id"],
+        "read": False, "created_at": now_iso(),
+    }
+    await db.messages.insert_one(msg)
+    await db.conversations.update_one(
+        {"key": key},
+        {"$set": {
+            "key": key, "participants": sorted([user["id"], payload.to_user_id]),
+            "last_message": (msg["content"] or "[reencaminhado]")[:140],
+            "last_at": msg["created_at"],
+        }},
+        upsert=True,
+    )
+    msg.pop("_id", None)
+    return msg
+
+
+@api2.get("/conversations/{other_user_id}/media")
+async def conversation_media(other_user_id: str, user=Depends(get_current_user)):
+    """Returns shared media (images) from this conversation."""
+    key = conv_key(user["id"], other_user_id)
+    msgs = await db.messages.find(
+        {"conversation_key": key, "kind": "image"},
+        {"_id": 0, "id": 1, "image": 1, "created_at": 1, "sender_id": 1},
+    ).sort("created_at", -1).to_list(60)
+    return {"items": msgs, "count": len(msgs)}
+
+
+# ============================================================
+# SSS — Profile: block, mute, report, favorite, notify, export, relation
+# ============================================================
+@api2.post("/users/{username}/block")
+async def block_user(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == user["id"]:
+        raise HTTPException(400, "Não te podes bloquear a ti")
+    blocked = list(user.get("blocked", []) or [])
+    if target["id"] in blocked:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"blocked": target["id"]}})
+        return {"blocked": False}
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$addToSet": {"blocked": target["id"]},
+         "$pull": {"following": target["id"], "favorites": target["id"], "notify_users": target["id"]}},
+    )
+    await db.users.update_one({"id": target["id"]}, {"$pull": {"followers": user["id"]}})
+    return {"blocked": True}
+
+
+@api2.post("/users/{username}/mute")
+async def mute_user_account(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == user["id"]:
+        raise HTTPException(400, "Não te podes silenciar a ti")
+    muted = list(user.get("muted_users", []) or [])
+    if target["id"] in muted:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"muted_users": target["id"]}})
+        return {"muted": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"muted_users": target["id"]}})
+    return {"muted": True}
+
+
+@api2.post("/users/{username}/report")
+async def report_user(username: str, payload: ReportIn, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.reports.insert_one({
+        "id": str(uuid.uuid4()), "kind": "user", "target_id": target["id"],
+        "reporter_id": user["id"], "reason": (payload.reason or "outro")[:40],
+        "detail": (payload.detail or "")[:400], "created_at": now_iso(), "status": "open",
+    })
+    return {"ok": True}
+
+
+@api2.post("/users/{username}/favorite")
+async def favorite_user(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == user["id"]:
+        raise HTTPException(400, "Não podes adicionar-te aos favoritos")
+    favs = list(user.get("favorites", []) or [])
+    if target["id"] in favs:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"favorites": target["id"]}})
+        return {"favorited": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"favorites": target["id"]}})
+    return {"favorited": True}
+
+
+@api2.post("/users/{username}/notify")
+async def notify_user_toggle(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == user["id"]:
+        raise HTTPException(400, "Inválido")
+    notified = list(user.get("notify_users", []) or [])
+    if target["id"] in notified:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"notify_users": target["id"]}})
+        return {"notify": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"notify_users": target["id"]}})
+    return {"notify": True}
+
+
+@api2.get("/users/{username}/relation")
+async def user_relation(username: str, user=Depends(get_current_user)):
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    return {
+        "following": target["id"] in (user.get("following") or []),
+        "blocked": target["id"] in (user.get("blocked") or []),
+        "muted": target["id"] in (user.get("muted_users") or []),
+        "favorited": target["id"] in (user.get("favorites") or []),
+        "notify": target["id"] in (user.get("notify_users") or []),
+    }
+
+
+@api2.get("/users/me/export")
+async def export_user_data(user=Depends(get_current_user)):
+    posts = await db.posts.find({"author_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    comments = await db.comments.find({"author_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    return {
+        "user": public_user(user),
+        "posts": posts,
+        "comments": comments,
+        "exported_at": now_iso(),
+        "note": "Dados exportados — RGPD-friendly. Guarda este ficheiro num local seguro.",
+    }
+
+
+# ============================================================
+# SSS — Discovery: surprise me, advanced search, refresh
+# ============================================================
+@api2.get("/discover/surprise")
+async def discover_surprise(user: Optional[dict] = Depends(maybe_user)):
+    """Returns a curated random post outside the usual feed — diversity boost."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    pipeline = [
+        {"$match": {
+            "is_draft": {"$ne": True},
+            "repost_of": None,
+            "created_at": {"$gt": cutoff},
+        }},
+        {"$sample": {"size": 1}},
+    ]
+    items = await db.posts.aggregate(pipeline).to_list(1)
+    if not items:
+        raise HTTPException(404, "Nada para descobrir agora")
+    p = items[0]
+    p.pop("_id", None)
+    enriched = await enrich_post(p, user)
+    enriched["reason"] = {"key": "surprise", "label": "Surpresa do algoritmo"}
+    return enriched
+
+
+@api2.get("/search")
+async def unified_search(q: str = "", kind: str = "all", limit: int = 20):
+    """Unified search across posts, users, hashtags, communities."""
+    qn = (q or "").strip()
+    if not qn:
+        return {"posts": [], "people": [], "tags": [], "communities": []}
+    limit = max(1, min(limit, 50))
+    out = {"posts": [], "people": [], "tags": [], "communities": []}
+    if kind in {"all", "posts"}:
+        posts = await db.posts.find(
+            {"content": {"$regex": re.escape(qn), "$options": "i"}, "is_draft": {"$ne": True}},
+            {"_id": 0},
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        out["posts"] = [await enrich_post(p, None) for p in posts]
+    if kind in {"all", "people"}:
+        people = await db.users.find(
+            {"$or": [
+                {"username": {"$regex": re.escape(qn.lower()), "$options": "i"}},
+                {"name": {"$regex": re.escape(qn), "$options": "i"}},
+            ]},
+            {"_id": 0},
+        ).limit(limit).to_list(limit)
+        out["people"] = [public_user(u) for u in people]
+    if kind in {"all", "tags"}:
+        tag = qn.lstrip("#").lower()
+        if tag:
+            count = await db.posts.count_documents({"hashtags": tag})
+            if count > 0:
+                out["tags"].append({"tag": tag, "count": count})
+    if kind in {"all", "communities"}:
+        comms = await db.communities.find(
+            {"$or": [
+                {"name": {"$regex": re.escape(qn), "$options": "i"}},
+                {"slug": {"$regex": re.escape(qn.lower()), "$options": "i"}},
+            ]},
+            {"_id": 0},
+        ).limit(limit).to_list(limit)
+        out["communities"] = [{"id": c["id"], "name": c["name"], "slug": c["slug"],
+                                "members_count": len(c.get("members", []))} for c in comms]
+    return out
+
+
+# ============================================================
+# SSS — Notifications: enable/disable category, pin important
+# ============================================================
+class NotifPrefsIn(BaseModel):
+    muted_types: Optional[List[str]] = None
+    pinned_ids: Optional[List[str]] = None
+
+
+@api2.post("/notifications/preferences")
+async def update_notif_prefs(payload: NotifPrefsIn, user=Depends(get_current_user)):
+    update = {}
+    if payload.muted_types is not None:
+        update["notif_muted_types"] = list(set(payload.muted_types))[:30]
+    if update:
+        await db.users.update_one({"id": user["id"]}, {"$set": update})
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return {
+        "muted_types": fresh.get("notif_muted_types", []),
+    }
+
+
+@api2.get("/notifications/preferences")
+async def get_notif_prefs(user=Depends(get_current_user)):
+    return {
+        "muted_types": user.get("notif_muted_types", []),
+    }
+
+
+@api2.post("/notifications/{notif_id}/pin")
+async def pin_notification(notif_id: str, user=Depends(get_current_user)):
+    n = await db.notifications.find_one({"id": notif_id, "user_id": user["id"]}, {"_id": 0})
+    if not n:
+        raise HTTPException(404, "Notificação não encontrada")
+    new_state = not n.get("pinned", False)
+    await db.notifications.update_one({"id": notif_id}, {"$set": {"pinned": new_state}})
+    return {"pinned": new_state}
+
+
 app.include_router(api2)

@@ -64,6 +64,8 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const [editing, setEditing] = useState(false);
     const [quoting, setQuoting] = useState(false);
     const [analytics, setAnalytics] = useState(false);
+    const [quickReactOpen, setQuickReactOpen] = useState(false);
+    const longPressTimer = useRef(null);
     const viewedRef = useRef(false);
     const isOwn = user?.id === post.author?.id;
     const audience = post.reply_audience || "everyone";
@@ -160,6 +162,25 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     };
 
     const openDetail = () => clickable && navigate(`/post/${post.id}`);
+
+    const onHeartPressStart = (e) => {
+        e.stopPropagation();
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = setTimeout(() => setQuickReactOpen(true), 380);
+    };
+    const onHeartPressEnd = () => clearTimeout(longPressTimer.current);
+
+    const quickReact = async (emoji) => {
+        setQuickReactOpen(false);
+        try {
+            const { data } = await api.post(`/posts/${post.id}/react`, { emoji });
+            setReactions(data.reactions);
+            onChange?.({ ...post, reactions: data.reactions });
+            toast.success(`Reagiste com ${emoji}`);
+        } catch (err) { toastApiError(err); }
+    };
+
+    const QUICK_REACT_LIST = ["❤️", "🔥", "😂", "😢", "👏", "🤔", "✨"];
 
     return (
         <>
@@ -328,14 +349,48 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     {formatNum(reposts)}
                                 </span>
                             </div>
-                            <button
-                                onClick={toggleLike}
-                                data-testid={`like-btn-${post.id}`}
-                                className={`eng-btn ${liked ? "is-liked" : ""}`}
-                            >
-                                <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
-                                <span className="text-[12.5px] tabular-nums">{formatNum(likes)}</span>
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={toggleLike}
+                                    onMouseDown={onHeartPressStart}
+                                    onMouseUp={onHeartPressEnd}
+                                    onMouseLeave={onHeartPressEnd}
+                                    onTouchStart={onHeartPressStart}
+                                    onTouchEnd={onHeartPressEnd}
+                                    onContextMenu={(e) => { e.preventDefault(); setQuickReactOpen(true); }}
+                                    data-testid={`like-btn-${post.id}`}
+                                    className={`eng-btn ${liked ? "is-liked" : ""}`}
+                                    title="Gosto (segura para reagir)"
+                                >
+                                    <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                    <span className="text-[12.5px] tabular-nums">{formatNum(likes)}</span>
+                                </button>
+                                {quickReactOpen && (
+                                    <>
+                                        <button
+                                            aria-label="Fechar"
+                                            onClick={(e) => { e.stopPropagation(); setQuickReactOpen(false); }}
+                                            className="fixed inset-0 z-30 cursor-default"
+                                        />
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            data-testid={`quick-react-palette-${post.id}`}
+                                            className="absolute z-40 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white rounded-full shadow-xl border border-black/[0.08] flex gap-0.5 px-2 py-1.5 anim-fade-up"
+                                        >
+                                            {QUICK_REACT_LIST.map((emoji) => (
+                                                <button
+                                                    key={emoji}
+                                                    onClick={(e) => { e.stopPropagation(); quickReact(emoji); }}
+                                                    data-testid={`quick-react-${emoji}-${post.id}`}
+                                                    className="text-[20px] w-8 h-8 grid place-items-center hover:bg-black/[0.05] rounded-full transition hover:scale-125"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                             <button
                                 onClick={toggleBookmark}
                                 data-testid={`bookmark-btn-${post.id}`}

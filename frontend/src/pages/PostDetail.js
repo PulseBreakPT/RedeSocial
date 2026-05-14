@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
-import { MessageCircle, Trash2, CornerDownRight, ChevronDown, ChevronRight, X, Pin } from "lucide-react";
-import { api, formatApiError, toastApiError } from "../lib/api";
+import { MessageCircle, CornerDownRight, X, ArrowUpDown, BellOff, BellRing } from "lucide-react";
+import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
-import { RichText } from "../components/RichText";
 import { Spinner } from "../components/Spinner";
-import { VerifiedBadge } from "../components/VerifiedBadge";
+import { CommentItem } from "../components/CommentItem";
 import { useAuth } from "../context/AuthContext";
-import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
 
-const MAX_DEPTH = 6; // visual indent cap (px-per-level after that stays flat)
+const MAX_DEPTH = 6;
 const INDENT_PX = 14;
 
 function buildTree(comments) {
@@ -27,13 +25,6 @@ function buildTree(comments) {
             roots.push(node);
         }
     });
-    // pinned root comments float to top
-    roots.sort((a, b) => {
-        const pa = a.pinned_by_author ? 1 : 0;
-        const pb = b.pinned_by_author ? 1 : 0;
-        if (pa !== pb) return pb - pa;
-        return new Date(a.created_at) - new Date(b.created_at);
-    });
     return roots;
 }
 
@@ -43,10 +34,6 @@ function countDescendants(node) {
     return n;
 }
 
-/**
- * Walk the tree and emit a flat list of { node, depth, hidden }.
- * Collapsed nodes hide their descendants (but the node itself stays visible).
- */
 function flatten(tree, collapsedIds) {
     const out = [];
     const walk = (node, depth, hidden) => {
@@ -56,6 +43,36 @@ function flatten(tree, collapsedIds) {
     };
     tree.forEach((r) => walk(r, 0, false));
     return out;
+}
+
+function sortRoots(roots, mode) {
+    const arr = [...roots];
+    if (mode === "best") {
+        arr.sort((a, b) => {
+            const pa = a.pinned_by_author ? 1 : 0;
+            const pb = b.pinned_by_author ? 1 : 0;
+            if (pa !== pb) return pb - pa;
+            const sa = (a.likes_count || 0) * 2 + (a.replies_count || 0) * 1.5;
+            const sb = (b.likes_count || 0) * 2 + (b.replies_count || 0) * 1.5;
+            if (sa !== sb) return sb - sa;
+            return new Date(a.created_at) - new Date(b.created_at);
+        });
+    } else if (mode === "old") {
+        arr.sort((a, b) => {
+            const pa = a.pinned_by_author ? 1 : 0;
+            const pb = b.pinned_by_author ? 1 : 0;
+            if (pa !== pb) return pb - pa;
+            return new Date(a.created_at) - new Date(b.created_at);
+        });
+    } else {
+        arr.sort((a, b) => {
+            const pa = a.pinned_by_author ? 1 : 0;
+            const pb = b.pinned_by_author ? 1 : 0;
+            if (pa !== pb) return pb - pa;
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+    }
+    return arr;
 }
 
 export default function PostDetail() {
@@ -68,11 +85,14 @@ export default function PostDetail() {
     const [text, setText] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [replyingTo, setReplyingTo] = useState(null); // { id, author }
+    const [replyingTo, setReplyingTo] = useState(null);
     const [collapsedIds, setCollapsedIds] = useState(() => new Set());
-    const [inlineFor, setInlineFor] = useState(null); // commentId for which inline reply box is open
+    const [inlineFor, setInlineFor] = useState(null);
     const [inlineText, setInlineText] = useState("");
     const [inlineBusy, setInlineBusy] = useState(false);
+    const [sortMode, setSortMode] = useState("new"); // new | best | old
+    const [threadFollowed, setThreadFollowed] = useState(false);
+    const [threadMuted, setThreadMuted] = useState(false);
     const rootInputRef = useRef(null);
     const inlineRef = useRef(null);
 
@@ -80,17 +100,23 @@ export default function PostDetail() {
         try {
             const [p, c] = await Promise.all([
                 api.get(`/posts/${postId}`),
-                api.get(`/posts/${postId}/comments`),
+                api.get(`/posts/${postId}/comments?sort=${sortMode}`),
             ]);
             setPost(p.data);
             setComments(c.data);
+            // relation (silent)
+            try {
+                const r = await api.get(`/posts/${postId}/relation`);
+                setThreadFollowed(!!r.data.thread_followed);
+                setThreadMuted(!!r.data.thread_muted);
+            } catch { /* ignore */ }
         } catch (e) {
             toastApiError(e);
             navigate("/");
         } finally {
             setLoading(false);
         }
-    }, [postId, navigate]);
+    }, [postId, navigate, sortMode]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -108,7 +134,21 @@ export default function PostDetail() {
         }
     }, [inlineFor]);
 
-    const tree = useMemo(() => buildTree(comments), [comments]);
+    // Scroll to anchored comment if URL has #c-<id>
+    useEffect(() => {
+        if (loading) return;
+        const h = window.location.hash;
+        if (h.startsWith("#c-")) {
+            const el = document.getElementById(h.slice(1));
+            if (el) {
+                el.scrollIntoView({ block: "center", behavior: "smooth" });
+                el.classList.add("bg-yellow-50");
+                setTimeout(() => el.classList.remove("bg-yellow-50"), 1800);
+            }
+        }
+    }, [loading, comments]);
+
+    const tree = useMemo(() => sortRoots(buildTree(comments), sortMode), [comments, sortMode]);
     const flat = useMemo(() => flatten(tree, collapsedIds), [tree, collapsedIds]);
 
     const submitComment = async ({ content, parentId }) => {
@@ -123,9 +163,7 @@ export default function PostDetail() {
             setComments((c) => [...c, data]);
             if (parentId) {
                 setComments((c) =>
-                    c.map((x) =>
-                        x.id === parentId ? { ...x, replies_count: (x.replies_count || 0) + 1 } : x,
-                    ),
+                    c.map((x) => x.id === parentId ? { ...x, replies_count: (x.replies_count || 0) + 1 } : x),
                 );
             } else {
                 setPost((p) => ({ ...p, comments_count: (p.comments_count || 0) + 1 }));
@@ -185,10 +223,7 @@ export default function PostDetail() {
                     ),
                 );
             } else {
-                setPost((p) => ({
-                    ...p,
-                    comments_count: Math.max(0, (p.comments_count || 0) - (data?.deleted || removedIds.size)),
-                }));
+                setPost((p) => ({ ...p, comments_count: Math.max(0, (p.comments_count || 0) - (data?.deleted || removedIds.size)) }));
             }
             if (inlineFor && removedIds.has(inlineFor)) setInlineFor(null);
             if (replyingTo && removedIds.has(replyingTo.id)) setReplyingTo(null);
@@ -206,22 +241,33 @@ export default function PostDetail() {
         });
     };
 
-    const togglePin = async (commentId) => {
+    const updateCommentLocal = (updated) => {
+        setComments((c) => c.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)));
+    };
+
+    const onPinChange = (id, pinned) => {
+        setComments((c) => c.map((x) => {
+            if (x.id === id) return { ...x, pinned_by_author: pinned };
+            // when one is pinned, unpin the others (root-level only)
+            if (pinned && !x.parent_id) return { ...x, pinned_by_author: false };
+            return x;
+        }).map((x) => (x.id === id ? { ...x, pinned_by_author: pinned } : x)));
+    };
+
+    const toggleFollowThread = async () => {
         try {
-            const { data } = await api.post(`/comments/${commentId}/pin`);
-            setComments((c) =>
-                c.map((x) =>
-                    x.id === commentId
-                        ? { ...x, pinned_by_author: data.pinned }
-                        : (data.pinned && x.post_id === post.id && x.id !== commentId
-                            ? { ...x, pinned_by_author: false }
-                            : x),
-                ),
-            );
-            toast.success(data.pinned ? "Comentário fixado" : "Comentário libertado");
-        } catch (e) {
-            toastApiError(e);
-        }
+            const { data } = await api.post(`/posts/${postId}/follow-thread`);
+            setThreadFollowed(data.following);
+            toast.success(data.following ? "A seguir esta discussão" : "Deixaste de seguir esta discussão");
+        } catch (e) { toastApiError(e); }
+    };
+
+    const toggleMuteThread = async () => {
+        try {
+            const { data } = await api.post(`/posts/${postId}/mute-thread`);
+            setThreadMuted(data.muted);
+            toast.success(data.muted ? "Discussão silenciada" : "Discussão ativa");
+        } catch (e) { toastApiError(e); }
     };
 
     if (loading || !post) {
@@ -250,17 +296,52 @@ export default function PostDetail() {
                 onDelete={() => navigate("/")}
             />
 
+            {/* Discussion controls */}
+            <div className="px-4 lg:px-5 py-2.5 flex items-center gap-1.5 hairline-b bg-paper">
+                <div className="relative">
+                    <select
+                        value={sortMode}
+                        onChange={(e) => setSortMode(e.target.value)}
+                        data-testid="comment-sort-select"
+                        className="appearance-none bg-black/[0.04] hover:bg-black/[0.08] text-black/75 font-mono text-[11.5px] uppercase tracking-[0.14em] pl-7 pr-3 py-1.5 rounded-full cursor-pointer focus:outline-none transition"
+                    >
+                        <option value="new">Mais recentes</option>
+                        <option value="best">Melhores</option>
+                        <option value="old">Mais antigos</option>
+                    </select>
+                    <ArrowUpDown size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/55 pointer-events-none" />
+                </div>
+                <button
+                    onClick={toggleFollowThread}
+                    data-testid="follow-thread-btn"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[11.5px] uppercase tracking-[0.14em] transition ${
+                        threadFollowed
+                            ? "bg-black text-white"
+                            : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
+                    }`}
+                >
+                    <BellRing size={11} /> {threadFollowed ? "A seguir" : "Seguir discussão"}
+                </button>
+                <button
+                    onClick={toggleMuteThread}
+                    data-testid="mute-thread-btn"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[11.5px] uppercase tracking-[0.14em] transition ${
+                        threadMuted
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
+                    }`}
+                >
+                    <BellOff size={11} /> {threadMuted ? "Silenciada" : "Silenciar"}
+                </button>
+            </div>
+
             {/* Root composer */}
             <div className="px-4 lg:px-5 py-5 hairline-b bg-paper">
                 {replyingTo && (
                     <div className="mb-3 flex items-center gap-2 text-[12px] font-mono text-black/60 bg-black/[0.04] rounded-full px-3 py-1.5 anim-fade-up">
                         <CornerDownRight size={12} />
                         a responder a <span className="text-black font-medium">@{replyingTo.author?.username}</span>
-                        <button
-                            onClick={() => setReplyingTo(null)}
-                            className="ml-auto text-black/45 hover:text-black tap-shrink"
-                            aria-label="Cancelar resposta"
-                        >
+                        <button onClick={() => setReplyingTo(null)} className="ml-auto text-black/45 hover:text-black tap-shrink" aria-label="Cancelar resposta">
                             <X size={13} />
                         </button>
                     </div>
@@ -303,7 +384,7 @@ export default function PostDetail() {
                 </div>
             </div>
 
-            {/* Threaded comments — flat render for predictable layout */}
+            {/* Threaded comments */}
             {tree.length === 0 ? (
                 <div className="p-14 text-center anim-fade-up">
                     <div className="ring-silver w-16 h-16 rounded-full grid place-items-center mx-auto mb-5">
@@ -312,10 +393,7 @@ export default function PostDetail() {
                     <p className="type-overline mb-1">Sem novidades</p>
                     <h3 className="font-display text-[18px] tracking-tight">Sem comentários ainda</h3>
                     <p className="text-black/55 font-mono text-sm mt-1.5">Sê o primeiro a dizer algo.</p>
-                    <button
-                        onClick={() => rootInputRef.current?.focus()}
-                        className="mt-5 btn-obsidian px-5 py-2 text-[11px]"
-                    >
+                    <button onClick={() => rootInputRef.current?.focus()} className="mt-5 btn-obsidian px-5 py-2 text-[11px]">
                         Comentar
                     </button>
                 </div>
@@ -323,150 +401,76 @@ export default function PostDetail() {
                 <div data-testid="comments-thread">
                     {flat.map(({ node, depth, hidden }) => {
                         if (hidden) return null;
-                        const indent = Math.min(depth, MAX_DEPTH);
-                        const pl = depth === 0 ? 16 : 16 + indent * INDENT_PX;
-                        const canDelete = user?.id === node.author?.id || user?.id === post.author?.id;
                         const total = countDescendants(node);
                         const isCollapsed = collapsedIds.has(node.id);
                         const isReplyOpen = inlineFor === node.id;
 
                         return (
-                            <div
-                                key={node.id}
-                                data-testid={`comment-${node.id}`}
-                                className="relative py-3.5 hairline-b hover:bg-black/[0.012] transition anim-fade-up"
-                                style={{ paddingLeft: pl, paddingRight: 16 }}
-                            >
-                                {/* thread connector for nested comments */}
-                                {depth > 0 && (
-                                    <span
-                                        aria-hidden
-                                        className="absolute top-0 bottom-0 w-px bg-black/[0.07]"
-                                        style={{ left: pl - 9 }}
-                                    />
-                                )}
-                                <div className="flex gap-2.5">
-                                    <Link to={`/u/${node.author?.username}`} className="flex-shrink-0">
-                                        <Avatar user={node.author} size={depth === 0 ? 36 : 30} />
-                                    </Link>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                            <Link
-                                                to={`/u/${node.author?.username}`}
-                                                className="font-heading font-medium text-[13.5px] tracking-tight hover:underline text-black"
-                                            >
-                                                {node.author?.name}
-                                            </Link>
-                                            {node.author?.verified && <VerifiedBadge size={11} />}
-                                            <span className="font-mono text-[11px] text-black/45">@{node.author?.username}</span>
-                                            <span className="text-black/20">·</span>
-                                            <span className="font-mono text-[11px] text-black/45" title={fullTime(node.created_at)}>{smartTime(node.created_at)}</span>
-                                            {node.author?.id === post.author?.id && (
-                                                <span className="font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/55">
-                                                    autor
-                                                </span>
-                                            )}
-                                            {node.pinned_by_author && (
-                                                <span
-                                                    className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700"
-                                                    data-testid={`comment-pinned-${node.id}`}
-                                                    title="Destacado pelo autor"
-                                                >
-                                                    <Pin size={9} /> destaque
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <RichText
-                                            text={node.content}
-                                            className="mt-1.5 text-[14.5px] text-black/85 leading-relaxed"
-                                        />
-
-                                        <div className="flex items-center gap-0.5 mt-2 -ml-2 flex-wrap">
-                                            <button
-                                                onClick={() => {
-                                                    setInlineFor(isReplyOpen ? null : node.id);
-                                                    setInlineText("");
-                                                }}
-                                                data-testid={`comment-reply-${node.id}`}
-                                                className="inline-flex items-center gap-1 text-[12px] font-mono text-black/50 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition"
-                                            >
-                                                <CornerDownRight size={12} /> responder
-                                            </button>
-                                            {node.children.length > 0 && (
-                                                <button
-                                                    onClick={() => toggleCollapse(node.id)}
-                                                    data-testid={`comment-toggle-${node.id}`}
-                                                    className="inline-flex items-center gap-1 text-[12px] font-mono text-black/50 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition"
-                                                >
-                                                    {isCollapsed
-                                                        ? <><ChevronRight size={12} /> mostrar {total}</>
-                                                        : <><ChevronDown size={12} /> ocultar</>}
-                                                </button>
-                                            )}
-                                            {canDelete && (
-                                                <button
-                                                    onClick={() => removeComment(node.id)}
-                                                    data-testid={`comment-delete-${node.id}`}
-                                                    className="ml-auto inline-flex items-center gap-1 text-[12px] font-mono text-black/40 hover:text-red-soft px-2 py-1 rounded-full hover:bg-red-soft/10 tap-shrink transition"
-                                                >
-                                                    <Trash2 size={12} /> apagar
-                                                </button>
-                                            )}
-                                            {user?.id === post.author?.id && (
-                                                <button
-                                                    onClick={() => togglePin(node.id)}
-                                                    data-testid={`comment-pin-${node.id}`}
-                                                    className={`${canDelete ? "" : "ml-auto"} inline-flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded-full tap-shrink transition ${
-                                                        node.pinned_by_author
-                                                            ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
-                                                            : "text-black/40 hover:text-black hover:bg-black/[0.04]"
-                                                    }`}
-                                                >
-                                                    <Pin size={12} /> {node.pinned_by_author ? "destacado" : "destacar"}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {isReplyOpen && (
-                                            <div className="mt-3 flex gap-2 items-start anim-fade-up">
-                                                <Avatar user={user} size={26} />
-                                                <div className="flex-1">
-                                                    <textarea
-                                                        ref={inlineRef}
-                                                        value={inlineText}
-                                                        onChange={(e) => setInlineText(e.target.value)}
-                                                        placeholder={`Responde a @${node.author?.username}…`}
-                                                        rows={2}
-                                                        maxLength={300}
-                                                        data-testid={`comment-reply-input-${node.id}`}
-                                                        className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3 py-2 text-[14px] focus:bg-white focus:border-black/30 focus:outline-none transition resize-none"
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === "Escape") { setInlineFor(null); setInlineText(""); }
-                                                            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitInline(); }
-                                                        }}
-                                                    />
-                                                    <div className="flex justify-end gap-2 mt-1.5">
-                                                        <button
-                                                            onClick={() => { setInlineFor(null); setInlineText(""); }}
-                                                            className="text-[11px] font-mono uppercase tracking-[0.14em] text-black/55 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]"
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                        <button
-                                                            onClick={submitInline}
-                                                            disabled={!inlineText.trim() || inlineBusy}
-                                                            data-testid={`comment-reply-submit-${node.id}`}
-                                                            className="btn-obsidian text-[11px] px-4 py-1.5 disabled:opacity-40 inline-flex items-center gap-1.5"
-                                                        >
-                                                            {inlineBusy && <Spinner size={10} />} Responder
-                                                        </button>
-                                                    </div>
+                            <div key={node.id}>
+                                <CommentItem
+                                    node={node}
+                                    depth={depth}
+                                    postId={post.id}
+                                    postAuthorId={post.author?.id}
+                                    viewerId={user?.id}
+                                    indentPx={INDENT_PX}
+                                    maxDepth={MAX_DEPTH}
+                                    isCollapsed={isCollapsed}
+                                    hasChildren={node.children.length > 0}
+                                    totalDescendants={total}
+                                    onToggleCollapse={toggleCollapse}
+                                    onReplyOpen={(id) => { setInlineFor(id); setInlineText(""); }}
+                                    isReplyOpen={isReplyOpen}
+                                    onLocalUpdate={updateCommentLocal}
+                                    onDelete={removeComment}
+                                    onPinChange={onPinChange}
+                                    threadFollowed={threadFollowed}
+                                    threadMuted={threadMuted}
+                                    onToggleThreadFollow={toggleFollowThread}
+                                    onToggleThreadMute={toggleMuteThread}
+                                />
+                                {isReplyOpen && (
+                                    <div
+                                        className="px-4 pb-3 hairline-b bg-paper anim-fade-up"
+                                        style={{ paddingLeft: 16 + (Math.min(depth, MAX_DEPTH) * INDENT_PX) + 46 }}
+                                    >
+                                        <div className="flex gap-2 items-start">
+                                            <Avatar user={user} size={26} />
+                                            <div className="flex-1">
+                                                <textarea
+                                                    ref={inlineRef}
+                                                    value={inlineText}
+                                                    onChange={(e) => setInlineText(e.target.value)}
+                                                    placeholder={`Responde a @${node.author?.username}…`}
+                                                    rows={2}
+                                                    maxLength={300}
+                                                    data-testid={`comment-reply-input-${node.id}`}
+                                                    className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3 py-2 text-[14px] focus:bg-white focus:border-black/30 focus:outline-none transition resize-none"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Escape") { setInlineFor(null); setInlineText(""); }
+                                                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitInline(); }
+                                                    }}
+                                                />
+                                                <div className="flex justify-end gap-2 mt-1.5">
+                                                    <button
+                                                        onClick={() => { setInlineFor(null); setInlineText(""); }}
+                                                        className="text-[11px] font-mono uppercase tracking-[0.14em] text-black/55 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                    <button
+                                                        onClick={submitInline}
+                                                        disabled={!inlineText.trim() || inlineBusy}
+                                                        data-testid={`comment-reply-submit-${node.id}`}
+                                                        className="btn-obsidian text-[11px] px-4 py-1.5 disabled:opacity-40 inline-flex items-center gap-1.5"
+                                                    >
+                                                        {inlineBusy && <Spinner size={10} />} Responder
+                                                    </button>
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         );
                     })}

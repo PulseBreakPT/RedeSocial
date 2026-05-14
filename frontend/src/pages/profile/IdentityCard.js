@@ -7,6 +7,7 @@ import {
 import { Avatar } from "../../components/Avatar";
 import { VerifiedBadge } from "../../components/VerifiedBadge";
 import { RodaButton } from "../../components/RodaButton";
+import { ProfileMoreMenu } from "./ProfileMoreMenu";
 import { api, toastApiError } from "../../lib/api";
 import { toast } from "sonner";
 import { isFavouriteUser, toggleFavouriteUser } from "../../lib/interestSignals";
@@ -26,6 +27,7 @@ const slug = (s) =>
 export function IdentityCard({
     profile, stats, mutual, regionMeta, moodMeta, teamMeta,
     onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing,
+    onProfileUpdate,
 }) {
     const [fav, setFav] = useState(() => isFavouriteUser(profile.username));
     const [quickOpen, setQuickOpen] = useState(false);
@@ -75,6 +77,7 @@ export function IdentityCard({
                     >
                         <Share2 size={15} />
                     </button>
+                    <ProfileMoreMenu profile={profile} onProfileUpdate={onProfileUpdate} />
                     {profile.is_self ? (
                         <button
                             onClick={onEditProfile}

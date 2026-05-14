@@ -188,6 +188,7 @@ export default function Profile() {
                 onEditProfile={onEditProfile}
                 onOpenFollowers={() => setModal("followers")}
                 onOpenFollowing={() => setModal("following")}
+                onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
 
             {profile.can_view === false ? (

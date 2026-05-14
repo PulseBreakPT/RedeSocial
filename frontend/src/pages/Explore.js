@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
-import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X } from "lucide-react";
+import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X, Sparkles, RotateCw } from "lucide-react";
 import { MOOD_OPTIONS } from "../lib/portuguese";
 import { Avatar } from "../components/Avatar";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ export default function Explore() {
     const [comunidades, setComunidades] = useState([]);
     const [cidades, setCidades] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [surprising, setSurprising] = useState(false);
     useLiveTime(30000);
 
     useEffect(() => {

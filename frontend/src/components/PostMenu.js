@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import {
     MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3,
     Users2, Languages, VolumeX, ThumbsDown, ThumbsUp, FolderPlus, Bell, BellOff,
-    Sparkles, FileText, Clock,
+    Sparkles, FileText, Clock, Eye, StickyNote,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 import { CollabModal } from "./CollabModal";
+import { ViewersModal } from "./ViewersModal";
+import { ReportModal } from "./ReportModal";
 import {
     muteAuthor, muteTopic, seeLessOfTopic, seeMoreOfTopic,
     toggleBoost, isBoosted, setPostNote, getPostNote,
@@ -24,8 +26,11 @@ function firstHashtag(content) {
 export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalytics }) {
     const [open, setOpen] = useState(false);
     const [collabOpen, setCollabOpen] = useState(false);
+    const [viewersOpen, setViewersOpen] = useState(false);
+    const [reportOpen, setReportOpen] = useState(false);
     const [boosted, setBoosted] = useState(() => isBoosted(post.id));
     const [watching, setWatching] = useState(() => isWatchingPost(post.id));
+    const [threadMuted, setThreadMuted] = useState(false);
     const ref = useRef(null);
 
     useEffect(() => {
@@ -59,8 +64,43 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
     };
     const handleReport = (e) => {
         e.stopPropagation();
-        toast.success("Publicação reportada. Obrigado!");
         close();
+        setReportOpen(true);
+    };
+
+    const submitReport = async ({ reason, detail }) => {
+        try {
+            await api.post(`/posts/${post.id}/report`, { reason, detail });
+            toast.success("Publicação reportada. Obrigado.");
+            setReportOpen(false);
+        } catch (err) { toastApiError(err); }
+    };
+
+    const handleConvertRecado = async (e) => {
+        e.stopPropagation();
+        close();
+        const text = (post.content || "").trim().slice(0, 60);
+        if (!text) { toast.error("Sem texto para converter"); return; }
+        try {
+            await api.post("/notes", { text, mood: post.mood || "" });
+            toast.success("Recado de 24h criado!");
+        } catch (err) { toastApiError(err); }
+    };
+
+    const handleMuteThread = async (e) => {
+        e.stopPropagation();
+        try {
+            const { data } = await api.post(`/posts/${post.id}/mute-thread`);
+            setThreadMuted(data.muted);
+            toast.success(data.muted ? "Discussão silenciada" : "Notificações da discussão reativadas");
+        } catch (err) { toastApiError(err); }
+        close();
+    };
+
+    const handleViewers = (e) => {
+        e.stopPropagation();
+        close();
+        setViewersOpen(true);
     };
     const handleTranslate = (e) => {
         e.stopPropagation();
@@ -181,6 +221,9 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                             <button onClick={(e) => { e.stopPropagation(); onAnalytics?.(); close(); }} data-testid={`analytics-${post.id}`} className={itemCls}>
                                 <BarChart3 size={14} strokeWidth={1.6} className="text-black/55" /> Analytics
                             </button>
+                            <button onClick={handleViewers} data-testid={`viewers-${post.id}`} className={itemCls}>
+                                <Eye size={14} strokeWidth={1.6} className="text-black/55" /> Ver viewers ({post.views || 0})
+                            </button>
                             <button onClick={(e) => { e.stopPropagation(); setCollabOpen(true); close(); }} data-testid={`collab-btn-${post.id}`} className={itemCls}>
                                 <Users2 size={14} strokeWidth={1.6} className="text-black/55" /> Colaboradores
                             </button>
@@ -197,6 +240,14 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                             </button>
                             <button onClick={handleConvertStory} data-testid={`story-${post.id}`} className={itemCls}>
                                 <Clock size={14} strokeWidth={1.6} className="text-black/55" /> Converter em story 24h
+                            </button>
+                            <button onClick={handleConvertRecado} data-testid={`recado-${post.id}`} className={itemCls}>
+                                <StickyNote size={14} strokeWidth={1.6} className="text-black/55" /> Converter em recado 24h
+                            </button>
+                            <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls}>
+                                {threadMuted
+                                    ? <><Bell size={14} strokeWidth={1.6} className="text-black/55" /> Reativar notificações da discussão</>
+                                    : <><BellOff size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar discussão</>}
                             </button>
                             {canEdit && (
                                 <button onClick={(e) => { e.stopPropagation(); onEdit?.(); close(); }} data-testid={`edit-post-${post.id}`} className={itemCls}>
@@ -224,6 +275,11 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                             <button onClick={handleWhy} data-testid={`why-${post.id}`} className={itemCls}>
                                 <BarChart3 size={14} strokeWidth={1.6} className="text-black/55" /> Porque vejo isto?
                             </button>
+                            <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls}>
+                                {threadMuted
+                                    ? <><Bell size={14} strokeWidth={1.6} className="text-black/55" /> Reativar notificações da discussão</>
+                                    : <><BellOff size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar discussão</>}
+                            </button>
                             <button onClick={handleMuteTopic} data-testid={`mute-topic-${post.id}`} className={itemCls}>
                                 <VolumeX size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar tópico
                             </button>
@@ -231,7 +287,7 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                                 <VolumeX size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar @{post.author?.username}
                             </button>
                             <div className="hairline-t my-1" />
-                            <button onClick={handleReport} className={itemCls}>
+                            <button onClick={handleReport} data-testid={`report-${post.id}`} className={itemCls}>
                                 <Flag size={14} strokeWidth={1.6} className="text-black/55" /> Reportar
                             </button>
                         </>
@@ -239,6 +295,14 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                 </div>
             )}
             {collabOpen && <CollabModal postId={post.id} onClose={() => setCollabOpen(false)} />}
+            {viewersOpen && <ViewersModal postId={post.id} onClose={() => setViewersOpen(false)} />}
+            {reportOpen && (
+                <ReportModal
+                    targetLabel={`Publicação de @${post.author?.username || "alguém"}`}
+                    onCancel={() => setReportOpen(false)}
+                    onSubmit={submitReport}
+                />
+            )}
         </div>
     );
 }
