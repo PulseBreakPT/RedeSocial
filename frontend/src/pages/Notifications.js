@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog, Reply, Send, X, Eye } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
@@ -58,6 +58,11 @@ export default function Notifications() {
     const [priorityGroups, setPriorityGroups] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
+    const [replyTo, setReplyTo] = useState(null);  /* notification id being replied to */
+    const [replyText, setReplyText] = useState("");
+    const [replyBusy, setReplyBusy] = useState(false);
+    const [contextFor, setContextFor] = useState(null); /* notification id with expanded context */
+    const [postContexts, setPostContexts] = useState({}); /* post_id -> { content, author } */
     useLiveTime(30000);
 
     const reload = async () => {
@@ -119,6 +124,36 @@ export default function Notifications() {
     const markAll = async () => {
         try { await api.post("/notifications/read-all"); await reload(); toast.success("Marcadas como lidas"); }
         catch (e) { toastApiError(e); }
+    };
+
+    const sendQuickReply = async (n) => {
+        if (!replyText.trim() || !n.post_id) return;
+        setReplyBusy(true);
+        try {
+            await api.post(`/posts/${n.post_id}/comments`, { content: replyText.trim() });
+            toast.success("Resposta enviada");
+            setReplyText(""); setReplyTo(null);
+        } catch (e) { toastApiError(e); }
+        finally { setReplyBusy(false); }
+    };
+
+    const openContext = async (n) => {
+        if (contextFor === n.id) { setContextFor(null); return; }
+        setContextFor(n.id);
+        if (n.post_id && !postContexts[n.post_id]) {
+            try {
+                const { data } = await api.get(`/posts/${n.post_id}`);
+                setPostContexts((prev) => ({ ...prev, [n.post_id]: data }));
+            } catch { /* silent */ }
+        }
+    };
+
+    const muteCategory = (type) => {
+        try {
+            const muted = JSON.parse(localStorage.getItem("notifications.mutedTypes") || "[]");
+            if (!muted.includes(type)) { muted.push(type); localStorage.setItem("notifications.mutedTypes", JSON.stringify(muted)); }
+            toast.success(`Categoria "${type}" silenciada`);
+        } catch { /* silent */ }
     };
 
     const unreadCount = items.filter((n) => !n.read).length;
@@ -214,32 +249,90 @@ export default function Notifications() {
                         </div>
                         {list.map((n) => {
                             const linkTo = n.post_id ? `/post/${n.post_id}` : `/u/${n.from_user?.username}`;
+                            const canReply = (n.type === "comment" || n.type === "mention" || n.type === "reply") && !!n.post_id;
+                            const isReplying = replyTo === n.id;
+                            const isExpanded = contextFor === n.id;
+                            const ctx = n.post_id ? postContexts[n.post_id] : null;
                             return (
-                                <div key={n.id} data-testid={`notification-${n.id}`} className={`group flex items-start gap-3 px-4 lg:px-5 py-4 hairline-b transition-colors hover:bg-black/[0.015] ${n.read ? "" : "bg-black/[0.02]"}`}>
-                                    <div className={`w-9 h-9 rounded-full grid place-items-center flex-shrink-0 ${bgFor(n.type)}`}>{iconFor(n.type)}</div>
-                                    <Link to={linkTo} className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <Avatar user={n.from_user} size={28} />
-                                            <span className="font-heading font-medium text-[14px] tracking-tight flex items-center gap-1 text-black truncate">
-                                                {n.from_user?.name}
-                                                {n.from_user?.verified && <VerifiedBadge size={11} />}
-                                            </span>
-                                            <span className="font-mono text-[10px] text-black/40 flex-shrink-0 ml-auto">{smartTime(n.created_at)}</span>
-                                            {!n.read && (<span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" aria-label="não lida" />)}
+                                <div key={n.id} data-testid={`notification-${n.id}`} className={`group hairline-b transition-colors ${n.read ? "" : "bg-black/[0.02]"}`}>
+                                    <div className={`flex items-start gap-3 px-4 lg:px-5 py-4 hover:bg-black/[0.015]`}>
+                                        <div className={`w-9 h-9 rounded-full grid place-items-center flex-shrink-0 ${bgFor(n.type)}`}>{iconFor(n.type)}</div>
+                                        <Link to={linkTo} className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <Avatar user={n.from_user} size={28} />
+                                                <span className="font-heading font-medium text-[14px] tracking-tight flex items-center gap-1 text-black truncate">
+                                                    {n.from_user?.name}
+                                                    {n.from_user?.verified && <VerifiedBadge size={11} />}
+                                                </span>
+                                                <span className="font-mono text-[10px] text-black/40 flex-shrink-0 ml-auto">{smartTime(n.created_at)}</span>
+                                                {!n.read && (<span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" aria-label="não lida" />)}
+                                            </div>
+                                            <p className="mt-1.5 text-sm text-black/70 leading-relaxed line-clamp-2">{n.text}</p>
+                                        </Link>
+                                        <div className="flex flex-col gap-1 opacity-60 group-hover:opacity-100 transition">
+                                            {canReply && (
+                                                <button onClick={() => { setReplyTo(isReplying ? null : n.id); setReplyText(""); }} data-testid={`notif-reply-${n.id}`} title="Responder rápido" className={`w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.05] ${isReplying ? "text-black" : "text-black/40"}`}>
+                                                    <Reply size={13} strokeWidth={1.7} />
+                                                </button>
+                                            )}
+                                            {n.post_id && (
+                                                <button onClick={() => openContext(n)} data-testid={`notif-context-${n.id}`} title="Ver contexto" className={`w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.05] ${isExpanded ? "text-black" : "text-black/40"}`}>
+                                                    <Eye size={13} strokeWidth={1.7} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => toggleStar(n)} data-testid={`notif-star-${n.id}`} title={n.starred ? "Desmarcar" : "Importante"} className={`w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.05] ${n.starred ? "text-amber-500" : "text-black/40"}`}>
+                                                <Star size={13} strokeWidth={1.7} fill={n.starred ? "currentColor" : "none"} />
+                                            </button>
+                                            <button onClick={() => snooze(n)} data-testid={`notif-snooze-${n.id}`} title="Silenciar 24h" className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-black/[0.05]">
+                                                <BellOff size={13} strokeWidth={1.7} />
+                                            </button>
+                                            <button onClick={() => muteCategory(n.type)} data-testid={`notif-mute-cat-${n.id}`} title={`Silenciar todos os "${n.type}"`} className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-black/[0.05]">
+                                                <BellOff size={11} strokeWidth={1.7} />
+                                            </button>
+                                            <button onClick={() => remove(n)} data-testid={`notif-delete-${n.id}`} title="Apagar" className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-red-soft-bg hover:text-red-soft">
+                                                <Trash2 size={13} strokeWidth={1.7} />
+                                            </button>
                                         </div>
-                                        <p className="mt-1.5 text-sm text-black/70 leading-relaxed line-clamp-2">{n.text}</p>
-                                    </Link>
-                                    <div className="flex flex-col gap-1 opacity-60 group-hover:opacity-100 transition">
-                                        <button onClick={() => toggleStar(n)} data-testid={`notif-star-${n.id}`} title={n.starred ? "Desmarcar" : "Importante"} className={`w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.05] ${n.starred ? "text-amber-500" : "text-black/40"}`}>
-                                            <Star size={13} strokeWidth={1.7} fill={n.starred ? "currentColor" : "none"} />
-                                        </button>
-                                        <button onClick={() => snooze(n)} data-testid={`notif-snooze-${n.id}`} title="Silenciar 24h" className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-black/[0.05]">
-                                            <BellOff size={13} strokeWidth={1.7} />
-                                        </button>
-                                        <button onClick={() => remove(n)} data-testid={`notif-delete-${n.id}`} title="Apagar" className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-red-soft-bg hover:text-red-soft">
-                                            <Trash2 size={13} strokeWidth={1.7} />
-                                        </button>
                                     </div>
+
+                                    {isExpanded && ctx && (
+                                        <div className="px-5 pb-3 -mt-2" data-testid={`notif-context-content-${n.id}`}>
+                                            <div className="rounded-xl border border-black/[0.06] bg-black/[0.02] px-3 py-2.5 text-[12.5px] text-black/75 line-clamp-3">
+                                                {ctx.content || "(sem texto)"}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isReplying && (
+                                        <div className="px-4 lg:px-5 pb-3 -mt-2 pl-16" data-testid={`notif-reply-form-${n.id}`}>
+                                            <div className="flex items-end gap-2">
+                                                <textarea
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    placeholder="Responder rapidamente…"
+                                                    rows={2}
+                                                    maxLength={500}
+                                                    data-testid={`notif-reply-input-${n.id}`}
+                                                    className="flex-1 bg-white border border-black/[0.10] rounded-xl px-3 py-2 text-[13px] focus:border-black/40 outline-none resize-none"
+                                                />
+                                                <button
+                                                    onClick={() => sendQuickReply(n)}
+                                                    disabled={replyBusy || !replyText.trim()}
+                                                    data-testid={`notif-reply-send-${n.id}`}
+                                                    className="btn-obsidian px-3 py-2 text-[11.5px] inline-flex items-center gap-1 disabled:opacity-40"
+                                                >
+                                                    <Send size={12} /> {replyBusy ? "…" : "Enviar"}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setReplyTo(null); setReplyText(""); }}
+                                                    data-testid={`notif-reply-cancel-${n.id}`}
+                                                    className="w-9 h-9 grid place-items-center rounded-full text-black/45 hover:bg-black/[0.05] tap-shrink"
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

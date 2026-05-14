@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Lock, Users, MessageCircle, Share2, MapPin, Award,
-    Smile, Music, BookOpen, Quote, CalendarDays,
+    Smile, Music, BookOpen, Quote, CalendarDays, Star, Send, X,
 } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
 import { VerifiedBadge } from "../../components/VerifiedBadge";
 import { RodaButton } from "../../components/RodaButton";
+import { api, toastApiError } from "../../lib/api";
+import { toast } from "sonner";
+import { isFavouriteUser, toggleFavouriteUser } from "../../lib/interestSignals";
 
 const BIO_SLOT_META = [
     { key: "mood_today",      Icon: Smile,    label: "Mood do dia" },
@@ -23,10 +27,26 @@ export function IdentityCard({
     profile, stats, mutual, regionMeta, moodMeta, teamMeta,
     onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing,
 }) {
+    const [fav, setFav] = useState(() => isFavouriteUser(profile.username));
+    const [quickOpen, setQuickOpen] = useState(false);
+    const [quickMsg, setQuickMsg] = useState("");
+    const [sending, setSending] = useState(false);
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-PT", { month: "long", year: "numeric" })
         : "";
     const filledSlots = BIO_SLOT_META.filter((s) => (profile.bio_slots?.[s.key] || "").trim()).slice(0, 6);
+
+    const onToggleFav = () => { setFav(toggleFavouriteUser(profile.username)); };
+    const sendQuick = async () => {
+        if (!quickMsg.trim()) return;
+        setSending(true);
+        try {
+            await api.post("/messages", { to_user_id: profile.id, content: quickMsg.trim() });
+            toast.success(`Mensagem enviada para ${profile.name.split(" ")[0]}`);
+            setQuickMsg(""); setQuickOpen(false);
+        } catch (e) { toastApiError(e); }
+        finally { setSending(false); }
+    };
 
     return (
         <div className="px-4 lg:px-6 -mt-12 lg:-mt-14 relative" data-testid="identity-card">
@@ -35,6 +55,18 @@ export function IdentityCard({
                     <Avatar user={profile} size={88} showOnline />
                 </div>
                 <div className="hidden sm:flex gap-2 pb-1">
+                    {!profile.is_self && (
+                        <button
+                            onClick={onToggleFav}
+                            data-testid="profile-favourite-btn"
+                            title={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                            className={`w-10 h-10 grid place-items-center rounded-full border tap-shrink transition ${
+                                fav ? "border-amber-300 bg-amber-50 text-amber-600" : "border-black/[0.10] hover:bg-black/[0.04] text-black/65"
+                            }`}
+                        >
+                            <Star size={15} strokeWidth={1.7} fill={fav ? "currentColor" : "none"} />
+                        </button>
+                    )}
                     <button
                         onClick={onShare}
                         title="Partilhar perfil"
@@ -53,14 +85,55 @@ export function IdentityCard({
                         </button>
                     ) : (
                         <>
-                            <button
-                                onClick={onMessage}
-                                data-testid="message-profile-btn"
-                                className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
-                                title="Mensagem"
-                            >
-                                <MessageCircle size={16} />
-                            </button>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setQuickOpen((v) => !v)}
+                                    data-testid="profile-quick-msg-btn"
+                                    className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
+                                    title="Mensagem rápida"
+                                >
+                                    <MessageCircle size={16} />
+                                </button>
+                                {quickOpen && (
+                                    <div
+                                        data-testid="profile-quick-msg-popover"
+                                        className="absolute right-0 top-full mt-2 z-30 w-80 bg-white border border-black/[0.08] rounded-2xl p-3 shadow-[0_20px_50px_-12px_rgba(13,13,16,0.18)] anim-fade-up"
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="type-overline mb-0">Mensagem rápida</span>
+                                            <button onClick={() => setQuickOpen(false)} className="w-6 h-6 grid place-items-center rounded-full hover:bg-black/[0.05]">
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            value={quickMsg}
+                                            onChange={(e) => setQuickMsg(e.target.value)}
+                                            placeholder={`Olá ${profile.name.split(" ")[0]}…`}
+                                            rows={3}
+                                            maxLength={500}
+                                            data-testid="profile-quick-msg-input"
+                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] focus:bg-white focus:border-black/30 outline-none resize-none"
+                                        />
+                                        <div className="flex items-center justify-between mt-2">
+                                            <button
+                                                onClick={onMessage}
+                                                data-testid="profile-quick-msg-open-thread"
+                                                className="text-[11px] font-mono text-black/55 hover:text-black"
+                                            >
+                                                abrir conversa →
+                                            </button>
+                                            <button
+                                                onClick={sendQuick}
+                                                disabled={sending || !quickMsg.trim()}
+                                                data-testid="profile-quick-msg-send"
+                                                className="btn-obsidian px-4 py-2 text-[11.5px] inline-flex items-center gap-1.5 disabled:opacity-40"
+                                            >
+                                                <Send size={12} /> {sending ? "A enviar…" : "Enviar"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             {profile.is_following ? (
                                 <button
                                     onClick={onFollow}

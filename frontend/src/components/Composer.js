@@ -274,10 +274,67 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const audienceLabel = AUDIENCES.find((a) => a.id === audience)?.label;
 
     return (
-        <div className={asModal ? "p-4 lg:p-5" : "hidden lg:block px-4 py-4 border-b border-black/[0.06]"}>
-            <div className="flex gap-3">
+        <div className={
+            fullscreen
+                ? "fixed inset-0 z-50 bg-white p-4 lg:p-8 overflow-y-auto"
+                : (asModal ? "p-4 lg:p-5" : "hidden lg:block px-4 py-4 border-b border-black/[0.06]")
+        }>
+            <div className={`flex gap-3 ${fullscreen ? "max-w-3xl mx-auto" : ""} ${previewMode === "mobile" && !fullscreen ? "max-w-[420px]" : ""}`}>
                 <Avatar user={user} size={44} />
                 <div className="flex-1 min-w-0">
+                    {/* SSS-tier composer toolbar */}
+                    <div className="flex items-center justify-between mb-2 -mt-1">
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={clearComposer}
+                                data-testid="composer-clear-btn"
+                                title="Limpar composer"
+                                className="w-7 h-7 rounded-full grid place-items-center text-black/55 hover:text-red-soft hover:bg-red-soft/10 transition tap-shrink"
+                            >
+                                <Trash2 size={13} strokeWidth={1.7} />
+                            </button>
+                            <button
+                                onClick={duplicateLast}
+                                data-testid="composer-duplicate-btn"
+                                title="Duplicar última publicação"
+                                className="w-7 h-7 rounded-full grid place-items-center text-black/55 hover:text-black hover:bg-black/[0.05] transition tap-shrink"
+                            >
+                                <Copy size={13} strokeWidth={1.7} />
+                            </button>
+                            <span className="mx-1 h-4 w-px bg-black/[0.08]" />
+                            <button
+                                onClick={() => setPreviewMode("desktop")}
+                                data-testid="composer-preview-desktop"
+                                title="Pré-visualizar desktop"
+                                className={`w-7 h-7 rounded-full grid place-items-center transition tap-shrink ${previewMode === "desktop" ? "bg-black text-white" : "text-black/55 hover:bg-black/[0.05]"}`}
+                            >
+                                <Monitor size={13} strokeWidth={1.7} />
+                            </button>
+                            <button
+                                onClick={() => setPreviewMode("mobile")}
+                                data-testid="composer-preview-mobile"
+                                title="Pré-visualizar mobile"
+                                className={`w-7 h-7 rounded-full grid place-items-center transition tap-shrink ${previewMode === "mobile" ? "bg-black text-white" : "text-black/55 hover:bg-black/[0.05]"}`}
+                            >
+                                <Smartphone size={13} strokeWidth={1.7} />
+                            </button>
+                            <button
+                                onClick={() => setFullscreen((v) => !v)}
+                                data-testid="composer-fullscreen-btn"
+                                title={fullscreen ? "Sair de fullscreen" : "Fullscreen"}
+                                className="w-7 h-7 rounded-full grid place-items-center text-black/55 hover:text-black hover:bg-black/[0.05] transition tap-shrink"
+                            >
+                                {fullscreen ? <Minimize2 size={13} strokeWidth={1.7} /> : <Maximize2 size={13} strokeWidth={1.7} />}
+                            </button>
+                        </div>
+                        {/* Auto-save indicator */}
+                        {savedAt && content && (
+                            <div data-testid="composer-autosave" className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-black/45">
+                                <Check size={10} strokeWidth={2} className="text-emerald-600" /> guardado
+                            </div>
+                        )}
+                    </div>
+
                     {hadDraft && content && (
                         <div className="flex items-center gap-2 text-xs font-mono text-green-soft mb-2" data-testid="draft-restored">
                             <FileText size={12} /> Rascunho restaurado
