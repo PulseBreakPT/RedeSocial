@@ -248,6 +248,216 @@ def compute_reputation(user: dict, likes_received: int, posts_count: int) -> dic
     return {"reputation": rep, "level": level}
 
 
+# ============================================================
+# Fase 3 — Retenção (XP, Levels, Prompts, Onboarding)
+# ============================================================
+XP_VALUES = {
+    "create_post":      10,
+    "create_comment":    5,
+    "like_received":     2,
+    "create_event":     50,
+    "create_community": 30,
+    "daily_checkin":     5,
+}
+
+# Levels: (xp_threshold, name, emoji)
+LEVELS = [
+    (0,     "Novato",       "🌱"),
+    (50,    "Curioso",      "🔎"),
+    (150,   "Iniciado",     "✨"),
+    (350,   "Familiar",     "🤝"),
+    (750,   "Tasqueiro",    "🍷"),
+    (1500,  "Veterano",     "🗓"),
+    (3000,  "Popular",      "⭐"),
+    (6000,  "Embaixador",   "🇵🇹"),
+    (12000, "Lenda",        "🌟"),
+    (25000, "Mito",         "👑"),
+]
+
+
+def level_for_xp(xp: int) -> dict:
+    """Return level info for a given XP value."""
+    xp = max(0, int(xp or 0))
+    idx = 0
+    for i, (threshold, _, _) in enumerate(LEVELS):
+        if xp >= threshold:
+            idx = i
+    threshold, name, emoji = LEVELS[idx]
+    next_threshold = LEVELS[idx + 1][0] if idx + 1 < len(LEVELS) else None
+    next_name = LEVELS[idx + 1][1] if idx + 1 < len(LEVELS) else None
+    span = (next_threshold - threshold) if next_threshold else 1
+    progress = ((xp - threshold) / span) if next_threshold else 1.0
+    return {
+        "xp": xp,
+        "level": idx + 1,
+        "level_name": name,
+        "level_emoji": emoji,
+        "current_threshold": threshold,
+        "next_threshold": next_threshold,
+        "next_name": next_name,
+        "progress": round(min(max(progress, 0.0), 1.0), 4),
+    }
+
+
+async def award_xp(user_id: str, reason: str, amount: Optional[int] = None) -> dict:
+    """Add XP to a user. Returns {xp, level, leveled_up, gained, reason}."""
+    if amount is None:
+        amount = XP_VALUES.get(reason, 0)
+    if amount <= 0:
+        return {"gained": 0}
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "xp": 1, "xp_log": 1})
+    if not u:
+        return {"gained": 0}
+    prev_xp = int(u.get("xp") or 0)
+    prev_level = level_for_xp(prev_xp)["level"]
+    new_xp = prev_xp + amount
+    new_level_info = level_for_xp(new_xp)
+    new_log = list(u.get("xp_log") or [])
+    new_log.append({"reason": reason, "amount": amount, "ts": now_iso()})
+    new_log = new_log[-30:]
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"xp": new_xp, "xp_log": new_log}},
+    )
+    return {
+        "gained": amount,
+        "reason": reason,
+        "xp": new_xp,
+        "level": new_level_info["level"],
+        "level_name": new_level_info["level_name"],
+        "leveled_up": new_level_info["level"] > prev_level,
+    }
+
+
+async def daily_checkin(user_id: str) -> None:
+    """Award daily check-in XP (idempotent per UTC day)."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "xp_last_checkin": 1})
+    if not u:
+        return
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if u.get("xp_last_checkin") == today:
+        return
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"xp_last_checkin": today}},
+    )
+    await award_xp(user_id, "daily_checkin")
+
+
+# Daily prompts — deterministic by day-of-year. Calm, PT-flavoured nudges.
+DAILY_PROMPTS = [
+    {"text": "Qual o teu sítio favorito para um café em Portugal?", "emoji": "☕", "mood": "cafe", "hashtag": "cafe"},
+    {"text": "Conta-nos a tua última saudade em três palavras.", "emoji": "🥹", "mood": "saudade", "hashtag": "saudade"},
+    {"text": "Melhor tasca que conheces? Recomenda.", "emoji": "🍷", "mood": "tasca", "hashtag": "tasca"},
+    {"text": "Que música portuguesa anda em loop hoje?", "emoji": "🎙️", "mood": "fado", "hashtag": "musica"},
+    {"text": "Praia ou serra este fim-de-semana? Justifica.", "emoji": "🌊", "mood": "praia", "hashtag": "finsdesemana"},
+    {"text": "Partilha uma fotografia da tua janela agora.", "emoji": "📸", "mood": None, "hashtag": "vermillion"},
+    {"text": "Diz uma palavra portuguesa que adoras e porquê.", "emoji": "💬", "mood": None, "hashtag": "lingua"},
+    {"text": "Última refeição que valeu cada euro?", "emoji": "🍽️", "mood": "tasca", "hashtag": "comer"},
+    {"text": "Que livro andas a ler? Recomenda.", "emoji": "📚", "mood": "cultura", "hashtag": "leitura"},
+    {"text": "Lisboa, Porto ou outra? Onde está o teu coração?", "emoji": "🇵🇹", "mood": None, "hashtag": "cidades"},
+    {"text": "Conta um momento que te emocionou esta semana.", "emoji": "🫶", "mood": "saudade", "hashtag": "vida"},
+    {"text": "Que personagem portuguesa devia ser celebrada mais?", "emoji": "🎭", "mood": "cultura", "hashtag": "cultura"},
+    {"text": "Festival, concerto, peça — o que tens marcado?", "emoji": "🎉", "mood": "festa", "hashtag": "agenda"},
+    {"text": "Que prato típico ainda não experimentaste mas queres?", "emoji": "🥘", "mood": "tasca", "hashtag": "gastronomia"},
+    {"text": "Hoje sentes-te mais Lisboa ou mais Porto? Porquê?", "emoji": "🌉", "mood": None, "hashtag": "portugalidade"},
+    {"text": "Conta um segredo bem guardado da tua cidade.", "emoji": "🤫", "mood": None, "hashtag": "segredos"},
+    {"text": "Que ato de boa-vizinhança presenciaste recentemente?", "emoji": "🙏", "mood": None, "hashtag": "bairro"},
+    {"text": "Se hoje fosses 10 anos mais novo, que ias fazer?", "emoji": "✨", "mood": None, "hashtag": "vida"},
+    {"text": "Foto do café da manhã — bonus se for pastel de nata.", "emoji": "🥐", "mood": "cafe", "hashtag": "pequenoalmoco"},
+    {"text": "Qual a melhor frase portuguesa intraduzível?", "emoji": "🗣️", "mood": None, "hashtag": "lingua"},
+    {"text": "Recomenda uma série ou filme português recente.", "emoji": "🎬", "mood": "cultura", "hashtag": "cinema"},
+    {"text": "Qual a tua avó dizia mais e tu nunca esqueceste?", "emoji": "👵", "mood": "saudade", "hashtag": "familia"},
+    {"text": "Bairro que adoras visitar mas não vives?", "emoji": "🏘️", "mood": None, "hashtag": "bairros"},
+    {"text": "Última vez que te perdeste numa cidade — onde?", "emoji": "🧭", "mood": None, "hashtag": "viagens"},
+    {"text": "Que ritual diário não trocas por nada?", "emoji": "🕰️", "mood": "cafe", "hashtag": "rituais"},
+    {"text": "Que evento desportivo te fez gritar mais alto?", "emoji": "⚽", "mood": "futebol", "hashtag": "desporto"},
+    {"text": "Música portuguesa para uma viagem de carro?", "emoji": "🚗", "mood": None, "hashtag": "playlist"},
+    {"text": "Praia secreta? (sussurra ao ouvido da timeline)", "emoji": "🏖️", "mood": "praia", "hashtag": "praias"},
+    {"text": "Que mercado local recomendarias a turistas?", "emoji": "🛒", "mood": None, "hashtag": "mercados"},
+    {"text": "Lembras-te de uma feira de tradição? Conta.", "emoji": "🎪", "mood": "festa", "hashtag": "tradicao"},
+    {"text": "Qual a tua sopa preferida do mundo todo?", "emoji": "🥣", "mood": "tasca", "hashtag": "sopa"},
+    {"text": "Que conselho darias ao teu eu de há 5 anos?", "emoji": "💭", "mood": "saudade", "hashtag": "reflexao"},
+    {"text": "Café — bica, abatanado, galão? Defende a escolha.", "emoji": "☕", "mood": "cafe", "hashtag": "cafe"},
+    {"text": "Que parte de Portugal queres visitar este ano?", "emoji": "🗺️", "mood": None, "hashtag": "viagens"},
+    {"text": "Tradição que adoras mas que está a desaparecer?", "emoji": "🕯️", "mood": "saudade", "hashtag": "tradicao"},
+]
+
+
+# Onboarding checklist definitions
+CHECKLIST_STEPS = [
+    {"key": "avatar",         "label": "Define o teu avatar",        "emoji": "🖼️",  "xp": 15, "cta": "/settings/profile"},
+    {"key": "bio",            "label": "Escreve uma bio",            "emoji": "✍️",  "xp": 15, "cta": "/settings/profile"},
+    {"key": "city",           "label": "Indica a tua cidade",        "emoji": "📍",  "xp": 10, "cta": "/settings/profile"},
+    {"key": "follow_5",       "label": "Segue 5 pessoas",            "emoji": "👥",  "xp": 25, "cta": "/explore"},
+    {"key": "first_post",     "label": "Faz a tua primeira publicação", "emoji": "📝", "xp": 20, "cta": "/"},
+    {"key": "first_comment",  "label": "Comenta numa publicação",    "emoji": "💬",  "xp": 15, "cta": "/explore"},
+    {"key": "join_community", "label": "Entra numa comunidade",      "emoji": "🏛️",  "xp": 20, "cta": "/communities"},
+]
+CHECKLIST_BONUS_XP = 100  # bonus when ALL steps complete
+
+
+async def evaluate_checklist(user: dict) -> dict:
+    """Evaluate which onboarding steps are complete for a user."""
+    uid = user["id"]
+    rewarded = set(user.get("checklist_rewarded") or [])
+    bonus_claimed = bool(user.get("checklist_bonus_claimed"))
+
+    avatar_ok = bool((user.get("avatar") or "").strip())
+    bio_ok = len((user.get("bio") or "").strip()) >= 5
+    city_ok = bool((user.get("city") or "").strip())
+    follow_count = len(user.get("following") or [])
+    follow_ok = follow_count >= 5
+
+    # Async lookups
+    has_post = await db.posts.find_one(
+        {"author_id": uid, "is_draft": {"$ne": True}}, {"_id": 1}
+    )
+    has_comment = await db.comments.find_one({"author_id": uid}, {"_id": 1})
+    has_community = await db.communities.find_one({"members": uid}, {"_id": 1})
+
+    states = {
+        "avatar":         avatar_ok,
+        "bio":            bio_ok,
+        "city":           city_ok,
+        "follow_5":       follow_ok,
+        "first_post":     bool(has_post),
+        "first_comment":  bool(has_comment),
+        "join_community": bool(has_community),
+    }
+
+    steps = []
+    for s in CHECKLIST_STEPS:
+        key = s["key"]
+        done = states[key]
+        progress_val = None
+        if key == "follow_5":
+            progress_val = {"current": min(follow_count, 5), "total": 5}
+        steps.append({
+            **s,
+            "done": done,
+            "rewarded": key in rewarded,
+            "progress": progress_val,
+        })
+
+    total = len(steps)
+    completed = sum(1 for s in steps if s["done"])
+    all_done = completed == total
+
+    return {
+        "steps": steps,
+        "completed": completed,
+        "total": total,
+        "percent": round((completed / total) * 100) if total else 0,
+        "all_done": all_done,
+        "bonus_xp": CHECKLIST_BONUS_XP,
+        "bonus_claimed": bonus_claimed,
+        "pending_rewards": [
+            s["key"] for s in steps if s["done"] and not s["rewarded"]
+        ],
+    }
+
+
 # Fase 2 helpers --------------------------------------------------------------
 def detect_mood(text: str) -> Optional[str]:
     """Classify a post into one of the MOODS by keyword match. None if none match."""
@@ -346,6 +556,12 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "charms_equipped": user.get("charms_equipped", []),
         "cosmetics_equipped": user.get("cosmetics_equipped") or {"frame": "", "sticker": ""},
         "track_visits": user.get("track_visits", True),
+        # Fase 3 — Retenção
+        "xp": int(user.get("xp") or 0),
+        "level": level_for_xp(user.get("xp") or 0)["level"],
+        "level_name": level_for_xp(user.get("xp") or 0)["level_name"],
+        "level_emoji": level_for_xp(user.get("xp") or 0)["level_emoji"],
+        "streak_days": int(user.get("streak_days") or 0),
     }
     if extra:
         data.update(extra)
@@ -1161,6 +1377,8 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     if not post["is_draft"] and not scheduled_at:
         await handle_mentions(payload.content, user, post["id"])
         await update_streak_on_post(user["id"])
+        await daily_checkin(user["id"])
+        await award_xp(user["id"], "create_post")
         await ws_broadcast_activity("new_post", {
             "post_id": post["id"],
             "author_id": user["id"],
@@ -1491,6 +1709,9 @@ async def like_post(post_id: str, user=Depends(get_current_user)):
         return {"liked": False, "likes_count": len(post.get("likes", [])) - 1}
     await db.posts.update_one({"id": post_id}, {"$addToSet": {"likes": user["id"]}})
     await create_notification(post["author_id"], "like", user["id"], post_id, f"@{user['username']} gostou da tua publicação")
+    if post["author_id"] != user["id"]:
+        await award_xp(post["author_id"], "like_received")
+    await daily_checkin(user["id"])
     return {"liked": True, "likes_count": len(post.get("likes", [])) + 1}
 
 
@@ -1608,6 +1829,8 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
         "replies_count": 0,
     }
     await db.comments.insert_one(comment)
+    await daily_checkin(user["id"])
+    await award_xp(user["id"], "create_comment")
     # Bump parent replies_count
     if parent:
         await db.comments.update_one(
