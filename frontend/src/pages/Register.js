@@ -4,6 +4,11 @@ import { ArrowRight, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
 
+// Convivial Portuguese hero — street decorated for Santos Populares.
+// Frames the "come to the table" moment with community / festa popular.
+const REGISTER_HERO =
+    "https://images.unsplash.com/photo-1690467521792-8e38e841e000?auto=format&fit=crop&w=1600&q=75";
+
 /**
  * F2.1 — Onboarding 60s.
  * 3 steps: credentials → identity (city/region/mood/team) → consent.
@@ -94,41 +99,73 @@ export default function Register() {
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
-            {/* Left aesthetic panel */}
-            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden bg-paper grain isolate">
-                <div className="absolute -top-32 -right-24 w-[520px] h-[520px] rounded-full opacity-50"
-                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }} />
-                <div className="absolute -bottom-40 -left-32 w-[640px] h-[640px] rounded-full opacity-40"
-                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }} />
+            {/* Left — Portugal atmosphere panel (cinematic photo background) */}
+            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden isolate">
+                <img
+                    src={REGISTER_HERO}
+                    alt="Rua portuguesa decorada para os Santos Populares"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="eager"
+                />
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        background:
+                            "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 32%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.78) 100%)",
+                    }}
+                    aria-hidden
+                />
                 <div className="relative">
-                    <h1 className="font-display text-[36px] leading-none tracking-tight text-black flex items-baseline gap-2">
+                    <h1 className="font-display text-[36px] leading-none tracking-tight text-white flex items-baseline gap-2">
                         <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
                         <span>vermillion</span>
                     </h1>
                 </div>
                 <div className="relative max-w-md">
-                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-black">
+                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
                         Senta-te <span className="silver-foil">à mesa</span>.
                     </h2>
-                    <p className="font-body text-black/60 mt-6 leading-relaxed text-[15px] max-w-sm">
+                    <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
                         Conta criada em 60 segundos. Cinco perguntas para a tua casa ficar tua — todas saltáveis.
                     </p>
                 </div>
-                <div className="relative text-[12px] text-black/40 font-medium">
+                <div className="relative text-[12px] text-white/60 font-medium">
                     © vermillion · {new Date().getFullYear()}
                 </div>
             </div>
 
-            {/* Right form panel */}
-            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen bg-white">
-                <div className="max-w-sm w-full mx-auto">
-                    <div className="lg:hidden text-center mb-8">
-                        <h1 className="font-display text-[36px] leading-none tracking-tight">
+            {/* Right form panel (mobile gets a Portugal hero banner on top) */}
+            <div className="flex flex-col lg:justify-center pb-safe min-h-screen bg-white">
+                {/* Mobile-only hero — mirrors the desktop atmosphere panel */}
+                <div className="lg:hidden relative h-[200px] sm:h-[240px] overflow-hidden">
+                    <img
+                        src={REGISTER_HERO}
+                        alt="Rua portuguesa decorada para os Santos Populares"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="eager"
+                    />
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background:
+                                "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.72) 100%)",
+                        }}
+                        aria-hidden
+                    />
+                    <div className="absolute inset-x-0 bottom-5 px-6 text-center">
+                        <h1 className="font-display text-[32px] leading-none tracking-tight text-white">
                             <span className="silver-foil">◆</span> vermillion
                         </h1>
+                        <p className="text-white/85 font-body text-[13px] mt-2">
+                            Senta-te à mesa.
+                        </p>
                     </div>
+                </div>
 
-                    {/* Step indicator */}
+                <div className="px-6 sm:px-8 pt-8 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
+                    <div className="max-w-sm w-full mx-auto">
+
+                        {/* Step indicator */}
                     <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
                         {[1, 2, 3].map((n) => (
                             <div
@@ -331,6 +368,7 @@ export default function Register() {
                             <Link to="/manifesto" className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

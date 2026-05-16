@@ -2,6 +2,11 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// Cinematic Portuguese hero — Porto / Douro at golden hour.
+// Frames the "welcome back" moment in saudade (solitary, contemplative).
+const LOGIN_HERO =
+    "https://images.unsplash.com/photo-1612632554560-42cc9d2acfdc?auto=format&fit=crop&w=1600&q=75";
+
 export default function Login() {
     const { user, login } = useAuth();
     const navigate = useNavigate();
@@ -24,44 +29,73 @@ export default function Login() {
 
     return (
         <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
-            {/* Left — atmosphere panel */}
-            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden bg-paper grain isolate">
-                <div
-                    className="absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full opacity-50"
-                    style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
+            {/* Left — Portugal atmosphere panel (cinematic photo background) */}
+            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden isolate">
+                <img
+                    src={LOGIN_HERO}
+                    alt="Anoitecer dourado sobre o rio Douro, no Porto"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="eager"
                 />
+                {/* Cinematic gradient overlay — keeps brand legible top, tagline legible bottom */}
                 <div
-                    className="absolute -bottom-40 -right-32 w-[640px] h-[640px] rounded-full opacity-40"
-                    style={{ background: "radial-gradient(circle, rgba(106,168,230,0.18), transparent 60%)" }}
+                    className="absolute inset-0"
+                    style={{
+                        background:
+                            "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 32%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.78) 100%)",
+                    }}
+                    aria-hidden
                 />
                 <div className="relative">
-                    <h1 className="font-display text-[36px] leading-none tracking-tight text-black flex items-baseline gap-2">
+                    <h1 className="font-display text-[36px] leading-none tracking-tight text-white flex items-baseline gap-2">
                         <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
                         <span>vermillion</span>
                     </h1>
                 </div>
                 <div className="relative max-w-md">
-                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-black">
+                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
                         Liga-te.<br />Partilha o que <span className="silver-foil">importa</span>.
                     </h2>
-                    <p className="font-body text-black/60 mt-6 leading-relaxed text-[15px] max-w-sm">
+                    <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
                         Uma rede social rápida, simples e sem distracções — feita para conversas que valem.
                     </p>
                 </div>
-                <div className="relative text-[12px] text-black/40 font-medium">
+                <div className="relative text-[12px] text-white/60 font-medium">
                     © vermillion · {new Date().getFullYear()}
                 </div>
             </div>
 
-            {/* Right — form */}
-            <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-16 pt-12 pb-safe min-h-screen bg-white">
-                <div className="max-w-sm w-full mx-auto">
-                    <div className="lg:hidden text-center mb-10">
-                        <h1 className="font-display text-[36px] leading-none tracking-tight">
+            {/* Right — form (mobile gets a Portugal hero banner on top) */}
+            <div className="flex flex-col lg:justify-center pb-safe min-h-screen bg-white">
+                {/* Mobile-only hero — mirrors the desktop atmosphere panel */}
+                <div className="lg:hidden relative h-[220px] sm:h-[260px] overflow-hidden">
+                    <img
+                        src={LOGIN_HERO}
+                        alt="Anoitecer dourado sobre o rio Douro, no Porto"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="eager"
+                    />
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background:
+                                "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.72) 100%)",
+                        }}
+                        aria-hidden
+                    />
+                    <div className="absolute inset-x-0 bottom-5 px-6 text-center">
+                        <h1 className="font-display text-[34px] leading-none tracking-tight text-white">
                             <span className="silver-foil">◆</span> vermillion
                         </h1>
+                        <p className="text-white/85 font-body text-[13px] mt-2.5">
+                            Liga-te. Partilha o que importa.
+                        </p>
                     </div>
-                    <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Entrar na conta</h2>
+                </div>
+
+                <div className="px-6 sm:px-8 pt-10 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
+                    <div className="max-w-sm w-full mx-auto">
+                        <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Entrar na conta</h2>
                     <p className="text-black/55 text-[14px] mt-2">Bem-vindo de volta.</p>
 
                     <form onSubmit={submit} className="mt-8 space-y-4" data-testid="login-form">
@@ -133,6 +167,7 @@ export default function Login() {
                             <Link to="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</Link>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
