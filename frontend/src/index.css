@@ -911,6 +911,10 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .anim-sheet-up { animation: sheetUp 360ms var(--ease-out-soft) both; }
     @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .anim-slide-in-right { animation: slideInRight 280ms var(--ease-out-soft) both; }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .anim-slide-out-right { animation: slideOutRight 180ms var(--ease-out-soft) both; }
+    @keyframes slideOutRight { from { transform: translateX(0); } to { transform: translateX(100%); } }
     .anim-pop { animation: pop 360ms var(--ease-pop) both; }
     @keyframes pop { 0% { transform: scale(0.6); opacity: 0.4; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
     @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.4); } }
