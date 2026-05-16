@@ -151,8 +151,24 @@ export default function Login() {
                         </Link>
                     </p>
 
+                    {/* Social proof — quiet, not braggy */}
+                    <div className="mt-10 rounded-2xl border border-black/[0.08] p-5 bg-paper grain isolate">
+                        <p className="text-[10.5px] uppercase tracking-[0.14em] text-black/45 font-mono mb-2.5">
+                            Da nossa cozinha
+                        </p>
+                        <blockquote className="font-display text-[19px] leading-[1.25] tracking-tight text-black max-w-[34ch]">
+                            “Não é sobre quantos seguem. É sobre <span className="silver-foil">quem está à mesa</span>.”
+                        </blockquote>
+                        <p className="mt-3 text-[12px] text-black/55 leading-relaxed">
+                            Aqui não há streaks que punam, nem notificações entre as 23h e as 8h.{" "}
+                            <Link to="/manifesto" className="underline underline-offset-2 hover:text-black font-medium">
+                                Lê o manifesto
+                            </Link>.
+                        </p>
+                    </div>
+
                     {/* Legal footer */}
-                    <div className="mt-10 pt-6 border-t border-black/[0.06]">
+                    <div className="mt-8 pt-6 border-t border-black/[0.06]">
                         <p className="text-[11px] text-black/45 leading-relaxed text-center lg:text-left">
                             Ao entrar concordas com os{" "}
                             <Link to="/legal/terms" className="underline underline-offset-2 hover:text-black">Termos</Link>{" "}

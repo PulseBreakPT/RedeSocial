@@ -1,5 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck } from "lucide-react";
+
+// Cinematic Portuguese hero — contemplative scene by the Tagus.
+// Visual embodiment of the manifesto's core line: "Queremos-te bem."
+const MANIFESTO_IMAGE =
+    "https://images.unsplash.com/photo-1556268397-4b97d760d8f7?auto=format&fit=crop&w=1600&q=75";
 
 /**
  * /manifesto — public page declaring the 6 anti-dark-pattern promises.
@@ -124,6 +129,36 @@ export default function Manifesto() {
                     ))}
                 </div>
 
+                {/* Cinematic visual break — embodies "Queremos-te bem" */}
+                <figure
+                    data-testid="manifesto-image"
+                    className="mt-14 relative rounded-2xl overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9]"
+                >
+                    <img
+                        src={MANIFESTO_IMAGE}
+                        alt="Pessoa contemplativa ao pôr-do-sol sobre o Tejo, em Lisboa"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                    />
+                    <div
+                        className="absolute inset-0"
+                        style={{
+                            background:
+                                "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.10) 40%, rgba(0,0,0,0.78) 100%)",
+                        }}
+                        aria-hidden
+                    />
+                    <figcaption className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
+                        <p className="text-[10.5px] uppercase tracking-[0.18em] text-white/65 font-mono mb-2.5">
+                            A regra silenciosa
+                        </p>
+                        <h2 className="font-display text-[28px] sm:text-[42px] lg:text-[52px] leading-[1.0] tracking-tight text-white max-w-[18ch]">
+                            O tempo que passas aqui <span className="silver-foil">é teu</span>.{" "}
+                            Não nosso.
+                        </h2>
+                    </figcaption>
+                </figure>
+
                 <div className="mt-14 rounded-2xl border border-black/[0.10] p-6 bg-paper grain isolate">
                     <p className="text-[13px] uppercase tracking-[0.12em] text-black/45 font-mono mb-3">
                         A regra interna que aplicamos a cada feature nova
@@ -153,6 +188,44 @@ export default function Manifesto() {
                     >
                         Ajustar preferências
                     </Link>
+                </div>
+
+                {/* High-conversion closing CTA — converts manifesto-readers into accounts */}
+                <div
+                    data-testid="manifesto-cta-register-card"
+                    className="mt-10 rounded-2xl p-7 sm:p-10 bg-black text-white relative overflow-hidden isolate"
+                >
+                    <div
+                        className="absolute -right-20 -top-20 w-72 h-72 rounded-full opacity-25 blur-3xl pointer-events-none"
+                        style={{ background: "radial-gradient(circle, var(--coral-500), transparent 70%)" }}
+                        aria-hidden
+                    />
+                    <p className="text-[10.5px] uppercase tracking-[0.18em] text-white/55 font-mono mb-3">
+                        Se chegaste aqui
+                    </p>
+                    <h3 className="font-display text-[28px] sm:text-[38px] leading-[1.05] tracking-tight text-white max-w-[22ch]">
+                        Então já percebeste que isto <span className="silver-foil">é diferente</span>.
+                    </h3>
+                    <p className="mt-4 text-[14px] text-white/75 leading-relaxed max-w-[52ch]">
+                        Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns. Se um dia mudarmos
+                        este manifesto, vais ser o primeiro a saber — e a poder ir embora.
+                    </p>
+                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                        <Link
+                            to="/register"
+                            data-testid="manifesto-cta-register"
+                            className="inline-flex items-center gap-1.5 bg-white text-black font-semibold text-[13.5px] px-5 py-3 rounded-full hover:bg-white/90 transition tap-shrink"
+                        >
+                            Criar conta gratuita <ArrowRight size={14} />
+                        </Link>
+                        <Link
+                            to="/login"
+                            data-testid="manifesto-cta-login"
+                            className="inline-flex items-center text-[13px] font-medium text-white/80 hover:text-white underline underline-offset-4"
+                        >
+                            Já tenho conta
+                        </Link>
+                    </div>
                 </div>
 
                 <p className="mt-16 text-[12px] text-black/45 leading-relaxed border-t border-black/[0.06] pt-6">

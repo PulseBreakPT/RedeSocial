@@ -190,7 +190,35 @@ export default function Register() {
                         {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
                     </p>
 
-                    <form onSubmit={submit} className="mt-7" data-testid="register-form">
+                    {/* Per-step benefit ribbon — reduce drop-off by reaffirming value */}
+                    <div
+                        data-testid={`register-benefit-${step}`}
+                        className="mt-5 rounded-xl border border-black/[0.07] bg-paper grain isolate px-3.5 py-2.5 flex items-start gap-2.5"
+                    >
+                        <span aria-hidden className="silver-foil text-[14px] leading-none mt-0.5">◆</span>
+                        <p className="text-[12.5px] leading-relaxed text-black/75">
+                            {step === 1 && (
+                                <>
+                                    <strong className="text-black">60 segundos.</strong> Sem cartão, sem upsell, sem trial.
+                                    Conta gratuita para sempre.
+                                </>
+                            )}
+                            {step === 2 && (
+                                <>
+                                    <strong className="text-black">O algoritmo respeita silêncios.</strong> Cada
+                                    resposta torna o teu feed mais teu — e cada uma é saltável.
+                                </>
+                            )}
+                            {step === 3 && (
+                                <>
+                                    <strong className="text-black">Sem letra pequena.</strong> Os teus dados são
+                                    teus. Podes apagar a conta com um clique a qualquer momento.
+                                </>
+                            )}
+                        </p>
+                    </div>
+
+                    <form onSubmit={submit} className="mt-6" data-testid="register-form">
                         {step === 1 && (
                             <div className="space-y-4">
                                 <Field label="Nome">
@@ -269,6 +297,17 @@ export default function Register() {
 
                         {step === 3 && (
                             <div className="space-y-3 pt-1">
+                                {/* Micro-testimonial — final psychological push before consent */}
+                                <div className="rounded-xl border border-black/[0.08] bg-white p-3.5">
+                                    <blockquote className="font-display text-[17px] leading-[1.25] tracking-tight text-black max-w-[34ch]">
+                                        “Finalmente uma rede que não me <span className="silver-foil">trata</span>{" "}
+                                        como produto.”
+                                    </blockquote>
+                                    <p className="mt-2 text-[11px] text-black/50 font-mono uppercase tracking-[0.12em]">
+                                        — Manifesto, promessa 04
+                                    </p>
+                                </div>
+
                                 <ConsentCheckbox
                                     id="consent-age" checked={consent.age}
                                     onChange={() => toggleConsent("age")}
