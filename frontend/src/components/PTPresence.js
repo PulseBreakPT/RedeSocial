@@ -39,7 +39,7 @@ export function NewVoicesStrip() {
                     Vozes novas perto de ti
                 </h2>
                 <Link
-                    to="/diaspora"
+                    to="/explore"
                     className="text-[11.5px] font-medium text-black/55 hover:text-black underline-offset-2 hover:underline"
                 >
                     ver mais

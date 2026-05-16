@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Bell, Sun, X, ChevronRight } from "lucide-react";
+import { CalendarDays, Sun, X, ChevronRight } from "lucide-react";
 import { api } from "../lib/api";
 import { isATardeWindow, isBoaNoiteHour } from "../lib/ptCulture";
 
@@ -164,85 +164,4 @@ function shouldShowMissed() {
     // Show after 22h if the user hasn't dismissed it today.
     const h = new Date().getHours();
     return h >= 22 || h < 6;
-}
-
-/**
- * F5.2 Sino do Bairro — single local event in next 7 days. Rate-limited weekly via localStorage.
- */
-export function SinoBairroBanner() {
-    const [ev, setEv] = useState(null);
-    const [dismissed, setDismissed] = useState(false);
-
-    useEffect(() => {
-        // Soft-throttle: show at most once per ISO week per user
-        const week = isoWeek(new Date());
-        const dismissKey = `vm_bairro_dismiss_${week}`;
-        if (localStorage.getItem(dismissKey) === "1") {
-            setDismissed(true);
-            return;
-        }
-        let cancelled = false;
-        (async () => {
-            try {
-                const { data } = await api.get("/bairro/events");
-                if (!cancelled && data?.event) setEv(data.event);
-            } catch { /* anonymous user — silent */ }
-        })();
-        return () => { cancelled = true; };
-    }, []);
-
-    if (!ev || dismissed) return null;
-
-    const dismiss = () => {
-        const week = isoWeek(new Date());
-        localStorage.setItem(`vm_bairro_dismiss_${week}`, "1");
-        setDismissed(true);
-    };
-
-    return (
-        <div
-            data-testid="sino-bairro-banner"
-            className="rounded-2xl border border-black/[0.10] p-4 mb-4 bg-white relative overflow-hidden"
-        >
-            <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl grid place-items-center shrink-0 bg-black text-white">
-                    <Bell size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[10.5px] uppercase tracking-[0.14em] text-black/45 font-mono">
-                        Sino do bairro · 1×/semana
-                    </p>
-                    <h3 className="mt-0.5 font-semibold text-[15px] tracking-tight text-black leading-snug">
-                        {ev.title}
-                    </h3>
-                    <p className="text-[13px] text-black/60 mt-0.5 leading-relaxed">
-                        {ev.location || "Localização por confirmar"} ·{" "}
-                        <Link
-                            to="/events"
-                            className="underline underline-offset-2 hover:text-black"
-                        >
-                            ver evento
-                        </Link>
-                    </p>
-                </div>
-                <button
-                    onClick={dismiss}
-                    data-testid="sino-bairro-dismiss"
-                    className="text-black/35 hover:text-black tap-shrink"
-                    aria-label="Dispensar até à próxima semana"
-                >
-                    <X size={16} />
-                </button>
-            </div>
-        </div>
-    );
-}
-
-function isoWeek(d) {
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const dayNum = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-    return `${date.getUTCFullYear()}-${String(weekNo).padStart(2, "0")}`;
 }

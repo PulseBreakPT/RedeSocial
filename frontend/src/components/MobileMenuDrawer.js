@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
-    LogOut, Users as UsersIcon, CalendarDays, TrendingUp,
-    FileText, Clock, X, ScrollText, Scale, Globe, Eye, Gift,
+    LogOut, Users as UsersIcon, TrendingUp,
+    FileText, Clock, X, ScrollText, Scale, Eye,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -26,9 +26,6 @@ const groups = [
         label: "Descobrir",
         items: [
             { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "mdrawer-trending" },
-            { to: "/events", label: "Eventos", icon: CalendarDays, testid: "mdrawer-events" },
-            { to: "/starter-packs", label: "Starter Packs", icon: Gift, testid: "mdrawer-starter-packs" },
-            { to: "/diaspora", label: "Diáspora", icon: Globe, testid: "mdrawer-diaspora" },
         ],
     },
     {

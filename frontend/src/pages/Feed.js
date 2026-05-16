@@ -9,7 +9,7 @@ import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
-import { CalendarPTBanner, ATardeBanner, SinoBairroBanner } from "../components/PTBanners";
+import { CalendarPTBanner, ATardeBanner } from "../components/PTBanners";
 import { NewVoicesStrip } from "../components/PTPresence";
 import { NotesBar } from "../components/NotesBar";
 
@@ -212,7 +212,6 @@ export default function Feed() {
             <div className="px-4 lg:px-5 pt-3">
                 <CalendarPTBanner />
                 <ATardeBanner />
-                <SinoBairroBanner />
                 <NewVoicesStrip />
             </div>
 

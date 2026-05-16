@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
+import { DesktopTopBar } from "./DesktopTopBar";
 import { RightSidebar } from "./RightSidebar";
 import { Composer } from "./Composer";
 import { OnboardingModal } from "./OnboardingModal";
@@ -102,8 +102,8 @@ export function Layout() {
         <WebSocketProvider>
         <div className="min-h-screen text-black">
             <MobileTopBar onOpenMenu={() => setMenuOpen(true)} onOpenChat={() => setChatOpen(true)} />
-            <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,640px)_340px] max-w-[1300px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
-                <Sidebar onCompose={() => setComposeOpen(true)} />
+            <DesktopTopBar onCompose={() => setComposeOpen(true)} />
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,640px)_340px] max-w-[1100px] mx-auto gap-0 lg:gap-8 px-0 lg:px-6">
                 <main className="lg:border-x lg:border-black/[0.07] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
                     <Outlet context={{ openCompose: () => setComposeOpen(true), openChat: () => setChatOpen(true), openMenu: () => setMenuOpen(true) }} />
                 </main>

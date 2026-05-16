@@ -30,7 +30,6 @@ export function useKeyboardShortcuts({ openCompose, openHelp }) {
                     n: "/notifications",
                     m: "/messages",
                     c: "/communities",
-                    v: "/events",
                     b: "/bookmarks",
                     s: "/settings",
                 };

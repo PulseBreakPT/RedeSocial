@@ -19,7 +19,6 @@ import Settings from "./pages/Settings";
 import TagPage from "./pages/TagPage";
 import Communities from "./pages/Communities";
 import Community from "./pages/Community";
-import Events from "./pages/Events";
 import Trending from "./pages/Trending";
 import Drafts from "./pages/Drafts";
 import Scheduled from "./pages/Scheduled";
@@ -30,9 +29,7 @@ import Cookies from "./pages/legal/Cookies";
 import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
 import Glossary from "./pages/legal/Glossary";
 import Manifesto from "./pages/Manifesto";
-import Diaspora from "./pages/Diaspora";
 import Visitors from "./pages/Visitors";
-import StarterPacks from "./pages/StarterPacks";
 import SeriesPage from "./pages/SeriesPage";
 
 function App() {
@@ -65,7 +62,6 @@ function App() {
                         <Route path="/legal/community" element={<CommunityGuidelines />} />
                         <Route path="/legal/glossary" element={<Glossary />} />
                         <Route path="/manifesto" element={<Manifesto />} />
-                        <Route path="/diaspora" element={<Diaspora />} />
                         <Route
                             element={
                                 <ProtectedRoute>
@@ -84,14 +80,11 @@ function App() {
                             <Route path="/scheduled" element={<Scheduled />} />
                             <Route path="/communities" element={<Communities />} />
                             <Route path="/c/:slug" element={<Community />} />
-                            <Route path="/events" element={<Events />} />
                             <Route path="/u/:username" element={<Profile />} />
                             <Route path="/post/:postId" element={<PostDetail />} />
                             <Route path="/tag/:tag" element={<TagPage />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/visitors" element={<Visitors />} />
-                            <Route path="/starter-packs" element={<StarterPacks />} />
-                            <Route path="/starter-packs/:packId" element={<StarterPacks />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
                         </Route>
                     </Routes>

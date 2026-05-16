@@ -66,7 +66,7 @@ export function RightSidebar() {
     const onlineNow = suggestions.slice(0, 5);
 
     return (
-        <aside className="hidden lg:flex flex-col gap-5 py-6 pl-2 sticky top-0 h-screen overflow-y-auto no-scrollbar" data-testid="right-sidebar">
+        <aside className="hidden lg:flex flex-col gap-5 py-6 pl-2 sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto no-scrollbar" data-testid="right-sidebar">
             {/* Search */}
             <div className="relative" ref={searchRef}>
                 <Search size={15} strokeWidth={1.7} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40" />
