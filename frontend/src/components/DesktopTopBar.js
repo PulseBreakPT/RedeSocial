@@ -1,8 +1,8 @@
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
     Home, Compass, Bell, MessageCircle, Bookmark, User, Settings,
-    LogOut, PenSquare, Users as UsersIcon, TrendingUp,
-    FileText, Clock, ScrollText, Scale, Eye, ChevronDown,
+    LogOut, PenSquare, Users as UsersIcon,
+    FileText, Clock, Eye, ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -13,14 +13,21 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useClickOutside } from "../hooks/useClickOutside";
 
-// Primary nav — kept short, horizontal across the desktop top bar.
+// Primary nav — kept tight (5 items, social-network standard)
 const primaryItems = [
     { to: "/", label: "Início", icon: Home, testid: "nav-home", end: true },
     { to: "/explore", label: "Explorar", icon: Compass, testid: "nav-explore" },
     { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications" },
     { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "nav-messages" },
     { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "nav-communities" },
-    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
+];
+
+// User dropdown — account-only, social-network style.
+const accountItems = [
+    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "umenu-bookmarks" },
+    { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "umenu-drafts" },
+    { to: "/scheduled", label: "Agendados", icon: Clock, testid: "umenu-scheduled" },
+    { to: "/visitors", label: "Visitas", icon: Eye, testid: "umenu-visitors" },
 ];
 
 export function DesktopTopBar({ onCompose }) {
@@ -45,18 +52,6 @@ export function DesktopTopBar({ onCompose }) {
         const id = setInterval(tick, 8000);
         return () => { cancelled = true; clearInterval(id); };
     }, []);
-
-    const userMenuItems = [
-        { to: user?.username ? `/u/${user.username}` : "/", label: "Perfil", icon: User, testid: "umenu-profile" },
-        { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "umenu-trending" },
-        { to: "/visitors", label: "Visitas", icon: Eye, testid: "umenu-visitors" },
-        { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "umenu-drafts" },
-        { to: "/scheduled", label: "Agendados", icon: Clock, testid: "umenu-scheduled" },
-        { divider: true },
-        { to: "/settings", label: "Definições", icon: Settings, testid: "umenu-settings" },
-        { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "umenu-manifesto" },
-        { to: "/legal", label: "Centro Legal", icon: Scale, testid: "umenu-legal" },
-    ];
 
     return (
         <header
@@ -136,20 +131,33 @@ export function DesktopTopBar({ onCompose }) {
                         <div
                             role="menu"
                             data-testid="topbar-user-menu"
-                            className="absolute right-0 top-full mt-2 w-[280px] z-50 rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(13,13,16,0.25)] border border-black/[0.07] py-2 animate-in fade-in-0 zoom-in-95 duration-150"
+                            className="absolute right-0 top-full mt-2 w-[300px] z-50 rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(13,13,16,0.25)] border border-black/[0.07] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
                         >
-                            {/* User header */}
+                            {/* Header card — clickable, links to profile */}
                             <button
                                 onClick={() => { setMenuOpen(false); navigate(`/u/${user?.username}`); }}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/[0.03] transition text-left tap-shrink"
                                 data-testid="umenu-header"
+                                className="w-full text-left tap-shrink hover:bg-black/[0.02] transition group"
                             >
-                                <Avatar user={user} size={40} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-heading font-semibold truncate text-sm flex items-center gap-1 text-black">
-                                        {user?.name} {user?.verified && <VerifiedBadge size={12} />}
+                                <div className="flex items-center gap-3 px-4 pt-3.5 pb-2">
+                                    <Avatar user={user} size={46} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-heading font-semibold truncate text-[15px] flex items-center gap-1 text-black">
+                                            {user?.name} {user?.verified && <VerifiedBadge size={12} />}
+                                        </div>
+                                        <div className="font-mono text-[11.5px] text-black/50 truncate">@{user?.username}</div>
                                     </div>
-                                    <div className="font-mono text-xs text-black/50 truncate">@{user?.username}</div>
+                                </div>
+                                <div className="flex items-center gap-4 px-4 pb-3 text-[12px]">
+                                    <span>
+                                        <span className="font-semibold text-black tabular-nums">{user?.following_count ?? 0}</span>
+                                        <span className="text-black/55"> a seguir</span>
+                                    </span>
+                                    <span>
+                                        <span className="font-semibold text-black tabular-nums">{user?.followers_count ?? 0}</span>
+                                        <span className="text-black/55"> seguidores</span>
+                                    </span>
+                                    <span className="ml-auto text-[11px] font-medium text-black/45 group-hover:text-black transition">Ver perfil →</span>
                                 </div>
                             </button>
 
@@ -159,12 +167,9 @@ export function DesktopTopBar({ onCompose }) {
                                 <ConnectionIndicator />
                             </div>
 
-                            {/* Menu items */}
-                            <div className="py-1">
-                                {userMenuItems.map((item, idx) => {
-                                    if (item.divider) {
-                                        return <div key={`div-${idx}`} className="my-1.5 mx-3 h-px bg-black/[0.07]" />;
-                                    }
+                            {/* Account items */}
+                            <div className="py-1.5">
+                                {accountItems.map((item) => {
                                     const Icon = item.icon;
                                     return (
                                         <NavLink
@@ -187,8 +192,25 @@ export function DesktopTopBar({ onCompose }) {
                                 })}
                             </div>
 
+                            {/* Settings */}
+                            <div className="hairline-t py-1.5">
+                                <NavLink
+                                    to="/settings"
+                                    onClick={() => setMenuOpen(false)}
+                                    data-testid="umenu-settings"
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 px-4 py-2.5 transition tap-shrink text-[14px] ${
+                                            isActive ? "bg-black/[0.05] text-black font-semibold" : "text-black/80 hover:bg-black/[0.04]"
+                                        }`
+                                    }
+                                >
+                                    <Settings size={17} strokeWidth={1.7} />
+                                    <span className="tracking-tight">Definições</span>
+                                </NavLink>
+                            </div>
+
                             {/* Logout */}
-                            <div className="hairline-t mt-1 pt-1">
+                            <div className="hairline-t py-1.5">
                                 <button
                                     onClick={() => { setMenuOpen(false); logout(); }}
                                     data-testid="umenu-logout"
@@ -199,12 +221,13 @@ export function DesktopTopBar({ onCompose }) {
                                 </button>
                             </div>
 
-                            {/* Footer links */}
-                            <div className="px-4 pt-2 pb-1 flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-black/40">
-                                <a href="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</a>
-                                <a href="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</a>
-                                <a href="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</a>
-                                <span className="font-mono text-black/35 ml-auto">© Vermillion</span>
+                            {/* Micro-footer */}
+                            <div className="px-4 py-2.5 hairline-t flex flex-wrap gap-x-2.5 gap-y-1 text-[10.5px] text-black/40 bg-black/[0.015]">
+                                <Link to="/manifesto" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
+                                <Link to="/legal" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
+                                <Link to="/legal/terms" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Termos</Link>
+                                <Link to="/legal/privacy" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
+                                <span className="font-mono text-black/30 ml-auto">© Vermillion</span>
                             </div>
                         </div>
                     )}

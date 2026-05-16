@@ -1,8 +1,8 @@
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-    Bell, Search, MessageCircle, ChevronDown, User, TrendingUp,
+    Bell, Search, MessageCircle, ChevronDown, TrendingUp,
     Users as UsersIcon, Bookmark, FileText, Clock, Eye, Settings,
-    ScrollText, Scale, LogOut, X,
+    LogOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
@@ -13,19 +13,25 @@ import { PresencePicker } from "./PresencePicker";
 import { ConnectionIndicator } from "./WebSocketProvider";
 import { useClickOutside, useEscapeKey } from "../hooks/useClickOutside";
 
-const menuItems = [
-    { to: "__profile__", label: "Perfil", icon: User, testid: "mtop-menu-profile" },
-    { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "mtop-menu-communities" },
-    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "mtop-menu-bookmarks" },
-    { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "mtop-menu-trending" },
-    { divider: true },
-    { to: "/visitors", label: "Visitas", icon: Eye, testid: "mtop-menu-visitors" },
-    { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "mtop-menu-drafts" },
-    { to: "/scheduled", label: "Agendados", icon: Clock, testid: "mtop-menu-scheduled" },
-    { divider: true },
-    { to: "/settings", label: "Definições", icon: Settings, testid: "mtop-menu-settings" },
-    { to: "/manifesto", label: "Manifesto", icon: ScrollText, testid: "mtop-menu-manifesto" },
-    { to: "/legal", label: "Centro Legal", icon: Scale, testid: "mtop-menu-legal" },
+// Sections (mobile has more items because bottom-nav only has 5 slots
+// and there's no right sidebar to host Tendências on mobile)
+const sections = [
+    {
+        label: "Navegar",
+        items: [
+            { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "mtop-menu-communities" },
+            { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "mtop-menu-bookmarks" },
+            { to: "/trending", label: "Tendências", icon: TrendingUp, testid: "mtop-menu-trending" },
+        ],
+    },
+    {
+        label: "A minha actividade",
+        items: [
+            { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "mtop-menu-drafts" },
+            { to: "/scheduled", label: "Agendados", icon: Clock, testid: "mtop-menu-scheduled" },
+            { to: "/visitors", label: "Visitas", icon: Eye, testid: "mtop-menu-visitors" },
+        ],
+    },
 ];
 
 export function MobileTopBar({ onOpenChat }) {
@@ -61,7 +67,7 @@ export function MobileTopBar({ onOpenChat }) {
             data-testid="mobile-topbar"
         >
             <div className="flex items-center gap-3 px-4 h-[var(--mobile-topbar-h)]">
-                {/* Avatar + chevron — opens a compact dropdown menu */}
+                {/* Avatar — opens a compact, account-focused dropdown */}
                 <div className="relative flex-shrink-0" ref={menuRef}>
                     <button
                         onClick={() => setMenuOpen((v) => !v)}
@@ -77,47 +83,41 @@ export function MobileTopBar({ onOpenChat }) {
                             strokeWidth={1.8}
                             className={`text-black/55 transition-transform ${menuOpen ? "rotate-180" : ""}`}
                         />
-                        {unread > 0 && !menuOpen && (
-                            <span
-                                aria-hidden
-                                className="absolute top-0 left-7 w-2.5 h-2.5 rounded-full border-2 border-white"
-                                style={{ background: "var(--coral-500)" }}
-                            />
-                        )}
                     </button>
 
                     {menuOpen && (
                         <div
                             role="menu"
                             data-testid="mobile-topbar-menu"
-                            className="absolute left-0 top-full mt-2 w-[280px] z-50 rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(13,13,16,0.30)] border border-black/[0.08] py-2 animate-in fade-in-0 zoom-in-95 duration-150"
+                            className="absolute left-0 top-full mt-2 w-[290px] z-50 rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(13,13,16,0.30)] border border-black/[0.08] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
                         >
-                            {/* User header */}
+                            {/* Header — clickable */}
                             <button
                                 onClick={() => { setMenuOpen(false); navigate(`/u/${user?.username}`); }}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/[0.03] transition text-left tap-shrink"
                                 data-testid="mtop-menu-header"
+                                className="w-full text-left tap-shrink hover:bg-black/[0.02] transition group"
                             >
-                                <Avatar user={user} size={42} />
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-heading font-semibold truncate text-[14.5px] flex items-center gap-1 text-black">
-                                        {user?.name} {user?.verified && <VerifiedBadge size={12} />}
+                                <div className="flex items-center gap-3 px-4 pt-3.5 pb-2">
+                                    <Avatar user={user} size={46} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-heading font-semibold truncate text-[15px] flex items-center gap-1 text-black">
+                                            {user?.name} {user?.verified && <VerifiedBadge size={12} />}
+                                        </div>
+                                        <div className="font-mono text-[11.5px] text-black/50 truncate">@{user?.username}</div>
                                     </div>
-                                    <div className="font-mono text-xs text-black/50 truncate">@{user?.username}</div>
+                                </div>
+                                <div className="flex items-center gap-4 px-4 pb-3 text-[12px]">
+                                    <span>
+                                        <span className="font-semibold text-black tabular-nums">{user?.following_count ?? 0}</span>
+                                        <span className="text-black/55"> a seguir</span>
+                                    </span>
+                                    <span>
+                                        <span className="font-semibold text-black tabular-nums">{user?.followers_count ?? 0}</span>
+                                        <span className="text-black/55"> seguidores</span>
+                                    </span>
+                                    <span className="ml-auto text-[11px] font-medium text-black/45 group-hover:text-black transition">Ver perfil →</span>
                                 </div>
                             </button>
-
-                            {/* Follow counts */}
-                            <div className="px-4 pb-2 -mt-1 flex items-center gap-4 text-[12.5px]" onClick={(e) => e.stopPropagation()}>
-                                <button onClick={() => { setMenuOpen(false); navigate(`/u/${user?.username}?tab=following`); }} className="tap-shrink">
-                                    <span className="font-semibold text-black tabular-nums">{user?.following_count ?? 0}</span>
-                                    <span className="text-black/55"> a seguir</span>
-                                </button>
-                                <button onClick={() => { setMenuOpen(false); navigate(`/u/${user?.username}?tab=followers`); }} className="tap-shrink">
-                                    <span className="font-semibold text-black tabular-nums">{user?.followers_count ?? 0}</span>
-                                    <span className="text-black/55"> seguidores</span>
-                                </button>
-                            </div>
 
                             {/* Presence */}
                             <div className="px-4 py-2 hairline-t hairline-b flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
@@ -125,37 +125,59 @@ export function MobileTopBar({ onOpenChat }) {
                                 <ConnectionIndicator />
                             </div>
 
-                            {/* Menu items */}
-                            <div className="py-1 max-h-[55vh] overflow-y-auto">
-                                {menuItems.map((item, idx) => {
-                                    if (item.divider) {
-                                        return <div key={`div-${idx}`} className="my-1.5 mx-3 h-px bg-black/[0.07]" />;
+                            {/* Sections */}
+                            <div className="max-h-[55vh] overflow-y-auto">
+                                {sections.map((section, sIdx) => (
+                                    <div key={section.label} className={sIdx > 0 ? "hairline-t" : ""}>
+                                        <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.14em] text-black/40 font-mono">
+                                            {section.label}
+                                        </p>
+                                        <div className="pb-1.5">
+                                            {section.items.map((item) => {
+                                                const Icon = item.icon;
+                                                return (
+                                                    <NavLink
+                                                        key={item.to}
+                                                        to={item.to}
+                                                        onClick={() => setMenuOpen(false)}
+                                                        data-testid={item.testid}
+                                                        className={({ isActive }) =>
+                                                            `flex items-center gap-3 px-4 py-2.5 transition tap-shrink text-[14px] ${
+                                                                isActive
+                                                                    ? "bg-black/[0.05] text-black font-semibold"
+                                                                    : "text-black/80 hover:bg-black/[0.04]"
+                                                            }`
+                                                        }
+                                                    >
+                                                        <Icon size={17} strokeWidth={1.7} />
+                                                        <span className="tracking-tight">{item.label}</span>
+                                                    </NavLink>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Settings */}
+                            <div className="hairline-t py-1.5">
+                                <NavLink
+                                    to="/settings"
+                                    onClick={() => setMenuOpen(false)}
+                                    data-testid="mtop-menu-settings"
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 px-4 py-2.5 transition tap-shrink text-[14px] ${
+                                            isActive ? "bg-black/[0.05] text-black font-semibold" : "text-black/80 hover:bg-black/[0.04]"
+                                        }`
                                     }
-                                    const Icon = item.icon;
-                                    const to = item.to === "__profile__" ? `/u/${user?.username}` : item.to;
-                                    return (
-                                        <NavLink
-                                            key={item.to}
-                                            to={to}
-                                            onClick={() => setMenuOpen(false)}
-                                            data-testid={item.testid}
-                                            className={({ isActive }) =>
-                                                `flex items-center gap-3 px-4 py-2.5 transition tap-shrink text-[14px] ${
-                                                    isActive
-                                                        ? "bg-black/[0.05] text-black font-semibold"
-                                                        : "text-black/80 hover:bg-black/[0.04]"
-                                                }`
-                                            }
-                                        >
-                                            <Icon size={17} strokeWidth={1.7} />
-                                            <span className="tracking-tight">{item.label}</span>
-                                        </NavLink>
-                                    );
-                                })}
+                                >
+                                    <Settings size={17} strokeWidth={1.7} />
+                                    <span className="tracking-tight">Definições</span>
+                                </NavLink>
                             </div>
 
                             {/* Logout */}
-                            <div className="hairline-t mt-1 pt-1">
+                            <div className="hairline-t py-1.5">
                                 <button
                                     onClick={() => { setMenuOpen(false); logout(); }}
                                     data-testid="mtop-menu-logout"
@@ -166,12 +188,13 @@ export function MobileTopBar({ onOpenChat }) {
                                 </button>
                             </div>
 
-                            {/* Footer */}
-                            <div className="px-4 pt-2 pb-1 flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-black/40">
+                            {/* Micro-footer */}
+                            <div className="px-4 py-2.5 hairline-t flex flex-wrap gap-x-2.5 gap-y-1 text-[10.5px] text-black/40 bg-black/[0.015]">
+                                <Link to="/manifesto" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
+                                <Link to="/legal" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
                                 <Link to="/legal/terms" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Termos</Link>
                                 <Link to="/legal/privacy" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
-                                <Link to="/legal/cookies" onClick={() => setMenuOpen(false)} className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
-                                <span className="font-mono text-black/35 ml-auto">© Vermillion</span>
+                                <span className="font-mono text-black/30 ml-auto">© Vermillion</span>
                             </div>
                         </div>
                     )}
