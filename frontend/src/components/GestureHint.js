@@ -47,9 +47,7 @@ export function GestureHint() {
                 <style>{`@keyframes hintIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
                 <span className="text-[13px] leading-snug tracking-tight">
                     <span className="opacity-70">Dica:</span> deslize{" "}
-                    <span className="font-semibold">→ menu</span>
-                    <span className="opacity-40 mx-1.5">·</span>
-                    <span className="font-semibold">← chats</span>
+                    <span className="font-semibold">← para chats</span>
                 </span>
                 <button
                     onClick={dismiss}
