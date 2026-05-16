@@ -21,6 +21,7 @@ import { toast } from "sonner";
 
 import { IdentityCard } from "./profile/IdentityCard";
 import { CompletionPanel } from "./profile/CompletionPanel";
+import { AccountPanel } from "./profile/AccountPanel";
 import { AffinityRibbon } from "./profile/AffinityRibbon";
 import { RhythmPanel } from "./profile/RhythmPanel";
 import { FingerprintGrid } from "./profile/FingerprintGrid";
@@ -204,7 +205,10 @@ export default function Profile() {
                 <>
                     {/* Self: completion ring + checklist · Other: affinity ribbon */}
                     {profile.is_self ? (
-                        <CompletionPanel profile={profile} stats={stats} />
+                        <>
+                            <CompletionPanel profile={profile} stats={stats} />
+                            <AccountPanel />
+                        </>
                     ) : (
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
                     )}
