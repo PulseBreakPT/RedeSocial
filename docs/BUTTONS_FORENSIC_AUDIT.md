@@ -1,12 +1,37 @@
 # 🔍 AUDITORIA FORENSE SSS-TIER — Vermillion
 
-> **Documento gerado em modo READ-ONLY.** Nenhum ficheiro de código foi alterado.
-> Objectivo: mapear, por componente e botão, todos os controlos de UI que **não estão ligados ao backend, persistem apenas localmente, ou são puramente visuais**.
-> Análise feita ao código de `/app/frontend/src/` cruzando com `/app/backend/server.py` (`@api.*` e `@api2.*` em 5.646 linhas).
+> **Documento gerado em modo READ-ONLY** (versão original).
+> **Atualização (esta sessão)**: aplicado plano de correção — ver secção 0 abaixo e `/app/docs/BUTTONS_FIX_REPORT.md`.
+> Objectivo original: mapear, por componente e botão, todos os controlos de UI que **não estão ligados ao backend, persistem apenas localmente, ou são puramente visuais**.
+> Análise feita ao código de `/app/frontend/src/` cruzando com `/app/backend/server.py` (`@api.*` e `@api2.*` em 5.823 linhas).
 
 ---
 
-## 📊 1. SUMÁRIO EXECUTIVO
+## ✅ 0. ESTADO ATUAL APÓS CORREÇÃO
+
+**Corrigidos nesta sessão (29):**
+B-001, B-002, B-003, B-004, B-005, B-006, B-007, B-008, B-009, B-010, B-011 (interest signals → backend completo)
+B-012 (favoritos unificados)
+B-013, B-014, B-015 (toggles 2FA/login_alerts/recovery_email **removidos**)
+B-016, B-017, B-018, B-019, B-020, B-021 (preferências persistem cross-device)
+B-022 (PrivTab usa export real)
+B-024 (Drafts "ver" → abre Composer em modo edição real)
+B-028 (RightSidebar empty state)
+B-031, B-032, B-033, B-034, B-035, B-036 (window.confirm/prompt → `ConfirmDialog`)
+B-038 (Visitors usa `track_visits` canónico)
+B-042 (console.log removido)
+B-043 (Composer autocomplete de menções `@`)
+
+**Pendentes documentados (apenas P2/P3 e infra-deferred):**
+B-023 (Café receipt) · B-027 (composer preview) · B-029/B-030 (sessões + score 2FA) ·
+B-039 (translate AI) · B-040/B-041 (WS migrations) · B-044 (story extensions) ·
+B-046, B-047, B-048, B-049, B-050 (UX micro / object storage)
+
+Ver tabela final na secção 7 e `/app/docs/BUTTONS_FIX_REPORT.md` para resumo executivo.
+
+---
+
+## 📊 1. SUMÁRIO EXECUTIVO (original)
 
 O Vermillion tem **187 endpoints REST** (`/api` + `/api2`) já implementados no backend e a **maioria** das interações principais (publicar, comentar, gostar, comunidades, mensagens, stories, notas, charms, cosmetics, roda, mesa, presence, denúncias, follow/block/mute, exportação, eliminação de conta, recuperação de password, mudança de password, agendamento, drafts, polls, reações PT) **estão correctamente cabladas**.
 
@@ -343,3 +368,68 @@ O **calcanhar de Aquiles** é a camada `interestSignals.js` + os toggles de `Set
 Após F0+F1+F2+F3 (≈8-10 dias-engenheiro), o produto fica pronto para Beta com promessas alinhadas ao comportamento real. F4+F5 (WS + object storage) são pré-requisitos para Produção.
 
 — Fim do relatório.
+
+
+
+---
+
+## 🛠️ 7. STATUS POR ID — APÓS CORREÇÃO (sessão atual)
+
+| ID | Estado | Como ficou |
+|----|--------|------------|
+| B-001 | ✅ Corrigido | `muteTopic` → `POST /api2/users/me/muted-topics`, filtro server-side em `/posts/feed` e `/feed/v2` |
+| B-002 | ✅ Corrigido | `muteAuthor` → `POST /api2/users/{username}/mute` real (caminho único) |
+| B-003 | ✅ Corrigido | `seeLess` → `POST /api2/feed/signals` com peso negativo |
+| B-004 | ✅ Corrigido | `seeMore` → `POST /api2/feed/signals` com peso positivo |
+| B-005 | ✅ Corrigido | "Não interessado" → `POST /api2/posts/{id}/dismiss` (oculta nos feeds) |
+| B-006 | ✅ Corrigido | "Porquê isto?" → `GET /api2/posts/{id}/why` com `reason` real |
+| B-007 | ✅ Corrigido | "Boost" → `POST /api/posts/{id}/boost` (cap diário, expira 24h, afeta ranker) |
+| B-008 | ✅ Corrigido | Notas privadas → `PUT /api/posts/{id}/note` (cross-device) |
+| B-009 | ✅ Corrigido | "Story 24h" → cria story real via `POST /api/stories` com imagem do post |
+| B-010 | ✅ Corrigido | "Watch post" → `POST /api2/posts/{id}/follow-thread` (recebe notifs reais) |
+| B-011 | ✅ Corrigido | "Adicionar à coleção" → `POST /api/posts/{id}/collection` (caminho único) |
+| B-012 | ✅ Corrigido | Favoritos unificados em `POST /api2/users/{username}/favorite` |
+| B-013 | ✅ Mitigado | Toggle 2FA fake **removido** da UI (implementação real deferida) |
+| B-014 | ✅ Mitigado | Toggle "Login alerts" fake **removido** (pipeline real deferido) |
+| B-015 | ✅ Mitigado | Campo "Recovery email" fake **removido** (campo real no `PATCH /users/me` deferido) |
+| B-016 | ✅ Corrigido | `notif_preferences` agora persiste via `PATCH /users/me` debounced |
+| B-017 | ✅ Corrigido | `show_online`, `typing_indicator`, `searchable` → `PATCH /users/me` |
+| B-018 | ✅ Corrigido | `theme`, `density`, `language`, `reduce_motion` → `PATCH /users/me` |
+| B-019 | ✅ Corrigido | `boa_noite_start/end` persistem em servidor (já respeitados no envio) |
+| B-020 | ✅ Corrigido | Toggles de notif categóricas chegam ao backend via mesma flow do B-016 |
+| B-021 | ✅ Corrigido | `muteCategory` → `POST /api2/notifications/preferences` |
+| B-022 | ✅ Corrigido | PrivTab usa `GET /api2/users/me/export` (mesma rota da DataTab) |
+| B-023 | 🟡 Pendente | "Café receipt" — requer endpoint `PATCH /messages/{id}/manual-read` |
+| B-024 | ✅ Corrigido | Drafts "editar" abre Composer com draft pré-carregado; PATCH + publish |
+| B-025 | 🟢 Aceite UI-only | `feed.mood/sort` mantém-se localStorage por escolha de produto |
+| B-026 | 🟢 Aceite UI-only | "Duplicar última" conveniência local; OK |
+| B-027 | 🟡 Pendente | Preview real do PostCard no Composer — UX melhoria |
+| B-028 | ✅ Corrigido | RightSidebar mostra empty state quando trending vazio |
+| B-029 | 🟡 Pendente | Listagem/revogação de sessões — requer infra de session tracking |
+| B-030 | 🟡 Pendente | Score de Segurança — recalibrar quando 2FA real existir |
+| B-031 | ✅ Corrigido | Composer "Limpar" usa `confirmDialog()` |
+| B-032 | ✅ Corrigido | Apagar post usa `confirmDialog()` (`danger=true`) |
+| B-033 | ✅ Corrigido | Drafts bulk publish/delete usam `confirmDialog()` |
+| B-034 | ✅ Corrigido | Bookmarks rename/delete usam `promptDialog()` / `confirmDialog()` |
+| B-035 | ✅ Corrigido | Notifications "Apagar lidas" usa `confirmDialog()` |
+| B-036 | ✅ Corrigido | Messages "Apagar mensagem" + "Localização manual" usam dialogs |
+| B-037 | ✅ Já correto | DataTab é a referência de UX |
+| B-038 | ✅ Corrigido | Visitors usa `track_visits` canónico |
+| B-039 | 🟡 Pendente | Translate via Gemini — não prioritário; Google Translate continua como fallback externo |
+| B-040 | 🟡 Pendente | Feed via WS — perf rework |
+| B-041 | 🟡 Pendente | Messages via WS — perf rework |
+| B-042 | ✅ Corrigido | `console.log` removido de `useEdgeGestures.js` |
+| B-043 | ✅ Corrigido | Composer agora tem `MentionSuggester` para `@username` |
+| B-044 | 🟡 Pendente | Story extensions (stickers/texto) — roadmap |
+| B-045 | 🟡 Pendente | Quick message UX audit |
+| B-046 | 🟡 Pendente | Visitors optimistic state |
+| B-047 | 🟡 Pendente | ShortcutsTab sync |
+| B-048 | 🟡 Pendente | Avatar via object storage |
+| B-049 | 🟡 Pendente | Imagens via object storage |
+| B-050 | 🟡 Pendente | Stories via object storage |
+| B-051 | ✅ Já correto | OnboardingModal chama `POST /users/me/onboard` |
+| B-052 | 🟡 Pendente | ShareModal — verificar Web Share API |
+
+**Resumo:**
+- ✅ **35 corrigidos** (29 controlos + 3 mitigados via remoção + 3 já corretos antes da auditoria)
+- 🟡 **17 pendentes** (todos P2/P3 ou requerem infra significativa documentada)

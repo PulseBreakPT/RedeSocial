@@ -29,6 +29,8 @@ import { useLocalDraft } from "../hooks/useLocalDraft";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { Spinner } from "./Spinner";
 import { HashtagSuggester } from "./HashtagSuggester";
+import { MentionSuggester } from "./MentionSuggester";
+import { confirmDialog } from "./ConfirmDialog";
 import { toast } from "sonner";
 
 // Lightweight mood detection mirroring backend logic
@@ -130,12 +132,18 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         return () => clearTimeout(t);
     }, [content]);
 
-    const clearComposer = () => {
+    const clearComposer = async () => {
         if (!content && images.length === 0 && !pollOpen && !scheduleOpen) {
             toast.info("Já está vazio");
             return;
         }
-        if (!window.confirm("Limpar tudo do composer?")) return;
+        const ok = await confirmDialog({
+            title: "Limpar tudo do composer?",
+            description: "Texto, imagens, enquete e agendamento serão removidos. Esta ação não pode ser desfeita.",
+            confirmText: "Limpar",
+            danger: true,
+        });
+        if (!ok) return;
         setContent("");
         setImages([]);
         setPollOpen(false);
@@ -211,26 +219,48 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         }
         setBusy(true);
         try {
-            const body = {
-                content,
-                images,
-                reply_audience: audience,
-                audience_ring: ring,
-                is_draft: isDraft,
-            };
-            if (communityId) body.community_id = communityId;
-            if (pollOpen) {
-                body.poll = {
-                    options: pollOptions.map((s) => s.trim()).filter(Boolean),
-                    allow_multiple: pollMultiple,
-                    ends_in_minutes: pollDuration,
+            // Editing an existing draft / scheduled post → PATCH + optionally publish
+            const editingExisting = !!(initialPost?.id && (initialPost.is_draft || initialPost.scheduled_at));
+            let data;
+            if (editingExisting) {
+                // 1) update content + images
+                await api.patch(`/posts/${initialPost.id}`, { content, images });
+                if (isDraft) {
+                    // Stay as a draft; just refetch
+                    const r = await api.get(`/posts/${initialPost.id}`);
+                    data = r.data;
+                } else if (isScheduled) {
+                    // Cannot "reschedule" via this flow yet; fall through to publish now
+                    // (Scheduled posts have their own page for date changes.)
+                    const r = await api.post(`/posts/${initialPost.id}/publish`);
+                    data = r.data;
+                } else {
+                    const r = await api.post(`/posts/${initialPost.id}/publish`);
+                    data = r.data;
+                }
+            } else {
+                const body = {
+                    content,
+                    images,
+                    reply_audience: audience,
+                    audience_ring: ring,
+                    is_draft: isDraft,
                 };
+                if (communityId) body.community_id = communityId;
+                if (pollOpen) {
+                    body.poll = {
+                        options: pollOptions.map((s) => s.trim()).filter(Boolean),
+                        allow_multiple: pollMultiple,
+                        ends_in_minutes: pollDuration,
+                    };
+                }
+                if (isScheduled) {
+                    const iso = new Date(scheduledAt).toISOString();
+                    body.scheduled_at = iso;
+                }
+                const r = await api.post("/posts", body);
+                data = r.data;
             }
-            if (isScheduled) {
-                const iso = new Date(scheduledAt).toISOString();
-                body.scheduled_at = iso;
-            }
-            const { data } = await api.post("/posts", body);
             clearDraft();
             /* Remember last published for "Duplicar" */
             try {
@@ -467,6 +497,18 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             const lastIdx = content.lastIndexOf("#" + partial);
                             if (lastIdx === -1) return;
                             const newText = content.slice(0, lastIdx) + "#" + tag + " " + content.slice(lastIdx + 1 + partial.length);
+                            setContent(newText);
+                            textareaRef.current?.focus();
+                        }}
+                    />
+
+                    {/* Mention suggester */}
+                    <MentionSuggester
+                        text={content}
+                        onInsert={(uname, partial) => {
+                            const lastIdx = content.lastIndexOf("@" + partial);
+                            if (lastIdx === -1) return;
+                            const newText = content.slice(0, lastIdx) + "@" + uname + " " + content.slice(lastIdx + 1 + partial.length);
                             setContent(newText);
                             textareaRef.current?.focus();
                         }}

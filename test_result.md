@@ -235,7 +235,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "UX polish pass — dead-click elimination across PostDetail (threaded comments), Composer dropdowns (click-outside/ESC), search (hashtag results + ESC), Stories (full-screen tap zones), Bookmarks (auto-remove on unbookmark), empty-state CTAs, Profile clickable pills, Trending city tag canonicalisation"
+    - "Buttons forensic remediation — Settings prefs cross-device persistence + draft edit flow + new PATCH /posts capabilities (images, scheduled_at, draft bypass of 24h window)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -250,5 +250,25 @@ agent_communication:
           1. POST /api/posts/{post_id}/comments with body {"content":"…","parent_id":"<id>"} → returns enriched comment with replies_count and parent_id
           2. DELETE /api/comments/{comment_id} → returns {"deleted": N} where N includes descendants and removes them transitively
         No new endpoints, no schema changes.
+    - agent: "main"
+      message: |
+        Buttons forensic remediation pass (SSS-tier execution). Frontend-only changes EXCEPT for one extension to PATCH /api/posts/{post_id}.
+
+        BACKEND DELTA (please verify):
+          1. PATCH /api/posts/{post_id} — model PostEditIn now accepts:
+             - content: Optional[str] (was required)
+             - images: Optional[List[str]]  (only honoured for drafts and scheduled)
+             - scheduled_at: Optional[str]  (ISO; only honoured for scheduled posts; must be future)
+          2. The 24h edit window now applies ONLY to live posts (drafts and scheduled bypass it).
+          3. Ownership check unchanged (only author can edit).
+          4. Reschedule with non-future date must return 400 "Tem de ser uma data futura".
+          5. PATCH on live post with no content (only images) must return 400 because images update is only for drafts/scheduled.
+          6. edit_history continues to be capped at 10 entries.
+
+        REGRESSION SANITY:
+          - POST /api2/users/me/muted-topics, /feed/signals, /posts/{id}/dismiss, /posts/{id}/why, /posts/{id}/boost, /posts/{id}/note, /posts/{id}/follow-thread, /posts/{id}/collection, /api2/users/{u}/favorite, /api2/notifications/preferences, /api2/users/me/export, PATCH /users/me — all UNCHANGED, only their consumption from the frontend was refactored.
+          - Login still demo123 / *@vermillion.demo.
+
+        DO NOT test frontend. Only the PATCH /posts contract changes above.
 
 

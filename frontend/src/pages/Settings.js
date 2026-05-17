@@ -93,29 +93,85 @@ export default function Settings() {
     const [initialForm, setInitialForm] = useState(() => ({ ...form }));
     const [busy, setBusy] = useState(false);
 
-    /* Local prefs */
-    const [prefs, setPrefs] = useState(() => ({
-        notif_likes: lsGet("pref.notif_likes", true),
-        notif_comments: lsGet("pref.notif_comments", true),
-        notif_follows: lsGet("pref.notif_follows", true),
-        notif_mentions: lsGet("pref.notif_mentions", true),
-        notif_dm: lsGet("pref.notif_dm", true),
-        priv_show_online: lsGet("pref.priv_show_online", true),
-        priv_typing: lsGet("pref.priv_typing", true),
-        priv_search: lsGet("pref.priv_search", true),
-        theme: lsGet("pref.theme", "light"),
-        density: lsGet("pref.density", "comfortable"),
-        language: lsGet("pref.language", "pt-PT"),
-        reduce_motion: lsGet("pref.reduce_motion", false),
-        /* New prefs */
-        two_fa_enabled: lsGet("pref.two_fa_enabled", false),
-        login_alerts: lsGet("pref.login_alerts", true),
-        last_password_change_ok: lsGet("pref.last_password_change_ok", false),
-        recovery_email: lsGet("pref.recovery_email", ""),
-        boa_noite_start: lsGet("pref.boa_noite_start", "23:00"),
-        boa_noite_end: lsGet("pref.boa_noite_end", "08:00"),
-    }));
-    const setPref = (k, v) => { setPrefs((p) => ({ ...p, [k]: v })); lsSet(`pref.${k}`, v); };
+    /* Server-persisted prefs — hydrated from user object, fallback to localStorage for legacy values.
+       Saves are debounced and pushed to PATCH /users/me so prefs sync cross-device. */
+    const initialPrefs = useMemo(() => {
+        const np = user?.notif_preferences || {};
+        return {
+            notif_likes:        typeof np.likes === "boolean"    ? np.likes    : lsGet("pref.notif_likes", true),
+            notif_comments:     typeof np.comments === "boolean" ? np.comments : lsGet("pref.notif_comments", true),
+            notif_follows:      typeof np.follows === "boolean"  ? np.follows  : lsGet("pref.notif_follows", true),
+            notif_mentions:     typeof np.mentions === "boolean" ? np.mentions : lsGet("pref.notif_mentions", true),
+            notif_dm:           typeof np.dm === "boolean"       ? np.dm       : lsGet("pref.notif_dm", true),
+            priv_show_online:   typeof user?.show_online === "boolean"       ? user.show_online       : lsGet("pref.priv_show_online", true),
+            priv_typing:        typeof user?.typing_indicator === "boolean"  ? user.typing_indicator  : lsGet("pref.priv_typing", true),
+            priv_search:        typeof user?.searchable === "boolean"        ? user.searchable        : lsGet("pref.priv_search", true),
+            theme:              user?.theme       || lsGet("pref.theme", "light"),
+            density:            user?.density     || lsGet("pref.density", "comfortable"),
+            language:           user?.language    || lsGet("pref.language", "pt-PT"),
+            reduce_motion:      typeof user?.reduce_motion === "boolean" ? user.reduce_motion : lsGet("pref.reduce_motion", false),
+            boa_noite_start:    user?.boa_noite_start || lsGet("pref.boa_noite_start", "23:00"),
+            boa_noite_end:      user?.boa_noite_end   || lsGet("pref.boa_noite_end", "08:00"),
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id]);
+    const [prefs, setPrefs] = useState(initialPrefs);
+    useEffect(() => { setPrefs(initialPrefs); }, [initialPrefs]);
+
+    // Mapping frontend → backend payload for /users/me
+    const PREF_TO_PAYLOAD = {
+        notif_likes:     (v, p) => ({ notif_preferences: { ...(p._notif_pref_base || {}), likes: v } }),
+        notif_comments:  (v, p) => ({ notif_preferences: { ...(p._notif_pref_base || {}), comments: v } }),
+        notif_follows:   (v, p) => ({ notif_preferences: { ...(p._notif_pref_base || {}), follows: v } }),
+        notif_mentions:  (v, p) => ({ notif_preferences: { ...(p._notif_pref_base || {}), mentions: v } }),
+        notif_dm:        (v, p) => ({ notif_preferences: { ...(p._notif_pref_base || {}), dm: v } }),
+        priv_show_online: (v) => ({ show_online: v }),
+        priv_typing:      (v) => ({ typing_indicator: v }),
+        priv_search:      (v) => ({ searchable: v }),
+        theme:            (v) => ({ theme: v }),
+        density:          (v) => ({ density: v }),
+        language:         (v) => ({ language: v }),
+        reduce_motion:    (v) => ({ reduce_motion: v }),
+        boa_noite_start:  (v) => ({ boa_noite_start: v }),
+        boa_noite_end:    (v) => ({ boa_noite_end: v }),
+    };
+    const saveTimerRef = useRef(null);
+    const pendingPatchRef = useRef({});
+    const flushPrefSave = async () => {
+        const payload = { ...pendingPatchRef.current };
+        pendingPatchRef.current = {};
+        if (!Object.keys(payload).length) return;
+        try {
+            const { data } = await api.patch("/users/me", payload);
+            setUser({ ...user, ...data });
+        } catch (e) {
+            toastApiError(e, "Não foi possível guardar preferências");
+        }
+    };
+    const setPref = (k, v) => {
+        setPrefs((p) => ({ ...p, [k]: v }));
+        // keep localStorage warm for offline/legacy reads
+        lsSet(`pref.${k}`, v);
+        // Build payload increment
+        const mapper = PREF_TO_PAYLOAD[k];
+        if (!mapper) return;
+        const currentNp = user?.notif_preferences || {
+            likes: prefs.notif_likes, comments: prefs.notif_comments,
+            follows: prefs.notif_follows, mentions: prefs.notif_mentions, dm: prefs.notif_dm,
+        };
+        const inc = mapper(v, { _notif_pref_base: { ...currentNp, ...(pendingPatchRef.current.notif_preferences || {}) } });
+        // Merge into pending patch (notif_preferences merges field-by-field)
+        if (inc.notif_preferences) {
+            pendingPatchRef.current.notif_preferences = {
+                ...(pendingPatchRef.current.notif_preferences || {}),
+                ...inc.notif_preferences,
+            };
+        } else {
+            Object.assign(pendingPatchRef.current, inc);
+        }
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(flushPrefSave, 350);
+    };
 
     const avatarRef = useRef(null);
     const bannerRef = useRef(null);
@@ -609,13 +665,27 @@ function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
 
 /* =================== Privacidade tab =================== */
 function PrivTab({ prefs, setPref, user }) {
-    const downloadData = () => {
-        const blob = new Blob([JSON.stringify({ user, prefs }, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = `vermillion-${user?.username || "user"}.json`; a.click();
-        URL.revokeObjectURL(url);
-        toast.success("Download iniciado");
+    const [exporting, setExporting] = useState(false);
+    const downloadData = async () => {
+        if (exporting) return;
+        setExporting(true);
+        try {
+            const { data } = await api.get("/users/me/export");
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `vermillion-${user?.username || "user"}-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            toast.success(`Exportação concluída · ${data.posts?.length || 0} posts, ${data.comments?.length || 0} comentários`);
+        } catch (e) {
+            toastApiError(e, "Não foi possível exportar os teus dados");
+        } finally {
+            setExporting(false);
+        }
     };
     return (
         <div className="px-4 lg:px-6 py-5 space-y-3 max-w-2xl">
@@ -625,7 +695,9 @@ function PrivTab({ prefs, setPref, user }) {
             <ToggleRow label="Aparecer em pesquisas" k="priv_search" prefs={prefs} setPref={setPref} />
             <div className="hairline-t pt-5">
                 <p className="type-overline mb-3">Os teus dados</p>
-                <button onClick={downloadData} data-testid="download-data-btn" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium"><Download size={14} /> Descarregar os meus dados</button>
+                <button onClick={downloadData} disabled={exporting} data-testid="download-data-btn" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium disabled:opacity-60 disabled:cursor-wait">
+                    <Download size={14} /> {exporting ? "A exportar…" : "Descarregar os meus dados"}
+                </button>
                 <button className="ml-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-red-soft hover:bg-red-soft/10 text-[13px] font-medium" onClick={() => toast.info("Vai à secção Dados para iniciar a eliminação")}><Trash2 size={14} /> Apagar conta</button>
             </div>
         </div>

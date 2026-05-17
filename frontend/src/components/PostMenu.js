@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { toast } from "sonner";
+import { confirmDialog, promptDialog } from "./ConfirmDialog";
 import { CollabModal } from "./CollabModal";
 import { ViewersModal } from "./ViewersModal";
 import { ReportModal } from "./ReportModal";
@@ -140,15 +141,37 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
             const { data } = await api.get("/bookmark-collections");
             const cols = data || [];
             if (cols.length === 0) {
-                if (!window.confirm("Ainda não tens coleções. Criar uma agora?")) return;
-                const name = window.prompt("Nome da nova coleção:", "Inspiração");
-                if (!name?.trim()) return;
-                const r = await api.post("/bookmark-collections", { name: name.trim() });
+                const create = await confirmDialog({
+                    title: "Sem coleções ainda",
+                    description: "Cria a tua primeira coleção para organizares posts guardados.",
+                    confirmText: "Criar coleção",
+                    cancelText: "Cancelar",
+                });
+                if (!create) return;
+                const name = await promptDialog({
+                    title: "Nova coleção",
+                    label: "Nome da coleção",
+                    placeholder: "Ex: Inspiração",
+                    defaultValue: "Inspiração",
+                    maxLength: 60,
+                    confirmText: "Criar e adicionar",
+                });
+                if (!name) return;
+                const r = await api.post("/bookmark-collections", { name });
                 await addToCollection(r.data.id, post.id);
                 return;
             }
             const labels = cols.map((c, i) => `${i + 1}. ${c.name}`).join("\n");
-            const choice = window.prompt(`Coleções disponíveis:\n${labels}\n\nEscreve o número da coleção (ou um novo nome):`, "1");
+            const choice = await promptDialog({
+                title: "Adicionar a coleção",
+                description: `Coleções existentes:\n${labels}\n\nEscreve o número de uma coleção ou o nome de uma nova.`,
+                label: "Número ou nome",
+                placeholder: "1",
+                defaultValue: "1",
+                multiline: false,
+                maxLength: 60,
+                confirmText: "Adicionar",
+            });
             if (!choice) return;
             const idx = parseInt(choice, 10);
             if (!isNaN(idx) && idx >= 1 && idx <= cols.length) {
@@ -183,10 +206,20 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
     const handleNote = async (e) => {
         e.stopPropagation();
         const current = getPostNote(post.id) || "";
-        const note = window.prompt("Adiciona uma nota privada a este post:", current);
-        if (note === null) { close(); return; }
-        await setPostNote(post.id, note);
         close();
+        const note = await promptDialog({
+            title: "Nota privada",
+            description: "Esta nota fica visível apenas para ti.",
+            label: "Nota",
+            placeholder: "Ex: Voltar a ler este artigo",
+            defaultValue: current,
+            multiline: true,
+            maxLength: 280,
+            required: false,
+            confirmText: "Guardar nota",
+        });
+        if (note === null) return;
+        await setPostNote(post.id, note);
     };
     const handleConvertStory = async (e) => {
         e.stopPropagation();

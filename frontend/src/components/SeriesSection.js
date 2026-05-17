@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { BookOpen, Plus, Loader2, X, Trash2 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { toast } from "sonner";
+import { confirmDialog } from "./ConfirmDialog";
 
 // Series section shown on user profile
 export function SeriesSection({ username, isSelf }) {
@@ -24,7 +25,13 @@ export function SeriesSection({ username, isSelf }) {
     useEffect(() => { if (username) load(); }, [username]);
 
     async function remove(id) {
-        if (!window.confirm("Apagar esta série?")) return;
+        const ok = await confirmDialog({
+            title: "Apagar esta série?",
+            description: "Os posts da série permanecem, mas perdem a ligação à série.",
+            confirmText: "Apagar série",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await api.delete(`/series/${id}`);
             toast.success("Série apagada");

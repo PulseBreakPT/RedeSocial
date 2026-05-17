@@ -8,6 +8,7 @@ import { PageHeader } from "../components/PageHeader";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
+import { confirmDialog } from "../components/ConfirmDialog";
 
 const iconFor = (type) => {
     if (type === "like") return <Heart size={16} strokeWidth={1.6} className="text-red-soft" fill="currentColor" />;
@@ -114,7 +115,13 @@ export default function Notifications() {
         } catch (e) { toastApiError(e); }
     };
     const clearRead = async () => {
-        if (!window.confirm("Apagar todas as notificações lidas?")) return;
+        const ok = await confirmDialog({
+            title: "Apagar todas as notificações lidas?",
+            description: "As notificações por ler permanecem. Esta ação não pode ser desfeita.",
+            confirmText: "Apagar lidas",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await api.delete("/notifications");
             await reload();

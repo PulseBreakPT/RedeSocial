@@ -15,6 +15,7 @@ import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
+import { confirmDialog, promptDialog } from "../components/ConfirmDialog";
 
 const QUICK_REACT = ["❤️", "🔥", "😂", "😢", "👏", "🤔", "✨"];
 const VIBES = ["👋", "❤️", "🔥", "🥹", "✨", "🌸", "☕", "🌙", "🍷"];
@@ -789,7 +790,14 @@ function ChatView({ other, onBack }) {
         setAttachOpen(false);
         if (!navigator.geolocation) {
             // Fall back to manual prompt
-            const label = window.prompt("Indica a localização:");
+            const label = await promptDialog({
+                title: "Partilhar localização",
+                description: "O teu dispositivo não suporta geolocalização. Indica manualmente onde estás.",
+                label: "Localização",
+                placeholder: "Ex: Café A Brasileira, Lisboa",
+                maxLength: 120,
+                confirmText: "Enviar",
+            });
             if (!label) return;
             try {
                 await api.post("/messages/v2", { to_user_id: other.id, kind: "location", location: { label } });
@@ -890,7 +898,13 @@ function ChatView({ other, onBack }) {
         } catch (e) { toastApiError(e); throw e; }
     };
     const onDeleteMsg = async (m) => {
-        if (!window.confirm("Apagar esta mensagem?")) return;
+        const ok = await confirmDialog({
+            title: "Apagar esta mensagem?",
+            description: "A mensagem será removida da conversa para ambos.",
+            confirmText: "Apagar",
+            danger: true,
+        });
+        if (!ok) return;
         const prev = messages;
         setMessages((arr) => arr.filter((x) => x.id !== m.id));
         try {

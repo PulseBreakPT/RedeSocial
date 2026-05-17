@@ -20,6 +20,7 @@ import { RichText } from "./RichText";
 import { ImageLightbox } from "./ImageLightbox";
 import { ImageCarousel } from "./ImageCarousel";
 import { PostMenu } from "./PostMenu";
+import { confirmDialog } from "./ConfirmDialog";
 import { EditPostModal } from "./EditPostModal";
 import { QuoteModal } from "./QuoteModal";
 import { RepostMenu } from "./RepostMenu";
@@ -151,7 +152,13 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     };
 
     const remove = async () => {
-        if (!window.confirm("Apagar esta publicação?")) return;
+        const ok = await confirmDialog({
+            title: "Apagar esta publicação?",
+            description: "A publicação, comentários e reações associados serão removidos. Esta ação é irreversível.",
+            confirmText: "Apagar publicação",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await api.delete(`/posts/${post.id}`);
             onDelete?.(post.id);

@@ -7,6 +7,7 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime } from "../lib/time";
 import { toast } from "sonner";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { confirmDialog } from "../components/ConfirmDialog";
 
 export default function Drafts() {
     const [posts, setPosts] = useState([]);
@@ -46,13 +47,24 @@ export default function Drafts() {
         catch (e) { toastApiError(e); }
     };
     const remove = async (id) => {
-        if (!window.confirm("Apagar este rascunho?")) return;
+        const ok = await confirmDialog({
+            title: "Apagar este rascunho?",
+            description: "O rascunho será removido permanentemente.",
+            confirmText: "Apagar",
+            danger: true,
+        });
+        if (!ok) return;
         try { await api.delete(`/posts/${id}`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Rascunho apagado"); }
         catch (e) { toastApiError(e); }
     };
     const bulkPublish = async () => {
         if (selected.size === 0) return;
-        if (!window.confirm(`Publicar ${selected.size} rascunhos?`)) return;
+        const ok = await confirmDialog({
+            title: `Publicar ${selected.size} ${selected.size === 1 ? "rascunho" : "rascunhos"}?`,
+            description: "Todos serão publicados imediatamente.",
+            confirmText: "Publicar todos",
+        });
+        if (!ok) return;
         for (const id of selected) { try { await api.post(`/posts/${id}/publish`); } catch {} }
         setPosts((prev) => prev.filter((p) => !selected.has(p.id)));
         setSelected(new Set());
@@ -60,11 +72,22 @@ export default function Drafts() {
     };
     const bulkDelete = async () => {
         if (selected.size === 0) return;
-        if (!window.confirm(`Apagar ${selected.size} rascunhos?`)) return;
+        const ok = await confirmDialog({
+            title: `Apagar ${selected.size} ${selected.size === 1 ? "rascunho" : "rascunhos"}?`,
+            description: "Esta ação é irreversível.",
+            confirmText: "Apagar todos",
+            danger: true,
+        });
+        if (!ok) return;
         for (const id of selected) { try { await api.delete(`/posts/${id}`); } catch {} }
         setPosts((prev) => prev.filter((p) => !selected.has(p.id)));
         setSelected(new Set());
         toast.success("Apagados");
+    };
+
+    const editDraft = (p) => {
+        if (openCompose) openCompose({ draft: p });
+        else toast.error("Não foi possível abrir o composer");
     };
 
     return (
@@ -137,7 +160,7 @@ export default function Drafts() {
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-3">
                                     <button onClick={() => publish(p.id)} data-testid={`draft-publish-${p.id}`} className="inline-flex items-center gap-1.5 chip-on text-[11px] font-heading font-semibold px-3 py-1.5 rounded-full"><Send size={11} /> Publicar</button>
-                                    <button onClick={() => navigate(`/post/${p.id}`)} className="inline-flex items-center gap-1 text-[11px] font-mono text-black/60 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04]">ver</button>
+                                    <button onClick={() => editDraft(p)} data-testid={`draft-edit-${p.id}`} className="inline-flex items-center gap-1 text-[11px] font-mono text-black/60 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04]">editar</button>
                                     <button onClick={() => remove(p.id)} data-testid={`draft-delete-${p.id}`} className="ml-auto inline-flex items-center gap-1 text-[11px] font-mono text-red-soft hover:bg-red-soft/10 px-2 py-1 rounded-full"><Trash2 size={11} /></button>
                                 </div>
                             </article>

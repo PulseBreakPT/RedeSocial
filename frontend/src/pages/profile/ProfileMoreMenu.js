@@ -6,6 +6,7 @@ import {
 import { toast } from "sonner";
 import { api, toastApiError } from "../../lib/api";
 import { Spinner } from "../../components/Spinner";
+import { confirmDialog } from "../../components/ConfirmDialog";
 
 const REASONS = [
     { key: "spam", label: "Spam" },
@@ -150,8 +151,16 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
         } catch (e) { toastApiError(e); } finally { setBusyKey(null); }
     };
 
-    const blockAction = () => {
-        if (!rel.blocked && !window.confirm(`Bloquear @${profile.username}? Deixarão de se ver mutuamente.`)) return;
+    const blockAction = async () => {
+        if (!rel.blocked) {
+            const ok = await confirmDialog({
+                title: `Bloquear @${profile.username}?`,
+                description: "Deixarão de se ver mutuamente. As tuas publicações ficam invisíveis para esta pessoa e as dela para ti.",
+                confirmText: "Bloquear",
+                danger: true,
+            });
+            if (!ok) return;
+        }
         callToggle("block", "block", `@${profile.username} bloqueado`, "Desbloqueado");
     };
 

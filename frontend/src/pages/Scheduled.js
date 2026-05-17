@@ -7,6 +7,7 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { confirmDialog, promptDialog } from "../components/ConfirmDialog";
 
 function untilLabel(iso) {
     if (!iso) return "";
@@ -51,27 +52,62 @@ export default function Scheduled() {
         catch (e) { toastApiError(e); }
     };
     const remove = async (id) => {
-        if (!window.confirm("Cancelar agendamento e apagar?")) return;
+        const ok = await confirmDialog({
+            title: "Cancelar agendamento?",
+            description: "A publicação agendada será apagada e nunca será publicada.",
+            confirmText: "Cancelar agendamento",
+            danger: true,
+        });
+        if (!ok) return;
         try { await api.delete(`/posts/${id}`); setPosts((prev) => prev.filter((p) => p.id !== id)); toast.success("Agendamento cancelado"); }
         catch (e) { toastApiError(e); }
     };
     const reschedule = async (id, currentIso) => {
-        const def = currentIso ? currentIso.slice(0, 16) : "";
-        const input = window.prompt("Nova data (AAAA-MM-DD HH:MM):", def.replace("T", " "));
+        const def = currentIso ? currentIso.slice(0, 16).replace("T", " ") : "";
+        const input = await promptDialog({
+            title: "Reagendar publicação",
+            description: "Indica a nova data e hora no formato AAAA-MM-DD HH:MM.",
+            label: "Nova data",
+            placeholder: "2025-12-31 14:30",
+            defaultValue: def,
+            maxLength: 20,
+            confirmText: "Reagendar",
+        });
         if (!input) return;
-        const iso = new Date(input.replace(" ", "T")).toISOString();
+        let iso;
+        try {
+            iso = new Date(input.replace(" ", "T")).toISOString();
+            if (!iso || new Date(iso).getTime() <= Date.now()) {
+                toast.error("Tem de ser uma data futura válida");
+                return;
+            }
+        } catch {
+            toast.error("Data inválida");
+            return;
+        }
         try { await api.patch(`/posts/${id}`, { scheduled_at: iso }); load(); toast.success("Reagendado"); }
         catch (e) { toastApiError(e); }
     };
     const bulkPublish = async () => {
         if (!selected.size) return;
-        if (!window.confirm(`Publicar ${selected.size} agora?`)) return;
+        const ok = await confirmDialog({
+            title: `Publicar ${selected.size} ${selected.size === 1 ? "agendamento" : "agendamentos"} agora?`,
+            description: "Todos serão publicados imediatamente, ignorando a data agendada.",
+            confirmText: "Publicar agora",
+        });
+        if (!ok) return;
         for (const id of selected) { try { await api.post(`/posts/${id}/publish`); } catch {} }
         setPosts((prev) => prev.filter((p) => !selected.has(p.id))); setSelected(new Set()); toast.success("Publicados");
     };
     const bulkCancel = async () => {
         if (!selected.size) return;
-        if (!window.confirm(`Cancelar ${selected.size} agendamentos?`)) return;
+        const ok = await confirmDialog({
+            title: `Cancelar ${selected.size} ${selected.size === 1 ? "agendamento" : "agendamentos"}?`,
+            description: "As publicações agendadas serão apagadas e nunca serão publicadas.",
+            confirmText: "Cancelar todos",
+            danger: true,
+        });
+        if (!ok) return;
         for (const id of selected) { try { await api.delete(`/posts/${id}`); } catch {} }
         setPosts((prev) => prev.filter((p) => !selected.has(p.id))); setSelected(new Set()); toast.success("Cancelados");
     };

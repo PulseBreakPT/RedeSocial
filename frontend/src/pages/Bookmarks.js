@@ -8,6 +8,7 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useEscapeKey } from "../hooks/useClickOutside";
 import { toast } from "sonner";
+import { confirmDialog, promptDialog } from "../components/ConfirmDialog";
 
 export default function Bookmarks() {
     const [posts, setPosts] = useState([]);
@@ -59,13 +60,25 @@ export default function Bookmarks() {
         } catch (e) { toastApiError(e); }
     };
     const renameCol = async (c) => {
-        const name = window.prompt("Novo nome:", c.name);
+        const name = await promptDialog({
+            title: "Renomear coleção",
+            label: "Novo nome",
+            defaultValue: c.name,
+            maxLength: 60,
+            confirmText: "Renomear",
+        });
         if (!name || name === c.name) return;
-        try { await api.patch(`/bookmark-collections/${c.id}`, { name }); await loadCollections(); }
+        try { await api.patch(`/bookmark-collections/${c.id}`, { name }); await loadCollections(); toast.success("Renomeada"); }
         catch (e) { toastApiError(e); }
     };
     const deleteCol = async (c) => {
-        if (!window.confirm(`Apagar a coleção "${c.name}"?`)) return;
+        const ok = await confirmDialog({
+            title: `Apagar a coleção "${c.name}"?`,
+            description: "Os posts guardados não são apagados — apenas perdem a associação a esta coleção.",
+            confirmText: "Apagar coleção",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             await api.delete(`/bookmark-collections/${c.id}`);
             await loadCollections();

@@ -882,7 +882,9 @@ class PostIn(BaseModel):
 
 
 class PostEditIn(BaseModel):
-    content: str = Field(min_length=0, max_length=500)
+    content: Optional[str] = Field(default=None, max_length=500)
+    images: Optional[List[str]] = None  # only used when editing a draft / scheduled
+    scheduled_at: Optional[str] = None  # rescheduling a scheduled post
 
 
 class PostVoteIn(BaseModel):
@@ -1540,20 +1542,46 @@ async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_
         raise HTTPException(404, "Publicação não encontrada")
     if post["author_id"] != user["id"]:
         raise HTTPException(403, "Sem permissão")
-    age = datetime.now(timezone.utc) - datetime.fromisoformat(post["created_at"])
-    if age > timedelta(hours=24):
-        raise HTTPException(400, "Janela de edição expirada (24 h)")
-    history = post.get("edit_history") or []
-    history.append({"content": post["content"], "edited_at": now_iso()})
-    history = history[-10:]  # keep last 10 revisions only
-    await db.posts.update_one(
-        {"id": post_id},
-        {"$set": {
+    is_draft = bool(post.get("is_draft"))
+    is_scheduled = bool(post.get("scheduled_at"))
+    update_set = {}
+    # Content updates
+    if payload.content is not None:
+        # 24h edit window applies only to live (already-published) posts.
+        if not is_draft and not is_scheduled:
+            age = datetime.now(timezone.utc) - datetime.fromisoformat(post["created_at"])
+            if age > timedelta(hours=24):
+                raise HTTPException(400, "Janela de edição expirada (24 h)")
+        history = post.get("edit_history") or []
+        history.append({"content": post["content"], "edited_at": now_iso()})
+        history = history[-10:]  # keep last 10 revisions only
+        update_set.update({
             "content": payload.content,
             "hashtags": extract_hashtags(payload.content),
             "edited_at": now_iso(),
             "edit_history": history,
-        }},
+        })
+    # Allow updating images only when the post is still a draft or scheduled.
+    if payload.images is not None and (is_draft or is_scheduled):
+        imgs = payload.images[:4]
+        update_set["images"] = imgs
+        update_set["image"] = imgs[0] if imgs else ""
+    # Rescheduling: only for scheduled posts
+    if payload.scheduled_at is not None:
+        if not is_scheduled:
+            raise HTTPException(400, "Só publicações agendadas podem ser reagendadas")
+        try:
+            new_iso = datetime.fromisoformat(payload.scheduled_at.replace("Z", "+00:00")).isoformat()
+        except Exception:
+            raise HTTPException(400, "Data inválida")
+        if datetime.fromisoformat(new_iso) <= datetime.now(timezone.utc):
+            raise HTTPException(400, "Tem de ser uma data futura")
+        update_set["scheduled_at"] = new_iso
+    if not update_set:
+        raise HTTPException(400, "Nada para atualizar")
+    await db.posts.update_one(
+        {"id": post_id},
+        {"$set": update_set},
     )
     fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
     return await enrich_post(fresh, user)

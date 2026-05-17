@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import { CookieBanner } from "./components/CookieBanner";
+import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -89,6 +90,7 @@ function App() {
                         </Route>
                     </Routes>
                     <CookieBanner />
+                    <ConfirmDialogHost />
                 </BrowserRouter>
             </AuthProvider>
         </div>

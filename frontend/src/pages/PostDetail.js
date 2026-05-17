@@ -7,6 +7,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
 import { Spinner } from "../components/Spinner";
 import { CommentItem } from "../components/CommentItem";
+import { confirmDialog } from "../components/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
@@ -200,7 +201,13 @@ export default function PostDetail() {
     };
 
     const removeComment = async (commentId) => {
-        if (!window.confirm("Apagar este comentário? Respostas também serão apagadas.")) return;
+        const ok = await confirmDialog({
+            title: "Apagar comentário?",
+            description: "Todas as respostas a este comentário também serão apagadas. Esta ação é irreversível.",
+            confirmText: "Apagar",
+            danger: true,
+        });
+        if (!ok) return;
         try {
             const { data } = await api.delete(`/comments/${commentId}`);
             const removedIds = new Set();
