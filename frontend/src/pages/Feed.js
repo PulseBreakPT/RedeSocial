@@ -7,6 +7,7 @@ import { MobileDiscoverStrip } from "../components/MobileDiscoverStrip";
 import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
 import { CalendarPTBanner, ATardeBanner } from "../components/PTBanners";
@@ -62,7 +63,25 @@ export default function Feed() {
 
     useEffect(() => { load(tab); }, [load, tab]);
 
+    // B-040 — Realtime: when WS is live, rely on `new_post` broadcasts;
+    // fall back to polling if WS goes offline.
+    const wsState = useWsState();
+    const pendingIdsRef = useRef(new Set());
+    const handleWs = useCallback((evt) => {
+        if (!evt || typeof evt !== "object") return;
+        if (evt.type !== "activity" || evt.event !== "new_post") return;
+        const p = evt.payload || {};
+        const pid = p.post_id || p.id;
+        if (!pid) return;
+        if (knownIdsRef.current.has(pid) || pendingIdsRef.current.has(pid)) return;
+        pendingIdsRef.current.add(pid);
+        setNewCount((n) => n + 1);
+    }, []);
+    useWsMessages(handleWs);
+
     useEffect(() => {
+        // Only poll when WS is offline/reconnecting (graceful fallback)
+        if (wsState === "live") return;
         const id = setInterval(async () => {
             try {
                 const params = new URLSearchParams();
@@ -76,10 +95,11 @@ export default function Feed() {
             } catch {}
         }, 30000);
         return () => clearInterval(id);
-    }, [tab, mood, sort]);
+    }, [tab, mood, sort, wsState]);
 
     const refresh = useCallback(async () => {
         setRefreshing(true);
+        pendingIdsRef.current = new Set();
         await load(tab, false);
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, [load, tab]);

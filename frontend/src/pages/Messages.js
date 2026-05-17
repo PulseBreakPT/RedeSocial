@@ -14,6 +14,7 @@ import { Spinner } from "../components/Spinner";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
+import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { toast } from "sonner";
 import { confirmDialog, promptDialog } from "../components/ConfirmDialog";
 
@@ -248,6 +249,14 @@ function ConversationList({ activeId, onSelect, onNew }) {
         const id = setInterval(tick, 5000);
         return () => clearInterval(id);
     }, [load]);
+
+    // B-041 — Realtime: refresh the conversation list when a new message
+    // arrives or a read receipt comes in. Light-weight: just call load().
+    const onWs = useCallback((evt) => {
+        if (!evt || (evt.type !== "new_message" && evt.type !== "message_read" && evt.type !== "message_read_bulk")) return;
+        load();
+    }, [load]);
+    useWsMessages(onWs);
 
     const filtered = useMemo(() => {
         if (!q.trim()) return convs;
@@ -676,8 +685,13 @@ function ChatView({ other, onBack }) {
         try {
             const { data } = await api.get(`/messages/${other.id}`);
             setMessages(data.messages || []);
+            // B-023 — Server-side Cafezinho state (per-conversation or global)
+            if (typeof data.cafezinho_active === "boolean") {
+                setCafeReceipt(data.cafezinho_active);
+                try { localStorage.setItem(cafeKey, data.cafezinho_active ? "1" : "0"); } catch { /* ignore */ }
+            }
         } catch { /* silent */ }
-    }, [other.id]);
+    }, [other.id, cafeKey]);
     const checkTyping = useCallback(async () => {
         try {
             const { data } = await api.get(`/messages/${other.id}/typing-status`);
@@ -692,6 +706,40 @@ function ChatView({ other, onBack }) {
         }, 3000);
         return () => clearInterval(id);
     }, [load, checkTyping]);
+
+    // B-041 — Realtime: append on inbound new_message; update read receipts on outbound.
+    const otherId = other.id;
+    const onWsChat = useCallback((evt) => {
+        if (!evt || typeof evt !== "object") return;
+        if (evt.type === "new_message") {
+            const m = evt.message;
+            if (!m) return;
+            // Only react to messages of this conversation
+            const involves =
+                (m.sender_id === otherId) || (m.recipient_id === otherId);
+            if (!involves) return;
+            setMessages((arr) => {
+                if (arr.some((x) => x.id === m.id)) return arr;
+                return [...arr, m];
+            });
+            // Mark this inbound msg as read on the wire if Cafezinho is NOT on
+            try {
+                const cafeOn = localStorage.getItem(`vm_cafe_receipt_${otherId}`) === "1";
+                if (!cafeOn) load();
+            } catch {}
+        } else if (evt.type === "message_read") {
+            // Sender side — flip read indicator
+            setMessages((arr) => arr.map((x) => (x.id === evt.message_id ? { ...x, read: true, read_at: new Date().toISOString() } : x)));
+        } else if (evt.type === "message_read_bulk") {
+            if (evt.by !== otherId) return;
+            setMessages((arr) => arr.map((x) => (x.read ? x : { ...x, read: true, read_at: new Date().toISOString() })));
+        } else if (evt.type === "typing") {
+            // Optional: if backend pushes typing events later
+            if (evt.from === otherId) setTyping(true);
+        }
+    }, [otherId, load]);
+    useWsMessages(onWsChat);
+    const wsLive = useWsState() === "live";
 
     useEffect(() => { if (window.innerWidth >= 1024) inputRef.current?.focus(); }, [other.id]);
     useEffect(() => {
@@ -859,11 +907,34 @@ function ChatView({ other, onBack }) {
             if (data.marked) toast.success("Marcada como não lida"); else toast("Nada para marcar");
         } catch (e) { toastApiError(e); }
     };
-    const toggleCafe = () => {
+    const toggleCafe = async () => {
+        // B-023 — Persist Cafezinho preference server-side (and mirror to localStorage for UI)
         const next = !cafeReceipt;
         setCafeReceipt(next);
         try { localStorage.setItem(cafeKey, next ? "1" : "0"); } catch { /* ignore */ }
-        toast.success(next ? "“Café” ligado — vais marcar quando leres com calma." : "“Café” desligado.");
+        try {
+            const { data } = await api.post(`/conversations/${other.id}/cafezinho`);
+            // Server is the source of truth — sync state if we got a divergence
+            if (typeof data.active === "boolean" && data.active !== next) {
+                setCafeReceipt(data.active);
+                try { localStorage.setItem(cafeKey, data.active ? "1" : "0"); } catch { /* ignore */ }
+            }
+            toast.success(next ? "“Café” ligado — vais marcar quando leres com calma." : "“Café” desligado.");
+        } catch (e) {
+            // Rollback on error
+            setCafeReceipt(!next);
+            try { localStorage.setItem(cafeKey, !next ? "1" : "0"); } catch { /* ignore */ }
+            toastApiError(e);
+        }
+    };
+
+    const markAllRead = async () => {
+        // B-023 — Bulk manual-read (used by Cafezinho's "Marcar como lido")
+        try {
+            const { data } = await api.post(`/conversations/${other.id}/read-all`);
+            if (data.updated > 0) toast.success("Marcadas como lidas");
+            setMessages((arr) => arr.map((x) => (x.sender_id === other.id && !x.read ? { ...x, read: true, read_at: new Date().toISOString() } : x)));
+        } catch (e) { toastApiError(e); }
     };
 
     const onReactMsg = async (m, emoji) => {
@@ -1119,7 +1190,19 @@ function ChatView({ other, onBack }) {
                 </div>
                 <p className="text-[10.5px] text-black/35 font-mono mt-1.5 px-1 hidden sm:block">
                     Enter para enviar · Shift+Enter nova linha · Duplo-clique para reagir ❤️
-                    {cafeReceipt && <span className="ml-2 text-[color:var(--coral-500)]">· “Café” ligado</span>}
+                    {cafeReceipt && (
+                        <>
+                            <span className="ml-2 text-[color:var(--coral-500)]">· “Café” ligado</span>
+                            <button
+                                type="button"
+                                onClick={markAllRead}
+                                data-testid="mark-all-read"
+                                className="ml-2 underline decoration-dotted underline-offset-2 hover:text-black/70 text-black/50"
+                            >
+                                marcar como lido
+                            </button>
+                        </>
+                    )}
                 </p>
             </div>
 

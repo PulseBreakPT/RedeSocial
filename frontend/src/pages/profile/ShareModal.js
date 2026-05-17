@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { X, Link2, Copy, Check, Download, QrCode, Twitter, MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { X, Link2, Copy, Check, Download, QrCode, Twitter, MessageCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 /* Minimal QR encoder using qr-server.com image URL (no extra dep). */
@@ -12,6 +12,10 @@ export function ShareModal({ profile, onClose }) {
     const ref = useRef(null);
     const url = `${window.location.origin}/u/${profile.username}`;
     const text = `Vê o perfil de ${profile.name} no Vermillion`;
+    const nativeShareSupported = useMemo(
+        () => typeof navigator !== "undefined" && typeof navigator.share === "function",
+        []
+    );
 
     useEffect(() => {
         const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
@@ -27,6 +31,21 @@ export function ShareModal({ profile, onClose }) {
             setTimeout(() => setCopied(false), 1600);
         } catch {
             toast.error("Não foi possível copiar");
+        }
+    };
+
+    const onNativeShare = async () => {
+        try {
+            await navigator.share({
+                title: profile.name,
+                text,
+                url,
+            });
+        } catch (e) {
+            // User cancelled — no toast
+            if (e?.name && e.name !== "AbortError") {
+                toast.error("Não foi possível partilhar");
+            }
         }
     };
 
@@ -90,6 +109,17 @@ export function ShareModal({ profile, onClose }) {
                     </div>
 
                     <div className="mt-5 grid grid-cols-3 gap-2">
+                        {nativeShareSupported && (
+                            <button
+                                type="button"
+                                onClick={onNativeShare}
+                                data-testid="share-native"
+                                className="col-span-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-black text-white hover:bg-black/85 text-[12px] font-mono uppercase tracking-wider tap-shrink transition mb-1"
+                                aria-label="Partilhar via apps do sistema"
+                            >
+                                <Share2 size={14} strokeWidth={1.8} /> Partilhar via...
+                            </button>
+                        )}
                         <a
                             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`}
                             target="_blank" rel="noopener noreferrer"

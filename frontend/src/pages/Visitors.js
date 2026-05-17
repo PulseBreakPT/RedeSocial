@@ -30,12 +30,18 @@ export default function Visitors() {
     useEffect(() => { load(); }, []);
 
     async function toggleTracking() {
+        // B-046 — optimistic UI: flip immediately, rollback on error
+        const next = !data.track_visits;
+        const snapshot = data;
+        setData((d) => ({ ...d, track_visits: next }));
         setBusy(true);
         try {
-            const r = await api.post("/users/me/visitors/settings", { track_visits: !data.track_visits });
+            const r = await api.post("/users/me/visitors/settings", { track_visits: next });
             toast.success(r.data.track_visits ? "A registar visitas" : "Visitas desativadas");
+            // Sync the visitors list (server may have purged/added entries)
             await load();
         } catch (e) {
+            setData(snapshot);  // rollback
             toastApiError(e);
         } finally {
             setBusy(false);

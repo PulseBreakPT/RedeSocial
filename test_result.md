@@ -269,6 +269,56 @@ agent_communication:
           - POST /api2/users/me/muted-topics, /feed/signals, /posts/{id}/dismiss, /posts/{id}/why, /posts/{id}/boost, /posts/{id}/note, /posts/{id}/follow-thread, /posts/{id}/collection, /api2/users/{u}/favorite, /api2/notifications/preferences, /api2/users/me/export, PATCH /users/me — all UNCHANGED, only their consumption from the frontend was refactored.
           - Login still demo123 / *@vermillion.demo.
 
-        DO NOT test frontend. Only the PATCH /posts contract changes above.
+    - agent: "main"
+      message: |
+        Register page UX redesign + new auth endpoints. Backend delta to validate (NO frontend testing in this round):
+
+        NEW BACKEND ENDPOINT (B-001-register):
+          - GET /api/auth/check-username?u=<name> — public, no auth. Returns:
+            {available: bool, reason?: str, message: str}
+            Reasons: empty | too_short (<3) | too_long (>20) | invalid_chars | reserved | taken
+            Reserved list: admin, root, support, vermillion, vm, moderator, mod, help, official, api, anon, anonymous, null, undefined, system, team, staff, bot
+            Must compare case-insensitively against db.users.username (stored lowercase).
+
+        BIG CHANGES TO EXISTING AUTH FLOW (B-013/B-014/B-015/B-029):
+          1. POST /api/auth/register — same payload, but now ALSO creates a session row (db.sessions) with jti and embeds jti in the JWT. login_alerts_enabled defaults to True.
+          2. POST /api/auth/login — payload now optionally accepts totp_code. If user.two_fa_enabled is True, totp_code is required (403 "Código 2FA necessário"); invalid code returns 401 "Código 2FA inválido". On success: creates session + emits "new device" notification (login_alert) when UA/IP is unseen for that user.
+          3. POST /api/auth/logout — revokes the current session jti (sessions.revoked=true with reason "logout").
+          4. POST /api/auth/change-password — also revokes OTHER non-current sessions (reason "password_change"). Current session stays alive.
+          5. POST /api/auth/forgot-password — now also matches users by recovery_email. Response payload includes via_recovery: bool.
+
+          6. NEW: GET /api/auth/sessions — returns all non-revoked sessions for the user as
+              [{id (jti), browser, os, device, ip, created_at, last_seen_at, current: bool, source}]
+          7. NEW: DELETE /api/auth/sessions/{jti} — revokes one session. Cannot revoke the current session (returns 400).
+          8. NEW: POST /api/auth/sessions/revoke-others — revokes all sessions except current.
+
+          9. NEW: GET /api/auth/2fa/status → {enabled, setup_in_progress, backup_codes_left, enabled_at}
+          10. NEW: POST /api/auth/2fa/setup → {secret, otpauth_url, qr_data_url (data:image/png;base64,…), issuer, account}. Does NOT activate.
+          11. NEW: POST /api/auth/2fa/verify {code} → activates 2FA + returns {ok, backup_codes: [10 strings]}. 401 if code invalid.
+          12. NEW: POST /api/auth/2fa/disable {password, code} → requires password + valid TOTP/backup code.
+          13. NEW: POST /api/auth/2fa/regenerate-backup {password} → rotates backup codes.
+
+        EXTENDED PATCH /api/users/me:
+          - Now accepts recovery_email (validated; must contain @, max 200 chars, must differ from primary email) and login_alerts_enabled (bool).
+          - public_user() now exposes two_fa_enabled, recovery_email, login_alerts_enabled, cafezinho_conversations.
+
+        OTHER ENDPOINTS ADDED IN THE SAME PASS:
+          - PATCH (effectively POST) /api/messages/{message_id}/manual-read — recipient marks one inbound message as read. Returns 404 if not found, 403 if not recipient. Emits ws "message_read" to sender.
+          - POST /api/conversations/{other_user_id}/read-all — bulk manual read for a conversation. Returns {updated}.
+          - POST /api/conversations/{other_user_id}/cafezinho — toggles per-conversation Cafezinho. Returns {active: bool}.
+          - GET /api/messages/{other_user_id} — response now also returns cafezinho_active: bool, and SKIPS auto-mark-read when (other_user_id in user.cafezinho_conversations) OR user.cafezinho_enabled is True.
+          - POST /api/messages and POST /api2/messages/forward — now emit WS "new_message" to recipient.
+          - GET /api2/posts/boosts/status — returns {used, cap (=3)}. POST /api2/posts/{id}/boost now enforces cap of 3 active boosts (returns 429), and the ranker (compute_ranking_score) multiplies score by 1.6 when boosted_until > now.
+
+        REGRESSION:
+          - Existing seed/admin login: admin@vermillion.app / admin123 still must work (no 2FA on that account by default).
+          - Existing tokens issued before this change have no "jti" — get_current_user must still accept them (verified via fallthrough — sessions check only when jti is present).
+          - All existing endpoints unchanged.
+
+        Please:
+          - Verify all NEW endpoints above (success + auth + ownership + edge cases).
+          - Verify Cafezinho auto-read suppression actually works when user has cafezinho_conversations contains the peer id.
+          - Verify boost cap (3) is enforced and toggling a boost off does not consume the cap.
+          - DO NOT test frontend.
 
 

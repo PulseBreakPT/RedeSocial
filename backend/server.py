@@ -12,6 +12,10 @@ import logging
 import secrets
 import bcrypt
 import jwt
+import base64
+import io
+import pyotp
+import qrcode
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
@@ -213,12 +217,109 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, jti: Optional[str] = None) -> str:
     payload = {
         "sub": user_id, "email": email, "type": "access",
         "exp": datetime.now(timezone.utc) + timedelta(days=7),
     }
+    if jti:
+        payload["jti"] = jti
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def _parse_ua(ua: str) -> dict:
+    """Best-effort parse of User-Agent into {browser, os, device}."""
+    ua = ua or ""
+    browser = "Browser"
+    if "Chrome/" in ua and "Edg/" not in ua and "OPR/" not in ua:
+        browser = "Chrome"
+    elif "Edg/" in ua:
+        browser = "Edge"
+    elif "Firefox/" in ua:
+        browser = "Firefox"
+    elif "Safari/" in ua and "Chrome/" not in ua:
+        browser = "Safari"
+    elif "OPR/" in ua or "Opera/" in ua:
+        browser = "Opera"
+    os_name = "Desconhecido"
+    if "Windows" in ua:
+        os_name = "Windows"
+    elif "Mac OS X" in ua:
+        os_name = "macOS"
+    elif "Android" in ua:
+        os_name = "Android"
+    elif "iPhone" in ua or "iPad" in ua or "iPod" in ua:
+        os_name = "iOS"
+    elif "Linux" in ua:
+        os_name = "Linux"
+    device = "mobile" if re.search(r"Mobi|Android|iPhone|iPad", ua) else "desktop"
+    return {"browser": browser, "os": os_name, "device": device}
+
+
+async def create_session(user_id: str, request: Request, source: str = "login") -> str:
+    """Creates a new session row + returns the jti to embed in the JWT."""
+    jti = str(uuid.uuid4())
+    ua = request.headers.get("user-agent", "")[:300] if request else ""
+    ip = request.client.host if request and request.client else ""
+    meta = _parse_ua(ua)
+    sess = {
+        "jti": jti,
+        "user_id": user_id,
+        "ip": ip,
+        "ua": ua,
+        "browser": meta["browser"],
+        "os": meta["os"],
+        "device": meta["device"],
+        "source": source,  # "login" | "register" | "reset"
+        "created_at": now_iso(),
+        "last_seen_at": now_iso(),
+        "last_ip": ip,
+        "last_ua": ua,
+        "revoked": False,
+    }
+    await db.sessions.insert_one(sess)
+    return jti
+
+
+async def maybe_emit_login_alert(user: dict, request: Request) -> None:
+    """B-014 — If this is a 'new' device/IP for the user, drop a notification."""
+    if not user.get("login_alerts_enabled", True):
+        return
+    ip = request.client.host if request and request.client else ""
+    ua = request.headers.get("user-agent", "")[:300] if request else ""
+    meta = _parse_ua(ua)
+    # If we already saw this UA-fingerprint or IP recently, skip
+    seen = await db.sessions.find_one(
+        {"user_id": user["id"], "ua": ua, "ip": ip},
+        sort=[("created_at", -1)],
+    )
+    if seen:
+        # not new — also no alert
+        return
+    # Drop an in-app notification (visible in /api/notifications)
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "type": "login_alert",
+        "from_user_id": user["id"],
+        "post_id": None,
+        "text": f"Novo início de sessão · {meta['browser']} em {meta['os']}",
+        "extra": {"browser": meta["browser"], "os": meta["os"], "ip": ip, "device": meta["device"]},
+        "read": False,
+        "created_at": now_iso(),
+    }
+    await db.notifications.insert_one(doc)
+    try:
+        if "ws_manager" in globals():
+            await ws_manager.send_personal(user["id"], {
+                "type": "new_notification",
+                "notification": {
+                    "id": doc["id"], "type": "login_alert",
+                    "text": doc["text"], "created_at": doc["created_at"],
+                },
+            })
+    except Exception:
+        pass
 
 
 def set_auth_cookie(response: Response, token: str) -> None:
@@ -550,6 +651,7 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         # Healthy-mode preferences
         "boa_noite_enabled": user.get("boa_noite_enabled", True),
         "cafezinho_enabled": user.get("cafezinho_enabled", False),
+        "cafezinho_conversations": user.get("cafezinho_conversations", []),
         "feed_mix": user.get("feed_mix") or {"friends": 40, "interest": 30, "place": 30},
         # v2 — modern social
         "presence": user.get("presence") or {"status": "online", "emoji": "", "text": "", "until": None},
@@ -573,6 +675,10 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         # Boa-noite hours
         "boa_noite_start": user.get("boa_noite_start") or "23:00",
         "boa_noite_end": user.get("boa_noite_end") or "08:00",
+        # Security (B-013/B-014/B-015)
+        "two_fa_enabled": bool(user.get("two_fa_enabled")),
+        "recovery_email": user.get("recovery_email", ""),
+        "login_alerts_enabled": bool(user.get("login_alerts_enabled", True)),
         # Soft engagement signals (server-side now — see /api2/feed/signals)
         "muted_authors": user.get("muted_authors", []),
         "muted_topics": user.get("muted_topics", []),
@@ -608,6 +714,20 @@ async def get_current_user(request: Request) -> dict:
         user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
         if not user:
             raise HTTPException(status_code=401, detail="Utilizador não encontrado")
+        # B-029 — session revocation check
+        jti = payload.get("jti")
+        if jti:
+            sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
+            if sess and sess.get("revoked"):
+                raise HTTPException(status_code=401, detail="Sessão terminada")
+            # last-seen heartbeat (best-effort, ~5 min)
+            await db.sessions.update_one(
+                {"jti": jti},
+                {"$set": {"last_seen_at": now_iso(),
+                          "last_ip": request.client.host if request.client else "",
+                          "last_ua": request.headers.get("user-agent", "")[:300]}},
+                upsert=False,
+            )
         # update last seen (best-effort)
         await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
         return user
@@ -779,6 +899,21 @@ async def create_notification(user_id: str, ntype: str, from_user_id: str,
     if extra:
         doc.update(extra)
     await db.notifications.insert_one(doc)
+    # Real-time push (best-effort)
+    try:
+        # ws_manager is defined later in the file; use a soft guard so module
+        # import order is irrelevant.
+        if "ws_manager" in globals():
+            await ws_manager.send_personal(user_id, {
+                "type": "new_notification",
+                "notification": {
+                    "id": doc["id"], "type": ntype,
+                    "from_user_id": from_user_id, "post_id": post_id,
+                    "text": text, "created_at": doc["created_at"],
+                },
+            })
+    except Exception:
+        pass
 
 
 async def handle_mentions(text: str, author: dict, post_id: str) -> None:
@@ -814,6 +949,7 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+    totp_code: Optional[str] = None  # 2FA — required when account has 2fa_enabled
 
 
 class ForgotPasswordIn(BaseModel):
@@ -856,6 +992,19 @@ class UpdateProfileIn(BaseModel):
     reduce_motion: Optional[bool] = None
     # Notification preference object (5 channels)
     notif_preferences: Optional[dict] = None  # {likes,comments,follows,mentions,dm: bool}
+    # B-015 — Recovery email (used as fallback for forgot-password)
+    recovery_email: Optional[str] = None
+    # B-014 — Per-user toggle for login-alert notifications
+    login_alerts_enabled: Optional[bool] = None
+
+
+class TwoFASetupConfirmIn(BaseModel):
+    code: str = Field(min_length=6, max_length=8)
+
+
+class TwoFADisableIn(BaseModel):
+    password: str
+    code: Optional[str] = None  # TOTP or backup code
 
 
 class ChangePasswordIn(BaseModel):
@@ -931,8 +1080,34 @@ class EventIn(BaseModel):
 # ============================================================
 # Auth
 # ============================================================
+@api.get("/auth/check-username")
+async def check_username(u: str = ""):
+    """Public, unauthenticated endpoint used by the registration form to give
+    real-time availability feedback on the player ID (username)."""
+    raw = (u or "").strip()
+    if not raw:
+        return {"available": False, "reason": "empty", "message": "Escolhe um username."}
+    if len(raw) < 3:
+        return {"available": False, "reason": "too_short", "message": "Mínimo 3 caracteres."}
+    if len(raw) > 20:
+        return {"available": False, "reason": "too_long", "message": "Máximo 20 caracteres."}
+    if not re.fullmatch(r"[a-zA-Z0-9_]+", raw):
+        return {"available": False, "reason": "invalid_chars", "message": "Só letras, números e _."}
+    RESERVED = {
+        "admin", "root", "support", "vermillion", "vm", "moderator", "mod",
+        "help", "official", "api", "anon", "anonymous", "null", "undefined",
+        "system", "team", "staff", "bot",
+    }
+    if raw.lower() in RESERVED:
+        return {"available": False, "reason": "reserved", "message": "Username reservado."}
+    existing = await db.users.find_one({"username": raw.lower()}, {"_id": 0, "id": 1})
+    if existing:
+        return {"available": False, "reason": "taken", "message": "Já em uso."}
+    return {"available": True, "message": "Disponível."}
+
+
 @api.post("/auth/register")
-async def register(payload: RegisterIn, response: Response):
+async def register(payload: RegisterIn, request: Request, response: Response):
     email = payload.email.lower()
     username = payload.username.lower().strip()
     if await db.users.find_one({"email": email}):
@@ -958,6 +1133,8 @@ async def register(payload: RegisterIn, response: Response):
         "boa_noite_enabled": True,
         "cafezinho_enabled": False,
         "feed_mix": {"friends": 40, "interest": 30, "place": 30},
+        # B-014 default ON
+        "login_alerts_enabled": True,
         # RGPD consent audit trail (Lei 58/2019 art. 16)
         "consent": {
             "terms_accepted": bool(payload.terms_accepted),
@@ -969,25 +1146,77 @@ async def register(payload: RegisterIn, response: Response):
         },
     }
     await db.users.insert_one(user)
-    token = create_access_token(user["id"], email)
+    jti = await create_session(user["id"], request, source="register")
+    token = create_access_token(user["id"], email, jti=jti)
     set_auth_cookie(response, token)
     return {"user": public_user(user), "token": token}
 
 
 @api.post("/auth/login")
-async def login(payload: LoginIn, response: Response):
+async def login(payload: LoginIn, request: Request, response: Response):
     email = payload.email.lower()
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(401, "Credenciais inválidas")
-    token = create_access_token(user["id"], email)
+    # B-013 — 2FA gate
+    if user.get("two_fa_enabled") and user.get("two_fa_secret"):
+        code = (payload.totp_code or "").strip()
+        if not code:
+            raise HTTPException(403, "Código 2FA necessário")
+        if not await _verify_2fa_code(user, code):
+            raise HTTPException(401, "Código 2FA inválido")
+    # B-014 — login alert before creating new session
+    await maybe_emit_login_alert(user, request)
+    jti = await create_session(user["id"], request, source="login")
+    token = create_access_token(user["id"], email, jti=jti)
     set_auth_cookie(response, token)
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
     return {"user": public_user(user), "token": token}
 
 
+async def _verify_2fa_code(user: dict, code: str) -> bool:
+    code = (code or "").replace(" ", "").replace("-", "").strip().upper()
+    if not code:
+        return False
+    # TOTP first
+    secret = user.get("two_fa_secret")
+    if secret:
+        try:
+            totp = pyotp.TOTP(secret)
+            if totp.verify(code, valid_window=1):
+                return True
+        except Exception:
+            pass
+    # Backup codes (one-shot use)
+    backups = user.get("two_fa_backup_codes") or []
+    if code in backups:
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$pull": {"two_fa_backup_codes": code}},
+        )
+        return True
+    return False
+
+
 @api.post("/auth/logout")
-async def logout(response: Response):
+async def logout(request: Request, response: Response):
+    # B-029 — Revoke the current session jti
+    token = request.cookies.get("access_token") or ""
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if token:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            jti = payload.get("jti")
+            if jti:
+                await db.sessions.update_one(
+                    {"jti": jti},
+                    {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "logout"}},
+                )
+        except Exception:
+            pass
     clear_auth_cookie(response)
     return {"ok": True}
 
@@ -1003,15 +1232,21 @@ async def me(request: Request):
 @api.post("/auth/forgot-password")
 async def forgot_password(payload: ForgotPasswordIn):
     email = payload.email.lower()
+    # B-015 — Try primary email first, then recovery_email
     user = await db.users.find_one({"email": email}, {"_id": 0})
+    used_recovery = False
+    if not user:
+        user = await db.users.find_one({"recovery_email": email}, {"_id": 0})
+        used_recovery = bool(user)
     if user:
         token = secrets.token_urlsafe(24)
         expires = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         await db.password_resets.insert_one({
             "token": token, "user_id": user["id"], "expires_at": expires, "used": False,
+            "delivered_to": email, "via_recovery": used_recovery,
         })
-        logger.info(f"🔐 Password reset token for {email}: {token}")
-        return {"ok": True, "dev_token": token}  # exposed for dev/testing
+        logger.info(f"🔐 Password reset token for {email} (via_recovery={used_recovery}): {token}")
+        return {"ok": True, "dev_token": token, "via_recovery": used_recovery}
     return {"ok": True}
 
 
@@ -1028,7 +1263,7 @@ async def reset_password(payload: ResetPasswordIn):
 
 
 @api.post("/auth/change-password")
-async def change_password(payload: ChangePasswordIn, user=Depends(get_current_user)):
+async def change_password(payload: ChangePasswordIn, request: Request, user=Depends(get_current_user)):
     """Change password while logged in. Validates current password via bcrypt."""
     fresh = await db.users.find_one({"id": user["id"]})
     if not fresh:
@@ -1049,7 +1284,210 @@ async def change_password(payload: ChangePasswordIn, user=Depends(get_current_us
         {"user_id": user["id"], "used": False},
         {"$set": {"used": True}},
     )
+    # B-029 — Optionally revoke OTHER sessions after a password change.
+    # Keep current session alive; revoke siblings.
+    current_jti = _extract_jti_from_request(request)
+    if current_jti:
+        await db.sessions.update_many(
+            {"user_id": user["id"], "revoked": False, "jti": {"$ne": current_jti}},
+            {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "password_change"}},
+        )
     return {"ok": True, "password_changed_at": now_iso()}
+
+
+def _extract_jti_from_request(request: Request) -> Optional[str]:
+    token = request.cookies.get("access_token") or ""
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload.get("jti")
+    except Exception:
+        return None
+
+
+# ============================================================
+# B-029 — Sessions: list, terminate one, terminate all-others
+# ============================================================
+@api.get("/auth/sessions")
+async def list_sessions(request: Request, user=Depends(get_current_user)):
+    """List all active (non-revoked) sessions for the current user."""
+    current_jti = _extract_jti_from_request(request)
+    rows = await db.sessions.find(
+        {"user_id": user["id"], "revoked": {"$ne": True}},
+        {"_id": 0},
+    ).sort("last_seen_at", -1).to_list(100)
+    out = []
+    for s in rows:
+        out.append({
+            "id": s.get("jti"),
+            "browser": s.get("browser", "Browser"),
+            "os": s.get("os", "Desconhecido"),
+            "device": s.get("device", "desktop"),
+            "ip": s.get("last_ip") or s.get("ip", ""),
+            "created_at": s.get("created_at"),
+            "last_seen_at": s.get("last_seen_at"),
+            "current": s.get("jti") == current_jti,
+            "source": s.get("source", "login"),
+        })
+    return out
+
+
+@api.delete("/auth/sessions/{session_id}")
+async def revoke_session(session_id: str, request: Request, user=Depends(get_current_user)):
+    sess = await db.sessions.find_one({"jti": session_id, "user_id": user["id"]}, {"_id": 0})
+    if not sess:
+        raise HTTPException(404, "Sessão não encontrada")
+    current_jti = _extract_jti_from_request(request)
+    if sess.get("jti") == current_jti:
+        raise HTTPException(400, "Usa o botão 'Terminar sessão' para sair da sessão atual.")
+    await db.sessions.update_one(
+        {"jti": session_id},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "user_revoke"}},
+    )
+    return {"ok": True}
+
+
+@api.post("/auth/sessions/revoke-others")
+async def revoke_other_sessions(request: Request, user=Depends(get_current_user)):
+    current_jti = _extract_jti_from_request(request)
+    q = {"user_id": user["id"], "revoked": {"$ne": True}}
+    if current_jti:
+        q["jti"] = {"$ne": current_jti}
+    res = await db.sessions.update_many(
+        q,
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "user_revoke_all"}},
+    )
+    return {"ok": True, "revoked": res.modified_count}
+
+
+# ============================================================
+# B-013 — 2FA TOTP (setup, verify, disable, regenerate backup codes)
+# ============================================================
+def _generate_backup_codes(n: int = 10) -> List[str]:
+    """10 single-use backup codes, 8 chars [0-9a-z], dash-separated visually."""
+    return [secrets.token_hex(4).upper() for _ in range(n)]
+
+
+@api.post("/auth/2fa/setup")
+async def two_fa_setup(user=Depends(get_current_user)):
+    """Start 2FA enrollment. Returns the provisioning URL + QR code (data URL).
+    Does NOT activate 2FA — the user must confirm via /verify with a valid code.
+    """
+    if user.get("two_fa_enabled"):
+        raise HTTPException(400, "2FA já está ativo")
+    # Reuse pending secret if user re-opens the flow
+    secret = user.get("two_fa_pending_secret") or pyotp.random_base32()
+    issuer = "Vermillion"
+    label = user.get("email") or user.get("username") or user["id"]
+    provisioning_url = pyotp.TOTP(secret).provisioning_uri(name=label, issuer_name=issuer)
+    # Build a QR code as a base64 PNG data URL (works with <img src=...>)
+    qr = qrcode.QRCode(version=1, box_size=6, border=2)
+    qr.add_data(provisioning_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    data_url = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"two_fa_pending_secret": secret, "two_fa_pending_started_at": now_iso()}},
+    )
+    return {
+        "secret": secret,
+        "otpauth_url": provisioning_url,
+        "qr_data_url": data_url,
+        "issuer": issuer,
+        "account": label,
+    }
+
+
+@api.post("/auth/2fa/verify")
+async def two_fa_verify(payload: TwoFASetupConfirmIn, user=Depends(get_current_user)):
+    """Confirm enrollment: validates the code against the pending secret and
+    activates 2FA. Returns one-time-use backup codes (only shown ONCE)."""
+    fresh = await db.users.find_one({"id": user["id"]})
+    pending = (fresh or {}).get("two_fa_pending_secret")
+    if not pending:
+        raise HTTPException(400, "Inicia o setup primeiro")
+    if (fresh or {}).get("two_fa_enabled"):
+        raise HTTPException(400, "2FA já está ativo")
+    try:
+        if not pyotp.TOTP(pending).verify((payload.code or "").strip(), valid_window=1):
+            raise HTTPException(401, "Código inválido")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(401, "Código inválido")
+    backup = _generate_backup_codes(10)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "two_fa_enabled": True,
+                "two_fa_secret": pending,
+                "two_fa_backup_codes": backup,
+                "two_fa_enabled_at": now_iso(),
+            },
+            "$unset": {"two_fa_pending_secret": "", "two_fa_pending_started_at": ""},
+        },
+    )
+    return {"ok": True, "backup_codes": backup}
+
+
+@api.post("/auth/2fa/disable")
+async def two_fa_disable(payload: TwoFADisableIn, user=Depends(get_current_user)):
+    """Disable 2FA — requires current password. If 2FA was active, also requires
+    a valid TOTP code (or backup code)."""
+    fresh = await db.users.find_one({"id": user["id"]})
+    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+        raise HTTPException(400, "Palavra-passe incorreta")
+    if (fresh or {}).get("two_fa_enabled"):
+        if not await _verify_2fa_code(fresh or {}, payload.code or ""):
+            raise HTTPException(401, "Código 2FA inválido")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {"two_fa_enabled": False},
+            "$unset": {
+                "two_fa_secret": "",
+                "two_fa_backup_codes": "",
+                "two_fa_pending_secret": "",
+                "two_fa_pending_started_at": "",
+            },
+        },
+    )
+    return {"ok": True}
+
+
+@api.post("/auth/2fa/regenerate-backup")
+async def two_fa_regenerate_backup(payload: TwoFADisableIn, user=Depends(get_current_user)):
+    fresh = await db.users.find_one({"id": user["id"]})
+    if not (fresh or {}).get("two_fa_enabled"):
+        raise HTTPException(400, "2FA não está ativo")
+    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+        raise HTTPException(400, "Palavra-passe incorreta")
+    backup = _generate_backup_codes(10)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"two_fa_backup_codes": backup}},
+    )
+    return {"ok": True, "backup_codes": backup}
+
+
+@api.get("/auth/2fa/status")
+async def two_fa_status(user=Depends(get_current_user)):
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0, "two_fa_enabled": 1, "two_fa_pending_secret": 1, "two_fa_backup_codes": 1, "two_fa_enabled_at": 1})
+    return {
+        "enabled": bool((fresh or {}).get("two_fa_enabled")),
+        "setup_in_progress": bool((fresh or {}).get("two_fa_pending_secret")) and not bool((fresh or {}).get("two_fa_enabled")),
+        "backup_codes_left": len((fresh or {}).get("two_fa_backup_codes") or []),
+        "enabled_at": (fresh or {}).get("two_fa_enabled_at"),
+    }
 
 
 # ============================================================
@@ -1379,6 +1817,16 @@ async def follow_user(username: str, user=Depends(get_current_user)):
 @api.patch("/users/me")
 async def update_me(payload: UpdateProfileIn, user=Depends(get_current_user)):
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # B-015 — basic validation/normalization of recovery_email
+    if "recovery_email" in update:
+        rec = (update["recovery_email"] or "").strip().lower()
+        if rec:
+            # very light email check (full validation already at register)
+            if "@" not in rec or "." not in rec or len(rec) > 200:
+                raise HTTPException(400, "Email de recuperação inválido")
+            if rec == (user.get("email") or "").lower():
+                raise HTTPException(400, "O email de recuperação tem de ser diferente do principal")
+        update["recovery_email"] = rec
     if update:
         await db.users.update_one({"id": user["id"]}, {"$set": update})
     fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
@@ -2380,11 +2828,77 @@ async def get_messages(other_user_id: str, user=Depends(get_current_user)):
     key = conv_key(user["id"], other_user_id)
     msgs = await db.messages.find({"conversation_key": key}, {"_id": 0}).sort("created_at", 1).to_list(500)
     other = await db.users.find_one({"id": other_user_id}, {"_id": 0})
-    await db.messages.update_many(
+    # B-023 Cafezinho: if the viewer opted-in to manual read receipts for this
+    # peer (or globally), don't auto-mark as read. They must hit the manual
+    # endpoint or explicitly "Marcar como lido".
+    cafe_convs = set(user.get("cafezinho_conversations") or [])
+    cafe_global = bool(user.get("cafezinho_enabled"))
+    if other_user_id not in cafe_convs and not cafe_global:
+        await db.messages.update_many(
+            {"conversation_key": key, "sender_id": other_user_id, "read": False},
+            {"$set": {"read": True, "read_at": now_iso()}},
+        )
+    return {
+        "other_user": public_user(other) if other else None,
+        "messages": msgs,
+        "cafezinho_active": (other_user_id in cafe_convs) or cafe_global,
+    }
+
+
+@api.post("/conversations/{other_user_id}/cafezinho")
+async def toggle_cafezinho_conversation(other_user_id: str, user=Depends(get_current_user)):
+    """B-023 — Toggle Cafezinho (manual read receipts) for a single conversation.
+    Persists server-side so it survives across devices."""
+    other = await db.users.find_one({"id": other_user_id}, {"_id": 0, "id": 1})
+    if not other:
+        raise HTTPException(404, "Utilizador não encontrado")
+    cafe = list(user.get("cafezinho_conversations") or [])
+    if other_user_id in cafe:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"cafezinho_conversations": other_user_id}})
+        return {"active": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"cafezinho_conversations": other_user_id}})
+    return {"active": True}
+
+
+@api.post("/messages/{message_id}/manual-read")
+async def manual_read_message(message_id: str, user=Depends(get_current_user)):
+    """B-023 — Mark a single inbound message as read manually (Cafezinho)."""
+    msg = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(404, "Mensagem não encontrada")
+    if msg.get("recipient_id") != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    if msg.get("read"):
+        return {"ok": True, "already": True}
+    await db.messages.update_one({"id": message_id}, {"$set": {"read": True, "read_at": now_iso()}})
+    # Real-time read-receipt to sender via WS
+    try:
+        await ws_manager.send_personal(msg["sender_id"], {
+            "type": "message_read",
+            "message_id": message_id,
+            "by": user["id"],
+        })
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@api.post("/conversations/{other_user_id}/read-all")
+async def read_all_conversation(other_user_id: str, user=Depends(get_current_user)):
+    """Bulk manual read for an entire conversation (used by 'Marcar como lido')."""
+    key = conv_key(user["id"], other_user_id)
+    res = await db.messages.update_many(
         {"conversation_key": key, "sender_id": other_user_id, "read": False},
-        {"$set": {"read": True}},
+        {"$set": {"read": True, "read_at": now_iso()}},
     )
-    return {"other_user": public_user(other) if other else None, "messages": msgs}
+    try:
+        await ws_manager.send_personal(other_user_id, {
+            "type": "message_read_bulk",
+            "by": user["id"],
+        })
+    except Exception:
+        pass
+    return {"updated": res.modified_count}
 
 
 @api.post("/messages/{other_user_id}/typing")
@@ -2461,6 +2975,16 @@ async def send_message(payload: MessageIn, user=Depends(get_current_user)):
         upsert=True,
     )
     msg.pop("_id", None)
+    # B-041 — real-time fan-out to the recipient (sender already has optimistic UI)
+    try:
+        await ws_manager.send_personal(other["id"], {
+            "type": "new_message",
+            "from": user["id"],
+            "from_username": user.get("username"),
+            "message": msg,
+        })
+    except Exception:
+        pass
     return msg
 
 
@@ -3131,6 +3655,9 @@ async def startup():
     await db.stories.create_index("expires_at")
     await db.communities.create_index("slug", unique=True)
     await db.events.create_index("starts_at")
+    # B-029 — sessions indexes
+    await db.sessions.create_index("jti", unique=True)
+    await db.sessions.create_index([("user_id", 1), ("revoked", 1), ("last_seen_at", -1)])
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@vermillion.app").lower()
     admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
     existing = await db.users.find_one({"email": admin_email})
@@ -4653,6 +5180,16 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
         + (mood_match + tod_bonus) * interest_w * 2.0
         + city_match * place_w * 2.0
     )
+    # B-007 — Author boost (24h window). If the author paid the "boost cost"
+    # (consumes from per-day cap, see /api2/posts/{id}/boost), multiply score
+    # by 1.6 for the post in question.
+    boosted_until = post.get("boosted_until")
+    if boosted_until:
+        try:
+            if datetime.fromisoformat(boosted_until.replace("Z", "+00:00")) > now:
+                base *= 1.6
+        except Exception:
+            pass
     return base * diversity_penalty
 
 
@@ -5459,6 +5996,16 @@ async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
         upsert=True,
     )
     msg.pop("_id", None)
+    # B-041 — real-time fan-out
+    try:
+        await ws_manager.send_personal(other["id"], {
+            "type": "new_message",
+            "from": user["id"],
+            "from_username": user.get("username"),
+            "message": msg,
+        })
+    except Exception:
+        pass
     return msg
 
 
@@ -5495,6 +6042,16 @@ async def forward_message(payload: ForwardIn, user=Depends(get_current_user)):
         upsert=True,
     )
     msg.pop("_id", None)
+    # B-041 — real-time fan-out
+    try:
+        await ws_manager.send_personal(payload.to_user_id, {
+            "type": "new_message",
+            "from": user["id"],
+            "from_username": user.get("username"),
+            "message": msg,
+        })
+    except Exception:
+        pass
     return msg
 
 
@@ -5774,13 +6331,65 @@ async def boost_post(post_id: str, user=Depends(get_current_user)):
         raise HTTPException(403, "Só podes impulsionar as tuas publicações")
     boosted = list(user.get("boosted_posts", []) or [])
     if post_id in boosted:
+        # Toggle off — no cap involved
         await db.users.update_one({"id": user["id"]}, {"$pull": {"boosted_posts": post_id}})
         await db.posts.update_one({"id": post_id}, {"$unset": {"boosted_until": ""}})
-        return {"boosted": False}
+        return {"boosted": False, "used_today": _count_active_boosts(user)}
+    # Daily cap: at most 3 active boosts at any time (rolling 24h)
+    BOOST_CAP = 3
+    if _count_active_boosts(user) >= BOOST_CAP:
+        raise HTTPException(429, f"Limite de {BOOST_CAP} impulsos ativos atingido (24h).")
     until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
     await db.users.update_one({"id": user["id"]}, {"$addToSet": {"boosted_posts": post_id}})
     await db.posts.update_one({"id": post_id}, {"$set": {"boosted_until": until}})
-    return {"boosted": True, "until": until}
+    refreshed = await db.users.find_one({"id": user["id"]}, {"_id": 0, "boosted_posts": 1})
+    used = await _count_active_boosts_async(refreshed)
+    return {"boosted": True, "until": until, "used_today": used, "cap": BOOST_CAP}
+
+
+def _count_active_boosts(user: dict) -> int:
+    """Sync best-effort count from user.boosted_posts (caller is expected to know
+    that expired boosts have been pulled from the array when consumed). Kept
+    here for callers that already loaded the user document."""
+    return len(user.get("boosted_posts") or [])
+
+
+async def _count_active_boosts_async(user: dict) -> int:
+    """Authoritative count: cross-checks posts.boosted_until and prunes
+    expired entries from user.boosted_posts."""
+    if not user:
+        return 0
+    ids = list(user.get("boosted_posts") or [])
+    if not ids:
+        return 0
+    now = datetime.now(timezone.utc)
+    active = []
+    expired = []
+    rows = await db.posts.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "boosted_until": 1}).to_list(50)
+    by_id = {r["id"]: r for r in rows}
+    for pid in ids:
+        b = (by_id.get(pid) or {}).get("boosted_until")
+        if not b:
+            expired.append(pid)
+            continue
+        try:
+            if datetime.fromisoformat(b.replace("Z", "+00:00")) > now:
+                active.append(pid)
+            else:
+                expired.append(pid)
+        except Exception:
+            expired.append(pid)
+    if expired:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"boosted_posts": {"$in": expired}}})
+        await db.posts.update_many({"id": {"$in": expired}}, {"$unset": {"boosted_until": ""}})
+    return len(active)
+
+
+@api2.get("/posts/boosts/status")
+async def boost_status(user=Depends(get_current_user)):
+    """Returns how many active boosts the user has + the cap."""
+    used = await _count_active_boosts_async(user)
+    return {"used": used, "cap": 3}
 
 
 @api2.put("/posts/{post_id}/note")
