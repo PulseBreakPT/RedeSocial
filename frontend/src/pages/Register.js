@@ -135,11 +135,6 @@ export default function Register() {
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    if (user) return <Navigate to="/" replace />;
-
-    const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-    const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
-
     const usernameState = useAvailabilityCheck({
         value: form.username,
         endpoint: "/api/auth/check-username",
@@ -155,6 +150,11 @@ export default function Register() {
     const pwdEval = useMemo(() => evaluatePassword(form.password), [form.password]);
     const pwdMatches = form.password && form.passwordConfirm && form.password === form.passwordConfirm;
     const pwdMismatch = form.password && form.passwordConfirm && form.password !== form.passwordConfirm;
+
+    if (user) return <Navigate to="/" replace />;
+
+    const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+    const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
 
     const nameValid = form.name.trim().length >= 1;
 
