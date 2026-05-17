@@ -12,7 +12,6 @@ import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
 import { CalendarPTBanner, ATardeBanner } from "../components/PTBanners";
 import { NewVoicesStrip } from "../components/PTPresence";
-import { NotesBar } from "../components/NotesBar";
 
 const SORTS = [
     { key: "recent", label: "Recente", icon: Clock },
@@ -224,7 +223,6 @@ export default function Feed() {
 
             <StoriesBar />
             <div className="px-4 lg:px-5">
-                <NotesBar />
             </div>
             <MobileDiscoverStrip />
             <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} />

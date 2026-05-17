@@ -27,3 +27,4 @@ typer>=0.9.0
 emergentintegrations==0.1.0
 pyotp==2.9.0
 qrcode==7.4.2
+pypng==0.20220715.0

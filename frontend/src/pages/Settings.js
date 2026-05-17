@@ -9,7 +9,6 @@ import {
 import { api, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
-import { CosmeticsPicker } from "../components/CosmeticsPicker";
 import { ForYouTuner } from "../components/ForYouTuner";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
@@ -176,19 +175,15 @@ export default function Settings() {
     const avatarRef = useRef(null);
     const bannerRef = useRef(null);
 
-    /* Local stats — pulled from /users/me/stats if available, else mocked */
-    const [stats, setStats] = useState({ posts_count: 0, streak_days: 0, trophies_count: 0 });
+    /* Local stats — pulled from /users/me/stats if available */
+    const [stats, setStats] = useState({ posts_count: 0 });
     useEffect(() => {
         let cancelled = false;
         (async () => {
             try {
                 const { data } = await api.get(`/users/${user?.username}/stats`);
                 if (!cancelled && data) setStats((s) => ({ ...s, ...data }));
-            } catch {}
-            try {
-                const { data: tr } = await api.get(`/users/${user?.username}/trophies`);
-                if (!cancelled && tr) setStats((s) => ({ ...s, trophies_count: (tr.unlocked || tr.items || []).length }));
-            } catch {}
+            } catch { /* silent */ }
         })();
         return () => { cancelled = true; };
     }, [user?.username]);
@@ -800,10 +795,6 @@ function AparTab({ prefs, setPref }) {
             </div>
 
             <ToggleRow label="Reduzir animações" sub="Útil se sentires tonturas com movimentos" k="reduce_motion" prefs={prefs} setPref={setPref} />
-
-            <div className="pt-5 mt-3 border-t border-black/[0.06]">
-                <CosmeticsPicker />
-            </div>
         </div>
     );
 }

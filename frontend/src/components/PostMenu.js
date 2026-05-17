@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import {
-    MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type, BarChart3,
+    MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type,
     Users2, Languages, VolumeX, ThumbsDown, ThumbsUp, FolderPlus, Bell, BellOff,
-    Sparkles, FileText, Clock, Eye, StickyNote,
+    FileText, Clock, BarChart3,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { toast } from "sonner";
 import { confirmDialog, promptDialog } from "./ConfirmDialog";
 import { CollabModal } from "./CollabModal";
-import { ViewersModal } from "./ViewersModal";
 import { ReportModal } from "./ReportModal";
 import {
     muteAuthor, muteTopic, seeLessOfTopic, seeMoreOfTopic,
-    toggleBoost, isBoosted, setPostNote, getPostNote,
+    setPostNote, getPostNote,
     convertToStory, addToCollection,
     toggleWatchPost, isWatchingPost, dismissPost,
 } from "../lib/interestSignals";
@@ -24,12 +23,10 @@ function firstHashtag(content) {
     return m ? m[1] : null;
 }
 
-export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalytics }) {
+export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
     const [open, setOpen] = useState(false);
     const [collabOpen, setCollabOpen] = useState(false);
-    const [viewersOpen, setViewersOpen] = useState(false);
     const [reportOpen, setReportOpen] = useState(false);
-    const [boosted, setBoosted] = useState(() => isBoosted(post.id));
     const [watching, setWatching] = useState(() => isWatchingPost(post.id));
     const [threadMuted, setThreadMuted] = useState(false);
     const ref = useRef(null);
@@ -77,17 +74,6 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
         } catch (err) { toastApiError(err); }
     };
 
-    const handleConvertRecado = async (e) => {
-        e.stopPropagation();
-        close();
-        const text = (post.content || "").trim().slice(0, 60);
-        if (!text) { toast.error("Sem texto para converter"); return; }
-        try {
-            await api.post("/notes", { text, mood: post.mood || "" });
-            toast.success("Recado de 24h criado!");
-        } catch (err) { toastApiError(err); }
-    };
-
     const handleMuteThread = async (e) => {
         e.stopPropagation();
         try {
@@ -98,11 +84,6 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
         close();
     };
 
-    const handleViewers = (e) => {
-        e.stopPropagation();
-        close();
-        setViewersOpen(true);
-    };
     const handleTranslate = (e) => {
         e.stopPropagation();
         const txt = encodeURIComponent(post.content || "");
@@ -197,12 +178,6 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
             toast.message(lines || "Recomendação sem contexto adicional.");
         } catch (err) { toastApiError(err); }
     };
-    const handleBoost = async (e) => {
-        e.stopPropagation();
-        const next = await toggleBoost(post.id);
-        setBoosted(next);
-        close();
-    };
     const handleNote = async (e) => {
         e.stopPropagation();
         const current = getPostNote(post.id) || "";
@@ -284,12 +259,6 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
 
                     {isOwn && (
                         <>
-                            <button onClick={(e) => { e.stopPropagation(); onAnalytics?.(); close(); }} data-testid={`analytics-${post.id}`} className={itemCls}>
-                                <BarChart3 size={14} strokeWidth={1.6} className="text-black/55" /> Analytics
-                            </button>
-                            <button onClick={handleViewers} data-testid={`viewers-${post.id}`} className={itemCls}>
-                                <Eye size={14} strokeWidth={1.6} className="text-black/55" /> Ver viewers ({post.views || 0})
-                            </button>
                             <button onClick={(e) => { e.stopPropagation(); setCollabOpen(true); close(); }} data-testid={`collab-btn-${post.id}`} className={itemCls}>
                                 <Users2 size={14} strokeWidth={1.6} className="text-black/55" /> Colaboradores
                             </button>
@@ -298,17 +267,11 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                                     ? <><PinOff size={14} strokeWidth={1.6} className="text-black/55" /> Desafixar do perfil</>
                                     : <><Pin size={14} strokeWidth={1.6} className="text-black/55" /> Fixar no perfil · Showcase</>}
                             </button>
-                            <button onClick={handleBoost} data-testid={`boost-${post.id}`} className={itemCls}>
-                                <Sparkles size={14} strokeWidth={1.6} className="text-black/55" /> {boosted ? "Remover boost" : "Boost · destacar 24h"}
-                            </button>
                             <button onClick={handleNote} data-testid={`note-${post.id}`} className={itemCls}>
                                 <FileText size={14} strokeWidth={1.6} className="text-black/55" /> Adicionar nota privada
                             </button>
                             <button onClick={handleConvertStory} data-testid={`story-${post.id}`} className={itemCls}>
                                 <Clock size={14} strokeWidth={1.6} className="text-black/55" /> Converter em story 24h
-                            </button>
-                            <button onClick={handleConvertRecado} data-testid={`recado-${post.id}`} className={itemCls}>
-                                <StickyNote size={14} strokeWidth={1.6} className="text-black/55" /> Converter em recado 24h
                             </button>
                             <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls}>
                                 {threadMuted
@@ -361,7 +324,6 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
                 </div>
             )}
             {collabOpen && <CollabModal postId={post.id} onClose={() => setCollabOpen(false)} />}
-            {viewersOpen && <ViewersModal postId={post.id} onClose={() => setViewersOpen(false)} />}
             {reportOpen && (
                 <ReportModal
                     targetLabel={`Publicação de @${post.author?.username || "alguém"}`}

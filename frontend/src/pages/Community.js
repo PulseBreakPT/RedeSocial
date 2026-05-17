@@ -7,7 +7,6 @@ import { Composer } from "../components/Composer";
 import { VistaDaTasca } from "../components/PTPresence";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
-import { HypeTrainBanner } from "../components/HypeTrainBanner";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { toast } from "sonner";
 
@@ -107,7 +106,6 @@ export default function Community() {
                     )}
 
                     <div className="px-4 lg:px-5 pt-3">
-                        <HypeTrainBanner slug={slug} />
                         <VistaDaTasca slug={slug} />
                     </div>
 

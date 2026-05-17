@@ -1,10 +1,7 @@
-import { Activity, ArrowRight, Flame } from "lucide-react";
+import { Activity, ArrowRight } from "lucide-react";
 
 /**
- * HeatmapCompactCard — substitui o ActivityHeatmap solto no meio da página.
- * Mostra um sumário de actividade (streak, dias activos do mês, melhor sequência,
- * mini heatmap dos últimos 28 dias) com botão para abrir o heatmap completo
- * dentro do PainelPessoalDrawer.
+ * HeatmapCompactCard — sumário simples de atividade (dias activos do mês + mini heatmap 28d).
  */
 
 function intensityClass(count, max) {
@@ -16,33 +13,14 @@ function intensityClass(count, max) {
     return "bg-black/20";
 }
 
-function bestStreak(days = []) {
-    let best = 0, cur = 0, prev = null;
-    const map = new Map(days.map((d) => [d.date, d.count]));
-    const sorted = days.slice().sort((a, b) => a.date.localeCompare(b.date));
-    for (const d of sorted) {
-        if (!d.count) { cur = 0; prev = d.date; continue; }
-        if (prev) {
-            const a = new Date(prev), b = new Date(d.date);
-            const diff = Math.round((b - a) / 86400000);
-            cur = diff === 1 ? cur + 1 : 1;
-        } else cur = 1;
-        if (cur > best) best = cur;
-        prev = d.date;
-    }
-    void map;
-    return best;
-}
-
 function activeThisMonth(days = []) {
     const now = new Date();
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     return days.filter((d) => d.date?.startsWith(ym) && d.count > 0).length;
 }
 
-export function HeatmapCompactCard({ heatmap = [], stats, onSeeMore }) {
+export function HeatmapCompactCard({ heatmap = [], onSeeMore }) {
     if (!heatmap || heatmap.length === 0) return null;
-    // last 28 days for mini grid (4 weeks x 7)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const cells = [];
@@ -54,9 +32,7 @@ export function HeatmapCompactCard({ heatmap = [], stats, onSeeMore }) {
         cells.push({ date: iso, count: found?.count || 0 });
     }
     const max = Math.max(...heatmap.map((d) => d.count), 1);
-    const streak = stats?.streak || 0;
     const monthly = activeThisMonth(heatmap);
-    const best = bestStreak(heatmap);
 
     return (
         <section className="px-4 lg:px-6 py-2" data-testid="heatmap-compact-card">
@@ -71,33 +47,12 @@ export function HeatmapCompactCard({ heatmap = [], stats, onSeeMore }) {
                             </h3>
                         </div>
                     </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                    <div className="text-center">
-                        <div className="font-display text-[20px] tabular-nums text-black leading-none flex items-center justify-center gap-1">
-                            <Flame size={12} className="text-red-soft" />
-                            {streak}
-                        </div>
-                        <div className="text-[9.5px] uppercase tracking-[0.12em] text-black/45 font-mono mt-1">streak</div>
-                    </div>
-                    <div className="text-center">
+                    <div className="text-right">
                         <div className="font-display text-[20px] tabular-nums text-black leading-none">{monthly}</div>
                         <div className="text-[9.5px] uppercase tracking-[0.12em] text-black/45 font-mono mt-1">dias mês</div>
                     </div>
-                    <div className="text-center">
-                        <div className="font-display text-[20px] tabular-nums text-black leading-none">{best}</div>
-                        <div className="text-[9.5px] uppercase tracking-[0.12em] text-black/45 font-mono mt-1">melhor</div>
-                    </div>
-                    <div className="text-center">
-                        <div className="font-display text-[20px] tabular-nums text-black leading-none">
-                            {cells.reduce((a, c) => a + c.count, 0)}
-                        </div>
-                        <div className="text-[9.5px] uppercase tracking-[0.12em] text-black/45 font-mono mt-1">posts 28d</div>
-                    </div>
                 </div>
 
-                {/* mini heatmap grid 7×4 transposed (rows = weekdays-ish) */}
                 <div className="grid grid-cols-[repeat(28,minmax(0,1fr))] gap-[3px] mb-3" aria-hidden>
                     {cells.map((c) => (
                         <div

@@ -1,4 +1,4 @@
-import { Flame, Heart, Repeat2, MessageCircle, Eye, TrendingUp } from "lucide-react";
+import { Heart, Repeat2, MessageCircle, Eye, TrendingUp } from "lucide-react";
 
 function Stat({ icon: Icon, label, value, tint }) {
     return (
@@ -21,7 +21,7 @@ const TINTS = {
     ink: { bg: "bg-black/[0.05]", fg: "text-black/70" },
 };
 
-export function StatsCard({ stats, completion }) {
+export function StatsCard({ stats }) {
     if (!stats) return null;
     return (
         <div className="px-5 py-5 hairline-b space-y-4" data-testid="stats-card">
@@ -30,27 +30,9 @@ export function StatsCard({ stats, completion }) {
                 <Stat icon={Heart} label="Gostos recebidas" value={stats.likes_received ?? 0} tint={TINTS.red} />
                 <Stat icon={Repeat2} label="Republicações" value={stats.reposts_received ?? 0} tint={TINTS.green} />
                 <Stat icon={MessageCircle} label="Respostas" value={stats.comments_received ?? 0} tint={TINTS.blue} />
-                <Stat icon={TrendingUp} label="Taxa engaj." value={`${stats.engagement_rate ?? 0}%`} tint={TINTS.ink} />
                 <Stat icon={Eye} label="Média gostos/post" value={stats.avg_likes ?? 0} tint={TINTS.ink} />
-                <Stat icon={Flame} label="Sequência" value={`${stats.streak ?? 0} ${stats.streak === 1 ? "dia" : "dias"}`} tint={TINTS.red} />
+                <Stat icon={TrendingUp} label="Taxa engaj." value={`${stats.engagement_rate ?? 0}%`} tint={TINTS.ink} />
             </div>
-            {completion !== undefined && completion < 100 && (
-                <div className="mt-3" data-testid="profile-completion">
-                    <div className="flex items-baseline justify-between mb-2">
-                        <span className="type-overline">Perfil completo</span>
-                        <span className="font-mono text-[11px]">
-                            <span className="text-black font-semibold">{completion}%</span>
-                            <span className="text-black/45 ml-1">completo</span>
-                        </span>
-                    </div>
-                    <div className="h-1.5 bg-black/[0.06] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-black/85 to-black/55 transition-all duration-700"
-                            style={{ width: `${completion}%` }}
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

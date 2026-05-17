@@ -1,23 +1,17 @@
 import { Link } from "react-router-dom";
 import {
     Users as UsersIcon, Bookmark, FileText, Settings, ChevronRight, ArrowRight,
-    Smile, MapPin, Trophy, Award, Heart, MessageCircle, Flame, BarChart3,
-    LayoutGrid,
+    Smile, MapPin, Trophy, Heart, MessageCircle, LayoutGrid, Eye,
 } from "lucide-react";
 
 /**
  * ProfileSummaryCards — 3 cartões horizontais compactos.
- * Em vez de empilhar painéis verticalmente, agrupa atalhos
- * em três cards lado-a-lado (desktop) / scroll horizontal (mobile).
- *
  *   Card 1: Atalhos da conta   (self only)
  *   Card 2: Identidade
  *   Card 3: Estatísticas
- *
- * Cada card mostra 3-4 itens-chave + botão "Ver tudo / mais".
  */
 
-function Card({ title, overline, onAction, actionLabel, children, testid, accent }) {
+function Card({ title, overline, onAction, actionLabel, children, testid }) {
     return (
         <div
             data-testid={testid}
@@ -30,11 +24,6 @@ function Card({ title, overline, onAction, actionLabel, children, testid, accent
                         {title}
                     </h3>
                 </div>
-                {accent && (
-                    <div className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${accent}`}>
-                        {/* slot for icon */}
-                    </div>
-                )}
             </div>
             <div className="flex-1 min-h-0">{children}</div>
             {onAction && (
@@ -81,12 +70,12 @@ function RowItem({ icon: Icon, label, value, to, onClick, sub }) {
 }
 
 /* ---------------- CARD 1: ATALHOS DA CONTA ---------------- */
-function AccountShortcutCard({ onOpenPainel, stats }) {
+function AccountShortcutCard({ onOpenPainel }) {
     return (
         <Card
             overline="A tua área"
             title="Atalhos da conta"
-            actionLabel="Painel pessoal"
+            actionLabel="A tua gaveta"
             onAction={onOpenPainel}
             testid="summary-account"
         >
@@ -101,14 +90,12 @@ function AccountShortcutCard({ onOpenPainel, stats }) {
 }
 
 /* ---------------- CARD 2: IDENTIDADE ---------------- */
-function IdentitySummaryCard({ profile, regionMeta, moodMeta, teamMeta, onSeeMore, badges }) {
-    const mainBadge = badges?.earned?.[0];
+function IdentitySummaryCard({ profile, regionMeta, moodMeta, teamMeta, onSeeMore }) {
     const items = [];
     if (moodMeta)   items.push({ icon: Smile,  label: `Mood: ${moodMeta.label}`,  sub: moodMeta.emoji });
     if (regionMeta) items.push({ icon: MapPin, label: regionMeta.label,            sub: profile.city || "Região" });
     if (profile.city && !regionMeta) items.push({ icon: MapPin, label: profile.city, sub: "Cidade" });
     if (teamMeta && teamMeta.key !== "nenhum") items.push({ icon: Trophy, label: teamMeta.label, sub: "Clube" });
-    if (mainBadge) items.push({ icon: Award, label: mainBadge.label, sub: "Badge principal" });
 
     if (items.length === 0) {
         items.push({ icon: Smile, label: "Sem identidade definida", sub: "Define mood, região, clube" });
@@ -134,16 +121,16 @@ function IdentitySummaryCard({ profile, regionMeta, moodMeta, teamMeta, onSeeMor
 /* ---------------- CARD 3: ESTATÍSTICAS ---------------- */
 function StatsSummaryCard({ stats, onSeeMore }) {
     const items = [
-        { icon: LayoutGrid,   label: "Posts",      value: stats?.posts_count ?? 0 },
-        { icon: Heart,        label: "Reações",    value: stats?.likes_received ?? 0 },
-        { icon: MessageCircle,label: "Comentários",value: stats?.comments_received ?? 0 },
-        { icon: Flame,        label: "Streak",     value: stats?.streak ? `${stats.streak}d` : 0 },
+        { icon: LayoutGrid,    label: "Posts",      value: stats?.posts_count ?? 0 },
+        { icon: Heart,         label: "Reações",    value: stats?.likes_received ?? 0 },
+        { icon: MessageCircle, label: "Comentários", value: stats?.comments_received ?? 0 },
+        { icon: Eye,           label: "Visualizações", value: stats?.views ?? 0 },
     ];
     return (
         <Card
             overline="Em números"
             title="Estatísticas"
-            actionLabel="Ver analytics"
+            actionLabel="Ver mais"
             onAction={onSeeMore}
             testid="summary-stats"
         >
@@ -168,9 +155,8 @@ function StatsSummaryCard({ stats, onSeeMore }) {
     );
 }
 
-/* ---------------- WRAPPER ---------------- */
 export function ProfileSummaryCards({
-    profile, stats, badges, regionMeta, moodMeta, teamMeta,
+    profile, stats, regionMeta, moodMeta, teamMeta,
     onOpenPainel, onSeeIdentity, onSeeAnalytics,
 }) {
     return (
@@ -182,14 +168,13 @@ export function ProfileSummaryCards({
                 className="grid gap-2.5 lg:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
             >
                 {profile.is_self && (
-                    <AccountShortcutCard onOpenPainel={onOpenPainel} stats={stats} />
+                    <AccountShortcutCard onOpenPainel={onOpenPainel} />
                 )}
                 <IdentitySummaryCard
                     profile={profile}
                     regionMeta={regionMeta}
                     moodMeta={moodMeta}
                     teamMeta={teamMeta}
-                    badges={badges}
                     onSeeMore={onSeeIdentity}
                 />
                 <StatsSummaryCard stats={stats} onSeeMore={onSeeAnalytics} />

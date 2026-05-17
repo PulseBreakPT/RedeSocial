@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-    Lock, Users, MessageCircle, Share2, MapPin, Award,
+    Lock, Users, MessageCircle, Share2, MapPin,
     Smile, Music, BookOpen, Quote, CalendarDays, Star, Send, X,
 } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
@@ -208,25 +208,10 @@ export function IdentityCard({
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mt-4">
-                    <div
-                        className="inline-flex items-center gap-1.5 bg-black/[0.04] border border-black/[0.08] rounded-full px-3 py-1"
-                        data-testid="reputation-badge"
-                    >
-                        <Award size={11} className="text-black/70" />
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em]">
-                            <span className="text-black font-medium">Nível {profile.level}</span>
-                            <span className="text-black/45 ml-1.5">· {profile.reputation} rep</span>
-                        </span>
-                    </div>
                     {profile.online && (
                         <div className="inline-flex items-center gap-1.5 bg-green-soft-bg border border-green-soft/30 rounded-full px-3 py-1">
                             <span className="w-1.5 h-1.5 bg-green-soft rounded-full pulse-dot" />
                             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-green-soft">online</span>
-                        </div>
-                    )}
-                    {stats?.streak > 0 && (
-                        <div className="inline-flex items-center gap-1.5 bg-red-soft-bg border border-red-soft/30 rounded-full px-3 py-1" data-testid="streak-badge">
-                            <span className="font-mono text-[10px] text-red-soft uppercase tracking-[0.14em]">{stats.streak}d streak</span>
                         </div>
                     )}
                     {regionMeta && (
