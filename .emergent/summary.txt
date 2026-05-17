@@ -1,0 +1,105 @@
+<analysis>**original_problem_statement:** The user wants an SSS TIER FORENSIC AUDIT of the entire Vermillion project. The goal is to identify all UI controls (buttons, links, tabs, dropdowns, etc.) that are mocked, empty, lack backend integration, lack persistence, or just have visual behavior without real functionality. 
+PRODUCT REQUIREMENTS: 
+1. Create a detailed, highly structured markdown report at .
+2. DO NOT fix anything, do not alter code, do not create endpoints, do not modify schemas. Just audit and report.
+3. The report must contain an Executive summary, global metrics, a complete table with specific columns (ID, Severity, Page, File, Problem, Expected Function, etc.), Top 30 issues, Map by area, Correction matrix, and Beta/Prod checklists.
+
+**User's preferred language**: **Portuguese** (The user's initial prompt is in Portuguese. You MUST respond and write the final markdown report in Portuguese).
+
+**what currently exists?** 
+A full-stack application (React frontend, FastAPI backend) named Vermillion. The app has extensive UI components including feeds, messaging, settings, composers, and layouts. Many of these UI elements are suspected to be mocked, lacking actual API integrations or state persistence.
+
+**Last working item**: 
+    - Last item agent was working: The agent was actively exploring the codebase to map out the UI elements and API connections. It ran multiple  and file view commands on , , , , , , and  to gather data on missing  handlers, empty hrefs, and mocked functions.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N/A
+    - Which testing method agent to use? NA (No code changes are allowed; this is purely an audit task).
+    - User Testing Done: N/A
+
+**All Pending/In progress Issue list**: 
+  None. This is an audit task, no bugs are to be fixed by the agent.
+
+**In progress Task List**: 
+  - Task 1: Generate the Forensic Audit Report
+     - Where to resume: The previous agent has gathered significant context regarding  components and  routes. You need to synthesize this data, explore any remaining critical areas (like mobile navigation or specific contexts if needed), and write the extensive markdown report to .
+     - What will be achieved with this? A complete map of technical debt regarding UI actions, identifying what needs to be fixed before Beta/Production.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? NA
+     - Blocked on something: None
+
+**Upcoming and Future Tasks**
+  Upcoming Tasks:
+  - P0: Compile the gathered data and write  adhering strictly to the user's requested structure (Executive summary, metrics, full table, top 30 issues, matrix, checklists).
+
+**Completed work in this session**
+- Read and analyzed core frontend pages and components (, , , , ).
+- Mapped backend routes in  to compare against frontend API calls.
+- Identified local persistence mock layers (e.g., ).
+
+**Earlier issues found/mentioned but not fixed**
+  - NA (Agent is strictly forbidden from fixing issues).
+
+**Known issue recurrence from previous fork**
+  - Recurrence count: 0
+  - Status: NOT STARTED
+
+**Code Architecture**
+-  - React frontend (pages, components, hooks, context).
+-  - FastAPI backend with routes/websockets.
+-  - Target directory for the requested documentation.
+
+**Key Technical Concepts**
+React hooks/state, UI event handlers, simulated persistence vs actual FastAPI REST/WebSocket endpoints.
+
+**key DB schema**
+  - NA (Agent has not audited DB schemas deeply yet, focusing on UI-to-API links).
+
+**changes in tech stack**
+  - None
+
+**All files of reference** 
+  -  (Target file to be created)
+  -  (Analyzed for mock actions)
+  -  (Analyzed)
+  -  (Analyzed)
+  -  (Analyzed)
+  -  (Analyzed)
+  -  (Analyzed for actual endpoint existence)
+  -  (Analyzed - handles soft engagement signals locally)
+
+**Areas that need refactoring**: 
+  - (The requested report will comprehensively list this).
+
+**key api endpoints**
+  - Found in : , , ,  (v2 routes).
+
+**Critical Info for New Agent** 
+- **CRITICAL RULE**: DO NOT FIX ANYTHING. The user's instructions are explicit: NÃO implementes correções. NÃO alteres código. (Do not implement fixes. Do not alter code).
+- Your sole purpose is to act as an auditor. Read the code, identify fake/mocked/incomplete UI elements, and write the report.
+- The report must be written in **Portuguese**.
+- Use the  or standard bash tools to generate the markdown file once your analysis is complete. Do not get stuck in an endless loop of reading files; you have enough data from the previous agent's context to start forming the report, read more only as strictly necessary to fill out the tables.
+
+**documents and test reports created in this job** 
+  - None yet. Next agent must create .
+
+**Last 10 User Messages and any pending HUMAN messages** 
+ - Continue (Proceed with the analysis and file creation).
+ - Start the task now (Task initiated).
+
+**Project Health Check:**
+  - Mocked Category: Extensive amounts of UI actions are mocked or use local placeholders (e.g., ). This is the core subject of the audit.
+
+**3rd Party Integrations** 
+  - None relevant to this specific task.
+
+**Testing status**
+  - Testing agent used after significant changes: NO (Not applicable)
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: []
+
+**Credentials to test flow:**
+  - NA
+
+**What agent forgot to execute**
+The previous agent spent its entire context window reading files and running grep commands. It did not begin writing the required  file. The new agent must pivot from pure exploration to data synthesis and file creation.</analysis>
