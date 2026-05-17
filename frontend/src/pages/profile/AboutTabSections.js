@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
     ChevronDown, ChevronUp, MapPin, Smile, Trophy, BookOpen, Music, Quote,
-    Coffee, Sparkles, User, Activity as ActivityIcon, Award, Users as UsersIcon,
-    Flame,
+    Coffee, Sparkles, User, Activity as ActivityIcon, Users as UsersIcon,
 } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
 
@@ -117,14 +116,7 @@ function IdentitySection({ profile, regionMeta, moodMeta, teamMeta }) {
 function ActivitySection({ stats, regions, onOpenPainel }) {
     return (
         <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div className="rounded-xl border border-black/[0.07] bg-black/[0.02] p-3">
-                    <div className="flex items-center gap-1 mb-1 text-black/45">
-                        <Flame size={11} className="text-red-soft" />
-                        <span className="text-[9.5px] uppercase tracking-[0.12em] font-mono">streak</span>
-                    </div>
-                    <div className="font-display text-[19px] tracking-tight tabular-nums text-black leading-none">{stats?.streak || 0}d</div>
-                </div>
+            <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-xl border border-black/[0.07] bg-black/[0.02] p-3">
                     <div className="text-[9.5px] uppercase tracking-[0.12em] font-mono text-black/45 mb-1">posts</div>
                     <div className="font-display text-[19px] tracking-tight tabular-nums text-black leading-none">{stats?.posts_count || 0}</div>
@@ -163,58 +155,6 @@ function ActivitySection({ stats, regions, onOpenPainel }) {
                     Ver actividade completa
                 </button>
             )}
-        </div>
-    );
-}
-
-/* ---------- BADGES CAROUSEL ---------- */
-function BadgesCarousel({ badges }) {
-    if (!badges) {
-        return <div className="px-1 py-3 text-center type-overline">A carregar…</div>;
-    }
-    const earned = badges.earned || [];
-    const all = badges.all || [];
-    if (all.length === 0) {
-        return <p className="text-black/45 font-mono text-[12px]">Sem conquistas ainda.</p>;
-    }
-    const main = earned[0];
-    const others = all.filter((b) => !main || b.key !== main.key);
-
-    return (
-        <div data-testid="about-badges-carousel">
-            {main && (
-                <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 to-white p-4 mb-3 flex items-center gap-4">
-                    <div className="text-[44px] leading-none">{main.emoji}</div>
-                    <div className="flex-1 min-w-0">
-                        <div className="text-[9.5px] uppercase tracking-[0.14em] text-amber-700 font-mono mb-0.5">Badge principal</div>
-                        <h4 className="font-display text-[18px] tracking-tight text-black leading-tight">{main.label}</h4>
-                        <p className="text-[11.5px] text-black/55 mt-1 leading-snug">{main.desc}</p>
-                    </div>
-                </div>
-            )}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
-                {others.slice(0, 12).map((b) => (
-                    <div
-                        key={b.key}
-                        title={b.desc}
-                        data-testid={`about-badge-${b.key}`}
-                        className={`shrink-0 w-[112px] rounded-2xl border p-3 text-center transition ${
-                            b.earned
-                                ? "bg-white border-black/[0.10]"
-                                : "bg-black/[0.02] border-black/[0.06] opacity-50 grayscale"
-                        }`}
-                    >
-                        <div className="text-[28px] leading-none mb-1">{b.emoji}</div>
-                        <div className="font-heading font-semibold text-[11.5px] tracking-tight text-black truncate">{b.label}</div>
-                        <div className="text-[9.5px] font-mono text-black/45 mt-0.5">
-                            {b.earned ? "conquistada" : "bloqueada"}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <p className="text-[10.5px] text-black/45 font-mono mt-1">
-                {earned.length} de {all.length} conquistas · desliza para ver todas
-            </p>
         </div>
     );
 }
@@ -291,7 +231,7 @@ function CommunitiesPreview({ communities }) {
 /* ============= ENTRY POINT ============= */
 export function AboutTabSections({
     profile, stats, regionMeta, moodMeta, teamMeta,
-    badges, regions, communities, mutual,
+    regions, communities, mutual,
     onOpenPainel, onOpenFollowers, onOpenFollowing,
 }) {
     return (
@@ -299,11 +239,8 @@ export function AboutTabSections({
             <Section icon={User}         title="Identidade"     subtitle="Bio, slots, região, clube"  testid="about-section-identity"     defaultOpen={true}>
                 <IdentitySection profile={profile} regionMeta={regionMeta} moodMeta={moodMeta} teamMeta={teamMeta} />
             </Section>
-            <Section icon={ActivityIcon} title="Atividade"      subtitle="Streak, posts, mapa PT"     testid="about-section-activity"     defaultOpen={false}>
+            <Section icon={ActivityIcon} title="Atividade"      subtitle="Posts, reações, mapa PT"    testid="about-section-activity"     defaultOpen={false}>
                 <ActivitySection stats={stats} regions={regions} onOpenPainel={profile.is_self ? onOpenPainel : null} />
-            </Section>
-            <Section icon={Award}        title="Conquistas"     subtitle={badges ? `${badges.earned?.length || 0} de ${badges.all?.length || 0} badges` : "Carregar…"} testid="about-section-badges" defaultOpen={false}>
-                <BadgesCarousel badges={badges} />
             </Section>
             <Section icon={UsersIcon}    title="Social"         subtitle="Seguidores, a seguir, mútuos" testid="about-section-social"     defaultOpen={false}>
                 <SocialSection profile={profile} mutual={mutual} onOpenFollowers={onOpenFollowers} onOpenFollowing={onOpenFollowing} />

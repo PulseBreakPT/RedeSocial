@@ -103,7 +103,182 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Phase 1 of major feature expansion: rich posts. Backend additions to /app/backend/server.py:
+  Remove a funcionalidade de gamificação da rede social.
+  Decisões do utilizador:
+    - Remover TUDO: XP/níveis, conquistas/badges, streaks, check-in diário,
+      checklist de onboarding com XP, charms, cosmetics, reputação numérica.
+    - Endpoints obsoletos devem manter-se vivos a devolver respostas
+      vazias/neutras (mais seguro para consumidores antigos).
+    - Onboarding modal (sugestão para seguir 5 pessoas) é para manter — não
+      é gamificação.
+
+backend:
+  - task: "Remoção de gamificação — backend (stubs neutros + remoção de XP/level/streak/reputação de public_user e get_profile)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Ações executadas no /app/backend/server.py:
+              · compute_reputation → devolve {reputation:0, level:0}.
+              · level_for_xp → devolve dict neutro (level=0, name="", emoji="").
+              · award_xp → no-op {"gained": 0}.
+              · daily_checkin → no-op.
+              · update_streak_on_post → no-op.
+              · evaluate_checklist → devolve checklist vazia.
+              · public_user() — REMOVIDOS os campos xp, level, level_name,
+                level_emoji, streak_days (já não estão no payload do
+                utilizador autenticado nem em /users/{u}).
+              · GET /api/users/{u} — já não devolve "reputation" nem "level"
+                (rep removido do payload).
+              · GET /api/users/{u}/stats — campo "streak" forçado a 0
+                (mantemos o campo para compat).
+              · GET /api/users/{u}/badges → {earned:[], all:[], totals:{}}.
+              · GET /api/badges/narrative → {"badges": []}.
+              · GET /api/users/{u}/streak → zeros neutros.
+              · GET /api/charms/catalog → [].
+              · GET /api/users/{u}/charms → {unlocked:[], equipped:[]}.
+              · POST /api/users/me/charms/equip → no-op {equipped:[]}.
+              · GET /api/users/{u}/charms-progress → {unlocked_keys:[],
+                progress:{}, catalog:[]}.
+              · GET /api/cosmetics/catalog → [].
+              · POST /api/users/me/cosmetics/equip → no-op (frame e
+                sticker forçados a "").
+              · GET /api/users/{u}/cosmetics → {frame:null, sticker:null}.
+              · POST /users/me/onboard mantido (apenas marca onboarded=true).
+
+            Validar:
+              1) Login (admin@vermillion.app / admin123) continua a funcionar;
+                 user payload NÃO contém xp / level / level_name / level_emoji
+                 / streak_days / reputation.
+              2) GET /api/users/admin não devolve "reputation" nem "level".
+              3) GET /api/users/admin/stats — campo "streak" presente e == 0.
+              4) Todos os endpoints stubbed devolvem JSON válido com forma
+                 vazia/neutra (sem 500).
+              5) Criar um post (POST /api/posts), comentar, dar like —
+                 fluxos normais continuam a funcionar (as chamadas internas
+                 a award_xp/daily_checkin/update_streak_on_post agora são
+                 no-ops).
+              6) /users/me/onboard ainda marca onboarded=true.
+              7) /api/users/admin continua a devolver os outros campos
+                 normais (posts_count, followers_count, etc.).
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ TODOS OS TESTES PASSARAM (19/19)
+            
+            Smoke tests executados com credenciais admin@vermillion.app / admin123:
+            
+            ✓ Test 1 - Login Response Fields:
+              - Login bem-sucedido (200 OK)
+              - Payload do utilizador NÃO contém campos de gamificação
+              - Confirmado: sem xp, level, level_name, level_emoji, streak_days, reputation
+            
+            ✓ Test 2 - Public Profile (GET /api/users/admin):
+              - Endpoint funcional (200 OK)
+              - Perfil público NÃO contém "reputation" nem "level"
+              - Outros campos normais presentes (posts_count, followers_count, etc.)
+            
+            ✓ Test 3 - User Stats (GET /api/users/admin/stats):
+              - Endpoint funcional (200 OK)
+              - Campo "streak" presente e == 0 (mantido para compatibilidade)
+            
+            ✓ Test 4 - Stubbed Endpoints (10 endpoints testados):
+              - GET /api/users/{u}/badges → {earned:[], all:[], totals:{}} ✓
+              - GET /api/badges/narrative → {badges:[]} ✓
+              - GET /api/users/{u}/streak → todos contadores a 0/null ✓
+              - GET /api/charms/catalog → [] ✓
+              - GET /api/users/{u}/charms → {unlocked:[], equipped:[]} ✓
+              - POST /api/users/me/charms/equip → {equipped:[]} (no-op) ✓
+              - GET /api/users/{u}/charms-progress → {unlocked_keys:[], progress:{}, catalog:[]} ✓
+              - GET /api/cosmetics/catalog → [] ✓
+              - POST /api/users/me/cosmetics/equip → {frame:"", sticker:""} (no-op) ✓
+              - GET /api/users/{u}/cosmetics → {frame:null, sticker:null} ✓
+              Todos devolvem 200 OK com payloads neutros/vazios conforme esperado.
+            
+            ✓ Test 5 - Legacy Flows (fluxos não devem rebentar):
+              - POST /api/posts (criar post) → 200/201 OK ✓
+              - POST /api/posts/{id}/like (dar like) → 200 OK ✓
+              - POST /api/posts/{id}/comments (comentar) → 200/201 OK ✓
+              - POST /api/users/me/onboard → 200 OK ✓
+              - Verificado: flag onboarded=true corretamente definida ✓
+            
+            Conclusão: Gamificação removida com sucesso. Todos os endpoints
+            stubbed funcionam corretamente, campos de gamificação ausentes
+            dos payloads de utilizador, e fluxos legacy (criar post, like,
+            comentar, onboard) continuam funcionais sem erros 500.
+            As chamadas internas a award_xp/daily_checkin/update_streak_on_post
+            são no-ops e não quebram nada.
+
+frontend:
+  - task: "Remoção de gamificação — UI (sem aba Conquistas, sem badges carousel, sem stats de streak/troféus)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/profile/AboutTabSections.js, /app/frontend/src/pages/Profile.js, /app/frontend/src/pages/profile/ProfileTabContent.js, /app/frontend/src/pages/settings/HubTab.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Mudanças visuais (sem auto-test):
+              · Profile.js — removido estado `badges`, `loadBadges`, sem
+                chamadas a /users/{u}/badges no carregamento, sem prop
+                `badges` em ProfileSummaryCards / AboutTabSections.
+              · AboutTabSections.js — secção "Conquistas" removida;
+                ActivitySection grid passa de 4 para 3 colunas (streak tile
+                removido); função BadgesCarousel removida.
+              · ProfileTabContent.js — `BadgesTab` removido (não tinha
+                consumidores).
+              · settings/HubTab.js — QuickStats reduzidos de 4 para 2
+                tiles (Posts + Seguidores); Streak e Conquistas/Troféus
+                removidos.
+              · Manifesto.js mantido (mensagem "Sem streaks que punam"
+                continua a fazer sentido com a remoção).
+
+metadata:
+  created_by: "main_agent"
+  version: "2.3"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: |
+        Removida gamificação. Verificar smoke-test dos endpoints stubbed,
+        confirmar ausência de XP/level/streak_days/reputation no payload
+        do utilizador, e validar que os fluxos legacy (criar post,
+        comentar, gostar, seguir, onboard) continuam funcionais — as
+        chamadas internas a award_xp / daily_checkin /
+        update_streak_on_post agora são no-ops mas continuam a ser
+        invocadas (não devem rebentar nada).
+        Credenciais: admin@vermillion.app / admin123.
+    - agent: "testing"
+      message: |
+        ✅ GAMIFICATION REMOVAL VALIDATION COMPLETE - ALL TESTS PASSED (19/19)
+        
+        Comprehensive smoke tests executed successfully:
+        • Login works, user payload clean (no xp/level/streak_days/reputation)
+        • Public profile clean (no reputation/level fields)
+        • Stats endpoint returns streak: 0 (maintained for compatibility)
+        • All 10 stubbed endpoints return 200 with neutral/empty payloads
+        • Legacy flows work perfectly (create post, like, comment, onboard)
+        • No 500 errors, no breaking changes
+        
+        Backend gamification removal is COMPLETE and WORKING.
+        Ready for user acceptance or summary.
     - PostIn extended: images[], poll, scheduled_at, is_draft, reply_audience
     - New constants ALLOWED_REACTIONS = {❤️,🔥,👏,😂,💯,😢}, VALID_AUDIENCES = {everyone,following,mentioned}
     - Helper functions: normalize_images, build_poll, post_is_published, auto_publish_due_posts

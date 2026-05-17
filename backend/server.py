@@ -344,105 +344,42 @@ def slugify(text: str) -> str:
 
 
 def compute_reputation(user: dict, likes_received: int, posts_count: int) -> dict:
-    rep = likes_received + posts_count * 2 + len(user.get("followers", [])) * 5
-    level = int(math.floor(math.sqrt(max(rep, 0) / 10))) + 1
-    return {"reputation": rep, "level": level}
+    # Gamificação removida — sem reputação numérica nem níveis.
+    return {"reputation": 0, "level": 0}
 
 
 # ============================================================
-# Fase 3 — Retenção (XP, Levels, Prompts, Onboarding)
+# Fase 3 — Retenção REMOVIDA (gamificação desativada).
+# Mantemos os helpers como no-ops para não quebrar chamadas existentes.
 # ============================================================
-XP_VALUES = {
-    "create_post":      10,
-    "create_comment":    5,
-    "like_received":     2,
-    "create_event":     50,
-    "create_community": 30,
-    "daily_checkin":     5,
-}
+XP_VALUES: dict = {}
 
-# Levels: (xp_threshold, name, emoji)
-LEVELS = [
-    (0,     "Novato",       "🌱"),
-    (50,    "Curioso",      "🔎"),
-    (150,   "Iniciado",     "✨"),
-    (350,   "Familiar",     "🤝"),
-    (750,   "Tasqueiro",    "🍷"),
-    (1500,  "Veterano",     "🗓"),
-    (3000,  "Popular",      "⭐"),
-    (6000,  "Embaixador",   "🇵🇹"),
-    (12000, "Lenda",        "🌟"),
-    (25000, "Mito",         "👑"),
-]
+# Levels mantidos só para compatibilidade interna — não expostos ao utilizador.
+LEVELS = [(0, "", "")]
 
 
 def level_for_xp(xp: int) -> dict:
-    """Return level info for a given XP value."""
-    xp = max(0, int(xp or 0))
-    idx = 0
-    for i, (threshold, _, _) in enumerate(LEVELS):
-        if xp >= threshold:
-            idx = i
-    threshold, name, emoji = LEVELS[idx]
-    next_threshold = LEVELS[idx + 1][0] if idx + 1 < len(LEVELS) else None
-    next_name = LEVELS[idx + 1][1] if idx + 1 < len(LEVELS) else None
-    span = (next_threshold - threshold) if next_threshold else 1
-    progress = ((xp - threshold) / span) if next_threshold else 1.0
+    """No-op — gamificação removida. Retorna estrutura neutra."""
     return {
-        "xp": xp,
-        "level": idx + 1,
-        "level_name": name,
-        "level_emoji": emoji,
-        "current_threshold": threshold,
-        "next_threshold": next_threshold,
-        "next_name": next_name,
-        "progress": round(min(max(progress, 0.0), 1.0), 4),
+        "xp": 0,
+        "level": 0,
+        "level_name": "",
+        "level_emoji": "",
+        "current_threshold": 0,
+        "next_threshold": None,
+        "next_name": None,
+        "progress": 0.0,
     }
 
 
 async def award_xp(user_id: str, reason: str, amount: Optional[int] = None) -> dict:
-    """Add XP to a user. Returns {xp, level, leveled_up, gained, reason}."""
-    if amount is None:
-        amount = XP_VALUES.get(reason, 0)
-    if amount <= 0:
-        return {"gained": 0}
-    u = await db.users.find_one({"id": user_id}, {"_id": 0, "xp": 1, "xp_log": 1})
-    if not u:
-        return {"gained": 0}
-    prev_xp = int(u.get("xp") or 0)
-    prev_level = level_for_xp(prev_xp)["level"]
-    new_xp = prev_xp + amount
-    new_level_info = level_for_xp(new_xp)
-    new_log = list(u.get("xp_log") or [])
-    new_log.append({"reason": reason, "amount": amount, "ts": now_iso()})
-    new_log = new_log[-30:]
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {"xp": new_xp, "xp_log": new_log}},
-    )
-    return {
-        "gained": amount,
-        "reason": reason,
-        "xp": new_xp,
-        "level": new_level_info["level"],
-        "level_name": new_level_info["level_name"],
-        "leveled_up": new_level_info["level"] > prev_level,
-    }
+    """No-op — gamificação removida."""
+    return {"gained": 0}
 
 
 async def daily_checkin(user_id: str) -> None:
-    """Award daily check-in XP (idempotent per UTC day)."""
-    u = await db.users.find_one({"id": user_id}, {"_id": 0, "xp_last_checkin": 1})
-    if not u:
-        return
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    if u.get("xp_last_checkin") == today:
-        return
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {"xp_last_checkin": today}},
-    )
-    await award_xp(user_id, "daily_checkin")
+    """No-op — gamificação removida."""
+    return None
 
 
 # Daily prompts — deterministic by day-of-year. Calm, PT-flavoured nudges.
@@ -499,63 +436,16 @@ CHECKLIST_BONUS_XP = 100  # bonus when ALL steps complete
 
 
 async def evaluate_checklist(user: dict) -> dict:
-    """Evaluate which onboarding steps are complete for a user."""
-    uid = user["id"]
-    rewarded = set(user.get("checklist_rewarded") or [])
-    bonus_claimed = bool(user.get("checklist_bonus_claimed"))
-
-    avatar_ok = bool((user.get("avatar") or "").strip())
-    bio_ok = len((user.get("bio") or "").strip()) >= 5
-    city_ok = bool((user.get("city") or "").strip())
-    follow_count = len(user.get("following") or [])
-    follow_ok = follow_count >= 5
-
-    # Async lookups
-    has_post = await db.posts.find_one(
-        {"author_id": uid, "is_draft": {"$ne": True}}, {"_id": 1}
-    )
-    has_comment = await db.comments.find_one({"author_id": uid}, {"_id": 1})
-    has_community = await db.communities.find_one({"members": uid}, {"_id": 1})
-
-    states = {
-        "avatar":         avatar_ok,
-        "bio":            bio_ok,
-        "city":           city_ok,
-        "follow_5":       follow_ok,
-        "first_post":     bool(has_post),
-        "first_comment":  bool(has_comment),
-        "join_community": bool(has_community),
-    }
-
-    steps = []
-    for s in CHECKLIST_STEPS:
-        key = s["key"]
-        done = states[key]
-        progress_val = None
-        if key == "follow_5":
-            progress_val = {"current": min(follow_count, 5), "total": 5}
-        steps.append({
-            **s,
-            "done": done,
-            "rewarded": key in rewarded,
-            "progress": progress_val,
-        })
-
-    total = len(steps)
-    completed = sum(1 for s in steps if s["done"])
-    all_done = completed == total
-
+    """No-op — checklist de onboarding com recompensas XP removida."""
     return {
-        "steps": steps,
-        "completed": completed,
-        "total": total,
-        "percent": round((completed / total) * 100) if total else 0,
-        "all_done": all_done,
-        "bonus_xp": CHECKLIST_BONUS_XP,
-        "bonus_claimed": bonus_claimed,
-        "pending_rewards": [
-            s["key"] for s in steps if s["done"] and not s["rewarded"]
-        ],
+        "steps": [],
+        "completed": 0,
+        "total": 0,
+        "percent": 0,
+        "all_done": True,
+        "bonus_xp": 0,
+        "bonus_claimed": False,
+        "pending_rewards": [],
     }
 
 
@@ -687,12 +577,6 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "boosted_posts": user.get("boosted_posts", []),
         "post_notes": user.get("post_notes") or {},
         "followed_threads": user.get("followed_threads", []),
-        # Fase 3 — Retenção
-        "xp": int(user.get("xp") or 0),
-        "level": level_for_xp(user.get("xp") or 0)["level"],
-        "level_name": level_for_xp(user.get("xp") or 0)["level_name"],
-        "level_emoji": level_for_xp(user.get("xp") or 0)["level_emoji"],
-        "streak_days": int(user.get("streak_days") or 0),
     }
     if extra:
         data.update(extra)
@@ -1618,14 +1502,11 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     ]).to_list(1)
     likes_n = likes_received[0]["total"] if likes_received else 0
     posts_n = await db.posts.count_documents({"author_id": user["id"], "repost_of": {"$exists": False}})
-    rep = compute_reputation(user, likes_n, posts_n)
     data = public_user(user, {
         "is_following": bool(viewer and viewer["id"] in user.get("followers", [])),
         "is_self": bool(viewer and viewer["id"] == user["id"]),
         "posts_count": posts_n,
         "likes_received": likes_n,
-        "reputation": rep["reputation"],
-        "level": rep["level"],
         "can_view": await can_view_profile(user, viewer),
     })
     return data
@@ -1736,16 +1617,8 @@ async def user_stats(username: str, viewer: Optional[dict] = Depends(maybe_user)
     # Engagement rate formula: (likes + reposts*2 + comments*3) / max(followers,1) / posts
     eng_raw = likes_received + reposts_received * 2 + comments_received * 3
     engagement_rate = (eng_raw / max(followers, 1) / max(posts_count, 1)) * 100 if posts_count else 0
-    # Streak: consecutive days with at least one post
-    dates = sorted({p["created_at"][:10] for p in posts}, reverse=True)
+    # Streak removida (gamificação desativada) — devolvemos sempre 0.
     streak = 0
-    today = datetime.now(timezone.utc).date()
-    for i, d in enumerate(dates):
-        dt = datetime.fromisoformat(d).date()
-        if (today - dt).days == i:
-            streak += 1
-        else:
-            break
     joined_days = (datetime.now(timezone.utc) - datetime.fromisoformat(user["created_at"])).days
     # Profile completion: bio(20)+avatar(20)+banner(15)+verified(10)+>=1 post(20)+>=3 following(15)
     completion = 0
@@ -3269,79 +3142,12 @@ async def explore_people(viewer=Depends(get_current_user)):
 # ============================================================
 @api.get("/users/{username}/badges")
 async def user_badges(username: str, viewer: Optional[dict] = Depends(maybe_user)):
-    user = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    # Conquistas removidas (gamificação desativada). Mantemos o endpoint
+    # a devolver uma resposta vazia para não quebrar consumidores antigos.
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
     if not user:
         raise HTTPException(404, "Utilizador não encontrado")
-    if not await can_view_profile(user, viewer):
-        return {"earned": [], "all": []}
-    posts = await db.posts.find(
-        {"author_id": user["id"], "repost_of": {"$exists": False}}, {"_id": 0},
-    ).to_list(2000)
-    posts_count = len(posts)
-    likes_received = sum(len(p.get("likes", [])) for p in posts)
-    image_posts = sum(1 for p in posts if (p.get("image") or (p.get("images") or [])))
-    # mood counters
-    tasca_n = sum(1 for p in posts if detect_mood(p.get("content", "")) == "tasca")
-    fado_n = sum(1 for p in posts if detect_mood(p.get("content", "")) == "fado")
-    morning = 0
-    night = 0
-    cities_set: set = set()
-    for p in posts:
-        try:
-            h = datetime.fromisoformat(p["created_at"]).hour
-            if 5 <= h < 8:
-                morning += 1
-            if 0 <= h < 4:
-                night += 1
-        except Exception:
-            pass
-        for c in detect_cities(p.get("content", ""), p.get("hashtags", [])):
-            cities_set.add(c)
-    # streak (reuse simple calc)
-    dates = sorted({p["created_at"][:10] for p in posts}, reverse=True)
-    streak = 0
-    today = datetime.now(timezone.utc).date()
-    for i, d in enumerate(dates):
-        try:
-            dt = datetime.fromisoformat(d).date()
-        except Exception:
-            break
-        if (today - dt).days == i:
-            streak += 1
-        else:
-            break
-    joined_days = (datetime.now(timezone.utc) - datetime.fromisoformat(user["created_at"])).days
-    comments_made = await db.comments.count_documents({"author_id": user["id"]})
-
-    rules = {
-        "verificado":   bool(user.get("verified")),
-        "embaixador":   len(user.get("followers", [])) >= 50,
-        "popular":      likes_received >= 100,
-        "maratonista":  streak >= 7,
-        "lenda":        streak >= 30,
-        "veterano":     joined_days >= 365,
-        "tasqueiro":    tasca_n >= 3,
-        "fadista":      fado_n >= 3,
-        "madrugador":   morning >= 3,
-        "noctivago":    night >= 3,
-        "colecionador": len(user.get("bookmarks", [])) >= 10,
-        "conversador":  comments_made >= 20,
-        "fotografo":    image_posts >= 5,
-        "viajante":     len(cities_set) >= 3,
-    }
-    all_badges = []
-    for b in PT_BADGES_DEFS:
-        all_badges.append({**b, "earned": bool(rules.get(b["key"]))})
-    return {
-        "earned": [b for b in all_badges if b["earned"]],
-        "all": all_badges,
-        "totals": {
-            "posts": posts_count, "likes_received": likes_received,
-            "streak": streak, "cities": len(cities_set),
-            "image_posts": image_posts, "comments_made": comments_made,
-            "joined_days": joined_days,
-        },
-    }
+    return {"earned": [], "all": [], "totals": {}}
 
 
 @api.get("/users/{username}/regions")
@@ -4024,63 +3830,8 @@ async def bairro_events(viewer=Depends(get_current_user)):
 
 @api.get("/badges/narrative")
 async def narrative_badges(user=Depends(get_current_user)):
-    """F2.2 — Badges narrativos. Computes seasonal/ritual badges on-the-fly.
-    Cheap to call (under 50ms) — used in profile and notifications."""
-    badges = []
-    user_id = user["id"]
-
-    # Café das 7h32 — published 5+ days before 08:00 UTC
-    early_count = await db.posts.count_documents({
-        "author_id": user_id,
-        "$expr": {"$lt": [{"$hour": {"$dateFromString": {"dateString": "$created_at"}}}, 8]},
-    })
-    if early_count >= 5:
-        badges.append({"key": "cafe_das_732", "label": "Café das 7h32", "emoji": "☕", "desc": "Publicas antes das 8h. Madrugador."})
-
-    # Tasca-mestre — owns/moderates community with 50+ members
-    big_comm = await db.communities.find_one({"owner_id": user_id, "members": {"$size": 50}}, {"_id": 0})
-    if not big_comm:
-        big_comm = await db.communities.find_one({"owner_id": user_id}, {"_id": 0})
-        if big_comm and len(big_comm.get("members", [])) >= 50:
-            badges.append({"key": "tasca_mestre", "label": "Tasca-mestre", "emoji": "🍷", "desc": "Comunidade com 50+ pessoas. Sentas pessoas à mesa."})
-    else:
-        badges.append({"key": "tasca_mestre", "label": "Tasca-mestre", "emoji": "🍷", "desc": "Comunidade com 50+ pessoas. Sentas pessoas à mesa."})
-
-    # Saudade verificada — at least one post with mood "saudade" and 20+ reactions
-    saudade_posts = await db.posts.find(
-        {"author_id": user_id, "audience_ring": {"$in": ["publico", None]}},
-        {"_id": 0},
-    ).to_list(50)
-    for p in saudade_posts:
-        if "saudade" in (p.get("content", "") + " ".join(p.get("hashtags", []))).lower():
-            rc = sum(len(v) if isinstance(v, list) else 0 for v in (p.get("reactions") or {}).values())
-            if rc >= 20 or len(p.get("likes", [])) >= 20:
-                badges.append({"key": "saudade_verificada", "label": "Saudade verificada", "emoji": "🫶", "desc": "20+ pessoas comoveram-se com um post teu."})
-                break
-
-    # Maré viva — published in 7+ consecutive days during summer (Jun-Sep)
-    if datetime.now(timezone.utc).month in (6, 7, 8, 9):
-        # rough check — last 7 days have at least 1 post each
-        days_with_posts = set()
-        recent = await db.posts.find(
-            {"author_id": user_id, "created_at": {"$gte": (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()}},
-            {"_id": 0, "created_at": 1},
-        ).to_list(200)
-        for p in recent:
-            try:
-                d = datetime.fromisoformat(p["created_at"].replace("Z", "+00:00")).date()
-                days_with_posts.add(d)
-            except Exception:
-                pass
-        if len(days_with_posts) >= 7:
-            badges.append({"key": "mare_viva", "label": "Maré viva", "emoji": "🌊", "desc": "7 dias seguidos a publicar no verão."})
-
-    # Voz da [região] — most engaged author from the user's region this month (informational)
-    region = (user.get("region") or "").strip().lower()
-    if region:
-        badges.append({"key": f"voz_{region}", "label": f"Voz d{'a' if region != 'algarve' else 'o'} {region.title()}", "emoji": "📣", "desc": f"A escrever a partir d{'a' if region != 'algarve' else 'o'} {region.title()}.", "soft": True})
-
-    return {"badges": badges}
+    """Gamificação removida — endpoint mantido a devolver lista vazia."""
+    return {"badges": []}
 
 
 # ============================================================
@@ -4650,74 +4401,21 @@ async def toggle_visitor_tracking(payload: VisitorOptIn, user=Depends(get_curren
 # ---------- 7) Charms ----------
 @api.get("/charms/catalog")
 async def charms_catalog():
-    return CHARMS_CATALOG
+    # Gamificação removida — sem charms.
+    return []
 
 
 async def _compute_unlocked_charms(user: dict) -> list:
-    uid = user["id"]
-    out = set()
-    earlier = await db.users.count_documents({"created_at": {"$lt": user.get("created_at", now_iso())}})
-    if earlier < 1000:
-        out.add("fundador")
-    comments = await db.comments.count_documents({"author_id": uid})
-    if comments >= 100:
-        out.add("conversador")
-    owns = await db.communities.count_documents({"owner_id": uid})
-    if owns >= 1:
-        out.add("anfitriao")
-    posts = await db.posts.find(
-        {"author_id": uid}, {"_id": 0, "created_at": 1, "hashtags": 1}
-    ).to_list(200)
-    cities = set()
-    moods = {}
-    for p in posts:
-        ts = p.get("created_at") or ""
-        try:
-            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            h = dt.hour
-            if h < 7:
-                out.add("madrugador")
-            if 2 <= h < 5:
-                out.add("noctivago")
-        except Exception:
-            pass
-        cities_in_post = detect_cities(p.get("content", "") if p.get("content") else "", p.get("hashtags", []))
-        for c in cities_in_post:
-            cities.add(c)
-        mood = detect_mood(p.get("content", "") if p.get("content") else "")
-        if mood:
-            moods[mood] = moods.get(mood, 0) + 1
-    if len(cities) >= 5:
-        out.add("explorador")
-    if len(cities) >= 3:
-        out.add("viajante")
-    if moods.get("saudade", 0) >= 10:
-        out.add("saudosista")
-    if moods.get("festa", 0) >= 10:
-        out.add("festeiro")
-    if moods.get("cafe", 0) >= 5:
-        out.add("pastelinho")
-    if moods.get("futebol", 0) >= 5:
-        out.add("bolacampea")
-    top = await db.posts.find_one({"author_id": uid, "reactions": {"$exists": True}}, {"_id": 0, "reactions": 1})
-    if top and top.get("reactions"):
-        total = sum(len(v) if isinstance(v, list) else 0 for v in top["reactions"].values())
-        if total >= 100:
-            out.add("poeta")
-    return [CHARMS_BY_KEY[k] for k in out if k in CHARMS_BY_KEY]
+    # Gamificação removida — nenhum charm é desbloqueado.
+    return []
 
 
 @api.get("/users/{username}/charms")
 async def list_user_charms(username: str):
-    u = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
     if not u:
         raise HTTPException(404, "Utilizador não encontrado")
-    unlocked = await _compute_unlocked_charms(u)
-    equipped = u.get("charms_equipped", [])
-    return {
-        "unlocked": unlocked,
-        "equipped": [CHARMS_BY_KEY[k] for k in equipped if k in CHARMS_BY_KEY],
-    }
+    return {"unlocked": [], "equipped": []}
 
 
 class CharmsEquipIn(BaseModel):
@@ -4726,10 +4424,9 @@ class CharmsEquipIn(BaseModel):
 
 @api.post("/users/me/charms/equip")
 async def equip_charms(payload: CharmsEquipIn, user=Depends(get_current_user)):
-    unlocked = {c["key"] for c in await _compute_unlocked_charms(user)}
-    final = [k for k in payload.keys[:3] if k in unlocked]
-    await db.users.update_one({"id": user["id"]}, {"$set": {"charms_equipped": final}})
-    return {"equipped": [CHARMS_BY_KEY[k] for k in final]}
+    # No-op — gamificação removida.
+    await db.users.update_one({"id": user["id"]}, {"$set": {"charms_equipped": []}})
+    return {"equipped": []}
 
 
 # ---------- 8) Roda (Inner Circle) ----------
@@ -5005,7 +4702,8 @@ async def list_collab(post_id: str):
 # ---------- 12) Avatar Cosmetics ----------
 @api.get("/cosmetics/catalog")
 async def cosmetics_catalog():
-    return [{**c, "tier": "free"} for c in COSMETICS_CATALOG]
+    # Gamificação removida — sem cosméticos.
+    return []
 
 
 class CosmeticsEquipIn(BaseModel):
@@ -5015,17 +4713,8 @@ class CosmeticsEquipIn(BaseModel):
 
 @api.post("/users/me/cosmetics/equip")
 async def equip_cosmetics(payload: CosmeticsEquipIn, user=Depends(get_current_user)):
-    frame_id = (payload.frame or "").strip()
-    sticker_id = (payload.sticker or "").strip()
-    if frame_id and frame_id not in COSMETICS_BY_ID:
-        raise HTTPException(400, "Frame inválida")
-    if sticker_id and sticker_id not in COSMETICS_BY_ID:
-        raise HTTPException(400, "Sticker inválido")
-    if frame_id and COSMETICS_BY_ID[frame_id]["type"] != "frame":
-        raise HTTPException(400, "Item não é uma frame")
-    if sticker_id and COSMETICS_BY_ID[sticker_id]["type"] != "sticker":
-        raise HTTPException(400, "Item não é um sticker")
-    cosmetics_equipped = {"frame": frame_id, "sticker": sticker_id}
+    # No-op — gamificação removida.
+    cosmetics_equipped = {"frame": "", "sticker": ""}
     await db.users.update_one(
         {"id": user["id"]}, {"$set": {"cosmetics_equipped": cosmetics_equipped}}
     )
@@ -5036,15 +4725,11 @@ async def equip_cosmetics(payload: CosmeticsEquipIn, user=Depends(get_current_us
 async def get_user_cosmetics(username: str):
     u = await db.users.find_one(
         {"username": username.lower()},
-        {"_id": 0, "cosmetics_equipped": 1},
+        {"_id": 0, "id": 1},
     )
     if not u:
         raise HTTPException(404, "Utilizador não encontrado")
-    eq = u.get("cosmetics_equipped") or {"frame": "", "sticker": ""}
-    return {
-        "frame": COSMETICS_BY_ID.get(eq.get("frame"), None),
-        "sticker": COSMETICS_BY_ID.get(eq.get("sticker"), None),
-    }
+    return {"frame": None, "sticker": None}
 
 
 # ---------- 13) For You Reason Chips ----------
@@ -5319,76 +5004,23 @@ async def set_feed_mix(payload: FeedMixIn, user=Depends(get_current_user)):
 
 # ---------- Streak Engine ----------
 async def update_streak_on_post(user_id: str):
-    """Called when user creates a post — extends/breaks streak."""
-    u = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not u:
-        return
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    last = u.get("streak_last_date")
-    streak = u.get("streak_days", 0)
-    best = u.get("streak_best", 0)
-    freezes = u.get("streak_freezes", 2)
-    if last == today:
-        return  # already counted today
-    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
-    if last == yesterday:
-        streak += 1
-    elif last is None:
-        streak = 1
-    else:
-        # missed days
-        try:
-            gap = (datetime.now(timezone.utc).date() - datetime.fromisoformat(last).date()).days
-        except Exception:
-            gap = 2
-        if gap == 2 and freezes > 0:
-            # auto-use freeze
-            streak += 1
-            freezes -= 1
-        else:
-            streak = 1
-            # Reset to 2 freezes monthly
-            freezes = max(freezes, 2)
-    best = max(best, streak)
-    await db.users.update_one(
-        {"id": user_id},
-        {"$set": {
-            "streak_days": streak,
-            "streak_best": best,
-            "streak_last_date": today,
-            "streak_freezes": freezes,
-        }},
-    )
+    """No-op — gamificação removida (streaks desativados)."""
+    return None
 
 
 @api.get("/users/{username}/streak")
 async def get_streak(username: str):
-    u = await db.users.find_one(
-        {"username": username.lower()},
-        {"_id": 0, "id": 1, "streak_days": 1, "streak_best": 1, "streak_last_date": 1, "streak_freezes": 1},
-    )
-    if not u or not u.get("id"):
+    # Streaks removidos. Endpoint mantido a devolver valores neutros.
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
+    if not u:
         raise HTTPException(404, "Utilizador não encontrado")
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    last = u.get("streak_last_date")
-    streak = u.get("streak_days", 0)
-    # If user hasn't posted in 2+ days and has no freezes left → effectively 0
-    if last:
-        try:
-            gap = (datetime.now(timezone.utc).date() - datetime.fromisoformat(last).date()).days
-            if gap >= 2 and u.get("streak_freezes", 0) <= 0:
-                streak = 0
-        except Exception:
-            pass
-    milestones = [7, 14, 30, 60, 100, 365]
-    next_milestone = next((m for m in milestones if m > streak), None)
     return {
-        "current": streak,
-        "best": u.get("streak_best", streak),
-        "last_date": last,
-        "freezes": u.get("streak_freezes", 2),
-        "next_milestone": next_milestone,
-        "active_today": last == today,
+        "current": 0,
+        "best": 0,
+        "last_date": None,
+        "freezes": 0,
+        "next_milestone": None,
+        "active_today": False,
     }
 
 
@@ -5478,15 +5110,14 @@ async def _charm_progress(user: dict) -> dict:
 
 @api.get("/users/{username}/charms-progress")
 async def user_charms_progress(username: str):
-    u = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    # Gamificação removida — sem progressão de charms.
+    u = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
     if not u:
         raise HTTPException(404, "Utilizador não encontrado")
-    progress = await _charm_progress(u)
-    unlocked_keys = {c["key"] for c in await _compute_unlocked_charms(u)}
     return {
-        "unlocked_keys": list(unlocked_keys),
-        "progress": progress,
-        "catalog": CHARMS_CATALOG,
+        "unlocked_keys": [],
+        "progress": {},
+        "catalog": [],
     }
 
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Trophy, MapPin, Users, Heart, ScrollText } from "lucide-react";
+import { MapPin, Users, Heart, ScrollText } from "lucide-react";
 
 export function ProfileEmpty({ tab, isSelf }) {
     const msg = tab === "likes"
@@ -63,44 +63,6 @@ export function CommunitiesTab({ communities }) {
                             </p>
                         </div>
                     </Link>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-export function BadgesTab({ badges }) {
-    if (!badges) return <div className="p-12 text-center type-overline">A carregar…</div>;
-    const pct = badges.all.length > 0 ? Math.round((badges.earned.length / badges.all.length) * 100) : 0;
-    return (
-        <div className="p-4 lg:p-5" data-testid="badges-tab">
-            <div className="flex items-center gap-2 mb-4">
-                <Trophy size={16} className="text-amber-500" />
-                <p className="type-overline">
-                    {badges.earned.length} de {badges.all.length} conquistas
-                </p>
-                <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] overflow-hidden ml-2">
-                    <div
-                        className="h-full bg-black transition-all"
-                        style={{ width: `${pct}%` }}
-                    />
-                </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                {badges.all.map((b) => (
-                    <div
-                        key={b.key}
-                        data-testid={`badge-${b.key}`}
-                        className={`relative card-lux p-3 text-center transition ${b.earned ? "" : "opacity-40 grayscale"}`}
-                        title={b.desc}
-                    >
-                        <div className="text-3xl mb-1">{b.emoji}</div>
-                        <div className="font-heading font-bold text-[12px] tracking-tight text-black">{b.label}</div>
-                        <div className="text-[10px] font-mono text-black/45 mt-0.5">
-                            {b.earned ? "conquistada" : "bloqueada"}
-                        </div>
-                        <div className="text-[11px] text-black/55 mt-1.5 leading-snug">{b.desc}</div>
-                    </div>
                 ))}
             </div>
         </div>

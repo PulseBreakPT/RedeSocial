@@ -50,7 +50,6 @@ export default function Profile() {
     const [stats, setStats] = useState(null);
     const [heatmap, setHeatmap] = useState([]);
     const [mutual, setMutual] = useState(null);
-    const [badges, setBadges] = useState(null);
     const [regions, setRegions] = useState(null);
     const [fingerprint, setFingerprint] = useState(null);
     const [communities, setCommunities] = useState(null);
@@ -77,8 +76,6 @@ export default function Profile() {
             setHeatmap(h.data);
             setFingerprint(fp.data);
             if (!p.data.is_self) api.get(`/users/${username}/mutual`).then((r) => setMutual(r.data)).catch(() => {});
-            // Pre-load badges so identity card / about preview can show main badge.
-            api.get(`/users/${username}/badges`).then((r) => setBadges(r.data)).catch(() => {});
         } catch (e) { toastApiError(e); }
         finally { setLoading(false); }
     };
@@ -87,7 +84,6 @@ export default function Profile() {
         try { const { data } = await api.get(`/users/${username}/posts?tab=${which}`); setPosts(data); }
         catch { /* silent */ } finally { setPostsLoading(false); }
     };
-    const loadBadges      = async () => { try { const { data } = await api.get(`/users/${username}/badges`); setBadges(data); } catch { /* */ } };
     const loadRegions     = async () => { try { const { data } = await api.get(`/users/${username}/regions`); setRegions(data); } catch { /* */ } };
     const loadCommunities = async () => { try { const { data } = await api.get(`/users/${username}/communities`); setCommunities(data); } catch { /* */ } };
 
@@ -105,7 +101,6 @@ export default function Profile() {
         if (["posts", "replies", "media", "likes"].includes(tab)) loadPosts(tab);
         else if (tab === "communities" && !communities) loadCommunities();
         else if (tab === "about") {
-            if (!badges)      loadBadges();
             if (!regions)     loadRegions();
             if (!communities) loadCommunities();
         }
@@ -237,7 +232,6 @@ export default function Profile() {
                     <ProfileSummaryCards
                         profile={profile}
                         stats={stats}
-                        badges={badges}
                         regionMeta={regionMeta}
                         moodMeta={moodMeta}
                         teamMeta={teamMeta}
@@ -289,7 +283,6 @@ export default function Profile() {
                             regionMeta={regionMeta}
                             moodMeta={moodMeta}
                             teamMeta={teamMeta}
-                            badges={badges}
                             regions={regions}
                             communities={communities}
                             mutual={mutual}

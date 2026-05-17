@@ -1,7 +1,7 @@
 import {
-    LayoutDashboard, Activity, Award, Sparkles, Zap, TrendingUp,
+    LayoutDashboard, Activity, Sparkles, Zap, TrendingUp,
     ArrowRight, CheckCircle2, AlertCircle, ChevronRight, Edit3, Eye,
-    UserCircle2, Calendar, MapPin as MapPinIcon, Flame,
+    UserCircle2, Calendar, MapPin as MapPinIcon,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -173,11 +173,9 @@ export function HubTab({ user, form, prefs, stats, setActiveTab }) {
             </div>
 
             {/* Quick stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3">
                 <QuickStat icon={Activity} label="Posts" value={stats?.posts_count ?? 0} accent="bg-black/[0.04] text-black/75" />
                 <QuickStat icon={UserCircle2} label="Seguidores" value={user?.followers_count ?? 0} />
-                <QuickStat icon={Flame} label="Streak" value={`${stats?.streak_days ?? 0}d`} sub="dias seguidos" />
-                <QuickStat icon={Award} label="Conquistas" value={stats?.trophies_count ?? 0} sub="troféus" />
             </div>
 
             {/* Score cards: profile + security */}
