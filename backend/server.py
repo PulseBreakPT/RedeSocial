@@ -1106,6 +1106,42 @@ async def check_username(u: str = ""):
     return {"available": True, "message": "Disponível."}
 
 
+# Cheap-but-decent email validator (must match what Pydantic will accept at register).
+# We don't import email_validator here because it pulls in DNS checks; the canonical
+# validation still happens at POST /auth/register via Pydantic EmailStr.
+_EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+# Common disposable/throwaway domains we reject (best-effort)
+_DISPOSABLE_DOMAINS = {
+    "mailinator.com", "tempmail.com", "10minutemail.com", "guerrillamail.com",
+    "yopmail.com", "trashmail.com", "throwaway.email", "fakeinbox.com",
+    "maildrop.cc", "getnada.com", "sharklasers.com", "guerrillamail.info",
+    "spam4.me", "tempinbox.com", "dispostable.com", "mintemail.com",
+}
+
+
+@api.get("/auth/check-email")
+async def check_email(e: str = ""):
+    """Public, unauthenticated endpoint that mirrors check-username for emails.
+    Returns one of: empty | invalid | disposable | taken | available."""
+    raw = (e or "").strip().lower()
+    if not raw:
+        return {"available": False, "reason": "empty", "message": "Introduz um email."}
+    if len(raw) > 200:
+        return {"available": False, "reason": "invalid", "message": "Email demasiado longo."}
+    if not _EMAIL_RE.match(raw):
+        return {"available": False, "reason": "invalid", "message": "Formato de email inválido."}
+    try:
+        domain = raw.split("@", 1)[1]
+    except IndexError:
+        return {"available": False, "reason": "invalid", "message": "Formato de email inválido."}
+    if domain in _DISPOSABLE_DOMAINS:
+        return {"available": False, "reason": "disposable", "message": "Emails descartáveis não são aceites."}
+    existing = await db.users.find_one({"email": raw}, {"_id": 0, "id": 1})
+    if existing:
+        return {"available": False, "reason": "taken", "message": "Já existe uma conta com este email."}
+    return {"available": True, "message": "Disponível."}
+
+
 @api.post("/auth/register")
 async def register(payload: RegisterIn, request: Request, response: Response):
     email = payload.email.lower()

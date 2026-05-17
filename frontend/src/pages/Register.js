@@ -40,55 +40,49 @@ function evaluatePassword(pwd) {
 }
 
 // =====================================================================
-// Username availability — debounced live check against /api/auth/check-username
-// State machine: idle | checking | available | taken | invalid
+// Generic availability hook — debounced live check against any endpoint
+// of the shape /api/auth/check-X?<paramName>=<value>.
+// State machine: idle | checking | available | taken | invalid | disposable
 // =====================================================================
-function useUsernameAvailability(username) {
+function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
     const [state, setState] = useState({ status: "idle", message: "" });
-    const lastCheckedRef = useRef("");
     const abortRef = useRef(null);
 
     useEffect(() => {
-        const u = (username || "").trim();
+        const v = (value || "").trim();
         // Cancel previous in-flight request
         if (abortRef.current) {
             try { abortRef.current.abort(); } catch { /* noop */ }
             abortRef.current = null;
         }
-        if (!u) {
+        if (!v) {
             setState({ status: "idle", message: "" });
             return;
         }
         // Cheap client-side validation first — avoid wasting a request
-        if (u.length < 3) {
-            setState({ status: "invalid", message: "Mínimo 3 caracteres." });
-            return;
-        }
-        if (u.length > 20) {
-            setState({ status: "invalid", message: "Máximo 20 caracteres." });
-            return;
-        }
-        if (!/^[a-zA-Z0-9_]+$/.test(u)) {
-            setState({ status: "invalid", message: "Só letras, números e _." });
-            return;
+        if (localValidate) {
+            const local = localValidate(v);
+            if (local && !local.ok) {
+                setState({ status: "invalid", message: local.message });
+                return;
+            }
         }
         setState({ status: "checking", message: "A verificar…" });
         const ctrl = new AbortController();
         abortRef.current = ctrl;
         const t = setTimeout(async () => {
             try {
-                const { data } = await axios.get(`${BACKEND}/api/auth/check-username`, {
-                    params: { u },
+                const { data } = await axios.get(`${BACKEND}${endpoint}`, {
+                    params: { [paramName]: v },
                     signal: ctrl.signal,
                 });
-                lastCheckedRef.current = u;
                 if (data.available) {
                     setState({ status: "available", message: data.message || "Disponível" });
                 } else {
-                    setState({
-                        status: data.reason === "taken" ? "taken" : "invalid",
-                        message: data.message || "Indisponível",
-                    });
+                    let status = "invalid";
+                    if (data.reason === "taken") status = "taken";
+                    else if (data.reason === "disposable") status = "invalid";
+                    setState({ status, message: data.message || "Indisponível" });
                 }
             } catch (e) {
                 if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") return;
@@ -96,10 +90,23 @@ function useUsernameAvailability(username) {
             }
         }, 380);
         return () => { clearTimeout(t); ctrl.abort(); };
-    }, [username]);
+    }, [value, endpoint, paramName, localValidate]);
 
     return state;
 }
+
+// Pre-built local validators for username and email
+const _validateUsernameLocal = (u) => {
+    if (u.length < 3) return { ok: false, message: "Mínimo 3 caracteres." };
+    if (u.length > 20) return { ok: false, message: "Máximo 20 caracteres." };
+    if (!/^[a-zA-Z0-9_]+$/.test(u)) return { ok: false, message: "Só letras, números e _." };
+    return { ok: true };
+};
+const _validateEmailLocal = (e) => {
+    if (e.length > 200) return { ok: false, message: "Email demasiado longo." };
+    if (!/^\S+@\S+\.\S+$/.test(e)) return { ok: false, message: "Formato de email inválido." };
+    return { ok: true };
+};
 
 /**
  * F2.1 — Onboarding 30s.
@@ -133,18 +140,28 @@ export default function Register() {
     const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
     const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
 
-    const usernameState = useUsernameAvailability(form.username);
+    const usernameState = useAvailabilityCheck({
+        value: form.username,
+        endpoint: "/api/auth/check-username",
+        paramName: "u",
+        localValidate: _validateUsernameLocal,
+    });
+    const emailState = useAvailabilityCheck({
+        value: form.email,
+        endpoint: "/api/auth/check-email",
+        paramName: "e",
+        localValidate: _validateEmailLocal,
+    });
     const pwdEval = useMemo(() => evaluatePassword(form.password), [form.password]);
     const pwdMatches = form.password && form.passwordConfirm && form.password === form.passwordConfirm;
     const pwdMismatch = form.password && form.passwordConfirm && form.password !== form.passwordConfirm;
 
-    const emailValid = /\S+@\S+\.\S+/.test(form.email);
     const nameValid = form.name.trim().length >= 1;
 
     const canStep1 =
         nameValid &&
         usernameState.status === "available" &&
-        emailValid &&
+        emailState.status === "available" &&
         pwdEval.score >= 2 &&        // require at least "Razoável"
         form.password.length >= 8 && // hard floor (security)
         pwdMatches;
@@ -158,7 +175,9 @@ export default function Register() {
             if (usernameState.status === "taken") return setError("Esse username já está em uso.");
             if (usernameState.status === "invalid") return setError(usernameState.message || "Username inválido.");
             if (usernameState.status !== "available") return setError("Espera pela verificação do username.");
-            if (!emailValid) return setError("Email inválido.");
+            if (emailState.status === "taken") return setError("Já existe uma conta com esse email.");
+            if (emailState.status === "invalid") return setError(emailState.message || "Email inválido.");
+            if (emailState.status !== "available") return setError("Espera pela verificação do email.");
             if (form.password.length < 8) return setError("A palavra-passe tem de ter pelo menos 8 caracteres.");
             if (pwdEval.score < 2) return setError("A palavra-passe é demasiado fraca. Reforça-a.");
             if (!pwdMatches) return setError("As palavras-passe não coincidem.");
@@ -374,17 +393,47 @@ export default function Register() {
                                     </Field>
 
                                     <Field label="Email">
-                                        <input
-                                            data-testid="register-email"
-                                            type="email" value={form.email} onChange={update("email")} required
-                                            placeholder="tu@exemplo.com"
-                                            className={`vm-input ${form.email && !emailValid ? "border-red-soft/60" : ""}`}
-                                            autoComplete="email"
-                                            inputMode="email"
-                                        />
-                                        {form.email && !emailValid && (
-                                            <p className="mt-1.5 text-[11.5px] font-mono text-red-soft">
-                                                <AlertCircle size={11} className="inline mr-1 -mt-0.5" /> Email inválido.
+                                        <div className="relative">
+                                            <input
+                                                data-testid="register-email"
+                                                type="email" value={form.email} onChange={update("email")} required
+                                                placeholder="tu@exemplo.com"
+                                                className={`vm-input pr-9 ${
+                                                    emailState.status === "available" ? "border-emerald-500/60" :
+                                                    (emailState.status === "taken" || emailState.status === "invalid") ? "border-red-soft/60" : ""
+                                                }`}
+                                                autoComplete="email"
+                                                inputMode="email"
+                                                autoCapitalize="off"
+                                                spellCheck={false}
+                                            />
+                                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid="register-email-status">
+                                                {emailState.status === "checking" && <Loader2 size={14} className="animate-spin text-black/45" />}
+                                                {emailState.status === "available" && <CheckCircle2 size={15} className="text-emerald-600" />}
+                                                {(emailState.status === "taken" || emailState.status === "invalid") && <X size={15} className="text-red-soft" />}
+                                            </div>
+                                        </div>
+                                        {emailState.message && (
+                                            <p
+                                                data-testid="register-email-message"
+                                                className={`mt-1.5 text-[11.5px] font-mono ${
+                                                    emailState.status === "available" ? "text-emerald-700" :
+                                                    (emailState.status === "taken" || emailState.status === "invalid") ? "text-red-soft" :
+                                                    "text-black/55"
+                                                }`}
+                                            >
+                                                {emailState.status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
+                                                {(emailState.status === "taken" || emailState.status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
+                                                {emailState.status === "taken" ? (
+                                                    <>
+                                                        {emailState.message}{" "}
+                                                        <Link to="/login" className="underline underline-offset-2 hover:no-underline font-medium">
+                                                            Entrar?
+                                                        </Link>
+                                                    </>
+                                                ) : (
+                                                    emailState.message
+                                                )}
                                             </p>
                                         )}
                                     </Field>
