@@ -556,6 +556,12 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "charms_equipped": user.get("charms_equipped", []),
         "cosmetics_equipped": user.get("cosmetics_equipped") or {"frame": "", "sticker": ""},
         "track_visits": user.get("track_visits", True),
+        # Privacy prefs (settings → Privacidade)
+        "show_online": user.get("show_online", True),
+        "typing_indicator": user.get("typing_indicator", True),
+        "searchable": user.get("searchable", True),
+        "password_changed_at": user.get("password_changed_at"),
+        "notif_muted_types": user.get("notif_muted_types", []),
         # Fase 3 — Retenção
         "xp": int(user.get("xp") or 0),
         "level": level_for_xp(user.get("xp") or 0)["level"],
@@ -818,6 +824,20 @@ class UpdateProfileIn(BaseModel):
     boa_noite_enabled: Optional[bool] = None  # silence push 23h-08h
     cafezinho_enabled: Optional[bool] = None  # morning 60s session
     feed_mix: Optional[dict] = None  # {friends: 40, interest: 30, place: 30}
+    # Privacy prefs (settings → Privacidade)
+    show_online: Optional[bool] = None
+    typing_indicator: Optional[bool] = None
+    searchable: Optional[bool] = None
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+class DeleteAccountIn(BaseModel):
+    password: str
+    confirm: str  # must equal "APAGAR"
 
 
 class PostIn(BaseModel):
@@ -972,9 +992,34 @@ async def reset_password(payload: ResetPasswordIn):
         raise HTTPException(400, "Token inválido")
     if datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
         raise HTTPException(400, "Token expirado")
-    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": hash_password(payload.password)}})
+    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": hash_password(payload.password), "password_changed_at": now_iso()}})
     await db.password_resets.update_one({"token": payload.token}, {"$set": {"used": True}})
     return {"ok": True}
+
+
+@api.post("/auth/change-password")
+async def change_password(payload: ChangePasswordIn, user=Depends(get_current_user)):
+    """Change password while logged in. Validates current password via bcrypt."""
+    fresh = await db.users.find_one({"id": user["id"]})
+    if not fresh:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not verify_password(payload.current_password, fresh.get("password_hash", "")):
+        raise HTTPException(400, "Palavra-passe atual incorreta")
+    if payload.current_password == payload.new_password:
+        raise HTTPException(400, "A nova palavra-passe tem de ser diferente da atual")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "password_hash": hash_password(payload.new_password),
+            "password_changed_at": now_iso(),
+        }},
+    )
+    # Invalidate any pending reset tokens for this user
+    await db.password_resets.update_many(
+        {"user_id": user["id"], "used": False},
+        {"$set": {"used": True}},
+    )
+    return {"ok": True, "password_changed_at": now_iso()}
 
 
 # ============================================================
@@ -1308,6 +1353,73 @@ async def update_me(payload: UpdateProfileIn, user=Depends(get_current_user)):
         await db.users.update_one({"id": user["id"]}, {"$set": update})
     fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
     return public_user(fresh)
+
+
+@api.delete("/users/me")
+async def delete_my_account(payload: DeleteAccountIn, response: Response, user=Depends(get_current_user)):
+    """Permanently delete the authenticated user and all associated data.
+
+    Requires the current password + the confirmation string "APAGAR".
+    Cascades: posts, comments, messages, conversations, notifications,
+    stories, profile_views, reports, hype_trains, notes, password_resets,
+    and removes the user_id from communities.members and other users'
+    followers/following/blocked/favorites/notify_users/muted_users lists.
+    """
+    if payload.confirm != "APAGAR":
+        raise HTTPException(400, "Confirmação inválida — escreve APAGAR")
+    fresh = await db.users.find_one({"id": user["id"]})
+    if not fresh:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if not verify_password(payload.password, fresh.get("password_hash", "")):
+        raise HTTPException(400, "Palavra-passe incorreta")
+
+    uid = user["id"]
+
+    # Cascade delete documents owned by this user
+    await db.posts.delete_many({"author_id": uid})
+    await db.comments.delete_many({"author_id": uid})
+    await db.messages.delete_many({"$or": [{"sender_id": uid}, {"recipient_id": uid}]})
+    await db.conversations.delete_many({"participants": uid})
+    await db.notifications.delete_many({"$or": [{"user_id": uid}, {"actor_id": uid}]})
+    await db.stories.delete_many({"author_id": uid})
+    await db.profile_views.delete_many({"$or": [{"user_id": uid}, {"viewer_id": uid}]})
+    await db.reports.delete_many({"$or": [{"reporter_id": uid}, {"target_user_id": uid}]})
+    await db.notes.delete_many({"author_id": uid})
+    await db.hype_trains.delete_many({"$or": [{"author_id": uid}, {"user_id": uid}]})
+    await db.password_resets.delete_many({"user_id": uid})
+    await db.bookmark_collections.delete_many({"user_id": uid})
+    await db.typing_state.delete_many({"$or": [{"user_id": uid}, {"recipient_id": uid}]})
+
+    # Remove this user from social graphs of other users
+    await db.users.update_many(
+        {},
+        {"$pull": {
+            "followers": uid,
+            "following": uid,
+            "blocked": uid,
+            "favorites": uid,
+            "notify_users": uid,
+            "muted_users": uid,
+        }},
+    )
+    # Remove this user from likes/bookmarks/reposts arrays on remaining posts
+    await db.posts.update_many(
+        {},
+        {"$pull": {
+            "likes": uid,
+            "bookmarks": uid,
+            "reposts": uid,
+        }},
+    )
+    # Remove from community membership
+    await db.communities.update_many({}, {"$pull": {"members": uid}})
+
+    # Finally delete the user document itself
+    await db.users.delete_one({"id": uid})
+
+    # Invalidate session cookie
+    clear_auth_cookie(response)
+    return {"ok": True, "deleted_user_id": uid}
 
 
 @api.post("/users/me/onboard")

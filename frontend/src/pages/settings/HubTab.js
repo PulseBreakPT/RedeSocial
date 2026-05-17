@@ -23,15 +23,24 @@ function computeProfileCompletion(user, form) {
     return Math.round((filled / buckets.length) * 100);
 }
 
-/* Compute security score 0-100 from local prefs + form */
-function computeSecurityScore(prefs, form) {
+/* Compute security score 0-100 from real user fields */
+function computeSecurityScore(user, form) {
+    const pwdAge = (() => {
+        if (!user?.password_changed_at) return false;
+        try {
+            const months = (Date.now() - new Date(user.password_changed_at).getTime()) / (1000 * 60 * 60 * 24 * 30);
+            return months <= 12; /* changed in the last 12 months */
+        } catch {
+            return false;
+        }
+    })();
     const buckets = [
-        !!prefs.two_fa_enabled,
-        !!prefs.login_alerts,
-        !!form.private,
-        prefs.priv_search === false,
-        !!prefs.last_password_change_ok,
-        !!prefs.recovery_email,
+        !!form.private,                                /* private account */
+        user?.searchable === false,                    /* hidden from search */
+        user?.show_online === false,                   /* online indicator off */
+        user?.typing_indicator === false,              /* typing indicator off */
+        pwdAge,                                        /* password recent */
+        !!user?.email,                                 /* email on file (recovery) */
     ];
     const filled = buckets.filter(Boolean).length;
     return Math.round((filled / buckets.length) * 100);
