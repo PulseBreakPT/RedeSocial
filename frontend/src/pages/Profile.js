@@ -1,36 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock, LayoutDashboard, Settings } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { FollowsModal } from "../components/FollowsModal";
 import { PostCard } from "../components/PostCard";
-import { StatsCard } from "../components/StatsCard";
-import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
-import { CharmsPanel } from "../components/CharmsPanel";
-import { CharmsProgressPanel } from "../components/CharmsProgressPanel";
-import { SeriesSection } from "../components/SeriesSection";
-import { StreakCard } from "../components/StreakCard";
-import { MesaPanel } from "../components/MesaPanel";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
-import { toast } from "sonner";
 
 import { IdentityCard } from "./profile/IdentityCard";
-import { CompletionPanel } from "./profile/CompletionPanel";
-import { AccountPanel } from "./profile/AccountPanel";
-import { AffinityRibbon } from "./profile/AffinityRibbon";
-import { RhythmPanel } from "./profile/RhythmPanel";
-import { FingerprintGrid } from "./profile/FingerprintGrid";
-import { AboutTab } from "./profile/AboutTab";
 import { ShareModal } from "./profile/ShareModal";
 import { MobileActionBar } from "./profile/MobileActionBar";
 import { ProfileTabBar } from "./profile/ProfileTabBar";
+import { ProfileSummaryCards } from "./profile/ProfileSummaryCards";
+import { HeatmapCompactCard } from "./profile/HeatmapCompactCard";
+import { AboutTabSections } from "./profile/AboutTabSections";
+import { PainelPessoalDrawer } from "./profile/PainelPessoalDrawer";
+import { AffinityRibbon } from "./profile/AffinityRibbon";
 import {
-    ProfileEmpty, CommunitiesTab, BadgesTab, MapaTab,
+    ProfileEmpty, CommunitiesTab,
     PostsFilterBar, applyPostsFilter, computePostCounts,
 } from "./profile/ProfileTabContent";
 
@@ -69,6 +60,7 @@ export default function Profile() {
     const [postsLoading, setPostsLoading] = useState(false);
     const [modal, setModal] = useState(null);
     const [shareOpen, setShareOpen] = useState(false);
+    const [painelOpen, setPainelOpen] = useState(false);
     useLiveTime(30000);
 
     const loadAll = async () => {
@@ -85,6 +77,8 @@ export default function Profile() {
             setHeatmap(h.data);
             setFingerprint(fp.data);
             if (!p.data.is_self) api.get(`/users/${username}/mutual`).then((r) => setMutual(r.data)).catch(() => {});
+            // Pre-load badges so identity card / about preview can show main badge.
+            api.get(`/users/${username}/badges`).then((r) => setBadges(r.data)).catch(() => {});
         } catch (e) { toastApiError(e); }
         finally { setLoading(false); }
     };
@@ -102,16 +96,19 @@ export default function Profile() {
         loadPosts("posts");
         setTab("posts");
         setPostsFilter("all");
-        setBadges(null); setRegions(null); setCommunities(null);
+        setRegions(null); setCommunities(null);
         // eslint-disable-next-line
     }, [username]);
 
     useEffect(() => {
         if (!profile) return;
-        if (["posts", "media", "likes"].includes(tab)) loadPosts(tab);
-        else if (tab === "badges"      && !badges)      loadBadges();
-        else if (tab === "mapa"        && !regions)     loadRegions();
+        if (["posts", "replies", "media", "likes"].includes(tab)) loadPosts(tab);
         else if (tab === "communities" && !communities) loadCommunities();
+        else if (tab === "about") {
+            if (!badges)      loadBadges();
+            if (!regions)     loadRegions();
+            if (!communities) loadCommunities();
+        }
         // eslint-disable-next-line
     }, [tab]);
 
@@ -125,6 +122,8 @@ export default function Profile() {
     const share = () => setShareOpen(true);
     const onMessage = () => navigate(`/messages/${profile.id}`);
     const onEditProfile = () => navigate("/settings");
+    const onOpenPainel = () => setPainelOpen(true);
+    const onSeeIdentity = () => setTab("about");
 
     const postCounts = useMemo(() => computePostCounts(posts), [posts]);
     const filteredPosts = useMemo(() => applyPostsFilter(posts, postsFilter), [posts, postsFilter]);
@@ -152,7 +151,7 @@ export default function Profile() {
 
             {/* ---------- HERO BANNER ---------- */}
             <div
-                className="relative h-44 lg:h-60 overflow-hidden"
+                className="relative h-36 lg:h-52 overflow-hidden"
                 data-testid="profile-banner"
                 style={{ background: regionGradient(profile.region) }}
             >
@@ -175,7 +174,7 @@ export default function Profile() {
                 )}
             </div>
 
-            {/* ---------- IDENTITY CARD ---------- */}
+            {/* ---------- IDENTITY CARD (compact header) ---------- */}
             <IdentityCard
                 profile={profile}
                 stats={stats}
@@ -192,6 +191,32 @@ export default function Profile() {
                 onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
 
+            {/* Self-only: Painel pessoal + Definições quick row */}
+            {profile.is_self && profile.can_view !== false && (
+                <div
+                    className="px-4 lg:px-6 mt-3 flex flex-wrap gap-2"
+                    data-testid="profile-self-quickbar"
+                >
+                    <button
+                        onClick={onOpenPainel}
+                        data-testid="open-painel-btn"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black text-white text-[12px] font-heading font-medium tracking-tight hover:bg-black/90 tap-shrink"
+                    >
+                        <LayoutDashboard size={13} />
+                        <span>Painel pessoal</span>
+                    </button>
+                    <button
+                        onClick={() => navigate("/settings")}
+                        data-testid="open-settings-btn"
+                        className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
+                        title="Definições"
+                        aria-label="Definições"
+                    >
+                        <Settings size={15} />
+                    </button>
+                </div>
+            )}
+
             {profile.can_view === false ? (
                 <div className="mt-12 p-12 text-center hairline-t" data-testid="private-locked">
                     <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
@@ -203,51 +228,38 @@ export default function Profile() {
                 </div>
             ) : (
                 <>
-                    {/* Self: completion ring + checklist · Other: affinity ribbon */}
-                    {profile.is_self ? (
-                        <>
-                            <CompletionPanel profile={profile} stats={stats} />
-                            <AccountPanel />
-                        </>
-                    ) : (
+                    {/* Affinity ribbon only for visitors */}
+                    {!profile.is_self && (
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
                     )}
 
-                    {/* Identity Fingerprint editorial strip */}
-                    {fingerprint && fingerprint.available && (fingerprint.posts_analyzed > 0) && (
-                        <FingerprintGrid fp={fingerprint} firstName={firstName} />
-                    )}
+                    {/* 3 horizontal cards — atalhos + identidade + estatísticas */}
+                    <ProfileSummaryCards
+                        profile={profile}
+                        stats={stats}
+                        badges={badges}
+                        regionMeta={regionMeta}
+                        moodMeta={moodMeta}
+                        teamMeta={teamMeta}
+                        onOpenPainel={onOpenPainel}
+                        onSeeIdentity={onSeeIdentity}
+                        onSeeAnalytics={profile.is_self ? onOpenPainel : onSeeIdentity}
+                    />
 
-                    {/* Rhythm: 24h clock + day-of-week heatmap */}
-                    <RhythmPanel heatmap={heatmap} fingerprint={fingerprint} firstName={firstName} />
-
-                    {/* Numeric stats */}
-                    <StatsCard stats={stats} completion={profile.is_self ? stats?.profile_completion : undefined} />
-
-                    {/* v2 — Streak + Mesa + Charms + Series */}
-                    <div className="px-5 py-4 hairline-b space-y-3">
-                        <div className="grid sm:grid-cols-2 gap-3">
-                            <StreakCard username={profile.username} />
-                            {profile.is_self && <MesaPanel />}
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-3">
-                            <CharmsPanel username={profile.username} editable={profile.is_self} />
-                            <SeriesSection username={profile.username} isSelf={profile.is_self} />
-                        </div>
-                        {profile.is_self && <CharmsProgressPanel username={profile.username} />}
-                    </div>
-
+                    {/* Compact heatmap with link to full inside drawer */}
                     {heatmap?.length > 0 && (
-                        <div className="px-5 py-5 hairline-b">
-                            <ActivityHeatmap data={heatmap} />
-                        </div>
+                        <HeatmapCompactCard
+                            heatmap={heatmap}
+                            stats={stats}
+                            onSeeMore={profile.is_self ? onOpenPainel : null}
+                        />
                     )}
 
-                    {/* ---------- TABS ---------- */}
+                    {/* ---------- TABS (sticky) ---------- */}
                     <ProfileTabBar tab={tab} onChange={setTab} />
 
                     {/* ---------- TAB CONTENT ---------- */}
-                    {["posts", "media", "likes"].includes(tab) && (
+                    {["posts", "replies", "media", "likes"].includes(tab) && (
                         <>
                             {tab === "posts" && posts.length > 0 && (
                                 <PostsFilterBar filter={postsFilter} onChange={setPostsFilter} counts={postCounts} />
@@ -269,15 +281,41 @@ export default function Profile() {
                         </>
                     )}
 
-                    {tab === "about"       && <AboutTab profile={profile} regionMeta={regionMeta} moodMeta={moodMeta} teamMeta={teamMeta} />}
                     {tab === "communities" && <CommunitiesTab communities={communities} />}
-                    {tab === "badges"      && <BadgesTab badges={badges} />}
-                    {tab === "mapa"        && <MapaTab regions={regions} />}
+                    {tab === "about" && (
+                        <AboutTabSections
+                            profile={profile}
+                            stats={stats}
+                            regionMeta={regionMeta}
+                            moodMeta={moodMeta}
+                            teamMeta={teamMeta}
+                            badges={badges}
+                            regions={regions}
+                            communities={communities}
+                            mutual={mutual}
+                            onOpenPainel={onOpenPainel}
+                            onOpenFollowers={() => setModal("followers")}
+                            onOpenFollowing={() => setModal("following")}
+                        />
+                    )}
                 </>
             )}
 
             {modal && <FollowsModal username={username} type={modal} onClose={() => setModal(null)} />}
             {shareOpen && <ShareModal profile={profile} onClose={() => setShareOpen(false)} />}
+
+            {/* Painel Pessoal Drawer — privado, gestão */}
+            {profile.is_self && (
+                <PainelPessoalDrawer
+                    open={painelOpen}
+                    onClose={() => setPainelOpen(false)}
+                    profile={profile}
+                    stats={stats}
+                    heatmap={heatmap}
+                    fingerprint={fingerprint}
+                    firstName={firstName}
+                />
+            )}
 
             {/* Mobile sticky action bar */}
             <MobileActionBar
