@@ -20,13 +20,23 @@ import { X } from "lucide-react";
 
 export function Layout() {
     const [composeOpen, setComposeOpen] = useState(false);
+    const [composeDraft, setComposeDraft] = useState(null); // pre-fill with an existing draft post
     const [helpOpen, setHelpOpen] = useState(false);
     const [chatOpen, setChatOpen] = useState(false);
     const [dragPreview, setDragPreview] = useState({ dir: null, progress: 0 });
     const location = useLocation();
 
+    const openCompose = useCallback((opts) => {
+        setComposeDraft(opts?.draft || null);
+        setComposeOpen(true);
+    }, []);
+    const closeCompose = useCallback(() => {
+        setComposeOpen(false);
+        setComposeDraft(null);
+    }, []);
+
     useKeyboardShortcuts({
-        openCompose: () => setComposeOpen(true),
+        openCompose: () => openCompose(),
         openHelp: () => setHelpOpen(true),
     });
     useGlobalNotifications();
@@ -91,16 +101,16 @@ export function Layout() {
         <WebSocketProvider>
         <div className="min-h-screen text-black">
             <MobileTopBar onOpenChat={() => setChatOpen(true)} />
-            <DesktopTopBar onCompose={() => setComposeOpen(true)} />
+            <DesktopTopBar onCompose={() => openCompose()} />
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,640px)_340px] max-w-[1100px] mx-auto gap-0 lg:gap-8 px-0 lg:px-6">
                 <main className="lg:border-x lg:border-black/[0.07] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
-                    <Outlet context={{ openCompose: () => setComposeOpen(true), openChat: () => setChatOpen(true) }} />
+                    <Outlet context={{ openCompose, openChat: () => setChatOpen(true) }} />
                 </main>
                 <RightSidebar />
             </div>
 
             <OnboardingModal />
-            <MobileBottomNav onCompose={() => setComposeOpen(true)} />
+            <MobileBottomNav onCompose={() => openCompose()} />
             <ScrollToTop />
             <ActivityTickerLive />
 
@@ -127,7 +137,7 @@ export function Layout() {
             {composeOpen && (
                 <div
                     className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-end lg:items-start lg:justify-center lg:pt-20"
-                    onClick={() => setComposeOpen(false)}
+                    onClick={closeCompose}
                     data-testid="composer-backdrop"
                 >
                     <div
@@ -139,9 +149,11 @@ export function Layout() {
                             <span className="w-10 h-1 rounded-full bg-black/20" />
                         </div>
                         <div className="flex items-center justify-between px-5 lg:px-6 py-3 lg:py-4 hairline-b">
-                                <h2 className="font-display text-[22px] lg:text-[26px] font-semibold tracking-tight leading-none">Nova publicação</h2>
+                                <h2 className="font-display text-[22px] lg:text-[26px] font-semibold tracking-tight leading-none">
+                                    {composeDraft ? "Editar rascunho" : "Nova publicação"}
+                                </h2>
                             <button
-                                onClick={() => setComposeOpen(false)}
+                                onClick={closeCompose}
                                 data-testid="close-composer-modal"
                                 className="p-2 rounded-full hover:bg-black/[0.06] active:scale-90 tap-shrink"
                                 aria-label="fechar"
@@ -149,7 +161,7 @@ export function Layout() {
                                 <X size={18} strokeWidth={1.6} />
                             </button>
                         </div>
-                        <Composer asModal onClose={() => setComposeOpen(false)} onPosted={() => setComposeOpen(false)} />
+                        <Composer asModal initialPost={composeDraft} onClose={closeCompose} onPosted={closeCompose} />
                     </div>
                 </div>
             )}

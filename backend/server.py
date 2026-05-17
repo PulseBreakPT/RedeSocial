@@ -562,6 +562,25 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "searchable": user.get("searchable", True),
         "password_changed_at": user.get("password_changed_at"),
         "notif_muted_types": user.get("notif_muted_types", []),
+        "notif_preferences": user.get("notif_preferences") or {
+            "likes": True, "comments": True, "follows": True, "mentions": True, "dm": True,
+        },
+        # Appearance prefs (settings → Aparência)
+        "theme": user.get("theme") or "light",
+        "density": user.get("density") or "comfortable",
+        "language": user.get("language") or "pt-PT",
+        "reduce_motion": user.get("reduce_motion", False),
+        # Boa-noite hours
+        "boa_noite_start": user.get("boa_noite_start") or "23:00",
+        "boa_noite_end": user.get("boa_noite_end") or "08:00",
+        # Soft engagement signals (server-side now — see /api2/feed/signals)
+        "muted_authors": user.get("muted_authors", []),
+        "muted_topics": user.get("muted_topics", []),
+        "favorites": user.get("favorites", []),
+        "dismissed_posts": user.get("dismissed_posts", []),
+        "boosted_posts": user.get("boosted_posts", []),
+        "post_notes": user.get("post_notes") or {},
+        "followed_threads": user.get("followed_threads", []),
         # Fase 3 — Retenção
         "xp": int(user.get("xp") or 0),
         "level": level_for_xp(user.get("xp") or 0)["level"],
@@ -822,12 +841,21 @@ class UpdateProfileIn(BaseModel):
     bio_slots: Optional[dict] = None  # {city, mood_today, soundtrack, reading, favourite_place, quote_of_month}
     # Healthy-mode preferences
     boa_noite_enabled: Optional[bool] = None  # silence push 23h-08h
+    boa_noite_start: Optional[str] = None     # "HH:MM"
+    boa_noite_end: Optional[str] = None       # "HH:MM"
     cafezinho_enabled: Optional[bool] = None  # morning 60s session
     feed_mix: Optional[dict] = None  # {friends: 40, interest: 30, place: 30}
     # Privacy prefs (settings → Privacidade)
     show_online: Optional[bool] = None
     typing_indicator: Optional[bool] = None
     searchable: Optional[bool] = None
+    # Appearance prefs — persisted cross-device
+    theme: Optional[str] = None        # "light" | "sepia" | "auto"
+    density: Optional[str] = None      # "compact" | "comfortable"
+    language: Optional[str] = None     # "pt-PT" | "pt-BR" | "en"
+    reduce_motion: Optional[bool] = None
+    # Notification preference object (5 channels)
+    notif_preferences: Optional[dict] = None  # {likes,comments,follows,mentions,dm: bool}
 
 
 class ChangePasswordIn(BaseModel):
@@ -1583,8 +1611,12 @@ async def pin_post(post_id: str, user=Depends(get_current_user)):
 async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_user)):
     await auto_publish_due_posts()
     ids = user.get("following", []) + [user["id"]]
+    muted_authors = set(user.get("muted_authors", []) or [])
+    muted_topics = set((t or "").lower() for t in (user.get("muted_topics", []) or []))
+    dismissed = set(user.get("dismissed_posts", []) or [])
+    visible_ids = [aid for aid in ids if aid not in muted_authors]
     query: dict = {
-        "author_id": {"$in": ids},
+        "author_id": {"$in": visible_ids},
         "is_draft": {"$ne": True},
         "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
     }
@@ -1592,6 +1624,12 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
         rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
         query["content"] = {"$regex": rx, "$options": "i"}
     posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    def _topic_blocked(p):
+        if not muted_topics:
+            return False
+        tags = set((t or "").lower() for t in (p.get("hashtags") or []))
+        return bool(tags & muted_topics)
+    posts = [p for p in posts if p.get("id") not in dismissed and not _topic_blocked(p)]
     if sort == "top":
         posts = sorted(
             posts,
@@ -1614,7 +1652,20 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
     if mood and mood in MOODS:
         rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
         query["content"] = {"$regex": rx, "$options": "i"}
+    if viewer:
+        muted_authors = list(set(viewer.get("muted_authors", []) or []))
+        if muted_authors:
+            query["author_id"] = {"$nin": muted_authors}
     posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
+    if viewer:
+        muted_topics = set((t or "").lower() for t in (viewer.get("muted_topics", []) or []))
+        dismissed = set(viewer.get("dismissed_posts", []) or [])
+        def _topic_blocked(p):
+            if not muted_topics:
+                return False
+            tags = set((t or "").lower() for t in (p.get("hashtags") or []))
+            return bool(tags & muted_topics)
+        posts = [p for p in posts if p.get("id") not in dismissed and not _topic_blocked(p)]
     if sort == "trending":
         # Score with time decay (half-life ~ 12h)
         now = datetime.now(timezone.utc)
@@ -5641,6 +5692,132 @@ async def pin_notification(notif_id: str, user=Depends(get_current_user)):
     new_state = not n.get("pinned", False)
     await db.notifications.update_one({"id": notif_id}, {"$set": {"pinned": new_state}})
     return {"pinned": new_state}
+
+
+# ============================================================
+# Soft engagement signals — moved from frontend localStorage to server
+# (see /app/docs/BUTTONS_FORENSIC_AUDIT.md §5.23)
+# ============================================================
+class TopicIn(BaseModel):
+    topic: str = Field(min_length=1, max_length=60)
+
+
+class PostNoteIn(BaseModel):
+    note: str = Field(default="", max_length=400)
+
+
+@api2.post("/topics/mute")
+async def mute_topic(payload: TopicIn, user=Depends(get_current_user)):
+    topic = payload.topic.strip().lstrip("#").lower()
+    if not topic:
+        raise HTTPException(400, "Tópico inválido")
+    muted = list(user.get("muted_topics", []) or [])
+    if topic in muted:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"muted_topics": topic}})
+        return {"muted": False, "topic": topic}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"muted_topics": topic}})
+    return {"muted": True, "topic": topic}
+
+
+@api2.get("/topics/muted")
+async def list_muted_topics(user=Depends(get_current_user)):
+    return {"topics": user.get("muted_topics", []) or []}
+
+
+@api2.post("/posts/{post_id}/dismiss")
+async def dismiss_post(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    dismissed = list(user.get("dismissed_posts", []) or [])
+    if post_id in dismissed:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"dismissed_posts": post_id}})
+        return {"dismissed": False}
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"dismissed_posts": post_id}})
+    return {"dismissed": True}
+
+
+@api2.post("/posts/{post_id}/boost")
+async def boost_post(post_id: str, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    if post.get("author_id") != user["id"]:
+        raise HTTPException(403, "Só podes impulsionar as tuas publicações")
+    boosted = list(user.get("boosted_posts", []) or [])
+    if post_id in boosted:
+        await db.users.update_one({"id": user["id"]}, {"$pull": {"boosted_posts": post_id}})
+        await db.posts.update_one({"id": post_id}, {"$unset": {"boosted_until": ""}})
+        return {"boosted": False}
+    until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    await db.users.update_one({"id": user["id"]}, {"$addToSet": {"boosted_posts": post_id}})
+    await db.posts.update_one({"id": post_id}, {"$set": {"boosted_until": until}})
+    return {"boosted": True, "until": until}
+
+
+@api2.put("/posts/{post_id}/note")
+async def set_post_note(post_id: str, payload: PostNoteIn, user=Depends(get_current_user)):
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    notes = dict(user.get("post_notes") or {})
+    text = (payload.note or "").strip()
+    if text:
+        notes[post_id] = text[:400]
+    else:
+        notes.pop(post_id, None)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"post_notes": notes}})
+    return {"note": notes.get(post_id, "")}
+
+
+@api2.get("/posts/{post_id}/note")
+async def get_post_note(post_id: str, user=Depends(get_current_user)):
+    notes = user.get("post_notes") or {}
+    return {"note": notes.get(post_id, "")}
+
+
+@api2.post("/posts/{post_id}/why")
+async def post_why(post_id: str, user=Depends(get_current_user)):
+    """Return the recommendation reason for a post, if any."""
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Publicação não encontrada")
+    reasons = []
+    if p.get("author_id") in (user.get("following") or []):
+        reasons.append({"key": "following", "label": "Segues @" + (p.get("author_username") or "")})
+    if any(t.lower() in (user.get("muted_topics") or []) for t in (p.get("hashtags") or [])):
+        reasons.append({"key": "muted_topic", "label": "Tópico silenciado por ti"})
+    if p.get("city") and p.get("city") == user.get("city"):
+        reasons.append({"key": "city", "label": f"Mesma cidade ({p.get('city')})"})
+    if p.get("mood") and p.get("mood") == user.get("mood_initial"):
+        reasons.append({"key": "mood", "label": f"Mood: {p.get('mood')}"})
+    if not reasons:
+        reasons.append({"key": "explore", "label": "Recomendado pela actividade da rede"})
+    return {"reasons": reasons}
+
+
+class NotifPrefsFullIn(BaseModel):
+    muted_types: Optional[List[str]] = None
+    preferences: Optional[dict] = None  # {likes,comments,follows,mentions,dm: bool}
+
+
+@api2.post("/notifications/preferences/full")
+async def update_notif_prefs_full(payload: NotifPrefsFullIn, user=Depends(get_current_user)):
+    update = {}
+    if payload.muted_types is not None:
+        update["notif_muted_types"] = list(set(payload.muted_types))[:30]
+    if payload.preferences is not None:
+        allowed = {"likes", "comments", "follows", "mentions", "dm"}
+        cleaned = {k: bool(v) for k, v in (payload.preferences or {}).items() if k in allowed}
+        if cleaned:
+            update["notif_preferences"] = cleaned
+    if update:
+        await db.users.update_one({"id": user["id"]}, {"$set": update})
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return {
+        "muted_types": fresh.get("notif_muted_types", []),
+        "preferences": fresh.get("notif_preferences", {}),
+    }
 
 
 app.include_router(api2)

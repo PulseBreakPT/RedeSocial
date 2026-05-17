@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
     Lock, Users, MessageCircle, Share2, MapPin, Award,
@@ -10,7 +10,6 @@ import { RodaButton } from "../../components/RodaButton";
 import { ProfileMoreMenu } from "./ProfileMoreMenu";
 import { api, toastApiError } from "../../lib/api";
 import { toast } from "sonner";
-import { isFavouriteUser, toggleFavouriteUser } from "../../lib/interestSignals";
 
 const BIO_SLOT_META = [
     { key: "mood_today",      Icon: Smile,    label: "Mood do dia" },
@@ -29,7 +28,8 @@ export function IdentityCard({
     onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing,
     onProfileUpdate,
 }) {
-    const [fav, setFav] = useState(() => isFavouriteUser(profile.username));
+    const [fav, setFav] = useState(false);
+    const [favLoading, setFavLoading] = useState(false);
     const [quickOpen, setQuickOpen] = useState(false);
     const [quickMsg, setQuickMsg] = useState("");
     const [sending, setSending] = useState(false);
@@ -38,7 +38,36 @@ export function IdentityCard({
         : "";
     const filledSlots = BIO_SLOT_META.filter((s) => (profile.bio_slots?.[s.key] || "").trim()).slice(0, 6);
 
-    const onToggleFav = () => { setFav(toggleFavouriteUser(profile.username)); };
+    // Fetch real favourite state from /api2/users/{username}/relation
+    useEffect(() => {
+        if (profile.is_self || !profile.username) return;
+        let alive = true;
+        (async () => {
+            try {
+                const { data } = await api.get(`/users/${profile.username}/relation`);
+                if (alive) setFav(!!data.favorited);
+            } catch { /* silent */ }
+        })();
+        return () => { alive = false; };
+    }, [profile.is_self, profile.username]);
+
+    const onToggleFav = async () => {
+        if (favLoading) return;
+        setFavLoading(true);
+        const prev = fav;
+        setFav(!prev);
+        try {
+            const { data } = await api.post(`/users/${profile.username}/favorite`);
+            const isFav = !!data.favorited;
+            setFav(isFav);
+            toast.success(isFav ? `@${profile.username} adicionado aos favoritos ★` : `@${profile.username} removido dos favoritos`);
+        } catch (e) {
+            setFav(prev);
+            toastApiError(e);
+        } finally {
+            setFavLoading(false);
+        }
+    };
     const sendQuick = async () => {
         if (!quickMsg.trim()) return;
         setSending(true);

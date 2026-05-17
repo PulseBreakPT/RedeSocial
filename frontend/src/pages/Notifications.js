@@ -148,12 +148,14 @@ export default function Notifications() {
         }
     };
 
-    const muteCategory = (type) => {
+    const muteCategory = async (type) => {
         try {
-            const muted = JSON.parse(localStorage.getItem("notifications.mutedTypes") || "[]");
-            if (!muted.includes(type)) { muted.push(type); localStorage.setItem("notifications.mutedTypes", JSON.stringify(muted)); }
+            const { data } = await api.get("/notifications/preferences");
+            const muted = data.muted_types || [];
+            if (muted.includes(type)) { toast.info(`Categoria "${type}" já estava silenciada`); return; }
+            await api.post("/notifications/preferences", { muted_types: [...muted, type] });
             toast.success(`Categoria "${type}" silenciada`);
-        } catch { /* silent */ }
+        } catch (e) { toastApiError(e); }
     };
 
     const unreadCount = items.filter((n) => !n.read).length;

@@ -181,7 +181,7 @@ export function useEdgeGestures({
 
                 if (typeof window !== "undefined" && window.__VMLN_GESTURE_DEBUG__) {
                     // eslint-disable-next-line no-console
-                    console.log("[gesture]", { dx: Math.round(dx), dy: Math.round(dy), v: v.toFixed(2), fromEdge, distanceOk, flickOk });
+                    /* gesture debug removed */
                 }
 
                 if (distanceOk || flickOk) {

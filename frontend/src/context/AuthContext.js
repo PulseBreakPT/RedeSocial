@@ -6,6 +6,7 @@ import {
     setStoredToken,
     setAuthListener,
 } from "../lib/api";
+import { setSignalsUser } from "../lib/interestSignals";
 
 const AuthContext = createContext(null);
 
@@ -45,6 +46,9 @@ export function AuthProvider({ children }) {
     }, []);
 
     useEffect(() => { refresh(); }, [refresh]);
+
+    // Keep interestSignals.js in sync with the live user
+    useEffect(() => { setSignalsUser(user || null); }, [user]);
 
     // Wire the global axios 401 listener once
     useEffect(() => {

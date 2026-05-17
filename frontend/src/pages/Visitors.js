@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
 export default function Visitors() {
-    const [data, setData] = useState({ enabled: true, visitors: [] });
+    const [data, setData] = useState({ track_visits: true, visitors: [] });
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
 
@@ -16,7 +16,11 @@ export default function Visitors() {
         setLoading(true);
         try {
             const r = await api.get("/users/me/visitors");
-            setData(r.data);
+            // Normalize to single canonical field name
+            setData({
+                track_visits: r.data.track_visits ?? r.data.enabled ?? true,
+                visitors: r.data.visitors || [],
+            });
         } catch (e) {
             toastApiError(e);
         } finally {
@@ -28,7 +32,7 @@ export default function Visitors() {
     async function toggleTracking() {
         setBusy(true);
         try {
-            const r = await api.post("/users/me/visitors/settings", { track_visits: !data.enabled });
+            const r = await api.post("/users/me/visitors/settings", { track_visits: !data.track_visits });
             toast.success(r.data.track_visits ? "A registar visitas" : "Visitas desativadas");
             await load();
         } catch (e) {
@@ -53,13 +57,13 @@ export default function Visitors() {
                         data-testid="visitors-toggle"
                     >
                         {busy ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={12} />}
-                        {data.enabled ? "Desativar" : "Ativar"}
+                        {data.track_visits ? "Desativar" : "Ativar"}
                     </button>
                 }
             />
             {loading ? (
                 <div className="text-sm font-mono text-black/50 py-12 text-center"><Loader2 size={14} className="animate-spin inline" /> A carregar…</div>
-            ) : !data.enabled ? (
+            ) : !data.track_visits ? (
                 <Empty
                     icon={Lock}
                     title="Visitas desativadas"

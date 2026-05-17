@@ -13,7 +13,7 @@ import {
     muteAuthor, muteTopic, seeLessOfTopic, seeMoreOfTopic,
     toggleBoost, isBoosted, setPostNote, getPostNote,
     convertToStory, addToCollection,
-    toggleWatchPost, isWatchingPost,
+    toggleWatchPost, isWatchingPost, dismissPost,
 } from "../lib/interestSignals";
 
 const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
@@ -109,66 +109,99 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle, onAnalyti
         toast.success("A abrir tradução no Google");
         close();
     };
-    const handleMuteAuthor = (e) => {
+    const handleMuteAuthor = async (e) => {
         e.stopPropagation();
-        muteAuthor(post.author?.username || "alguém");
+        await muteAuthor(post.author?.username || "");
         close();
     };
-    const handleMuteTopic = (e) => {
+    const handleMuteTopic = async (e) => {
         e.stopPropagation();
         const tag = firstHashtag(post.content);
-        if (!tag) { toast.info("Este post não tem hashtag para silenciar"); }
-        else muteTopic(tag);
+        if (!tag) { toast.info("Este post não tem hashtag para silenciar"); close(); return; }
+        await muteTopic(tag);
         close();
     };
-    const handleSeeLess = (e) => {
+    const handleSeeLess = async (e) => {
+        e.stopPropagation();
+        const tag = firstHashtag(post.content);
+        if (!tag) { toast.info("Este post não tem hashtag — não é possível filtrar por tema"); close(); return; }
+        await seeLessOfTopic(tag);
+        close();
+    };
+    const handleSeeMore = async (e) => {
         e.stopPropagation();
         const tag = firstHashtag(post.content) || "este tema";
-        seeLessOfTopic(tag); close();
+        await seeMoreOfTopic(tag); close();
     };
-    const handleSeeMore = (e) => {
+    const handleAddCollection = async (e) => {
         e.stopPropagation();
-        const tag = firstHashtag(post.content) || "este tema";
-        seeMoreOfTopic(tag); close();
+        close();
+        try {
+            const { data } = await api.get("/bookmark-collections");
+            const cols = data || [];
+            if (cols.length === 0) {
+                if (!window.confirm("Ainda não tens coleções. Criar uma agora?")) return;
+                const name = window.prompt("Nome da nova coleção:", "Inspiração");
+                if (!name?.trim()) return;
+                const r = await api.post("/bookmark-collections", { name: name.trim() });
+                await addToCollection(r.data.id, post.id);
+                return;
+            }
+            const labels = cols.map((c, i) => `${i + 1}. ${c.name}`).join("\n");
+            const choice = window.prompt(`Coleções disponíveis:\n${labels}\n\nEscreve o número da coleção (ou um novo nome):`, "1");
+            if (!choice) return;
+            const idx = parseInt(choice, 10);
+            if (!isNaN(idx) && idx >= 1 && idx <= cols.length) {
+                await addToCollection(cols[idx - 1].id, post.id);
+            } else {
+                const r = await api.post("/bookmark-collections", { name: String(choice).trim() });
+                await addToCollection(r.data.id, post.id);
+            }
+        } catch (err) { toastApiError(err); }
     };
-    const handleAddCollection = (e) => {
+    const handleNotInterested = async (e) => {
         e.stopPropagation();
-        const name = window.prompt("Adicionar a que coleção?", "Inspiração");
-        if (name && name.trim()) addToCollection(name.trim(), post.id);
+        close();
+        const ok = await dismissPost(post.id);
+        if (ok) onDelete?.(post.id); // local removal feels right after dismiss
+    };
+    const handleWhy = async (e) => {
+        e.stopPropagation();
+        close();
+        try {
+            const { data } = await api.post(`/posts/${post.id}/why`);
+            const lines = (data.reasons || []).map((r) => `• ${r.label}`).join("\n");
+            toast.message(lines || "Recomendação sem contexto adicional.");
+        } catch (err) { toastApiError(err); }
+    };
+    const handleBoost = async (e) => {
+        e.stopPropagation();
+        const next = await toggleBoost(post.id);
+        setBoosted(next);
         close();
     };
-    const handleNotInterested = (e) => {
-        e.stopPropagation();
-        toast.success("Não te mostraremos coisas semelhantes");
-        close();
-    };
-    const handleWhy = (e) => {
-        e.stopPropagation();
-        toast.message(post.reason
-            ? `Sugerido porque: ${post.reason.label || post.reason.key}`
-            : "Sugerido pela atividade da rede e interesses que indicaste.");
-        close();
-    };
-    const handleBoost = (e) => {
-        e.stopPropagation();
-        setBoosted(toggleBoost(post.id));
-        close();
-    };
-    const handleNote = (e) => {
+    const handleNote = async (e) => {
         e.stopPropagation();
         const current = getPostNote(post.id) || "";
         const note = window.prompt("Adiciona uma nota privada a este post:", current);
-        if (note !== null) setPostNote(post.id, note);
+        if (note === null) { close(); return; }
+        await setPostNote(post.id, note);
         close();
     };
-    const handleConvertStory = (e) => {
+    const handleConvertStory = async (e) => {
         e.stopPropagation();
-        convertToStory(post.id);
         close();
+        const img = (post.images && post.images[0]) || post.image;
+        if (!img) {
+            toast.error("Este post não tem imagem — só posts com imagem podem virar story");
+            return;
+        }
+        await convertToStory({ image: img, content: post.content || "" });
     };
-    const handleWatch = (e) => {
+    const handleWatch = async (e) => {
         e.stopPropagation();
-        setWatching(toggleWatchPost(post.id));
+        const next = await toggleWatchPost(post.id);
+        setWatching(next);
         close();
     };
 

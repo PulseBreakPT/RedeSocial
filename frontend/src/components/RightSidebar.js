@@ -197,32 +197,9 @@ export function RightSidebar() {
                     <TrendingUp size={16} strokeWidth={1.5} className="text-[color:var(--atl-500)]" />
                 </div>
                 {trending.length === 0 ? (
-                    <ul className="space-y-3.5">
-                        {[
-                            { tag: "Lisboa", count: "12.4k" },
-                            { tag: "Porto", count: "8.2k" },
-                            { tag: "Fado", count: "3.1k" },
-                            { tag: "Benfica", count: "5.7k" },
-                            { tag: "BairroAlto", count: "1.8k" },
-                        ].map((t, idx) => (
-                            <li
-                                key={t.tag}
-                                onClick={() => navigate(`/tag/${t.tag}`)}
-                                data-testid={`trending-fallback-${t.tag}`}
-                                className="group cursor-pointer flex items-start gap-3 tap-press rounded-lg -mx-2 px-2 py-1"
-                            >
-                                <span className="font-mono text-[10px] text-black/35 mt-1 w-4 tabular-nums">{String(idx + 1).padStart(2, "0")}</span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-heading text-[15px] font-semibold tracking-tight text-black truncate">
-                                        #{t.tag}
-                                    </div>
-                                    <div className="text-[11px] tracking-tight text-black/45 mt-0.5">
-                                        {t.count} publicações
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                    <p className="type-overline text-black/45 text-center py-6">
+                        Sem tendências agora
+                    </p>
                 ) : (
                     <ul className="space-y-3.5">
                         {trending.map((t, idx) => (
