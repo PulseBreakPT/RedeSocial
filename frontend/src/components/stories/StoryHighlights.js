@@ -57,8 +57,8 @@ export function StoryHighlights({ username, isSelf }) {
                         data-testid="highlight-create-empty"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
-                            <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
+                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-black transition">
+                            <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-black" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
                     </button>
@@ -72,8 +72,8 @@ export function StoryHighlights({ username, isSelf }) {
                         data-testid="highlight-create"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
-                            <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
+                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-black transition">
+                            <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-black" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
                     </button>
@@ -244,7 +244,7 @@ function HighlightCreatorModal({ onClose, onCreated }) {
                         onChange={(e) => setTitle(e.target.value.slice(0, 24))}
                         placeholder="Nome (ex: Lisboa 2025)"
                         data-testid="highlight-title-input"
-                        className="w-full px-3 py-2 rounded-xl border border-black/15 outline-none focus:border-coral text-[14px]"
+                        className="w-full px-3 py-2 rounded-xl border border-black/15 outline-none focus:border-black text-[14px]"
                     />
                     <div className="mt-3 text-[10.5px] font-mono uppercase tracking-[0.16em] text-black/45">
                         Escolhe stories ({selected.size}{archive ? `/${archive.length}` : ""})
@@ -266,7 +266,7 @@ function HighlightCreatorModal({ onClose, onCreated }) {
                                         key={s.id}
                                         onClick={() => toggle(s.id)}
                                         data-testid={`hl-pick-${s.id}`}
-                                        className={`relative aspect-[9/16] rounded-xl overflow-hidden border-2 transition ${on ? "border-coral ring-2 ring-coral/30" : "border-transparent hover:border-black/15"}`}
+                                        className={`relative aspect-[9/16] rounded-xl overflow-hidden border-2 transition ${on ? "border-black ring-2 ring-black/30" : "border-transparent hover:border-black/15"}`}
                                         style={!isImage && !isVideo ? { background: bgCss(s.background) } : undefined}
                                     >
                                         {isImage && <img src={s.image} alt="" className="w-full h-full object-cover" />}
@@ -277,7 +277,7 @@ function HighlightCreatorModal({ onClose, onCreated }) {
                                             </div>
                                         )}
                                         {on && (
-                                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-coral grid place-items-center text-white">
+                                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black grid place-items-center text-white">
                                                 <Check size={11} strokeWidth={3} />
                                             </div>
                                         )}
@@ -292,7 +292,7 @@ function HighlightCreatorModal({ onClose, onCreated }) {
                         onClick={submit}
                         disabled={busy}
                         data-testid="highlight-submit"
-                        className="w-full px-4 py-2.5 rounded-full bg-black text-white font-mono uppercase text-[11px] tracking-wider hover:bg-coral disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                        className="w-full px-4 py-2.5 rounded-full bg-black text-white font-mono uppercase text-[11px] tracking-wider hover:bg-black/85 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                     >
                         {busy ? <Loader2 size={12} className="animate-spin" /> : <ChevronRight size={13} />}
                         Criar destaque

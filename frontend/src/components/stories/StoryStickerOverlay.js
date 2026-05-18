@@ -75,7 +75,7 @@ function PollSticker({ story, sticker, isAuthor, onUpdate }) {
                             >
                                 {showResults && (
                                     <div
-                                        className="sv-poll-bar absolute inset-y-0 left-0 bg-gradient-to-r from-coral/40 to-coral/25"
+                                        className="sv-poll-bar absolute inset-y-0 left-0 bg-black/15"
                                         style={{ width: `${opt.pct || 0}%` }}
                                     />
                                 )}
@@ -127,7 +127,7 @@ function QuestionSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
                     {sticker.data?.prompt}
                 </div>
                 {!isAuthor && !open && (
-                    <div className="mt-2 text-[11px] font-mono text-coral-deep font-semibold">
+                    <div className="mt-2 text-[11px] font-mono text-black font-semibold">
                         {sticker.viewer_answered ? "✓ Já respondeste" : "Toca para responder"}
                     </div>
                 )}
@@ -147,7 +147,7 @@ function QuestionSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
                             className="flex-1 rounded-full bg-black/[0.06] px-3 py-1.5 text-[12.5px] outline-none focus:bg-black/[0.10]"
                             data-testid={`q-input-${sticker.id}`}
                         />
-                        <button onClick={submit} disabled={busy} className="px-3 py-1.5 rounded-full bg-black text-white text-[11px] font-mono uppercase tracking-wider hover:bg-coral disabled:opacity-50">
+                        <button onClick={submit} disabled={busy} className="px-3 py-1.5 rounded-full bg-black text-white text-[11px] font-mono uppercase tracking-wider hover:bg-black/80 disabled:opacity-50">
                             Enviar
                         </button>
                     </div>
@@ -221,9 +221,9 @@ function MentionSticker({ sticker, isAuthor }) {
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <Link
                 to={`/u/${username}`}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-black hover:text-white transition"
             >
-                <span className="text-coral">@</span>{username}
+                <span className="text-black/70">@</span>{username}
             </Link>
         </StickerWrap>
     );
@@ -235,7 +235,7 @@ function HashtagSticker({ sticker, isAuthor }) {
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <Link
                 to={`/tag/${tag}`}
-                className="inline-flex items-center gap-0.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-coral to-coral-deep text-white shadow-lg text-[13px] font-heading font-semibold tracking-tight hover:scale-105 transition"
+                className="inline-flex items-center gap-0.5 px-3 py-1.5 rounded-full bg-black text-white shadow-lg text-[13px] font-heading font-semibold tracking-tight hover:scale-105 transition"
             >
                 <span>#</span>{tag}
             </Link>
@@ -247,7 +247,7 @@ function LocationSticker({ sticker, isAuthor }) {
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90">
-                <MapPin size={13} className="text-coral" strokeWidth={2.4} />
+                <MapPin size={13} className="text-black/70" strokeWidth={2.4} />
                 {sticker.data?.place}
             </div>
         </StickerWrap>
@@ -303,7 +303,7 @@ function LinkSticker({ sticker, isAuthor }) {
                 href={sticker.data?.url}
                 target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-black hover:text-white transition"
             >
                 <ExternalLink size={12} strokeWidth={2.4} />
                 {sticker.data?.label || "Saber mais"}
@@ -316,7 +316,7 @@ function MusicSticker({ sticker, isAuthor }) {
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 max-w-[260px]">
-                <span className="sv-eq text-coral"><span /><span /><span /><span /></span>
+                <span className="sv-eq text-black/85"><span /><span /><span /><span /></span>
                 <span className="truncate">
                     <span className="font-semibold">{sticker.data?.title}</span>
                     {sticker.data?.artist && <span className="text-black/55"> · {sticker.data.artist}</span>}

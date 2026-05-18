@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2, MapPin } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { CitySelect } from "../components/CitySelect";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
@@ -129,7 +130,10 @@ export default function Register() {
     const [showPwd, setShowPwd] = useState(false);
     const [showPwdConfirm, setShowPwdConfirm] = useState(false);
 
-    // Step 2 — consent
+    // Step 2 — cidade (PT identity)
+    const [city, setCity] = useState(null);
+
+    // Step 3 — consent
     const [consent, setConsent] = useState({ age: false, terms: false, marketing: false });
 
     const [error, setError] = useState("");
@@ -182,7 +186,8 @@ export default function Register() {
             if (pwdEval.score < 2) return setError("A palavra-passe é demasiado fraca. Reforça-a.");
             if (!pwdMatches) return setError("As palavras-passe não coincidem.");
         }
-        setStep((s) => Math.min(2, s + 1));
+        // Step 2 — cidade é OPCIONAL, deixamos passar
+        setStep((s) => Math.min(3, s + 1));
     };
     const back = () => setStep((s) => Math.max(1, s - 1));
 
@@ -199,9 +204,9 @@ export default function Register() {
             username: form.username,
             email: form.email,
             password: form.password,
-            // PT identity moved to onboarding inside the app
-            city: null,
-            region: null,
+            // PT identity — cidade já no registo (opcional)
+            city: city?.name || null,
+            region: city?.region || null,
             mood_initial: null,
             team: null,
             terms_accepted: consent.terms,
@@ -292,9 +297,9 @@ export default function Register() {
                 <div className="px-6 sm:px-8 pt-8 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
 
-                        {/* Step indicator — 2 steps only now */}
+                        {/* Step indicator — 3 steps */}
                         <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
-                            {[1, 2].map((n) => (
+                            {[1, 2, 3].map((n) => (
                                 <div
                                     key={n}
                                     className={`h-1 flex-1 rounded-full transition-colors ${
@@ -304,15 +309,17 @@ export default function Register() {
                             ))}
                         </div>
                         <p className="text-[11px] uppercase tracking-[0.16em] text-black/45 font-mono mb-2">
-                            Passo {step} de 2
+                            Passo {step} de 3
                         </p>
                         <h2 className="font-display text-[30px] lg:text-[36px] tracking-tight leading-[1.05]">
                             {step === 1 && "Cria a tua conta"}
-                            {step === 2 && "Última coisa, juramos"}
+                            {step === 2 && "De onde és?"}
+                            {step === 3 && "Última coisa, juramos"}
                         </h2>
                         <p className="text-black/55 text-[14px] mt-2 leading-relaxed">
                             {step === 1 && "Nome, email e palavra-passe. Mais nada para já."}
-                            {step === 2 && "Consentimento obrigatório por lei. Não há letra pequena."}
+                            {step === 2 && "Escolhe a tua cidade — ajuda-nos a mostrar-te o que importa perto. Podes saltar."}
+                            {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
                         </p>
 
                         <div
@@ -328,6 +335,12 @@ export default function Register() {
                                     </>
                                 )}
                                 {step === 2 && (
+                                    <>
+                                        <strong className="text-black">Lisboa, Porto, Olhão, Funchal…</strong>{" "}
+                                        ~300 cidades portuguesas. A tua identidade começa pelo lugar.
+                                    </>
+                                )}
+                                {step === 3 && (
                                     <>
                                         <strong className="text-black">Sem letra pequena.</strong> Os teus dados são
                                         teus. Podes apagar a conta com um clique a qualquer momento.
@@ -535,6 +548,28 @@ export default function Register() {
                             )}
 
                             {step === 2 && (
+                                <div className="space-y-4 pt-1" data-testid="register-step-city">
+                                    <Field label="A tua cidade">
+                                        <CitySelect
+                                            value={city?.id || null}
+                                            onChange={setCity}
+                                            placeholder="Pesquisa — Lisboa, Olhão, Funchal…"
+                                            testid="register-city"
+                                        />
+                                    </Field>
+                                    {!city && (
+                                        <div className="rounded-xl border border-dashed border-black/[0.10] px-4 py-5 text-center">
+                                            <MapPin size={18} className="inline text-black/35 mb-2" />
+                                            <p className="text-[13px] text-black/55 leading-relaxed">
+                                                Escolhe a tua cidade — mostraremos a sua história e cultura.<br/>
+                                                <span className="text-[11px] text-black/40">Podes saltar este passo se preferires.</span>
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {step === 3 && (
                                 <div className="space-y-3 pt-1">
                                     {/* Micro-testimonial */}
                                     <div className="rounded-xl border border-black/[0.08] bg-white p-3.5">
@@ -600,14 +635,14 @@ export default function Register() {
                                         Voltar
                                     </button>
                                 )}
-                                {step < 2 ? (
+                                {step < 3 ? (
                                     <button
                                         type="button" onClick={next}
                                         data-testid="register-next"
-                                        disabled={!canStep1}
+                                        disabled={step === 1 ? !canStep1 : false}
                                         className="btn-obsidian flex-1 text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
                                     >
-                                        Seguinte <ArrowRight size={15} />
+                                        {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={15} />
                                     </button>
                                 ) : (
                                     <button

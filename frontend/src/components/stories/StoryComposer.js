@@ -685,7 +685,7 @@ function StickerPicker({ onSelect, onClose }) {
                         key={t.key}
                         onClick={() => onSelect(t)}
                         data-testid={`sticker-add-${t.key}`}
-                        className="aspect-square rounded-2xl bg-gradient-to-br from-coral/10 to-coral/[0.04] hover:from-coral/25 hover:to-coral/15 border border-coral/20 flex flex-col items-center justify-center gap-1.5 transition sc-bg-tile"
+                        className="aspect-square rounded-2xl bg-paper grain isolate hover:bg-black/[0.04] border border-black/[0.10] hover:border-black/30 flex flex-col items-center justify-center gap-1.5 transition sc-bg-tile"
                     >
                         <span className="text-[28px]">{t.emoji}</span>
                         <span className="font-mono text-[10px] uppercase tracking-wider text-black/70">{t.label}</span>
@@ -797,7 +797,7 @@ function StickerEditor({ type, onSubmit, onClose }) {
             <button
                 onClick={submit}
                 data-testid="sticker-editor-save"
-                className="mt-5 w-full px-4 h-12 rounded-full bg-gradient-to-r from-coral to-coral-deep text-white font-mono uppercase text-[11px] tracking-wider hover:opacity-95 inline-flex items-center justify-center gap-1.5"
+                className="mt-5 w-full px-4 h-12 rounded-full bg-black text-white font-mono uppercase text-[11px] tracking-wider hover:bg-black/85 inline-flex items-center justify-center gap-1.5"
             >
                 <Check size={13} /> Adicionar ao story
             </button>

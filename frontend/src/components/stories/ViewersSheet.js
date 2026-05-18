@@ -68,7 +68,7 @@ export function ViewersSheet({ storyId, onClose }) {
                     {tab === "viewers" && data?.reactions_breakdown && Object.keys(data.reactions_breakdown).length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5 text-[12px] font-mono">
                             {Object.entries(data.reactions_breakdown).map(([emoji, n]) => (
-                                <span key={emoji} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-coral/10 text-black/75">
+                                <span key={emoji} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/[0.06] text-black/80">
                                     <span className="text-[14px]">{emoji}</span>
                                     <span className="tabular-nums">{n}</span>
                                 </span>
@@ -96,7 +96,7 @@ export function ViewersSheet({ storyId, onClose }) {
                                             <div className="font-mono text-[10.5px] text-black/45">@{v.user.username}</div>
                                         </Link>
                                         {v.reaction && (
-                                            <span className="text-[20px] grid place-items-center w-9 h-9 rounded-full bg-coral/[0.08]" title="reagiu">
+                                            <span className="text-[20px] grid place-items-center w-9 h-9 rounded-full bg-black/[0.05]" title="reagiu">
                                                 {v.reaction}
                                             </span>
                                         )}

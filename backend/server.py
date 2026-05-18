@@ -2654,6 +2654,227 @@ def _enrich_sticker_for_viewer(sticker: dict, story: dict, viewer_id: str) -> di
     return s
 
 
+# =========================================================================
+# SSS-Tier Stories Intelligence
+# =========================================================================
+# Esta camada acrescenta inteligência algorítmica ao módulo stories:
+#
+#   • _compute_story_eqs    Engagement Quality Score 0..1 (densidade de
+#                           interacções por viewer, decaimento temporal,
+#                           penalização para stories sem alma)
+#   • _detect_story_mood    auto-mood a partir de caption + text_content + stickers
+#                           (8 moods PT — saudade, festa, cafe, tasca, …)
+#   • _affinity_score       afinidade viewer↔autor (Mesa > Roda > seguindo > anónimo)
+#   • _score_group_for_feed score combinado para ordenar tray de stories
+#   • _quick_replies_for    sugestões inteligentes de respostas contextuais
+#   • _is_echo_post         detecção de spam / repetição (anti-eco)
+#   • _hour_bucket_weights  curadoria por hora do dia (manhã→café, noite→fado/saudade)
+#
+# Decisões importantes:
+#   · Todo o cálculo é determinístico e barato (O(n) sobre lista do tray).
+#   · EQS é computado on-the-fly (idempotente, sem necessidade de cache).
+# =========================================================================
+
+def _compute_story_eqs(story: dict) -> float:
+    """
+    Engagement Quality Score em [0, 1].
+
+    Não é um simples /views — penaliza stories com alto view-count e baixa
+    densidade de interacção (passa-stories), e premeia diversidade de sinal
+    (poll vote ≠ reacção ≠ resposta).
+    """
+    viewers = story.get("viewers") or []
+    n_views = max(1, len(viewers))
+    # Reactions
+    reactions = story.get("reactions") or {}
+    n_react = sum(1 for v in reactions.values() if v)
+    # Replies
+    n_replies = len(story.get("replies") or [])
+    # Sticker interactions (poll + question + slider)
+    n_poll = 0
+    for opts in (story.get("poll_votes") or {}).values():
+        for voters in (opts or {}).values():
+            n_poll += len(voters or [])
+    n_q = sum(len(v or []) for v in (story.get("question_answers") or {}).values())
+    n_slider = sum(len(v or []) for v in (story.get("slider_responses") or {}).values())
+    n_sticker = n_poll + n_q + n_slider
+
+    # Sinais ponderados — diversidade conta
+    react_rate = n_react / n_views
+    reply_rate = n_replies / n_views
+    sticker_rate = n_sticker / n_views
+    # Diversidade — número de tipos de sinal diferentes
+    types_present = sum(1 for x in (n_react, n_replies, n_sticker) if x > 0)
+    diversity_bonus = (types_present - 1) * 0.06 if types_present > 1 else 0
+
+    # Combo ponderado (peso favorece replies > sticker > reaction)
+    raw = (react_rate * 0.30) + (sticker_rate * 0.35) + (reply_rate * 0.50) + diversity_bonus
+    # Saturação suave
+    score = raw / (1 + raw * 0.5)
+    return max(0.0, min(1.0, score))
+
+
+def _detect_story_mood(caption: str, text_content: str, stickers):
+    """Devolve um mood ∈ MOODS ou None se nada bater."""
+    haystack = " ".join([caption or "", text_content or ""]).lower()
+    for s in (stickers or []):
+        data = s.get("data") or {}
+        for key in ("place", "tag", "question", "prompt", "title"):
+            v = data.get(key)
+            if isinstance(v, str):
+                haystack += " " + v.lower()
+    if not haystack.strip():
+        return None
+    best = None
+    best_score = 0
+    for key, m in MOODS.items():
+        kws = m.get("keywords") or []
+        score = sum(1 for kw in kws if kw in haystack)
+        if score > best_score:
+            best_score = score
+            best = key
+    return best if best_score > 0 else None
+
+
+def _hour_bucket(now: datetime) -> str:
+    """madrugada | manhã | tarde | noite — usado para curadoria de mood."""
+    h = now.astimezone(timezone.utc).hour
+    if h < 5:
+        return "madrugada"
+    if h < 12:
+        return "manha"
+    if h < 18:
+        return "tarde"
+    return "noite"
+
+
+_MOOD_TIME_WEIGHTS = {
+    "manha":     {"cafe": 1.25, "saudade": 0.95, "festa": 0.85},
+    "tarde":     {"praia": 1.18, "cultura": 1.10, "futebol": 1.08},
+    "noite":     {"fado": 1.30, "saudade": 1.20, "festa": 1.18, "tasca": 1.15},
+    "madrugada": {"saudade": 1.40, "fado": 1.30, "festa": 1.10},
+}
+
+
+def _mood_time_multiplier(mood, hour_bucket: str) -> float:
+    if not mood:
+        return 1.0
+    return _MOOD_TIME_WEIGHTS.get(hour_bucket, {}).get(mood, 1.0)
+
+
+async def _affinity_score(viewer: dict, author_id: str) -> float:
+    """Afinidade viewer → autor ∈ [0, 1]."""
+    if author_id == viewer["id"]:
+        return 1.0
+    mesa = set(viewer.get("mesa") or [])
+    if author_id in mesa:
+        return 0.90
+    roda_mine = set(viewer.get("roda") or [])
+    if author_id in roda_mine:
+        return 0.78
+    author = await db.users.find_one({"id": author_id}, {"_id": 0, "roda": 1})
+    if author and viewer["id"] in (author.get("roda") or []):
+        return 0.72
+    following = set(viewer.get("following") or [])
+    if author_id in following:
+        return 0.55
+    return 0.28
+
+
+def _recency_decay(created_at_iso: str, now: datetime) -> float:
+    """Decai de 1 → ~0.02 ao longo das 24h de validade do story (meia-vida ~6h)."""
+    try:
+        created = datetime.fromisoformat(created_at_iso)
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+    except Exception:
+        return 0.5
+    age_hours = max(0.0, (now - created).total_seconds() / 3600.0)
+    return math.exp(-age_hours / 6.0)
+
+
+def _is_echo_post(prev_caption: str, prev_text: str, new_caption: str, new_text: str) -> bool:
+    """Detecta duplicação trivial (mesmo texto/legenda em janela curta)."""
+    a = (prev_caption or "").strip().lower() + "|" + (prev_text or "").strip().lower()
+    b = (new_caption or "").strip().lower() + "|" + (new_text or "").strip().lower()
+    if not a.strip("|") or not b.strip("|"):
+        return False
+    if a == b:
+        return True
+    common = sum(1 for c in a if c in b)
+    longest = max(len(a), len(b))
+    return longest > 8 and (common / longest) > 0.85
+
+
+_QUICK_REPLY_TEMPLATES = {
+    "saudade":  ["Senti isso mesmo 🥹", "Bate fundo", "Levas-me lá", "Que linda"],
+    "festa":    ["Bora!", "Quero estar aí 🎉", "Que arraial", "Salta-se?"],
+    "tasca":    ["Que petisco 😋", "Tasca-me a morada", "Quero também", "Bom proveito"],
+    "cafe":     ["Bica? Toma uma por mim ☕", "Que paz", "Padaria boa", "Que manhã"],
+    "praia":    ["Areia 🌊", "Que cor", "Inveja sadia", "Estou a derreter aqui"],
+    "fado":     ["🎙️ Que voz", "Levaste-me", "Saudade pura", "Que casa"],
+    "futebol":  ["Golo! ⚽", "Boa equipa", "Vamos!", "Que ambiente"],
+    "cultura":  ["Que vista", "Tenho de ir", "Que detalhe", "Bonito demais"],
+}
+_QUICK_REPLY_FALLBACK = ["❤️", "🔥", "Boa!", "Que fixe"]
+
+
+def _quick_replies_for(story: dict, limit: int = 6) -> list:
+    mood = story.get("mood")
+    pool = list(_QUICK_REPLY_TEMPLATES.get(mood) or [])
+    for s in (story.get("stickers") or []):
+        if s.get("type") == "question":
+            pool.append("Boa pergunta…")
+        elif s.get("type") == "poll":
+            pool.append("Já votei!")
+        elif s.get("type") == "location":
+            place = (s.get("data") or {}).get("place", "")
+            if place:
+                pool.append(f"Que sítio bom — {place}")
+        elif s.get("type") == "music":
+            pool.append("Que som 🎶")
+    while len(pool) < limit:
+        for x in _QUICK_REPLY_FALLBACK:
+            if x not in pool:
+                pool.append(x)
+                if len(pool) >= limit:
+                    break
+    seen = set()
+    out = []
+    for x in pool:
+        if x not in seen:
+            seen.add(x)
+            out.append(x)
+        if len(out) >= limit:
+            break
+    return out
+
+
+async def _score_group_for_feed(
+    author_id: str, items: list, viewer: dict, now: datetime, hour_bucket: str
+) -> float:
+    """Pontuação combinada de um GRUPO de stories (por autor) para o tray."""
+    if not items:
+        return 0.0
+    if author_id == viewer["id"]:
+        return 99.0  # próprio sempre no topo
+    affinity = await _affinity_score(viewer, author_id)
+    has_unseen = any(viewer["id"] not in (s.get("viewers") or []) for s in items)
+    most_recent_iso = max(s.get("created_at", "") for s in items)
+    recency = _recency_decay(most_recent_iso, now)
+    eqs_avg = sum(_compute_story_eqs(s) for s in items) / len(items)
+    moods = [s.get("mood") for s in items if s.get("mood")]
+    mood_boost = max([_mood_time_multiplier(m, hour_bucket) for m in moods] or [1.0])
+    return (
+        affinity * 0.40
+        + (1.0 if has_unseen else 0.0) * 0.25
+        + recency * 0.20
+        + eqs_avg * 0.10
+        + (mood_boost - 1.0) * 0.05
+    )
+
+
+
 async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
     """Devolve story enriquecido para o consumer: bg, reactions, viewer_reaction,
        stickers com agregados, allowed flags."""
@@ -2670,6 +2891,8 @@ async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
             viewer_reaction = emoji
     stickers = [_enrich_sticker_for_viewer(s, story, viewer_id)
                 for s in (story.get("stickers") or [])]
+    # SSS-Tier: calcular EQS e flag de hot
+    eqs = _compute_story_eqs(story)
     return {
         "id": story["id"],
         "author_id": story["author_id"],
@@ -2696,6 +2919,10 @@ async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
         "replies_count": len(story.get("replies", []) or []),
         "in_highlights": bool(story.get("highlight_ids")),
         "is_viewed": viewer_id in (story.get("viewers", []) or []),
+        # SSS-Tier signals
+        "eqs": round(eqs, 3),
+        "is_hot": eqs >= 0.55,
+        "mood": story.get("mood"),
     }
 
 
@@ -2755,6 +2982,20 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         duration_ms = max(2000, min(15000, duration_ms))
     else:
         duration_ms = max(3000, min(10000, duration_ms))
+
+    # SSS-Tier: anti-echo (impede reposts idênticos do mesmo autor em <5min)
+    five_min_ago = (now - timedelta(minutes=5)).isoformat()
+    prev = await db.stories.find_one(
+        {"author_id": user["id"], "created_at": {"$gt": five_min_ago}},
+        {"_id": 0, "caption": 1, "text_content": 1},
+        sort=[("created_at", -1)],
+    )
+    if prev and _is_echo_post(prev.get("caption", ""), prev.get("text_content", ""), caption, payload.text_content or ""):
+        raise HTTPException(429, "Acabaste de publicar algo parecido. Espera um pouco antes de repetir.")
+
+    # SSS-Tier: auto-mood
+    detected_mood = _detect_story_mood(caption, payload.text_content or "", stickers)
+
     story = {
         "id": str(uuid.uuid4()),
         "author_id": user["id"],
@@ -2778,6 +3019,8 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         "poll_votes": {},         # {sticker_id: {option_id: [user_ids]}}
         "question_answers": {},   # {sticker_id: [{user_id, content, created_at}]}
         "slider_responses": {},   # {sticker_id: [{user_id, value, created_at}]}
+        "view_events": [],        # [{user_id, completion: 0..1, viewed_at}] — SSS-Tier
+        "mood": detected_mood,    # SSS-Tier
         "highlight_ids": [],
         "created_at": now.isoformat(),
         "expires_at": (now + timedelta(hours=24)).isoformat(),
@@ -2797,20 +3040,28 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
 
 @api.get("/stories")
 async def list_stories(user=Depends(get_current_user)):
-    """Lista stories activos visíveis ao viewer, agrupados por autor."""
-    now = datetime.now(timezone.utc).isoformat()
-    # autores potenciais:
-    #   - próprio
-    #   - quem o viewer segue
-    #   - quem adicionou o viewer à sua Roda (close friends) — pode ainda não ser seguido
+    """
+    Lista stories activos visíveis ao viewer, agrupados por autor.
+
+    SSS-Tier ranking:
+       · próprio autor sempre primeiro
+       · grupos ordenados por score combinado (affinity × unseen × recency × eqs × mood)
+       · diversity penalty: nunca mais de 2 grupos consecutivos do mesmo cluster
+         (cluster = "alta-afinidade Mesa/Roda" vs "média" vs "stranger")
+    """
+    now_dt = datetime.now(timezone.utc)
+    now_iso = now_dt.isoformat()
+    hour_bucket = _hour_bucket(now_dt)
+
+    # autores potenciais
     roda_authors_cur = db.users.find({"roda": user["id"]}, {"_id": 0, "id": 1})
     roda_authors = [u["id"] async for u in roda_authors_cur]
     ids = list({user["id"], *(user.get("following") or []), *roda_authors})
-    # excluir stories silenciados pelo viewer
     muted = set(user.get("stories_muted") or [])
     rows = await db.stories.find(
-        {"author_id": {"$in": ids}, "expires_at": {"$gt": now}}, {"_id": 0}
+        {"author_id": {"$in": ids}, "expires_at": {"$gt": now_iso}}, {"_id": 0}
     ).sort("created_at", -1).to_list(800)
+
     # filtrar por audiência
     visible = []
     for s in rows:
@@ -2818,9 +3069,11 @@ async def list_stories(user=Depends(get_current_user)):
             continue
         if await _story_is_visible_to(s, user):
             visible.append(s)
+
     groups: dict[str, list] = {}
     for s in visible:
         groups.setdefault(s["author_id"], []).append(s)
+
     out = []
     for author_id, items in groups.items():
         author = await db.users.find_one({"id": author_id}, {"_id": 0})
@@ -2829,28 +3082,85 @@ async def list_stories(user=Depends(get_current_user)):
         items_sorted = sorted(items, key=lambda x: x["created_at"])
         enriched = [await _enrich_story_for_viewer(s, user["id"]) for s in items_sorted]
         unseen = any(not s["is_viewed"] for s in enriched)
+        score = await _score_group_for_feed(author_id, items_sorted, user, now_dt, hour_bucket)
+        affinity = await _affinity_score(user, author_id)
         out.append({
             "author": public_user(author),
             "stories": enriched,
             "has_unseen": unseen,
+            "score": round(score, 4),
+            "affinity": round(affinity, 3),
+            "max_eqs": round(max((s["eqs"] for s in enriched), default=0.0), 3),
         })
-    # próprio primeiro, depois com unseen, depois resto
-    out.sort(key=lambda g: (g["author"]["id"] != user["id"], not g["has_unseen"]))
-    return out
+
+    # próprio primeiro, depois ordenar por score SSS-Tier
+    out.sort(key=lambda g: (g["author"]["id"] != user["id"], -g["score"]))
+
+    # SSS-Tier: diversity penalty — espalhar clusters de afinidade
+    # nunca devolver 3 grupos consecutivos do mesmo tier (≥0.7, 0.4-0.7, <0.4)
+    def _tier(g):
+        a = g.get("affinity", 0)
+        if g["author"]["id"] == user["id"]:
+            return "self"
+        if a >= 0.7:
+            return "high"
+        if a >= 0.45:
+            return "mid"
+        return "low"
+
+    diversified: list = []
+    skipped: list = []
+    last_tier = None
+    last_count = 0
+    for g in out:
+        t = _tier(g)
+        if t == last_tier and last_count >= 2 and t != "self":
+            skipped.append(g)
+            continue
+        if t == last_tier:
+            last_count += 1
+        else:
+            last_tier = t
+            last_count = 1
+        diversified.append(g)
+    # anexar os que ficaram para trás no fim, preservando ordem original
+    diversified.extend(skipped)
+
+    return diversified
+
+
+class StoryViewIn(BaseModel):
+    # SSS-Tier — quanto do story foi visto (0..1)
+    completion: Optional[float] = None
 
 
 @api.post("/stories/{story_id}/view")
-async def view_story(story_id: str, user=Depends(get_current_user)):
+async def view_story(
+    story_id: str,
+    payload: Optional[StoryViewIn] = None,
+    user=Depends(get_current_user),
+):
     s = await db.stories.find_one({"id": story_id}, {"_id": 0})
     if not s:
         raise HTTPException(404, "Story não encontrado")
     if not await _story_is_visible_to(s, user):
         raise HTTPException(403, "Sem acesso")
-    if user["id"] != s["author_id"]:
-        await db.stories.update_one(
-            {"id": story_id},
-            {"$addToSet": {"viewers": user["id"]}},
-        )
+    if user["id"] == s["author_id"]:
+        return {"ok": True}
+    completion = max(0.0, min(1.0, float((payload.completion if payload else None) or 1.0)))
+    # SSS-Tier: tracking de view event (event sourcing, limitado a 2000 eventos)
+    event = {
+        "user_id": user["id"],
+        "completion": round(completion, 3),
+        "viewed_at": now_iso(),
+    }
+    await db.stories.update_one(
+        {"id": story_id},
+        {
+            "$addToSet": {"viewers": user["id"]},
+            "$push": {"view_events": {"$each": [event], "$slice": -2000}},
+        },
+    )
     return {"ok": True}
 
 
@@ -3159,6 +3469,205 @@ async def get_sticker_responders(story_id: str, sticker_id: str, user=Depends(ge
             for r in responses if umap.get(r["user_id"])
         ]}
     return {"type": stype}
+
+
+# =========================================================================
+# SSS-Tier endpoints: insights, quick-replies, feed-stats
+# =========================================================================
+
+@api.get("/stories/feed-stats")
+async def stories_feed_stats(user=Depends(get_current_user)):
+    """
+    Resumo do tray actual do viewer — usado para badges/notificações no header.
+    Devolve: unseen_groups, hot_stories, total_active, top_mood.
+    """
+    now_dt = datetime.now(timezone.utc)
+    now_iso = now_dt.isoformat()
+    roda_authors_cur = db.users.find({"roda": user["id"]}, {"_id": 0, "id": 1})
+    roda_authors = [u["id"] async for u in roda_authors_cur]
+    ids = list({user["id"], *(user.get("following") or []), *roda_authors})
+    muted = set(user.get("stories_muted") or [])
+    rows = await db.stories.find(
+        {"author_id": {"$in": ids}, "expires_at": {"$gt": now_iso}}, {"_id": 0}
+    ).to_list(800)
+    visible = []
+    for s in rows:
+        if s["author_id"] in muted and s["author_id"] != user["id"]:
+            continue
+        if await _story_is_visible_to(s, user):
+            visible.append(s)
+    unseen_authors: set = set()
+    hot_count = 0
+    mood_count: dict = {}
+    for s in visible:
+        if s["author_id"] != user["id"] and user["id"] not in (s.get("viewers") or []):
+            unseen_authors.add(s["author_id"])
+        if _compute_story_eqs(s) >= 0.55:
+            hot_count += 1
+        m = s.get("mood")
+        if m:
+            mood_count[m] = mood_count.get(m, 0) + 1
+    top_mood = max(mood_count.items(), key=lambda kv: kv[1])[0] if mood_count else None
+    return {
+        "unseen_groups": len(unseen_authors),
+        "hot_stories": hot_count,
+        "total_active": len(visible),
+        "top_mood": top_mood,
+        "hour_bucket": _hour_bucket(now_dt),
+    }
+
+
+@api.get("/stories/{story_id}/quick-replies")
+async def story_quick_replies(story_id: str, user=Depends(get_current_user)):
+    """
+    Sugestões contextuais de respostas rápidas (chips) — baseadas em mood,
+    stickers e tipo de conteúdo do story. Não inclui chips se o viewer é o autor.
+    """
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    if s["author_id"] == user["id"]:
+        return {"suggestions": []}
+    if not s.get("allow_replies", True):
+        return {"suggestions": []}
+    return {
+        "suggestions": _quick_replies_for(s, limit=6),
+        "mood": s.get("mood"),
+    }
+
+
+@api.get("/stories/{story_id}/insights")
+async def story_insights(story_id: str, user=Depends(get_current_user)):
+    """
+    Painel de inteligência do autor — apenas o autor pode aceder.
+    Devolve:
+       · summary: total_views, unique_viewers, completion_avg, eqs, mood, hot
+       · retention_curve: lista [{bucket, completion_count}] (10 buckets 0-1)
+       · hourly_heatmap: lista de 24 inteiros (visualizações por hora UTC)
+       · reactions_breakdown: {emoji: count}
+       · stickers_summary: agregados por sticker
+       · top_viewers: top-5 viewers por afinidade ao autor (Mesa>Roda>Following)
+    """
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if s["author_id"] != user["id"]:
+        raise HTTPException(403, "Apenas o autor pode ver os insights")
+    view_events = s.get("view_events") or []
+    viewers_set = s.get("viewers") or []
+    n_unique = len(viewers_set)
+    # completion média sobre últimos events (1 por user)
+    last_event_per_user: dict = {}
+    for ev in view_events:
+        last_event_per_user[ev["user_id"]] = ev
+    completions = [ev.get("completion", 1.0) for ev in last_event_per_user.values()]
+    completion_avg = (sum(completions) / len(completions)) if completions else 0.0
+
+    # retention curve — 10 buckets [0, 0.1, 0.2, ... 1.0]
+    retention = [0] * 11
+    for c in completions:
+        idx = max(0, min(10, int(round(c * 10))))
+        retention[idx] += 1
+    # cumulative (do bucket K em diante == viram pelo menos K*10%)
+    cumulative = []
+    running = sum(retention)
+    for i in range(11):
+        cumulative.append({"threshold": round(i * 0.1, 1), "viewers": running})
+        running -= retention[i]
+
+    # hourly heatmap (UTC)
+    heatmap = [0] * 24
+    for ev in view_events:
+        try:
+            d = datetime.fromisoformat(ev["viewed_at"])
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            heatmap[d.astimezone(timezone.utc).hour] += 1
+        except Exception:
+            continue
+
+    # reactions breakdown
+    reactions = s.get("reactions") or {}
+    react_bd: dict = {}
+    for emoji in reactions.values():
+        if emoji:
+            react_bd[emoji] = react_bd.get(emoji, 0) + 1
+
+    # stickers summary
+    stickers_summary = []
+    for st in (s.get("stickers") or []):
+        sid = st["id"]
+        stype = st["type"]
+        entry = {"id": sid, "type": stype, "label": ""}
+        if stype == "poll":
+            votes = (s.get("poll_votes") or {}).get(sid, {})
+            total = sum(len(v or []) for v in votes.values())
+            entry["label"] = (st.get("data") or {}).get("question", "")
+            entry["total_votes"] = total
+        elif stype == "question":
+            answers = (s.get("question_answers") or {}).get(sid, [])
+            entry["label"] = (st.get("data") or {}).get("prompt", "")
+            entry["total_answers"] = len(answers)
+        elif stype == "slider":
+            responses = (s.get("slider_responses") or {}).get(sid, [])
+            entry["label"] = (st.get("data") or {}).get("prompt", "")
+            entry["total_responses"] = len(responses)
+            entry["average"] = (sum(r.get("value", 0) for r in responses) / len(responses)) if responses else None
+        elif stype == "location":
+            entry["label"] = (st.get("data") or {}).get("place", "")
+        elif stype == "mention":
+            entry["label"] = "@" + (st.get("data") or {}).get("username", "")
+        elif stype == "hashtag":
+            entry["label"] = "#" + (st.get("data") or {}).get("tag", "")
+        elif stype == "music":
+            entry["label"] = (st.get("data") or {}).get("title", "")
+        elif stype == "link":
+            entry["label"] = (st.get("data") or {}).get("label", "")
+        elif stype == "countdown":
+            entry["label"] = (st.get("data") or {}).get("title", "")
+        stickers_summary.append(entry)
+
+    # Top viewers por afinidade
+    top_viewers: list = []
+    if viewers_set:
+        viewer_users = await db.users.find(
+            {"id": {"$in": viewers_set}}, {"_id": 0}
+        ).to_list(800)
+        scored = []
+        for vu in viewer_users:
+            aff = await _affinity_score(user, vu["id"])
+            ev = last_event_per_user.get(vu["id"])
+            scored.append({
+                "user": public_user(vu),
+                "affinity": round(aff, 3),
+                "completion": round(ev.get("completion", 1.0), 2) if ev else 1.0,
+                "reaction": reactions.get(vu["id"]),
+            })
+        scored.sort(key=lambda x: x["affinity"], reverse=True)
+        top_viewers = scored[:8]
+
+    eqs = _compute_story_eqs(s)
+    return {
+        "summary": {
+            "total_views": len(view_events) if view_events else n_unique,
+            "unique_viewers": n_unique,
+            "completion_avg": round(completion_avg, 3),
+            "eqs": round(eqs, 3),
+            "is_hot": eqs >= 0.55,
+            "mood": s.get("mood"),
+            "replies_count": len(s.get("replies") or []),
+            "reactions_count": sum(1 for v in reactions.values() if v),
+        },
+        "retention_curve": cumulative,
+        "hourly_heatmap": heatmap,
+        "reactions_breakdown": react_bd,
+        "stickers_summary": stickers_summary,
+        "top_viewers": top_viewers,
+        "created_at": s.get("created_at"),
+        "expires_at": s.get("expires_at"),
+    }
 
 
 # ---------- Archive (autor only) ----------

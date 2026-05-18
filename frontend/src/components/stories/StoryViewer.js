@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
     X, Heart, Send, MoreHorizontal, Eye, Volume2, VolumeX, Trash2, Star,
-    BellOff, Sparkles, Pause,
+    BellOff, Sparkles, Pause, BarChart3, Flame,
 } from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
 import { Avatar } from "../Avatar";
@@ -13,6 +13,7 @@ import {
     STORY_REACTIONS, bgCss, fontStyleFor, computeTextDecorationStyle, LIGHT_BG_KEYS,
 } from "./storyConstants";
 import { ViewersSheet } from "./ViewersSheet";
+import { StoryInsightsSheet } from "./StoryInsightsSheet";
 import "./stories.css";
 
 function relativeTime(iso) {
@@ -44,6 +45,8 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     const [ripple, setRipple] = useState(null);
     const [dragY, setDragY] = useState(0);
     const [stickerUpdates, setStickerUpdates] = useState({});
+    const [insightsOpen, setInsightsOpen] = useState(false);
+    const [quickReplies, setQuickReplies] = useState([]);
 
     const rafRef = useRef(null);
     const startRef = useRef(0);
@@ -70,7 +73,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     // Mark viewed + reset progress on story change
     useEffect(() => {
         if (!story) return;
-        api.post(`/stories/${story.id}/view`).catch(() => {});
+        api.post(`/stories/${story.id}/view`, { completion: 0.05 }).catch(() => {});
         setProgress(0);
         elapsedRef.current = 0;
         startRef.current = performance.now();
@@ -78,8 +81,48 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         setReplyValue("");
         setShowReactions(false);
         setMoreOpen(false);
+        setInsightsOpen(false);
+        // Smart replies — só para stories de outros
+        setQuickReplies([]);
+        if (!isMine && story.allow_replies) {
+            api.get(`/stories/${story.id}/quick-replies`)
+                .then((r) => setQuickReplies(r.data?.suggestions || []))
+                .catch(() => {});
+        }
         // eslint-disable-next-line
     }, [gi, si]);
+
+    // SSS-Tier: ao trocar de story, envia o completion final do story anterior
+    const lastViewedRef = useRef({ storyId: null, completion: 0 });
+    useEffect(() => {
+        const lvr = lastViewedRef.current;
+        if (lvr.storyId && lvr.storyId !== story?.id && lvr.completion > 0.1) {
+            api.post(`/stories/${lvr.storyId}/view`, {
+                completion: Math.min(1.0, lvr.completion),
+            }).catch(() => {});
+        }
+        if (story) {
+            lastViewedRef.current = { storyId: story.id, completion: 0 };
+        }
+        // eslint-disable-next-line
+    }, [story?.id]);
+
+    // Acompanhar progress para o completion enviado ao trocar/fechar
+    useEffect(() => {
+        if (lastViewedRef.current.storyId === story?.id) {
+            lastViewedRef.current.completion = progress / 100;
+        }
+    }, [progress, story?.id]);
+
+    // Garantir envio do último completion ao fechar
+    useEffect(() => () => {
+        const lvr = lastViewedRef.current;
+        if (lvr.storyId && lvr.completion > 0.1) {
+            api.post(`/stories/${lvr.storyId}/view`, {
+                completion: Math.min(1.0, lvr.completion),
+            }).catch(() => {});
+        }
+    }, []);
 
     const next = useCallback(() => {
         if (si + 1 < group.stories.length) setSi(si + 1);
@@ -95,7 +138,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     // rAF-based smooth progress
     useEffect(() => {
         if (!story) return;
-        const isPaused = paused || replyFocus || viewersOpen || moreOpen;
+        const isPaused = paused || replyFocus || viewersOpen || moreOpen || insightsOpen;
         let last = performance.now();
         startRef.current = last;
         const tick = (now) => {
@@ -114,19 +157,19 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         };
         rafRef.current = requestAnimationFrame(tick);
         return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-    }, [gi, si, paused, replyFocus, viewersOpen, moreOpen, dur, next, story]);
+    }, [gi, si, paused, replyFocus, viewersOpen, moreOpen, insightsOpen, dur, next, story]);
 
     // Sync video play/pause + mute
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
         v.muted = muted;
-        if (paused || replyFocus || viewersOpen || moreOpen) {
+        if (paused || replyFocus || viewersOpen || moreOpen || insightsOpen) {
             try { v.pause(); } catch { /**/ }
         } else {
             try { v.play(); } catch { /**/ }
         }
-    }, [paused, replyFocus, viewersOpen, moreOpen, muted, gi, si]);
+    }, [paused, replyFocus, viewersOpen, moreOpen, insightsOpen, muted, gi, si]);
 
     const onUpdateSticker = useCallback((stickerId, newSticker) => {
         setStickerUpdates((prev) => ({ ...prev, [stickerId]: newSticker }));
@@ -266,15 +309,33 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                 onPointerUp={onShellPointerUp}
                 onPointerCancel={onShellPointerUp}
             >
+                {/* Top scrim — garante legibilidade do header em qualquer fundo */}
+                <div
+                    className="absolute top-0 left-0 right-0 z-30 pointer-events-none"
+                    style={{
+                        height: isLightBg ? "118px" : "92px",
+                        background: isLightBg
+                            ? "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.28) 60%, rgba(0,0,0,0) 100%)"
+                            : "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0) 100%)",
+                    }}
+                    aria-hidden
+                />
+
                 {/* Progress bars */}
                 <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))] z-40">
                     {group.stories.map((_, i) => (
-                        <div key={i} className="flex-1 h-[3px] sv-progress-bar rounded-full overflow-hidden">
+                        <div
+                            key={i}
+                            className="flex-1 h-[3px] rounded-full overflow-hidden"
+                            style={{ background: "rgba(255,255,255,0.32)" }}
+                        >
                             <div
-                                className="h-full sv-progress-fill"
+                                className="h-full"
                                 style={{
                                     width: `${i < si ? 100 : i === si ? progress : 0}%`,
+                                    background: "#ffffff",
                                     transition: i === si ? "none" : "width 200ms ease-out",
+                                    boxShadow: "0 0 6px rgba(255,255,255,0.4)",
                                 }}
                             />
                         </div>
@@ -288,28 +349,28 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                             <Avatar user={group.author} size={36} />
                         </div>
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}>
                         <div className="flex items-center gap-1.5">
                             <span className="text-white font-heading font-medium text-[14px] tracking-tight truncate">{group.author.name}</span>
-                            {group.author.verified && <Sparkles size={12} className="text-coral" />}
+                            {group.author.verified && <Sparkles size={12} className="text-white" />}
                             {(paused || replyFocus) && (
-                                <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/70">
+                                <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/80">
                                     <Pause size={10} strokeWidth={2.4} /> pausa
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-center gap-2 text-white/65 font-mono text-[10.5px]">
+                        <div className="flex items-center gap-2 text-white/80 font-mono text-[10.5px]">
                             <span>@{group.author.username}</span>
                             <span>·</span>
                             <span>{relativeTime(story.created_at)}</span>
-                            {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9.5px]">{audienceTag}</span>}
+                            {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-black/35 text-white text-[9.5px]">{audienceTag}</span>}
                         </div>
                     </div>
                     {story.media_type === "video" && (
                         <button
                             onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}
                             data-testid="story-mute-toggle"
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
+                            className="p-2 rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur tap-shrink"
                             aria-label={muted ? "Activar som" : "Silenciar"}
                         >
                             {muted ? <VolumeX size={15} strokeWidth={2} /> : <Volume2 size={15} strokeWidth={2} />}
@@ -318,7 +379,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                     <button
                         onClick={(e) => { e.stopPropagation(); setMoreOpen((o) => !o); }}
                         data-testid="story-more-btn"
-                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
+                        className="p-2 rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur tap-shrink"
                         aria-label="Mais"
                     >
                         <MoreHorizontal size={16} strokeWidth={2} />
@@ -326,7 +387,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                     <button
                         onClick={(e) => { e.stopPropagation(); onClose(); }}
                         data-testid="story-close"
-                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
+                        className="p-2 rounded-full bg-black/35 hover:bg-black/55 text-white backdrop-blur tap-shrink"
                     >
                         <X size={16} strokeWidth={2} />
                     </button>
@@ -444,8 +505,21 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                 {Object.keys(story.reactions || {}).length > 0 && (
                                     <span className="text-white/70">· {Object.entries(story.reactions).slice(0, 3).map(([e, n]) => `${e}${n}`).join(" ")}</span>
                                 )}
+                                {story.is_hot && (
+                                    <span className="ml-1 inline-flex items-center gap-0.5 text-white">
+                                        <Flame size={11} />
+                                    </span>
+                                )}
                             </button>
                             <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setInsightsOpen(true); }}
+                                    className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur tap-shrink"
+                                    data-testid="story-insights-btn"
+                                    title="Insights SSS-Tier"
+                                >
+                                    <BarChart3 size={15} strokeWidth={2.2} />
+                                </button>
                                 <button onClick={(e) => { e.stopPropagation(); addToHighlight(); }} className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur tap-shrink" data-testid="story-highlight-btn" title="Adicionar a destaque">
                                     <Star size={15} strokeWidth={2.2} />
                                 </button>
@@ -455,7 +529,29 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="space-y-2">
+                            {/* Smart-reply chips — SSS-Tier */}
+                            {!replyValue && quickReplies.length > 0 && story.allow_replies && (
+                                <div
+                                    className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1"
+                                    data-testid="story-quick-replies"
+                                >
+                                    {quickReplies.map((qr, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setReplyValue(qr);
+                                            }}
+                                            className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-[12px] whitespace-nowrap backdrop-blur tap-shrink border border-white/15"
+                                            data-testid={`story-quick-reply-${i}`}
+                                        >
+                                            {qr}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
                             <input
                                 value={replyValue}
                                 onChange={(e) => setReplyValue(e.target.value)}
@@ -469,7 +565,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                 data-testid="story-reply-input"
                             />
                             {replyValue.trim() ? (
-                                <button onClick={(e) => { e.stopPropagation(); sendReply(); }} className="p-2.5 rounded-full bg-coral hover:bg-coral-deep text-white tap-shrink" data-testid="story-send-reply">
+                                <button onClick={(e) => { e.stopPropagation(); sendReply(); }} className="p-2.5 rounded-full bg-black hover:bg-black/85 text-white tap-shrink" data-testid="story-send-reply">
                                     <Send size={16} strokeWidth={2.2} />
                                 </button>
                             ) : (
@@ -500,6 +596,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                     )}
                                 </>
                             )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -519,9 +616,13 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                     <Star size={13} strokeWidth={2} />
                                     Adicionar a destaque
                                 </button>
+                                <button onClick={() => { setMoreOpen(false); setInsightsOpen(true); }} className="w-full px-4 py-2.5 text-left hover:bg-white/10 flex items-center gap-2.5" data-testid="story-more-insights">
+                                    <BarChart3 size={13} strokeWidth={2} />
+                                    Insights SSS-Tier
+                                </button>
                                 <button onClick={() => { setMoreOpen(false); setViewersOpen(true); }} className="w-full px-4 py-2.5 text-left hover:bg-white/10 flex items-center gap-2.5">
                                     <Eye size={13} strokeWidth={2} />
-                                    Ver actividade
+                                    Ver visualizações
                                 </button>
                                 <div className="my-1 mx-3 h-px bg-white/10" />
                                 <button onClick={deleteStory} className="w-full px-4 py-2.5 text-left hover:bg-white/10 text-red-300 flex items-center gap-2.5">
@@ -535,6 +636,10 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
 
                 {viewersOpen && isMine && (
                     <ViewersSheet storyId={story.id} onClose={() => setViewersOpen(false)} />
+                )}
+
+                {insightsOpen && isMine && (
+                    <StoryInsightsSheet storyId={story.id} onClose={() => setInsightsOpen(false)} />
                 )}
             </div>
         </div>
