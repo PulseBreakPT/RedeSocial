@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Lock, LayoutDashboard, Settings } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
+import { confirmDialog } from "../components/ConfirmDialog";
 import { FollowsModal } from "../components/FollowsModal";
 import { PostCard } from "../components/PostCard";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
@@ -109,6 +110,16 @@ export default function Profile() {
     const toggleFollow = async () => {
         if (!viewer) { navigate("/login"); return; }
         const prev = profile.is_following;
+        if (prev) {
+            const ok = await confirmDialog({
+                title: `Deixar de seguir @${profile.username}?`,
+                description: "Vais deixar de ver as publicações desta pessoa no teu feed.",
+                confirmText: "Deixar de seguir",
+                cancelText: "Cancelar",
+                danger: true,
+            });
+            if (!ok) return;
+        }
         setProfile({ ...profile, is_following: !prev, followers_count: profile.followers_count + (prev ? -1 : 1) });
         try { await api.post(`/users/${username}/follow`); }
         catch (e) { setProfile({ ...profile, is_following: prev }); toastApiError(e); }
@@ -181,6 +192,7 @@ export default function Profile() {
                 onEditProfile={onEditProfile}
                 onOpenFollowers={() => setModal("followers")}
                 onOpenFollowing={() => setModal("following")}
+                onOpenMutuals={() => setModal("mutuals")}
                 onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
 

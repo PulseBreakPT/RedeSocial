@@ -234,7 +234,15 @@ function ConversationList({ activeId, onSelect, onNew }) {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("all");
     const [q, setQ] = useState("");
+    const [onlineUsers, setOnlineUsers] = useState([]);
     useLiveTime(30000);
+
+    // Load "Online agora" users (moved here from the right sidebar)
+    useEffect(() => {
+        api.get("/users/suggestions")
+            .then((r) => setOnlineUsers((r.data || []).slice(0, 12)))
+            .catch(() => {});
+    }, []);
 
     const load = useCallback(async () => {
         try {
@@ -289,6 +297,39 @@ function ConversationList({ activeId, onSelect, onNew }) {
 
     return (
         <div data-testid="conversations-list">
+            {/* Online agora — moved here from the global right sidebar */}
+            {onlineUsers.length > 0 && (
+                <div className="px-3 lg:px-4 pt-3 pb-2 hairline-b" data-testid="dms-online-now">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="type-overline inline-flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--eu-500)" }} />
+                            Online agora
+                        </p>
+                        <span className="font-mono text-[10.5px] text-black/40">{onlineUsers.length}</span>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-4 px-3 lg:px-4 pb-1">
+                        {onlineUsers.map((u) => (
+                            <button
+                                key={u.id}
+                                onClick={() => onSelect(u)}
+                                data-testid={`dms-online-${u.username}`}
+                                title={`Mensagem para @${u.username}`}
+                                className="relative flex-shrink-0 tap-shrink group"
+                            >
+                                <Avatar user={u} size={44} className="ring-2 ring-white" />
+                                <span
+                                    className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
+                                    style={{ background: "var(--eu-500)" }}
+                                />
+                                <span className="block mt-1 font-mono text-[10px] text-black/55 max-w-[48px] truncate text-center group-hover:text-black transition">
+                                    @{u.username}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="px-3 lg:px-4 py-2.5 hairline-b flex items-center gap-2">
                 <div className="relative flex-1">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />

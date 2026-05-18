@@ -1,22 +1,38 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
-import { api, formatApiError, toastApiError } from "../lib/api";
+import { X, Users2 } from "lucide-react";
+import { api, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { toast } from "sonner";
 
+/**
+ * Generic modal for showing follower lists.
+ * type:
+ *   "followers" — pessoas que seguem o utilizador
+ *   "following" — pessoas que o utilizador segue
+ *   "mutuals"   — pessoas que segues e que também seguem o utilizador
+ */
 export function FollowsModal({ username, type, onClose }) {
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const titles = {
+        followers: { overline: "Seguidores", title: "Seguidores", empty: "Ainda sem seguidores." },
+        following: { overline: "A seguir",   title: "A seguir",   empty: "Ainda não segue ninguém." },
+        mutuals:   { overline: "Em comum",   title: "Conhecidos em comum", empty: "Ainda não têm seguidores em comum." },
+    };
+    const t = titles[type] || titles.followers;
+    const endpoint = type === "mutuals" ? "mutuals" : type;
+
     useEffect(() => {
-        api.get(`/users/${username}/${type}`)
-            .then((r) => setUsers(r.data))
+        setLoading(true);
+        api.get(`/users/${username}/${endpoint}`)
+            .then((r) => setUsers(r.data || []))
             .catch((e) => toastApiError(e))
             .finally(() => setLoading(false));
-    }, [username, type]);
+    }, [username, endpoint]);
 
     const goto = (u) => {
         navigate(`/u/${u.username}`);
@@ -42,9 +58,10 @@ export function FollowsModal({ username, type, onClose }) {
             >
                 <div className="flex items-center justify-between px-6 py-4 hairline-b">
                     <div>
-                        <p className="type-overline mb-0.5">{type === "followers" ? "Seguidores" : "A seguir"}</p>
-                        <h2 className="font-display text-[22px] tracking-tight leading-none text-black">
-                            {type === "followers" ? "Seguidores" : "A seguir"}
+                        <p className="type-overline mb-0.5">{t.overline}</p>
+                        <h2 className="font-display text-[22px] tracking-tight leading-none text-black inline-flex items-center gap-2">
+                            {type === "mutuals" && <Users2 size={16} className="text-black/55" />}
+                            {t.title}
                         </h2>
                     </div>
                     <button onClick={onClose} className="w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.04] text-black/55" data-testid="follows-modal-close">
@@ -57,7 +74,7 @@ export function FollowsModal({ username, type, onClose }) {
                     ) : users.length === 0 ? (
                         <div className="p-12 text-center">
                             <p className="type-overline mb-1">Vazio</p>
-                            <p className="text-black/55 font-mono text-sm">Ninguém aqui ainda.</p>
+                            <p className="text-black/55 font-mono text-sm">{t.empty}</p>
                         </div>
                     ) : (
                         users.map((u) => (
@@ -74,12 +91,14 @@ export function FollowsModal({ username, type, onClose }) {
                                     </div>
                                     <div className="font-mono text-[11px] text-black/45">@{u.username}</div>
                                 </div>
-                                <button
-                                    onClick={(e) => handleFollow(e, u)}
-                                    className="btn-obsidian text-[11px] px-3.5 py-1.5"
-                                >
-                                    Seguir
-                                </button>
+                                {type !== "mutuals" && (
+                                    <button
+                                        onClick={(e) => handleFollow(e, u)}
+                                        className="btn-obsidian text-[11px] px-3.5 py-1.5"
+                                    >
+                                        Seguir
+                                    </button>
+                                )}
                             </div>
                         ))
                     )}

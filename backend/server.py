@@ -1683,6 +1683,21 @@ async def user_mutual(username: str, viewer=Depends(get_current_user)):
     return {"count": len(mutual_ids), "users": [public_user(u) for u in users]}
 
 
+@api.get("/users/{username}/mutuals")
+async def user_mutuals_full(username: str, viewer=Depends(get_current_user)):
+    """Full list of mutual followers (people you follow that also follow `username`)."""
+    target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == viewer["id"]:
+        return []
+    mutual_ids = list(set(target.get("followers", [])) & set(viewer.get("following", [])))
+    if not mutual_ids:
+        return []
+    users = await db.users.find({"id": {"$in": mutual_ids}}, {"_id": 0}).to_list(500)
+    return [public_user(u) for u in users]
+
+
 @api.get("/users/{username}/followers")
 async def list_followers(username: str, viewer=Depends(get_current_user)):
     user = await db.users.find_one({"username": username.lower()}, {"_id": 0})

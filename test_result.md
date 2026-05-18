@@ -557,3 +557,48 @@ agent_communication:
             - Mobile: exactly 2 avatars visible above the fold (topbar + "O teu story"), exactly 1 coral pulse (logo), no explicit refresh button.
             - Desktop: subtitle stable even when mood is selected, only one pulse cluster per zone.
         DO NOT auto-test (UI cosmetic change; user has not requested testing).
+
+    - agent: "main"
+      message: |
+        Mistura de tarefas (1 backend novo endpoint + frontend layout/buttons audit). Resumo:
+          BACKEND:
+            * Novo endpoint GET /api/users/{username}/mutuals — lista completa de followers em comum
+              entre o viewer autenticado e o `username`. Devolve [] quando username é o próprio
+              viewer ou utilizador não encontrado (404). Reutiliza interseção followers/following
+              já existente em /users/{u}/mutual (que continua a devolver count + 3 samples).
+              Lint OK; backend reiniciou sem erros.
+            VALIDAR (auto-test backend):
+              1) Login admin@vermillion.app / admin123 → token ok.
+              2) GET /api/users/{u}/mutuals para um username válido retorna 200 + array (pode estar
+                 vazio, sem erro).
+              3) GET /api/users/{u}/mutuals para username inexistente → 404.
+              4) GET /api/users/{u}/mutuals com username == viewer → [] (não 500).
+              5) GET /api/users/{u}/mutual (legacy) continua a devolver {count, users[]<=3}.
+          FRONTEND (UI ONLY, NO BACKEND TESTING NEEDED):
+            * Home/Início:
+                - Removidos chips "Recente" / "Top" no Feed (desktop e mobile). Sort silencioso a
+                  "recent". Estado `sort` e `lsGet/lsSet("feed.sort")` removidos.
+                - <MobileDiscoverStrip /> removido do Feed.js. Componente continua a existir mas
+                  não é renderizado em lado nenhum.
+                - RightSidebar agora oculta o card "Tendências" quando `pathname === "/"` ou
+                  "/feed" (useLocation). Continua visível em outras páginas. ActivityTicker e
+                  busca permanecem em todas.
+                - Card "Online agora" removido da RightSidebar.
+            * DMs (/messages):
+                - Adicionada faixa horizontal "Online agora" no topo de ConversationList — usa
+                  /api/users/suggestions (mantém o nome canonical) e abre conversa ao clicar
+                  (data-testid: dms-online-now, dms-online-{username}).
+            * Buttons audit (todos os botões do user request agora presentes e funcionais):
+                - Seguir / Deixar de seguir: botão "Seguindo" muda para "Deixar de seguir" em
+                  hover (desktop). Em mobile, abre confirmDialog antes de unfollow.
+                - Mensagem, Editar perfil, Partilhar perfil: já existiam (IdentityCard).
+                - Copiar link: já existia (ShareModal + ProfileMoreMenu).
+                - Ver seguidores / Ver a seguir: já existiam (FollowsModal type=followers|following).
+                - Ver mutuals: NOVO. Bloco "Seguido por X pessoas que segues" no IdentityCard
+                  passou a <button> (data-testid: mutual-followers) que abre FollowsModal com
+                  type="mutuals". FollowsModal agora suporta os 3 tipos (followers/following/mutuals)
+                  e chama o endpoint correto (singular/plural).
+                - Bloquear / Silenciar / Reportar: já existiam (ProfileMoreMenu).
+                - Fixar post: já existia (PostMenu, em posts próprios).
+          NÃO fazer auto-test do frontend — só do backend (novo endpoint /mutuals).
+

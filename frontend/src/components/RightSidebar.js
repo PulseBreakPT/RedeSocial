@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, TrendingUp, Hash, X } from "lucide-react";
 import { api } from "../lib/api";
 import { Avatar } from "./Avatar";
@@ -14,16 +14,16 @@ export function RightSidebar() {
     const [results, setResults] = useState({ users: [], tags: [] });
     const [searching, setSearching] = useState(false);
     const [focused, setFocused] = useState(false);
-    const [suggestions, setSuggestions] = useState([]);
     const [trending, setTrending] = useState([]);
     const navigate = useNavigate();
+    const { pathname } = useLocation();
+
+    // Hide the Trending card on the home/feed page (it now lives only on /trending and /explore).
+    const isHome = pathname === "/" || pathname === "/feed";
 
     const searchRef = useClickOutside(() => setFocused(false), focused);
 
     useEffect(() => {
-        // suggestions feed the "Online agora" widget only; the full "Quem seguir"
-        // list lives on the Descobrir (Explore) page now.
-        api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
         api.get("/trending").then((r) => setTrending(r.data.slice(0, 6))).catch(() => {});
     }, []);
 
@@ -51,10 +51,6 @@ export function RightSidebar() {
 
     const showDropdown = focused && q.trim().length > 0;
     const isEmpty = !searching && results.users.length === 0 && results.tags.length === 0;
-
-    // First 5 online-marked suggestions feed the "Online agora" widget.
-    // If no online flag exists on backend, we still show the first few suggestions as the "active circle".
-    const onlineNow = suggestions.slice(0, 5);
 
     return (
         <aside className="hidden lg:flex flex-col gap-5 py-3 pl-2 sticky top-0 h-[calc(100vh-0.75rem)] overflow-y-auto no-scrollbar" data-testid="right-sidebar">
@@ -147,36 +143,10 @@ export function RightSidebar() {
 
             <ActivityTicker />
 
-            {/* Online now */}
-            {onlineNow.length > 0 && (
-                <div className="card-lux p-5" data-testid="online-now">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="type-overline mb-0.5">Online agora</p>
-                            <h3 className="font-display text-[20px] leading-none tracking-tight text-black mt-1">Comunidade ativa</h3>
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                        {onlineNow.map((u) => (
-                            <Link
-                                key={u.id}
-                                to={`/u/${u.username}`}
-                                data-testid={`online-${u.username}`}
-                                className="relative tap-shrink"
-                                title={`@${u.username}`}
-                            >
-                                <Avatar user={u} size={42} className="ring-2 ring-white" />
-                                <span
-                                    className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
-                                    style={{ background: "var(--eu-500)" }}
-                                />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* "Online agora" moved to the DMs (/messages) page. */}
 
-            {/* Trending */}
+            {/* Trending — hidden on the home/feed page (lives on /trending and /explore). */}
+            {!isHome && (
             <div className="card-lux p-5">
                 <div className="flex items-center justify-between mb-4">
                     <div>
@@ -216,6 +186,7 @@ export function RightSidebar() {
                     ver tudo →
                 </Link>
             </div>
+            )}
 
             {/* "Quem seguir" moved to the Descobrir (Explore) page. */}
 

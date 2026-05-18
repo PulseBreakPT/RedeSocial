@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { RefreshCw, Sparkles, Flame, Clock } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
-import { MobileDiscoverStrip } from "../components/MobileDiscoverStrip";
 import { MobileHomeHero } from "../components/MobileHomeHero";
 import { MobileComposePill } from "../components/MobileComposePill";
 import { PostSkeletonList } from "../components/Skeleton";
@@ -12,18 +11,11 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
-import { lsGet, lsSet } from "../lib/portuguese";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
-
-const SORTS = [
-    { key: "recent", label: "Recente", icon: Clock },
-    { key: "top", label: "Top", icon: Flame },
-];
 
 export default function Feed() {
     const { user } = useAuth();
     const [tab, setTab] = useState("following");
-    const [sort, setSort] = useState(lsGet("feed.sort", "recent"));
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -40,14 +32,12 @@ export default function Feed() {
     }, []);
     const firstName = (user?.name || user?.username || "").split(" ")[0] || "";
 
-    useEffect(() => lsSet("feed.sort", sort), [sort]);
-
     const load = useCallback(
         async (which = tab, showSkeleton = true) => {
             if (showSkeleton) setLoading(true);
             try {
                 const params = new URLSearchParams();
-                params.set("sort", sort);
+                params.set("sort", "recent");
                 // V2: For You uses the new ranking engine, Following stays chronological
                 let url;
                 if (which === "foryou") {
@@ -66,7 +56,7 @@ export default function Feed() {
                 setRefreshing(false);
             }
         },
-        [tab, sort],
+        [tab],
     );
 
     useEffect(() => { load(tab); }, [load, tab]);
@@ -93,7 +83,7 @@ export default function Feed() {
         const id = setInterval(async () => {
             try {
                 const params = new URLSearchParams();
-                params.set("sort", sort);
+                params.set("sort", "recent");
                 const url = tab === "following" ? `/posts/feed?${params}` : `/posts/explore?${params}`;
                 const { data } = await api.get(url);
                 let n = 0;
@@ -102,7 +92,7 @@ export default function Feed() {
             } catch {}
         }, 30000);
         return () => clearInterval(id);
-    }, [tab, sort, wsState]);
+    }, [tab, wsState]);
 
     const refresh = useCallback(async () => {
         setRefreshing(true);
@@ -148,28 +138,10 @@ export default function Feed() {
                         </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                        {SORTS.map((s) => {
-                            const Icon = s.icon;
-                            const active = sort === s.key;
-                            return (
-                                <button
-                                    key={s.key}
-                                    onClick={() => setSort(s.key)}
-                                    data-testid={`feed-sort-${s.key}`}
-                                    title={s.label}
-                                    className={`h-9 px-3 rounded-full inline-flex items-center gap-1.5 transition tap-shrink text-[12px] font-medium tracking-tight ${
-                                        active ? "chip-filter-on" : "text-black/75 hover:bg-black/[0.06]"
-                                    }`}
-                                >
-                                    <Icon size={14} strokeWidth={1.8} />
-                                    <span>{s.label}</span>
-                                </button>
-                            );
-                        })}
                         <button
                             onClick={refresh}
                             data-testid="feed-refresh"
-                            className="w-9 h-9 ml-1 rounded-full grid place-items-center text-black/70 hover:text-black hover:bg-black/[0.05] tap-shrink transition border border-black/[0.06]"
+                            className="w-9 h-9 rounded-full grid place-items-center text-black/70 hover:text-black hover:bg-black/[0.05] tap-shrink transition border border-black/[0.06]"
                             title="Atualizar"
                         >
                             <RefreshCw size={15} strokeWidth={1.8} className={refreshing ? "animate-spin" : ""} />
@@ -198,12 +170,10 @@ export default function Feed() {
                 </div>
             </div>
 
-            {/* Mobile-only hero strip (greeting + sort only — no avatar/live/refresh; those live in MobileTopBar) */}
+            {/* Mobile-only hero strip — greeting only (sort removed) */}
             <MobileHomeHero
                 greeting={greeting}
                 firstName={firstName}
-                sort={sort}
-                onSort={setSort}
             />
 
             {/* Mobile-only tabs — sticky under MobileTopBar */}
@@ -254,7 +224,7 @@ export default function Feed() {
                 <SmartTodayBanner />
             </div>
 
-            <MobileDiscoverStrip />
+            {/* MobileDiscoverStrip removed — trending is hidden on home, online-agora moved to /messages */}
 
             {loading ? (
                 <PostSkeletonList count={5} />

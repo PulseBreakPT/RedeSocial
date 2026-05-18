@@ -25,7 +25,7 @@ const slug = (s) =>
 
 export function IdentityCard({
     profile, stats, mutual, regionMeta, moodMeta, teamMeta,
-    onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing,
+    onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing, onOpenMutuals,
     onProfileUpdate,
 }) {
     const [fav, setFav] = useState(false);
@@ -33,6 +33,7 @@ export function IdentityCard({
     const [quickOpen, setQuickOpen] = useState(false);
     const [quickMsg, setQuickMsg] = useState("");
     const [sending, setSending] = useState(false);
+    const [followHover, setFollowHover] = useState(false);
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-PT", { month: "long", year: "numeric" })
         : "";
@@ -169,10 +170,17 @@ export function IdentityCard({
                             {profile.is_following ? (
                                 <button
                                     onClick={onFollow}
+                                    onMouseEnter={() => setFollowHover(true)}
+                                    onMouseLeave={() => setFollowHover(false)}
                                     data-testid="follow-profile-btn"
-                                    className="chip-on px-5 py-2 text-[11px] !text-white font-heading font-medium tracking-tight rounded-full"
+                                    title="Deixar de seguir"
+                                    className={`px-5 py-2 text-[11px] font-heading font-medium tracking-tight rounded-full transition ${
+                                        followHover
+                                            ? "border border-red-200 bg-red-50 text-red-600"
+                                            : "chip-on !text-white"
+                                    }`}
                                 >
-                                    Seguindo
+                                    {followHover ? "Deixar de seguir" : "Seguindo"}
                                 </button>
                             ) : (
                                 <button
@@ -284,9 +292,12 @@ export function IdentityCard({
                 </div>
 
                 {mutual && mutual.count > 0 && (
-                    <div
-                        className="flex items-center gap-2.5 mt-4 text-[11px] font-mono text-black/55"
+                    <button
+                        type="button"
+                        onClick={onOpenMutuals}
                         data-testid="mutual-followers"
+                        className="flex items-center gap-2.5 mt-4 text-[11px] font-mono text-black/55 hover:text-black transition group"
+                        title="Ver conhecidos em comum"
                     >
                         <div className="flex -space-x-2">
                             {mutual.users.map((u) => (
@@ -298,7 +309,8 @@ export function IdentityCard({
                             Seguido por <span className="text-black font-medium">{mutual.count}</span>{" "}
                             {mutual.count > 1 ? "pessoas que segues" : "pessoa que segues"}
                         </span>
-                    </div>
+                        <span className="font-mono text-[10px] text-black/35 group-hover:text-black/60 transition">→</span>
+                    </button>
                 )}
 
                 <div className="flex gap-6 mt-5">
