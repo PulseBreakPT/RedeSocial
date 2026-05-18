@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Clock, ExternalLink, Music } from "lucide-react";
+import { MapPin, Clock, ExternalLink } from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
+import "./stories.css";
 
-/** Wrapper que posiciona um sticker no canvas do story (área normalizada 0..1). */
+/** Wrapper que posiciona um sticker no canvas do story (0..1 normalizado). */
 function StickerWrap({ sticker, children, onClick, isAuthor }) {
     const style = {
         position: "absolute",
@@ -11,28 +12,32 @@ function StickerWrap({ sticker, children, onClick, isAuthor }) {
         top: `${sticker.y * 100}%`,
         transform: `translate(-50%, -50%) rotate(${sticker.rotation || 0}deg) scale(${sticker.scale || 1})`,
         zIndex: 25,
-        maxWidth: "78%",
+        maxWidth: "82%",
     };
     return (
         <div
             style={style}
-            onClick={(e) => {
-                e.stopPropagation();
-                onClick?.(e);
-            }}
+            onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             data-testid={`story-sticker-${sticker.type}-${sticker.id}`}
             data-author={isAuthor ? "true" : "false"}
+            data-no-drag
         >
             {children}
         </div>
     );
 }
 
-/** Poll: 2 botões empilhados. Mostra resultados se já votou ou é autor. */
+/** Poll: barras animadas a preencher; winner com glow. */
 function PollSticker({ story, sticker, isAuthor, onUpdate }) {
     const [busy, setBusy] = useState(false);
     const results = sticker.results || { options: sticker.data?.options || [], total: 0, viewer_vote: null };
     const showResults = isAuthor || results.viewer_vote !== null;
+    const winnerId = showResults && results.options.length > 0
+        ? results.options.reduce((a, b) => ((a.pct || 0) >= (b.pct || 0) ? a : b)).id
+        : null;
 
     const vote = async (option_id) => {
         if (isAuthor || busy) return;
@@ -46,39 +51,43 @@ function PollSticker({ story, sticker, isAuthor, onUpdate }) {
     };
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 p-3 min-w-[200px]">
+            <div className="sv-sticker-glass rounded-2xl p-3 min-w-[220px]">
                 <div className="text-[12px] font-heading font-semibold text-black/85 mb-2 text-center tracking-tight">
                     {sticker.data?.question}
                 </div>
                 <div className="space-y-1.5">
-                    {results.options.map((opt) => (
-                        <button
-                            key={opt.id}
-                            disabled={isAuthor || busy}
-                            onClick={() => vote(opt.id)}
-                            className={`w-full relative overflow-hidden rounded-xl px-3 py-2 text-[13px] font-medium transition ${
-                                results.viewer_vote === opt.id
-                                    ? "bg-black text-white"
-                                    : showResults
-                                        ? "bg-black/[0.05] text-black/80 hover:bg-black/[0.08]"
-                                        : "bg-black/[0.04] text-black hover:bg-black/[0.10]"
-                            }`}
-                            data-testid={`poll-option-${opt.id}`}
-                        >
-                            {showResults && (
-                                <div
-                                    className="absolute inset-y-0 left-0 bg-coral/30"
-                                    style={{ width: `${opt.pct || 0}%` }}
-                                />
-                            )}
-                            <div className="relative flex items-center justify-between gap-2">
-                                <span className="truncate">{opt.text}</span>
+                    {results.options.map((opt) => {
+                        const isWinner = opt.id === winnerId && (opt.pct || 0) > 0;
+                        const myVote = results.viewer_vote === opt.id;
+                        return (
+                            <button
+                                key={opt.id}
+                                disabled={isAuthor || busy}
+                                onClick={() => vote(opt.id)}
+                                className={`w-full relative overflow-hidden rounded-xl px-3 py-2 text-[13px] font-medium transition ${
+                                    myVote
+                                        ? "bg-black text-white"
+                                        : showResults
+                                            ? "bg-black/[0.05] text-black/80"
+                                            : "bg-black/[0.06] text-black hover:bg-black/[0.12]"
+                                } ${isWinner ? "sv-poll-winner" : ""}`}
+                                data-testid={`poll-option-${opt.id}`}
+                            >
                                 {showResults && (
-                                    <span className="font-mono text-[11px] tabular-nums opacity-80">{opt.pct || 0}%</span>
+                                    <div
+                                        className="sv-poll-bar absolute inset-y-0 left-0 bg-gradient-to-r from-coral/40 to-coral/25"
+                                        style={{ width: `${opt.pct || 0}%` }}
+                                    />
                                 )}
-                            </div>
-                        </button>
-                    ))}
+                                <div className="relative flex items-center justify-between gap-2">
+                                    <span className="truncate">{opt.text}</span>
+                                    {showResults && (
+                                        <span className="font-mono text-[11px] tabular-nums opacity-85">{opt.pct || 0}%</span>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
                 {showResults && (
                     <div className="mt-2 text-center text-[10px] font-mono uppercase tracking-[0.14em] text-black/45">
@@ -90,7 +99,7 @@ function PollSticker({ story, sticker, isAuthor, onUpdate }) {
     );
 }
 
-/** Question: prompt + input que abre teclado/textarea inline. */
+/** Question: tap opens inline input. */
 function QuestionSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
     const [open, setOpen] = useState(false);
     const [value, setValue] = useState("");
@@ -105,19 +114,20 @@ function QuestionSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
             setValue("");
             onUpdate?.({ ...sticker, viewer_answered: true, answers_count: (sticker.answers_count || 0) + 1 });
             if (navigator.vibrate) navigator.vibrate(20);
+            onPause?.(false);
         } catch (e) { toastApiError(e); }
         finally { setBusy(false); }
     };
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}
             onClick={() => { if (!isAuthor && !sticker.viewer_answered) { setOpen(true); onPause?.(true); } }}>
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 px-4 py-3 min-w-[220px]">
+            <div className="sv-sticker-glass rounded-2xl px-4 py-3 min-w-[240px]">
                 <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-black/45 mb-1">Pergunta</div>
                 <div className="text-[14px] font-display tracking-tight text-black/90 leading-tight">
                     {sticker.data?.prompt}
                 </div>
                 {!isAuthor && !open && (
-                    <div className="mt-2 text-[11px] font-mono text-coral">
+                    <div className="mt-2 text-[11px] font-mono text-coral-deep font-semibold">
                         {sticker.viewer_answered ? "✓ Já respondeste" : "Toca para responder"}
                     </div>
                 )}
@@ -147,7 +157,7 @@ function QuestionSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
     );
 }
 
-/** Slider: arrastar emoji. */
+/** Slider: drag with glowing thumb. */
 function SliderSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
     const [value, setValue] = useState(sticker.viewer_value ?? 0.5);
     const [committed, setCommitted] = useState(sticker.viewer_value != null);
@@ -164,18 +174,19 @@ function SliderSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
             setCommitted(true);
             onUpdate?.(r.data.sticker);
             if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
+            onPause?.(false);
         } catch (e) { toastApiError(e); }
         finally { setBusy(false); }
     };
     const pct = Math.round(value * 100);
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor} onClick={() => onPause?.(true)}>
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 px-4 py-3 min-w-[240px]">
+            <div className="sv-sticker-glass rounded-2xl px-4 py-3 min-w-[260px]">
                 <div className="text-[13px] font-heading font-medium text-black/85 text-center mb-2 tracking-tight">
                     {sticker.data?.prompt}
                 </div>
                 <div className="relative h-10 rounded-full bg-black/[0.06] overflow-hidden">
-                    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-coral to-coral-deep rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-coral to-coral-deep transition-all" style={{ width: `${pct}%` }} />
                     <input
                         type="range" min={0} max={100} value={pct}
                         disabled={isAuthor}
@@ -185,10 +196,9 @@ function SliderSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         data-testid={`slider-input-${sticker.id}`}
                     />
-                    <div className="absolute inset-0 flex items-center justify-start pointer-events-none">
-                        <div className="text-[24px] -mt-0.5" style={{ marginLeft: `calc(${pct}% - 14px)` }}>
-                            {sticker.data?.emoji || "🔥"}
-                        </div>
+                    <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none transition-all"
+                         style={{ left: `calc(${pct}% - 14px)` }}>
+                        <div className="sv-slider-thumb text-[24px]">{sticker.data?.emoji || "🔥"}</div>
                     </div>
                 </div>
                 {isAuthor ? (
@@ -205,14 +215,13 @@ function SliderSticker({ story, sticker, isAuthor, onUpdate, onPause }) {
     );
 }
 
-/** Mention chip → link para perfil. */
 function MentionSticker({ sticker, isAuthor }) {
     const username = sticker.data?.username;
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <Link
                 to={`/u/${username}`}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur shadow-lg border border-white/50 text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
             >
                 <span className="text-coral">@</span>{username}
             </Link>
@@ -220,7 +229,6 @@ function MentionSticker({ sticker, isAuthor }) {
     );
 }
 
-/** Hashtag chip → link. */
 function HashtagSticker({ sticker, isAuthor }) {
     const tag = sticker.data?.tag;
     return (
@@ -238,7 +246,7 @@ function HashtagSticker({ sticker, isAuthor }) {
 function LocationSticker({ sticker, isAuthor }) {
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur shadow-lg border border-white/50 text-[13px] font-heading font-medium tracking-tight text-black/90">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90">
                 <MapPin size={13} className="text-coral" strokeWidth={2.4} />
                 {sticker.data?.place}
             </div>
@@ -246,6 +254,7 @@ function LocationSticker({ sticker, isAuthor }) {
     );
 }
 
+/** Countdown with flip animation per second */
 function CountdownSticker({ sticker, isAuthor }) {
     const [now, setNow] = useState(Date.now());
     useEffect(() => {
@@ -261,17 +270,30 @@ function CountdownSticker({ sticker, isAuthor }) {
     const expired = ends <= now;
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
-            <div className="rounded-2xl bg-black/85 backdrop-blur shadow-xl px-4 py-2.5 text-white text-center min-w-[180px]">
+            <div className="rounded-2xl bg-black/90 backdrop-blur-xl shadow-xl border border-white/10 px-4 py-2.5 text-white text-center min-w-[200px]">
                 <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-white/55 flex items-center justify-center gap-1">
                     <Clock size={11} strokeWidth={2.2} />
                     {sticker.data?.title}
                 </div>
-                <div className="mt-1 font-display text-[18px] tracking-tight tabular-nums">
-                    {expired ? "Terminou ✨" : `${d > 0 ? d + "d " : ""}${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`}
-                </div>
+                {expired ? (
+                    <div className="mt-1 font-display text-[18px] tracking-tight">Terminou ✨</div>
+                ) : (
+                    <div className="mt-1 font-display text-[20px] tracking-tight tabular-nums flex items-center justify-center gap-0.5">
+                        {d > 0 && <FlipDigit value={`${d}d`} keyVal={`d-${d}`} />}
+                        <FlipDigit value={String(h).padStart(2, "0")} keyVal={`h-${h}`} />
+                        <span className="opacity-60">:</span>
+                        <FlipDigit value={String(m).padStart(2, "0")} keyVal={`m-${m}`} />
+                        <span className="opacity-60">:</span>
+                        <FlipDigit value={String(s).padStart(2, "0")} keyVal={`s-${s}`} />
+                    </div>
+                )}
             </div>
         </StickerWrap>
     );
+}
+
+function FlipDigit({ value, keyVal }) {
+    return <span className="sv-flip-digit" key={keyVal}>{value}</span>;
 }
 
 function LinkSticker({ sticker, isAuthor }) {
@@ -281,7 +303,7 @@ function LinkSticker({ sticker, isAuthor }) {
                 href={sticker.data?.url}
                 target="_blank" rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white shadow-lg text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-coral hover:text-white transition"
             >
                 <ExternalLink size={12} strokeWidth={2.4} />
                 {sticker.data?.label || "Saber mais"}
@@ -293,8 +315,8 @@ function LinkSticker({ sticker, isAuthor }) {
 function MusicSticker({ sticker, isAuthor }) {
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur shadow-lg border border-white/50 text-[13px] font-heading font-medium tracking-tight text-black/90 max-w-[240px]">
-                <Music size={13} className="text-coral animate-pulse" strokeWidth={2.4} />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 max-w-[260px]">
+                <span className="sv-eq text-coral"><span /><span /><span /><span /></span>
                 <span className="truncate">
                     <span className="font-semibold">{sticker.data?.title}</span>
                     {sticker.data?.artist && <span className="text-black/55"> · {sticker.data.artist}</span>}
@@ -304,7 +326,6 @@ function MusicSticker({ sticker, isAuthor }) {
     );
 }
 
-/** Renderiza todos os stickers de um story. */
 export function StoryStickerOverlay({ story, isAuthor, onPause, onUpdateSticker }) {
     if (!story.stickers?.length) return null;
     return (

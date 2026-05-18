@@ -1,0 +1,256 @@
+/* ============================================================
+   Stories SSS Tier — animations, glass, gestures
+   ============================================================ */
+
+/* Composer canvas — touch tuning */
+.sc-canvas {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.sc-canvas .sc-sticker {
+    cursor: grab;
+    transition: transform 120ms ease, filter 120ms ease;
+    will-change: transform;
+}
+.sc-canvas .sc-sticker:active,
+.sc-canvas .sc-sticker.is-dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+    z-index: 60 !important;
+}
+
+.sc-trash {
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+.sc-trash.is-armed {
+    transform: scale(1.15);
+    background: rgba(239, 68, 68, 0.95) !important;
+    color: #fff !important;
+}
+
+/* Composer toolbars */
+.sc-toolbar-btn {
+    transition: transform 140ms ease, background-color 140ms ease;
+}
+.sc-toolbar-btn:active { transform: scale(0.92); }
+
+/* Background tile in carousel */
+.sc-bg-tile {
+    transition: transform 200ms cubic-bezier(.34, 1.56, .64, 1), box-shadow 200ms ease, border-color 200ms ease;
+}
+.sc-bg-tile.is-active {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(232, 93, 79, 0.9);
+}
+
+/* Viewer */
+.sv-shell {
+    transition: transform 240ms cubic-bezier(.22, .61, .36, 1), opacity 240ms ease;
+}
+.sv-shell.is-dragging {
+    transition: none;
+}
+
+.sv-progress-bar {
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(6px);
+}
+.sv-progress-fill {
+    background: linear-gradient(90deg, #ffffff 0%, #ffe7e2 100%);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
+}
+
+.sv-tap-feedback {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 999px;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 70%);
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+    animation: sv-tap-ripple 380ms ease-out;
+}
+@keyframes sv-tap-ripple {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+
+/* Pause indicator */
+.sv-paused-pill {
+    animation: sv-pulse 1.6s ease-in-out infinite;
+}
+@keyframes sv-pulse {
+    0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 1;   transform: translateX(-50%) scale(1.04); }
+}
+
+/* Reactions arc */
+.sv-react-orb {
+    transition: transform 180ms cubic-bezier(.34, 1.56, .64, 1), background-color 160ms ease;
+}
+.sv-react-orb:hover { transform: translateY(-4px) scale(1.18); }
+.sv-react-orb:active { transform: scale(0.92); }
+.sv-react-orb.is-selected {
+    box-shadow: 0 0 0 2px #fff, 0 6px 24px rgba(232, 93, 79, 0.6);
+}
+
+@keyframes sv-react-pop {
+    0%   { transform: scale(0.4) translateY(20px); opacity: 0; }
+    60%  { transform: scale(1.1) translateY(0); opacity: 1; }
+    100% { transform: scale(1)   translateY(0); }
+}
+.sv-react-pop { animation: sv-react-pop 320ms cubic-bezier(.34, 1.56, .64, 1) both; }
+
+/* Floating reaction burst (from quick-heart) */
+@keyframes sv-burst {
+    0%   { transform: translate(-50%, 0) scale(0.4); opacity: 0; }
+    20%  { transform: translate(-50%, -10px) scale(1.6); opacity: 1; }
+    100% { transform: translate(-50%, -180px) scale(0.9); opacity: 0; }
+}
+.sv-burst { animation: sv-burst 1.1s cubic-bezier(.22, .61, .36, 1) both; }
+
+/* Music equalizer bars */
+.sv-eq {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+}
+.sv-eq span {
+    display: block;
+    width: 2.5px;
+    background: currentColor;
+    border-radius: 1.5px;
+    animation: sv-eq-bounce 1s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+.sv-eq span:nth-child(1) { animation-delay: 0ms;   height: 60%; }
+.sv-eq span:nth-child(2) { animation-delay: 130ms; height: 90%; }
+.sv-eq span:nth-child(3) { animation-delay: 60ms;  height: 70%; }
+.sv-eq span:nth-child(4) { animation-delay: 200ms; height: 100%; }
+@keyframes sv-eq-bounce {
+    0%, 100% { transform: scaleY(0.5); }
+    50%      { transform: scaleY(1);   }
+}
+
+/* Countdown digit flip */
+.sv-flip-digit {
+    display: inline-block;
+    min-width: 0.62em;
+    text-align: center;
+    animation: sv-flip-in 320ms ease-out both;
+}
+@keyframes sv-flip-in {
+    0%   { transform: rotateX(-90deg); opacity: 0; }
+    100% { transform: rotateX(0deg);   opacity: 1; }
+}
+
+/* Poll bar fill */
+.sv-poll-bar {
+    transition: width 520ms cubic-bezier(.22, .61, .36, 1);
+}
+.sv-poll-winner {
+    box-shadow: 0 0 0 2px rgba(232, 93, 79, 0.95), 0 4px 16px rgba(232, 93, 79, 0.4);
+}
+
+/* Glass sticker base */
+.sv-sticker-glass {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 10px 30px rgba(0, 0, 0, 0.18),
+        0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Identity ring */
+.sv-ring {
+    background: conic-gradient(from 210deg, #ff6b6b 0deg, #f08c1f 110deg, #e85d4f 240deg, #ff6b6b 360deg);
+    padding: 2.5px;
+    border-radius: 9999px;
+}
+.sv-ring.is-seen {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Story bar live dot */
+.sv-livedot {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(34, 197, 94, 0.35);
+    animation: sv-pulse-live 1.8s ease-out infinite;
+}
+@keyframes sv-pulse-live {
+    0%   { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(34, 197, 94, 0.55); }
+    70%  { box-shadow: 0 0 0 2px #fff, 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(34, 197, 94, 0); }
+}
+
+/* Composer slide-in toolbar */
+@keyframes sc-toolbar-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.sc-toolbar-in { animation: sc-toolbar-in 220ms cubic-bezier(.22, .61, .36, 1) both; }
+
+/* Sheet from bottom */
+@keyframes sc-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+.sc-sheet-up { animation: sc-sheet-up 280ms cubic-bezier(.22, .61, .36, 1) both; }
+
+/* Fade overlay */
+@keyframes sc-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.sc-fade-in { animation: sc-fade-in 200ms ease both; }
+
+/* Composer textarea premium look (centered, on canvas) */
+.sc-text-overlay {
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    text-align: center;
+    line-height: 1.05;
+    width: 100%;
+    color: inherit;
+    caret-color: currentColor;
+}
+
+/* Slider sticker thumb glow */
+.sv-slider-thumb {
+    filter: drop-shadow(0 4px 12px rgba(232, 93, 79, 0.6));
+}
+
+/* Skeleton shimmer */
+.sv-skel {
+    background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 100%);
+    background-size: 200% 100%;
+    animation: sv-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes sv-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Identity ring spin (active story) */
+@keyframes sv-ring-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Highlights cover gradient ring */
+.hl-ring {
+    background: conic-gradient(from 210deg, #ff6b6b 0deg, #f08c1f 110deg, #e85d4f 240deg, #ff6b6b 360deg);
+}
+.hl-ring.is-seen {
+    background: rgba(0, 0, 0, 0.16);
+}

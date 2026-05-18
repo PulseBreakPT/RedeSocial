@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="13" skipped="0" tests="18" time="2.513" timestamp="2026-05-18T18:05:53.942334+00:00" hostname="agent-env-ddc61619-1217-452f-b85c-984f89cb48b4"><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_each_text_style[plain]" time="0.627"><failure message="KeyError: 'text_style'">backend/tests/test_stories_sss.py:87: in test_create_story_with_each_text_style
+    assert body["text_style"] == text_style
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'text_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_each_text_style[highlight]" time="0.052"><failure message="KeyError: 'text_style'">backend/tests/test_stories_sss.py:87: in test_create_story_with_each_text_style
+    assert body["text_style"] == text_style
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'text_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_each_text_style[outline]" time="0.053"><failure message="KeyError: 'text_style'">backend/tests/test_stories_sss.py:87: in test_create_story_with_each_text_style
+    assert body["text_style"] == text_style
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'text_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_each_text_style[glow]" time="0.053"><failure message="KeyError: 'text_style'">backend/tests/test_stories_sss.py:87: in test_create_story_with_each_text_style
+    assert body["text_style"] == text_style
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'text_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_new_pt_backgrounds[tejo]" time="0.052"><failure message="KeyError: 'background'">backend/tests/test_stories_sss.py:102: in test_create_story_with_new_pt_backgrounds
+    assert body["background"] == bg
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'background'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_new_pt_backgrounds[azulejo]" time="0.048"><failure message="KeyError: 'background'">backend/tests/test_stories_sss.py:102: in test_create_story_with_new_pt_backgrounds
+    assert body["background"] == bg
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'background'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_create_story_with_new_pt_backgrounds[pinhal]" time="0.054"><failure message="KeyError: 'background'">backend/tests/test_stories_sss.py:102: in test_create_story_with_new_pt_backgrounds
+    assert body["background"] == bg
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'background'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_brush_font_style" time="0.062"><failure message="KeyError: 'font_style'">backend/tests/test_stories_sss.py:117: in test_brush_font_style
+    assert body["font_style"] == "brush"
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'font_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_invalid_text_style_falls_back_to_plain" time="0.055"><failure message="KeyError: 'text_style'">backend/tests/test_stories_sss.py:139: in test_invalid_text_style_falls_back_to_plain
+    assert body["text_style"] == "plain"
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'text_style'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryNewFields" name="test_invalid_background_falls_back_to_coral" time="0.098"><failure message="KeyError: 'background'">backend/tests/test_stories_sss.py:151: in test_invalid_background_falls_back_to_coral
+    assert body["background"] == "coral"
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'background'</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestLegacyDefaults" name="test_story_without_text_style_defaults_to_plain" time="0.061"><failure message="AssertionError: assert None == 'plain'&#10; +  where None = &lt;built-in method get of dict object at 0xfcaf7058c780&gt;('text_style')&#10; +    where &lt;built-in method get of dict object at 0xfcaf7058c780&gt; = {'id': 'fc56b468-6625-4672-9454-83eeed59968a'}.get">backend/tests/test_stories_sss.py:166: in test_story_without_text_style_defaults_to_plain
+    assert body.get("text_style") == "plain"
+E   AssertionError: assert None == 'plain'
+E    +  where None = &lt;built-in method get of dict object at 0xfcaf7058c780&gt;('text_style')
+E    +    where &lt;built-in method get of dict object at 0xfcaf7058c780&gt; = {'id': 'fc56b468-6625-4672-9454-83eeed59968a'}.get</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStoryCatalog" name="test_catalog_lists_new_backgrounds_and_brush" time="0.049" /><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_view_then_react" time="0.588"><failure message="assert None is not None">backend/tests/test_stories_sss.py:230: in test_view_then_react
+    assert story is not None
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_reply" time="0.055" /><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_poll_vote" time="0.096"><failure message="AssertionError: {&quot;detail&quot;:&quot;Sondagem não encontrada&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_stories_sss.py:245: in test_poll_vote
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Sondagem não encontrada"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_question_answer" time="0.056" /><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_slider_response" time="0.053" /><testcase classname="backend.tests.test_stories_sss.TestStorySticker" name="test_owner_can_fetch_viewers_and_replies" time="0.161" /></testsuite></testsuites>

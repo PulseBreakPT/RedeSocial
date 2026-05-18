@@ -952,7 +952,8 @@ class StoryIn(BaseModel):
     text_content: Optional[str] = ""
     background: Optional[str] = "coral"   # preset key (coral, ocean, dusk, fado, ...)
     text_color: Optional[str] = "#ffffff"
-    font_style: Optional[str] = "modern"  # modern | classic | neon | typewriter | serif
+    font_style: Optional[str] = "modern"  # modern | classic | neon | typewriter | serif | bold | brush
+    text_style: Optional[str] = "plain"   # plain | highlight | outline | glow
     # Overlay/caption (image/video stories)
     caption: Optional[str] = ""
     # Stickers interactivos posicionados no canvas
@@ -2516,6 +2517,9 @@ STORY_BACKGROUNDS = {
     "fado":      "linear-gradient(135deg,#1F1147 0%,#7E1F86 50%,#F08C1F 100%)",
     "saudade":   "linear-gradient(180deg,#0E2148 0%,#283593 60%,#7E57C2 100%)",
     "tasca":     "linear-gradient(135deg,#7C2D12 0%,#B45309 100%)",
+    "tejo":      "linear-gradient(180deg,#4A6FA5 0%,#7BA7C9 50%,#E8C39E 100%)",
+    "azulejo":   "linear-gradient(135deg,#1E40AF 0%,#3B82F6 50%,#F0F9FF 100%)",
+    "pinhal":    "linear-gradient(135deg,#064E3B 0%,#10B981 60%,#FDE68A 100%)",
     "praia":     "linear-gradient(135deg,#A1FFCE 0%,#FAFFD1 100%)",
     "noite":     "linear-gradient(135deg,#0F2027 0%,#203A43 50%,#2C5364 100%)",
     "neon":      "linear-gradient(135deg,#FA00FF 0%,#00F0FF 100%)",
@@ -2523,7 +2527,8 @@ STORY_BACKGROUNDS = {
     "monochrome":"linear-gradient(180deg,#1a1a1a 0%,#404040 100%)",
     "papel":     "linear-gradient(135deg,#F5F1E8 0%,#E8DCC4 100%)",
 }
-VALID_FONT_STYLES = {"modern", "classic", "neon", "typewriter", "serif", "bold"}
+VALID_FONT_STYLES = {"modern", "classic", "neon", "typewriter", "serif", "bold", "brush"}
+VALID_TEXT_STYLES = {"plain", "highlight", "outline", "glow"}
 VALID_STORY_AUDIENCES = {"everyone", "roda", "following"}
 STORY_REACTION_EMOJIS = {"❤️", "🔥", "👏", "😂", "😢", "💯", "🫶", "🥹"}
 VALID_STICKER_TYPES = {
@@ -2677,6 +2682,7 @@ async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
         "background_css": bg_css,
         "text_color": story.get("text_color", "#ffffff"),
         "font_style": story.get("font_style", "modern"),
+        "text_style": story.get("text_style", "plain"),
         "caption": story.get("caption", "") or story.get("content", ""),
         "stickers": stickers,
         "audience": story.get("audience", "everyone"),
@@ -2731,6 +2737,7 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         raise HTTPException(400, "Texto obrigatório para story de texto")
     audience = payload.audience if payload.audience in VALID_STORY_AUDIENCES else "everyone"
     font_style = payload.font_style if payload.font_style in VALID_FONT_STYLES else "modern"
+    text_style = payload.text_style if payload.text_style in VALID_TEXT_STYLES else "plain"
     background = payload.background if payload.background in STORY_BACKGROUNDS else "coral"
     stickers = _normalize_stickers(payload.stickers)
     caption = (payload.caption or payload.content or "").strip()[:300]
@@ -2759,6 +2766,7 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         "background": background,
         "text_color": payload.text_color or "#ffffff",
         "font_style": font_style,
+        "text_style": text_style,
         "caption": caption,
         "stickers": stickers,
         "audience": audience,

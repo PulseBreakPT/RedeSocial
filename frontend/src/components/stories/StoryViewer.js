@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { X, Heart, Send, MoreHorizontal, Eye, Volume2, VolumeX, Trash2, Star, BellOff, Bell, Sparkles } from "lucide-react";
+import {
+    X, Heart, Send, MoreHorizontal, Eye, Volume2, VolumeX, Trash2, Star,
+    BellOff, Sparkles, Pause,
+} from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
 import { Avatar } from "../Avatar";
 import { useAuth } from "../../context/AuthContext";
 import { useEscapeKey } from "../../hooks/useClickOutside";
 import { toast } from "sonner";
 import { StoryStickerOverlay } from "./StoryStickerOverlay";
-import { STORY_REACTIONS, bgCss, fontStyleFor } from "./storyConstants";
+import {
+    STORY_REACTIONS, bgCss, fontStyleFor, computeTextDecorationStyle, LIGHT_BG_KEYS,
+} from "./storyConstants";
 import { ViewersSheet } from "./ViewersSheet";
+import "./stories.css";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -18,6 +24,9 @@ function relativeTime(iso) {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     return `${Math.floor(diff / 86400)}d`;
 }
+
+const SWIPE_DISMISS_THRESHOLD = 110;
+const SWIPE_NAV_THRESHOLD = 60;
 
 export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, onChange }) {
     const { user: me } = useAuth();
@@ -31,11 +40,16 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     const [showReactions, setShowReactions] = useState(false);
     const [viewersOpen, setViewersOpen] = useState(false);
     const [moreOpen, setMoreOpen] = useState(false);
-    const [stickerUpdates, setStickerUpdates] = useState({}); // {sticker_id: enrichedSticker}
-    const intervalRef = useRef(null);
-    const startRef = useRef(Date.now());
+    const [bursts, setBursts] = useState([]);
+    const [ripple, setRipple] = useState(null);
+    const [dragY, setDragY] = useState(0);
+    const [stickerUpdates, setStickerUpdates] = useState({});
+
+    const rafRef = useRef(null);
+    const startRef = useRef(0);
     const elapsedRef = useRef(0);
     const videoRef = useRef(null);
+    const dragRef = useRef(null);
 
     const group = groups[gi];
     const baseStory = group?.stories[si];
@@ -53,52 +67,19 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     const isMine = me?.id === group?.author?.id;
     const dur = story?.duration_ms || (story?.media_type === "video" ? 8000 : 5000);
 
-    // Notificar viewer
+    // Mark viewed + reset progress on story change
     useEffect(() => {
         if (!story) return;
         api.post(`/stories/${story.id}/view`).catch(() => {});
         setProgress(0);
-        startRef.current = Date.now();
         elapsedRef.current = 0;
+        startRef.current = performance.now();
         setStickerUpdates({});
         setReplyValue("");
         setShowReactions(false);
         setMoreOpen(false);
         // eslint-disable-next-line
     }, [gi, si]);
-
-    // Progress loop (pausa quando paused, replyFocus, viewersOpen, moreOpen)
-    useEffect(() => {
-        if (!story) return;
-        const isPaused = paused || replyFocus || viewersOpen || moreOpen;
-        intervalRef.current = setInterval(() => {
-            if (isPaused) {
-                startRef.current = Date.now() - elapsedRef.current;
-                return;
-            }
-            elapsedRef.current = Date.now() - startRef.current;
-            const p = Math.min(100, (elapsedRef.current / dur) * 100);
-            setProgress(p);
-            if (p >= 100) {
-                clearInterval(intervalRef.current);
-                next();
-            }
-        }, 50);
-        return () => clearInterval(intervalRef.current);
-        // eslint-disable-next-line
-    }, [gi, si, paused, replyFocus, viewersOpen, moreOpen, dur]);
-
-    // Sync vídeo play/pause
-    useEffect(() => {
-        const v = videoRef.current;
-        if (!v) return;
-        v.muted = muted;
-        if (paused || replyFocus || viewersOpen || moreOpen) {
-            try { v.pause(); } catch { /**/ }
-        } else {
-            try { v.play(); } catch { /**/ }
-        }
-    }, [paused, replyFocus, viewersOpen, moreOpen, muted, gi, si]);
 
     const next = useCallback(() => {
         if (si + 1 < group.stories.length) setSi(si + 1);
@@ -111,22 +92,62 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         else if (gi > 0) { setGi(gi - 1); setSi(groups[gi - 1].stories.length - 1); }
     }, [si, gi, groups]);
 
+    // rAF-based smooth progress
+    useEffect(() => {
+        if (!story) return;
+        const isPaused = paused || replyFocus || viewersOpen || moreOpen;
+        let last = performance.now();
+        startRef.current = last;
+        const tick = (now) => {
+            if (!isPaused) {
+                const delta = now - last;
+                elapsedRef.current += delta;
+                const p = Math.min(100, (elapsedRef.current / dur) * 100);
+                setProgress(p);
+                if (p >= 100) {
+                    next();
+                    return;
+                }
+            }
+            last = now;
+            rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    }, [gi, si, paused, replyFocus, viewersOpen, moreOpen, dur, next, story]);
+
+    // Sync video play/pause + mute
+    useEffect(() => {
+        const v = videoRef.current;
+        if (!v) return;
+        v.muted = muted;
+        if (paused || replyFocus || viewersOpen || moreOpen) {
+            try { v.pause(); } catch { /**/ }
+        } else {
+            try { v.play(); } catch { /**/ }
+        }
+    }, [paused, replyFocus, viewersOpen, moreOpen, muted, gi, si]);
+
     const onUpdateSticker = useCallback((stickerId, newSticker) => {
         setStickerUpdates((prev) => ({ ...prev, [stickerId]: newSticker }));
     }, []);
 
     const react = async (emoji) => {
         if (!story?.allow_reactions) return;
-        const prev = story.viewer_reaction;
-        const toggling = prev === emoji;
+        const previousR = story.viewer_reaction;
+        const toggling = previousR === emoji;
         try {
             const r = await api.post(`/stories/${story.id}/react`, { emoji });
-            // optimistic local merge na próxima carga; aqui mostra toast curto
             toast.success(toggling ? "Reacção removida" : `Reagiste com ${emoji}`);
             if (navigator.vibrate) navigator.vibrate(toggling ? 8 : [10, 40, 10]);
-            // actualizar baseStory in-place
             baseStory.viewer_reaction = r.data.reaction;
             setShowReactions(false);
+            if (!toggling) {
+                // Animate a heart burst
+                const id = Math.random().toString(36).slice(2);
+                setBursts((b) => [...b, { id, emoji }]);
+                setTimeout(() => setBursts((b) => b.filter((x) => x.id !== id)), 1200);
+            }
         } catch (e) { toastApiError(e); }
     };
 
@@ -135,10 +156,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     const sendReply = async () => {
         const v = replyValue.trim();
         if (!v) return;
-        if (!story?.allow_replies) {
-            toast.error("Respostas desactivadas neste story");
-            return;
-        }
+        if (!story?.allow_replies) { toast.error("Respostas desactivadas neste story"); return; }
         try {
             await api.post(`/stories/${story.id}/reply`, { content: v });
             setReplyValue("");
@@ -177,46 +195,118 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         } catch (e) { toastApiError(e); }
     };
 
+    /* ---------- gesture handlers (swipe vertical = close, horizontal = nav) ---------- */
+    const onShellPointerDown = (e) => {
+        // Skip drags that originate on reply input / buttons
+        if (e.target.closest("input, textarea, button, a, [data-no-drag]")) return;
+        dragRef.current = { x: e.clientX, y: e.clientY, dx: 0, dy: 0, axis: null, t0: performance.now() };
+        setPaused(true);
+    };
+    const onShellPointerMove = (e) => {
+        const st = dragRef.current;
+        if (!st) return;
+        st.dx = e.clientX - st.x;
+        st.dy = e.clientY - st.y;
+        if (!st.axis && Math.hypot(st.dx, st.dy) > 10) {
+            st.axis = Math.abs(st.dx) > Math.abs(st.dy) ? "x" : "y";
+        }
+        if (st.axis === "y" && st.dy > 0) setDragY(st.dy);
+    };
+    const onShellPointerUp = (e) => {
+        const st = dragRef.current;
+        if (!st) { setPaused(false); return; }
+        const elapsed = performance.now() - st.t0;
+        const isTap = Math.hypot(st.dx, st.dy) < 8 && elapsed < 250;
+        if (isTap) {
+            // Determine prev/next tap zone based on x-position
+            const rect = e.currentTarget.getBoundingClientRect();
+            const xRel = (e.clientX - rect.left) / rect.width;
+            // Trigger ripple feedback
+            setRipple({ id: Math.random().toString(36).slice(2), x: e.clientX - rect.left, y: e.clientY - rect.top });
+            setTimeout(() => setRipple(null), 400);
+            if (xRel < 0.33) prev();
+            else if (xRel > 0.66) next();
+            // middle tap = toggle pause briefly? skip — used by quick-heart on bottom
+        } else if (st.axis === "y" && st.dy > SWIPE_DISMISS_THRESHOLD) {
+            onClose();
+        } else if (st.axis === "x") {
+            if (st.dx < -SWIPE_NAV_THRESHOLD) next();
+            else if (st.dx > SWIPE_NAV_THRESHOLD) prev();
+        }
+        dragRef.current = null;
+        setDragY(0);
+        setPaused(false);
+    };
+
     if (!story) return null;
 
     const bgKey = story.background || "coral";
     const fStyle = fontStyleFor(story.font_style || "modern");
     const textColor = story.text_color || "#ffffff";
+    const textStyle = story.text_style || "plain";
+    const decorStyle = computeTextDecorationStyle(textStyle, textColor);
+    const isLightBg = LIGHT_BG_KEYS.has(bgKey);
     const audienceTag = story.audience === "roda" ? "🫂 Roda" : story.audience === "following" ? "👥 A seguir" : null;
 
+    const shellStyle = dragY > 0
+        ? { transform: `translateY(${dragY}px) scale(${Math.max(0.84, 1 - dragY / 800)})`, opacity: Math.max(0.5, 1 - dragY / 600) }
+        : {};
+
     return (
-        <div className="fixed inset-0 z-[90] bg-black/95 grid place-items-center select-none" onClick={onClose} data-testid="story-viewer">
+        <div
+            className="fixed inset-0 z-[90] bg-black/95 grid place-items-center select-none sc-fade-in"
+            data-testid="story-viewer"
+        >
             <div
-                className="relative w-full max-w-md h-full lg:h-auto lg:aspect-[9/16] bg-black lg:rounded-3xl overflow-hidden border border-white/10 shadow-[0_40px_100px_-10px_rgba(0,0,0,0.6)]"
-                onClick={(e) => e.stopPropagation()}
+                className={`sv-shell relative w-full max-w-md h-full lg:h-auto lg:aspect-[9/16] bg-black lg:rounded-3xl overflow-hidden border border-white/10 shadow-[0_40px_100px_-10px_rgba(0,0,0,0.6)] ${dragY > 0 ? "is-dragging" : ""}`}
+                style={shellStyle}
+                onPointerDown={onShellPointerDown}
+                onPointerMove={onShellPointerMove}
+                onPointerUp={onShellPointerUp}
+                onPointerCancel={onShellPointerUp}
             >
                 {/* Progress bars */}
                 <div className="absolute top-0 left-0 right-0 flex gap-1 p-3 z-40">
                     {group.stories.map((_, i) => (
-                        <div key={i} className="flex-1 h-[2.5px] bg-white/25 rounded-full overflow-hidden">
-                            <div className="h-full bg-white" style={{ width: `${i < si ? 100 : i === si ? progress : 0}%`, transition: "width 50ms linear" }} />
+                        <div key={i} className="flex-1 h-[3px] sv-progress-bar rounded-full overflow-hidden">
+                            <div
+                                className="h-full sv-progress-fill"
+                                style={{
+                                    width: `${i < si ? 100 : i === si ? progress : 0}%`,
+                                    transition: i === si ? "none" : "width 200ms ease-out",
+                                }}
+                            />
                         </div>
                     ))}
                 </div>
 
                 {/* Header */}
-                <div className="absolute top-7 left-3 right-3 flex items-center gap-2.5 z-40">
-                    <Avatar user={group.author} size={36} className="ring-2 ring-white/80" />
+                <div className="absolute top-7 left-3 right-3 flex items-center gap-2.5 z-40" data-no-drag>
+                    <div className="sv-ring">
+                        <div className="bg-black rounded-full p-[2px]">
+                            <Avatar user={group.author} size={36} />
+                        </div>
+                    </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                             <span className="text-white font-heading font-medium text-[14px] tracking-tight truncate">{group.author.name}</span>
                             {group.author.verified && <Sparkles size={12} className="text-coral" />}
+                            {(paused || replyFocus) && (
+                                <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/70">
+                                    <Pause size={10} strokeWidth={2.4} /> pausa
+                                </span>
+                            )}
                         </div>
                         <div className="flex items-center gap-2 text-white/65 font-mono text-[10.5px]">
                             <span>@{group.author.username}</span>
                             <span>·</span>
                             <span>{relativeTime(story.created_at)}</span>
-                            {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9.5px] font-mono">{audienceTag}</span>}
+                            {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-[9.5px]">{audienceTag}</span>}
                         </div>
                     </div>
                     {story.media_type === "video" && (
                         <button
-                            onClick={() => setMuted((m) => !m)}
+                            onClick={(e) => { e.stopPropagation(); setMuted((m) => !m); }}
                             data-testid="story-mute-toggle"
                             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
                             aria-label={muted ? "Activar som" : "Silenciar"}
@@ -225,14 +315,18 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                         </button>
                     )}
                     <button
-                        onClick={() => setMoreOpen((o) => !o)}
+                        onClick={(e) => { e.stopPropagation(); setMoreOpen((o) => !o); }}
                         data-testid="story-more-btn"
                         className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
                         aria-label="Mais"
                     >
                         <MoreHorizontal size={16} strokeWidth={2} />
                     </button>
-                    <button onClick={onClose} data-testid="story-close" className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        data-testid="story-close"
+                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur tap-shrink"
+                    >
                         <X size={16} strokeWidth={2} />
                     </button>
                 </div>
@@ -240,7 +334,16 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                 {/* Media content */}
                 {story.media_type === "text" ? (
                     <div className="absolute inset-0 grid place-items-center px-8 py-16" style={{ background: bgCss(bgKey), color: textColor }}>
-                        <div className="text-center break-words" style={{ ...fStyle, fontSize: textFontSize(story.text_content), color: textColor, textShadow: bgKey === "papel" || bgKey === "pastel" || bgKey === "praia" ? "none" : "0 2px 24px rgba(0,0,0,0.3)" }}>
+                        <div
+                            className="text-center break-words"
+                            style={{
+                                ...fStyle,
+                                fontSize: textFontSize(story.text_content),
+                                color: textColor,
+                                textShadow: isLightBg ? "none" : "0 2px 24px rgba(0,0,0,0.3)",
+                                ...decorStyle,
+                            }}
+                        >
                             {story.text_content}
                         </div>
                     </div>
@@ -257,58 +360,68 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                     <img src={story.image} alt="" className="absolute inset-0 w-full h-full object-cover bg-black" />
                 )}
 
+                {/* Subtle bottom gradient for readability */}
+                <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10" />
+
                 {/* Caption */}
                 {story.caption && story.media_type !== "text" && (
-                    <div className="absolute bottom-32 left-4 right-4 z-30 text-white font-display text-[20px] font-light tracking-tight leading-tight drop-shadow-[0_2px_16px_rgba(0,0,0,0.7)]">
+                    <div
+                        className="absolute bottom-32 left-4 right-4 z-30 text-center pointer-events-none"
+                        style={{
+                            fontFamily: fStyle.fontFamily,
+                            fontWeight: fStyle.fontWeight,
+                            color: textColor,
+                            fontSize: "20px",
+                            textShadow: "0 2px 16px rgba(0,0,0,0.7)",
+                            ...decorStyle,
+                        }}
+                    >
                         {story.caption}
                     </div>
                 )}
 
                 {/* Stickers overlay */}
-                <div className="absolute inset-0 pointer-events-none z-25">
-                    <div className="absolute inset-0 pointer-events-auto" style={{ pointerEvents: "none" }}>
-                        <div style={{ position: "relative", width: "100%", height: "100%", pointerEvents: "auto" }}>
-                            <StoryStickerOverlay
-                                story={story}
-                                isAuthor={isMine}
-                                onPause={setPaused}
-                                onUpdateSticker={onUpdateSticker}
-                            />
-                        </div>
-                    </div>
+                <div className="absolute inset-0 z-25" style={{ pointerEvents: "auto" }}>
+                    <StoryStickerOverlay
+                        story={story}
+                        isAuthor={isMine}
+                        onPause={setPaused}
+                        onUpdateSticker={onUpdateSticker}
+                    />
                 </div>
 
-                {/* Tap zones */}
-                <button
-                    onClick={prev}
-                    onPointerDown={() => setPaused(true)}
-                    onPointerUp={() => setPaused(false)}
-                    onPointerLeave={() => setPaused(false)}
-                    className="absolute left-0 top-16 bottom-24 w-1/3 z-20"
-                    aria-label="anterior"
-                    data-testid="story-prev"
-                />
-                <button
-                    onClick={next}
-                    onPointerDown={() => setPaused(true)}
-                    onPointerUp={() => setPaused(false)}
-                    onPointerLeave={() => setPaused(false)}
-                    className="absolute right-0 top-16 bottom-24 w-1/3 z-20"
-                    aria-label="próximo"
-                    data-testid="story-next"
-                />
+                {/* Tap ripple feedback */}
+                {ripple && (
+                    <span className="sv-tap-feedback" style={{ left: ripple.x, top: ripple.y }} key={ripple.id} />
+                )}
+
+                {/* Reaction bursts */}
+                <div className="absolute inset-0 z-30 pointer-events-none">
+                    {bursts.map((b) => (
+                        <div key={b.id} className="absolute left-1/2 bottom-24 text-[40px] sv-burst" style={{ filter: "drop-shadow(0 4px 20px rgba(255,255,255,0.6))" }}>
+                            {b.emoji}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Paused indicator */}
+                {(paused || replyFocus) && (
+                    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 sv-paused-pill px-3 py-1 rounded-full bg-black/70 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 pointer-events-none">
+                        <Pause size={10} strokeWidth={2.6} /> em pausa
+                    </div>
+                )}
 
                 {/* Bottom actions */}
-                <div className="absolute bottom-0 left-0 right-0 z-40 px-3 pb-4 pt-12 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
-                    {/* Quick reactions bar (toggleable) */}
+                <div className="absolute bottom-0 left-0 right-0 z-40 px-3 pb-4 pt-12" data-no-drag>
+                    {/* Quick reactions row */}
                     {showReactions && story.allow_reactions && !isMine && (
-                        <div className="mb-2 flex justify-center gap-1.5 animate-fade-in" data-testid="story-reactions-bar">
+                        <div className="mb-2 flex justify-center gap-1.5 sv-react-pop" data-testid="story-reactions-bar">
                             {STORY_REACTIONS.map((e) => (
                                 <button
                                     key={e}
-                                    onClick={() => react(e)}
-                                    className={`w-10 h-10 rounded-full grid place-items-center text-[22px] bg-white/15 hover:bg-white/30 hover:scale-125 transition tap-shrink ${
-                                        story.viewer_reaction === e ? "bg-white/40 ring-2 ring-white" : ""
+                                    onClick={(ev) => { ev.stopPropagation(); react(e); }}
+                                    className={`sv-react-orb w-11 h-11 rounded-full grid place-items-center text-[22px] bg-white/15 hover:bg-white/30 ${
+                                        story.viewer_reaction === e ? "is-selected bg-white/40" : ""
                                     }`}
                                     data-testid={`story-react-${e}`}
                                 >
@@ -321,7 +434,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                     {isMine ? (
                         <div className="flex items-center justify-between gap-3">
                             <button
-                                onClick={() => setViewersOpen(true)}
+                                onClick={(e) => { e.stopPropagation(); setViewersOpen(true); }}
                                 className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur font-mono text-[12px] tap-shrink"
                                 data-testid="story-viewers-btn"
                             >
@@ -332,10 +445,10 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                 )}
                             </button>
                             <div className="flex items-center gap-1.5">
-                                <button onClick={addToHighlight} className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur tap-shrink" data-testid="story-highlight-btn" title="Adicionar a destaque">
+                                <button onClick={(e) => { e.stopPropagation(); addToHighlight(); }} className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur tap-shrink" data-testid="story-highlight-btn" title="Adicionar a destaque">
                                     <Star size={15} strokeWidth={2.2} />
                                 </button>
-                                <button onClick={deleteStory} className="p-2.5 rounded-full bg-red-500/85 hover:bg-red-500 text-white backdrop-blur tap-shrink" data-testid="story-delete">
+                                <button onClick={(e) => { e.stopPropagation(); deleteStory(); }} className="p-2.5 rounded-full bg-red-500/85 hover:bg-red-500 text-white backdrop-blur tap-shrink" data-testid="story-delete">
                                     <Trash2 size={15} strokeWidth={2.2} />
                                 </button>
                             </div>
@@ -348,20 +461,21 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                 onFocus={() => setReplyFocus(true)}
                                 onBlur={() => setReplyFocus(false)}
                                 onKeyDown={(e) => { if (e.key === "Enter") sendReply(); }}
+                                onClick={(e) => e.stopPropagation()}
                                 disabled={!story.allow_replies}
                                 placeholder={story.allow_replies ? `Responder a @${group.author.username}…` : "Respostas desactivadas"}
                                 className="flex-1 px-4 py-2.5 rounded-full bg-white/10 border border-white/20 backdrop-blur text-white placeholder-white/55 text-[13.5px] outline-none focus:bg-white/15 focus:border-white/40 disabled:opacity-50"
                                 data-testid="story-reply-input"
                             />
                             {replyValue.trim() ? (
-                                <button onClick={sendReply} className="p-2.5 rounded-full bg-coral hover:bg-coral-deep text-white tap-shrink" data-testid="story-send-reply">
+                                <button onClick={(e) => { e.stopPropagation(); sendReply(); }} className="p-2.5 rounded-full bg-coral hover:bg-coral-deep text-white tap-shrink" data-testid="story-send-reply">
                                     <Send size={16} strokeWidth={2.2} />
                                 </button>
                             ) : (
                                 <>
                                     {story.allow_reactions && (
                                         <button
-                                            onClick={() => setShowReactions((s) => !s)}
+                                            onClick={(e) => { e.stopPropagation(); setShowReactions((s) => !s); }}
                                             className={`p-2.5 rounded-full backdrop-blur text-white tap-shrink ${
                                                 showReactions ? "bg-white/30" : "bg-white/10 hover:bg-white/20"
                                             }`}
@@ -373,7 +487,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                                     )}
                                     {story.allow_reactions && (
                                         <button
-                                            onClick={quickHeart}
+                                            onClick={(e) => { e.stopPropagation(); quickHeart(); }}
                                             className={`p-2.5 rounded-full backdrop-blur text-white tap-shrink ${
                                                 story.viewer_reaction === "❤️" ? "bg-red-500" : "bg-white/10 hover:bg-white/20"
                                             }`}
@@ -391,7 +505,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
 
                 {/* More menu */}
                 {moreOpen && (
-                    <div className="absolute top-16 right-3 z-50 w-56 bg-black/95 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl py-1 text-white font-mono text-[12px]" data-testid="story-more-menu">
+                    <div className="absolute top-16 right-3 z-50 w-60 bg-black/95 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl py-1 text-white font-mono text-[12px] sc-toolbar-in" data-testid="story-more-menu" data-no-drag onClick={(e) => e.stopPropagation()}>
                         {!isMine && (
                             <button onClick={toggleStoriesMute} className="w-full px-4 py-2.5 text-left hover:bg-white/10 flex items-center gap-2.5">
                                 <BellOff size={13} strokeWidth={2} />
@@ -426,7 +540,6 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     );
 }
 
-// Tamanho da fonte para text-story em função do comprimento
 function textFontSize(text) {
     const n = (text || "").length;
     if (n < 30) return "44px";

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useEscapeKey } from "../../hooks/useClickOutside";
 import { StoryViewer } from "./StoryViewer";
 import { bgCss } from "./storyConstants";
+import "./stories.css";
 
 export function StoryHighlights({ username, isSelf }) {
     const [items, setItems] = useState(null);
@@ -20,7 +21,23 @@ export function StoryHighlights({ username, isSelf }) {
 
     useEffect(() => { load(); }, [username]);
 
-    if (items === null) return null;
+    if (items === null) {
+        return (
+            <div className="px-4 lg:px-6 mt-4" data-testid="story-highlights-loading">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-black/45">Destaques</h3>
+                </div>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+                            <div className="w-[72px] h-[72px] rounded-full bg-black/[0.06] sv-skel" />
+                            <div className="w-12 h-2 rounded bg-black/[0.06] sv-skel" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
     if (!isSelf && items.length === 0) return null;
 
     return (
@@ -40,7 +57,7 @@ export function StoryHighlights({ username, isSelf }) {
                         data-testid="highlight-create-empty"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
+                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
                             <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
@@ -55,7 +72,7 @@ export function StoryHighlights({ username, isSelf }) {
                         data-testid="highlight-create"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
+                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
                             <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
@@ -90,21 +107,21 @@ function HighlightThumb({ h, onClick }) {
             data-testid={`highlight-${h.id}`}
             className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
         >
-            <div className="w-[68px] h-[68px] rounded-full p-[2.5px] bg-black/15 group-hover:bg-gradient-to-tr group-hover:from-coral group-hover:via-coral-deep group-hover:to-amber-400 transition">
+            <div className="w-[72px] h-[72px] rounded-full p-[2.5px] hl-ring group-hover:scale-105 transition">
                 <div className="w-full h-full rounded-full overflow-hidden bg-white p-[2px]">
                     <div className="w-full h-full rounded-full overflow-hidden grid place-items-center"
                         style={!isImage ? { background: bgCss(cover.background || "coral") } : undefined}>
                         {isImage ? (
                             <img src={cover.image} alt="" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white font-display text-[14px] tracking-tight px-1 text-center leading-none">
+                            <span className="text-white font-display text-[15px] tracking-tight px-1 text-center leading-none">
                                 {h.title.charAt(0)}
                             </span>
                         )}
                     </div>
                 </div>
             </div>
-            <span className="text-[10.5px] font-medium tracking-tight text-black/65 max-w-[68px] truncate group-hover:text-black">
+            <span className="text-[10.5px] font-medium tracking-tight text-black/65 max-w-[72px] truncate group-hover:text-black">
                 {h.title}
             </span>
         </button>
