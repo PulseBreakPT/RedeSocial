@@ -10,7 +10,7 @@ import base64
 from typing import Optional, Dict, Any
 
 # Backend URL from frontend/.env
-BASE_URL = "https://thermal-social.preview.emergentagent.com/api"
+BASE_URL = "https://create-spotlight.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"

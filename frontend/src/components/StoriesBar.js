@@ -31,6 +31,13 @@ export function StoriesBar() {
         return () => clearInterval(id);
     }, []);
 
+    // Listen for global event to open the story composer (fired from FAB long-press → "Story").
+    useEffect(() => {
+        const handler = () => setComposerOpen(true);
+        window.addEventListener("vermillion:open-story-composer", handler);
+        return () => window.removeEventListener("vermillion:open-story-composer", handler);
+    }, []);
+
     const myGroup = groups.find((g) => g.author.id === user?.id);
     const others = groups.filter((g) => g.author.id !== user?.id);
     const orderedGroups = myGroup ? [myGroup, ...others] : others;

@@ -26,6 +26,7 @@ const NAV_ITEMS = [
 export function LeftSidebar({ onCompose }) {
     const { user, logout } = useAuth();
     const [counts, setCounts] = useState({ notif: 0, msg: 0 });
+    const [draftCount, setDraftCount] = useState(0);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useClickOutside(() => setMenuOpen(false), menuOpen);
     const navigate = useNavigate();
@@ -45,6 +46,23 @@ export function LeftSidebar({ onCompose }) {
         const id = setInterval(tick, 8000);
         return () => { cancelled = true; clearInterval(id); };
     }, []);
+
+    // Draft count for the Publicar CTA badge
+    useEffect(() => {
+        if (!user?.username) return;
+        let alive = true;
+        const fetchDrafts = async () => {
+            try {
+                const r = await api.get("/posts/drafts");
+                if (!alive) return;
+                const list = Array.isArray(r.data) ? r.data : (r.data?.items || []);
+                setDraftCount(list.length || 0);
+            } catch {}
+        };
+        fetchDrafts();
+        const id = setInterval(fetchDrafts, 60000);
+        return () => { alive = false; clearInterval(id); };
+    }, [user?.username]);
 
     const handleLogout = async () => {
         await logout();
@@ -157,13 +175,29 @@ export function LeftSidebar({ onCompose }) {
                 </div>
             </nav>
 
-            {/* Big Publicar */}
+            {/* Big Publicar — vermillion CTA com indicador de rascunhos */}
             <button
                 onClick={onCompose}
                 data-testid="left-sidebar-compose"
-                className="btn-obsidian w-full mt-3 mb-3 text-[14px] py-3 flex items-center justify-center gap-2 tracking-tight shrink-0"
+                aria-label={draftCount > 0 ? `Publicar — ${draftCount} rascunho${draftCount === 1 ? "" : "s"} guardado${draftCount === 1 ? "" : "s"}` : "Publicar"}
+                className="btn-vermillion w-full mt-3 mb-3 text-[14px] py-3 flex items-center justify-center gap-2 tracking-tight shrink-0 relative"
             >
-                <PenSquare size={16} strokeWidth={2.1} /> Publicar
+                <PenSquare className="relative z-[1]" size={16} strokeWidth={2.2} />
+                <span className="relative z-[1]">Publicar</span>
+                {draftCount > 0 && (
+                    <span
+                        data-testid="left-sidebar-compose-draft-dot"
+                        className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full grid place-items-center text-[10.5px] font-bold font-mono z-[2]"
+                        style={{
+                            background: "#f7c948",
+                            color: "#1a1308",
+                            boxShadow: "0 2px 8px rgba(247,201,72,0.55), 0 0 0 2.5px #fff",
+                        }}
+                        aria-hidden
+                    >
+                        {draftCount > 9 ? "9+" : draftCount}
+                    </span>
+                )}
             </button>
 
             {/* User mini-card with logout menu */}

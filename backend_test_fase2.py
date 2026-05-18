@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 # Base URL from frontend/.env
-BASE_URL = "https://thermal-social.preview.emergentagent.com/api"
+BASE_URL = "https://create-spotlight.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"
