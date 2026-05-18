@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
 import {
-    Users as UsersIcon, Bookmark, FileText, Settings, ChevronRight, ArrowRight,
-    Smile, MapPin, Trophy, Heart, MessageCircle, LayoutGrid, Eye,
+    Users as UsersIcon, Bookmark, FileText, Settings, ArrowRight,
 } from "lucide-react";
 
 /**
- * ProfileSummaryCards — 3 cartões horizontais compactos.
- *   Card 1: Atalhos da conta   (self only)
- *   Card 2: Identidade
- *   Card 3: Estatísticas
+ * ProfileSummaryCards — apenas atalhos da conta (visível ao próprio).
+ * Cartões "Quem és" (Identidade) e "Em números" (Estatísticas) removidos.
  */
 
 function Card({ title, overline, onAction, actionLabel, children, testid }) {
@@ -40,7 +37,7 @@ function Card({ title, overline, onAction, actionLabel, children, testid }) {
     );
 }
 
-function RowItem({ icon: Icon, label, value, to, onClick, sub }) {
+function RowItem({ icon: Icon, label, to, onClick }) {
     const inner = (
         <>
             <div className="w-7 h-7 rounded-lg bg-black/[0.04] grid place-items-center shrink-0 text-black/65">
@@ -48,11 +45,7 @@ function RowItem({ icon: Icon, label, value, to, onClick, sub }) {
             </div>
             <div className="flex-1 min-w-0">
                 <div className="text-[12.5px] text-black/85 leading-tight truncate font-medium">{label}</div>
-                {sub && <div className="text-[10.5px] text-black/45 font-mono leading-tight mt-0.5 truncate">{sub}</div>}
             </div>
-            {value !== undefined && (
-                <span className="font-heading font-bold text-[13px] tabular-nums text-black/75 shrink-0">{value}</span>
-            )}
         </>
     );
     if (to) {
@@ -69,7 +62,7 @@ function RowItem({ icon: Icon, label, value, to, onClick, sub }) {
     );
 }
 
-/* ---------------- CARD 1: ATALHOS DA CONTA ---------------- */
+/* ---------------- CARD: ATALHOS DA CONTA ---------------- */
 function AccountShortcutCard({ onOpenPainel }) {
     return (
         <Card
@@ -89,95 +82,18 @@ function AccountShortcutCard({ onOpenPainel }) {
     );
 }
 
-/* ---------------- CARD 2: IDENTIDADE ---------------- */
-function IdentitySummaryCard({ profile, regionMeta, moodMeta, teamMeta, onSeeMore }) {
-    const items = [];
-    if (moodMeta)   items.push({ icon: Smile,  label: `Mood: ${moodMeta.label}`,  sub: moodMeta.emoji });
-    if (regionMeta) items.push({ icon: MapPin, label: regionMeta.label,            sub: profile.city || "Região" });
-    if (profile.city && !regionMeta) items.push({ icon: MapPin, label: profile.city, sub: "Cidade" });
-    if (teamMeta && teamMeta.key !== "nenhum") items.push({ icon: Trophy, label: teamMeta.label, sub: "Clube" });
+export function ProfileSummaryCards({ profile, onOpenPainel }) {
+    // Só mostramos atalhos no perfil do próprio utilizador. Para perfis
+    // de terceiros, a secção é completamente omitida.
+    if (!profile.is_self) return null;
 
-    if (items.length === 0) {
-        items.push({ icon: Smile, label: "Sem identidade definida", sub: "Define mood, região, clube" });
-    }
-
-    return (
-        <Card
-            overline="Quem és"
-            title="Identidade"
-            actionLabel="Ver identidade completa"
-            onAction={onSeeMore}
-            testid="summary-identity"
-        >
-            <div className="space-y-0.5">
-                {items.slice(0, 4).map((it, i) => (
-                    <RowItem key={i} icon={it.icon} label={it.label} sub={it.sub} onClick={onSeeMore} />
-                ))}
-            </div>
-        </Card>
-    );
-}
-
-/* ---------------- CARD 3: ESTATÍSTICAS ---------------- */
-function StatsSummaryCard({ stats, onSeeMore }) {
-    const items = [
-        { icon: LayoutGrid,    label: "Posts",      value: stats?.posts_count ?? 0 },
-        { icon: Heart,         label: "Reações",    value: stats?.likes_received ?? 0 },
-        { icon: MessageCircle, label: "Comentários", value: stats?.comments_received ?? 0 },
-        { icon: Eye,           label: "Visualizações", value: stats?.views ?? 0 },
-    ];
-    return (
-        <Card
-            overline="Em números"
-            title="Estatísticas"
-            actionLabel="Ver mais"
-            onAction={onSeeMore}
-            testid="summary-stats"
-        >
-            <div className="grid grid-cols-2 gap-1.5">
-                {items.map((it, i) => (
-                    <div
-                        key={i}
-                        className="card-lux !shadow-none border border-black/[0.05] bg-black/[0.02] p-2 flex flex-col items-start"
-                        data-testid={`summary-stat-${it.label.toLowerCase()}`}
-                    >
-                        <div className="flex items-center gap-1.5 text-black/45">
-                            <it.icon size={11} strokeWidth={1.8} />
-                            <span className="text-[9.5px] uppercase tracking-[0.12em] font-mono">{it.label}</span>
-                        </div>
-                        <div className="font-display text-[19px] tracking-tight tabular-nums text-black leading-none mt-1.5">
-                            {typeof it.value === "number" ? it.value.toLocaleString("pt-PT") : it.value}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </Card>
-    );
-}
-
-export function ProfileSummaryCards({
-    profile, stats, regionMeta, moodMeta, teamMeta,
-    onOpenPainel, onSeeIdentity, onSeeAnalytics,
-}) {
     return (
         <section
             data-testid="profile-summary-cards"
             className="px-4 lg:px-6 pt-4 pb-2"
         >
-            <div
-                className="grid gap-2.5 lg:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            >
-                {profile.is_self && (
-                    <AccountShortcutCard onOpenPainel={onOpenPainel} />
-                )}
-                <IdentitySummaryCard
-                    profile={profile}
-                    regionMeta={regionMeta}
-                    moodMeta={moodMeta}
-                    teamMeta={teamMeta}
-                    onSeeMore={onSeeIdentity}
-                />
-                <StatsSummaryCard stats={stats} onSeeMore={onSeeAnalytics} />
+            <div className="grid gap-2.5 lg:gap-3 grid-cols-1 sm:max-w-sm">
+                <AccountShortcutCard onOpenPainel={onOpenPainel} />
             </div>
         </section>
     );

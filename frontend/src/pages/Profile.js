@@ -118,7 +118,6 @@ export default function Profile() {
     const onMessage = () => navigate(`/messages/${profile.id}`);
     const onEditProfile = () => navigate("/settings");
     const onOpenPainel = () => setPainelOpen(true);
-    const onSeeIdentity = () => setTab("about");
 
     const postCounts = useMemo(() => computePostCounts(posts), [posts]);
     const filteredPosts = useMemo(() => applyPostsFilter(posts, postsFilter), [posts, postsFilter]);
@@ -228,16 +227,10 @@ export default function Profile() {
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
                     )}
 
-                    {/* 3 horizontal cards — atalhos + identidade + estatísticas */}
+                    {/* Atalhos da conta (apenas no perfil do próprio) */}
                     <ProfileSummaryCards
                         profile={profile}
-                        stats={stats}
-                        regionMeta={regionMeta}
-                        moodMeta={moodMeta}
-                        teamMeta={teamMeta}
                         onOpenPainel={onOpenPainel}
-                        onSeeIdentity={onSeeIdentity}
-                        onSeeAnalytics={profile.is_self ? onOpenPainel : onSeeIdentity}
                     />
 
                     {/* Compact heatmap with link to full inside drawer */}
