@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { TrendingUp, Sparkles } from "lucide-react";
-import { api, formatApiError, toastApiError } from "../lib/api";
+import { TrendingUp } from "lucide-react";
+import { api } from "../lib/api";
 import { Avatar } from "./Avatar";
-import { VerifiedBadge } from "./VerifiedBadge";
-import { toast } from "sonner";
 
 /**
  * Mobile-only discovery strip — mirrors what desktop has in RightSidebar:
  *   · Online agora (small avatars row)
  *   · Tendências em alta (horizontal pill scroll)
- *   · Quem seguir (horizontal cards scroll)
+ * "Quem seguir" lives only on the Descobrir (Explore) page now.
  * Hidden on lg+ where the full RightSidebar already shows these.
  */
 export function MobileDiscoverStrip() {
@@ -20,20 +18,9 @@ export function MobileDiscoverStrip() {
 
     useEffect(() => {
         api.get("/trending").then((r) => setTrending(r.data.slice(0, 8))).catch(() => {});
+        // suggestions feed only the "Online agora" widget here
         api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
     }, []);
-
-    const handleFollow = async (e, username) => {
-        e.stopPropagation();
-        e.preventDefault();
-        try {
-            await api.post(`/users/${username}/follow`);
-            setSuggestions((s) => s.filter((u) => u.username !== username));
-            toast.success(`Começaste a seguir @${username}`);
-        } catch (err) {
-            toastApiError(err);
-        }
-    };
 
     const trendingFallback = [
         { tag: "Lisboa", count: "12.4k" },
@@ -45,7 +32,7 @@ export function MobileDiscoverStrip() {
     const tags = trending.length > 0 ? trending : trendingFallback;
     const onlineNow = suggestions.slice(0, 6);
 
-    if (tags.length === 0 && suggestions.length === 0) return null;
+    if (tags.length === 0 && onlineNow.length === 0) return null;
 
     return (
         <div className="lg:hidden hairline-b" data-testid="mobile-discover-strip">
@@ -79,7 +66,7 @@ export function MobileDiscoverStrip() {
             )}
 
             {/* Tendências em alta */}
-            <div className="px-4 pt-3" data-testid="mobile-trending-strip">
+            <div className="px-4 pt-3 pb-4" data-testid="mobile-trending-strip">
                 <div className="flex items-center justify-between mb-2.5">
                     <p className="type-overline inline-flex items-center gap-1.5">
                         <TrendingUp size={11} strokeWidth={1.8} className="text-[color:var(--atl-500)]" />
@@ -103,41 +90,6 @@ export function MobileDiscoverStrip() {
                     ))}
                 </div>
             </div>
-
-            {/* Quem seguir */}
-            {suggestions.length > 0 && (
-                <div className="px-4 pt-4 pb-4" data-testid="mobile-suggestions-strip">
-                    <div className="flex items-center justify-between mb-2.5">
-                        <p className="type-overline inline-flex items-center gap-1.5">
-                            <Sparkles size={11} strokeWidth={1.8} className="text-[color:var(--atl-500)]" />
-                            Quem seguir
-                        </p>
-                    </div>
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-                        {suggestions.slice(0, 6).map((u) => (
-                            <Link
-                                key={u.id}
-                                to={`/u/${u.username}`}
-                                data-testid={`m-suggestion-${u.username}`}
-                                className="flex-shrink-0 w-[160px] card-lux p-3 active:scale-[0.98] transition"
-                            >
-                                <Avatar user={u} size={44} />
-                                <div className="mt-2 font-heading font-semibold text-[13px] tracking-tight text-black truncate flex items-center gap-1">
-                                    {u.name} {u.verified && <VerifiedBadge size={10} />}
-                                </div>
-                                <div className="text-[10.5px] text-black/50 truncate font-mono">@{u.username}</div>
-                                <button
-                                    onClick={(e) => handleFollow(e, u.username)}
-                                    data-testid={`m-follow-${u.username}`}
-                                    className="mt-3 w-full btn-atl !py-1.5 !text-[11.5px]"
-                                >
-                                    Seguir
-                                </button>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

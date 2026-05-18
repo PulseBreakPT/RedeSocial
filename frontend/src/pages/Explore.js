@@ -8,6 +8,7 @@ import { useLiveTime } from "../hooks/useLiveTime";
 import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X, Sparkles, RotateCw } from "lucide-react";
 import { MOOD_OPTIONS } from "../lib/portuguese";
 import { Avatar } from "../components/Avatar";
+import { VerifiedBadge } from "../components/VerifiedBadge";
 import { toast } from "sonner";
 
 const TABS = [
@@ -29,10 +30,28 @@ export default function Explore() {
     const [tags, setTags] = useState([]);
     const [comunidades, setComunidades] = useState([]);
     const [cidades, setCidades] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
     const [surprising, setSurprising] = useState(false);
     useLiveTime(30000);
+
+    // Load follow suggestions once for the top "Quem seguir" strip
+    useEffect(() => {
+        api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
+    }, []);
+
+    const handleSuggestionFollow = async (e, username) => {
+        e.stopPropagation();
+        e.preventDefault();
+        try {
+            await api.post(`/users/${username}/follow`);
+            setSuggestions((s) => s.filter((u) => u.username !== username));
+            toast.success(`Começaste a seguir @${username}`);
+        } catch (err) {
+            toastApiError(err);
+        }
+    };
 
     useEffect(() => {
         // Sync URL with current tab + mood (replace, so back-button doesn't pile up)
@@ -143,12 +162,56 @@ export default function Explore() {
             </PageHeader>
 
             {loading ? (<PostSkeletonList count={4} />) : tab === "posts" ? (
-                (filtered || posts).length === 0 ? <EmptyExplore /> : (filtered || posts).map((p) => (
-                    <PostCard key={p.id} post={p}
-                        onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
-                        onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
-                    />
-                ))
+                <>
+                    {/* Quem seguir — horizontal scroll strip (lives only on Descobrir) */}
+                    {suggestions.length > 0 && (
+                        <div className="px-3 lg:px-5 pt-4 pb-3 hairline-b" data-testid="explore-quem-seguir">
+                            <div className="flex items-center justify-between mb-2.5">
+                                <p className="type-overline inline-flex items-center gap-1.5">
+                                    <Sparkles size={11} strokeWidth={1.8} className="text-black/50" />
+                                    Quem seguir
+                                </p>
+                                <button
+                                    onClick={() => setTab("pessoas")}
+                                    className="text-[11.5px] text-black/55 hover:text-black font-medium tap-shrink transition-colors"
+                                >
+                                    ver todos →
+                                </button>
+                            </div>
+                            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-5 px-3 lg:px-5 pb-1">
+                                {suggestions.slice(0, 8).map((u) => (
+                                    <Link
+                                        key={u.id}
+                                        to={`/u/${u.username}`}
+                                        data-testid={`explore-suggestion-${u.username}`}
+                                        className="flex-shrink-0 w-[168px] card-lux p-3 active:scale-[0.98] transition"
+                                    >
+                                        <Avatar user={u} size={44} />
+                                        <div className="mt-2 font-heading font-semibold text-[13px] tracking-tight text-black truncate flex items-center gap-1">
+                                            {u.name || u.username} {u.verified && <VerifiedBadge size={10} />}
+                                        </div>
+                                        <div className="text-[10.5px] text-black/50 truncate font-mono">
+                                            @{u.username}{u.reason ? ` · ${u.reason}` : ""}
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleSuggestionFollow(e, u.username)}
+                                            data-testid={`explore-suggestion-follow-${u.username}`}
+                                            className="mt-3 w-full btn-obsidian !py-1.5 !text-[11.5px]"
+                                        >
+                                            Seguir
+                                        </button>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {(filtered || posts).length === 0 ? <EmptyExplore /> : (filtered || posts).map((p) => (
+                        <PostCard key={p.id} post={p}
+                            onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                            onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
+                        />
+                    ))}
+                </>
             ) : tab === "pessoas" ? (
                 (filtered || pessoas).length === 0 ? <EmptyExplore msg="Sem sugestões agora" /> : (filtered || pessoas).map((u) => (
                     <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b">

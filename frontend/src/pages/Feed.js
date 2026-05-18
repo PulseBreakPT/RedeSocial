@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { RefreshCw, Sparkles, Flame, Clock, X } from "lucide-react";
+import { RefreshCw, Sparkles, Flame, Clock } from "lucide-react";
 import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
@@ -12,7 +12,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
-import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
+import { lsGet, lsSet } from "../lib/portuguese";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
 
 const SORTS = [
@@ -23,7 +23,6 @@ const SORTS = [
 export default function Feed() {
     const { user } = useAuth();
     const [tab, setTab] = useState("following");
-    const [mood, setMood] = useState(lsGet("feed.mood", ""));
     const [sort, setSort] = useState(lsGet("feed.sort", "recent"));
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,7 +40,6 @@ export default function Feed() {
     }, []);
     const firstName = (user?.name || user?.username || "").split(" ")[0] || "";
 
-    useEffect(() => lsSet("feed.mood", mood), [mood]);
     useEffect(() => lsSet("feed.sort", sort), [sort]);
 
     const load = useCallback(
@@ -49,12 +47,11 @@ export default function Feed() {
             if (showSkeleton) setLoading(true);
             try {
                 const params = new URLSearchParams();
-                if (mood) params.set("mood", mood);
                 params.set("sort", sort);
                 // V2: For You uses the new ranking engine, Following stays chronological
                 let url;
                 if (which === "foryou") {
-                    url = `/feed/v2${mood ? `?mood=${mood}` : ""}`;
+                    url = `/feed/v2`;
                 } else if (which === "following") {
                     url = `/posts/feed?${params}`;
                 } else {
@@ -69,7 +66,7 @@ export default function Feed() {
                 setRefreshing(false);
             }
         },
-        [tab, mood, sort],
+        [tab, sort],
     );
 
     useEffect(() => { load(tab); }, [load, tab]);
@@ -96,7 +93,6 @@ export default function Feed() {
         const id = setInterval(async () => {
             try {
                 const params = new URLSearchParams();
-                if (mood) params.set("mood", mood);
                 params.set("sort", sort);
                 const url = tab === "following" ? `/posts/feed?${params}` : `/posts/explore?${params}`;
                 const { data } = await api.get(url);
@@ -106,7 +102,7 @@ export default function Feed() {
             } catch {}
         }, 30000);
         return () => clearInterval(id);
-    }, [tab, mood, sort, wsState]);
+    }, [tab, sort, wsState]);
 
     const refresh = useCallback(async () => {
         setRefreshing(true);
@@ -235,36 +231,7 @@ export default function Feed() {
                 </div>
             </div>
 
-            {/* Mood chips — sticky on mobile under tabs, regular on desktop */}
-            <div
-                className="border-b border-black/[0.06] bg-white/85 backdrop-blur-md lg:static lg:bg-white/60 sticky z-10"
-                style={{ top: "calc(var(--mobile-topbar-h) + var(--safe-top) + 44px)" }}
-            >
-                <div className="flex gap-1.5 px-3 lg:px-5 py-2.5 overflow-x-auto scrollbar-hide">
-                    <button
-                        onClick={() => setMood("")}
-                        data-testid="feed-mood-all"
-                        className={`shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium tracking-tight transition ${mood === "" ? "chip-filter-on" : "bg-black/[0.04] text-black/80 hover:bg-black/[0.08] hover:text-black"}`}
-                    >
-                        Tudo
-                    </button>
-                    {MOOD_OPTIONS.map((m) => (
-                        <button
-                            key={m.key}
-                            onClick={() => setMood(m.key)}
-                            data-testid={`feed-mood-${m.key}`}
-                            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-medium tracking-tight transition ${mood === m.key ? "chip-filter-on" : "bg-black/[0.04] text-black/80 hover:bg-black/[0.08] hover:text-black"}`}
-                        >
-                            <span>{m.emoji}</span> {m.label}
-                        </button>
-                    ))}
-                    {mood && (
-                        <button onClick={() => setMood("")} className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] text-black/55 hover:bg-black/[0.05]" data-testid="feed-mood-clear">
-                            <X size={11} /> Limpar
-                        </button>
-                    )}
-                </div>
-            </div>
+            {/* Mood chips removed — discovery filters live only on /explore now */}
 
             {newCount > 0 && (
                 <div className="flex justify-center pt-3">
@@ -298,10 +265,10 @@ export default function Feed() {
                     </div>
                     <p className="type-overline mb-2">Sem novidades</p>
                     <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">
-                        {mood ? `Sem ${MOOD_OPTIONS.find(m => m.key === mood)?.label?.toLowerCase()} por aqui.` : (tab === "following" ? "O teu feed está calmo." : "Sê o primeiro.")}
+                        {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
                     </h3>
                     <p className="text-black/55 text-[14px] mt-3 max-w-xs mx-auto leading-relaxed">
-                        {mood ? "Tenta outro mood ou limpa o filtro." : (tab === "following" ? "Segue pessoas ou passa para Para ti e descobre novidades." : "Nenhuma publicação ainda — começa a conversa.")}
+                        {tab === "following" ? "Segue pessoas ou passa para Para ti e descobre novidades." : "Nenhuma publicação ainda — começa a conversa."}
                     </p>
                 </div>
             ) : (

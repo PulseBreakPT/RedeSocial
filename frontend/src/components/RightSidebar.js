@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, TrendingUp, Sparkles, Hash, X } from "lucide-react";
-import { api, formatApiError, toastApiError } from "../lib/api";
+import { Search, TrendingUp, Hash, X } from "lucide-react";
+import { api } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
 import { Spinner } from "./Spinner";
 import { TrendingPulse } from "./TrendingPulse";
 import { useClickOutside } from "../hooks/useClickOutside";
-import { toast } from "sonner";
 
 export function RightSidebar() {
     const [q, setQ] = useState("");
@@ -22,6 +21,8 @@ export function RightSidebar() {
     const searchRef = useClickOutside(() => setFocused(false), focused);
 
     useEffect(() => {
+        // suggestions feed the "Online agora" widget only; the full "Quem seguir"
+        // list lives on the Descobrir (Explore) page now.
         api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
         api.get("/trending").then((r) => setTrending(r.data.slice(0, 6))).catch(() => {});
     }, []);
@@ -45,16 +46,6 @@ export function RightSidebar() {
         }, 250);
         return () => clearTimeout(id);
     }, [q]);
-
-    const handleFollow = async (username) => {
-        try {
-            await api.post(`/users/${username}/follow`);
-            setSuggestions((s) => s.filter((u) => u.username !== username));
-            toast.success(`Começaste a seguir @${username}`);
-        } catch (e) {
-            toastApiError(e);
-        }
-    };
 
     const closeSearch = () => { setQ(""); setFocused(false); };
 
@@ -226,44 +217,7 @@ export function RightSidebar() {
                 </Link>
             </div>
 
-            {/* Suggestions */}
-            <div className="card-lux p-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <p className="type-overline mb-0.5">Sugestões</p>
-                        <h3 className="font-display text-[22px] leading-none tracking-tight text-black">Quem seguir</h3>
-                    </div>
-                    <Sparkles size={16} strokeWidth={1.5} className="text-black/40" />
-                </div>
-                {suggestions.length === 0 ? (
-                    <p className="text-black/55 text-sm">Sem sugestões agora.</p>
-                ) : (
-                    <ul className="space-y-4">
-                        {suggestions.map((u) => (
-                            <li key={u.id} className="flex items-center gap-3" data-testid={`suggestion-${u.username}`}>
-                                <Link to={`/u/${u.username}`}>
-                                    <Avatar user={u} size={42} />
-                                </Link>
-                                <div className="flex-1 min-w-0">
-                                    <Link to={`/u/${u.username}`} className="font-heading font-medium text-[14px] tracking-tight truncate hover:underline flex items-center gap-1 text-black">
-                                        {u.name} {u.verified && <VerifiedBadge size={11} />}
-                                    </Link>
-                                    <div className="font-mono text-[10px] text-black/45 truncate mt-0.5">
-                                        @{u.username} · {u.reason}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => handleFollow(u.username)}
-                                    data-testid={`follow-suggestion-${u.username}`}
-                                    className="btn-obsidian px-3.5 py-1.5 text-[11px] tracking-tight"
-                                >
-                                    Seguir
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+            {/* "Quem seguir" moved to the Descobrir (Explore) page. */}
 
             <p className="type-overline px-2 mt-auto pt-2">
                 © vermillion · {new Date().getFullYear()} · feito à mão
