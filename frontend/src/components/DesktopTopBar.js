@@ -38,7 +38,7 @@ export function DesktopTopBar({ onCompose }) {
 
     return (
         <header
-            className="hidden lg:block sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-black/[0.07]"
+            className="hidden sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-black/[0.07]"
             data-testid="desktop-topbar"
         >
             <div className="max-w-[1300px] mx-auto px-6 h-[64px] flex items-center gap-4">

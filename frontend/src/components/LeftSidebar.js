@@ -1,0 +1,220 @@
+import { useEffect, useState } from "react";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import {
+    Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
+    FileText, Clock, User, Settings, PenSquare, LogOut, MoreHorizontal,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { Avatar } from "./Avatar";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { api } from "../lib/api";
+import { useClickOutside } from "../hooks/useClickOutside";
+
+// Vertical primary nav (social-network standard, X/Bluesky style)
+const NAV_ITEMS = [
+    { to: "/", label: "Início", icon: Home, testid: "nav-home", end: true },
+    { to: "/explore", label: "Explorar", icon: Compass, testid: "nav-explore" },
+    { to: "/trending", label: "Tendências", icon: Flame, testid: "nav-trending" },
+    { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications", badgeKey: "notif" },
+    { to: "/messages", label: "Mensagens", icon: MessageCircle, testid: "nav-messages", badgeKey: "msg" },
+    { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "nav-bookmarks" },
+    { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "nav-communities" },
+    { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
+    { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
+];
+
+export function LeftSidebar({ onCompose }) {
+    const { user, logout } = useAuth();
+    const [counts, setCounts] = useState({ notif: 0, msg: 0 });
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useClickOutside(() => setMenuOpen(false), menuOpen);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        let cancelled = false;
+        const tick = async () => {
+            try {
+                const [n, m] = await Promise.all([
+                    api.get("/notifications/unread-count"),
+                    api.get("/messages/unread-count"),
+                ]);
+                if (!cancelled) setCounts({ notif: n.data.count, msg: m.data.count });
+            } catch {}
+        };
+        tick();
+        const id = setInterval(tick, 8000);
+        return () => { cancelled = true; clearInterval(id); };
+    }, []);
+
+    const handleLogout = async () => {
+        await logout();
+        setMenuOpen(false);
+        navigate("/login");
+    };
+
+    const profileTo = user?.username ? `/u/${user.username}` : "/";
+
+    return (
+        <aside
+            className="hidden lg:flex flex-col h-[calc(100vh-1.5rem)] sticky top-3 py-3 pr-2"
+            data-testid="left-sidebar"
+        >
+            {/* Logo */}
+            <Link
+                to="/"
+                className="flex items-center gap-2 px-3 py-2 mb-2 tap-shrink shrink-0"
+                data-testid="left-sidebar-logo"
+            >
+                <span className="silver-foil text-[22px] leading-none">◆</span>
+                <span className="font-display text-[24px] leading-none tracking-tight text-black">vermillion</span>
+            </Link>
+
+            {/* Nav */}
+            <nav className="flex flex-col gap-0.5 min-h-0 overflow-y-auto no-scrollbar pr-1">
+                {NAV_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const badge = item.badgeKey ? counts[item.badgeKey] : 0;
+                    return (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.end}
+                            data-testid={item.testid}
+                            className={({ isActive }) =>
+                                `group relative flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
+                                    isActive
+                                        ? "bg-black text-white font-semibold"
+                                        : "text-black/85 hover:bg-black/[0.05] hover:text-black"
+                                }`
+                            }
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <span className="relative shrink-0">
+                                        <Icon
+                                            size={20}
+                                            strokeWidth={isActive ? 2.1 : 1.7}
+                                            className={isActive ? "text-white" : "text-black/80 group-hover:text-black"}
+                                        />
+                                        {badge > 0 && (
+                                            <span
+                                                className={`absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-mono grid place-items-center text-white ring-2 ${
+                                                    isActive ? "ring-black" : "ring-white"
+                                                }`}
+                                                style={{ background: "var(--coral-500)" }}
+                                            >
+                                                {badge > 99 ? "99+" : badge}
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="text-[15px] tracking-tight whitespace-nowrap">
+                                        {item.label}
+                                    </span>
+                                </>
+                            )}
+                        </NavLink>
+                    );
+                })}
+
+                {/* Profile + Settings — kept slightly apart visually */}
+                <div className="mt-1 pt-1 hairline-t flex flex-col gap-0.5">
+                    <NavLink
+                        to={profileTo}
+                        data-testid="nav-profile"
+                        className={({ isActive }) =>
+                            `flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
+                                isActive
+                                    ? "bg-black text-white font-semibold"
+                                    : "text-black/85 hover:bg-black/[0.05] hover:text-black"
+                            }`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <User size={20} strokeWidth={isActive ? 2.1 : 1.7} />
+                                <span className="text-[15px] tracking-tight">Perfil</span>
+                            </>
+                        )}
+                    </NavLink>
+                    <NavLink
+                        to="/settings"
+                        data-testid="nav-settings"
+                        className={({ isActive }) =>
+                            `flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
+                                isActive
+                                    ? "bg-black text-white font-semibold"
+                                    : "text-black/85 hover:bg-black/[0.05] hover:text-black"
+                            }`
+                        }
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <Settings size={20} strokeWidth={isActive ? 2.1 : 1.7} />
+                                <span className="text-[15px] tracking-tight">Definições</span>
+                            </>
+                        )}
+                    </NavLink>
+                </div>
+            </nav>
+
+            {/* Big Publicar */}
+            <button
+                onClick={onCompose}
+                data-testid="left-sidebar-compose"
+                className="btn-obsidian w-full mt-3 mb-3 text-[14px] py-3 flex items-center justify-center gap-2 tracking-tight shrink-0"
+            >
+                <PenSquare size={16} strokeWidth={2.1} /> Publicar
+            </button>
+
+            {/* User mini-card with logout menu */}
+            {user && (
+                <div className="relative shrink-0" ref={menuRef}>
+                    <button
+                        onClick={() => setMenuOpen((v) => !v)}
+                        data-testid="left-sidebar-user-btn"
+                        className="w-full flex items-center gap-3 px-2.5 py-2 rounded-full hover:bg-black/[0.05] transition tap-shrink text-left"
+                    >
+                        <Avatar user={user} size={40} showOnline />
+                        <div className="flex-1 min-w-0">
+                            <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black truncate flex items-center gap-1">
+                                {user.name}
+                                {user.verified && <VerifiedBadge size={10} />}
+                            </div>
+                            <div className="font-mono text-[11px] text-black/45 truncate">@{user.username}</div>
+                        </div>
+                        <MoreHorizontal size={16} className="text-black/45 shrink-0" />
+                    </button>
+                    {menuOpen && (
+                        <div className="absolute bottom-full left-0 right-0 mb-2 card-premium rounded-2xl py-1.5 shadow-2xl z-30 anim-fade-up">
+                            <Link
+                                to={profileTo}
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-black/80 hover:bg-black/[0.04] transition"
+                                data-testid="user-menu-profile"
+                            >
+                                <User size={15} strokeWidth={1.7} /> Ver perfil
+                            </Link>
+                            <Link
+                                to="/settings"
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-black/80 hover:bg-black/[0.04] transition"
+                                data-testid="user-menu-settings"
+                            >
+                                <Settings size={15} strokeWidth={1.7} /> Definições
+                            </Link>
+                            <div className="hairline-t my-1" />
+                            <button
+                                onClick={handleLogout}
+                                data-testid="user-menu-logout"
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-coral-600 hover:bg-coral-50/60 transition text-left"
+                                style={{ color: "var(--coral-500)" }}
+                            >
+                                <LogOut size={15} strokeWidth={1.7} /> Sair da conta
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </aside>
+    );
+}

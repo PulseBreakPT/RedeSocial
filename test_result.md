@@ -497,3 +497,14 @@ agent_communication:
           - DO NOT test frontend.
 
 
+
+    - agent: "main"
+      message: |
+        UI ONLY (frontend): SSS-tier redesign of the post-login main page.
+          - New `components/LeftSidebar.js` (desktop): vertical nav (Início, Explorar, Tendências, Notificações, Mensagens, Guardados, Comunidades, Rascunhos, Agendados, Perfil, Definições), big "Publicar" CTA, user mini-card with menu (Ver perfil / Definições / Sair).
+          - `components/Layout.js` switched to 3-column desktop grid (260px / 640px / 340px, max-w 1320px). Removed DesktopTopBar usage (replaced by LeftSidebar).
+          - `pages/Feed.js` header polished: personalized greeting "Bom dia/Boa tarde/Boa noite, {firstName}.", "ao vivo" live dot, sort buttons with labels, gradient-underline tabs (Seguindo / Para ti) sticky on desktop; mood chips moved into their own glass strip; mobile-only tab row preserved.
+          - `RightSidebar`: sticky offset adjusted to top:0 (no more DesktopTopBar).
+          - DesktopTopBar component still exists but is now hidden everywhere.
+        NO backend changes. Mobile (MobileTopBar + MobileBottomNav) preserved.
+        DO NOT auto-test (UI cosmetic change; user has not requested testing).

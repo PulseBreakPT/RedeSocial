@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { RefreshCw, Sparkles, Flame, Clock, X } from "lucide-react";
 import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
@@ -8,6 +8,7 @@ import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
+import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { MOOD_OPTIONS, lsGet, lsSet } from "../lib/portuguese";
 import { CalendarPTBanner, ATardeBanner } from "../components/PTBanners";
@@ -19,6 +20,7 @@ const SORTS = [
 ];
 
 export default function Feed() {
+    const { user } = useAuth();
     const [tab, setTab] = useState("following");
     const [mood, setMood] = useState(lsGet("feed.mood", ""));
     const [sort, setSort] = useState(lsGet("feed.sort", "recent"));
@@ -28,6 +30,15 @@ export default function Feed() {
     const [newCount, setNewCount] = useState(0);
     const knownIdsRef = useRef(new Set());
     useLiveTime(30000);
+
+    const greeting = useMemo(() => {
+        const h = new Date().getHours();
+        if (h < 6)  return "Boa madrugada";
+        if (h < 13) return "Bom dia";
+        if (h < 20) return "Boa tarde";
+        return "Boa noite";
+    }, []);
+    const firstName = (user?.name || user?.username || "").split(" ")[0] || "";
 
     useEffect(() => lsSet("feed.mood", mood), [mood]);
     useEffect(() => lsSet("feed.sort", sort), [sort]);
@@ -127,12 +138,21 @@ export default function Feed() {
             </div>
 
             <div className="hidden lg:block sticky top-0 z-30 glass border-b border-black/[0.06]">
-                <div className="px-5 py-4 flex items-center justify-between">
-                    <div>
-                        <h1 className="font-display text-[22px] font-bold tracking-tight leading-tight text-black">Início</h1>
-                        <p className="text-[12px] text-black/50 mt-0.5 font-medium">O que se passa{mood ? ` · ${MOOD_OPTIONS.find(m => m.key === mood)?.emoji} ${MOOD_OPTIONS.find(m => m.key === mood)?.label}` : ""}</p>
+                <div className="px-6 pt-5 pb-3 flex items-end justify-between gap-4">
+                    <div className="min-w-0">
+                        <p className="type-overline mb-1 inline-flex items-center gap-1.5 text-black/50">
+                            <span className="live-dot" /> ao vivo
+                        </p>
+                        <h1 className="font-display text-[26px] font-bold tracking-tight leading-[1.05] text-black">
+                            {greeting}{firstName ? `, ${firstName}` : ""}.
+                        </h1>
+                        <p className="text-[13px] text-black/55 mt-1 font-medium tracking-tight">
+                            {mood
+                                ? <>A filtrar por <span className="text-black font-semibold">{MOOD_OPTIONS.find(m => m.key === mood)?.emoji} {MOOD_OPTIONS.find(m => m.key === mood)?.label}</span></>
+                                : "O que se passa em Portugal agora."}
+                        </p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                         {SORTS.map((s) => {
                             const Icon = s.icon;
                             const active = sort === s.key;
@@ -142,31 +162,53 @@ export default function Feed() {
                                     onClick={() => setSort(s.key)}
                                     data-testid={`feed-sort-${s.key}`}
                                     title={s.label}
-                                    className={`w-9 h-9 rounded-full grid place-items-center transition tap-shrink ${
-                                        active ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"
+                                    className={`h-9 px-3 rounded-full inline-flex items-center gap-1.5 transition tap-shrink text-[12px] font-medium tracking-tight ${
+                                        active ? "chip-filter-on" : "text-black/75 hover:bg-black/[0.06]"
                                     }`}
                                 >
-                                    <Icon size={15} strokeWidth={1.7} />
+                                    <Icon size={14} strokeWidth={1.8} />
+                                    <span>{s.label}</span>
                                 </button>
                             );
                         })}
                         <button
                             onClick={refresh}
                             data-testid="feed-refresh"
-                            className="w-10 h-10 rounded-full grid place-items-center text-black hover:text-black hover:bg-black/[0.05] tap-shrink transition border border-transparent hover:border-black/[0.06]"
+                            className="w-9 h-9 ml-1 rounded-full grid place-items-center text-black/70 hover:text-black hover:bg-black/[0.05] tap-shrink transition border border-black/[0.06]"
                             title="Atualizar"
                         >
-                            <RefreshCw size={16} strokeWidth={1.7} className={refreshing ? "animate-spin" : ""} />
+                            <RefreshCw size={15} strokeWidth={1.8} className={refreshing ? "animate-spin" : ""} />
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <div className="glass border-b border-black/[0.06]">
-                <div className="grid grid-cols-2">
+                {/* Tabs — gradient underline */}
+                <div className="grid grid-cols-2 px-3">
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following"
+                        className={`py-3 font-heading text-[14px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black/65 hover:text-black hover:bg-black/[0.03] rounded-lg"}`}
+                    >
+                        Seguindo
+                        {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[2px] rounded-full grad-bar" />)}
+                    </button>
+                    <button
+                        onClick={() => setTab("foryou")}
+                        data-testid="tab-foryou"
+                        className={`py-3 font-heading text-[14px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black/65 hover:text-black hover:bg-black/[0.03] rounded-lg"}`}
+                    >
+                        Para ti
+                        {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[2px] rounded-full grad-bar" />)}
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile-only tabs (desktop tabs are above inside the sticky hero) */}
+            <div className="lg:hidden glass border-b border-black/[0.06]">
+                <div className="grid grid-cols-2">
+                    <button
+                        onClick={() => setTab("following")}
+                        data-testid="tab-following-mobile"
                         className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Seguindo
@@ -174,19 +216,22 @@ export default function Feed() {
                     </button>
                     <button
                         onClick={() => setTab("foryou")}
-                        data-testid="tab-foryou"
+                        data-testid="tab-foryou-mobile"
                         className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Para ti
                         {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
                     </button>
                 </div>
-                {/* Mood chips */}
-                <div className="flex gap-1.5 px-3 pb-2.5 overflow-x-auto scrollbar-hide">
+            </div>
+
+            {/* Mood chips */}
+            <div className="border-b border-black/[0.06] bg-white/60 backdrop-blur-md">
+                <div className="flex gap-1.5 px-3 lg:px-5 py-2.5 overflow-x-auto scrollbar-hide">
                     <button
                         onClick={() => setMood("")}
                         data-testid="feed-mood-all"
-                        className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === "" ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}
+                        className={`shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-medium tracking-tight transition ${mood === "" ? "chip-filter-on" : "bg-black/[0.04] text-black/80 hover:bg-black/[0.08] hover:text-black"}`}
                     >
                         Tudo
                     </button>
@@ -195,13 +240,13 @@ export default function Feed() {
                             key={m.key}
                             onClick={() => setMood(m.key)}
                             data-testid={`feed-mood-${m.key}`}
-                            className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium transition ${mood === m.key ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}
+                            className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-medium tracking-tight transition ${mood === m.key ? "chip-filter-on" : "bg-black/[0.04] text-black/80 hover:bg-black/[0.08] hover:text-black"}`}
                         >
                             <span>{m.emoji}</span> {m.label}
                         </button>
                     ))}
                     {mood && (
-                        <button onClick={() => setMood("")} className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] text-black/50 hover:bg-black/[0.04]" data-testid="feed-mood-clear">
+                        <button onClick={() => setMood("")} className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] text-black/55 hover:bg-black/[0.05]" data-testid="feed-mood-clear">
                             <X size={11} /> Limpar
                         </button>
                     )}
