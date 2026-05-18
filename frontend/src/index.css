@@ -945,4 +945,13 @@
     .ptr-indicator { display: grid; place-items: center; overflow: hidden; transition: height 200ms ease; }
     .ptr-spin { animation: ptrSpin 700ms linear infinite; }
     @keyframes ptrSpin { to { transform: rotate(360deg); } }
+    /* Termómetro Social — heartbeat subtil para estados em_brasa / a_ferver */
+    @keyframes pulseSoft {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.0); }
+        50%      { box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.10); }
+    }
+    .anim-pulse-soft { animation: pulseSoft 2.4s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) {
+        .anim-pulse-soft { animation: none; }
+    }
 }

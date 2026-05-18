@@ -488,6 +488,107 @@ def compute_velocity(curr: int, prev: int) -> int:
     return max(-99, min(999, int(round(pct))))
 
 
+# ============================================================
+# Termómetro Social — sistema central reutilizável de energia
+# Estados: frio · morno · quente · em_brasa · a_ferver (0–100)
+# ============================================================
+TEMP_STATES = (
+    {"min": 0,  "key": "frio",     "label": "Frio",     "emoji": "🧊"},
+    {"min": 20, "key": "morno",    "label": "Morno",    "emoji": "🌤️"},
+    {"min": 40, "key": "quente",   "label": "Quente",   "emoji": "🌡️"},
+    {"min": 60, "key": "em_brasa", "label": "Em Brasa", "emoji": "🔥"},
+    {"min": 80, "key": "a_ferver", "label": "A Ferver", "emoji": "🌋"},
+)
+
+# Pesos por tipo de entidade — calibrados para uma rede social de média escala.
+# anchor = ponto de saturação ("activity feels alive"); baixo = aquece rápido.
+TEMP_PROFILES = {
+    "tag":          {"anchor": 30.0, "w_post": 3, "w_like": 1, "w_comment": 2, "w_repost": 2, "w_unique": 2},
+    "city":         {"anchor": 25.0, "w_post": 3, "w_like": 1, "w_comment": 2, "w_repost": 2, "w_unique": 2},
+    "mood":         {"anchor": 30.0, "w_post": 3, "w_like": 1, "w_comment": 2, "w_repost": 2, "w_unique": 2},
+    "post":         {"anchor": 15.0, "w_like": 1, "w_comment": 2, "w_repost": 3, "w_reaction": 1},
+    "conversation": {"anchor": 10.0, "w_message": 1},
+}
+
+
+def temperature_state(score: int) -> dict:
+    """Map a 0..100 score to one of the 5 named states."""
+    s = max(0, min(100, int(score)))
+    chosen = TEMP_STATES[0]
+    for st in TEMP_STATES:
+        if s >= st["min"]:
+            chosen = st
+    return {"key": chosen["key"], "label": chosen["label"], "emoji": chosen["emoji"]}
+
+
+def compute_temperature_score(curr: float, prev: float, anchor: float = 20.0) -> int:
+    """Compute a 0..100 temperature from current/previous weighted activity.
+
+    Two ingredients, intentionally:
+      · base: how much *absolute* activity is happening right now.
+        Saturation curve `(1 - e^(-curr/anchor)) * 70` keeps it tameable —
+        big numbers don't blow up, small numbers don't sit at zero.
+      · momentum: short-window velocity. Bonus capped at +30, malus at -15
+        so a quiet entity that's growing fast still gets warm, and a busy
+        entity that's cooling off slips down without crashing.
+    """
+    curr = max(0.0, float(curr))
+    prev = max(0.0, float(prev))
+    anchor = max(1.0, float(anchor))
+    base = (1.0 - math.exp(-curr / anchor)) * 70.0
+    if prev <= 0:
+        velocity_pct = 100.0 if curr > 0 else 0.0
+    else:
+        velocity_pct = ((curr - prev) / prev) * 100.0
+    momentum = max(-15.0, min(30.0, velocity_pct / 4.0))
+    score = base + momentum
+    # Only entities with literally zero activity should read truly cold (0).
+    if curr <= 0 and prev <= 0:
+        score = 0.0
+    return max(0, min(100, int(round(score))))
+
+
+def temperature_object(curr: float, prev: float, anchor: float = 20.0,
+                       signals: Optional[dict] = None,
+                       range_label: Optional[str] = None) -> dict:
+    """Full payload — score + named state + raw signals + velocity %."""
+    score = compute_temperature_score(curr, prev, anchor)
+    st = temperature_state(score)
+    velocity = compute_velocity(int(round(curr)), int(round(prev)))
+    return {
+        "score": score,
+        "state": st["key"],
+        "label": st["label"],
+        "emoji": st["emoji"],
+        "velocity": velocity,
+        "signals": signals or {},
+        "range": range_label,
+    }
+
+
+def _weighted_post_signals(posts: list, weights: dict) -> tuple[float, dict]:
+    """Aggregate posts into a single weighted activity number + raw signals."""
+    n_posts = len(posts)
+    likes = sum(len(p.get("likes", []) or []) for p in posts)
+    comments = sum(int(p.get("comments_count", 0) or 0) for p in posts)
+    reposts = sum(len(p.get("reposts", []) or []) for p in posts)
+    unique = len({p.get("author_id") for p in posts if p.get("author_id")})
+    weighted = (
+        n_posts * weights.get("w_post", 0)
+        + likes * weights.get("w_like", 0)
+        + comments * weights.get("w_comment", 0)
+        + reposts * weights.get("w_repost", 0)
+        + unique * weights.get("w_unique", 0)
+    )
+    return float(weighted), {
+        "posts": n_posts,
+        "likes": likes,
+        "comments": comments,
+        "reposts": reposts,
+        "unique_authors": unique,
+    }
+
+
 def hours_since(iso_str: Optional[str]) -> float:
     if not iso_str:
         return 1e9
@@ -4321,7 +4422,7 @@ async def send_message(payload: MessageIn, user=Depends(get_current_user)):
 # ============================================================
 @api.get("/trending")
 async def trending(range: str = "7d"):
-    """Top hashtags com taxa de crescimento (velocity %).
+    """Top hashtags com taxa de crescimento (velocity %) + temperatura social.
     range: 1h | 24h | 7d | 30d (default 7d)."""
     hours = range_to_hours(range)
     now = datetime.now(timezone.utc)
@@ -4331,30 +4432,42 @@ async def trending(range: str = "7d"):
         {"hashtags": {"$exists": True, "$ne": []},
          "is_draft": {"$ne": True},
          "created_at": {"$gte": curr_cut}},
-        {"_id": 0, "hashtags": 1},
+        {"_id": 0, "hashtags": 1, "author_id": 1, "likes": 1,
+         "reposts": 1, "comments_count": 1},
     ).to_list(800)
     prev_posts = await db.posts.find(
         {"hashtags": {"$exists": True, "$ne": []},
          "is_draft": {"$ne": True},
          "created_at": {"$gte": prev_cut, "$lt": curr_cut}},
-        {"_id": 0, "hashtags": 1},
+        {"_id": 0, "hashtags": 1, "author_id": 1, "likes": 1,
+         "reposts": 1, "comments_count": 1},
     ).to_list(800)
     curr_counts: dict[str, int] = {}
     prev_counts: dict[str, int] = {}
+    by_tag_curr: dict[str, list] = {}
+    by_tag_prev: dict[str, list] = {}
     for p in curr_posts:
         for t in p.get("hashtags", []):
             curr_counts[t] = curr_counts.get(t, 0) + 1
+            by_tag_curr.setdefault(t, []).append(p)
     for p in prev_posts:
         for t in p.get("hashtags", []):
             prev_counts[t] = prev_counts.get(t, 0) + 1
+            by_tag_prev.setdefault(t, []).append(p)
     items = sorted(curr_counts.items(), key=lambda kv: kv[1], reverse=True)[:30]
+    weights = TEMP_PROFILES["tag"]
     out = []
     for tag, cnt in items:
+        curr_w, signals = _weighted_post_signals(by_tag_curr.get(tag, []), weights)
+        prev_w, _ = _weighted_post_signals(by_tag_prev.get(tag, []), weights)
+        temp = temperature_object(curr_w, prev_w, anchor=weights["anchor"],
+                                  signals=signals, range_label=range)
         out.append({
             "tag": tag, "count": cnt,
             "previous": prev_counts.get(tag, 0),
             "velocity": compute_velocity(cnt, prev_counts.get(tag, 0)),
             "is_city": tag in PT_CITIES,
+            "temperature": temp,
         })
     return out
 
@@ -4434,39 +4547,210 @@ async def trending_communities(range: str = "7d", viewer: Optional[dict] = Depen
 
 @api.get("/trending/cidades")
 async def trending_cities(range: str = "30d"):
-    """Cidades portuguesas em alta — extraídas das hashtags + conteúdo."""
+    """Cidades portuguesas em alta — extraídas das hashtags + conteúdo + temperatura."""
     hours = range_to_hours(range)
     cut = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     prev_cut = (datetime.now(timezone.utc) - timedelta(hours=hours * 2)).isoformat()
     curr_posts = await db.posts.find(
         {"is_draft": {"$ne": True}, "created_at": {"$gte": cut}},
-        {"_id": 0, "hashtags": 1, "content": 1},
+        {"_id": 0, "hashtags": 1, "content": 1, "author_id": 1,
+         "likes": 1, "reposts": 1, "comments_count": 1},
     ).to_list(2000)
     prev_posts = await db.posts.find(
         {"is_draft": {"$ne": True}, "created_at": {"$gte": prev_cut, "$lt": cut}},
-        {"_id": 0, "hashtags": 1, "content": 1},
+        {"_id": 0, "hashtags": 1, "content": 1, "author_id": 1,
+         "likes": 1, "reposts": 1, "comments_count": 1},
     ).to_list(2000)
 
-    def _count(plist):
+    def _bucket(plist):
         c: dict[str, int] = {}
+        by_city: dict[str, list] = {}
         for p in plist:
             cities = detect_cities(p.get("content", ""), p.get("hashtags", []))
             for city in cities:
                 c[city] = c.get(city, 0) + 1
-        return c
+                by_city.setdefault(city, []).append(p)
+        return c, by_city
 
-    curr = _count(curr_posts)
-    prev = _count(prev_posts)
+    curr, by_curr = _bucket(curr_posts)
+    prev, by_prev = _bucket(prev_posts)
     ranked = sorted(curr.items(), key=lambda kv: kv[1], reverse=True)[:12]
+    weights = TEMP_PROFILES["city"]
     out = []
     for city, n in ranked:
+        curr_w, signals = _weighted_post_signals(by_curr.get(city, []), weights)
+        prev_w, _ = _weighted_post_signals(by_prev.get(city, []), weights)
+        temp = temperature_object(curr_w, prev_w, anchor=weights["anchor"],
+                                  signals=signals, range_label=range)
         out.append({
             "city": city,
             "count": n,
             "previous": prev.get(city, 0),
             "velocity": compute_velocity(n, prev.get(city, 0)),
+            "temperature": temp,
         })
     return out
+
+
+# ============================================================
+# Termómetro Social — endpoint universal reutilizável
+# GET /api/temperature/{kind}/{value}?range=1h|24h|7d|30d
+# kinds: tag · city · mood · post · conversation
+# ============================================================
+async def _temp_for_tag(value: str, hours: int, range_label: str) -> dict:
+    tag = (value or "").lstrip("#").lower().strip()
+    if not tag:
+        raise HTTPException(400, "Tag inválida")
+    now = datetime.now(timezone.utc)
+    curr_cut = (now - timedelta(hours=hours)).isoformat()
+    prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    proj = {"_id": 0, "author_id": 1, "likes": 1,
+            "reposts": 1, "comments_count": 1}
+    curr_posts = await db.posts.find(
+        {"hashtags": tag, "is_draft": {"$ne": True},
+         "created_at": {"$gte": curr_cut}}, proj
+    ).to_list(800)
+    prev_posts = await db.posts.find(
+        {"hashtags": tag, "is_draft": {"$ne": True},
+         "created_at": {"$gte": prev_cut, "$lt": curr_cut}}, proj
+    ).to_list(800)
+    w = TEMP_PROFILES["tag"]
+    curr_w, signals = _weighted_post_signals(curr_posts, w)
+    prev_w, _ = _weighted_post_signals(prev_posts, w)
+    return temperature_object(curr_w, prev_w, anchor=w["anchor"],
+                              signals=signals, range_label=range_label)
+
+
+async def _temp_for_city(value: str, hours: int, range_label: str) -> dict:
+    city_key = (value or "").lower().strip()
+    if not city_key or city_key not in PT_CITIES:
+        raise HTTPException(400, "Cidade inválida")
+    now = datetime.now(timezone.utc)
+    curr_cut = (now - timedelta(hours=hours)).isoformat()
+    prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    proj = {"_id": 0, "hashtags": 1, "content": 1, "author_id": 1,
+            "likes": 1, "reposts": 1, "comments_count": 1}
+    rx = re.escape(PT_CITIES[city_key])
+    base = {
+        "is_draft": {"$ne": True},
+        "$or": [{"hashtags": city_key},
+                {"content": {"$regex": rx, "$options": "i"}}],
+    }
+    curr_posts = await db.posts.find(
+        {**base, "created_at": {"$gte": curr_cut}}, proj
+    ).to_list(800)
+    prev_posts = await db.posts.find(
+        {**base, "created_at": {"$gte": prev_cut, "$lt": curr_cut}}, proj
+    ).to_list(800)
+    # Confirm via detect_cities to avoid false-positives.
+    pretty = PT_CITIES[city_key]
+    curr_posts = [p for p in curr_posts
+                  if pretty in detect_cities(p.get("content", ""), p.get("hashtags", []))]
+    prev_posts = [p for p in prev_posts
+                  if pretty in detect_cities(p.get("content", ""), p.get("hashtags", []))]
+    w = TEMP_PROFILES["city"]
+    curr_w, signals = _weighted_post_signals(curr_posts, w)
+    prev_w, _ = _weighted_post_signals(prev_posts, w)
+    return temperature_object(curr_w, prev_w, anchor=w["anchor"],
+                              signals=signals, range_label=range_label)
+
+
+async def _temp_for_mood(value: str, hours: int, range_label: str) -> dict:
+    mood_key = (value or "").lower().strip()
+    if mood_key not in MOODS:
+        raise HTTPException(400, "Mood inválido")
+    now = datetime.now(timezone.utc)
+    curr_cut = (now - timedelta(hours=hours)).isoformat()
+    prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    kws = MOODS[mood_key]["keywords"]
+    rx = "|".join(re.escape(k) for k in kws)
+    proj = {"_id": 0, "content": 1, "author_id": 1, "likes": 1,
+            "reposts": 1, "comments_count": 1}
+    curr_posts = await db.posts.find(
+        {"is_draft": {"$ne": True},
+         "content": {"$regex": rx, "$options": "i"},
+         "created_at": {"$gte": curr_cut}}, proj
+    ).to_list(800)
+    prev_posts = await db.posts.find(
+        {"is_draft": {"$ne": True},
+         "content": {"$regex": rx, "$options": "i"},
+         "created_at": {"$gte": prev_cut, "$lt": curr_cut}}, proj
+    ).to_list(800)
+    w = TEMP_PROFILES["mood"]
+    curr_w, signals = _weighted_post_signals(curr_posts, w)
+    prev_w, _ = _weighted_post_signals(prev_posts, w)
+    return temperature_object(curr_w, prev_w, anchor=w["anchor"],
+                              signals=signals, range_label=range_label)
+
+
+async def _temp_for_post(value: str, hours: int, range_label: str) -> dict:
+    if not value:
+        raise HTTPException(400, "Post id inválido")
+    post = await db.posts.find_one(
+        {"id": value},
+        {"_id": 0, "likes": 1, "reposts": 1, "comments_count": 1,
+         "reactions": 1, "created_at": 1},
+    )
+    if not post:
+        raise HTTPException(404, "Post não encontrado")
+    w = TEMP_PROFILES["post"]
+    likes = len(post.get("likes", []) or [])
+    reposts = len(post.get("reposts", []) or [])
+    comments = int(post.get("comments_count", 0) or 0)
+    reactions = sum(len(v or []) for v in (post.get("reactions") or {}).values()) \
+        if isinstance(post.get("reactions"), dict) else 0
+    curr_w = (likes * w["w_like"] + comments * w["w_comment"]
+              + reposts * w["w_repost"] + reactions * w.get("w_reaction", 0))
+    # Decay momentum based on post age (older posts feel colder).
+    age_h = hours_since(post.get("created_at"))
+    prev_w = curr_w * max(0.0, min(1.0, age_h / max(1.0, float(hours))))
+    signals = {"likes": likes, "comments": comments,
+               "reposts": reposts, "reactions": reactions,
+               "age_hours": round(age_h, 2)}
+    return temperature_object(float(curr_w), float(prev_w), anchor=w["anchor"],
+                              signals=signals, range_label=range_label)
+
+
+async def _temp_for_conversation(value: str, hours: int, range_label: str) -> dict:
+    if not value:
+        raise HTTPException(400, "Conversa inválida")
+    now = datetime.now(timezone.utc)
+    curr_cut = (now - timedelta(hours=hours)).isoformat()
+    prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    curr_n = await db.messages.count_documents(
+        {"conversation_key": value, "created_at": {"$gte": curr_cut}}
+    )
+    prev_n = await db.messages.count_documents(
+        {"conversation_key": value, "created_at": {"$gte": prev_cut, "$lt": curr_cut}}
+    )
+    w = TEMP_PROFILES["conversation"]
+    curr_w = float(curr_n) * w["w_message"]
+    prev_w = float(prev_n) * w["w_message"]
+    signals = {"messages": curr_n, "previous": prev_n}
+    return temperature_object(curr_w, prev_w, anchor=w["anchor"],
+                              signals=signals, range_label=range_label)
+
+
+_TEMP_RESOLVERS = {
+    "tag": _temp_for_tag,
+    "city": _temp_for_city,
+    "mood": _temp_for_mood,
+    "post": _temp_for_post,
+    "conversation": _temp_for_conversation,
+}
+
+
+@api.get("/temperature/{kind}/{value}")
+async def get_temperature(kind: str, value: str, range: str = "24h"):
+    """Termómetro Social universal — devolve score 0..100 + estado nomeado.
+    kinds suportados: tag · city · mood · post · conversation
+    range: 1h | 24h | 7d | 30d (default 24h)."""
+    resolver = _TEMP_RESOLVERS.get((kind or "").lower())
+    if not resolver:
+        raise HTTPException(400, f"Kind inválido: {kind}")
+    hours = range_to_hours(range)
+    temp = await resolver(value, hours, range)
+    return {"kind": kind, "value": value, **temp}
 
 
 # ============================================================
@@ -4474,22 +4758,43 @@ async def trending_cities(range: str = "30d"):
 # ============================================================
 @api.get("/explore/moods")
 async def list_moods():
-    """Static moods catalogue with counts (last 7 days)."""
-    cut = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-    posts = await db.posts.find(
+    """Static moods catalogue with counts (last 7 days) + temperatura social."""
+    now = datetime.now(timezone.utc)
+    cut = (now - timedelta(days=7)).isoformat()
+    prev_cut = (now - timedelta(days=14)).isoformat()
+    posts_curr = await db.posts.find(
         {"is_draft": {"$ne": True}, "created_at": {"$gte": cut}},
-        {"_id": 0, "content": 1},
+        {"_id": 0, "content": 1, "author_id": 1, "likes": 1,
+         "reposts": 1, "comments_count": 1, "hashtags": 1},
+    ).to_list(2000)
+    posts_prev = await db.posts.find(
+        {"is_draft": {"$ne": True}, "created_at": {"$gte": prev_cut, "$lt": cut}},
+        {"_id": 0, "content": 1, "author_id": 1, "likes": 1,
+         "reposts": 1, "comments_count": 1, "hashtags": 1},
     ).to_list(2000)
     counts: dict[str, int] = {}
-    for p in posts:
+    by_mood_curr: dict[str, list] = {}
+    by_mood_prev: dict[str, list] = {}
+    for p in posts_curr:
         m = detect_mood(p.get("content", ""))
         if m:
             counts[m] = counts.get(m, 0) + 1
+            by_mood_curr.setdefault(m, []).append(p)
+    for p in posts_prev:
+        m = detect_mood(p.get("content", ""))
+        if m:
+            by_mood_prev.setdefault(m, []).append(p)
+    weights = TEMP_PROFILES["mood"]
     out = []
     for key, m in MOODS.items():
+        curr_w, signals = _weighted_post_signals(by_mood_curr.get(key, []), weights)
+        prev_w, _ = _weighted_post_signals(by_mood_prev.get(key, []), weights)
+        temp = temperature_object(curr_w, prev_w, anchor=weights["anchor"],
+                                  signals=signals, range_label="7d")
         out.append({
             "key": key, "label": m["label"], "emoji": m["emoji"],
             "count": counts.get(key, 0),
+            "temperature": temp,
         })
     return out
 

@@ -4,6 +4,7 @@ import { Hash, MapPin, TrendingUp, Users, Heart, BellRing, BellOff, Share2 } fro
 import { api } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
+import { ThermometerFetch } from "../components/ThermometerFetch";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
 
@@ -54,7 +55,7 @@ export default function TagPage() {
     return (
         <div data-testid="tag-page">
             <PageHeader
-                title={<span className="inline-flex items-center gap-1.5">{stats?.is_city ? <MapPin size={16} className="text-rose-500" /> : <Hash size={16} className="text-black/55" />} {stats?.city_label || tag}</span>}
+                title={<span className="inline-flex items-center gap-1.5">{stats?.is_city ? <MapPin size={16} className="text-rose-500" /> : <Hash size={16} className="text-black/55" />} {stats?.city_label || tag}<ThermometerFetch kind={stats?.is_city ? "city" : "tag"} value={stats?.is_city ? (tag || "").toLowerCase() : tag} range="24h" size="sm" showLabel testid="thermometer-tag-header" /></span>}
                 subtitle={`${posts.length} ${posts.length === 1 ? "publicação" : "publicações"}`}
                 back testid="tag-header"
                 action={
