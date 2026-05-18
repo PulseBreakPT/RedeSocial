@@ -518,3 +518,25 @@ agent_communication:
           - `MobileTopBar`: added subtle coral live pulse dot next to "vermillion" logo.
           - No backend changes. Desktop layout unchanged.
         DO NOT auto-test (UI cosmetic change; user has not requested testing).
+
+    - agent: "main"
+      message: |
+        UI ONLY (frontend): SSS-tier structural restructure of home/feed — eliminates duplicated information.
+          Redundancies removed:
+            * `NewVoicesStrip` ("Vozes novas perto de ti") deleted from `Feed.js`. It duplicated:
+                - `RightSidebar` "Quem seguir" (desktop)
+                - `MobileDiscoverStrip` "Quem seguir" (mobile)
+              Now suggestions live in exactly ONE place per breakpoint.
+            * `CalendarPTBanner` + `ATardeBanner` were stacked back-to-back. Replaced with new
+              `components/SmartTodayBanner.js` which decides at runtime which one to show
+              (priority: calendar event > a-tarde digest > none). Never both.
+            * Composer top toolbar (trash, copy, preview-desktop, preview-mobile, fullscreen icons)
+              is now COLLAPSED when content is empty (and not fullscreen). Auto-reveals as soon
+              as user starts typing or expands. Significantly shorter idle composer.
+          New section order (single source of truth per breakpoint):
+            Desktop: hero (sticky greeting+sort+tabs+mood) -> StoriesBar -> Composer (compact)
+                     -> SmartTodayBanner -> posts. Right sidebar carries trends + suggestions + ticker.
+            Mobile : MobileTopBar -> MobileHomeHero -> sticky tabs -> sticky mood -> StoriesBar
+                     -> MobileComposePill -> SmartTodayBanner -> MobileDiscoverStrip -> posts.
+          No backend changes. Verified visually on 1920px desktop and 390x844 iPhone emulation.
+        DO NOT auto-test (UI cosmetic change; user has not requested testing).

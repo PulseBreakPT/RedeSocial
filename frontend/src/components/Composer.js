@@ -312,7 +312,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             <div className={`flex gap-3 ${fullscreen ? "max-w-3xl mx-auto" : ""} ${previewMode === "mobile" && !fullscreen ? "max-w-[420px]" : ""}`}>
                 <Avatar user={user} size={44} />
                 <div className="flex-1 min-w-0">
-                    {/* SSS-tier composer toolbar */}
+                    {/* SSS-tier composer toolbar — collapsed by default; revealed when there's content or fullscreen */}
+                    {(content.length > 0 || fullscreen) && (
                     <div className="flex items-center justify-between mb-2 -mt-1">
                         <div className="flex items-center gap-1">
                             <button
@@ -364,6 +365,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             </div>
                         )}
                     </div>
+                    )}
 
                     {hadDraft && content && (
                         <div className="flex items-center gap-2 text-xs font-mono text-green-soft mb-2" data-testid="draft-restored">
