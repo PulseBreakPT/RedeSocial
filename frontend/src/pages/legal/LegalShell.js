@@ -120,7 +120,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
         const url = window.location.href;
         try {
             if (navigator.share) {
-                await navigator.share({ title: `Vermillion · ${title}`, url });
+                await navigator.share({ title: `Lusorae · ${title}`, url });
             } else {
                 await navigator.clipboard.writeText(url);
                 setCopied(true);
@@ -161,7 +161,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     </button>
                     <Link to="/" className="inline-flex items-center gap-2 group" data-testid="legal-home-link">
                         <span aria-hidden className="w-2.5 h-2.5 rotate-45 bg-black rounded-[2px]" />
-                        <span className="font-display text-[17px] font-bold tracking-tight">vermillion</span>
+                        <span className="font-display text-[17px] font-bold tracking-tight">lusorae</span>
                     </Link>
                     <span className="ml-2 hidden sm:inline text-[11px] uppercase tracking-[0.14em] text-black/45 font-mono">
                         Centro Legal

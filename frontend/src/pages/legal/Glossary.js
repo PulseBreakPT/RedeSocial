@@ -5,7 +5,7 @@ export default function Glossary() {
         <LegalShell
             active="glossary"
             title="Glossário"
-            subtitle="Definições rápidas dos termos legais e técnicos usados nos documentos do Vermillion. Quando o tempo aperta, começa por aqui."
+            subtitle="Definições rápidas dos termos legais e técnicos usados nos documentos do Lusorae. Quando o tempo aperta, começa por aqui."
             lastUpdated="[data da última versão]"
             eli5="Vocabulário simples para os Termos, a Privacidade, os Cookies e as Diretrizes. Cada termo remete para o documento onde é tratado em detalhe."
         >
@@ -49,7 +49,7 @@ export default function Glossary() {
                 <dt>Responsável pelo tratamento (<em>controller</em>)</dt>
                 <dd>
                     A entidade que determina as finalidades e os meios do tratamento de dados pessoais
-                    (artigo 4.º, n.º 7 do RGPD). No Vermillion, é o prestador do Serviço.
+                    (artigo 4.º, n.º 7 do RGPD). No Lusorae, é o prestador do Serviço.
                 </dd>
                 <dt>Subcontratante (<em>processor</em>)</dt>
                 <dd>
@@ -59,7 +59,7 @@ export default function Glossary() {
                 <dt>Encarregado de Proteção de Dados (DPO)</dt>
                 <dd>
                     Pessoa designada pelo responsável para acompanhar o cumprimento do RGPD (artigos 37.º
-                    a 39.º). Contacto: <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a>.
+                    a 39.º). Contacto: <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.
                 </dd>
             </dl>
 

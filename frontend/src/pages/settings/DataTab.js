@@ -100,7 +100,7 @@ export function DataTab({ user }) {
             }
             const csv = parts.join("\n");
             const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-            downloadBlob(blob, `vermillion-${user?.username || "user"}-${Date.now()}.csv`);
+            downloadBlob(blob, `lusorae-${user?.username || "user"}-${Date.now()}.csv`);
             toast.success("Exportação CSV concluída");
         } catch (err) {
             toastApiError(err, "Não foi possível exportar os teus dados");

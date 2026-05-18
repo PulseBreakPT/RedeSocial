@@ -5,7 +5,7 @@ import { SeloPessoal } from "./SeloPessoal";
 import { useEscapeKey } from "../hooks/useClickOutside";
 
 /**
- * SeloPessoalModal — opens a personalised, exportable Vermillion seal card.
+ * SeloPessoalModal — opens a personalised, exportable Lusorae seal card.
  * Renders the SVG, lets the user download it as a 1080×1440 PNG (2× retina),
  * copy a public link to the profile, or use the OS native share sheet.
  *

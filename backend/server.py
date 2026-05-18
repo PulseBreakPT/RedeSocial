@@ -30,7 +30,7 @@ mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
-app = FastAPI(title="Vermillion Social")
+app = FastAPI(title="Lusorae Social")
 api = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -389,7 +389,7 @@ DAILY_PROMPTS = [
     {"text": "Melhor tasca que conheces? Recomenda.", "emoji": "🍷", "mood": "tasca", "hashtag": "tasca"},
     {"text": "Que música portuguesa anda em loop hoje?", "emoji": "🎙️", "mood": "fado", "hashtag": "musica"},
     {"text": "Praia ou serra este fim-de-semana? Justifica.", "emoji": "🌊", "mood": "praia", "hashtag": "finsdesemana"},
-    {"text": "Partilha uma fotografia da tua janela agora.", "emoji": "📸", "mood": None, "hashtag": "vermillion"},
+    {"text": "Partilha uma fotografia da tua janela agora.", "emoji": "📸", "mood": None, "hashtag": "lusorae"},
     {"text": "Diz uma palavra portuguesa que adoras e porquê.", "emoji": "💬", "mood": None, "hashtag": "lingua"},
     {"text": "Última refeição que valeu cada euro?", "emoji": "🍽️", "mood": "tasca", "hashtag": "comer"},
     {"text": "Que livro andas a ler? Recomenda.", "emoji": "📚", "mood": "cultura", "hashtag": "leitura"},
@@ -1134,7 +1134,7 @@ async def check_username(u: str = ""):
     if not re.fullmatch(r"[a-zA-Z0-9_]+", raw):
         return {"available": False, "reason": "invalid_chars", "message": "Só letras, números e _."}
     RESERVED = {
-        "admin", "root", "support", "vermillion", "vm", "moderator", "mod",
+        "admin", "root", "support", "lusorae", "vermillion", "vm", "moderator", "mod",
         "help", "official", "api", "anon", "anonymous", "null", "undefined",
         "system", "team", "staff", "bot",
     }
@@ -1458,7 +1458,7 @@ async def two_fa_setup(user=Depends(get_current_user)):
         raise HTTPException(400, "2FA já está ativo")
     # Reuse pending secret if user re-opens the flow
     secret = user.get("two_fa_pending_secret") or pyotp.random_base32()
-    issuer = "Vermillion"
+    issuer = "Lusorae"
     label = user.get("email") or user.get("username") or user["id"]
     provisioning_url = pyotp.TOTP(secret).provisioning_uri(name=label, issuer_name=issuer)
     # Build a QR code as a base64 PNG data URL (works with <img src=...>)
@@ -5232,8 +5232,8 @@ async def startup():
     if not existing:
         await db.users.insert_one({
             "id": str(uuid.uuid4()), "email": admin_email, "username": "admin",
-            "name": "Vermillion", "password_hash": hash_password(admin_password),
-            "bio": "Conta oficial. Bem-vindo ao Vermillion ✦",
+            "name": "Lusorae", "password_hash": hash_password(admin_password),
+            "bio": "Conta oficial. Bem-vindo ao Lusorae ✦",
             "avatar": "", "banner": "",
             "verified": True, "private": False, "onboarded": True,
             "followers": [], "following": [], "bookmarks": [],
@@ -5245,7 +5245,7 @@ async def startup():
             await db.users.update_one(
                 {"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}},
             )
-        await db.users.update_one({"email": admin_email}, {"$set": {"verified": True, "onboarded": True}})
+        await db.users.update_one({"email": admin_email}, {"$set": {"verified": True, "onboarded": True, "name": "Lusorae", "bio": "Conta oficial. Bem-vindo ao Lusorae ✦"}})
 
     # Demo Portuguese community — only if posts collection is empty
     if await db.posts.count_documents({}) == 0:

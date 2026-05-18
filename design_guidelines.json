@@ -1,12 +1,12 @@
 {
-  "project_name": "Vermillion",
+  "project_name": "Lusorae",
   "design_philosophy": "Premium Luxury Light Design (Hermès × Twitter × Apple Notes). Zero noise, absolute typographic clarity, and sophisticated silver metallic accents on a pristine white canvas.",
   "theme": "light",
   "archetype": "High-Contrast Minimalist Luxury",
   "brand_identity": {
     "logo_concept": {
       "symbol": "◆",
-      "wordmark": "vermillion",
+      "wordmark": "lusorae",
       "typography": "Cormorant Garamond (Italic/Regular mix)",
       "color": "Obsidian (#0A0A0A) with a subtle silver foil gradient hover state",
       "layout": "Symbol slightly smaller than x-height, tightly kerned wordmark"

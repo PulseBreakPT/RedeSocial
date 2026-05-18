@@ -1,6 +1,6 @@
-# Vermillion — Product Requirements (Living)
+# Lusorae — Product Requirements (Living)
 
-> Última atualização: 18 Fev 2026 (rev 3 — O Selo Vermillion)
+> Última atualização: 18 Fev 2026 (rev 3 — O Selo Lusorae)
 
 ## Visão
 "A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
@@ -104,9 +104,9 @@ Polimentos pedidos pelo utilizador para reduzir ruído visual:
 - Stories agora aparecem imediatamente abaixo da greeting ("Bom dia/Boa noite, X"), seguidas pelos tabs de feed.
 - Removido o composer inline (`<Composer />`) da home — publicação acontece exclusivamente via o botão "Publicar" (desktop) e o botão central "+" (mobile bottom nav).
 
-### O Selo Vermillion (Fev 2026 — rev 3)
+### O Selo Lusorae (Fev 2026 — rev 3)
 Detalhe inconfundível e exclusivo da casa, criado a pedido do utilizador ("algo que só se vê nesta aplicação e não se vê noutra qualquer aplicação").
-- Novo componente `/app/frontend/src/components/VermillionSeal.js` — SVG assinatura cursiva com `pathLength="1"` (normaliza `stroke-dasharray`) que se "escreve sozinha" ao entrar no viewport via `IntersectionObserver`.
+- Novo componente `/app/frontend/src/components/LusoraeSeal.js` — SVG assinatura cursiva com `pathLength="1"` (normaliza `stroke-dasharray`) que se "escreve sozinha" ao entrar no viewport via `IntersectionObserver`.
 - Sequência cinematográfica (~3,3s, single-shot):
   1. Stroke flui (2200ms, `cubic-bezier(.65,0,.35,1)`)
   2. Pontos dos i's caem como tinta (240ms cada, spring-back) — como se o autor voltasse atrás
@@ -143,7 +143,7 @@ Detalhe inconfundível e exclusivo da casa, criado a pedido do utilizador ("algo
 - Refactor `server.py` (~4600 linhas) em módulos
 
 ### P3 — Backlog longo
-- Vermillion+ (Stripe — quando user fornecer API key)
+- Lusorae+ (Stripe — quando user fornecer API key)
 - Sub-communities (Mesas dentro de comunidades)
 - Cosmetics drops sazonais (Sto António, Natal)
 - Public Identity Card exportável SVG/PNG

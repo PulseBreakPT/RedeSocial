@@ -51,15 +51,15 @@ export default function Login() {
                 <div className="relative">
                     <h1 className="font-display text-[36px] leading-none tracking-tight text-white flex items-baseline gap-2">
                         <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
-                        <span>vermillion</span>
+                        <span>lusorae</span>
                     </h1>
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
-                        Liga-te.<br />Partilha o que <span className="silver-foil">importa</span>.
+                        A tua cidade tem <span className="silver-foil">voz</span>.
                     </h2>
                     <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
-                        Uma rede social rápida, simples e sem distracções — feita para conversas que valem.
+                        Lusorae — uma rede social rápida, simples e sem distracções, feita para conversas que valem.
                     </p>
                 </div>
                 <div className="relative text-[12px] text-white/60 font-medium">

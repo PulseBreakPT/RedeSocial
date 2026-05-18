@@ -6,7 +6,7 @@ import { useEscapeKey } from "../../hooks/useClickOutside";
 
 /**
  * Painel SSS-Tier de inteligência do story (autor-only).
- * Tema CLARO — paper aesthetic — alinhado ao resto da app Vermillion.
+ * Tema CLARO — paper aesthetic — alinhado ao resto da app Lusorae.
  *   · Headline EQS + flag "Hot"
  *   · Total views / unique viewers / completion média
  *   · Curva de retenção (10 buckets)

@@ -5,7 +5,7 @@ export default function CommunityGuidelines() {
         <LegalShell
             active="community"
             title="Diretrizes da Comunidade"
-            subtitle="O que é permitido, o que é proibido, e o que esperamos uns dos outros para que o Vermillion continue a ser um sítio decente para conversar em português."
+            subtitle="O que é permitido, o que é proibido, e o que esperamos uns dos outros para que o Lusorae continue a ser um sítio decente para conversar em português."
             lastUpdated="[data da última versão]"
         >
             <div className="legal-callout">
@@ -50,7 +50,7 @@ export default function CommunityGuidelines() {
                 notificar conteúdo potencialmente ilegal mesmo sem ter conta.
             </p>
             <p>
-                Endereço dedicado: <a href="mailto:reportar@vermillion.pt">reportar@vermillion.pt</a>.
+                Endereço dedicado: <a href="mailto:reportar@lusorae.pt">reportar@lusorae.pt</a>.
             </p>
 
             <h2>4. <em>Trusted flaggers</em></h2>

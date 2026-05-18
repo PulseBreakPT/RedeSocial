@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * O Selo Vermillion — a hand-drawn animated signature that "writes itself"
+ * O Selo Lusorae — a hand-drawn animated signature that "writes itself"
  * when scrolled into view. The single most distinctive detail of the app:
  * a flowing cursive mark, two real ink-dots on the i's, and a coral diamond
  * "seal" that stamps down at the end (◆). Below, a tiny mono-cap caption.

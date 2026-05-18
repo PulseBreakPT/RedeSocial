@@ -1,4 +1,4 @@
-# Vermillion — Estratégia de Retenção, Hábito e Comunidade
+# Lusorae — Estratégia de Retenção, Hábito e Comunidade
 *Documento de produto · base behavioural psychology + social graph theory · aplicação direta à rede social portuguesa.*
 
 > Sintetiza pesquisa profunda sobre TikTok, Snapchat, Reddit, Discord, Instagram, Threads, X e Facebook, aplicada ao contexto português (9,27 M utilizadores PT online em 2025; 87 % de uso diário 16-30 anos).
@@ -13,7 +13,7 @@
 | Social | Amigos reais | Snapchat, FB | Obrigação social |
 | Interest | Pessoas + interesses | TikTok, Reddit | Curiosidade infinita |
 | Identity | Persona pública | X, Threads | Estatuto |
-| **Place (Vermillion)** | **Geografia PT** | **— único** | **Pertença local** |
+| **Place (Lusorae)** | **Geografia PT** | **— único** | **Pertença local** |
 
 > Insight estratégico: nenhuma plataforma global domina o place graph PT (cidade · freguesia · região · emigrante). É a vantagem competitiva única.
 
@@ -47,7 +47,7 @@
 
 ---
 
-## PARTE III — Features Vermillion (estado de implementação)
+## PARTE III — Features Lusorae (estado de implementação)
 
 Legenda: ✅ implementado · 🟡 em curso · ⬜ planeado · ❌ descartado · 🔇 excluído por decisão do utilizador
 

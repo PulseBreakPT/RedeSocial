@@ -7,7 +7,7 @@ const CARDS = [
         to: "/legal/terms",
         icon: FileText,
         title: "Termos e Condições",
-        desc: "O contrato entre ti e o Vermillion. Regras de utilização, conta, conteúdos, moderação, suspensão e foro competente.",
+        desc: "O contrato entre ti e o Lusorae. Regras de utilização, conta, conteúdos, moderação, suspensão e foro competente.",
     },
     {
         to: "/legal/privacy",
@@ -34,7 +34,7 @@ export default function LegalIndex() {
         <LegalShell
             active="index"
             title="Centro Legal"
-            subtitle="Toda a informação sobre o teu contrato com o Vermillion, a forma como tratamos os teus dados pessoais e as regras de convivência na comunidade — em conformidade com o RGPD, o Regulamento dos Serviços Digitais (DSA), a Lei n.º 58/2019, a Lei n.º 41/2004 e a Lei n.º 27/2021 (Carta Portuguesa dos Direitos Humanos na Era Digital)."
+            subtitle="Toda a informação sobre o teu contrato com o Lusorae, a forma como tratamos os teus dados pessoais e as regras de convivência na comunidade — em conformidade com o RGPD, o Regulamento dos Serviços Digitais (DSA), a Lei n.º 58/2019, a Lei n.º 41/2004 e a Lei n.º 27/2021 (Carta Portuguesa dos Direitos Humanos na Era Digital)."
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 not-prose">
                 {CARDS.map(({ to, icon: Icon, title, desc }) => (
@@ -61,16 +61,16 @@ export default function LegalIndex() {
 
             <h2 className="mt-12">Identificação da entidade responsável</h2>
             <p>
-                O Vermillion é operado por <strong>[Denominação social, e.g. Vermillion, Lda.]</strong>, pessoa coletiva
+                O Lusorae é operado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa coletiva
                 de direito português, com sede em <strong>[Morada completa]</strong>,
                 NIPC <strong>[Número de Identificação de Pessoa Coletiva]</strong>,
                 matriculada na Conservatória do Registo Comercial de <strong>[Cidade]</strong>
                 sob o número <strong>[Nº de matrícula]</strong>, com o capital social de <strong>[€ x,xx]</strong>.
             </p>
             <p>
-                Contactos: <a href="mailto:legal@vermillion.pt">legal@vermillion.pt</a> (assuntos legais),{" "}
-                <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a> (Encarregado de Proteção de Dados),{" "}
-                <a href="mailto:apoio@vermillion.pt">apoio@vermillion.pt</a> (apoio ao utilizador).
+                Contactos: <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a> (assuntos legais),{" "}
+                <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a> (Encarregado de Proteção de Dados),{" "}
+                <a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a> (apoio ao utilizador).
             </p>
 
             <h2>Autoridades de controlo e resolução de litígios</h2>

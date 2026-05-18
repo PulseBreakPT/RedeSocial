@@ -32,7 +32,7 @@ function joinedLabel(iso) {
 
 /**
  * SeloPessoal — a self-contained, exportable SVG card that constitutes the
- * user's personal Vermillion seal. Designed for sharing outside the app
+ * user's personal Lusorae seal. Designed for sharing outside the app
  * (Stories, WhatsApp, anywhere). 3:4 aspect (540×720) — looks great in
  * both feed posts and stories. All fonts are system-default so PNG export
  * via canvas works reliably across Chrome/Safari/Firefox.
@@ -183,7 +183,7 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 strokeWidth="1.5"
             />
 
-            {/* manifesto pull-quote (cultural anchor — Vermillion's spirit) */}
+            {/* manifesto pull-quote (cultural anchor — Lusorae's spirit) */}
             <g transform="translate(40, 330)">
                 <text
                     fontFamily="Georgia, 'Times New Roman', serif"
@@ -263,7 +263,7 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 </text>
             </g>
 
-            {/* the Vermillion Seal — same signature mark, larger, centered */}
+            {/* the Lusorae Seal — same signature mark, larger, centered */}
             <g transform="translate(155, 540)">
                 <path
                     className="selo-pessoal-signature"

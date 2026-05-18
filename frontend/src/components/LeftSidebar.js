@@ -175,7 +175,7 @@ export function LeftSidebar({ onCompose }) {
                 </div>
             </nav>
 
-            {/* Big Publicar — vermillion CTA com indicador de rascunhos */}
+            {/* Big Publicar — lusorae CTA com indicador de rascunhos */}
             <button
                 onClick={onCompose}
                 data-testid="left-sidebar-compose"

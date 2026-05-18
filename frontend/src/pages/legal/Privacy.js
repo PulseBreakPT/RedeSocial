@@ -18,7 +18,7 @@ export default function Privacy() {
 
             <h2>1. Responsável pelo tratamento</h2>
             <p>
-                <strong>[Denominação social, e.g. Vermillion, Lda.]</strong>, NIPC <strong>[NIPC]</strong>,
+                <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, NIPC <strong>[NIPC]</strong>,
                 com sede em <strong>[Morada]</strong>, é o responsável pelo tratamento (<em>controller</em>)
                 dos dados pessoais tratados no âmbito do Serviço.
             </p>
@@ -26,7 +26,7 @@ export default function Privacy() {
             <h2>2. Encarregado de Proteção de Dados (DPO)</h2>
             <p>
                 Foi designado um Encarregado de Proteção de Dados, nos termos dos artigos 37.º a 39.º do RGPD,
-                contactável em: <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a>, ou por correio postal
+                contactável em: <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>, ou por correio postal
                 para a sede social ao cuidado do &ldquo;DPO&rdquo;.
             </p>
 
@@ -79,7 +79,7 @@ export default function Privacy() {
                 Os dados podem ser comunicados a:
             </p>
             <ul>
-                <li>Subcontratantes (artigo 28.º do RGPD) que prestam serviços de alojamento (cloud), envio de e-mail transacional, deteção de abuso, suporte e analítica. Mantemos uma lista atualizada disponível mediante pedido para <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a>.</li>
+                <li>Subcontratantes (artigo 28.º do RGPD) que prestam serviços de alojamento (cloud), envio de e-mail transacional, deteção de abuso, suporte e analítica. Mantemos uma lista atualizada disponível mediante pedido para <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.</li>
                 <li>Autoridades judiciais, policiais ou regulatórias, no estrito cumprimento de obrigação legal ou ordem competente.</li>
                 <li>Terceiros adquirentes, no caso de reorganização societária, com prévia comunicação aos titulares.</li>
             </ul>
@@ -132,7 +132,7 @@ export default function Privacy() {
                 <li><strong>Retirar o consentimento</strong> a qualquer momento, sem prejuízo da licitude do tratamento anterior.</li>
             </ul>
             <p>
-                Para exercer os teus direitos, contacta <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a>.
+                Para exercer os teus direitos, contacta <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.
                 Respondemos no prazo de um mês, prorrogável por dois meses em casos complexos (artigo 12.º, n.º 3 do RGPD).
             </p>
 

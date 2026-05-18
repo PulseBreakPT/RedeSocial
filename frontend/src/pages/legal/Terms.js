@@ -5,12 +5,12 @@ export default function Terms() {
         <LegalShell
             active="terms"
             title="Termos e Condições de Utilização"
-            subtitle="O contrato entre ti e o Vermillion. Lê com atenção — ao criar conta ou usar o serviço aceitas integralmente os termos aqui descritos."
+            subtitle="O contrato entre ti e o Lusorae. Lê com atenção — ao criar conta ou usar o serviço aceitas integralmente os termos aqui descritos."
             lastUpdated="[data da última versão]"
         >
             <div className="legal-callout">
                 <strong>Em síntese</strong>
-                Estes Termos regulam a utilização do Vermillion, uma rede social com sede em Portugal. Aplicam-se,
+                Estes Termos regulam a utilização do Lusorae, uma rede social com sede em Portugal. Aplicam-se,
                 entre outros, o Regulamento (UE) 2016/679 (RGPD), o Regulamento (UE) 2022/2065 (Regulamento dos
                 Serviços Digitais — DSA), o Decreto-Lei n.º 7/2004 (comércio eletrónico) e a Lei n.º 27/2021 (Carta
                 Portuguesa dos Direitos Humanos na Era Digital). A lei aplicável é a lei portuguesa.
@@ -18,10 +18,10 @@ export default function Terms() {
 
             <h2>1. Identificação do prestador</h2>
             <p>
-                O serviço Vermillion (adiante &ldquo;<strong>Plataforma</strong>&rdquo; ou &ldquo;<strong>Serviço</strong>&rdquo;)
-                é prestado por <strong>[Denominação social, e.g. Vermillion, Lda.]</strong>, pessoa coletiva n.º{" "}
+                O serviço Lusorae (adiante &ldquo;<strong>Plataforma</strong>&rdquo; ou &ldquo;<strong>Serviço</strong>&rdquo;)
+                é prestado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa coletiva n.º{" "}
                 <strong>[NIPC]</strong>, com sede em <strong>[Morada]</strong>, contactável em{" "}
-                <a href="mailto:legal@vermillion.pt">legal@vermillion.pt</a>. Cumpre-se assim o dever de informação previsto
+                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Cumpre-se assim o dever de informação previsto
                 no artigo 10.º do Decreto-Lei n.º 7/2004, de 7 de janeiro.
             </p>
 
@@ -56,7 +56,7 @@ export default function Terms() {
             <h3>4.2 Segurança e responsabilidade</h3>
             <p>
                 O Utilizador é responsável pela confidencialidade das credenciais de acesso e por qualquer atividade
-                realizada a partir da sua conta. Deve notificar imediatamente o Vermillion em caso de acesso não
+                realizada a partir da sua conta. Deve notificar imediatamente o Lusorae em caso de acesso não
                 autorizado.
             </p>
             <h3>4.3 Encerramento pelo Utilizador</h3>
@@ -70,7 +70,7 @@ export default function Terms() {
             <h3>5.1 Propriedade e licença</h3>
             <p>
                 O Utilizador mantém a titularidade dos direitos sobre os conteúdos que publica. Ao publicar,
-                concede ao Vermillion uma <strong>licença mundial, não exclusiva, isenta de royalties</strong> e
+                concede ao Lusorae uma <strong>licença mundial, não exclusiva, isenta de royalties</strong> e
                 limitada à operação, promoção e melhoria do Serviço, incluindo o direito de armazenar, reproduzir,
                 distribuir, transmitir e exibir os conteúdos no contexto do Serviço. A licença caduca com a eliminação
                 do conteúdo, salvo quando seja necessário conservá-lo para cumprimento de obrigação legal, prevenção
@@ -104,7 +104,7 @@ export default function Terms() {
 
             <h2>7. Moderação de conteúdos</h2>
             <p>
-                Em cumprimento dos artigos 14.º, 15.º, 17.º e 24.º do DSA, o Vermillion publica os termos da sua
+                Em cumprimento dos artigos 14.º, 15.º, 17.º e 24.º do DSA, o Lusorae publica os termos da sua
                 política de moderação e elabora relatórios periódicos de transparência. As medidas de moderação
                 podem incluir: rotulagem, redução de visibilidade, remoção de conteúdo, suspensão temporária ou
                 permanente de conta.
@@ -133,7 +133,7 @@ export default function Terms() {
 
             <h2>8. Suspensão e cessação</h2>
             <p>
-                Nos termos do artigo 23.º do DSA, o Vermillion pode suspender o serviço a utilizadores que
+                Nos termos do artigo 23.º do DSA, o Lusorae pode suspender o serviço a utilizadores que
                 frequentemente publiquem conteúdos manifestamente ilegais ou apresentem reclamações ou notificações
                 manifestamente infundadas, mediante aviso prévio e fundamentado e tendo em conta as circunstâncias
                 do caso.
@@ -154,7 +154,7 @@ export default function Terms() {
 
             <h2>10. Propriedade intelectual da Plataforma</h2>
             <p>
-                A marca &ldquo;Vermillion&rdquo;, logótipo, interface, código-fonte e demais elementos distintivos
+                A marca &ldquo;Lusorae&rdquo;, logótipo, interface, código-fonte e demais elementos distintivos
                 são propriedade do prestador ou licenciados ao mesmo, encontrando-se protegidos pelo Código da
                 Propriedade Industrial e pelo Código do Direito de Autor e dos Direitos Conexos.
             </p>
@@ -168,7 +168,7 @@ export default function Terms() {
 
             <h2>12. Limitação de responsabilidade</h2>
             <p>
-                Nos limites máximos permitidos pela lei aplicável, a responsabilidade do Vermillion abrange apenas
+                Nos limites máximos permitidos pela lei aplicável, a responsabilidade do Lusorae abrange apenas
                 os danos diretos resultantes de incumprimento doloso ou com culpa grave. As cláusulas de exclusão
                 ou limitação de responsabilidade estão sujeitas ao regime das cláusulas contratuais gerais
                 (Decreto-Lei n.º 446/85, de 25 de outubro), prevalecendo as normas imperativas a favor do consumidor.
@@ -187,7 +187,7 @@ export default function Terms() {
                 Quando o Utilizador seja consumidor e tenha contratado serviços onerosos à distância, dispõe do
                 direito de livre resolução no prazo de <strong>14 dias</strong> após a celebração do contrato,
                 nos termos do Decreto-Lei n.º 24/2014, de 14 de fevereiro, sem necessidade de invocar motivo.
-                O Serviço-base do Vermillion é gratuito; este direito aplica-se apenas a subscrições pagas, quando
+                O Serviço-base do Lusorae é gratuito; este direito aplica-se apenas a subscrições pagas, quando
                 e se vierem a existir.
             </p>
 
@@ -201,7 +201,7 @@ export default function Terms() {
 
             <h2>16. Contactos</h2>
             <p>
-                Para qualquer questão sobre estes Termos: <a href="mailto:legal@vermillion.pt">legal@vermillion.pt</a>.
+                Para qualquer questão sobre estes Termos: <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
             </p>
         </LegalShell>
     );

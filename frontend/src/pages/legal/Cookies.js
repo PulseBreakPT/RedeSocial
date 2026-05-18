@@ -104,7 +104,7 @@ export default function Cookies() {
 
             <h2>6. Contacto</h2>
             <p>
-                Para questões: <a href="mailto:dpo@vermillion.pt">dpo@vermillion.pt</a>.
+                Para questões: <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.
             </p>
         </LegalShell>
     );
