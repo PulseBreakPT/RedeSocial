@@ -212,7 +212,7 @@ export function StoryComposer({ onClose, onCreated }) {
                         {/* Audiência badge canto sup direito */}
                         <button
                             onClick={() => setAudiencePicker(true)}
-                            data-testid="composer-audience-btn"
+                            data-testid="story-composer-audience-btn"
                             className="absolute top-2 right-2 z-40 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-black/75"
                         >
                             <span>{audienceMeta?.emoji}</span>

@@ -2791,8 +2791,13 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
 async def list_stories(user=Depends(get_current_user)):
     """Lista stories activos visíveis ao viewer, agrupados por autor."""
     now = datetime.now(timezone.utc).isoformat()
-    # autores potenciais: próprio + a seguir + Roda (caso author tenha posto roda mas viewer não segue; raro mas seguro)
-    ids = list({user["id"], *(user.get("following") or [])})
+    # autores potenciais:
+    #   - próprio
+    #   - quem o viewer segue
+    #   - quem adicionou o viewer à sua Roda (close friends) — pode ainda não ser seguido
+    roda_authors_cur = db.users.find({"roda": user["id"]}, {"_id": 0, "id": 1})
+    roda_authors = [u["id"] async for u in roda_authors_cur]
+    ids = list({user["id"], *(user.get("following") or []), *roda_authors})
     # excluir stories silenciados pelo viewer
     muted = set(user.get("stories_muted") or [])
     rows = await db.stories.find(

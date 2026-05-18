@@ -51,16 +51,16 @@ export function FollowButton({ profile, onChange, size = "default", showLabel = 
         };
     }, [menuOpen]);
 
-    // Don't render for self
-    if (!profile || profile.is_self) return null;
+    // Don't render for self — but defer the early return until AFTER all hooks
+    const isHidden = !profile || profile.is_self;
 
-    const username = profile.username;
-    const isFollowing = !!profile.is_following;
-    const followsMe = !!profile.follows_me;
-    const isBlocked = !!profile.is_blocked;
-    const isMuted = !!profile.is_muted;
-    const isNotified = !!profile.is_notified;
-    const isFavorited = !!profile.is_favorited;
+    const username = profile?.username;
+    const isFollowing = !!profile?.is_following;
+    const followsMe = !!profile?.follows_me;
+    const isBlocked = !!profile?.is_blocked;
+    const isMuted = !!profile?.is_muted;
+    const isNotified = !!profile?.is_notified;
+    const isFavorited = !!profile?.is_favorited;
 
     // Tiny haptic ping on touch devices (no-op elsewhere)
     const haptic = (pattern) => {
@@ -196,6 +196,7 @@ export function FollowButton({ profile, onChange, size = "default", showLabel = 
     const iconSize = size === "compact" ? 13 : 14;
 
     // ----- Render branches -----------------------------------------------
+    if (isHidden) return null;
     // Blocked → only "Desbloquear" — no follow/menu/bell
     if (isBlocked) {
         return (

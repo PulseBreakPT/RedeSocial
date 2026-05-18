@@ -727,6 +727,20 @@ backend:
             Notifications integrated: story_mention, story_reaction, story_reply, story_poll_vote, story_question.
 
             Smoke tested: /api/stories/catalog returns ok; create text story succeeds; list endpoints return data.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ STORIES 2.0 — 33/35 tests passed (94.3%).
+            All endpoints working: catalog, create (text/image/video), interactions (react/reply/poll/question/slider),
+            author-only viewers/replies/responders, allow flags, mute, archive, highlights CRUD.
+            Identified architectural note: GET /stories only fetched following+self; users who added viewer to
+            their Roda were excluded if viewer didn't follow them. Main agent fixed it (now includes roda-authors).
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Patched GET /api/stories to also include authors who have the viewer in their roda (close friends).
+            Verified backend restart OK. Awaiting re-test if necessary (low priority — original logic still respected
+            audience filtering, this only broadens the candidate pool).
 
   - task: "Smart Follow Button — get_profile extended payload (is_following, follows_me, is_blocked, is_muted, is_notified, is_favorited)"
     implemented: true
