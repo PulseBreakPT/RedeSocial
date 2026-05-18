@@ -943,8 +943,62 @@ class MessageIn(BaseModel):
 
 
 class StoryIn(BaseModel):
-    image: str
-    content: Optional[str] = ""
+    # Tipo de media: image | video | text
+    media_type: Optional[str] = "image"
+    image: Optional[str] = ""        # base64 ou URL (image stories)
+    video: Optional[str] = ""        # base64 (vídeo curto até ~15s)
+    duration_ms: Optional[int] = 5000
+    # Story tipo "texto" (sem media, fundo gradiente)
+    text_content: Optional[str] = ""
+    background: Optional[str] = "coral"   # preset key (coral, ocean, dusk, fado, ...)
+    text_color: Optional[str] = "#ffffff"
+    font_style: Optional[str] = "modern"  # modern | classic | neon | typewriter | serif
+    # Overlay/caption (image/video stories)
+    caption: Optional[str] = ""
+    # Stickers interactivos posicionados no canvas
+    # cada um: {id, type, x, y, rotation, scale, data}
+    stickers: Optional[List[dict]] = None
+    # Audiência: everyone | roda | following
+    audience: Optional[str] = "everyone"
+    allow_replies: Optional[bool] = True
+    allow_reactions: Optional[bool] = True
+    # Hashtags/menções inline (texto livre extraído ou explicit)
+    content: Optional[str] = ""  # legado; alias de caption
+
+
+class StoryReplyIn(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class StoryReactIn(BaseModel):
+    emoji: str = Field(min_length=1, max_length=8)
+
+
+class StoryPollVoteIn(BaseModel):
+    sticker_id: str
+    option_id: str
+
+
+class StoryQuestionAnswerIn(BaseModel):
+    sticker_id: str
+    content: str = Field(min_length=1, max_length=200)
+
+
+class StorySliderIn(BaseModel):
+    sticker_id: str
+    value: float = Field(ge=0, le=1)
+
+
+class HighlightIn(BaseModel):
+    title: str = Field(min_length=1, max_length=24)
+    cover: Optional[str] = ""           # base64 ou story_id de onde derivar
+    story_ids: Optional[List[str]] = None
+
+
+class HighlightPatchIn(BaseModel):
+    title: Optional[str] = None
+    cover: Optional[str] = None
+    story_ids: Optional[List[str]] = None
 
 
 class CommunityIn(BaseModel):
@@ -2450,50 +2504,340 @@ async def delete_comment(comment_id: str, user=Depends(get_current_user)):
 
 
 # ============================================================
-# Stories
+# Stories (v2 — rich media + stickers + reactions + replies + viewers
+#               + audience + highlights + archive + mute-author)
 # ============================================================
+
+# Background presets para text stories (frontend renderiza com estes nomes)
+STORY_BACKGROUNDS = {
+    "coral":     "linear-gradient(135deg,#FF6B6B 0%,#E03E3E 100%)",
+    "ocean":     "linear-gradient(135deg,#4FACFE 0%,#1E40AF 100%)",
+    "dusk":      "linear-gradient(135deg,#FA709A 0%,#FEE140 100%)",
+    "fado":      "linear-gradient(135deg,#1F1147 0%,#7E1F86 50%,#F08C1F 100%)",
+    "saudade":   "linear-gradient(180deg,#0E2148 0%,#283593 60%,#7E57C2 100%)",
+    "tasca":     "linear-gradient(135deg,#7C2D12 0%,#B45309 100%)",
+    "praia":     "linear-gradient(135deg,#A1FFCE 0%,#FAFFD1 100%)",
+    "noite":     "linear-gradient(135deg,#0F2027 0%,#203A43 50%,#2C5364 100%)",
+    "neon":      "linear-gradient(135deg,#FA00FF 0%,#00F0FF 100%)",
+    "pastel":    "linear-gradient(135deg,#FBC2EB 0%,#A6C1EE 100%)",
+    "monochrome":"linear-gradient(180deg,#1a1a1a 0%,#404040 100%)",
+    "papel":     "linear-gradient(135deg,#F5F1E8 0%,#E8DCC4 100%)",
+}
+VALID_FONT_STYLES = {"modern", "classic", "neon", "typewriter", "serif", "bold"}
+VALID_STORY_AUDIENCES = {"everyone", "roda", "following"}
+STORY_REACTION_EMOJIS = {"❤️", "🔥", "👏", "😂", "😢", "💯", "🫶", "🥹"}
+VALID_STICKER_TYPES = {
+    "poll", "question", "slider", "mention", "hashtag",
+    "location", "countdown", "music", "link",
+}
+
+
+def _normalize_stickers(raw):
+    """Sanitiza stickers vindos do composer. Cada sticker tem:
+       id (gerado), type, x, y, rotation, scale, data (depende do tipo)."""
+    if not raw:
+        return []
+    out = []
+    for s in raw[:8]:  # máximo 8 stickers por story
+        try:
+            stype = (s.get("type") or "").lower()
+            if stype not in VALID_STICKER_TYPES:
+                continue
+            sticker = {
+                "id": s.get("id") or str(uuid.uuid4()),
+                "type": stype,
+                "x": float(max(0.0, min(1.0, s.get("x", 0.5)))),
+                "y": float(max(0.0, min(1.0, s.get("y", 0.5)))),
+                "rotation": float(max(-180.0, min(180.0, s.get("rotation", 0)))),
+                "scale": float(max(0.4, min(2.5, s.get("scale", 1)))),
+                "data": {},
+            }
+            data = s.get("data") or {}
+            if stype == "poll":
+                # data: {question, options:[{id,text}]}
+                question = (data.get("question") or "").strip()[:80]
+                opts_raw = data.get("options") or []
+                options = []
+                for o in opts_raw[:4]:
+                    txt = (o.get("text") or "").strip()[:30]
+                    if not txt:
+                        continue
+                    options.append({"id": o.get("id") or str(uuid.uuid4())[:8], "text": txt})
+                if len(options) < 2:
+                    continue
+                sticker["data"] = {"question": question or "Sim ou não?", "options": options}
+            elif stype == "question":
+                sticker["data"] = {
+                    "prompt": ((data.get("prompt") or "Faz-me uma pergunta").strip())[:80],
+                    "placeholder": ((data.get("placeholder") or "Escreve aqui...").strip())[:60],
+                }
+            elif stype == "slider":
+                sticker["data"] = {
+                    "prompt": ((data.get("prompt") or "Avalia isto").strip())[:60],
+                    "emoji": (data.get("emoji") or "🔥")[:4],
+                }
+            elif stype == "mention":
+                username = (data.get("username") or "").lower().strip().lstrip("@")[:30]
+                if not username:
+                    continue
+                sticker["data"] = {"username": username}
+            elif stype == "hashtag":
+                tag = (data.get("tag") or "").strip().lstrip("#")[:30]
+                if not tag:
+                    continue
+                sticker["data"] = {"tag": tag.lower()}
+            elif stype == "location":
+                place = (data.get("place") or "").strip()[:60]
+                if not place:
+                    continue
+                sticker["data"] = {"place": place}
+            elif stype == "countdown":
+                ends = (data.get("ends_at") or "").strip()
+                title = (data.get("title") or "Contagem").strip()[:40]
+                if not ends:
+                    continue
+                sticker["data"] = {"title": title, "ends_at": ends}
+            elif stype == "link":
+                url = (data.get("url") or "").strip()[:300]
+                label = (data.get("label") or "Saber mais").strip()[:40]
+                if not url.startswith(("http://", "https://")):
+                    continue
+                sticker["data"] = {"url": url, "label": label}
+            elif stype == "music":
+                title = (data.get("title") or "").strip()[:60]
+                artist = (data.get("artist") or "").strip()[:60]
+                if not title:
+                    continue
+                sticker["data"] = {"title": title, "artist": artist}
+            out.append(sticker)
+        except Exception:
+            continue
+    return out
+
+
+def _enrich_sticker_for_viewer(sticker: dict, story: dict, viewer_id: str) -> dict:
+    """Devolve o sticker com agregados (votos, médias) e a resposta do viewer."""
+    s = dict(sticker)
+    stype = s.get("type")
+    sid = s.get("id")
+    if stype == "poll":
+        votes = (story.get("poll_votes") or {}).get(sid, {})
+        opts = s.get("data", {}).get("options", [])
+        total = 0
+        for o in opts:
+            total += len(votes.get(o["id"], []))
+        results = []
+        viewer_vote = None
+        for o in opts:
+            voters = votes.get(o["id"], [])
+            cnt = len(voters)
+            pct = round((cnt / total) * 100) if total else 0
+            results.append({"id": o["id"], "text": o["text"], "votes": cnt, "pct": pct})
+            if viewer_id and viewer_id in voters:
+                viewer_vote = o["id"]
+        s["results"] = {"options": results, "total": total, "viewer_vote": viewer_vote}
+    elif stype == "question":
+        answers = (story.get("question_answers") or {}).get(sid, [])
+        s["answers_count"] = len(answers)
+        s["viewer_answered"] = any(a.get("user_id") == viewer_id for a in answers)
+    elif stype == "slider":
+        responses = (story.get("slider_responses") or {}).get(sid, [])
+        s["responses_count"] = len(responses)
+        s["average"] = (sum(r.get("value", 0) for r in responses) / len(responses)) if responses else None
+        my = next((r for r in responses if r.get("user_id") == viewer_id), None)
+        s["viewer_value"] = my.get("value") if my else None
+    return s
+
+
+async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
+    """Devolve story enriquecido para o consumer: bg, reactions, viewer_reaction,
+       stickers com agregados, allowed flags."""
+    bg_key = story.get("background") or "coral"
+    bg_css = STORY_BACKGROUNDS.get(bg_key, STORY_BACKGROUNDS["coral"])
+    reactions_raw = story.get("reactions") or {}
+    react_counts: dict[str, int] = {}
+    viewer_reaction = None
+    for uid, emoji in reactions_raw.items():
+        if not emoji:
+            continue
+        react_counts[emoji] = react_counts.get(emoji, 0) + 1
+        if uid == viewer_id:
+            viewer_reaction = emoji
+    stickers = [_enrich_sticker_for_viewer(s, story, viewer_id)
+                for s in (story.get("stickers") or [])]
+    return {
+        "id": story["id"],
+        "author_id": story["author_id"],
+        "media_type": story.get("media_type", "image"),
+        "image": story.get("image", ""),
+        "video": story.get("video", ""),
+        "duration_ms": story.get("duration_ms", 5000),
+        "text_content": story.get("text_content", ""),
+        "background": bg_key,
+        "background_css": bg_css,
+        "text_color": story.get("text_color", "#ffffff"),
+        "font_style": story.get("font_style", "modern"),
+        "caption": story.get("caption", "") or story.get("content", ""),
+        "stickers": stickers,
+        "audience": story.get("audience", "everyone"),
+        "allow_replies": story.get("allow_replies", True),
+        "allow_reactions": story.get("allow_reactions", True),
+        "created_at": story.get("created_at"),
+        "expires_at": story.get("expires_at"),
+        "viewers_count": len(story.get("viewers", []) or []),
+        "reactions": react_counts,
+        "viewer_reaction": viewer_reaction,
+        "replies_count": len(story.get("replies", []) or []),
+        "in_highlights": bool(story.get("highlight_ids")),
+        "is_viewed": viewer_id in (story.get("viewers", []) or []),
+    }
+
+
+async def _story_is_visible_to(story: dict, viewer: dict) -> bool:
+    """Verifica audiência. O autor sempre vê os próprios stories."""
+    if story["author_id"] == viewer["id"]:
+        return True
+    # bloqueios
+    author = await db.users.find_one({"id": story["author_id"]}, {"_id": 0, "blocked": 1})
+    if author and viewer["id"] in (author.get("blocked") or []):
+        return False
+    audience = story.get("audience", "everyone")
+    if audience == "everyone":
+        return True
+    if audience == "following":
+        return viewer["id"] in (await _author_followers(story["author_id"]))
+    if audience == "roda":
+        # autor tem viewer na sua Roda?
+        author_full = await db.users.find_one({"id": story["author_id"]}, {"_id": 0, "roda": 1})
+        return author_full and viewer["id"] in (author_full.get("roda") or [])
+    return True
+
+
+async def _author_followers(author_id: str) -> list[str]:
+    a = await db.users.find_one({"id": author_id}, {"_id": 0, "followers": 1})
+    return (a.get("followers") or []) if a else []
+
+
 @api.post("/stories")
 async def create_story(payload: StoryIn, user=Depends(get_current_user)):
-    if not payload.image:
-        raise HTTPException(400, "Imagem é obrigatória")
+    media_type = (payload.media_type or "image").lower()
+    if media_type not in {"image", "video", "text"}:
+        media_type = "image"
+    if media_type == "image" and not payload.image:
+        raise HTTPException(400, "Imagem obrigatória para story de imagem")
+    if media_type == "video" and not payload.video:
+        raise HTTPException(400, "Vídeo obrigatório para story de vídeo")
+    if media_type == "text" and not (payload.text_content or "").strip():
+        raise HTTPException(400, "Texto obrigatório para story de texto")
+    audience = payload.audience if payload.audience in VALID_STORY_AUDIENCES else "everyone"
+    font_style = payload.font_style if payload.font_style in VALID_FONT_STYLES else "modern"
+    background = payload.background if payload.background in STORY_BACKGROUNDS else "coral"
+    stickers = _normalize_stickers(payload.stickers)
+    caption = (payload.caption or payload.content or "").strip()[:300]
+    # mentions automáticas via caption / text_content / mention stickers
+    mention_users = set()
+    for txt in (caption, payload.text_content or ""):
+        for u in extract_mentions(txt or ""):
+            mention_users.add(u)
+    for s in stickers:
+        if s["type"] == "mention":
+            mention_users.add(s["data"]["username"])
     now = datetime.now(timezone.utc)
+    duration_ms = int(payload.duration_ms or 5000)
+    if media_type == "video":
+        duration_ms = max(2000, min(15000, duration_ms))
+    else:
+        duration_ms = max(3000, min(10000, duration_ms))
     story = {
-        "id": str(uuid.uuid4()), "author_id": user["id"],
-        "image": payload.image, "content": payload.content or "",
-        "viewers": [], "created_at": now.isoformat(),
+        "id": str(uuid.uuid4()),
+        "author_id": user["id"],
+        "media_type": media_type,
+        "image": payload.image or "",
+        "video": payload.video or "",
+        "duration_ms": duration_ms,
+        "text_content": payload.text_content or "",
+        "background": background,
+        "text_color": payload.text_color or "#ffffff",
+        "font_style": font_style,
+        "caption": caption,
+        "stickers": stickers,
+        "audience": audience,
+        "allow_replies": bool(payload.allow_replies if payload.allow_replies is not None else True),
+        "allow_reactions": bool(payload.allow_reactions if payload.allow_reactions is not None else True),
+        "viewers": [],
+        "reactions": {},          # {user_id: emoji}
+        "replies": [],            # [{user_id, content, created_at}]
+        "poll_votes": {},         # {sticker_id: {option_id: [user_ids]}}
+        "question_answers": {},   # {sticker_id: [{user_id, content, created_at}]}
+        "slider_responses": {},   # {sticker_id: [{user_id, value, created_at}]}
+        "highlight_ids": [],
+        "created_at": now.isoformat(),
         "expires_at": (now + timedelta(hours=24)).isoformat(),
     }
     await db.stories.insert_one(story)
+    # Notificação de menções
+    for uname in mention_users:
+        target = await db.users.find_one({"username": uname.lower()}, {"_id": 0})
+        if target and target["id"] != user["id"]:
+            await create_notification(
+                target["id"], "story_mention", user["id"], None,
+                f"@{user['username']} mencionou-te num story",
+                extra={"story_id": story["id"]},
+            )
     return {"id": story["id"]}
 
 
 @api.get("/stories")
 async def list_stories(user=Depends(get_current_user)):
+    """Lista stories activos visíveis ao viewer, agrupados por autor."""
     now = datetime.now(timezone.utc).isoformat()
-    ids = user.get("following", []) + [user["id"]]
+    # autores potenciais: próprio + a seguir + Roda (caso author tenha posto roda mas viewer não segue; raro mas seguro)
+    ids = list({user["id"], *(user.get("following") or [])})
+    # excluir stories silenciados pelo viewer
+    muted = set(user.get("stories_muted") or [])
     rows = await db.stories.find(
         {"author_id": {"$in": ids}, "expires_at": {"$gt": now}}, {"_id": 0}
-    ).sort("created_at", -1).to_list(500)
-    groups = {}
+    ).sort("created_at", -1).to_list(800)
+    # filtrar por audiência
+    visible = []
     for s in rows:
+        if s["author_id"] in muted and s["author_id"] != user["id"]:
+            continue
+        if await _story_is_visible_to(s, user):
+            visible.append(s)
+    groups: dict[str, list] = {}
+    for s in visible:
         groups.setdefault(s["author_id"], []).append(s)
     out = []
     for author_id, items in groups.items():
         author = await db.users.find_one({"id": author_id}, {"_id": 0})
         if not author:
             continue
-        unseen = any(user["id"] not in s.get("viewers", []) for s in items)
         items_sorted = sorted(items, key=lambda x: x["created_at"])
+        enriched = [await _enrich_story_for_viewer(s, user["id"]) for s in items_sorted]
+        unseen = any(not s["is_viewed"] for s in enriched)
         out.append({
-            "author": public_user(author), "stories": items_sorted, "has_unseen": unseen,
+            "author": public_user(author),
+            "stories": enriched,
+            "has_unseen": unseen,
         })
+    # próprio primeiro, depois com unseen, depois resto
     out.sort(key=lambda g: (g["author"]["id"] != user["id"], not g["has_unseen"]))
     return out
 
 
 @api.post("/stories/{story_id}/view")
 async def view_story(story_id: str, user=Depends(get_current_user)):
-    await db.stories.update_one({"id": story_id}, {"$addToSet": {"viewers": user["id"]}})
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    if user["id"] != s["author_id"]:
+        await db.stories.update_one(
+            {"id": story_id},
+            {"$addToSet": {"viewers": user["id"]}},
+        )
     return {"ok": True}
 
 
@@ -2505,7 +2849,540 @@ async def delete_story(story_id: str, user=Depends(get_current_user)):
     if s["author_id"] != user["id"]:
         raise HTTPException(403, "Sem permissão")
     await db.stories.delete_one({"id": story_id})
+    # Remover de highlights
+    await db.highlights.update_many(
+        {"owner_id": user["id"], "story_ids": story_id},
+        {"$pull": {"story_ids": story_id}},
+    )
     return {"ok": True}
+
+
+# ---------- Reactions ----------
+@api.post("/stories/{story_id}/react")
+async def react_to_story(story_id: str, payload: StoryReactIn, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not s.get("allow_reactions", True):
+        raise HTTPException(400, "Reacções desactivadas neste story")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    emoji = (payload.emoji or "").strip()
+    if emoji not in STORY_REACTION_EMOJIS:
+        raise HTTPException(400, "Emoji inválido")
+    current = (s.get("reactions") or {}).get(user["id"])
+    if current == emoji:
+        # toggle off
+        await db.stories.update_one(
+            {"id": story_id}, {"$unset": {f"reactions.{user['id']}": ""}}
+        )
+        new_reaction = None
+    else:
+        await db.stories.update_one(
+            {"id": story_id}, {"$set": {f"reactions.{user['id']}": emoji}}
+        )
+        new_reaction = emoji
+        # notificação ao autor (uma só por reacção; agrupada se preferir)
+        if s["author_id"] != user["id"]:
+            await create_notification(
+                s["author_id"], "story_reaction", user["id"], None,
+                f"@{user['username']} reagiu ao teu story {emoji}",
+                extra={"story_id": story_id, "emoji": emoji},
+            )
+    return {"ok": True, "reaction": new_reaction}
+
+
+# ---------- Reply (envia DM com referência ao story) ----------
+@api.post("/stories/{story_id}/reply")
+async def reply_to_story(story_id: str, payload: StoryReplyIn, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not s.get("allow_replies", True):
+        raise HTTPException(400, "Respostas desactivadas neste story")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    if s["author_id"] == user["id"]:
+        raise HTTPException(400, "Não podes responder ao teu próprio story")
+    other_id = s["author_id"]
+    key = conv_key(user["id"], other_id)
+    now = now_iso()
+    # guardar reply no story (para o autor ver agregado)
+    await db.stories.update_one(
+        {"id": story_id},
+        {"$push": {"replies": {"user_id": user["id"], "content": payload.content, "created_at": now}}},
+    )
+    # criar DM com metadata de story
+    msg = {
+        "id": str(uuid.uuid4()), "conversation_key": key,
+        "sender_id": user["id"], "recipient_id": other_id,
+        "content": payload.content, "read": False, "created_at": now,
+        "story_ref": {
+            "story_id": story_id,
+            "preview": (s.get("text_content") or s.get("caption") or "")[:120],
+            "media_type": s.get("media_type"),
+            "thumb": s.get("image") if s.get("media_type") == "image" else "",
+            "background": s.get("background"),
+        },
+    }
+    await db.messages.insert_one(msg)
+    await db.conversations.update_one(
+        {"key": key},
+        {"$set": {
+            "key": key, "participants": sorted([user["id"], other_id]),
+            "last_message": f"↩ Story: {payload.content[:60]}",
+            "last_at": now,
+        }},
+        upsert=True,
+    )
+    msg.pop("_id", None)
+    try:
+        if "ws_manager" in globals():
+            await ws_manager.send_personal(other_id, {
+                "type": "new_message", "from": user["id"],
+                "from_username": user.get("username"), "message": msg,
+            })
+    except Exception:
+        pass
+    await create_notification(
+        other_id, "story_reply", user["id"], None,
+        f"@{user['username']} respondeu ao teu story",
+        extra={"story_id": story_id},
+    )
+    return {"ok": True, "message_id": msg["id"]}
+
+
+# ---------- Viewers list (autor only) ----------
+@api.get("/stories/{story_id}/viewers")
+async def list_story_viewers(story_id: str, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if s["author_id"] != user["id"]:
+        raise HTTPException(403, "Apenas o autor pode ver as visualizações")
+    viewer_ids = s.get("viewers") or []
+    if not viewer_ids:
+        return {"viewers": [], "reactions_breakdown": {}, "total_views": 0}
+    users = await db.users.find({"id": {"$in": viewer_ids}}, {"_id": 0}).to_list(800)
+    user_map = {u["id"]: public_user(u) for u in users}
+    reactions = s.get("reactions") or {}
+    # ordenar por reacção primeiro, depois alfabético
+    out = []
+    for vid in viewer_ids:
+        pu = user_map.get(vid)
+        if not pu:
+            continue
+        out.append({"user": pu, "reaction": reactions.get(vid)})
+    out.sort(key=lambda x: (x["reaction"] is None, x["user"].get("name", "").lower()))
+    breakdown: dict[str, int] = {}
+    for e in reactions.values():
+        if e:
+            breakdown[e] = breakdown.get(e, 0) + 1
+    return {
+        "viewers": out,
+        "reactions_breakdown": breakdown,
+        "total_views": len(viewer_ids),
+        "total_reactions": len([e for e in reactions.values() if e]),
+        "replies_count": len(s.get("replies") or []),
+    }
+
+
+# ---------- Replies list (autor only) ----------
+@api.get("/stories/{story_id}/replies")
+async def list_story_replies(story_id: str, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if s["author_id"] != user["id"]:
+        raise HTTPException(403, "Apenas o autor")
+    replies = s.get("replies") or []
+    if not replies:
+        return []
+    uids = list({r["user_id"] for r in replies})
+    users = await db.users.find({"id": {"$in": uids}}, {"_id": 0}).to_list(500)
+    umap = {u["id"]: public_user(u) for u in users}
+    return [
+        {"user": umap.get(r["user_id"]), "content": r["content"], "created_at": r["created_at"]}
+        for r in sorted(replies, key=lambda r: r["created_at"], reverse=True)
+        if umap.get(r["user_id"])
+    ]
+
+
+# ---------- Poll vote ----------
+@api.post("/stories/{story_id}/poll-vote")
+async def vote_story_poll(story_id: str, payload: StoryPollVoteIn, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    sticker = next((x for x in (s.get("stickers") or []) if x.get("id") == payload.sticker_id and x.get("type") == "poll"), None)
+    if not sticker:
+        raise HTTPException(404, "Sondagem não encontrada")
+    options = sticker.get("data", {}).get("options", [])
+    valid_ids = {o["id"] for o in options}
+    if payload.option_id not in valid_ids:
+        raise HTTPException(400, "Opção inválida")
+    poll_votes = s.get("poll_votes") or {}
+    sticker_votes = poll_votes.get(payload.sticker_id, {})
+    # remover voto antigo (1 voto por user)
+    for oid in list(sticker_votes.keys()):
+        sticker_votes[oid] = [u for u in sticker_votes[oid] if u != user["id"]]
+    sticker_votes.setdefault(payload.option_id, [])
+    if user["id"] not in sticker_votes[payload.option_id]:
+        sticker_votes[payload.option_id].append(user["id"])
+    await db.stories.update_one(
+        {"id": story_id},
+        {"$set": {f"poll_votes.{payload.sticker_id}": sticker_votes}},
+    )
+    if s["author_id"] != user["id"]:
+        await create_notification(
+            s["author_id"], "story_poll_vote", user["id"], None,
+            f"@{user['username']} votou na tua sondagem",
+            extra={"story_id": story_id},
+        )
+    refreshed = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    enriched_sticker = _enrich_sticker_for_viewer(sticker, refreshed, user["id"])
+    return {"ok": True, "sticker": enriched_sticker}
+
+
+# ---------- Question answer ----------
+@api.post("/stories/{story_id}/question-answer")
+async def answer_story_question(story_id: str, payload: StoryQuestionAnswerIn, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    sticker = next((x for x in (s.get("stickers") or []) if x.get("id") == payload.sticker_id and x.get("type") == "question"), None)
+    if not sticker:
+        raise HTTPException(404, "Pergunta não encontrada")
+    answer = {
+        "user_id": user["id"],
+        "content": payload.content.strip()[:200],
+        "created_at": now_iso(),
+    }
+    await db.stories.update_one(
+        {"id": story_id},
+        {"$push": {f"question_answers.{payload.sticker_id}": answer}},
+    )
+    if s["author_id"] != user["id"]:
+        await create_notification(
+            s["author_id"], "story_question", user["id"], None,
+            f"@{user['username']} respondeu à tua pergunta",
+            extra={"story_id": story_id},
+        )
+    return {"ok": True}
+
+
+# ---------- Slider response ----------
+@api.post("/stories/{story_id}/slider-response")
+async def respond_story_slider(story_id: str, payload: StorySliderIn, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if not await _story_is_visible_to(s, user):
+        raise HTTPException(403, "Sem acesso")
+    sticker = next((x for x in (s.get("stickers") or []) if x.get("id") == payload.sticker_id and x.get("type") == "slider"), None)
+    if not sticker:
+        raise HTTPException(404, "Slider não encontrado")
+    responses = (s.get("slider_responses") or {}).get(payload.sticker_id, [])
+    # 1 resposta por user — substitui
+    responses = [r for r in responses if r.get("user_id") != user["id"]]
+    responses.append({
+        "user_id": user["id"],
+        "value": float(max(0.0, min(1.0, payload.value))),
+        "created_at": now_iso(),
+    })
+    await db.stories.update_one(
+        {"id": story_id},
+        {"$set": {f"slider_responses.{payload.sticker_id}": responses}},
+    )
+    refreshed = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    return {"ok": True, "sticker": _enrich_sticker_for_viewer(sticker, refreshed, user["id"])}
+
+
+# ---------- Sticker reactors (autor vê quem respondeu) ----------
+@api.get("/stories/{story_id}/sticker/{sticker_id}/responders")
+async def get_sticker_responders(story_id: str, sticker_id: str, user=Depends(get_current_user)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    if s["author_id"] != user["id"]:
+        raise HTTPException(403, "Apenas o autor")
+    sticker = next((x for x in (s.get("stickers") or []) if x.get("id") == sticker_id), None)
+    if not sticker:
+        raise HTTPException(404, "Sticker não encontrado")
+    stype = sticker.get("type")
+    if stype == "poll":
+        votes = (s.get("poll_votes") or {}).get(sticker_id, {})
+        out = []
+        for opt in sticker.get("data", {}).get("options", []):
+            voters = votes.get(opt["id"], [])
+            if voters:
+                users = await db.users.find({"id": {"$in": voters}}, {"_id": 0}).to_list(200)
+                users_pub = [public_user(u) for u in users]
+            else:
+                users_pub = []
+            out.append({"option_id": opt["id"], "text": opt["text"], "users": users_pub})
+        return {"type": "poll", "results": out}
+    if stype == "question":
+        answers = (s.get("question_answers") or {}).get(sticker_id, [])
+        uids = list({a["user_id"] for a in answers})
+        users = await db.users.find({"id": {"$in": uids}}, {"_id": 0}).to_list(500)
+        umap = {u["id"]: public_user(u) for u in users}
+        return {"type": "question", "answers": [
+            {"user": umap.get(a["user_id"]), "content": a["content"], "created_at": a["created_at"]}
+            for a in sorted(answers, key=lambda x: x["created_at"], reverse=True)
+            if umap.get(a["user_id"])
+        ]}
+    if stype == "slider":
+        responses = (s.get("slider_responses") or {}).get(sticker_id, [])
+        uids = list({r["user_id"] for r in responses})
+        users = await db.users.find({"id": {"$in": uids}}, {"_id": 0}).to_list(500)
+        umap = {u["id"]: public_user(u) for u in users}
+        return {"type": "slider", "responses": [
+            {"user": umap.get(r["user_id"]), "value": r["value"], "created_at": r["created_at"]}
+            for r in responses if umap.get(r["user_id"])
+        ]}
+    return {"type": stype}
+
+
+# ---------- Archive (autor only) ----------
+@api.get("/stories/archive")
+async def list_archive(user=Depends(get_current_user), limit: int = 100):
+    """Stories próprios já expirados (e activos)."""
+    rows = await db.stories.find(
+        {"author_id": user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(min(max(limit, 1), 500))
+    enriched = [await _enrich_story_for_viewer(s, user["id"]) for s in rows]
+    return enriched
+
+
+# ---------- Mute author stories ----------
+@api.post("/users/me/stories-mute/{user_id}")
+async def toggle_stories_mute(user_id: str, user=Depends(get_current_user)):
+    if user_id == user["id"]:
+        raise HTTPException(400, "Não te podes silenciar")
+    target = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not target:
+        raise HTTPException(404, "Utilizador não encontrado")
+    current = set(user.get("stories_muted") or [])
+    if user_id in current:
+        current.discard(user_id)
+        action = "unmuted"
+    else:
+        current.add(user_id)
+        action = "muted"
+    await db.users.update_one({"id": user["id"]}, {"$set": {"stories_muted": list(current)}})
+    return {"action": action, "muted": list(current)}
+
+
+@api.get("/users/me/stories-mute")
+async def list_stories_muted(user=Depends(get_current_user)):
+    ids = user.get("stories_muted") or []
+    if not ids:
+        return []
+    users = await db.users.find({"id": {"$in": ids}}, {"_id": 0}).to_list(200)
+    return [public_user(u) for u in users]
+
+
+# ---------- Highlights ----------
+@api.post("/highlights")
+async def create_highlight(payload: HighlightIn, user=Depends(get_current_user)):
+    # validar story_ids — só do próprio
+    story_ids = payload.story_ids or []
+    if story_ids:
+        rows = await db.stories.find(
+            {"id": {"$in": story_ids}, "author_id": user["id"]}, {"_id": 0, "id": 1}
+        ).to_list(200)
+        valid_ids = {r["id"] for r in rows}
+        story_ids = [sid for sid in story_ids if sid in valid_ids]
+    h = {
+        "id": str(uuid.uuid4()),
+        "owner_id": user["id"],
+        "title": payload.title.strip()[:24],
+        "cover": payload.cover or "",
+        "story_ids": story_ids,
+        "created_at": now_iso(),
+        "updated_at": now_iso(),
+    }
+    await db.highlights.insert_one(h)
+    # marcar em cada story
+    if story_ids:
+        await db.stories.update_many(
+            {"id": {"$in": story_ids}},
+            {"$addToSet": {"highlight_ids": h["id"]}},
+        )
+    h.pop("_id", None)
+    return h
+
+
+@api.get("/users/{username}/highlights")
+async def list_user_highlights(username: str):
+    user = await db.users.find_one({"username": username.lower()}, {"_id": 0, "id": 1})
+    if not user:
+        raise HTTPException(404, "Utilizador não encontrado")
+    rows = await db.highlights.find(
+        {"owner_id": user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    # cover: se cover é story_id, devolver a media correspondente
+    for h in rows:
+        cover = h.get("cover") or ""
+        if cover and not cover.startswith("data:") and not cover.startswith("http"):
+            # assumir story_id
+            s = await db.stories.find_one({"id": cover}, {"_id": 0, "image": 1, "media_type": 1, "background": 1})
+            if s:
+                h["cover_resolved"] = {
+                    "media_type": s.get("media_type"),
+                    "image": s.get("image", ""),
+                    "background": s.get("background", "coral"),
+                }
+            else:
+                h["cover_resolved"] = None
+        elif cover.startswith("data:") or cover.startswith("http"):
+            h["cover_resolved"] = {"media_type": "image", "image": cover, "background": "coral"}
+        else:
+            # fallback: 1º story
+            s = None
+            if h.get("story_ids"):
+                s = await db.stories.find_one({"id": h["story_ids"][0]}, {"_id": 0, "image": 1, "media_type": 1, "background": 1})
+            h["cover_resolved"] = {
+                "media_type": (s.get("media_type") if s else "text"),
+                "image": (s.get("image", "") if s else ""),
+                "background": (s.get("background", "coral") if s else "coral"),
+            }
+        h["stories_count"] = len(h.get("story_ids") or [])
+    return rows
+
+
+@api.get("/highlights/{highlight_id}")
+async def get_highlight(highlight_id: str, user=Depends(get_current_user)):
+    h = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    if not h:
+        raise HTTPException(404, "Destaque não encontrado")
+    story_ids = h.get("story_ids") or []
+    if not story_ids:
+        return {"highlight": h, "stories": []}
+    rows = await db.stories.find({"id": {"$in": story_ids}}, {"_id": 0}).to_list(500)
+    by_id = {r["id"]: r for r in rows}
+    ordered = [by_id[sid] for sid in story_ids if sid in by_id]
+    enriched = [await _enrich_story_for_viewer(s, user["id"]) for s in ordered]
+    owner = await db.users.find_one({"id": h["owner_id"]}, {"_id": 0})
+    return {
+        "highlight": h,
+        "owner": public_user(owner) if owner else None,
+        "stories": enriched,
+    }
+
+
+@api.patch("/highlights/{highlight_id}")
+async def update_highlight(highlight_id: str, payload: HighlightPatchIn, user=Depends(get_current_user)):
+    h = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    if not h:
+        raise HTTPException(404, "Destaque não encontrado")
+    if h["owner_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    update: dict = {"updated_at": now_iso()}
+    if payload.title is not None:
+        update["title"] = payload.title.strip()[:24] or h["title"]
+    if payload.cover is not None:
+        update["cover"] = payload.cover
+    if payload.story_ids is not None:
+        rows = await db.stories.find(
+            {"id": {"$in": payload.story_ids}, "author_id": user["id"]}, {"_id": 0, "id": 1}
+        ).to_list(500)
+        valid_ids = {r["id"] for r in rows}
+        new_ids = [sid for sid in payload.story_ids if sid in valid_ids]
+        update["story_ids"] = new_ids
+        old_ids = set(h.get("story_ids") or [])
+        added = set(new_ids) - old_ids
+        removed = old_ids - set(new_ids)
+        if added:
+            await db.stories.update_many(
+                {"id": {"$in": list(added)}}, {"$addToSet": {"highlight_ids": highlight_id}}
+            )
+        if removed:
+            await db.stories.update_many(
+                {"id": {"$in": list(removed)}}, {"$pull": {"highlight_ids": highlight_id}}
+            )
+    await db.highlights.update_one({"id": highlight_id}, {"$set": update})
+    refreshed = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    return refreshed
+
+
+@api.delete("/highlights/{highlight_id}")
+async def delete_highlight(highlight_id: str, user=Depends(get_current_user)):
+    h = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    if not h:
+        raise HTTPException(404, "Destaque não encontrado")
+    if h["owner_id"] != user["id"]:
+        raise HTTPException(403, "Sem permissão")
+    await db.highlights.delete_one({"id": highlight_id})
+    if h.get("story_ids"):
+        await db.stories.update_many(
+            {"id": {"$in": h["story_ids"]}},
+            {"$pull": {"highlight_ids": highlight_id}},
+        )
+    return {"ok": True}
+
+
+@api.post("/highlights/{highlight_id}/stories/{story_id}")
+async def add_story_to_highlight(highlight_id: str, story_id: str, user=Depends(get_current_user)):
+    h = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    if not h or h["owner_id"] != user["id"]:
+        raise HTTPException(404, "Destaque não encontrado")
+    s = await db.stories.find_one({"id": story_id, "author_id": user["id"]}, {"_id": 0, "id": 1})
+    if not s:
+        raise HTTPException(404, "Story não encontrado")
+    current = list(h.get("story_ids") or [])
+    if story_id not in current:
+        current.append(story_id)
+    await db.highlights.update_one(
+        {"id": highlight_id},
+        {"$set": {"story_ids": current, "updated_at": now_iso()}},
+    )
+    await db.stories.update_one(
+        {"id": story_id}, {"$addToSet": {"highlight_ids": highlight_id}}
+    )
+    return {"ok": True, "story_ids": current}
+
+
+@api.delete("/highlights/{highlight_id}/stories/{story_id}")
+async def remove_story_from_highlight(highlight_id: str, story_id: str, user=Depends(get_current_user)):
+    h = await db.highlights.find_one({"id": highlight_id}, {"_id": 0})
+    if not h or h["owner_id"] != user["id"]:
+        raise HTTPException(404, "Destaque não encontrado")
+    current = [sid for sid in (h.get("story_ids") or []) if sid != story_id]
+    await db.highlights.update_one(
+        {"id": highlight_id},
+        {"$set": {"story_ids": current, "updated_at": now_iso()}},
+    )
+    await db.stories.update_one(
+        {"id": story_id}, {"$pull": {"highlight_ids": highlight_id}}
+    )
+    return {"ok": True, "story_ids": current}
+
+
+# ---------- Catalog (presets para o composer) ----------
+@api.get("/stories/catalog")
+async def stories_catalog():
+    return {
+        "backgrounds": [
+            {"key": k, "css": v} for k, v in STORY_BACKGROUNDS.items()
+        ],
+        "fonts": list(VALID_FONT_STYLES),
+        "audiences": [
+            {"key": "everyone", "label": "Todos", "emoji": "🌍",
+             "description": "Toda a gente pode ver"},
+            {"key": "following", "label": "A seguir-te", "emoji": "👥",
+             "description": "Só pessoas que te seguem"},
+            {"key": "roda", "label": "Roda íntima", "emoji": "🫂",
+             "description": "Só pessoas na tua Roda"},
+        ],
+        "reactions": list(STORY_REACTION_EMOJIS),
+        "sticker_types": list(VALID_STICKER_TYPES),
+    }
 
 
 # ============================================================
@@ -3515,6 +4392,8 @@ async def startup():
     await db.messages.create_index("conversation_key")
     await db.conversations.create_index("key", unique=True)
     await db.stories.create_index("expires_at")
+    await db.stories.create_index("author_id")
+    await db.highlights.create_index("owner_id")
     await db.communities.create_index("slug", unique=True)
     await db.events.create_index("starts_at")
     # B-029 — sessions indexes

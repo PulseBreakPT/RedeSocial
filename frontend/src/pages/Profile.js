@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Lock, LayoutDashboard, Settings } from "lucide-react";
+import { Lock, LayoutDashboard, Settings, Archive as ArchiveIcon } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { FollowsModal } from "../components/FollowsModal";
@@ -20,6 +20,7 @@ import { HeatmapCompactCard } from "./profile/HeatmapCompactCard";
 import { AboutTabSections } from "./profile/AboutTabSections";
 import { PainelPessoalDrawer } from "./profile/PainelPessoalDrawer";
 import { AffinityRibbon } from "./profile/AffinityRibbon";
+import { StoryHighlights } from "../components/stories/StoryHighlights";
 import {
     ProfileEmpty, CommunitiesTab,
     PostsFilterBar, applyPostsFilter, computePostCounts,
@@ -196,6 +197,9 @@ export default function Profile() {
                 onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
 
+            {/* ---------- HIGHLIGHTS / Destaques ---------- */}
+            <StoryHighlights username={profile.username} isSelf={!!profile.is_self} />
+
             {/* Self-only: Painel pessoal + Definições quick row */}
             {profile.is_self && profile.can_view !== false && (
                 <div
@@ -209,6 +213,15 @@ export default function Profile() {
                     >
                         <LayoutDashboard size={13} />
                         <span>Painel pessoal</span>
+                    </button>
+                    <button
+                        onClick={() => navigate("/stories/archive")}
+                        data-testid="open-archive-btn"
+                        className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
+                        title="Arquivo de stories"
+                        aria-label="Arquivo de stories"
+                    >
+                        <ArchiveIcon size={15} />
                     </button>
                     <button
                         onClick={() => navigate("/settings")}

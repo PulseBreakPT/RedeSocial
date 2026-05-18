@@ -1,930 +1,1104 @@
 #!/usr/bin/env python3
 """
-Backend tests for Smart Follow Button — get_profile extended payload.
-Tests all new fields (is_following, follows_me, is_blocked, is_muted, is_notified, is_favorited)
-and their reflection after toggle operations.
+Stories 2.0 Backend Test Suite
+Comprehensive testing of all Stories endpoints as per review request
 """
+
 import requests
 import json
-import os
-import sys
-from datetime import datetime
+import base64
+from typing import Optional, Dict, Any
 
-# Get backend URL from environment
-BACKEND_URL = os.getenv("REACT_APP_BACKEND_URL", "https://smart-story-builder.preview.emergentagent.com")
-API_BASE = f"{BACKEND_URL}/api"
+# Backend URL from frontend/.env
+BASE_URL = "https://smart-story-builder.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"
 ADMIN_PASSWORD = "admin123"
 
-# Color codes for output
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-RESET = "\033[0m"
-BOLD = "\033[1m"
+# Test results tracking
+test_results = []
+total_tests = 0
+passed_tests = 0
+failed_tests = 0
 
-class TestResults:
-    def __init__(self):
-        self.passed = []
-        self.failed = []
-        self.warnings = []
+def log_test(test_name: str, passed: bool, details: str = ""):
+    """Log test result"""
+    global total_tests, passed_tests, failed_tests
+    total_tests += 1
+    if passed:
+        passed_tests += 1
+        status = "✅ PASS"
+    else:
+        failed_tests += 1
+        status = "❌ FAIL"
     
-    def add_pass(self, test_name, details=""):
-        self.passed.append((test_name, details))
-        print(f"{GREEN}✓ PASS{RESET} {test_name}")
-        if details:
-            print(f"  {details}")
-    
-    def add_fail(self, test_name, details=""):
-        self.failed.append((test_name, details))
-        print(f"{RED}✗ FAIL{RESET} {test_name}")
-        if details:
-            print(f"  {RED}{details}{RESET}")
-    
-    def add_warning(self, test_name, details=""):
-        self.warnings.append((test_name, details))
-        print(f"{YELLOW}⚠ WARN{RESET} {test_name}")
-        if details:
-            print(f"  {YELLOW}{details}{RESET}")
-    
-    def summary(self):
-        print(f"\n{BOLD}{'='*70}{RESET}")
-        print(f"{BOLD}TEST SUMMARY{RESET}")
-        print(f"{BOLD}{'='*70}{RESET}")
-        print(f"{GREEN}Passed: {len(self.passed)}{RESET}")
-        print(f"{RED}Failed: {len(self.failed)}{RESET}")
-        print(f"{YELLOW}Warnings: {len(self.warnings)}{RESET}")
-        
-        if self.failed:
-            print(f"\n{BOLD}{RED}FAILED TESTS:{RESET}")
-            for name, details in self.failed:
-                print(f"  • {name}")
-                if details:
-                    print(f"    {details}")
-        
-        return len(self.failed) == 0
+    result = f"{status} | {test_name}"
+    if details:
+        result += f"\n    {details}"
+    test_results.append(result)
+    print(result)
 
-results = TestResults()
-
-def login():
-    """Test 1: Auth ok - POST /api/auth/login"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 1: Authentication{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def make_request(method: str, endpoint: str, token: Optional[str] = None, 
+                 json_data: Optional[Dict] = None, params: Optional[Dict] = None) -> tuple:
+    """Make HTTP request and return (status_code, response_json, error)"""
+    url = f"{BASE_URL}{endpoint}"
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     
     try:
-        response = requests.post(
-            f"{API_BASE}/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-            timeout=10
-        )
+        if method == "GET":
+            resp = requests.get(url, headers=headers, params=params, timeout=30)
+        elif method == "POST":
+            resp = requests.post(url, headers=headers, json=json_data, timeout=30)
+        elif method == "PATCH":
+            resp = requests.patch(url, headers=headers, json=json_data, timeout=30)
+        elif method == "DELETE":
+            resp = requests.delete(url, headers=headers, timeout=30)
+        else:
+            return (0, None, f"Unsupported method: {method}")
         
-        if response.status_code != 200:
-            results.add_fail(
-                "POST /api/auth/login",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return None
-        
-        data = response.json()
-        token = data.get("token")
-        
-        if not token:
-            results.add_fail("POST /api/auth/login", "Missing access_token in response")
-            return None
-        
-        results.add_pass("POST /api/auth/login → status 200, received access_token")
-        return token
-    
+        try:
+            return (resp.status_code, resp.json(), None)
+        except:
+            return (resp.status_code, resp.text, None)
     except Exception as e:
-        results.add_fail("POST /api/auth/login", f"Exception: {str(e)}")
+        return (0, None, str(e))
+
+# Tiny base64 PNG (1x1 transparent pixel)
+TINY_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+# Tiny base64 MP4 (minimal valid MP4)
+TINY_MP4 = "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAu1tZGF0AAACrQYF//+c3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAA"
+
+def test_01_admin_login():
+    """Test 1: Admin login"""
+    status, data, err = make_request("POST", "/auth/login", json_data={
+        "email": ADMIN_EMAIL,
+        "password": ADMIN_PASSWORD
+    })
+    
+    if status == 200 and data:
+        token = data.get("access_token") or data.get("token")
+        if token:
+            log_test("Test 1 - Admin Login", True, f"Status: {status}, Token received")
+            return token
+    
+    log_test("Test 1 - Admin Login", False, f"Status: {status}, Error: {err or data}")
+    return None
+
+def test_02_get_second_user(admin_token: str):
+    """Test 2: Get second user for multi-user flows"""
+    # Try filipa.azul first
+    status, data, err = make_request("POST", "/auth/login", json_data={
+        "email": "filipa.azul",
+        "password": "filipa123"
+    })
+    
+    if status == 200 and data:
+        token = data.get("access_token") or data.get("token")
+        if token:
+            log_test("Test 2 - Second User Login (filipa.azul)", True, f"Status: {status}")
+            return token, data.get("user", {}).get("id"), data.get("user", {}).get("username")
+    
+    # Try creating tester2.story
+    status, data, err = make_request("POST", "/auth/register", json_data={
+        "email": "tester2.story@vermillion.app",
+        "password": "Tester2!@",
+        "username": "tester2story",
+        "name": "Tester Two"
+    })
+    
+    if status in [200, 201] and data:
+        token = data.get("access_token") or data.get("token")
+        if token:
+            log_test("Test 2 - Second User Created (tester2story)", True, f"Status: {status}")
+            return token, data.get("user", {}).get("id"), data.get("user", {}).get("username")
+    
+    log_test("Test 2 - Second User", False, f"Could not login or create second user. Status: {status}, Error: {err or data}")
+    return None, None, None
+
+def test_03_stories_catalog():
+    """Test 3: GET /api/stories/catalog"""
+    status, data, err = make_request("GET", "/stories/catalog")
+    
+    if status != 200:
+        log_test("Test 3 - Stories Catalog", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    # Verify structure
+    checks = []
+    checks.append(("backgrounds" in data and isinstance(data["backgrounds"], list), "backgrounds list"))
+    checks.append((len(data.get("backgrounds", [])) >= 12, "12+ backgrounds"))
+    checks.append(("fonts" in data and isinstance(data["fonts"], list), "fonts list"))
+    checks.append(("audiences" in data and isinstance(data["audiences"], list), "audiences list"))
+    checks.append((len(data.get("audiences", [])) == 3, "3 audiences"))
+    checks.append(("reactions" in data and isinstance(data["reactions"], list), "reactions list"))
+    checks.append((len(data.get("reactions", [])) == 8, "8 reactions"))
+    checks.append(("sticker_types" in data and isinstance(data["sticker_types"], list), "sticker_types list"))
+    checks.append((len(data.get("sticker_types", [])) == 9, "9 sticker types"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 3 - Stories Catalog", True, "All fields present and valid")
+    else:
+        log_test("Test 3 - Stories Catalog", False, f"Missing/invalid: {', '.join(failed_checks)}")
+    
+    return all_passed
+
+def test_04_create_text_story(admin_token: str):
+    """Test 4: POST /api/stories - TEXT story"""
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "text",
+        "text_content": "Olá Vermillion",
+        "background": "fado",
+        "font_style": "neon",
+        "text_color": "#ffffff",
+        "audience": "everyone",
+        "allow_replies": True,
+        "allow_reactions": True
+    })
+    
+    if status in [200, 201] and data and "id" in data:
+        log_test("Test 4 - Create TEXT Story", True, f"Status: {status}, Story ID: {data['id']}")
+        return data["id"]
+    else:
+        log_test("Test 4 - Create TEXT Story", False, f"Status: {status}, Error: {err or data}")
         return None
 
-def test_self_profile(token):
-    """Test 2: GET /api/users/admin (self) - verify all new fields present"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 2: GET /api/users/admin (self){RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_05_verify_text_story_in_list(admin_token: str, story_id: str):
+    """Test 5: Verify TEXT story appears in GET /api/stories"""
+    status, data, err = make_request("GET", "/stories", admin_token)
     
-    try:
-        response = requests.get(
-            f"{API_BASE}/users/admin",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                "GET /api/users/admin (self)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        
-        # Check all required fields are present as bool
-        required_fields = {
-            "is_self": True,
-            "is_following": False,
-            "follows_me": False,
-            "is_blocked": False,
-            "is_muted": False,
-            "is_notified": False,
-            "is_favorited": False,
-        }
-        
-        missing_fields = []
-        wrong_type_fields = []
-        wrong_value_fields = []
-        
-        for field, expected_value in required_fields.items():
-            if field not in data:
-                missing_fields.append(field)
-            elif not isinstance(data[field], bool):
-                wrong_type_fields.append(f"{field} (type: {type(data[field]).__name__})")
-            elif data[field] != expected_value:
-                wrong_value_fields.append(f"{field} (expected: {expected_value}, got: {data[field]})")
-        
-        if missing_fields:
-            results.add_fail(
-                "GET /api/users/admin (self) - missing fields",
-                f"Missing: {', '.join(missing_fields)}"
-            )
-        elif wrong_type_fields:
-            results.add_fail(
-                "GET /api/users/admin (self) - wrong types",
-                f"Not bool: {', '.join(wrong_type_fields)}"
-            )
-        elif wrong_value_fields:
-            results.add_fail(
-                "GET /api/users/admin (self) - wrong values",
-                f"Wrong values: {', '.join(wrong_value_fields)}"
-            )
-        else:
-            results.add_pass(
-                "GET /api/users/admin (self) → all 7 fields present as bool with correct values",
-                f"is_self=true, is_following=false, follows_me=false, is_blocked=false, is_muted=false, is_notified=false, is_favorited=false"
-            )
+    if status != 200:
+        log_test("Test 5 - Verify TEXT Story in List", False, f"Status: {status}, Error: {err or data}")
+        return False
     
-    except Exception as e:
-        results.add_fail("GET /api/users/admin (self)", f"Exception: {str(e)}")
+    # Find admin's group
+    admin_group = None
+    for group in data:
+        if group.get("author", {}).get("username") == "admin":
+            admin_group = group
+            break
+    
+    if not admin_group:
+        log_test("Test 5 - Verify TEXT Story in List", False, "Admin's story group not found")
+        return False
+    
+    # Find the story
+    story = None
+    for s in admin_group.get("stories", []):
+        if s.get("id") == story_id:
+            story = s
+            break
+    
+    if not story:
+        log_test("Test 5 - Verify TEXT Story in List", False, f"Story {story_id} not found in list")
+        return False
+    
+    # Verify fields
+    checks = []
+    checks.append((story.get("media_type") == "text", "media_type=text"))
+    checks.append((story.get("text_content") == "Olá Vermillion", "text_content correct"))
+    checks.append((story.get("background") == "fado", "background=fado"))
+    checks.append(("background_css" in story, "background_css populated"))
+    checks.append((story.get("font_style") == "neon", "font_style=neon"))
+    checks.append((story.get("audience") == "everyone", "audience=everyone"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 5 - Verify TEXT Story in List", True, "All fields correct")
+    else:
+        log_test("Test 5 - Verify TEXT Story in List", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return all_passed
 
-def discover_other_user(token):
-    """Test 3: Discover another user via suggestions or search"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 3: Discover another user{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
-    
-    try:
-        # Try suggestions first
-        response = requests.get(
-            f"{API_BASE}/users/suggestions",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data and len(data) > 0:
-                username = data[0].get("username")
-                if username:
-                    results.add_pass(
-                        "Discovered user via GET /api/users/suggestions",
-                        f"Found user: {username}"
-                    )
-                    return username
-        
-        # Try search as fallback
-        response = requests.get(
-            f"{API_BASE}/users/search?q=a",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data and len(data) > 0:
-                username = data[0].get("username")
-                if username and username != "admin":
-                    results.add_pass(
-                        "Discovered user via GET /api/users/search",
-                        f"Found user: {username}"
-                    )
-                    return username
-        
-        # Create a new user as last resort
-        import random
-        random_email = f"testuser{random.randint(1000, 9999)}@vermillion.test"
-        random_username = f"testuser{random.randint(1000, 9999)}"
-        
-        response = requests.post(
-            f"{API_BASE}/auth/register",
-            json={
-                "email": random_email,
-                "username": random_username,
-                "password": "test123",
-                "name": "Test User"
+def test_06_create_image_story_with_stickers(admin_token: str):
+    """Test 6: POST /api/stories - IMAGE story with stickers (poll, question, slider)"""
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "image",
+        "image": TINY_PNG,
+        "caption": "Lisboa",
+        "audience": "everyone",
+        "allow_replies": True,
+        "allow_reactions": True,
+        "stickers": [
+            {
+                "type": "poll",
+                "x": 0.5,
+                "y": 0.6,
+                "data": {
+                    "question": "Sim ou não?",
+                    "options": [
+                        {"id": "a", "text": "Sim"},
+                        {"id": "b", "text": "Não"}
+                    ]
+                }
             },
-            timeout=10
-        )
-        
-        if response.status_code in [200, 201]:
-            results.add_pass(
-                "Created new user via POST /api/auth/register",
-                f"Created user: {random_username}"
-            )
-            return random_username
-        
-        results.add_fail(
-            "Discover other user",
-            "Could not find or create another user for testing"
-        )
-        return None
-    
-    except Exception as e:
-        results.add_fail("Discover other user", f"Exception: {str(e)}")
-        return None
-
-def test_other_user_profile(token, username):
-    """Test 4: GET /api/users/{other_user} - verify all new fields present"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 4: GET /api/users/{username} (other user){RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
-    
-    try:
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username}",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        
-        # Check all 5 new fields are present as bool
-        required_fields = [
-            "is_following",
-            "follows_me",
-            "is_blocked",
-            "is_muted",
-            "is_notified",
-            "is_favorited",
-            "is_self"
+            {
+                "type": "question",
+                "x": 0.3,
+                "y": 0.4,
+                "data": {
+                    "prompt": "Que tal?",
+                    "placeholder": "Diz..."
+                }
+            },
+            {
+                "type": "slider",
+                "x": 0.7,
+                "y": 0.3,
+                "data": {
+                    "prompt": "Avalia",
+                    "emoji": "🔥"
+                }
+            }
         ]
-        
-        missing_fields = []
-        wrong_type_fields = []
-        
-        for field in required_fields:
-            if field not in data:
-                missing_fields.append(field)
-            elif not isinstance(data[field], bool):
-                wrong_type_fields.append(f"{field} (type: {type(data[field]).__name__})")
-        
-        if missing_fields:
-            results.add_fail(
-                f"GET /api/users/{username} - missing fields",
-                f"Missing: {', '.join(missing_fields)}"
-            )
-        elif wrong_type_fields:
-            results.add_fail(
-                f"GET /api/users/{username} - wrong types",
-                f"Not bool: {', '.join(wrong_type_fields)}"
-            )
-        else:
-            # Check is_self is false
-            if data.get("is_self") != False:
-                results.add_fail(
-                    f"GET /api/users/{username} - is_self should be false",
-                    f"Expected is_self=false, got: {data.get('is_self')}"
-                )
-            else:
-                results.add_pass(
-                    f"GET /api/users/{username} → all 7 fields present as bool",
-                    f"is_self=false, all other fields present"
-                )
+    })
     
-    except Exception as e:
-        results.add_fail(f"GET /api/users/{username}", f"Exception: {str(e)}")
+    if status not in [200, 201] or not data or "id" not in data:
+        log_test("Test 6 - Create IMAGE Story with Stickers", False, f"Status: {status}, Error: {err or data}")
+        return None, None, None, None
+    
+    story_id = data["id"]
+    
+    # Verify in list
+    status, list_data, err = make_request("GET", "/stories", admin_token)
+    if status != 200:
+        log_test("Test 6 - Create IMAGE Story with Stickers", False, f"Could not verify in list. Status: {status}")
+        return story_id, None, None, None
+    
+    # Find the story
+    story = None
+    for group in list_data:
+        for s in group.get("stories", []):
+            if s.get("id") == story_id:
+                story = s
+                break
+        if story:
+            break
+    
+    if not story:
+        log_test("Test 6 - Create IMAGE Story with Stickers", False, "Story not found in list")
+        return story_id, None, None, None
+    
+    # Verify stickers
+    stickers = story.get("stickers", [])
+    if len(stickers) != 3:
+        log_test("Test 6 - Create IMAGE Story with Stickers", False, f"Expected 3 stickers, got {len(stickers)}")
+        return story_id, None, None, None
+    
+    poll_sticker = next((s for s in stickers if s.get("type") == "poll"), None)
+    question_sticker = next((s for s in stickers if s.get("type") == "question"), None)
+    slider_sticker = next((s for s in stickers if s.get("type") == "slider"), None)
+    
+    checks = []
+    checks.append((poll_sticker is not None, "poll sticker exists"))
+    checks.append((question_sticker is not None, "question sticker exists"))
+    checks.append((slider_sticker is not None, "slider sticker exists"))
+    
+    if poll_sticker:
+        poll_options = poll_sticker.get("data", {}).get("options", [])
+        checks.append((len(poll_options) == 2, "poll has 2 options"))
+        checks.append(("results" in poll_sticker, "poll has results field"))
+    
+    if question_sticker:
+        checks.append(("answers_count" in question_sticker, "question has answers_count"))
+    
+    if slider_sticker:
+        checks.append(("responses_count" in slider_sticker, "slider has responses_count"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 6 - Create IMAGE Story with Stickers", True, "Story created with 3 stickers, all fields correct")
+    else:
+        log_test("Test 6 - Create IMAGE Story with Stickers", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return (story_id, 
+            poll_sticker.get("id") if poll_sticker else None,
+            question_sticker.get("id") if question_sticker else None,
+            slider_sticker.get("id") if slider_sticker else None)
 
-def test_follow_toggle(token, username):
-    """Test 5: Toggle follow + reflection in GET /users/{u}"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 5: Follow toggle + reflection{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_07_create_video_story_roda(admin_token: str):
+    """Test 7: POST /api/stories - VIDEO story with audience=roda"""
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "video",
+        "video": TINY_MP4,
+        "caption": "Vídeo privado",
+        "audience": "roda",
+        "allow_replies": True,
+        "allow_reactions": True
+    })
     
-    try:
-        # 5a: POST /api/users/{u}/follow (follow)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/follow",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/follow (follow)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if "following" not in data:
-            results.add_fail(
-                f"POST /api/users/{username}/follow (follow)",
-                "Response missing 'following' field"
-            )
-            return
-        
-        results.add_pass(f"POST /api/users/{username}/follow → status 200, response ok")
-        
-        # 5b: GET /api/users/{u} → is_following == true
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after follow)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_following") != True:
-            results.add_fail(
-                f"GET /api/users/{username} → is_following should be true",
-                f"Expected is_following=true, got: {data.get('is_following')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_following == true")
-        
-        # 5c: POST /api/users/{u}/follow (unfollow)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/follow",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/follow (unfollow)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        results.add_pass(f"POST /api/users/{username}/follow (toggle off) → status 200")
-        
-        # 5d: GET /api/users/{u} → is_following == false
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after unfollow)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_following") != False:
-            results.add_fail(
-                f"GET /api/users/{username} → is_following should be false",
-                f"Expected is_following=false, got: {data.get('is_following')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_following == false")
-    
-    except Exception as e:
-        results.add_fail("Follow toggle test", f"Exception: {str(e)}")
+    if status in [200, 201] and data and "id" in data:
+        log_test("Test 7 - Create VIDEO Story (roda)", True, f"Status: {status}, Story ID: {data['id']}")
+        return data["id"]
+    else:
+        log_test("Test 7 - Create VIDEO Story (roda)", False, f"Status: {status}, Error: {err or data}")
+        return None
 
-def test_notify_toggle(token, username):
-    """Test 6: Toggle notify (sino) + reflection"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 6: Notify toggle + reflection{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_08_visibility_roda_before_add(user2_token: str, video_story_id: str):
+    """Test 8: Verify USER2 cannot see roda story before being added"""
+    status, data, err = make_request("GET", "/stories", user2_token)
     
-    try:
-        # 6a: POST /api/users/{u}/notify (enable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/notify",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/notify (enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("notify") != True:
-            results.add_fail(
-                f"POST /api/users/{username}/notify (enable)",
-                f"Expected notify=true, got: {data.get('notify')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/notify → response.notify == true")
-        
-        # 6b: GET /api/users/{u} → is_notified == true
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after notify enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_notified") != True:
-            results.add_fail(
-                f"GET /api/users/{username} → is_notified should be true",
-                f"Expected is_notified=true, got: {data.get('is_notified')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_notified == true")
-        
-        # 6c: POST /api/users/{u}/notify (disable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/notify",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/notify (disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("notify") != False:
-            results.add_fail(
-                f"POST /api/users/{username}/notify (disable)",
-                f"Expected notify=false, got: {data.get('notify')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/notify → response.notify == false")
-        
-        # 6d: GET /api/users/{u} → is_notified == false
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after notify disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_notified") != False:
-            results.add_fail(
-                f"GET /api/users/{username} → is_notified should be false",
-                f"Expected is_notified=false, got: {data.get('is_notified')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_notified == false")
+    if status != 200:
+        log_test("Test 8 - Roda Visibility (before add)", False, f"Status: {status}, Error: {err or data}")
+        return False
     
-    except Exception as e:
-        results.add_fail("Notify toggle test", f"Exception: {str(e)}")
+    # Check if video story is visible
+    for group in data:
+        for story in group.get("stories", []):
+            if story.get("id") == video_story_id:
+                log_test("Test 8 - Roda Visibility (before add)", False, "Roda story visible to non-roda user")
+                return False
+    
+    log_test("Test 8 - Roda Visibility (before add)", True, "Roda story correctly hidden from non-roda user")
+    return True
 
-def test_mute_toggle(token, username):
-    """Test 7: Toggle mute (silenciar) + reflection"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 7: Mute toggle + reflection{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_09_add_user_to_roda(admin_token: str, user2_id: str):
+    """Test 9: Add USER2 to admin's roda"""
+    # Try POST /api/users/me/roda/{user_id}
+    status, data, err = make_request("POST", f"/users/me/roda/{user2_id}", admin_token)
     
-    try:
-        # 7a: POST /api/users/{u}/mute (enable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/mute",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/mute (enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("muted") != True:
-            results.add_fail(
-                f"POST /api/users/{username}/mute (enable)",
-                f"Expected muted=true, got: {data.get('muted')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/mute → response.muted == true")
-        
-        # 7b: GET /api/users/{u} → is_muted == true
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after mute enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_muted") != True:
-            results.add_fail(
-                f"GET /api/users/{username} → is_muted should be true",
-                f"Expected is_muted=true, got: {data.get('is_muted')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_muted == true")
-        
-        # 7c: POST /api/users/{u}/mute (disable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/mute",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/mute (disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("muted") != False:
-            results.add_fail(
-                f"POST /api/users/{username}/mute (disable)",
-                f"Expected muted=false, got: {data.get('muted')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/mute → response.muted == false")
-        
-        # 7d: GET /api/users/{u} → is_muted == false
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after mute disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_muted") != False:
-            results.add_fail(
-                f"GET /api/users/{username} → is_muted should be false",
-                f"Expected is_muted=false, got: {data.get('is_muted')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_muted == false")
+    if status in [200, 201]:
+        log_test("Test 9 - Add User to Roda", True, f"Status: {status}")
+        return True
     
-    except Exception as e:
-        results.add_fail("Mute toggle test", f"Exception: {str(e)}")
+    # Try alternative: PATCH /api/users/me with roda field
+    status, data, err = make_request("PATCH", "/users/me", admin_token, json_data={
+        "roda": [user2_id]
+    })
+    
+    if status == 200:
+        log_test("Test 9 - Add User to Roda (via PATCH)", True, f"Status: {status}")
+        return True
+    
+    log_test("Test 9 - Add User to Roda", False, f"Could not add user to roda. Status: {status}, Error: {err or data}")
+    return False
 
-def test_favorite_toggle(token, username):
-    """Test 8: Toggle favorite + reflection"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 8: Favorite toggle + reflection{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_10_visibility_roda_after_add(user2_token: str, video_story_id: str):
+    """Test 10: Verify USER2 can see roda story after being added"""
+    status, data, err = make_request("GET", "/stories", user2_token)
     
-    try:
-        # 8a: POST /api/users/{u}/favorite (enable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/favorite",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/favorite (enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("favorited") != True:
-            results.add_fail(
-                f"POST /api/users/{username}/favorite (enable)",
-                f"Expected favorited=true, got: {data.get('favorited')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/favorite → response.favorited == true")
-        
-        # 8b: GET /api/users/{u} → is_favorited == true
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after favorite enable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_favorited") != True:
-            results.add_fail(
-                f"GET /api/users/{username} → is_favorited should be true",
-                f"Expected is_favorited=true, got: {data.get('is_favorited')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_favorited == true")
-        
-        # 8c: POST /api/users/{u}/favorite (disable)
-        response = requests.post(
-            f"{API_BASE}/users/{username}/favorite",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"POST /api/users/{username}/favorite (disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("favorited") != False:
-            results.add_fail(
-                f"POST /api/users/{username}/favorite (disable)",
-                f"Expected favorited=false, got: {data.get('favorited')}"
-            )
-        else:
-            results.add_pass(f"POST /api/users/{username}/favorite → response.favorited == false")
-        
-        # 8d: GET /api/users/{u} → is_favorited == false
-        response = requests.get(
-            f"{API_BASE}/users/{username}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username} (after favorite disable)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-            return
-        
-        data = response.json()
-        if data.get("is_favorited") != False:
-            results.add_fail(
-                f"GET /api/users/{username} → is_favorited should be false",
-                f"Expected is_favorited=false, got: {data.get('is_favorited')}"
-            )
-        else:
-            results.add_pass(f"GET /api/users/{username} → is_favorited == false")
+    if status != 200:
+        log_test("Test 10 - Roda Visibility (after add)", False, f"Status: {status}, Error: {err or data}")
+        return False
     
-    except Exception as e:
-        results.add_fail("Favorite toggle test", f"Exception: {str(e)}")
+    # Check if video story is visible
+    for group in data:
+        for story in group.get("stories", []):
+            if story.get("id") == video_story_id:
+                log_test("Test 10 - Roda Visibility (after add)", True, "Roda story now visible to roda member")
+                return True
+    
+    log_test("Test 10 - Roda Visibility (after add)", False, "Roda story still not visible after adding to roda")
+    return False
 
-def test_mutuals_endpoints(token, username):
-    """Test 9: Endpoint mutuals (plural) + legacy mutual (singular)"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 9: Mutuals endpoints{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_11_view_story(user2_token: str, story_id: str):
+    """Test 11: POST /api/stories/{id}/view"""
+    status, data, err = make_request("POST", f"/stories/{story_id}/view", user2_token)
     
-    try:
-        # 9a: GET /api/users/admin/mutuals (self)
-        response = requests.get(
-            f"{API_BASE}/users/admin/mutuals",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                "GET /api/users/admin/mutuals (self)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-        else:
-            data = response.json()
-            if not isinstance(data, list):
-                results.add_fail(
-                    "GET /api/users/admin/mutuals (self)",
-                    f"Expected array, got: {type(data).__name__}"
-                )
-            else:
-                results.add_pass(
-                    "GET /api/users/admin/mutuals (self) → status 200 + array []"
-                )
-        
-        # 9b: GET /api/users/{other_user}/mutuals
-        response = requests.get(
-            f"{API_BASE}/users/{username}/mutuals",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                f"GET /api/users/{username}/mutuals",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-        else:
-            data = response.json()
-            if not isinstance(data, list):
-                results.add_fail(
-                    f"GET /api/users/{username}/mutuals",
-                    f"Expected array, got: {type(data).__name__}"
-                )
-            else:
-                results.add_pass(
-                    f"GET /api/users/{username}/mutuals → status 200 + array (may be empty)"
-                )
-        
-        # 9c: GET /api/users/utilizador_que_nao_existe_zzz/mutuals → 404
-        response = requests.get(
-            f"{API_BASE}/users/utilizador_que_nao_existe_zzz/mutuals",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 404:
-            results.add_fail(
-                "GET /api/users/utilizador_que_nao_existe_zzz/mutuals",
-                f"Expected status 404, got: {response.status_code}"
-            )
-        else:
-            results.add_pass(
-                "GET /api/users/utilizador_que_nao_existe_zzz/mutuals → status 404"
-            )
-        
-        # 9d: GET /api/users/admin/mutual (singular legacy)
-        response = requests.get(
-            f"{API_BASE}/users/admin/mutual",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                "GET /api/users/admin/mutual (singular legacy)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-        else:
-            data = response.json()
-            if "count" not in data or "users" not in data:
-                results.add_fail(
-                    "GET /api/users/admin/mutual (singular legacy)",
-                    f"Expected {{count, users}}, got: {list(data.keys())}"
-                )
-            else:
-                results.add_pass(
-                    "GET /api/users/admin/mutual (singular legacy) → status 200 + {count, users}"
-                )
-    
-    except Exception as e:
-        results.add_fail("Mutuals endpoints test", f"Exception: {str(e)}")
+    if status == 200 and data and data.get("ok"):
+        log_test("Test 11 - View Story", True, f"Status: {status}")
+        return True
+    else:
+        log_test("Test 11 - View Story", False, f"Status: {status}, Error: {err or data}")
+        return False
 
-def test_no_regressions(token):
-    """Test 10: No regressions - stats and profile still work"""
-    print(f"\n{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}TEST 10: No regressions{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
+def test_12_react_to_story(user2_token: str, story_id: str):
+    """Test 12: POST /api/stories/{id}/react - toggle reaction"""
+    # First reaction
+    status, data, err = make_request("POST", f"/stories/{story_id}/react", user2_token, json_data={
+        "emoji": "❤️"
+    })
     
-    try:
-        # 10a: GET /api/users/admin/stats
-        response = requests.get(
-            f"{API_BASE}/users/admin/stats",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                "GET /api/users/admin/stats",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-        else:
-            data = response.json()
-            # Just check it returns valid JSON and doesn't 500
-            results.add_pass(
-                "GET /api/users/admin/stats → continues to work (no 500)"
-            )
-        
-        # 10b: GET /api/users/admin - check old fields still present
-        response = requests.get(
-            f"{API_BASE}/users/admin",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=10
-        )
-        
-        if response.status_code != 200:
-            results.add_fail(
-                "GET /api/users/admin (regression check)",
-                f"Status {response.status_code}: {response.text[:200]}"
-            )
-        else:
-            data = response.json()
-            
-            # Check old fields are still present
-            old_fields = ["posts_count", "likes_received", "can_view", "is_self", "is_following"]
-            missing_old_fields = [f for f in old_fields if f not in data]
-            
-            if missing_old_fields:
-                results.add_fail(
-                    "GET /api/users/admin - missing old fields",
-                    f"Missing: {', '.join(missing_old_fields)}"
-                )
-            else:
-                results.add_pass(
-                    "GET /api/users/admin → old fields still present (posts_count, likes_received, can_view, is_self, is_following)"
-                )
+    if status != 200 or not data:
+        log_test("Test 12 - React to Story", False, f"First reaction failed. Status: {status}, Error: {err or data}")
+        return False
     
-    except Exception as e:
-        results.add_fail("No regressions test", f"Exception: {str(e)}")
+    if data.get("reaction") != "❤️":
+        log_test("Test 12 - React to Story", False, f"Expected reaction='❤️', got {data.get('reaction')}")
+        return False
+    
+    # Toggle off (same emoji)
+    status, data, err = make_request("POST", f"/stories/{story_id}/react", user2_token, json_data={
+        "emoji": "❤️"
+    })
+    
+    if status != 200 or not data:
+        log_test("Test 12 - React to Story", False, f"Toggle off failed. Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("reaction") is not None:
+        log_test("Test 12 - React to Story", False, f"Expected reaction=null after toggle, got {data.get('reaction')}")
+        return False
+    
+    # React again for later tests
+    status, data, err = make_request("POST", f"/stories/{story_id}/react", user2_token, json_data={
+        "emoji": "❤️"
+    })
+    
+    log_test("Test 12 - React to Story", True, "Reaction toggle works correctly")
+    return True
+
+def test_13_react_invalid_emoji(user2_token: str, story_id: str):
+    """Test 13: POST /api/stories/{id}/react with invalid emoji"""
+    status, data, err = make_request("POST", f"/stories/{story_id}/react", user2_token, json_data={
+        "emoji": "🦄"
+    })
+    
+    if status == 400:
+        log_test("Test 13 - React Invalid Emoji", True, f"Correctly rejected invalid emoji with 400")
+        return True
+    else:
+        log_test("Test 13 - React Invalid Emoji", False, f"Expected 400, got {status}")
+        return False
+
+def test_14_reply_to_story(user2_token: str, story_id: str):
+    """Test 14: POST /api/stories/{id}/reply"""
+    status, data, err = make_request("POST", f"/stories/{story_id}/reply", user2_token, json_data={
+        "content": "Adorei!"
+    })
+    
+    if status == 200 and data and data.get("ok"):
+        log_test("Test 14 - Reply to Story", True, f"Status: {status}, Message ID: {data.get('message_id')}")
+        return True
+    else:
+        log_test("Test 14 - Reply to Story", False, f"Status: {status}, Error: {err or data}")
+        return False
+
+def test_15_poll_vote(user2_token: str, image_story_id: str, poll_sticker_id: str):
+    """Test 15: POST /api/stories/{id}/poll-vote - vote and switch"""
+    # Vote for option "a"
+    status, data, err = make_request("POST", f"/stories/{image_story_id}/poll-vote", user2_token, json_data={
+        "sticker_id": poll_sticker_id,
+        "option_id": "a"
+    })
+    
+    if status != 200 or not data or not data.get("ok"):
+        log_test("Test 15 - Poll Vote", False, f"First vote failed. Status: {status}, Error: {err or data}")
+        return False
+    
+    sticker = data.get("sticker", {})
+    results = sticker.get("results", {})
+    if results.get("viewer_vote") != "a":
+        log_test("Test 15 - Poll Vote", False, f"Expected viewer_vote='a', got {results.get('viewer_vote')}")
+        return False
+    
+    # Switch to option "b"
+    status, data, err = make_request("POST", f"/stories/{image_story_id}/poll-vote", user2_token, json_data={
+        "sticker_id": poll_sticker_id,
+        "option_id": "b"
+    })
+    
+    if status != 200 or not data or not data.get("ok"):
+        log_test("Test 15 - Poll Vote", False, f"Vote switch failed. Status: {status}, Error: {err or data}")
+        return False
+    
+    sticker = data.get("sticker", {})
+    results = sticker.get("results", {})
+    if results.get("viewer_vote") != "b":
+        log_test("Test 15 - Poll Vote", False, f"Expected viewer_vote='b' after switch, got {results.get('viewer_vote')}")
+        return False
+    
+    # Verify option "a" has 0 votes
+    options = results.get("options", [])
+    option_a = next((o for o in options if o.get("id") == "a"), None)
+    if option_a and option_a.get("votes") != 0:
+        log_test("Test 15 - Poll Vote", False, f"Expected option 'a' to have 0 votes, got {option_a.get('votes')}")
+        return False
+    
+    log_test("Test 15 - Poll Vote", True, "Poll vote and switch works correctly")
+    return True
+
+def test_16_question_answer(user2_token: str, image_story_id: str, question_sticker_id: str):
+    """Test 16: POST /api/stories/{id}/question-answer"""
+    status, data, err = make_request("POST", f"/stories/{image_story_id}/question-answer", user2_token, json_data={
+        "sticker_id": question_sticker_id,
+        "content": "100% sim"
+    })
+    
+    if status == 200 and data and data.get("ok"):
+        log_test("Test 16 - Question Answer", True, f"Status: {status}")
+        return True
+    else:
+        log_test("Test 16 - Question Answer", False, f"Status: {status}, Error: {err or data}")
+        return False
+
+def test_17_slider_response(user2_token: str, image_story_id: str, slider_sticker_id: str):
+    """Test 17: POST /api/stories/{id}/slider-response"""
+    status, data, err = make_request("POST", f"/stories/{image_story_id}/slider-response", user2_token, json_data={
+        "sticker_id": slider_sticker_id,
+        "value": 0.8
+    })
+    
+    if status != 200 or not data or not data.get("ok"):
+        log_test("Test 17 - Slider Response", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    sticker = data.get("sticker", {})
+    average = sticker.get("average")
+    if average is None or abs(average - 0.8) > 0.01:
+        log_test("Test 17 - Slider Response", False, f"Expected average ~0.8, got {average}")
+        return False
+    
+    log_test("Test 17 - Slider Response", True, f"Status: {status}, Average: {average}")
+    return True
+
+def test_18_viewers_list(admin_token: str, text_story_id: str):
+    """Test 18: GET /api/stories/{id}/viewers (author-only)"""
+    status, data, err = make_request("GET", f"/stories/{text_story_id}/viewers", admin_token)
+    
+    if status != 200:
+        log_test("Test 18 - Viewers List (author)", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    checks = []
+    checks.append(("viewers" in data, "viewers field"))
+    checks.append(("total_views" in data, "total_views field"))
+    checks.append(("reactions_breakdown" in data, "reactions_breakdown field"))
+    checks.append((data.get("total_views", 0) >= 1, "at least 1 view"))
+    
+    # Check if USER2 is in viewers (if they viewed it)
+    viewers = data.get("viewers", [])
+    has_user2 = any(v.get("user", {}).get("username") in ["filipa.azul", "tester2story"] for v in viewers)
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 18 - Viewers List (author)", True, f"Total views: {data.get('total_views')}, USER2 present: {has_user2}")
+    else:
+        log_test("Test 18 - Viewers List (author)", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return all_passed
+
+def test_19_viewers_list_non_author(user2_token: str, text_story_id: str):
+    """Test 19: GET /api/stories/{id}/viewers (non-author should get 403)"""
+    status, data, err = make_request("GET", f"/stories/{text_story_id}/viewers", user2_token)
+    
+    if status == 403:
+        log_test("Test 19 - Viewers List (non-author)", True, "Correctly rejected with 403")
+        return True
+    else:
+        log_test("Test 19 - Viewers List (non-author)", False, f"Expected 403, got {status}")
+        return False
+
+def test_20_replies_list(admin_token: str, text_story_id: str):
+    """Test 20: GET /api/stories/{id}/replies (author-only)"""
+    status, data, err = make_request("GET", f"/stories/{text_story_id}/replies", admin_token)
+    
+    if status != 200:
+        log_test("Test 20 - Replies List (author)", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if not isinstance(data, list):
+        log_test("Test 20 - Replies List (author)", False, f"Expected list, got {type(data)}")
+        return False
+    
+    # Check if USER2's reply is present
+    has_reply = any(r.get("content") == "Adorei!" for r in data)
+    
+    if has_reply:
+        log_test("Test 20 - Replies List (author)", True, f"Found USER2's reply in {len(data)} replies")
+    else:
+        log_test("Test 20 - Replies List (author)", False, f"USER2's reply not found in {len(data)} replies")
+    
+    return has_reply
+
+def test_21_sticker_responders_poll(admin_token: str, image_story_id: str, poll_sticker_id: str):
+    """Test 21: GET /api/stories/{id}/sticker/{sticker_id}/responders (poll)"""
+    status, data, err = make_request("GET", f"/stories/{image_story_id}/sticker/{poll_sticker_id}/responders", admin_token)
+    
+    if status != 200:
+        log_test("Test 21 - Sticker Responders (poll)", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("type") != "poll":
+        log_test("Test 21 - Sticker Responders (poll)", False, f"Expected type='poll', got {data.get('type')}")
+        return False
+    
+    results = data.get("results", [])
+    if not isinstance(results, list):
+        log_test("Test 21 - Sticker Responders (poll)", False, "results is not a list")
+        return False
+    
+    log_test("Test 21 - Sticker Responders (poll)", True, f"Got {len(results)} options with responders")
+    return True
+
+def test_22_sticker_responders_question(admin_token: str, image_story_id: str, question_sticker_id: str):
+    """Test 22: GET /api/stories/{id}/sticker/{sticker_id}/responders (question)"""
+    status, data, err = make_request("GET", f"/stories/{image_story_id}/sticker/{question_sticker_id}/responders", admin_token)
+    
+    if status != 200:
+        log_test("Test 22 - Sticker Responders (question)", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("type") != "question":
+        log_test("Test 22 - Sticker Responders (question)", False, f"Expected type='question', got {data.get('type')}")
+        return False
+    
+    answers = data.get("answers", [])
+    has_answer = any(a.get("content") == "100% sim" for a in answers)
+    
+    if has_answer:
+        log_test("Test 22 - Sticker Responders (question)", True, f"Found USER2's answer in {len(answers)} answers")
+    else:
+        log_test("Test 22 - Sticker Responders (question)", False, f"USER2's answer not found in {len(answers)} answers")
+    
+    return has_answer
+
+def test_23_sticker_responders_slider(admin_token: str, image_story_id: str, slider_sticker_id: str):
+    """Test 23: GET /api/stories/{id}/sticker/{sticker_id}/responders (slider)"""
+    status, data, err = make_request("GET", f"/stories/{image_story_id}/sticker/{slider_sticker_id}/responders", admin_token)
+    
+    if status != 200:
+        log_test("Test 23 - Sticker Responders (slider)", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("type") != "slider":
+        log_test("Test 23 - Sticker Responders (slider)", False, f"Expected type='slider', got {data.get('type')}")
+        return False
+    
+    responses = data.get("responses", [])
+    has_response = any(abs(r.get("value", 0) - 0.8) < 0.01 for r in responses)
+    
+    if has_response:
+        log_test("Test 23 - Sticker Responders (slider)", True, f"Found USER2's response in {len(responses)} responses")
+    else:
+        log_test("Test 23 - Sticker Responders (slider)", False, f"USER2's response not found in {len(responses)} responses")
+    
+    return has_response
+
+def test_24_allow_reactions_false(admin_token: str, user2_token: str):
+    """Test 24: Create story with allow_reactions=false, verify POST /react returns 400"""
+    # Create story
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "text",
+        "text_content": "Sem reações",
+        "background": "coral",
+        "allow_reactions": False,
+        "allow_replies": True
+    })
+    
+    if status not in [200, 201] or not data or "id" not in data:
+        log_test("Test 24 - Allow Reactions False", False, f"Story creation failed. Status: {status}")
+        return False
+    
+    story_id = data["id"]
+    
+    # Try to react
+    status, data, err = make_request("POST", f"/stories/{story_id}/react", user2_token, json_data={
+        "emoji": "❤️"
+    })
+    
+    if status == 400:
+        log_test("Test 24 - Allow Reactions False", True, "Correctly rejected reaction with 400")
+        return True
+    else:
+        log_test("Test 24 - Allow Reactions False", False, f"Expected 400, got {status}")
+        return False
+
+def test_25_allow_replies_false(admin_token: str, user2_token: str):
+    """Test 25: Create story with allow_replies=false, verify POST /reply returns 400"""
+    # Create story
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "text",
+        "text_content": "Sem respostas",
+        "background": "ocean",
+        "allow_reactions": True,
+        "allow_replies": False
+    })
+    
+    if status not in [200, 201] or not data or "id" not in data:
+        log_test("Test 25 - Allow Replies False", False, f"Story creation failed. Status: {status}")
+        return False
+    
+    story_id = data["id"]
+    
+    # Try to reply
+    status, data, err = make_request("POST", f"/stories/{story_id}/reply", user2_token, json_data={
+        "content": "Tentando responder"
+    })
+    
+    if status == 400:
+        log_test("Test 25 - Allow Replies False", True, "Correctly rejected reply with 400")
+        return True
+    else:
+        log_test("Test 25 - Allow Replies False", False, f"Expected 400, got {status}")
+        return False
+
+def test_26_reply_to_own_story(admin_token: str):
+    """Test 26: Reply to own story should return 400"""
+    # Create story
+    status, data, err = make_request("POST", "/stories", admin_token, json_data={
+        "media_type": "text",
+        "text_content": "Meu story",
+        "background": "dusk"
+    })
+    
+    if status not in [200, 201] or not data or "id" not in data:
+        log_test("Test 26 - Reply to Own Story", False, f"Story creation failed. Status: {status}")
+        return False
+    
+    story_id = data["id"]
+    
+    # Try to reply to own story
+    status, data, err = make_request("POST", f"/stories/{story_id}/reply", admin_token, json_data={
+        "content": "Respondendo a mim mesmo"
+    })
+    
+    if status == 400:
+        log_test("Test 26 - Reply to Own Story", True, "Correctly rejected self-reply with 400")
+        return True
+    else:
+        log_test("Test 26 - Reply to Own Story", False, f"Expected 400, got {status}")
+        return False
+
+def test_27_mute_author(user2_token: str, user2_id: str, admin_token: str):
+    """Test 27: POST /api/users/me/stories-mute/{author_id} - mute and verify stories disappear"""
+    # Get admin's user ID
+    status, data, err = make_request("GET", "/users/admin", user2_token)
+    if status != 200:
+        log_test("Test 27 - Mute Author", False, f"Could not get admin profile. Status: {status}")
+        return False
+    
+    admin_id = data.get("id")
+    
+    # Mute admin
+    status, data, err = make_request("POST", f"/users/me/stories-mute/{admin_id}", user2_token)
+    
+    if status != 200 or not data:
+        log_test("Test 27 - Mute Author", False, f"Mute failed. Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("action") != "muted":
+        log_test("Test 27 - Mute Author", False, f"Expected action='muted', got {data.get('action')}")
+        return False
+    
+    # Verify admin's stories don't appear
+    status, list_data, err = make_request("GET", "/stories", user2_token)
+    if status != 200:
+        log_test("Test 27 - Mute Author", False, f"Could not get stories. Status: {status}")
+        return False
+    
+    admin_stories_visible = any(g.get("author", {}).get("username") == "admin" for g in list_data)
+    
+    if admin_stories_visible:
+        log_test("Test 27 - Mute Author", False, "Admin's stories still visible after mute")
+        return False
+    
+    # Unmute
+    status, data, err = make_request("POST", f"/users/me/stories-mute/{admin_id}", user2_token)
+    
+    if status != 200 or data.get("action") != "unmuted":
+        log_test("Test 27 - Mute Author", False, f"Unmute failed. Status: {status}")
+        return False
+    
+    # Verify stories reappear
+    status, list_data, err = make_request("GET", "/stories", user2_token)
+    admin_stories_visible = any(g.get("author", {}).get("username") == "admin" for g in list_data)
+    
+    if not admin_stories_visible:
+        log_test("Test 27 - Mute Author", False, "Admin's stories not visible after unmute")
+        return False
+    
+    log_test("Test 27 - Mute Author", True, "Mute/unmute works correctly")
+    return True
+
+def test_28_archive(admin_token: str):
+    """Test 28: GET /api/stories/archive"""
+    status, data, err = make_request("GET", "/stories/archive", admin_token)
+    
+    if status != 200:
+        log_test("Test 28 - Archive", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if not isinstance(data, list):
+        log_test("Test 28 - Archive", False, f"Expected list, got {type(data)}")
+        return False
+    
+    if len(data) == 0:
+        log_test("Test 28 - Archive", True, "Archive endpoint works (empty, no expired stories)")
+    else:
+        log_test("Test 28 - Archive", True, f"Archive endpoint works, returned {len(data)} stories")
+    
+    return True
+
+def test_29_create_highlight(admin_token: str, text_story_id: str, image_story_id: str):
+    """Test 29: POST /api/highlights"""
+    status, data, err = make_request("POST", "/highlights", admin_token, json_data={
+        "title": "Lisboa 2025",
+        "story_ids": [text_story_id, image_story_id],
+        "cover": text_story_id
+    })
+    
+    if status not in [200, 201] or not data or "id" not in data:
+        log_test("Test 29 - Create Highlight", False, f"Status: {status}, Error: {err or data}")
+        return None
+    
+    highlight_id = data["id"]
+    
+    checks = []
+    checks.append((data.get("title") == "Lisboa 2025", "title correct"))
+    checks.append((len(data.get("story_ids", [])) == 2, "2 stories"))
+    checks.append((data.get("cover") == text_story_id, "cover set"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 29 - Create Highlight", True, f"Highlight ID: {highlight_id}")
+    else:
+        log_test("Test 29 - Create Highlight", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return highlight_id if all_passed else None
+
+def test_30_get_user_highlights(admin_token: str, highlight_id: str):
+    """Test 30: GET /api/users/admin/highlights"""
+    status, data, err = make_request("GET", "/users/admin/highlights")
+    
+    if status != 200:
+        log_test("Test 30 - Get User Highlights", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if not isinstance(data, list):
+        log_test("Test 30 - Get User Highlights", False, f"Expected list, got {type(data)}")
+        return False
+    
+    # Find our highlight
+    highlight = next((h for h in data if h.get("id") == highlight_id), None)
+    
+    if not highlight:
+        log_test("Test 30 - Get User Highlights", False, f"Highlight {highlight_id} not found")
+        return False
+    
+    checks = []
+    checks.append(("cover_resolved" in highlight, "cover_resolved present"))
+    checks.append(("stories_count" in highlight, "stories_count present"))
+    
+    if "cover_resolved" in highlight:
+        cover = highlight["cover_resolved"]
+        checks.append(("media_type" in cover, "cover has media_type"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 30 - Get User Highlights", True, f"Found highlight with cover_resolved")
+    else:
+        log_test("Test 30 - Get User Highlights", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return all_passed
+
+def test_31_get_highlight_detail(admin_token: str, highlight_id: str):
+    """Test 31: GET /api/highlights/{id}"""
+    status, data, err = make_request("GET", f"/highlights/{highlight_id}", admin_token)
+    
+    if status != 200:
+        log_test("Test 31 - Get Highlight Detail", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    checks = []
+    checks.append(("highlight" in data, "highlight field"))
+    checks.append(("stories" in data, "stories field"))
+    checks.append(("owner" in data, "owner field"))
+    
+    if "stories" in data:
+        checks.append((isinstance(data["stories"], list), "stories is list"))
+        checks.append((len(data["stories"]) == 2, "2 stories"))
+    
+    all_passed = all(check[0] for check in checks)
+    failed_checks = [check[1] for check in checks if not check[0]]
+    
+    if all_passed:
+        log_test("Test 31 - Get Highlight Detail", True, "All fields present")
+    else:
+        log_test("Test 31 - Get Highlight Detail", False, f"Failed: {', '.join(failed_checks)}")
+    
+    return all_passed
+
+def test_32_update_highlight(admin_token: str, highlight_id: str):
+    """Test 32: PATCH /api/highlights/{id}"""
+    status, data, err = make_request("PATCH", f"/highlights/{highlight_id}", admin_token, json_data={
+        "title": "Lx 2025"
+    })
+    
+    if status != 200:
+        log_test("Test 32 - Update Highlight", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    if data.get("title") != "Lx 2025":
+        log_test("Test 32 - Update Highlight", False, f"Expected title='Lx 2025', got {data.get('title')}")
+        return False
+    
+    log_test("Test 32 - Update Highlight", True, "Title updated successfully")
+    return True
+
+def test_33_add_story_to_highlight(admin_token: str, highlight_id: str, video_story_id: str):
+    """Test 33: POST /api/highlights/{id}/stories/{story_id}"""
+    status, data, err = make_request("POST", f"/highlights/{highlight_id}/stories/{video_story_id}", admin_token)
+    
+    if status != 200:
+        log_test("Test 33 - Add Story to Highlight", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    story_ids = data.get("story_ids", [])
+    if video_story_id not in story_ids:
+        log_test("Test 33 - Add Story to Highlight", False, f"Story {video_story_id} not in story_ids")
+        return False
+    
+    log_test("Test 33 - Add Story to Highlight", True, f"Story added, total: {len(story_ids)}")
+    return True
+
+def test_34_remove_story_from_highlight(admin_token: str, highlight_id: str, video_story_id: str):
+    """Test 34: DELETE /api/highlights/{id}/stories/{story_id}"""
+    status, data, err = make_request("DELETE", f"/highlights/{highlight_id}/stories/{video_story_id}", admin_token)
+    
+    if status != 200:
+        log_test("Test 34 - Remove Story from Highlight", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    story_ids = data.get("story_ids", [])
+    if video_story_id in story_ids:
+        log_test("Test 34 - Remove Story from Highlight", False, f"Story {video_story_id} still in story_ids")
+        return False
+    
+    log_test("Test 34 - Remove Story from Highlight", True, f"Story removed, remaining: {len(story_ids)}")
+    return True
+
+def test_35_delete_highlight(admin_token: str, highlight_id: str):
+    """Test 35: DELETE /api/highlights/{id}"""
+    status, data, err = make_request("DELETE", f"/highlights/{highlight_id}", admin_token)
+    
+    if status != 200:
+        log_test("Test 35 - Delete Highlight", False, f"Status: {status}, Error: {err or data}")
+        return False
+    
+    # Verify it's gone
+    status, data, err = make_request("GET", f"/highlights/{highlight_id}", admin_token)
+    
+    if status == 404:
+        log_test("Test 35 - Delete Highlight", True, "Highlight deleted, GET returns 404")
+        return True
+    else:
+        log_test("Test 35 - Delete Highlight", False, f"Expected 404 after delete, got {status}")
+        return False
 
 def main():
-    print(f"{BOLD}{'='*70}{RESET}")
-    print(f"{BOLD}SMART FOLLOW BUTTON — BACKEND TESTS{RESET}")
-    print(f"{BOLD}get_profile extended payload validation{RESET}")
-    print(f"{BOLD}{'='*70}{RESET}")
-    print(f"Backend URL: {API_BASE}")
-    print(f"Test User: {ADMIN_EMAIL}")
+    """Run all tests"""
+    print("=" * 80)
+    print("STORIES 2.0 BACKEND TEST SUITE")
+    print("=" * 80)
+    print()
     
-    # Test 1: Login
-    token = login()
-    if not token:
-        print(f"\n{RED}Cannot proceed without authentication{RESET}")
-        results.summary()
-        return 1
+    # Test 1: Admin login
+    admin_token = test_01_admin_login()
+    if not admin_token:
+        print("\n❌ CRITICAL: Admin login failed. Cannot continue.")
+        return
     
-    # Test 2: Self profile
-    test_self_profile(token)
+    # Test 2: Get second user
+    user2_token, user2_id, user2_username = test_02_get_second_user(admin_token)
+    if not user2_token:
+        print("\n❌ CRITICAL: Could not get second user. Cannot continue multi-user tests.")
+        # Continue with single-user tests
     
-    # Test 3: Discover other user
-    other_user = discover_other_user(token)
-    if not other_user:
-        print(f"\n{RED}Cannot proceed without another user for testing{RESET}")
-        results.summary()
-        return 1
+    # Test 3: Stories catalog
+    test_03_stories_catalog()
     
-    # Test 4: Other user profile
-    test_other_user_profile(token, other_user)
+    # Test 4-5: Create and verify TEXT story
+    text_story_id = test_04_create_text_story(admin_token)
+    if text_story_id:
+        test_05_verify_text_story_in_list(admin_token, text_story_id)
     
-    # Test 5: Follow toggle
-    test_follow_toggle(token, other_user)
+    # Test 6: Create IMAGE story with stickers
+    image_story_id, poll_sticker_id, question_sticker_id, slider_sticker_id = test_06_create_image_story_with_stickers(admin_token)
     
-    # Test 6: Notify toggle
-    test_notify_toggle(token, other_user)
+    # Test 7: Create VIDEO story with roda audience
+    video_story_id = test_07_create_video_story_roda(admin_token)
     
-    # Test 7: Mute toggle
-    test_mute_toggle(token, other_user)
+    # Multi-user tests
+    if user2_token and video_story_id:
+        # Test 8-10: Roda visibility
+        test_08_visibility_roda_before_add(user2_token, video_story_id)
+        if user2_id:
+            test_09_add_user_to_roda(admin_token, user2_id)
+            test_10_visibility_roda_after_add(user2_token, video_story_id)
+        
+        # Test 11-17: Interactions
+        if text_story_id:
+            test_11_view_story(user2_token, text_story_id)
+            test_12_react_to_story(user2_token, text_story_id)
+            test_13_react_invalid_emoji(user2_token, text_story_id)
+            test_14_reply_to_story(user2_token, text_story_id)
+        
+        if image_story_id and poll_sticker_id and question_sticker_id and slider_sticker_id:
+            test_15_poll_vote(user2_token, image_story_id, poll_sticker_id)
+            test_16_question_answer(user2_token, image_story_id, question_sticker_id)
+            test_17_slider_response(user2_token, image_story_id, slider_sticker_id)
+        
+        # Test 18-23: Author-only endpoints
+        if text_story_id:
+            test_18_viewers_list(admin_token, text_story_id)
+            test_19_viewers_list_non_author(user2_token, text_story_id)
+            test_20_replies_list(admin_token, text_story_id)
+        
+        if image_story_id and poll_sticker_id and question_sticker_id and slider_sticker_id:
+            test_21_sticker_responders_poll(admin_token, image_story_id, poll_sticker_id)
+            test_22_sticker_responders_question(admin_token, image_story_id, question_sticker_id)
+            test_23_sticker_responders_slider(admin_token, image_story_id, slider_sticker_id)
+        
+        # Test 24-26: Allow flags
+        test_24_allow_reactions_false(admin_token, user2_token)
+        test_25_allow_replies_false(admin_token, user2_token)
+        test_26_reply_to_own_story(admin_token)
+        
+        # Test 27: Mute
+        if user2_id:
+            test_27_mute_author(user2_token, user2_id, admin_token)
     
-    # Test 8: Favorite toggle
-    test_favorite_toggle(token, other_user)
+    # Test 28: Archive
+    test_28_archive(admin_token)
     
-    # Test 9: Mutuals endpoints
-    test_mutuals_endpoints(token, other_user)
-    
-    # Test 10: No regressions
-    test_no_regressions(token)
+    # Test 29-35: Highlights
+    if text_story_id and image_story_id:
+        highlight_id = test_29_create_highlight(admin_token, text_story_id, image_story_id)
+        if highlight_id:
+            test_30_get_user_highlights(admin_token, highlight_id)
+            test_31_get_highlight_detail(admin_token, highlight_id)
+            test_32_update_highlight(admin_token, highlight_id)
+            if video_story_id:
+                test_33_add_story_to_highlight(admin_token, highlight_id, video_story_id)
+                test_34_remove_story_from_highlight(admin_token, highlight_id, video_story_id)
+            test_35_delete_highlight(admin_token, highlight_id)
     
     # Summary
-    success = results.summary()
+    print()
+    print("=" * 80)
+    print("TEST SUMMARY")
+    print("=" * 80)
+    print(f"Total Tests: {total_tests}")
+    print(f"Passed: {passed_tests} ✅")
+    print(f"Failed: {failed_tests} ❌")
+    print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
+    print()
     
-    return 0 if success else 1
+    if failed_tests > 0:
+        print("FAILED TESTS:")
+        for result in test_results:
+            if "❌ FAIL" in result:
+                print(result)
+        print()
+    
+    print("=" * 80)
 
 if __name__ == "__main__":
-    exit(main())
+    main()

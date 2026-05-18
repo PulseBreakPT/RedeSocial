@@ -32,6 +32,7 @@ import Glossary from "./pages/legal/Glossary";
 import Manifesto from "./pages/Manifesto";
 import Visitors from "./pages/Visitors";
 import SeriesPage from "./pages/SeriesPage";
+import StoryArchive from "./pages/StoryArchive";
 
 function App() {
     return (
@@ -87,6 +88,7 @@ function App() {
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/visitors" element={<Visitors />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
+                            <Route path="/stories/archive" element={<StoryArchive />} />
                         </Route>
                     </Routes>
                     <CookieBanner />
