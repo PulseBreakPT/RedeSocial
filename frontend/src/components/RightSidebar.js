@@ -161,9 +161,7 @@ export function RightSidebar() {
                 <div className="card-lux p-5" data-testid="online-now">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="type-overline mb-0.5 inline-flex items-center gap-1.5">
-                                <span className="live-dot" /> Online agora
-                            </p>
+                            <p className="type-overline mb-0.5">Online agora</p>
                             <h3 className="font-display text-[20px] leading-none tracking-tight text-black mt-1">Comunidade ativa</h3>
                         </div>
                     </div>

@@ -540,3 +540,20 @@ agent_communication:
                      -> MobileComposePill -> SmartTodayBanner -> MobileDiscoverStrip -> posts.
           No backend changes. Verified visually on 1920px desktop and 390x844 iPhone emulation.
         DO NOT auto-test (UI cosmetic change; user has not requested testing).
+
+    - agent: "main"
+      message: |
+        UI ONLY (frontend): Removed remaining duplicated / similar pieces of information on Home page (Início).
+          Mobile (visible simultaneously, now de-duped):
+            * Removed user avatar from MobileHomeHero -> kept only in MobileTopBar (canonical identity).
+            * Removed "ao vivo" overline pulse from MobileHomeHero -> kept only the small coral pulse next to "vermillion" logo in MobileTopBar.
+            * Removed explicit refresh button from MobileHomeHero -> pull-to-refresh is the native mobile pattern (already implemented).
+            * Removed user avatar from MobileComposePill -> replaced with neutral pencil icon (topbar + "O teu story" tile already carry identity).
+            * Removed live-dot pulse from MobileDiscoverStrip "Online agora" overline (kept the text).
+          Desktop (visible simultaneously, now de-duped):
+            * Removed mood echo from hero subtitle ("A filtrar por X") -> active mood chip below is the single source of truth for active filter.
+            * Removed live-dot pulse from RightSidebar "Online agora" overline (kept the text; green avatar dots + ActivityTicker still convey liveness).
+          No backend changes. Verified visually on 1920px desktop and 390x844 iPhone emulation:
+            - Mobile: exactly 2 avatars visible above the fold (topbar + "O teu story"), exactly 1 coral pulse (logo), no explicit refresh button.
+            - Desktop: subtitle stable even when mood is selected, only one pulse cluster per zone.
+        DO NOT auto-test (UI cosmetic change; user has not requested testing).

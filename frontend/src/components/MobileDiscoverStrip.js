@@ -53,9 +53,7 @@ export function MobileDiscoverStrip() {
             {onlineNow.length > 0 && (
                 <div className="px-4 pt-4 pb-1" data-testid="mobile-online-now">
                     <div className="flex items-center justify-between mb-2.5">
-                        <p className="type-overline inline-flex items-center gap-1.5">
-                            <span className="live-dot" /> Online agora
-                        </p>
+                        <p className="type-overline">Online agora</p>
                         <Link to="/explore" className="text-[11.5px] text-black/55 hover:text-black font-medium tap-shrink transition-colors">
                             ver todos →
                         </Link>

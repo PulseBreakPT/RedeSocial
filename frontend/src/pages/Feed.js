@@ -148,9 +148,7 @@ export default function Feed() {
                             {greeting}{firstName ? `, ${firstName}` : ""}.
                         </h1>
                         <p className="text-[13px] text-black/55 mt-1 font-medium tracking-tight">
-                            {mood
-                                ? <>A filtrar por <span className="text-black font-semibold">{MOOD_OPTIONS.find(m => m.key === mood)?.emoji} {MOOD_OPTIONS.find(m => m.key === mood)?.label}</span></>
-                                : "O que se passa em Portugal agora."}
+                            O que se passa em Portugal agora.
                         </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -204,14 +202,12 @@ export default function Feed() {
                 </div>
             </div>
 
-            {/* Mobile-only hero strip (greeting + sort) */}
+            {/* Mobile-only hero strip (greeting + sort only — no avatar/live/refresh; those live in MobileTopBar) */}
             <MobileHomeHero
                 greeting={greeting}
                 firstName={firstName}
                 sort={sort}
                 onSort={setSort}
-                refreshing={refreshing}
-                onRefresh={refresh}
             />
 
             {/* Mobile-only tabs — sticky under MobileTopBar */}
