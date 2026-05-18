@@ -47,6 +47,7 @@ export function MobileTopBar({ onOpenChat }) {
                         <span className="silver-foil text-[20px] not-italic translate-y-[1px]">◆</span>
                         vermillion
                     </span>
+                    <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-coral-500 animate-pulse" style={{ background: "var(--coral-500)" }} aria-hidden />
                 </Link>
                 <button
                     onClick={() => navigate("/explore")}

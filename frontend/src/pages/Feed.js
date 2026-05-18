@@ -4,6 +4,8 @@ import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
 import { MobileDiscoverStrip } from "../components/MobileDiscoverStrip";
+import { MobileHomeHero } from "../components/MobileHomeHero";
+import { MobileComposePill } from "../components/MobileComposePill";
 import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -203,13 +205,26 @@ export default function Feed() {
                 </div>
             </div>
 
-            {/* Mobile-only tabs (desktop tabs are above inside the sticky hero) */}
-            <div className="lg:hidden glass border-b border-black/[0.06]">
+            {/* Mobile-only hero strip (greeting + sort) */}
+            <MobileHomeHero
+                greeting={greeting}
+                firstName={firstName}
+                sort={sort}
+                onSort={setSort}
+                refreshing={refreshing}
+                onRefresh={refresh}
+            />
+
+            {/* Mobile-only tabs — sticky under MobileTopBar */}
+            <div
+                className="lg:hidden sticky z-20 glass border-b border-black/[0.06]"
+                style={{ top: "calc(var(--mobile-topbar-h) + var(--safe-top))" }}
+            >
                 <div className="grid grid-cols-2">
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following-mobile"
-                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
+                        className={`py-3 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Seguindo
                         {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
@@ -217,7 +232,7 @@ export default function Feed() {
                     <button
                         onClick={() => setTab("foryou")}
                         data-testid="tab-foryou-mobile"
-                        className={`py-3.5 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
+                        className={`py-3 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
                     >
                         Para ti
                         {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
@@ -225,8 +240,11 @@ export default function Feed() {
                 </div>
             </div>
 
-            {/* Mood chips */}
-            <div className="border-b border-black/[0.06] bg-white/60 backdrop-blur-md">
+            {/* Mood chips — sticky on mobile under tabs, regular on desktop */}
+            <div
+                className="border-b border-black/[0.06] bg-white/85 backdrop-blur-md lg:static lg:bg-white/60 sticky z-10"
+                style={{ top: "calc(var(--mobile-topbar-h) + var(--safe-top) + 44px)" }}
+            >
                 <div className="flex gap-1.5 px-3 lg:px-5 py-2.5 overflow-x-auto scrollbar-hide">
                     <button
                         onClick={() => setMood("")}
@@ -267,8 +285,7 @@ export default function Feed() {
             )}
 
             <StoriesBar />
-            <div className="px-4 lg:px-5">
-            </div>
+            <MobileComposePill />
             <MobileDiscoverStrip />
             <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} />
 

@@ -508,3 +508,13 @@ agent_communication:
           - DesktopTopBar component still exists but is now hidden everywhere.
         NO backend changes. Mobile (MobileTopBar + MobileBottomNav) preserved.
         DO NOT auto-test (UI cosmetic change; user has not requested testing).
+
+    - agent: "main"
+      message: |
+        UI ONLY (frontend): SSS-tier redesign extended to mobile.
+          - New `components/MobileHomeHero.js` — mobile-only personalized greeting strip (avatar + live dot + "Bom dia, {firstName} 👋" + refresh) with inline Recente/Top sort pills (data-testid: mobile-sort-recent / mobile-sort-top, mobile-feed-refresh).
+          - New `components/MobileComposePill.js` — mobile-only inline compose entry that opens the existing modal Composer via `openCompose` from outlet ctx (data-testid: mobile-compose-pill).
+          - `pages/Feed.js` mobile path now: MobileHomeHero -> sticky tabs (top=topbar+safe) -> sticky mood chips (top=topbar+safe+44px) -> StoriesBar -> MobileComposePill -> MobileDiscoverStrip -> posts. Composer inline stays `hidden lg:block` (modal only on mobile).
+          - `MobileTopBar`: added subtle coral live pulse dot next to "vermillion" logo.
+          - No backend changes. Desktop layout unchanged.
+        DO NOT auto-test (UI cosmetic change; user has not requested testing).
