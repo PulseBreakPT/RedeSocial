@@ -5,18 +5,17 @@ import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
-import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X, Sparkles, RotateCw } from "lucide-react";
-import { MOOD_OPTIONS } from "../lib/portuguese";
+import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { toast } from "sonner";
 
 const TABS = [
-    { key: "posts", label: "Posts", icon: Hash },
+    { key: "posts", label: "Posts", icon: MessageSquare },
     { key: "pessoas", label: "Pessoas", icon: Users },
     { key: "tags", label: "Tags", icon: Hash },
     { key: "comunidades", label: "Comunidades", icon: Layers },
-    { key: "cidades", label: "Cidades 🇵🇹", icon: MapPin },
+    { key: "cidades", label: "Cidades", icon: MapPin },
 ];
 
 export default function Explore() {
@@ -150,14 +149,7 @@ export default function Explore() {
                     })}
                 </div>
                 {tab === "posts" && (
-                    <div className="flex gap-1.5 px-3 lg:px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-                        <button onClick={() => setMood("")} className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-medium ${mood === "" ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>Todos</button>
-                        {MOOD_OPTIONS.map((m) => (
-                            <button key={m.key} onClick={() => setMood(m.key)} data-testid={`explore-mood-${m.key}`} className={`shrink-0 inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium ${mood === m.key ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"}`}>
-                                <span>{m.emoji}</span> {m.label}
-                            </button>
-                        ))}
-                    </div>
+                    <div className="px-3 lg:px-4 pb-2.5" />
                 )}
             </PageHeader>
 
@@ -192,8 +184,7 @@ export default function Explore() {
                                         </div>
                                         <div className="text-[10.5px] text-black/50 truncate font-mono">
                                             @{u.username}{u.reason ? ` · ${u.reason}` : ""}
-                                        </div>
-                                        <button
+                                        </div>                                        <button
                                             onClick={(e) => handleSuggestionFollow(e, u.username)}
                                             data-testid={`explore-suggestion-follow-${u.username}`}
                                             className="mt-3 w-full btn-obsidian !py-1.5 !text-[11.5px]"
@@ -218,7 +209,7 @@ export default function Explore() {
                         <Avatar user={u} size={44} />
                         <Link to={`/u/${u.username}`} className="flex-1 min-w-0">
                             <div className="font-medium text-[14px] truncate">{u.display_name || u.username}</div>
-                            <div className="text-[12px] text-black/55 truncate">@{u.username} · <span className="text-black/45">{u.reason}</span></div>
+                            <div className="text-[12px] text-black/55 truncate">@{u.username}{u.reason ? <> · <span className="text-black/45">{u.reason}</span></> : null}</div>
                         </Link>
                         <button
                             onClick={() => followUser(u.username)}

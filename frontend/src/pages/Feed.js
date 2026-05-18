@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
-import { Composer } from "../components/Composer";
 import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
 import { MobileHomeHero } from "../components/MobileHomeHero";
-import { MobileComposePill } from "../components/MobileComposePill";
 import { PostSkeletonList } from "../components/Skeleton";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -176,6 +174,9 @@ export default function Feed() {
                 firstName={firstName}
             />
 
+            {/* Stories — right under the greeting, on both desktop & mobile */}
+            <StoriesBar />
+
             {/* Mobile-only tabs — sticky under MobileTopBar */}
             <div
                 className="lg:hidden sticky z-20 glass border-b border-black/[0.06]"
@@ -216,9 +217,7 @@ export default function Feed() {
                 </div>
             )}
 
-            <StoriesBar />
-            <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} />
-            <MobileComposePill />
+            {/* Inline composer removed — publishing happens via the "+" button (mobile bottom nav / desktop "Publicar"). */}
 
             <div className="px-4 lg:px-5 pt-3">
                 <SmartTodayBanner />

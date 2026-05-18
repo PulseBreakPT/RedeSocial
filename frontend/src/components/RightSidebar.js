@@ -7,7 +7,6 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
 import { Spinner } from "./Spinner";
 import { TrendingPulse } from "./TrendingPulse";
-import { Thermometer } from "./Thermometer";
 import { useClickOutside } from "../hooks/useClickOutside";
 
 export function RightSidebar() {
@@ -174,13 +173,6 @@ export function RightSidebar() {
                                     <div className="font-heading text-[15px] font-semibold tracking-tight text-black group-hover:text-black/70 truncate transition-colors flex items-center gap-2">
                                         <span>#{t.tag}</span>
                                         <TrendingPulse tag={t.tag} width={48} height={16} />
-                                        {t.temperature && (
-                                            <Thermometer
-                                                temperature={t.temperature}
-                                                size="xs"
-                                                testid={`thermometer-tag-${t.tag}`}
-                                            />
-                                        )}
                                     </div>
                                     <div className="text-[11px] tracking-tight text-black/45 mt-0.5">
                                         {t.count} publicações

@@ -29,6 +29,7 @@ import { PostPoll } from "./PostPoll";
 import { PostReactions } from "./PostReactions";
 import { EditHistoryButton } from "./EditHistoryModal";
 import { ReasonChip } from "./ReasonChip";
+import { ThermometerFetch } from "./ThermometerFetch";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { toast } from "sonner";
@@ -215,6 +216,13 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             <span className="font-mono text-[12px] text-black/45 truncate">@{post.author?.username}</span>
                             <span className="text-black/20">·</span>
                             <span className="font-mono text-[12px] text-black/45" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
+                            <ThermometerFetch
+                                kind="post"
+                                value={post.id}
+                                range="24h"
+                                size="xs"
+                                testid={`thermometer-post-${post.id}`}
+                            />
                             {editedAt && (
                                 <span className="font-mono text-[10px] text-black/45 inline-flex items-center gap-0.5" title={`Editado em ${fullTime(editedAt)}`}>
                                     <Pencil size={9} strokeWidth={1.6} /> editado

@@ -4,7 +4,6 @@ import { TrendingUp, Hash, MapPin, Users, Layers, Sparkles, Flame } from "lucide
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
-import { Thermometer } from "../components/Thermometer";
 
 const RANGES = [
     { key: "1h", label: "1h" },
@@ -179,15 +178,6 @@ function HashtagsList({ items }) {
                             <Hash size={15} strokeWidth={1.5} className="text-black/45" />
                             {t.tag}
                             {t.is_city && <MapPin size={13} strokeWidth={1.6} className="text-black/45" />}
-                            {t.temperature && (
-                                <Thermometer
-                                    temperature={t.temperature}
-                                    size="sm"
-                                    showLabel
-                                    testid={`thermometer-trending-${t.tag}`}
-                                    className="ml-1"
-                                />
-                            )}
                         </div>
                         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/45 mt-1 flex items-center gap-2">
                             {t.count} {t.count === 1 ? "publicação" : "publicações"}
@@ -289,16 +279,7 @@ function CidadesList({ items }) {
                         <MapPin size={16} strokeWidth={1.6} className="text-rose-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="font-display text-[18px] truncate flex items-center gap-1.5">
-                            {c.city}
-                            {c.temperature && (
-                                <Thermometer
-                                    temperature={c.temperature}
-                                    size="xs"
-                                    testid={`thermometer-city-${c.city}`}
-                                />
-                            )}
-                        </div>
+                        <div className="font-display text-[18px] truncate">{c.city}</div>
                         <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/45 mt-1 flex items-center gap-2">
                             {c.count} posts
                             <VelocityPill value={c.velocity} />

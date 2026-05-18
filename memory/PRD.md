@@ -1,6 +1,6 @@
 # Vermillion — Product Requirements (Living)
 
-> Última atualização: 18 Fev 2026
+> Última atualização: 18 Fev 2026 (rev 2)
 
 ## Visão
 "A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
@@ -92,11 +92,17 @@ hashtag, cidade, mood, post ou conversa — com **5 estados nomeados** e score
 **Frontend:**
 - `<Thermometer />` (componente puro) — variantes `chip`/`inline`/`dot`, tamanhos `xs`/`sm`/`md`. Pulse subtil CSS (`anim-pulse-soft`) em estados quentes (em_brasa/a_ferver), respeita `prefers-reduced-motion`.
 - `<ThermometerFetch />` (wrapper) — cache em memória partilhado (TTL 60s) + de-dup de in-flight requests para evitar fan-out em listas grandes.
-- Integrações subtis (sem novos dashboards):
-  - `RightSidebar` → chip xs ao lado de cada hashtag em "Tendências"
-  - `TagPage` → chip sm com label no header
-  - `Trending` → chip sm com label em hashtags; chip xs em cidades
+- **Apenas em posts (rev 2):** o chip aparece exclusivamente no header de cada `PostCard`, ao lado do timestamp. Trending, RightSidebar, TagPage e Cidades já não mostram chip de temperatura (decisão UX: o termómetro é uma assinatura *do post*, não de listas).
 - 25 testes E2E em `/app/backend/tests/test_thermometer.py` (pure-math + endpoint + legacy-compat + error paths).
+
+### Sprint 5.1 — UX cleanup (18 Fev 2026 rev 2)
+Polimentos pedidos pelo utilizador para reduzir ruído visual:
+- Removida a fila de chips de moods (`Todos / Saudade / Tasca / …`) em `/explore` — o filtro mood agora vive só por deep-link.
+- Tab "Posts" em `/explore` passou a usar ícone `MessageSquare` (antes era `Hash`, duplicado com a tab "Tags").
+- Tab "Cidades" perdeu o emoji 🇵🇹 do label.
+- Backend: campo `reason` das sugestões de pessoas já não devolve `"popular"` — devolve vazio quando não há mutuais e o utilizador não é novo.
+- Stories agora aparecem imediatamente abaixo da greeting ("Bom dia/Boa noite, X"), seguidas pelos tabs de feed.
+- Removido o composer inline (`<Composer />`) da home — publicação acontece exclusivamente via o botão "Publicar" (desktop) e o botão central "+" (mobile bottom nav).
 
 ## Backlog Prioritizado
 

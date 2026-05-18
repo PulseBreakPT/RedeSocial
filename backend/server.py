@@ -1604,7 +1604,7 @@ async def user_suggestions(user=Depends(get_current_user)):
         d["mutual_count"] = mutual
         d["reason"] = (
             f"{mutual} em comum" if mutual > 0
-            else ("popular" if len(c.get("followers", [])) >= 3 else "novo")
+            else ("novo" if len(c.get("followers", [])) < 3 else "")
         )
         out.append(d)
     return out
@@ -4855,7 +4855,7 @@ async def explore_people(viewer=Depends(get_current_user)):
         d["mutual_count"] = mutual
         d["reason"] = (
             f"{mutual} em comum" if mutual > 0
-            else ("popular" if len(c.get("followers", [])) >= 3 else "novo")
+            else ("novo" if len(c.get("followers", [])) < 3 else "")
         )
         out.append(d)
     return out
