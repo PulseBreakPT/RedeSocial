@@ -23,14 +23,14 @@ export function StoryHighlights({ username, isSelf }) {
 
     if (items === null) {
         return (
-            <div className="px-4 lg:px-6 mt-4" data-testid="story-highlights-loading">
+            <div className="px-3 sm:px-4 lg:px-6 mt-4" data-testid="story-highlights-loading">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-black/45">Destaques</h3>
                 </div>
-                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1">
                     {[0, 1, 2, 3].map((i) => (
                         <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-                            <div className="w-[72px] h-[72px] rounded-full bg-black/[0.06] sv-skel" />
+                            <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full bg-black/[0.06] sv-skel" />
                             <div className="w-12 h-2 rounded bg-black/[0.06] sv-skel" />
                         </div>
                     ))}
@@ -41,7 +41,7 @@ export function StoryHighlights({ username, isSelf }) {
     if (!isSelf && items.length === 0) return null;
 
     return (
-        <div className="px-4 lg:px-6 mt-4" data-testid="story-highlights">
+        <div className="px-3 sm:px-4 lg:px-6 mt-4" data-testid="story-highlights">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-black/45">Destaques</h3>
                 {isSelf && items.length > 0 && (
@@ -50,14 +50,14 @@ export function StoryHighlights({ username, isSelf }) {
                     </button>
                 )}
             </div>
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1">
                 {isSelf && items.length === 0 && (
                     <button
                         onClick={() => setCreator(true)}
                         data-testid="highlight-create-empty"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
+                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
                             <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
@@ -72,7 +72,7 @@ export function StoryHighlights({ username, isSelf }) {
                         data-testid="highlight-create"
                         className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
                     >
-                        <div className="w-[72px] h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
+                        <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
                             <Plus size={18} strokeWidth={1.8} className="text-black/55 group-hover:text-coral" />
                         </div>
                         <span className="text-[10.5px] font-medium tracking-tight text-black/55">Novo</span>
@@ -107,7 +107,7 @@ function HighlightThumb({ h, onClick }) {
             data-testid={`highlight-${h.id}`}
             className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink"
         >
-            <div className="w-[72px] h-[72px] rounded-full p-[2.5px] hl-ring group-hover:scale-105 transition">
+            <div className="w-[68px] sm:w-[72px] h-[68px] sm:h-[72px] rounded-full p-[2.5px] hl-ring group-hover:scale-105 transition">
                 <div className="w-full h-full rounded-full overflow-hidden bg-white p-[2px]">
                     <div className="w-full h-full rounded-full overflow-hidden grid place-items-center"
                         style={!isImage ? { background: bgCss(cover.background || "coral") } : undefined}>
@@ -228,8 +228,12 @@ function HighlightCreatorModal({ onClose, onCreated }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-sm flex items-end lg:items-center justify-center p-2 lg:p-6" onClick={onClose} data-testid="highlight-creator">
-            <div className="w-full max-w-md lg:rounded-3xl rounded-t-3xl bg-white shadow-2xl max-h-[88vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-sm flex items-end lg:items-center justify-center p-0 lg:p-6" onClick={onClose} data-testid="highlight-creator">
+            <div
+                className="w-full max-w-md lg:rounded-3xl rounded-t-3xl bg-white shadow-2xl flex flex-col overflow-hidden"
+                style={{ maxHeight: "92vh", paddingBottom: "env(safe-area-inset-bottom)" }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="px-5 pt-4 pb-2 flex items-center gap-2 border-b border-black/[0.06]">
                     <h3 className="flex-1 font-display text-[18px] tracking-tight">Novo destaque</h3>
                     <button onClick={onClose}><X size={16} /></button>

@@ -36,8 +36,12 @@ export function ViewersSheet({ storyId, onClose }) {
             <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full lg:max-w-md lg:rounded-3xl rounded-t-3xl bg-white shadow-2xl max-h-[78%] overflow-hidden flex flex-col"
-                style={{ animation: "slideUp 0.22s ease-out" }}
+                className="relative w-full lg:max-w-md lg:rounded-3xl rounded-t-3xl bg-white shadow-2xl overflow-hidden flex flex-col"
+                style={{
+                    maxHeight: "78%",
+                    animation: "slideUp 0.22s ease-out",
+                    paddingBottom: "env(safe-area-inset-bottom)",
+                }}
             >
                 {/* Header com tabs */}
                 <div className="px-5 pt-4 pb-3 border-b border-black/[0.06]">

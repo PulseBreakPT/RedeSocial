@@ -256,9 +256,10 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         <div
             className="fixed inset-0 z-[90] bg-black/95 grid place-items-center select-none sc-fade-in"
             data-testid="story-viewer"
+            style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
             <div
-                className={`sv-shell relative w-full max-w-md h-full lg:h-auto lg:aspect-[9/16] bg-black lg:rounded-3xl overflow-hidden border border-white/10 shadow-[0_40px_100px_-10px_rgba(0,0,0,0.6)] ${dragY > 0 ? "is-dragging" : ""}`}
+                className={`sv-shell relative w-full max-w-md h-full sm:h-auto sm:aspect-[9/16] sm:max-h-[92vh] bg-black sm:rounded-3xl overflow-hidden border border-white/10 shadow-[0_40px_100px_-10px_rgba(0,0,0,0.6)] ${dragY > 0 ? "is-dragging" : ""}`}
                 style={shellStyle}
                 onPointerDown={onShellPointerDown}
                 onPointerMove={onShellPointerMove}
@@ -266,7 +267,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                 onPointerCancel={onShellPointerUp}
             >
                 {/* Progress bars */}
-                <div className="absolute top-0 left-0 right-0 flex gap-1 p-3 z-40">
+                <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))] z-40">
                     {group.stories.map((_, i) => (
                         <div key={i} className="flex-1 h-[3px] sv-progress-bar rounded-full overflow-hidden">
                             <div
@@ -281,7 +282,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                 </div>
 
                 {/* Header */}
-                <div className="absolute top-7 left-3 right-3 flex items-center gap-2.5 z-40" data-no-drag>
+                <div className="absolute top-[max(20px,calc(env(safe-area-inset-top)+12px))] left-3 right-3 flex items-center gap-2.5 z-40" data-no-drag>
                     <div className="sv-ring">
                         <div className="bg-black rounded-full p-[2px]">
                             <Avatar user={group.author} size={36} />
@@ -406,13 +407,13 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
 
                 {/* Paused indicator */}
                 {(paused || replyFocus) && (
-                    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 sv-paused-pill px-3 py-1 rounded-full bg-black/70 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 pointer-events-none">
+                    <div className="absolute top-[max(72px,calc(env(safe-area-inset-top)+60px))] left-1/2 -translate-x-1/2 z-40 sv-paused-pill px-3 py-1 rounded-full bg-black/70 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 pointer-events-none">
                         <Pause size={10} strokeWidth={2.6} /> em pausa
                     </div>
                 )}
 
                 {/* Bottom actions */}
-                <div className="absolute bottom-0 left-0 right-0 z-40 px-3 pb-4 pt-12" data-no-drag>
+                <div className="absolute bottom-0 left-0 right-0 z-40 px-3 pt-12 pb-[max(16px,env(safe-area-inset-bottom))]" data-no-drag>
                     {/* Quick reactions row */}
                     {showReactions && story.allow_reactions && !isMine && (
                         <div className="mb-2 flex justify-center gap-1.5 sv-react-pop" data-testid="story-reactions-bar">
@@ -505,7 +506,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
 
                 {/* More menu */}
                 {moreOpen && (
-                    <div className="absolute top-16 right-3 z-50 w-60 bg-black/95 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl py-1 text-white font-mono text-[12px] sc-toolbar-in" data-testid="story-more-menu" data-no-drag onClick={(e) => e.stopPropagation()}>
+                    <div className="absolute top-[max(60px,calc(env(safe-area-inset-top)+48px))] right-3 z-50 w-60 bg-black/95 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl py-1 text-white font-mono text-[12px] sc-toolbar-in" data-testid="story-more-menu" data-no-drag onClick={(e) => e.stopPropagation()}>
                         {!isMine && (
                             <button onClick={toggleStoriesMute} className="w-full px-4 py-2.5 text-left hover:bg-white/10 flex items-center gap-2.5">
                                 <BellOff size={13} strokeWidth={2} />

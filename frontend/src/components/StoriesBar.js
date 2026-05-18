@@ -38,22 +38,22 @@ export function StoriesBar() {
     const openAt = (gi) => setViewer({ gi, si: 0 });
 
     return (
-        <div className="hairline-b px-4 py-5 overflow-x-auto scroll-smooth no-scrollbar snap-x-stories" data-testid="stories-bar">
-            <div className="flex gap-5 items-start">
+        <div className="hairline-b px-3 sm:px-4 py-4 sm:py-5 overflow-x-auto scroll-smooth no-scrollbar snap-x-stories" data-testid="stories-bar">
+            <div className="flex gap-4 sm:gap-5 items-start">
                 <button
                     onClick={() => setComposerOpen(true)}
                     data-testid="add-story-btn"
                     className="flex flex-col items-center gap-2 group flex-shrink-0 tap-shrink snap-start-x"
                 >
                     <div className="relative">
-                        <div className="w-[82px] h-[82px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
-                            <Avatar user={user} size={68} />
+                        <div className="w-[72px] sm:w-[82px] h-[72px] sm:h-[82px] rounded-full border-2 border-dashed border-black/15 grid place-items-center group-hover:border-coral transition">
+                            <Avatar user={user} size={60} />
                         </div>
                         <div className="absolute -bottom-0.5 -right-0.5 rounded-full w-7 h-7 grid place-items-center border-[3px] border-white shadow-md bg-gradient-to-br from-coral to-coral-deep text-white">
                             <Plus size={14} strokeWidth={2.6} />
                         </div>
                     </div>
-                    <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[82px] truncate">
+                    <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[72px] sm:max-w-[82px] truncate">
                         {myGroup ? "Adicionar" : "O teu story"}
                     </span>
                 </button>
@@ -62,7 +62,7 @@ export function StoriesBar() {
                     <>
                         {[0, 1, 2, 3].map((i) => (
                             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-                                <div className="w-[82px] h-[82px] rounded-full bg-black/[0.06] sv-skel" />
+                                <div className="w-[68px] sm:w-[78px] h-[68px] sm:h-[78px] rounded-full bg-black/[0.06] sv-skel" />
                                 <div className="w-12 h-2 rounded bg-black/[0.06] sv-skel" />
                             </div>
                         ))}
@@ -109,10 +109,10 @@ function StoryThumb({ group, label, onClick }) {
         >
             <div className={`sv-ring ${unseen ? "" : "is-seen"}`}>
                 <div className="p-[2.5px] rounded-full bg-white">
-                    <Avatar user={group.author} size={68} />
+                    <Avatar user={group.author} size={62} />
                 </div>
             </div>
-            <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[82px] truncate">
+            <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[72px] sm:max-w-[82px] truncate">
                 {label}
             </span>
         </button>
