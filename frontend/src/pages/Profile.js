@@ -15,7 +15,6 @@ import { IdentityCard } from "./profile/IdentityCard";
 import { ShareModal } from "./profile/ShareModal";
 import { MobileActionBar } from "./profile/MobileActionBar";
 import { ProfileTabBar } from "./profile/ProfileTabBar";
-import { ProfileSummaryCards } from "./profile/ProfileSummaryCards";
 import { HeatmapCompactCard } from "./profile/HeatmapCompactCard";
 import { AboutTabSections } from "./profile/AboutTabSections";
 import { PainelPessoalDrawer } from "./profile/PainelPessoalDrawer";
@@ -226,12 +225,6 @@ export default function Profile() {
                     {!profile.is_self && (
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
                     )}
-
-                    {/* Atalhos da conta (apenas no perfil do próprio) */}
-                    <ProfileSummaryCards
-                        profile={profile}
-                        onOpenPainel={onOpenPainel}
-                    />
 
                     {/* Compact heatmap with link to full inside drawer */}
                     {heatmap?.length > 0 && (

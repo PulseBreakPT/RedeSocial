@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     X, Bookmark, FileText, Clock, Eye, Settings, LogOut,
-    ChevronRight, Activity as ActivityIcon,
+    ChevronRight, Activity as ActivityIcon, Users as UsersIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { StatsCard } from "../../components/StatsCard";
@@ -12,11 +12,13 @@ import { RhythmPanel } from "./RhythmPanel";
 import { PresencePicker } from "../../components/PresencePicker";
 import { useEscapeKey } from "../../hooks/useClickOutside";
 
-const contentCards = [
-    { to: "/bookmarks", label: "Guardados", icon: Bookmark, hint: "Posts marcados" },
-    { to: "/drafts", label: "Rascunhos", icon: FileText, hint: "Textos por publicar" },
-    { to: "/scheduled", label: "Agendados", icon: Clock, hint: "Publicações futuras" },
-    { to: "/visitors", label: "Visitas", icon: Eye, hint: "Quem te viu o perfil" },
+const shortcutCards = [
+    { to: "/communities", label: "Comunidades", icon: UsersIcon, hint: "Onde te juntas" },
+    { to: "/bookmarks",   label: "Guardados",   icon: Bookmark,  hint: "Posts marcados" },
+    { to: "/drafts",      label: "Rascunhos",   icon: FileText,  hint: "Textos por publicar" },
+    { to: "/scheduled",   label: "Agendados",   icon: Clock,     hint: "Publicações futuras" },
+    { to: "/visitors",    label: "Visitas",     icon: Eye,       hint: "Quem te viu o perfil" },
+    { to: "/settings",    label: "Definições",  icon: Settings,  hint: "Conta · Privacidade · Aparência" },
 ];
 
 function QuickCard({ to, label, icon: Icon, hint, onClick }) {
@@ -121,11 +123,11 @@ export function PainelPessoalDrawer({ open, onClose, profile, stats, heatmap, fi
                 </div>
 
                 <div className="px-5 py-5 space-y-7">
-                    {/* O meu conteúdo */}
+                    {/* Atalhos (unifica o antigo "A tua área" + "O meu conteúdo" + "Definições") */}
                     <section>
-                        <SectionTitle icon={Bookmark} label="O meu conteúdo" />
+                        <SectionTitle icon={Bookmark} label="Atalhos" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {contentCards.map((c) => (
+                            {shortcutCards.map((c) => (
                                 <QuickCard key={c.to} {...c} onClick={handleLinkClick} />
                             ))}
                         </div>
@@ -156,51 +158,20 @@ export function PainelPessoalDrawer({ open, onClose, profile, stats, heatmap, fi
                         </section>
                     )}
 
-                    {/* Definições + Logout */}
-                    <section>
-                        <SectionTitle icon={Settings} label="Conta" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <Link
-                                to="/settings"
-                                onClick={handleLinkClick}
-                                className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-white hairline hover:border-black/15 hover:shadow-[0_8px_22px_-12px_rgba(0,0,0,0.18)] transition-all tap-shrink"
-                                data-testid="painel-settings"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl grid place-items-center bg-black text-white shrink-0">
-                                        <Settings size={18} strokeWidth={1.7} />
-                                    </div>
-                                    <div>
-                                        <div className="font-heading font-semibold text-[14px] tracking-tight text-black leading-tight">Definições</div>
-                                        <div className="text-[11px] text-black/50 leading-tight mt-0.5">Conta · Privacidade · Aparência</div>
-                                    </div>
-                                </div>
-                                <ChevronRight size={15} strokeWidth={1.7} className="text-black/30 group-hover:text-black group-hover:translate-x-0.5 transition" />
-                            </Link>
-                            <button
-                                onClick={() => { close(); logout(); }}
-                                data-testid="painel-logout"
-                                className="group flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-white hairline hover:border-red-soft/40 hover:bg-red-soft/[0.04] transition-all tap-shrink text-left"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl grid place-items-center bg-red-soft/15 text-red-soft shrink-0">
-                                        <LogOut size={18} strokeWidth={1.7} />
-                                    </div>
-                                    <div>
-                                        <div className="font-heading font-semibold text-[14px] tracking-tight text-black leading-tight group-hover:text-red-soft transition">Terminar sessão</div>
-                                        <div className="text-[11px] text-black/50 leading-tight mt-0.5">Sair desta conta</div>
-                                    </div>
-                                </div>
-                                <ChevronRight size={15} strokeWidth={1.7} className="text-black/30 group-hover:text-red-soft group-hover:translate-x-0.5 transition" />
-                            </button>
+                    {/* Footer: terminar sessão (botão discreto) + micro-links legais */}
+                    <div className="pt-2 hairline-t space-y-3">
+                        <button
+                            onClick={() => { close(); logout(); }}
+                            data-testid="painel-logout"
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[12.5px] font-medium text-black/55 hover:text-red-soft hover:bg-red-soft/5 transition tap-shrink"
+                        >
+                            <LogOut size={14} strokeWidth={1.7} /> Terminar sessão
+                        </button>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-black/40">
+                            <Link to="/manifesto" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
+                            <Link to="/legal" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
+                            <span className="font-mono text-black/30 ml-auto">© Vermillion</span>
                         </div>
-                    </section>
-
-                    {/* Footer micro */}
-                    <div className="pt-3 hairline-t flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-black/40">
-                        <Link to="/manifesto" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
-                        <Link to="/legal" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
-                        <span className="font-mono text-black/30 ml-auto">© Vermillion</span>
                     </div>
                 </div>
             </aside>
