@@ -1,6 +1,6 @@
 # Vermillion — Product Requirements (Living)
 
-> Última atualização: 18 Fev 2026 (rev 2)
+> Última atualização: 18 Fev 2026 (rev 3 — O Selo Vermillion)
 
 ## Visão
 "A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
@@ -103,6 +103,24 @@ Polimentos pedidos pelo utilizador para reduzir ruído visual:
 - Backend: campo `reason` das sugestões de pessoas já não devolve `"popular"` — devolve vazio quando não há mutuais e o utilizador não é novo.
 - Stories agora aparecem imediatamente abaixo da greeting ("Bom dia/Boa noite, X"), seguidas pelos tabs de feed.
 - Removido o composer inline (`<Composer />`) da home — publicação acontece exclusivamente via o botão "Publicar" (desktop) e o botão central "+" (mobile bottom nav).
+
+### O Selo Vermillion (Fev 2026 — rev 3)
+Detalhe inconfundível e exclusivo da casa, criado a pedido do utilizador ("algo que só se vê nesta aplicação e não se vê noutra qualquer aplicação").
+- Novo componente `/app/frontend/src/components/VermillionSeal.js` — SVG assinatura cursiva com `pathLength="1"` (normaliza `stroke-dasharray`) que se "escreve sozinha" ao entrar no viewport via `IntersectionObserver`.
+- Sequência cinematográfica (~3,3s, single-shot):
+  1. Stroke flui (2200ms, `cubic-bezier(.65,0,.35,1)`)
+  2. Pontos dos i's caem como tinta (240ms cada, spring-back) — como se o autor voltasse atrás
+  3. Selo coral em diamante carimba (460ms, spring overshoot + ligeira rotação de carimbo)
+  4. Halo coral expande e desaparece (900ms)
+  5. Legenda "vermillion · {ano} · feito à mão" surge em mono caps (italic + coral em "feito à mão")
+- Tons: `ink` (preto, fundos claros) e `light` (branco, hero escuro do Login/Register).
+- Tamanhos: `sm` / `md` / `lg`.
+- Respeita totalmente `prefers-reduced-motion` (estado final estático).
+- Substituiu os rodapés `© vermillion · {ano}` em:
+  - `components/RightSidebar.js` (tom ink, size sm — feed e páginas internas)
+  - `pages/Login.js` (tom light, size md — hero esquerdo do login)
+  - `pages/Register.js` (tom light, size md — hero esquerdo do registo)
+- Animação só dispara quando o selo está visível (threshold 0.35) e nunca repete — economia de CPU e dramatismo de "primeira vez".
 
 ## Backlog Prioritizado
 

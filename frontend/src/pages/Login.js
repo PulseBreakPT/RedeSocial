@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { VermillionSeal } from "../components/VermillionSeal";
 
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
 // Frames the "welcome back" moment in saudade (solitary, contemplative).
@@ -61,7 +62,7 @@ export default function Login() {
                     </p>
                 </div>
                 <div className="relative text-[12px] text-white/60 font-medium">
-                    © vermillion · {new Date().getFullYear()}
+                    <VermillionSeal size="md" tone="light" />
                 </div>
             </div>
 

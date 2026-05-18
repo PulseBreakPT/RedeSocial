@@ -4,6 +4,7 @@ import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2, 
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
+import { VermillionSeal } from "../components/VermillionSeal";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
@@ -264,7 +265,7 @@ export default function Register() {
                     </p>
                 </div>
                 <div className="relative text-[12px] text-white/60 font-medium">
-                    © vermillion · {new Date().getFullYear()}
+                    <VermillionSeal size="md" tone="light" />
                 </div>
             </div>
 

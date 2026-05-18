@@ -1105,4 +1105,129 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
     .btn-vermillion:active { transform: scale(0.97); }
+
+    /* ─── O Selo Vermillion ──────────────────────────────────────────
+       O detalhe inconfundível da casa: uma assinatura cursiva que se
+       escreve sozinha, os pontos dos i's caem depois (como se quem
+       escreveu voltasse atrás para os fazer), e o selo coral em
+       diamante carimba no fim, com halo a expandir. Por baixo, a
+       legenda «vermillion · {ano} · feito à mão» surge em mono caps.
+       Só aparece nesta app. */
+    .vermillion-seal {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .vermillion-seal.is-center {
+        align-items: center;
+        text-align: center;
+    }
+    .vermillion-seal svg { overflow: visible; display: block; }
+
+    /* Stroke: comprimento normalizado por pathLength="1" */
+    .vermillion-seal .seal-signature {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        filter: drop-shadow(0 0.5px 0 rgba(0,0,0,0.02));
+    }
+    .vermillion-seal .seal-dot {
+        opacity: 0;
+        transform: scale(0);
+        transform-origin: center;
+        transform-box: fill-box;
+    }
+    .vermillion-seal .seal-stamp {
+        opacity: 0;
+        transform: scale(0.15) rotate(-22deg);
+    }
+    .vermillion-seal .seal-stamp-halo {
+        opacity: 0;
+        transform-origin: 215px 36px;
+        transform-box: fill-box;
+    }
+
+    .vermillion-seal.is-drawing .seal-signature {
+        animation: sealWrite 2200ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    }
+    .vermillion-seal.is-drawing .seal-dot-1 {
+        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation-delay: 1700ms;
+    }
+    .vermillion-seal.is-drawing .seal-dot-2 {
+        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation-delay: 1980ms;
+    }
+    .vermillion-seal.is-drawing .seal-stamp {
+        animation: sealStamp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation-delay: 2260ms;
+    }
+    .vermillion-seal.is-drawing .seal-stamp-halo {
+        animation: sealStampHalo 900ms ease-out forwards;
+        animation-delay: 2620ms;
+    }
+
+    @keyframes sealWrite {
+        to { stroke-dashoffset: 0; }
+    }
+    @keyframes sealDot {
+        0%   { opacity: 0; transform: scale(0); }
+        65%  { opacity: 1; transform: scale(1.45); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes sealStamp {
+        0%   { opacity: 0; transform: scale(0.15) rotate(-22deg); }
+        55%  { opacity: 1; transform: scale(1.18) rotate(3deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes sealStampHalo {
+        0%   { opacity: 0.55; transform: scale(1); }
+        100% { opacity: 0;    transform: scale(2.6); }
+    }
+
+    .vermillion-seal__caption {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin: 0;
+        font-weight: 500;
+        opacity: 0;
+        transform: translateY(3px);
+    }
+    .vermillion-seal.is-drawing .vermillion-seal__caption {
+        animation: sealCaption 620ms ease-out forwards;
+        animation-delay: 2700ms;
+    }
+    .vermillion-seal__caption em {
+        font-style: italic;
+        color: var(--coral-500);
+        font-weight: 600;
+        letter-spacing: 0.10em;
+    }
+    .vermillion-seal[data-tone="light"] .vermillion-seal__caption em {
+        color: #ffb1a3;
+    }
+    @keyframes sealCaption {
+        from { opacity: 0; transform: translateY(3px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .vermillion-seal .seal-signature {
+            stroke-dashoffset: 0;
+            animation: none !important;
+        }
+        .vermillion-seal .seal-dot,
+        .vermillion-seal .seal-stamp,
+        .vermillion-seal .seal-stamp-halo,
+        .vermillion-seal__caption {
+            animation: none !important;
+            opacity: 1;
+            transform: none;
+        }
+        .vermillion-seal .seal-stamp-halo { opacity: 0; }
+    }
 }
