@@ -1,6 +1,6 @@
 # Vermillion — Product Requirements (Living)
 
-> Última atualização: 14 Fev 2026
+> Última atualização: 18 Fev 2026
 
 ## Visão
 "A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
@@ -72,6 +72,31 @@
   - `/drafts` → grid 2-col compacta
   - `/scheduled` → grid 2-col
   - `/visitors` → grid 3-col
+
+### Sprint 5 — Termómetro Social (18 Fev 2026)
+Sistema central reutilizável de energia social. Mostra quão viva está uma
+hashtag, cidade, mood, post ou conversa — com **5 estados nomeados** e score
+0-100. Subtil no UI (chip), matematicamente robusto.
+
+**Backend:**
+- `compute_temperature_score(curr, prev, anchor)` — fórmula:
+  `base = (1 − e^(−curr/anchor)) · 70` + `momentum = clamp(velocity%/4, −15, +30)`
+- `temperature_object()` → `{score, state, label, emoji, velocity, signals, range}`
+- Estados: `frio` (0-19), `morno` (20-39), `quente` (40-59), `em_brasa` (60-79), `a_ferver` (80-100)
+- **Endpoint universal:** `GET /api/temperature/{kind}/{value}?range={1h|24h|7d|30d}`
+  - Kinds suportados: `tag`, `city`, `mood`, `post`, `conversation`
+  - Error paths: 400 (kind/city/mood inválido), 404 (post não existe)
+- **Payload-compat enrichment:** `/api/trending`, `/api/trending/cidades` e `/api/explore/moods` agora incluem campo `temperature` por item, sem quebrar o schema legado.
+- Perfis (anchor + weights) configuráveis por kind em `TEMP_PROFILES`.
+
+**Frontend:**
+- `<Thermometer />` (componente puro) — variantes `chip`/`inline`/`dot`, tamanhos `xs`/`sm`/`md`. Pulse subtil CSS (`anim-pulse-soft`) em estados quentes (em_brasa/a_ferver), respeita `prefers-reduced-motion`.
+- `<ThermometerFetch />` (wrapper) — cache em memória partilhado (TTL 60s) + de-dup de in-flight requests para evitar fan-out em listas grandes.
+- Integrações subtis (sem novos dashboards):
+  - `RightSidebar` → chip xs ao lado de cada hashtag em "Tendências"
+  - `TagPage` → chip sm com label no header
+  - `Trending` → chip sm com label em hashtags; chip xs em cidades
+- 25 testes E2E em `/app/backend/tests/test_thermometer.py` (pure-math + endpoint + legacy-compat + error paths).
 
 ## Backlog Prioritizado
 
