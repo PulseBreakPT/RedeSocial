@@ -7,6 +7,7 @@ import {
 import { Avatar } from "../../components/Avatar";
 import { VerifiedBadge } from "../../components/VerifiedBadge";
 import { RodaButton } from "../../components/RodaButton";
+import { FollowButton } from "../../components/FollowButton";
 import { ProfileMoreMenu } from "./ProfileMoreMenu";
 import { api, toastApiError } from "../../lib/api";
 import { toast } from "sonner";
@@ -28,12 +29,13 @@ export function IdentityCard({
     onFollow, onMessage, onShare, onEditProfile, onOpenFollowers, onOpenFollowing, onOpenMutuals,
     onProfileUpdate,
 }) {
+    // `onFollow` kept in signature for legacy callers; FollowButton drives state via onProfileUpdate now.
+    void onFollow;
     const [fav, setFav] = useState(false);
     const [favLoading, setFavLoading] = useState(false);
     const [quickOpen, setQuickOpen] = useState(false);
     const [quickMsg, setQuickMsg] = useState("");
     const [sending, setSending] = useState(false);
-    const [followHover, setFollowHover] = useState(false);
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-PT", { month: "long", year: "numeric" })
         : "";
@@ -167,30 +169,11 @@ export function IdentityCard({
                                     </div>
                                 )}
                             </div>
-                            {profile.is_following ? (
-                                <button
-                                    onClick={onFollow}
-                                    onMouseEnter={() => setFollowHover(true)}
-                                    onMouseLeave={() => setFollowHover(false)}
-                                    data-testid="follow-profile-btn"
-                                    title="Deixar de seguir"
-                                    className={`px-5 py-2 text-[11px] font-heading font-medium tracking-tight rounded-full transition ${
-                                        followHover
-                                            ? "border border-red-200 bg-red-50 text-red-600"
-                                            : "chip-on !text-white"
-                                    }`}
-                                >
-                                    {followHover ? "Deixar de seguir" : "Seguindo"}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={onFollow}
-                                    data-testid="follow-profile-btn"
-                                    className="btn-obsidian px-5 py-2 text-[12px]"
-                                >
-                                    Seguir
-                                </button>
-                            )}
+                            <FollowButton
+                                profile={profile}
+                                onChange={onProfileUpdate}
+                                size="default"
+                            />
                             <RodaButton targetUsername={profile.username} />
                         </>
                     )}

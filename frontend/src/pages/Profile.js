@@ -315,6 +315,7 @@ export default function Profile() {
                 onMessage={onMessage}
                 onShare={share}
                 onEditProfile={onEditProfile}
+                onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
         </div>
     );

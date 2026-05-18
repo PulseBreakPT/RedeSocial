@@ -602,3 +602,191 @@ agent_communication:
                 - Fixar post: já existia (PostMenu, em posts próprios).
           NÃO fazer auto-test do frontend — só do backend (novo endpoint /mutuals).
 
+
+    - agent: "main"
+      message: |
+        Smart Follow Button (QI extremo) — backend payload extension + new frontend component.
+
+        BACKEND (/app/backend/server.py — get_profile, returns GET /api/users/{username}):
+          Now also includes (already had is_following, is_self):
+            * follows_me      — bool: o `target` segue o `viewer`?
+            * is_blocked      — bool: o viewer bloqueou o target?
+            * is_muted        — bool: viewer silenciou target?
+            * is_notified     — bool: viewer recebe alertas dos posts do target (sino)?
+            * is_favorited    — bool: viewer favoritou o target?
+          Estes campos são derivados das listas já existentes no doc do user
+          (followers, following, blocked, muted_users, notify_users, favorites).
+          Sem novos endpoints — reutiliza /follow, /mute, /notify, /favorite, /block.
+
+          VALIDAR (auto-test backend):
+            1) Login admin → token ok.
+            2) GET /api/users/admin (self) → response.is_self == true, is_following == false,
+               follows_me == false, is_blocked == false.
+            3) GET /api/users/{outro_user} (com token admin) — escolher um user da lista de
+               suggestions — deve devolver os 5 campos novos como bool (true/false).
+               Sem 500, sem KeyError em users sem followers/blocked/etc.
+            4) Sequência fluxo "Seguir → unfollow":
+                a) POST /api/users/{u}/follow → response shape ok.
+                b) GET /api/users/{u} → is_following == true.
+                c) POST /api/users/{u}/follow (toggle) → ok.
+                d) GET /api/users/{u} → is_following == false.
+            5) Sequência "Notify (sino) toggle":
+                a) POST /api/users/{u}/notify → {notify: true}
+                b) GET /api/users/{u} → is_notified == true
+                c) POST /api/users/{u}/notify → {notify: false}
+                d) GET /api/users/{u} → is_notified == false
+            6) Sequência "Mute (silenciar) toggle":
+                a) POST /api/users/{u}/mute → {muted: true}
+                b) GET /api/users/{u} → is_muted == true
+                c) POST /api/users/{u}/mute → {muted: false}
+                d) GET /api/users/{u} → is_muted == false
+            7) Sequência "Favorite toggle" + GET reflete is_favorited.
+            8) Endpoint /api/users/{u}/mutuals (criado anteriormente) continua a funcionar
+               (200 + array; 404 para inexistente; [] para self).
+
+        FRONTEND (UI ONLY — NÃO testar automaticamente):
+          Novo componente: /app/frontend/src/components/FollowButton.js
+            * Renderiza nada se profile.is_self.
+            * Estados visuais (todos com data-testid):
+              - "Seguir"                  → !is_following && !follows_me
+              - "Seguir de volta"         → !is_following && follows_me  (CTA reciprocidade)
+              - "A seguir"                → is_following && !follows_me && !hover
+              - "A seguir · Mútuo"        → is_following && follows_me && !hover
+              - "Deixar de seguir"        → is_following && hover (Twitter pattern)
+              - "Desbloquear"             → is_blocked (substitui tudo)
+            * Mobile (touch): em vez de hover, abre confirmDialog antes de unfollow.
+            * Botão kebab (⋯) à direita aparece SÓ quando is_following, com dropdown:
+              - 🔔 Notificar de novos posts / Deixar de notificar  → /users/{u}/notify
+              - 🔕 Silenciar publicações / Repor publicações       → /users/{u}/mute
+              - ⭐ Adicionar aos favoritos / Remover dos favoritos → /users/{u}/favorite
+              - 🗙 Deixar de seguir (vermelho, com confirm em touch)
+            * UI otimista com rollback em falha, debounce (350ms), toast "Desfazer" no unfollow.
+            * Haptic feedback (navigator.vibrate) em mobile.
+            * 2 tamanhos: "default" (IdentityCard desktop), "compact" (MobileActionBar).
+            * a11y: aria-pressed, aria-haspopup, aria-expanded, Esc fecha menu, click-outside fecha.
+          Integração:
+            * pages/profile/IdentityCard.js — botão inline antigo removido; substituído por
+              <FollowButton profile onChange={onProfileUpdate} size="default" />.
+            * pages/profile/MobileActionBar.js — botão inline antigo removido; agora usa
+              <FollowButton ... size="compact" /> com className para preencher flex-1.
+            * pages/Profile.js — passa onProfileUpdate à MobileActionBar.
+
+          NÃO testar frontend (UI). Testar apenas o que está sob "VALIDAR (auto-test backend)" acima.
+
+backend:
+  - task: "Smart Follow Button — get_profile extended payload (is_following, follows_me, is_blocked, is_muted, is_notified, is_favorited)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Extended GET /api/users/{username} (get_profile function at line ~1505) to return 5 new derived boolean fields:
+              * follows_me — bool: does the target follow the viewer?
+              * is_blocked — bool: has viewer blocked target?
+              * is_muted — bool: has viewer muted target?
+              * is_notified — bool: does viewer receive alerts for target's posts (bell)?
+              * is_favorited — bool: has viewer favorited target?
+            These fields are derived from existing user document lists (followers, following, blocked, muted_users, notify_users, favorites).
+            No new endpoints created — reuses existing /follow, /mute, /notify, /favorite, /block endpoints.
+            All fields present for both self-profile and other users' profiles.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ ALL 26 TESTS PASSED — Smart Follow Button backend validation complete
+            
+            Comprehensive test suite executed with real API calls:
+            
+            ✓ Test 1 - Authentication (1/1 passed):
+              - POST /api/auth/login → 200 OK, received access_token
+            
+            ✓ Test 2 - Self Profile GET /api/users/admin (1/1 passed):
+              - All 7 fields present as bool with correct values
+              - is_self=true, is_following=false, follows_me=false, is_blocked=false, is_muted=false, is_notified=false, is_favorited=false
+            
+            ✓ Test 3 - Discover Other User (1/1 passed):
+              - Found user via GET /api/users/suggestions: filipa.azul
+            
+            ✓ Test 4 - Other User Profile GET /api/users/filipa.azul (1/1 passed):
+              - All 7 fields present as bool
+              - is_self=false, all other fields present
+            
+            ✓ Test 5 - Follow Toggle + Reflection (4/4 passed):
+              - POST /api/users/filipa.azul/follow → 200 OK
+              - GET /api/users/filipa.azul → is_following == true ✓
+              - POST /api/users/filipa.azul/follow (toggle off) → 200 OK
+              - GET /api/users/filipa.azul → is_following == false ✓
+            
+            ✓ Test 6 - Notify Toggle + Reflection (4/4 passed):
+              - POST /api/users/filipa.azul/notify → response.notify == true ✓
+              - GET /api/users/filipa.azul → is_notified == true ✓
+              - POST /api/users/filipa.azul/notify → response.notify == false ✓
+              - GET /api/users/filipa.azul → is_notified == false ✓
+            
+            ✓ Test 7 - Mute Toggle + Reflection (4/4 passed):
+              - POST /api/users/filipa.azul/mute → response.muted == true ✓
+              - GET /api/users/filipa.azul → is_muted == true ✓
+              - POST /api/users/filipa.azul/mute → response.muted == false ✓
+              - GET /api/users/filipa.azul → is_muted == false ✓
+            
+            ✓ Test 8 - Favorite Toggle + Reflection (4/4 passed):
+              - POST /api/users/filipa.azul/favorite → response.favorited == true ✓
+              - GET /api/users/filipa.azul → is_favorited == true ✓
+              - POST /api/users/filipa.azul/favorite → response.favorited == false ✓
+              - GET /api/users/filipa.azul → is_favorited == false ✓
+            
+            ✓ Test 9 - Mutuals Endpoints (4/4 passed):
+              - GET /api/users/admin/mutuals (self) → 200 + array [] ✓
+              - GET /api/users/filipa.azul/mutuals → 200 + array (may be empty) ✓
+              - GET /api/users/utilizador_que_nao_existe_zzz/mutuals → 404 ✓
+              - GET /api/users/admin/mutual (singular legacy) → 200 + {count, users} ✓
+            
+            ✓ Test 10 - No Regressions (2/2 passed):
+              - GET /api/users/admin/stats → continues to work (no 500) ✓
+              - GET /api/users/admin → old fields still present (posts_count, likes_received, can_view, is_self, is_following) ✓
+            
+            All toggle operations correctly reflect in subsequent GET requests.
+            All endpoints return correct status codes and response shapes.
+            No KeyError or 500 errors for users without followers/blocked/etc.
+            Legacy endpoints (stats, mutual singular) continue to work correctly.
+            
+            Backend implementation is COMPLETE and WORKING.
+
+metadata:
+  created_by: "main_agent"
+  version: "2.4"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: |
+        ✅ SMART FOLLOW BUTTON BACKEND VALIDATION COMPLETE — ALL 26 TESTS PASSED
+        
+        Executed comprehensive test suite covering all requirements from the review request:
+        • Authentication working correctly
+        • Self-profile returns all 7 fields as bool with correct values
+        • Other user profiles return all 7 fields as bool
+        • Follow toggle works and reflects correctly in GET requests
+        • Notify toggle works and reflects correctly in GET requests
+        • Mute toggle works and reflects correctly in GET requests
+        • Favorite toggle works and reflects correctly in GET requests
+        • Mutuals endpoints (plural and singular) work correctly
+        • No regressions in stats and profile endpoints
+        
+        All endpoints tested with real API calls using credentials admin@vermillion.app / admin123.
+        Test user discovered via suggestions: filipa.azul
+        
+        No critical issues found. Backend is ready for production.
+        Frontend testing was NOT performed as per instructions (UI only, no auto-test).
+

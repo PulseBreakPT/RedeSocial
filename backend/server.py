@@ -1504,6 +1504,11 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
     posts_n = await db.posts.count_documents({"author_id": user["id"], "repost_of": {"$exists": False}})
     data = public_user(user, {
         "is_following": bool(viewer and viewer["id"] in user.get("followers", [])),
+        "follows_me": bool(viewer and viewer["id"] in user.get("following", [])),
+        "is_blocked": bool(viewer and user["id"] in (viewer.get("blocked") or [])),
+        "is_muted": bool(viewer and user["id"] in (viewer.get("muted_users") or [])),
+        "is_notified": bool(viewer and user["id"] in (viewer.get("notify_users") or [])),
+        "is_favorited": bool(viewer and user["id"] in (viewer.get("favorites") or [])),
         "is_self": bool(viewer and viewer["id"] == user["id"]),
         "posts_count": posts_n,
         "likes_received": likes_n,

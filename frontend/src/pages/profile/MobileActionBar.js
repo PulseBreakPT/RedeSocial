@@ -1,7 +1,10 @@
 import { MessageCircle, Share2, Edit3 } from "lucide-react";
 import { RodaButton } from "../../components/RodaButton";
+import { FollowButton } from "../../components/FollowButton";
 
-export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditProfile }) {
+export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditProfile, onProfileUpdate }) {
+    // legacy onFollow kept for callers; FollowButton drives state via onProfileUpdate
+    void onFollow;
     return (
         <div
             className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-black/[0.06] px-4 py-3 anim-slide-up"
@@ -36,17 +39,14 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                             <MessageCircle size={16} />
                         </button>
                         <RodaButton targetUsername={profile.username} />
-                        <button
-                            onClick={onFollow}
-                            data-testid="mob-action-follow"
-                            className={`flex-1 py-3 rounded-full text-[12.5px] font-semibold tracking-tight tap-shrink transition ${
-                                profile.is_following
-                                    ? "chip-on !text-white"
-                                    : "btn-obsidian"
-                            }`}
-                        >
-                            {profile.is_following ? "Seguindo" : "Seguir"}
-                        </button>
+                        <div className="flex-1" data-testid="mob-action-follow-wrap">
+                            <FollowButton
+                                profile={profile}
+                                onChange={onProfileUpdate}
+                                size="compact"
+                                className="w-full [&>button:first-child]:flex-1 [&>button:first-child]:justify-center"
+                            />
+                        </div>
                     </>
                 )}
             </div>
