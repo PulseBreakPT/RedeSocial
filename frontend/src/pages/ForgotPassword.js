@@ -57,7 +57,7 @@ export default function ForgotPassword() {
             <div className="max-w-sm w-full relative">
                 <div className="text-center lg:text-left mb-10">
                     <h1 className="font-display text-[36px] leading-none tracking-tight">
-                        <span className="silver-foil">◆</span> vermillion
+                        <span className="silver-foil">◆</span> lusorae
                     </h1>
                 </div>
                 <h2 className="font-display text-[34px] tracking-tight leading-[1.05]">Recuperar acesso</h2>

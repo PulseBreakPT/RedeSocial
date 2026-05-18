@@ -1230,4 +1230,112 @@
         }
         .vermillion-seal .seal-stamp-halo { opacity: 0; }
     }
+
+    /* ─── Selo Pessoal (Identity Card) ─────────────────────────────
+       Preview animado dentro do modal. O SVG é auto-suficiente para
+       exportação a PNG; estas regras só aplicam ao preview em ecrã. */
+    .selo-pessoal-wrap svg.selo-pessoal { width: 100%; height: auto; display: block; }
+    .selo-pessoal.is-animated .selo-pessoal-signature {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: sealWrite 2200ms cubic-bezier(0.65, 0, 0.35, 1) 250ms forwards;
+    }
+    .selo-pessoal.is-animated .selo-pessoal-dot {
+        opacity: 0;
+        transform: scale(0);
+        transform-origin: center;
+        transform-box: fill-box;
+    }
+    .selo-pessoal.is-animated .selo-pessoal-dot-1 {
+        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) 1900ms forwards;
+    }
+    .selo-pessoal.is-animated .selo-pessoal-dot-2 {
+        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) 2180ms forwards;
+    }
+    .selo-pessoal.is-animated .selo-pessoal-stamp {
+        opacity: 0;
+        transform: scale(0.15) rotate(-22deg);
+        transform-origin: center;
+        transform-box: fill-box;
+        animation: sealStamp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 2460ms forwards;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .selo-pessoal.is-animated .selo-pessoal-signature,
+        .selo-pessoal.is-animated .selo-pessoal-dot,
+        .selo-pessoal.is-animated .selo-pessoal-stamp {
+            animation: none !important;
+            opacity: 1;
+            transform: none;
+            stroke-dashoffset: 0;
+        }
+    }
+
+    /* ─── DynamicSlogan ──────────────────────────────────────────────
+       Slogan generativo com efeito de máquina de escrever. Light mode,
+       cursor discreto, sem layout shift (ghost reserva largura). Usado
+       no topo do formulário em Login e Registo. */
+    .dynamic-slogan {
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        font-size: 13px;
+        line-height: 1.45;
+        letter-spacing: -0.005em;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.55);
+        margin: 0;
+        display: inline-flex;
+        align-items: baseline;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+    .dynamic-slogan__prefix {
+        color: rgba(0, 0, 0, 0.55);
+    }
+    .dynamic-slogan__dynamic {
+        position: relative;
+        display: inline-block;
+        color: var(--coral-500);
+        font-weight: 600;
+        font-style: italic;
+        letter-spacing: -0.005em;
+    }
+    .dynamic-slogan__ghost {
+        visibility: hidden;
+        pointer-events: none;
+        white-space: pre;
+        /* approximate space for cursor so width doesn't jitter when it appears */
+        padding-right: 0.18em;
+    }
+    .dynamic-slogan__live {
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: pre;
+        display: inline-flex;
+        align-items: baseline;
+    }
+    .dynamic-slogan__word { white-space: pre; }
+    .dynamic-slogan__suffix {
+        color: rgba(0, 0, 0, 0.55);
+        font-style: normal;
+        font-weight: 500;
+    }
+    .dynamic-slogan__cursor {
+        display: inline-block;
+        width: 1px;
+        margin: 0 1.5px 0 1px;
+        color: rgba(0, 0, 0, 0.45);
+        font-weight: 400;
+        font-style: normal;
+        animation: dynamicSloganCursorBlink 1.05s steps(2, start) infinite;
+        transform: translateY(0.05em);
+    }
+    @keyframes dynamicSloganCursorBlink {
+        50% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .dynamic-slogan__cursor { display: none; }
+        .dynamic-slogan__live { position: static; }
+        .dynamic-slogan__ghost { display: none; }
+    }
 }

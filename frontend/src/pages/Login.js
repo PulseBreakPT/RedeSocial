@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { VermillionSeal } from "../components/VermillionSeal";
+import { DynamicSlogan } from "../components/DynamicSlogan";
 
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
 // Frames the "welcome back" moment in saudade (solitary, contemplative).
@@ -86,16 +87,17 @@ export default function Login() {
                     />
                     <div className="absolute inset-x-0 bottom-5 px-6 text-center">
                         <h1 className="font-display text-[34px] leading-none tracking-tight text-white">
-                            <span className="silver-foil">◆</span> vermillion
+                            <span className="silver-foil">◆</span> lusorae
                         </h1>
                         <p className="text-white/85 font-body text-[13px] mt-2.5">
-                            Liga-te. Partilha o que importa.
+                            A tua cidade tem voz.
                         </p>
                     </div>
                 </div>
 
                 <div className="px-6 sm:px-8 pt-10 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
+                        <DynamicSlogan className="mb-6" testId="login-dynamic-slogan" />
                         <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Entrar na conta</h2>
                     <p className="text-black/55 text-[14px] mt-2">Bem-vindo de volta.</p>
 
@@ -183,6 +185,11 @@ export default function Login() {
                             <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
                             <Link to="/legal/community" className="hover:text-black hover:underline underline-offset-2">Diretrizes</Link>
                         </div>
+                    </div>
+
+                    {/* O Selo (animated brand signature) — visível também no mobile, fechando a página */}
+                    <div className="lg:hidden mt-8 mb-2 flex justify-center">
+                        <VermillionSeal size="sm" tone="ink" align="center" />
                     </div>
                 </div>
                 </div>

@@ -670,7 +670,7 @@ function PrivTab({ prefs, setPref, user }) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `vermillion-${user?.username || "user"}-${Date.now()}.json`;
+            a.download = `lusorae-${user?.username || "user"}-${Date.now()}.json`;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -805,7 +805,7 @@ function LegalTab() {
         <div className="px-4 lg:px-6 py-5 space-y-4 max-w-2xl">
             <p className="type-overline">Documentos legais</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <LegalLinkRow to="/legal/terms" icon={FileText} title="Termos e Condições" desc="O contrato entre ti e o Vermillion." />
+                <LegalLinkRow to="/legal/terms" icon={FileText} title="Termos e Condições" desc="O contrato entre ti e o Lusorae." />
                 <LegalLinkRow to="/legal/privacy" icon={Shield} title="Política de Privacidade" desc="Como tratamos os teus dados (RGPD)." />
                 <LegalLinkRow to="/legal/cookies" icon={Cookie} title="Política de Cookies" desc="Cookies e tecnologias semelhantes." />
                 <LegalLinkRow to="/legal/community" icon={Sparkle} title="Diretrizes da Comunidade" desc="O que é permitido e o que não é." />
@@ -824,8 +824,8 @@ function LegalTab() {
                 <p className="text-[13px] text-black/70 leading-relaxed">
                     Tens direito de acesso, retificação, apagamento, portabilidade, limitação e oposição ao tratamento dos teus dados. Para os exercer, contacta o nosso Encarregado de Proteção de Dados (DPO):
                 </p>
-                <a href="mailto:dpo@vermillion.pt" className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium">
-                    dpo@vermillion.pt
+                <a href="mailto:dpo@lusorae.pt" className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[13px] font-medium">
+                    dpo@lusorae.pt
                 </a>
                 <p className="text-[11px] text-black/50 mt-3 leading-relaxed">
                     Podes ainda apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD) em{" "}
@@ -835,8 +835,8 @@ function LegalTab() {
 
             <div className="hairline-t pt-5 text-[11px] text-black/45 leading-relaxed">
                 <p>
-                    Vermillion © {new Date().getFullYear()}. Operado por{" "}
-                    <span className="font-mono bg-black/[0.04] px-1.5 py-0.5 rounded">[Vermillion, Lda.]</span>,
+                    Lusorae © {new Date().getFullYear()}. Operado por{" "}
+                    <span className="font-mono bg-black/[0.04] px-1.5 py-0.5 rounded">[Lusorae, Lda.]</span>,
                     NIPC <span className="font-mono bg-black/[0.04] px-1.5 py-0.5 rounded">[a indicar]</span>.
                     Sujeito à lei portuguesa e à União Europeia.
                 </p>

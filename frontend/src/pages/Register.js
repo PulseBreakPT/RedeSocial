@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { VermillionSeal } from "../components/VermillionSeal";
+import { DynamicSlogan } from "../components/DynamicSlogan";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
@@ -253,12 +254,12 @@ export default function Register() {
                 <div className="relative">
                     <h1 className="font-display text-[36px] leading-none tracking-tight text-white flex items-baseline gap-2">
                         <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
-                        <span>vermillion</span>
+                        <span>lusorae</span>
                     </h1>
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
-                        Senta-te <span className="silver-foil">à mesa</span>.
+                        A tua cidade tem <span className="silver-foil">voz</span>.
                     </h2>
                     <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
                         Conta criada em 30 segundos. Duas perguntas — e estás dentro.
@@ -289,14 +290,15 @@ export default function Register() {
                     />
                     <div className="absolute inset-x-0 bottom-5 px-6 text-center">
                         <h1 className="font-display text-[32px] leading-none tracking-tight text-white">
-                            <span className="silver-foil">◆</span> vermillion
+                            <span className="silver-foil">◆</span> lusorae
                         </h1>
-                        <p className="text-white/85 font-body text-[13px] mt-2">Senta-te à mesa.</p>
+                        <p className="text-white/85 font-body text-[13px] mt-2">A tua cidade tem voz.</p>
                     </div>
                 </div>
 
                 <div className="px-6 sm:px-8 pt-8 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
+                        <DynamicSlogan className="mb-6" testId="register-dynamic-slogan" />
 
                         {/* Step indicator — 3 steps */}
                         <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
@@ -679,6 +681,11 @@ export default function Register() {
                                 <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
                                 <Link to="/manifesto" className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
                             </div>
+                        </div>
+
+                        {/* O Selo (animated brand signature) — visível também no mobile */}
+                        <div className="lg:hidden mt-8 mb-2 flex justify-center">
+                            <VermillionSeal size="sm" tone="ink" align="center" />
                         </div>
                     </div>
                 </div>

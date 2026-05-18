@@ -45,7 +45,7 @@ export function MobileTopBar({ onOpenChat }) {
                 <Link to="/" className="flex items-center gap-1.5 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
                     <span className="font-display text-[24px] leading-none tracking-tight text-black flex items-baseline gap-1">
                         <span className="silver-foil text-[20px] not-italic translate-y-[1px]">◆</span>
-                        vermillion
+                        lusorae
                     </span>
                     <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-coral-500 animate-pulse" style={{ background: "var(--coral-500)" }} aria-hidden />
                 </Link>

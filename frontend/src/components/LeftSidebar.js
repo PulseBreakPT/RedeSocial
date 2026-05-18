@@ -84,7 +84,7 @@ export function LeftSidebar({ onCompose }) {
                 data-testid="left-sidebar-logo"
             >
                 <span className="silver-foil text-[22px] leading-none">◆</span>
-                <span className="font-display text-[24px] leading-none tracking-tight text-black">vermillion</span>
+                <span className="font-display text-[24px] leading-none tracking-tight text-black">lusorae</span>
             </Link>
 
             {/* Nav */}

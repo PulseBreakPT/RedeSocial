@@ -143,7 +143,7 @@ export function ATardeBanner() {
                         <div className="flex-1 min-w-0">
                             <p className="text-[12.5px] text-black/45 mb-0.5">
                                 @{p.author?.username || "anon"} ·{" "}
-                                {p.author?.city || p.author?.region || "Vermillion"}
+                                {p.author?.city || p.author?.region || "Lusorae"}
                             </p>
                             <p className="text-[13.5px] text-black leading-snug line-clamp-2">
                                 {p.content || "(imagem)"}

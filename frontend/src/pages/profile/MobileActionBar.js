@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { MessageCircle, Share2, Edit3 } from "lucide-react";
 import { RodaButton } from "../../components/RodaButton";
 import { FollowButton } from "../../components/FollowButton";
+import { SeloPessoalModal } from "../../components/SeloPessoalModal";
 
 export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditProfile, onProfileUpdate }) {
     // legacy onFollow kept for callers; FollowButton drives state via onProfileUpdate
     void onFollow;
+    const [seloOpen, setSeloOpen] = useState(false);
     return (
         <div
             className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-black/[0.06] px-4 py-3 anim-slide-up"
@@ -12,6 +15,17 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
         >
             <div className="flex items-center gap-2">
+                <button
+                    onClick={() => setSeloOpen(true)}
+                    data-testid="mob-action-selo"
+                    className="w-11 h-11 grid place-items-center rounded-full border border-[color:var(--coral-500)]/40 bg-[color:var(--coral-500)]/[0.06] text-[color:var(--coral-500)] tap-shrink"
+                    aria-label="Selo pessoal"
+                    title="O selo pessoal"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M 12 3 L 21 12 L 12 21 L 3 12 Z" fill="currentColor" />
+                    </svg>
+                </button>
                 <button
                     onClick={onShare}
                     data-testid="mob-action-share"
@@ -50,6 +64,11 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                     </>
                 )}
             </div>
+            <SeloPessoalModal
+                profile={profile}
+                open={seloOpen}
+                onClose={() => setSeloOpen(false)}
+            />
         </div>
     );
 }

@@ -9,6 +9,7 @@ import { VerifiedBadge } from "../../components/VerifiedBadge";
 import { RodaButton } from "../../components/RodaButton";
 import { FollowButton } from "../../components/FollowButton";
 import { ProfileMoreMenu } from "./ProfileMoreMenu";
+import { SeloPessoalModal } from "../../components/SeloPessoalModal";
 import { api, toastApiError } from "../../lib/api";
 import { toast } from "sonner";
 
@@ -36,6 +37,7 @@ export function IdentityCard({
     const [quickOpen, setQuickOpen] = useState(false);
     const [quickMsg, setQuickMsg] = useState("");
     const [sending, setSending] = useState(false);
+    const [seloOpen, setSeloOpen] = useState(false);
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-PT", { month: "long", year: "numeric" })
         : "";
@@ -101,6 +103,16 @@ export function IdentityCard({
                             <Star size={15} strokeWidth={1.7} fill={fav ? "currentColor" : "none"} />
                         </button>
                     )}
+                    <button
+                        onClick={() => setSeloOpen(true)}
+                        title="Ver o selo pessoal"
+                        data-testid="profile-selo-btn"
+                        className="w-10 h-10 grid place-items-center rounded-full border border-[color:var(--coral-500)]/40 bg-[color:var(--coral-500)]/[0.06] hover:bg-[color:var(--coral-500)]/[0.10] text-[color:var(--coral-500)] transition tap-shrink"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M 12 3 L 21 12 L 12 21 L 3 12 Z" fill="currentColor" />
+                        </svg>
+                    </button>
                     <button
                         onClick={onShare}
                         title="Partilhar perfil"
@@ -315,6 +327,12 @@ export function IdentityCard({
                     </button>
                 </div>
             </div>
+
+            <SeloPessoalModal
+                profile={profile}
+                open={seloOpen}
+                onClose={() => setSeloOpen(false)}
+            />
         </div>
     );
 }

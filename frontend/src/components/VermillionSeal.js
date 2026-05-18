@@ -61,7 +61,7 @@ export function VermillionSeal({
             } ${className}`}
             data-testid="vermillion-seal"
             data-tone={tone}
-            aria-label="vermillion — selo da casa, feito à mão"
+            aria-label="lusorae — selo da casa, feito à mão"
             role="img"
         >
             <svg
@@ -147,7 +147,7 @@ export function VermillionSeal({
                     className="vermillion-seal__caption"
                     style={{ color: captionColor }}
                 >
-                    vermillion · {new Date().getFullYear()} ·{" "}
+                    lusorae · {new Date().getFullYear()} ·{" "}
                     <em>feito à mão</em>
                 </p>
             )}

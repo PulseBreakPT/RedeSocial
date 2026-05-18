@@ -6,6 +6,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { PresencePicker } from "../../components/PresencePicker";
 import { ConnectionIndicator } from "../../components/WebSocketProvider";
+import { VermillionSeal } from "../../components/VermillionSeal";
 
 /**
  * AccountPanel — replaces the old avatar dropdown. Shown inside Profile.js
@@ -129,7 +130,9 @@ export function AccountPanel() {
                 <Link to="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</Link>
                 <Link to="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
                 <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
-                <span className="font-mono text-black/30 ml-auto">© Vermillion</span>
+            </div>
+            <div className="pt-4 flex justify-center">
+                <VermillionSeal size="sm" tone="ink" align="center" />
             </div>
         </section>
     );

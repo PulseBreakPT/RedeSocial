@@ -46,7 +46,7 @@ export function DesktopTopBar({ onCompose }) {
                 <Link to="/" className="flex items-center shrink-0 tap-shrink mr-2" data-testid="desktop-topbar-logo">
                     <h1 className="font-display text-[26px] leading-none tracking-tight text-black flex items-baseline gap-1.5">
                         <span className="silver-foil text-[20px] translate-y-[2px]">◆</span>
-                        <span>vermillion</span>
+                        <span>lusorae</span>
                     </h1>
                 </Link>
 

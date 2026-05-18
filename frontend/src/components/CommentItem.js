@@ -159,7 +159,7 @@ export function CommentItem({
         const url = `${window.location.origin}/post/${postId}#c-${node.id}`;
         try {
             if (navigator.share) {
-                await navigator.share({ url, title: "Comentário Vermillion", text: node.content.slice(0, 80) });
+                await navigator.share({ url, title: "Comentário Lusorae", text: node.content.slice(0, 80) });
             } else {
                 await navigator.clipboard.writeText(url);
                 toast.success("Link do comentário copiado");

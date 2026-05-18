@@ -58,7 +58,7 @@ export function DataTab({ user }) {
         try {
             const data = await fetchExport();
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-            downloadBlob(blob, `vermillion-${user?.username || "user"}-${Date.now()}.json`);
+            downloadBlob(blob, `lusorae-${user?.username || "user"}-${Date.now()}.json`);
             toast.success(`Exportação JSON concluída · ${data.posts?.length || 0} posts, ${data.comments?.length || 0} comentários`);
         } catch (err) {
             toastApiError(err, "Não foi possível exportar os teus dados");

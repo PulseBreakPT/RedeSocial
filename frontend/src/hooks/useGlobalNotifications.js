@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-const BASE_TITLE = "Vermillion · rede social";
+const BASE_TITLE = "Lusorae · rede social";
 
 // Updates browser tab title with unread count and shows toast when new notifications arrive
 export function useGlobalNotifications() {

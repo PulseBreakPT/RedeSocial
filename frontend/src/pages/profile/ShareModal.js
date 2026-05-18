@@ -11,7 +11,7 @@ export function ShareModal({ profile, onClose }) {
     const [copied, setCopied] = useState(false);
     const ref = useRef(null);
     const url = `${window.location.origin}/u/${profile.username}`;
-    const text = `Vê o perfil de ${profile.name} no Vermillion`;
+    const text = `Vê o perfil de ${profile.name} no Lusorae`;
     const nativeShareSupported = useMemo(
         () => typeof navigator !== "undefined" && typeof navigator.share === "function",
         []
@@ -138,7 +138,7 @@ export function ShareModal({ profile, onClose }) {
                         </a>
                         <a
                             href={qrUrl(url, 600)}
-                            download={`${profile.username}-vermillion-qr.png`}
+                            download={`${profile.username}-lusorae-qr.png`}
                             data-testid="share-download-qr"
                             className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[10px] font-mono uppercase tracking-wider text-black/70 tap-shrink transition"
                         >

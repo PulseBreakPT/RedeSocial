@@ -157,7 +157,7 @@ export function CookieBanner() {
                             Os teus dados, as tuas escolhas
                         </h2>
                         <p className="mt-1 text-[13px] text-black/65 leading-relaxed">
-                            Usamos cookies estritamente necessários para o Vermillion funcionar. Com o teu consentimento,
+                            Usamos cookies estritamente necessários para o Lusorae funcionar. Com o teu consentimento,
                             usamos também cookies funcionais, analíticos e de marketing para melhorar a experiência.{" "}
                             <Link to="/legal/cookies" className="underline underline-offset-2 hover:text-black">
                                 Saber mais

@@ -77,7 +77,7 @@ export default function Manifesto() {
                     </button>
                     <Link to="/" className="inline-flex items-center gap-2" data-testid="manifesto-home-link">
                         <span aria-hidden className="w-2.5 h-2.5 rotate-45 bg-black rounded-[2px]" />
-                        <span className="font-display text-[17px] font-bold tracking-tight">vermillion</span>
+                        <span className="font-display text-[17px] font-bold tracking-tight">lusorae</span>
                     </Link>
                     <span className="ml-2 hidden sm:inline text-[11px] uppercase tracking-[0.14em] text-black/45 font-mono">
                         Manifesto
@@ -96,7 +96,7 @@ export default function Manifesto() {
                     Não te queremos viciado. <span className="silver-foil">Queremos-te bem.</span>
                 </h1>
                 <p className="mt-6 text-[16px] lg:text-[18px] text-black/70 leading-relaxed max-w-[60ch]">
-                    O Vermillion é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos
+                    O Lusorae é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos
                     por quantos minutos passas aqui. Estas seis promessas não são marketing — são regras de
                     engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui.
                 </p>
