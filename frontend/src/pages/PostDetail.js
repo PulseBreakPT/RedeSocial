@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
-import { MessageCircle, CornerDownRight, X, ArrowUpDown, BellOff, BellRing } from "lucide-react";
+import {
+    MessageCircle, CornerDownRight, X, BellOff, BellRing,
+    Clock, Sparkles, History, Check, ChevronDown,
+} from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
@@ -13,6 +16,12 @@ import { toast } from "sonner";
 
 const MAX_DEPTH = 6;
 const INDENT_PX = 14;
+
+const SORT_OPTIONS = [
+    { value: "new",  label: "Mais recentes", short: "Recentes", Icon: Clock,    hint: "ordem cronológica" },
+    { value: "best", label: "Melhores",      short: "Melhores", Icon: Sparkles, hint: "mais reagidos" },
+    { value: "old",  label: "Mais antigos",  short: "Antigos",  Icon: History,  hint: "ordem inversa" },
+];
 
 function buildTree(comments) {
     const map = new Map();
@@ -92,6 +101,8 @@ export default function PostDetail() {
     const [inlineText, setInlineText] = useState("");
     const [inlineBusy, setInlineBusy] = useState(false);
     const [sortMode, setSortMode] = useState("new"); // new | best | old
+    const [sortMenuOpen, setSortMenuOpen] = useState(false);
+    const sortMenuRef = useRef(null);
     const [threadFollowed, setThreadFollowed] = useState(false);
     const [threadMuted, setThreadMuted] = useState(false);
     const rootInputRef = useRef(null);
@@ -148,6 +159,21 @@ export default function PostDetail() {
             }
         }
     }, [loading, comments]);
+
+    // Close sort menu on outside click / Esc
+    useEffect(() => {
+        if (!sortMenuOpen) return;
+        const onDown = (e) => {
+            if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) setSortMenuOpen(false);
+        };
+        const onKey = (e) => { if (e.key === "Escape") setSortMenuOpen(false); };
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [sortMenuOpen]);
 
     const tree = useMemo(() => sortRoots(buildTree(comments), sortMode), [comments, sortMode]);
     const flat = useMemo(() => flatten(tree, collapsedIds), [tree, collapsedIds]);
@@ -304,42 +330,116 @@ export default function PostDetail() {
             />
 
             {/* Discussion controls */}
-            <div className="px-4 lg:px-5 py-2.5 flex items-center gap-1.5 hairline-b bg-paper">
-                <div className="relative">
-                    <select
-                        value={sortMode}
-                        onChange={(e) => setSortMode(e.target.value)}
-                        data-testid="comment-sort-select"
-                        className="appearance-none bg-black/[0.04] hover:bg-black/[0.08] text-black/75 font-mono text-[11.5px] uppercase tracking-[0.14em] pl-7 pr-3 py-1.5 rounded-full cursor-pointer focus:outline-none transition"
-                    >
-                        <option value="new">Mais recentes</option>
-                        <option value="best">Melhores</option>
-                        <option value="old">Mais antigos</option>
-                    </select>
-                    <ArrowUpDown size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/55 pointer-events-none" />
+            <div className="px-4 lg:px-5 py-3 flex items-center gap-2 hairline-b bg-paper">
+                {/* Sort dropdown */}
+                <div className="relative" ref={sortMenuRef}>
+                    {(() => {
+                        const active = SORT_OPTIONS.find((o) => o.value === sortMode) || SORT_OPTIONS[0];
+                        const ActiveIcon = active.Icon;
+                        return (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setSortMenuOpen((v) => !v)}
+                                    data-testid="comment-sort-trigger"
+                                    aria-haspopup="listbox"
+                                    aria-expanded={sortMenuOpen}
+                                    title={`Ordenar: ${active.label}`}
+                                    className={`group inline-flex items-center gap-1.5 pl-2.5 pr-2 h-8 rounded-full border font-mono text-[11px] uppercase tracking-[0.14em] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black/15 ${
+                                        sortMenuOpen
+                                            ? "bg-black text-white border-black"
+                                            : "bg-white text-black/75 border-black/[0.12] hover:bg-black/[0.04] hover:border-black/[0.2]"
+                                    }`}
+                                >
+                                    <ActiveIcon size={12} strokeWidth={2} />
+                                    <span className="hidden sm:inline">{active.label}</span>
+                                    <span className="sm:hidden">{active.short}</span>
+                                    <ChevronDown
+                                        size={12}
+                                        strokeWidth={2}
+                                        className={`transition-transform ${sortMenuOpen ? "rotate-180" : ""}`}
+                                    />
+                                </button>
+                                {sortMenuOpen && (
+                                    <div
+                                        role="listbox"
+                                        data-testid="comment-sort-menu"
+                                        className="absolute left-0 top-full mt-1.5 z-40 min-w-[200px] bg-white rounded-2xl shadow-xl border border-black/[0.08] p-1 anim-fade-up origin-top"
+                                    >
+                                        {SORT_OPTIONS.map((opt) => {
+                                            const OptIcon = opt.Icon;
+                                            const isActive = opt.value === sortMode;
+                                            return (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    role="option"
+                                                    aria-selected={isActive}
+                                                    data-testid={`comment-sort-opt-${opt.value}`}
+                                                    onClick={() => { setSortMode(opt.value); setSortMenuOpen(false); }}
+                                                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition ${
+                                                        isActive ? "bg-black/[0.05]" : "hover:bg-black/[0.04]"
+                                                    }`}
+                                                >
+                                                    <span className={`w-7 h-7 grid place-items-center rounded-full ${isActive ? "bg-black text-white" : "bg-black/[0.05] text-black/70"}`}>
+                                                        <OptIcon size={13} strokeWidth={2} />
+                                                    </span>
+                                                    <span className="flex-1 min-w-0">
+                                                        <span className="block text-[13px] font-medium text-black tracking-tight">{opt.label}</span>
+                                                        <span className="block text-[10.5px] font-mono text-black/45 lowercase tracking-tight">{opt.hint}</span>
+                                                    </span>
+                                                    {isActive && <Check size={14} strokeWidth={2.4} className="text-black flex-shrink-0" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                 </div>
-                <button
-                    onClick={toggleFollowThread}
-                    data-testid="follow-thread-btn"
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[11.5px] uppercase tracking-[0.14em] transition ${
-                        threadFollowed
-                            ? "bg-black text-white"
-                            : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
-                    }`}
-                >
-                    <BellRing size={11} /> {threadFollowed ? "A seguir" : "Seguir discussão"}
-                </button>
-                <button
-                    onClick={toggleMuteThread}
-                    data-testid="mute-thread-btn"
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-[11.5px] uppercase tracking-[0.14em] transition ${
-                        threadMuted
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
-                    }`}
-                >
-                    <BellOff size={11} /> {threadMuted ? "Silenciada" : "Silenciar"}
-                </button>
+
+                {/* Toggle group: Follow / Mute (mutually informative, not strictly exclusive) */}
+                <div className="ml-auto flex items-center gap-1.5">
+                    <button
+                        type="button"
+                        onClick={toggleFollowThread}
+                        data-testid="follow-thread-btn"
+                        aria-pressed={threadFollowed}
+                        title={threadFollowed ? "Estás a seguir esta discussão — toca para deixar de seguir" : "Receber notificações de novas respostas"}
+                        className={`group inline-flex items-center gap-1.5 h-8 px-3 rounded-full font-mono text-[11px] uppercase tracking-[0.14em] border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black/15 tap-shrink ${
+                            threadFollowed
+                                ? "bg-black text-white border-black hover:bg-black/85"
+                                : "bg-white text-black/75 border-black/[0.12] hover:bg-black/[0.04] hover:border-black/[0.2]"
+                        }`}
+                    >
+                        <BellRing
+                            size={12}
+                            strokeWidth={2}
+                            className={threadFollowed ? "animate-[pop_360ms_cubic-bezier(.22,.61,.36,1)]" : ""}
+                            fill={threadFollowed ? "currentColor" : "none"}
+                        />
+                        <span className="hidden sm:inline">{threadFollowed ? "A seguir" : "Seguir discussão"}</span>
+                        <span className="sm:hidden">{threadFollowed ? "A seguir" : "Seguir"}</span>
+                        {threadFollowed && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot ml-0.5" aria-hidden />}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={toggleMuteThread}
+                        data-testid="mute-thread-btn"
+                        aria-pressed={threadMuted}
+                        title={threadMuted ? "Discussão silenciada — toca para reativar" : "Silenciar notificações desta discussão"}
+                        aria-label={threadMuted ? "Reativar notificações" : "Silenciar discussão"}
+                        className={`group inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full font-mono text-[11px] uppercase tracking-[0.14em] border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black/15 tap-shrink ${
+                            threadMuted
+                                ? "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                                : "bg-white text-black/75 border-black/[0.12] hover:bg-black/[0.04] hover:border-black/[0.2]"
+                        }`}
+                    >
+                        <BellOff size={12} strokeWidth={2} />
+                        <span className="hidden sm:inline">{threadMuted ? "Silenciada" : "Silenciar"}</span>
+                    </button>
+                </div>
             </div>
 
             {/* Root composer */}
