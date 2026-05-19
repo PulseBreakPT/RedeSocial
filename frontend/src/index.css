@@ -1139,6 +1139,9 @@
         transform-origin: center;
         transform-box: fill-box;
     }
+    /* Note: "lusorae" has no dotted letters, so .seal-dot-1/.seal-dot-2
+       elements are no longer rendered. Base .seal-dot rule kept as harmless
+       no-op in case external code reaches for it. */
     .vermillion-seal .seal-stamp {
         opacity: 0;
         transform: scale(0.15) rotate(-22deg);
@@ -1152,17 +1155,9 @@
     .vermillion-seal.is-drawing .seal-signature {
         animation: sealWrite 2200ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
     }
-    .vermillion-seal.is-drawing .seal-dot-1 {
-        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        animation-delay: 1700ms;
-    }
-    .vermillion-seal.is-drawing .seal-dot-2 {
-        animation: sealDot 240ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        animation-delay: 1980ms;
-    }
     .vermillion-seal.is-drawing .seal-stamp {
         animation: sealStamp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        animation-delay: 2260ms;
+        animation-delay: 2280ms;
     }
     .vermillion-seal.is-drawing .seal-stamp-halo {
         animation: sealStampHalo 900ms ease-out forwards;

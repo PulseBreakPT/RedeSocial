@@ -263,31 +263,18 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 </text>
             </g>
 
-            {/* the Lusorae Seal — same signature mark, larger, centered */}
+            {/* the Lusorae Seal — same signature mark, larger, centered.
+                "lusorae" has no dotted letters, so no ink-dots are rendered. */}
             <g transform="translate(155, 540)">
                 <path
                     className="selo-pessoal-signature"
                     pathLength="1"
-                    d="M 10 22 C 12 30 16 46 22 46 C 28 46 32 30 34 22 C 38 18 42 22 42 28 C 42 36 36 38 36 32 C 36 26 50 44 58 44 C 64 44 66 38 68 36 C 72 32 74 44 76 44 C 80 44 82 36 82 36 L 82 44 C 86 10 94 8 90 44 C 96 44 100 44 102 44 C 108 10 116 8 112 44 C 116 44 120 40 122 36 L 122 44 C 132 32 144 32 144 40 C 144 48 132 48 132 40 C 132 36 138 36 142 38 C 148 38 150 26 156 26 C 162 26 164 36 164 44 C 172 44 184 40 196 32 Q 206 26 208 30"
+                    d="M 10 44 C 6 28 12 8 20 8 C 24 8 22 22 22 32 L 22 44 C 28 44 30 22 34 22 C 34 38 38 46 42 44 C 46 44 44 22 48 22 L 48 44 C 56 22 60 26 58 32 C 56 38 46 36 50 40 C 54 44 62 44 66 40 C 68 30 78 22 84 26 C 90 32 88 44 78 44 C 68 44 66 36 74 36 C 80 36 82 22 90 22 C 94 22 94 30 92 36 C 98 36 108 22 116 22 C 124 22 126 38 118 40 C 112 40 112 34 118 34 L 120 44 C 128 44 134 22 142 22 C 150 22 152 34 146 36 C 142 36 142 34 146 34 C 152 40 168 42 184 38 Q 198 34 208 32"
                     stroke="#161616"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     fill="none"
-                />
-                <circle
-                    cx="82"
-                    cy="14"
-                    r="2"
-                    fill="#161616"
-                    className="selo-pessoal-dot selo-pessoal-dot-1"
-                />
-                <circle
-                    cx="122"
-                    cy="14"
-                    r="2"
-                    fill="#161616"
-                    className="selo-pessoal-dot selo-pessoal-dot-2"
                 />
                 <path
                     className="selo-pessoal-stamp"
