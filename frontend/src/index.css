@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -232,32 +232,49 @@
         font-optical-sizing: auto;
     }
 
-    /* Hero de página — italic editorial grande, optical sizing display.
-       Letterspacing apertado, weight 380 (entre Regular e Medium) para
-       um "italic editorial" leve mas presente, como num jornal de marca. */
+    /* Hero de página — italic editorial grande.
+       LEGIBILIDADE: opsz reduzido para 36 (Text optical sizing, traços
+       mais robustos no tamanho 30–48px), weight 460 (italic médio,
+       muito mais legível que 380), SOFT 60 para letterforms mais suaves
+       e WONK 0 para formas standard (sem variantes excêntricas).
+       font-synthesis:none força o uso do italic REAL do Fraunces (e não
+       um falso italic obliquado pelo browser). */
     .editorial-hero {
         font-family: "Fraunces", "Times New Roman", Georgia, serif;
         font-optical-sizing: auto;
-        font-variation-settings: "opsz" 144;
-        font-weight: 380;
+        font-variation-settings: "opsz" 36, "SOFT" 60, "WONK" 0;
+        font-weight: 460;
         font-style: italic;
+        font-synthesis: none;
         font-size: clamp(30px, 4vw, 48px);
-        line-height: 1.02;
-        letter-spacing: -0.022em;
+        line-height: 1.04;
+        letter-spacing: -0.014em;
         color: hsl(var(--ink));
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     }
 
-    /* Quote editorial — para citações grandes, "vem para a mesa", etc. */
+    /* Quote editorial — para citações grandes, "vem para a mesa", etc.
+       LEGIBILIDADE: opsz Text (22), weight 480 para italic encorpado,
+       cor --ink (full contrast em vez de --ink-soft), letter-spacing
+       relaxado para os itálicos respirarem. */
     .editorial-quote {
         font-family: "Fraunces", "Times New Roman", Georgia, serif;
         font-optical-sizing: auto;
-        font-variation-settings: "opsz" 96;
-        font-weight: 400;
+        font-variation-settings: "opsz" 22, "SOFT" 60, "WONK" 0;
+        font-weight: 480;
         font-style: italic;
+        font-synthesis: none;
         font-size: clamp(18px, 1.9vw, 24px);
-        line-height: 1.38;
-        letter-spacing: -0.008em;
-        color: hsl(var(--ink-soft));
+        line-height: 1.42;
+        letter-spacing: -0.003em;
+        color: hsl(var(--ink));
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     }
 
     /* Lede — entrada editorial de posts longos, primeira frase. */

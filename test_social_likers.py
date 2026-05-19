@@ -9,7 +9,7 @@ import json
 from typing import Optional, Dict, Any
 
 # Backend URL
-BASE_URL = "https://post-structure-logic.preview.emergentagent.com/api"
+BASE_URL = "https://login-text-contrast.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"

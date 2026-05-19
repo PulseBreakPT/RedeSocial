@@ -97,16 +97,25 @@ export function Layout() {
     // Subtle live drag affordance — shown only for the swipe-left (chat) gesture.
     const showRail = !modalOpen && !chatOpen && dragPreview.dir === "left" && dragPreview.progress > 0.05;
 
+    // Páginas "produtor" (gestão) ocupam mais largura — sem RightSidebar e com main mais largo.
+    // Settings é uma página de configuração estrutural com super-grid 12-col que precisa de espaço.
+    const wideRoutes = ["/settings"];
+    const isWide = wideRoutes.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`));
+    const gridCols = isWide
+        ? "lg:grid-cols-[260px_minmax(0,1fr)]"
+        : "lg:grid-cols-[260px_minmax(0,640px)_340px]";
+    const maxW = isWide ? "max-w-[1480px]" : "max-w-[1320px]";
+
     return (
         <WebSocketProvider>
         <div className="min-h-screen text-black">
             <MobileTopBar onOpenChat={() => setChatOpen(true)} />
-            <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,640px)_340px] max-w-[1320px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
+            <div className={`grid grid-cols-1 ${gridCols} ${maxW} mx-auto gap-0 lg:gap-6 px-0 lg:px-6`}>
                 <LeftSidebar onCompose={() => openCompose()} />
                 <main className="lg:border-x lg:border-black/[0.07] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
                     <Outlet context={{ openCompose, openChat: () => setChatOpen(true) }} />
                 </main>
-                <RightSidebar />
+                {!isWide && <RightSidebar />}
             </div>
 
             {/* OnboardingModal removed per user request */}

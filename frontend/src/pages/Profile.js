@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Lock, LayoutDashboard, Settings, Archive as ArchiveIcon } from "lucide-react";
+import { Lock } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { FollowsModal } from "../components/FollowsModal";
@@ -18,9 +18,9 @@ import { MobileActionBar } from "./profile/MobileActionBar";
 import { ProfileTabBar } from "./profile/ProfileTabBar";
 import { HeatmapCompactCard } from "./profile/HeatmapCompactCard";
 import { AboutTabSections } from "./profile/AboutTabSections";
-import { PainelPessoalDrawer } from "./profile/PainelPessoalDrawer";
 import { AffinityRibbon } from "./profile/AffinityRibbon";
 import { StoryHighlights } from "../components/stories/StoryHighlights";
+import { ProfileActionRow } from "./profile/ProfileActionRow";
 import {
     ProfileEmpty, CommunitiesTab,
     PostsFilterBar, applyPostsFilter, computePostCounts,
@@ -60,7 +60,6 @@ export default function Profile() {
     const [postsLoading, setPostsLoading] = useState(false);
     const [modal, setModal] = useState(null);
     const [shareOpen, setShareOpen] = useState(false);
-    const [painelOpen, setPainelOpen] = useState(false);
     useLiveTime(30000);
 
     const loadAll = async () => {
@@ -128,7 +127,6 @@ export default function Profile() {
     const share = () => setShareOpen(true);
     const onMessage = () => navigate(`/messages/${profile.id}`);
     const onEditProfile = () => navigate("/settings");
-    const onOpenPainel = () => setPainelOpen(true);
 
     const postCounts = useMemo(() => computePostCounts(posts), [posts]);
     const filteredPosts = useMemo(() => applyPostsFilter(posts, postsFilter), [posts, postsFilter]);
@@ -138,7 +136,17 @@ export default function Profile() {
     const regionMeta = PT_REGIONS.find((r) => r.key === profile.region);
     const moodMeta = PT_MOODS.find((m) => m.key === profile.mood_initial);
     const teamMeta = PT_TEAMS.find((t) => t.key === profile.team);
-    const firstName = profile.name?.split(" ")[0] || profile.username;
+
+    // === MURO TOTAL ===
+    // Quando bloqueámos este utilizador, NADA do conteúdo dele deve ser visível:
+    // sem capa, sem avatar, sem bio, sem stories, sem posts, sem comunidades,
+    // sem hashtags, sem cidade, sem mensagens. Só mostramos:
+    //   · Nome real
+    //   · @username
+    //   · Botão "Voltar a abrir" (que desfaz o bloqueio)
+    if (profile.is_blocked) {
+        return <BlockedWallView profile={profile} />;
+    }
 
     return (
         <div data-testid="profile-page" className="pb-32 sm:pb-12">
@@ -200,39 +208,16 @@ export default function Profile() {
             {/* ---------- HIGHLIGHTS / Destaques ---------- */}
             <StoryHighlights username={profile.username} isSelf={!!profile.is_self} />
 
-            {/* Self-only: Painel pessoal + Definições quick row */}
-            {profile.is_self && profile.can_view !== false && (
-                <div
-                    className="px-4 lg:px-6 mt-3 flex flex-wrap gap-2"
-                    data-testid="profile-self-quickbar"
-                >
-                    <button
-                        onClick={onOpenPainel}
-                        data-testid="open-painel-btn"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black text-white text-[12px] font-heading font-medium tracking-tight hover:bg-black/90 tap-shrink"
-                    >
-                        <LayoutDashboard size={13} />
-                        <span>Painel pessoal</span>
-                    </button>
-                    <button
-                        onClick={() => navigate("/stories/archive")}
-                        data-testid="open-archive-btn"
-                        className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
-                        title="Arquivo de stories"
-                        aria-label="Arquivo de stories"
-                    >
-                        <ArchiveIcon size={15} />
-                    </button>
-                    <button
-                        onClick={() => navigate("/settings")}
-                        data-testid="open-settings-btn"
-                        className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
-                        title="Definições"
-                        aria-label="Definições"
-                    >
-                        <Settings size={15} />
-                    </button>
-                </div>
+            {/* ---------- ACTION ROW — Acompanhar / Falar / Levantar muro ----------
+                Aparece logo abaixo da identidade quando estamos a ver o perfil
+                de outra pessoa. Centraliza as 4 acções sociais (seguir,
+                deixar de seguir, falar, levantar muro) com wording editorial. */}
+            {!profile.is_self && profile.can_view !== false && (
+                <ProfileActionRow
+                    profile={profile}
+                    onMessage={onMessage}
+                    onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
+                />
             )}
 
             {profile.can_view === false ? (
@@ -251,12 +236,12 @@ export default function Profile() {
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
                     )}
 
-                    {/* Compact heatmap with link to full inside drawer */}
+                    {/* Compact heatmap — sem CTA para painel pessoal (removido) */}
                     {heatmap?.length > 0 && (
                         <HeatmapCompactCard
                             heatmap={heatmap}
                             stats={stats}
-                            onSeeMore={profile.is_self ? onOpenPainel : null}
+                            onSeeMore={null}
                         />
                     )}
 
@@ -297,7 +282,7 @@ export default function Profile() {
                             regions={regions}
                             communities={communities}
                             mutual={mutual}
-                            onOpenPainel={onOpenPainel}
+                            onOpenPainel={null}
                             onOpenFollowers={() => setModal("followers")}
                             onOpenFollowing={() => setModal("following")}
                         />
@@ -308,19 +293,6 @@ export default function Profile() {
             {modal && <FollowsModal username={username} type={modal} onClose={() => setModal(null)} />}
             {shareOpen && <ShareModal profile={profile} onClose={() => setShareOpen(false)} />}
 
-            {/* Painel Pessoal Drawer — privado, gestão */}
-            {profile.is_self && (
-                <PainelPessoalDrawer
-                    open={painelOpen}
-                    onClose={() => setPainelOpen(false)}
-                    profile={profile}
-                    stats={stats}
-                    heatmap={heatmap}
-                    fingerprint={fingerprint}
-                    firstName={firstName}
-                />
-            )}
-
             {/* Mobile sticky action bar */}
             <MobileActionBar
                 profile={profile}
@@ -330,6 +302,133 @@ export default function Profile() {
                 onEditProfile={onEditProfile}
                 onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
+        </div>
+    );
+}
+
+/* ============================================================
+   BlockedWallView — "muralha total"
+   Renderiza um perfil DESPIDO quando o viewer bloqueou esta conta.
+   · Sem capa, sem avatar (apenas iniciais cinzentas), sem bio
+   · Sem stories, sem posts, sem comunidades, sem hashtags, sem cidade
+   · Apenas: nome real, @username, e um botão "Voltar a abrir"
+   · Mensagens ficam bloqueadas naturalmente (botão indisponível).
+   ============================================================ */
+function BlockedWallView({ profile }) {
+    const navigate = useNavigate();
+    const [busy, setBusy] = useState(false);
+    const initials = (profile.name || profile.username || "?")
+        .split(/\s+/).slice(0, 2).map((s) => s[0] || "").join("").toUpperCase();
+
+    const unblock = async () => {
+        if (busy) return;
+        const ok = await confirmDialog({
+            title: `Voltar a abrir com @${profile.username}?`,
+            description: "O muro cai e voltam a ver-se mutuamente. Não voltarão a seguir-se automaticamente.",
+            confirmText: "Voltar a abrir",
+            cancelText: "Cancelar",
+        });
+        if (!ok) return;
+        setBusy(true);
+        try {
+            const { data } = await api.post(`/users/${profile.username}/block`);
+            if (data && data.blocked === false) {
+                // recarrega o perfil para mostrar a versão completa
+                navigate(0);
+            }
+        } catch (e) { toastApiError(e); }
+        finally { setBusy(false); }
+    };
+
+    return (
+        <div data-testid="profile-blocked-wall" className="pb-32 sm:pb-12">
+            <PageHeader
+                title="Conta com muro"
+                subtitle="Não vês nada desta pessoa enquanto o muro estiver de pé"
+                back
+                sticky={false}
+                testid="profile-header-blocked"
+            />
+
+            {/* Banner placeholder — silver-grad uniforme, SEM imagem real */}
+            <div
+                className="relative h-36 lg:h-52 overflow-hidden border-b border-black/[0.06]"
+                style={{
+                    background:
+                        "repeating-linear-gradient(45deg, rgba(13,13,16,0.04) 0 12px, rgba(13,13,16,0.02) 12px 24px), #f5f5f7",
+                }}
+                aria-hidden
+            >
+                <div className="absolute inset-0 grid place-items-center">
+                    <Lock size={32} className="text-black/25" strokeWidth={1.6} />
+                </div>
+            </div>
+
+            {/* Identity stub — APENAS iniciais + nome + @username */}
+            <div className="px-4 lg:px-6 -mt-10 lg:-mt-12 relative">
+                <div
+                    className="w-[84px] h-[84px] rounded-full grid place-items-center bg-[#f1f1f3] border border-black/[0.08] shadow-[0_8px_24px_-12px_rgba(13,13,16,0.18)] text-black/40 font-heading font-semibold text-[22px] tracking-tight select-none"
+                    aria-label="Avatar oculto"
+                    data-testid="blocked-avatar-placeholder"
+                >
+                    {initials}
+                </div>
+
+                <div className="mt-4">
+                    <h1
+                        className="font-heading font-semibold text-[22px] lg:text-[26px] tracking-tight text-black"
+                        data-testid="blocked-name"
+                    >
+                        {profile.name || profile.username}
+                    </h1>
+                    <p
+                        className="font-mono text-[13px] text-black/55 mt-0.5"
+                        data-testid="blocked-username"
+                    >
+                        @{profile.username}
+                    </p>
+                </div>
+
+                {/* Wall info + unblock CTA */}
+                <div
+                    className="mt-6 max-w-xl rounded-2xl border border-red-200 bg-red-50/40 p-4 sm:p-5"
+                    data-testid="blocked-wall-card"
+                >
+                    <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full grid place-items-center bg-red-100 text-red-600 shrink-0">
+                            <Lock size={17} strokeWidth={1.8} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-heading font-semibold text-[15px] tracking-tight text-red-700">
+                                Muro levantado
+                            </div>
+                            <p className="text-[12.5px] text-red-700/80 leading-relaxed mt-1">
+                                Não vês nada desta conta: nem foto, nem capa, nem bio, nem
+                                publicações, nem stories, nem comunidades, nem mensagens.
+                                Esta pessoa também não te vê a ti.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2 sm:pl-[52px]">
+                        <button
+                            onClick={unblock}
+                            disabled={busy}
+                            data-testid="blocked-unblock-btn"
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-red-300 text-red-700 hover:bg-red-100 font-heading font-medium text-[13px] tap-shrink transition disabled:opacity-50"
+                        >
+                            {busy ? "A reabrir…" : "Voltar a abrir"}
+                        </button>
+                        <button
+                            onClick={() => navigate(-1)}
+                            data-testid="blocked-back-btn"
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-black/[0.10] text-black/70 hover:bg-black/[0.04] font-heading font-medium text-[13px] tap-shrink transition"
+                        >
+                            Voltar
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
