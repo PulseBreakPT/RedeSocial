@@ -117,7 +117,8 @@ export function CitySelect({
                     onFocus={() => setOpen(true)}
                     onKeyDown={onKey}
                     placeholder={placeholder}
-                    className="vm-input pl-9 pr-9"
+                    className="vm-input"
+                    style={{ paddingLeft: "2.25rem", paddingRight: "2.25rem" }}
                     autoComplete="off"
                     spellCheck={false}
                 />
