@@ -12,6 +12,7 @@ import { Spinner } from "../components/Spinner";
 import { CommentItem } from "../components/CommentItem";
 import { CommentTypingIndicator } from "../components/CommentTypingIndicator";
 import { PostViewersBadge } from "../components/PostViewersBadge";
+import { ConversationPresence } from "../components/ConversationPresence";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
 import { useCommentTyping } from "../hooks/useCommentTyping";
@@ -171,8 +172,9 @@ export default function PostDetail() {
     // Comment typing indicator (real-time WS)
     const { typers, notifyTyping } = useCommentTyping(postId);
 
-    // Listen to live "new_comment" events for this post — fetch the comment and
-    // append + highlight. Avoid duplicates if it's ours (we already inserted).
+    // Listen to live "new_comment" events for this post.
+    // Backend now sends the full enriched comment in `detail.comment`, so we can
+    // splice it into state without a network round-trip → instant "appearing now".
     useEffect(() => {
         if (!postId) return;
         const onNew = async (e) => {
@@ -180,29 +182,33 @@ export default function PostDetail() {
             if (!d || d.post_id !== postId) return;
             if (d.author_id === user?.id) return; // self-create handled locally
             if (!d.comment_id) return;
-            // Avoid double-add
+            const enriched = d.comment;
             setComments((prev) => {
                 if (prev.some((c) => c.id === d.comment_id)) return prev;
+                if (enriched && enriched.id) return [...prev, enriched];
                 return prev;
             });
-            try {
-                // Fetch full thread snapshot to ensure consistent enrichment.
-                const { data } = await api.get(`/posts/${postId}/comments?sort=${sortMode}`);
-                setComments(data);
+            // If we didn't get an enriched payload (older clients), fall back to fetch
+            if (!enriched || !enriched.id) {
+                try {
+                    const { data } = await api.get(`/posts/${postId}/comments?sort=${sortMode}`);
+                    setComments(data);
+                } catch { /* ignore */ }
+            }
+            // Bump post.comments_count optimistically
+            setPost((p) => p ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p);
+            setHighlightIds((prev) => {
+                const n = new Set(prev);
+                n.add(d.comment_id);
+                return n;
+            });
+            setTimeout(() => {
                 setHighlightIds((prev) => {
                     const n = new Set(prev);
-                    n.add(d.comment_id);
+                    n.delete(d.comment_id);
                     return n;
                 });
-                // Clear highlight after animation
-                setTimeout(() => {
-                    setHighlightIds((prev) => {
-                        const n = new Set(prev);
-                        n.delete(d.comment_id);
-                        return n;
-                    });
-                }, 2600);
-            } catch { /* ignore */ }
+            }, 2600);
         };
         window.addEventListener("vmln:new_comment", onNew);
         return () => window.removeEventListener("vmln:new_comment", onNew);
@@ -477,8 +483,9 @@ export default function PostDetail() {
             />
 
             {/* Live viewers — discreet badge */}
-            <div className="px-4 lg:px-5 -mt-1 pb-2 flex items-center gap-2 anim-fade-up">
+            <div className="px-4 lg:px-5 -mt-1 pb-2 flex items-center gap-3 flex-wrap anim-fade-up">
                 <PostViewersBadge postId={post.id} />
+                <ConversationPresence postId={post.id} />
                 <CommentTypingIndicator typers={typers} currentUserId={user?.id} className="!px-0 !py-0" />
             </div>
 

@@ -2656,6 +2656,7 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
                 },
             )
     await handle_mentions(payload.content, user, post_id)
+    enriched_comment = await _enrich_comment(comment, user)
     # Notify post-viewers (incl. author) that a new comment was just posted (so they can highlight it live)
     try:
         await ws_manager.broadcast_to_post_viewers(
@@ -2666,12 +2667,13 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
                 "comment_id": comment["id"],
                 "parent_id": parent["id"] if parent else None,
                 "author_id": user["id"],
+                "comment": enriched_comment,  # full payload so clients can render without refetch
             },
             exclude_user=user["id"],
         )
     except Exception:
         pass
-    return await _enrich_comment(comment, user)
+    return enriched_comment
 
 
 @api.delete("/comments/{comment_id}")

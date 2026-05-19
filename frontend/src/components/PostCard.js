@@ -457,14 +457,63 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     );
 }
 
+function usePostLiveActivity(postId) {
+    // Tracks "is this post live right now?" — receives new_comment WS events
+    // and surfaces both a 10-min lingering "live" state (for the soft border)
+    // and a transient 18s "new reply" chip pulse.
+    const [hasLive, setHasLive] = useState(false);
+    const [chipKey, setChipKey] = useState(0); // bumping remounts chip → restarts anim
+    const liveTimerRef = useRef(null);
+    const chipTimerRef = useRef(null);
+
+    useEffect(() => {
+        if (!postId) return;
+        const onNew = (e) => {
+            if (e?.detail?.post_id !== postId) return;
+            setHasLive(true);
+            setChipKey((k) => k + 1);
+            if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+            if (chipTimerRef.current) clearTimeout(chipTimerRef.current);
+            liveTimerRef.current = setTimeout(() => setHasLive(false), 10 * 60 * 1000);
+            chipTimerRef.current = setTimeout(() => setChipKey(0), 18000);
+        };
+        window.addEventListener("vmln:new_comment", onNew);
+        return () => {
+            window.removeEventListener("vmln:new_comment", onNew);
+            if (liveTimerRef.current) clearTimeout(liveTimerRef.current);
+            if (chipTimerRef.current) clearTimeout(chipTimerRef.current);
+        };
+    }, [postId]);
+
+    return { hasLive, chipKey };
+}
+
 export function PostCard({ post, onChange, onDelete, clickable = true }) {
+    const innerId = post?.repost_of?.id || post?.id;
+    const { hasLive, chipKey } = usePostLiveActivity(innerId);
+    const liveCls = hasLive ? "live-border-left" : "";
+
+    const newReplyChip = chipKey > 0 ? (
+        <div
+            key={chipKey}
+            className="anim-new-reply-chip pointer-events-none absolute top-3 right-4 lg:right-6 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50/90 backdrop-blur text-[10px] font-mono uppercase tracking-wider text-emerald-700/85 border border-emerald-200/60"
+            data-testid="new-reply-chip"
+        >
+            <span className="relative inline-flex w-1 h-1">
+                <span className="absolute inset-0 rounded-full bg-emerald-500/85 anim-live-dot" />
+            </span>
+            novo reply agora
+        </div>
+    ) : null;
+
     if (post.repost_of) {
         const inner = post.repost_of;
         return (
             <article
                 data-testid={`post-${post.id}`}
-                className="px-4 lg:px-6 pt-4 pb-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up"
+                className={`relative px-4 lg:px-6 pt-4 pb-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls}`}
             >
+                {newReplyChip}
                 <div className="flex items-center gap-2 type-overline ml-12 mb-2 normal-case tracking-[0.16em]">
                     <Repeat2 size={12} strokeWidth={1.6} className="text-green-soft" />
                     <Link to={`/u/${post.author?.username}`} className="ink-link hover:text-black">
@@ -479,8 +528,9 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
     return (
         <article
             data-testid={`post-${post.id}`}
-            className="px-4 py-5 lg:px-6 lg:py-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up"
+            className={`relative px-4 py-5 lg:px-6 lg:py-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls}`}
         >
+            {newReplyChip}
             <PostBody post={post} onChange={onChange} clickable={clickable} onDelete={onDelete} />
         </article>
     );

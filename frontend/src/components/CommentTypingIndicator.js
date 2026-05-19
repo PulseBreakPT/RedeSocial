@@ -10,15 +10,17 @@ export function CommentTypingIndicator({ typers, currentUserId, className = "" }
     if (others.length === 0) return null;
 
     const first = others[0].user;
-    const rest = others.length - 1;
     let label;
     if (others.length === 1) {
-        label = `${first.name || first.username} está a escrever`;
+        label = `${first.name || first.username} está a responder`;
     } else if (others.length === 2) {
         const second = others[1].user;
-        label = `${first.name || first.username} e ${second.name || second.username} estão a escrever`;
+        label = `${first.name || first.username} e ${second.name || second.username} estão a responder`;
+    } else if (others.length === 3) {
+        label = "três pessoas a responder";
     } else {
-        label = `${first.name || first.username} e mais ${rest} a escrever`;
+        // Qualitative band (Manifesto: "sem números que viciam")
+        label = "várias pessoas a responder";
     }
 
     return (

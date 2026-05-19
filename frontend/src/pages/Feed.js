@@ -4,6 +4,7 @@ import { PostCard } from "../components/PostCard";
 import { StoriesBar } from "../components/StoriesBar";
 import { MobileHomeHero } from "../components/MobileHomeHero";
 import { PostSkeletonList } from "../components/Skeleton";
+import { LiveActivityBeacon } from "../components/LiveActivityBeacon";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
@@ -138,6 +139,7 @@ export default function Feed() {
 
     return (
         <div data-testid="feed-page">
+            <LiveActivityBeacon />
             <div
                 className="ptr-indicator lg:hidden"
                 style={{ height: ptrRefreshing ? 56 : pull }}

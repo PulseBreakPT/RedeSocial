@@ -1767,4 +1767,98 @@
         overscroll-behavior-x: contain;
     }
     .post-swipe-wrap > * { scroll-snap-align: start; }
+
+    /* ============================================================
+       PRESENÇA VIVA — animações atmosféricas (subtis, premium)
+       ============================================================
+       Princípios:
+       · Pulsar ≥ 2.5s (nunca mais rápido que respirar)
+       · Borders/rings em vez de backgrounds saturados
+       · 1 acento emerald (vivo) + 1 amber (a aquecer) + 1 rose (em brasa)
+       · Tudo respeita prefers-reduced-motion (override no fim)
+    */
+
+    /* Live dot — pulso muito subtil (presença) */
+    @keyframes liveDot {
+        0%, 100% { opacity: 0.55; transform: scale(1); }
+        50%      { opacity: 1;    transform: scale(1.15); }
+    }
+    .anim-live-dot { animation: liveDot 2.6s ease-in-out infinite; }
+
+    /* Soft pulse — para o anel das conversas ativas */
+    @keyframes softPulse {
+        0%, 100% { opacity: 0.45; }
+        50%      { opacity: 0.85; }
+    }
+    .anim-soft-pulse { animation: softPulse 2.8s ease-in-out infinite; }
+
+    /* Breathe — para halos quase imperceptíveis em conversas DM ativas */
+    @keyframes haloBreathe {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.0); }
+        50%      { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18); }
+    }
+    .anim-halo-breathe { animation: haloBreathe 3.2s ease-in-out infinite; }
+
+    /* Live border — barra fina à esquerda em PostCards com conversa viva */
+    .live-border-left {
+        position: relative;
+    }
+    .live-border-left::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 14%;
+        bottom: 14%;
+        width: 2px;
+        border-radius: 2px;
+        background: linear-gradient(180deg,
+            rgba(16, 185, 129, 0) 0%,
+            rgba(16, 185, 129, 0.55) 35%,
+            rgba(16, 185, 129, 0.55) 65%,
+            rgba(16, 185, 129, 0) 100%);
+        pointer-events: none;
+        animation: softPulse 2.8s ease-in-out infinite;
+    }
+
+    /* "novo reply agora" — chip que aparece e desvanece */
+    @keyframes newReplyChip {
+        0%   { opacity: 0; transform: translateY(-4px); }
+        15%  { opacity: 1; transform: translateY(0); }
+        80%  { opacity: 1; }
+        100% { opacity: 0; transform: translateY(-2px); }
+    }
+    .anim-new-reply-chip {
+        animation: newReplyChip 18s ease-out forwards;
+    }
+
+    /* Beacon "Lusorae a aquecer" — desliza do topo, fica, e some */
+    @keyframes activityBeacon {
+        0%   { opacity: 0; transform: translateY(-100%); }
+        10%  { opacity: 1; transform: translateY(0); }
+        88%  { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-100%); }
+    }
+    .anim-activity-beacon {
+        animation: activityBeacon 8s cubic-bezier(.22,.61,.36,1) forwards;
+    }
+
+    /* Appear up — para inserts (novo comment em real-time) */
+    @keyframes appearUp {
+        0%   { opacity: 0; transform: translateY(8px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .anim-appear-up { animation: appearUp 420ms cubic-bezier(.22,.61,.36,1) both; }
+
+    /* Honra prefers-reduced-motion: tudo congela */
+    @media (prefers-reduced-motion: reduce) {
+        .anim-live-dot,
+        .anim-soft-pulse,
+        .anim-halo-breathe,
+        .anim-new-reply-chip,
+        .anim-activity-beacon,
+        .anim-appear-up,
+        .live-border-left::before {
+            animation: none !important;
+        }
+    }
 }

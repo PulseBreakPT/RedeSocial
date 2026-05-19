@@ -383,11 +383,16 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     )}
                 </div>
             ) : (
-                filtered.map((c) => (
+                filtered.map((c) => {
+                    // "Conversa viva" — only when the other person is online AND the
+                    // last message is fresh (< 5 min). Subtle halo, not a counter.
+                    const lastTs = c.last_at ? new Date(c.last_at).getTime() : 0;
+                    const isLive = !!c.other_user?.online && lastTs && (Date.now() - lastTs) < 5 * 60 * 1000;
+                    return (
                     <button key={c.key} data-testid={`conversation-${c.other_user?.username}`} type="button"
-                        className={`group w-full flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.015] transition cursor-pointer text-left ${
+                        className={`group w-full flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.015] transition cursor-pointer text-left relative ${
                             activeId === c.other_user?.id ? "bg-black/[0.025]" : ""
-                        }`}
+                        } ${isLive ? "anim-halo-breathe" : ""}`}
                         onClick={() => onSelect(c.other_user)}>
                         <Avatar user={c.other_user} size={48} showOnline />
                         <div className="flex-1 min-w-0">
@@ -429,7 +434,8 @@ function ConversationList({ activeId, onSelect, onNew }) {
                             </button>
                         </div>
                     </button>
-                ))
+                    );
+                })
             )}
         </div>
     );

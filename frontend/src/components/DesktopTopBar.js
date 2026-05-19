@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
+import { HeaderLiveDot } from "./HeaderLiveDot";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
@@ -43,11 +44,12 @@ export function DesktopTopBar({ onCompose }) {
         >
             <div className="max-w-[1300px] mx-auto px-6 h-[64px] flex items-center gap-4">
                 {/* Logo */}
-                <Link to="/" className="flex items-center shrink-0 tap-shrink mr-2" data-testid="desktop-topbar-logo">
+                <Link to="/" className="flex items-center shrink-0 tap-shrink mr-2 relative" data-testid="desktop-topbar-logo">
                     <h1 className="font-display text-[26px] leading-none tracking-tight text-black flex items-baseline gap-1.5">
                         <span className="silver-foil text-[20px] translate-y-[2px]">◆</span>
                         <span>lusorae</span>
                     </h1>
+                    <HeaderLiveDot className="absolute -top-0.5 -right-1.5" />
                 </Link>
 
                 {/* Primary nav */}
