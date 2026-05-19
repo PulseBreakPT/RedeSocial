@@ -18,21 +18,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
  *  This component intentionally inherits the parent's font / size /
  *  colour — the parent <h1>/<h2>/<p> stays the source of truth for type
  *  scale, so the headline reads naturally even with motion turned off.
+ *
+ *  Word list is curated to evoke the social-network promise itself —
+ *  each word, when read with "A tua cidade tem ___", sells one reason
+ *  to join (voice · stories · people · sharing · community · …).
  */
 const DEFAULT_WORDS = [
-    "voz",
-    "histórias",
-    "conversa",
-    "pulso",
-    "vida",
-    "alma",
-    "ritmo",
-    "saudade",
-    "memória",
-    "esquinas",
-    "sotaque",
-    "noites",
-    "cor",
+    "voz",          // expressa-te — a tua opinião conta
+    "histórias",    // partilha o que te aconteceu
+    "conversa",     // entra na conversa
+    "gente",        // conhece pessoas reais
+    "vizinhos",     // ADN local · proximidade
+    "encontros",    // do online para o offline
+    "partilha",     // o gesto base da rede
+    "opinião",      // diz o que pensas, sem medo
+    "comunidade",   // mais do que seguidores
+    "ligações",     // o que uma rede social faz
+    "debate",       // conversas que valem
+    "amigos",       // o resultado final
+    "eco",          // o que dizes ressoa
 ];
 const TYPE_SPEED = 110;    // ms per char added — calmer typing
 const ERASE_SPEED = 58;    // ms per char removed (slightly faster — feels natural)
