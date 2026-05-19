@@ -168,14 +168,72 @@
         0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* Identity ring */
+/* Identity ring — vivid conic gradient when story is unseen,
+   transparent grey ring when already viewed. */
 .sv-ring {
-    background: conic-gradient(from 210deg, #ff6b6b 0deg, #f08c1f 110deg, #e85d4f 240deg, #ff6b6b 360deg);
-    padding: 2.5px;
+    position: relative;
+    padding: 2.75px;
     border-radius: 9999px;
+    background:
+        conic-gradient(
+            from var(--sv-ring-angle, 210deg),
+            #ff3d7f 0deg,
+            #ff6b6b 60deg,
+            #ff9a3d 130deg,
+            #ffd166 195deg,
+            #e85d4f 255deg,
+            #b557ff 315deg,
+            #ff3d7f 360deg
+        );
+    animation: sv-ring-rotate 9s linear infinite;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
 }
 .sv-ring.is-seen {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.16);
+    animation: none;
+    box-shadow: none;
+}
+@keyframes sv-ring-rotate {
+    from { --sv-ring-angle: 0deg; }
+    to   { --sv-ring-angle: 360deg; }
+}
+/* Fallback for browsers without @property — still looks nice (no animation). */
+@property --sv-ring-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+/* Media fit container — preserves aspect ratio, fills empty space with a blurred copy of the
+   image so we never crop critical content. */
+.sv-media-fit {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+}
+.sv-media-fit .sv-media-bg {
+    position: absolute;
+    inset: -40px;
+    width: calc(100% + 80px);
+    height: calc(100% + 80px);
+    object-fit: cover;
+    filter: blur(36px) saturate(1.25) brightness(0.7);
+    transform: scale(1.18);
+    opacity: 0.95;
+    pointer-events: none;
+}
+.sv-media-fit .sv-media-fg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+/* Composer preview: smaller blur for the smaller canvas */
+.sc-canvas .sv-media-fit .sv-media-bg {
+    filter: blur(20px) saturate(1.2) brightness(0.72);
 }
 
 /* Story bar live dot */
@@ -249,8 +307,43 @@
 
 /* Highlights cover gradient ring */
 .hl-ring {
-    background: conic-gradient(from 210deg, #ff6b6b 0deg, #f08c1f 110deg, #e85d4f 240deg, #ff6b6b 360deg);
+    background: conic-gradient(
+        from 210deg,
+        #ff3d7f 0deg,
+        #ff6b6b 90deg,
+        #ff9a3d 180deg,
+        #b557ff 280deg,
+        #ff3d7f 360deg
+    );
 }
 .hl-ring.is-seen {
     background: rgba(0, 0, 0, 0.16);
+}
+
+/* Story thumb wrapper enhancements */
+.sb-thumb-wrap { transition: transform 220ms cubic-bezier(.22,.61,.36,1); }
+.sb-thumb-wrap:hover { transform: translateY(-2px); }
+.sb-thumb-wrap:active { transform: scale(0.96); }
+
+.sb-thumb-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18), 0 0 0 2px #fff;
+    font-feature-settings: "tnum" 1;
+}
+
+/* Story counter pill in viewer header */
+.sv-counter {
+    font-variant-numeric: tabular-nums;
 }

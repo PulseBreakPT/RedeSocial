@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 # Base URL from frontend/.env
-BASE_URL = "https://auth-signature-1.preview.emergentagent.com/api"
+BASE_URL = "https://story-ui-enhancement.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"

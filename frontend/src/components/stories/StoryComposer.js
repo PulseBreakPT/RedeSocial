@@ -256,7 +256,10 @@ export function StoryComposer({ onClose, onCreated }) {
                         )}
                         {tab === "image" && (
                             media.image ? (
-                                <img src={media.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                <div className="sv-media-fit">
+                                    <img src={media.image} alt="" className="sv-media-bg" aria-hidden />
+                                    <img src={media.image} alt="" className="sv-media-fg" />
+                                </div>
                             ) : (
                                 <button
                                     onClick={() => fileImgRef.current?.click()}
@@ -275,7 +278,10 @@ export function StoryComposer({ onClose, onCreated }) {
                         )}
                         {tab === "video" && (
                             media.video ? (
-                                <video src={media.video} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                                <div className="sv-media-fit">
+                                    <video src={media.video} autoPlay loop muted playsInline className="sv-media-bg" aria-hidden />
+                                    <video src={media.video} autoPlay loop muted playsInline className="sv-media-fg" />
+                                </div>
                             ) : (
                                 <button
                                     onClick={() => fileVidRef.current?.click()}
@@ -340,6 +346,30 @@ export function StoryComposer({ onClose, onCreated }) {
                             <span>{audienceMeta?.emoji}</span>
                             <span>{audienceMeta?.label}</span>
                         </button>
+
+                        {/* Replace / clear media buttons */}
+                        {tab === "image" && media.image && (
+                            <button
+                                onClick={() => fileImgRef.current?.click()}
+                                data-testid="composer-change-image"
+                                className="absolute top-2.5 left-2.5 z-40 px-2.5 h-7 rounded-full bg-black/55 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-black/75 sc-toolbar-btn"
+                                title="Trocar imagem"
+                            >
+                                <ImageIcon size={11} strokeWidth={2.4} />
+                                Trocar
+                            </button>
+                        )}
+                        {tab === "video" && media.video && (
+                            <button
+                                onClick={() => fileVidRef.current?.click()}
+                                data-testid="composer-change-video"
+                                className="absolute top-2.5 left-2.5 z-40 px-2.5 h-7 rounded-full bg-black/55 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-black/75 sc-toolbar-btn"
+                                title="Trocar vídeo"
+                            >
+                                <Video size={11} strokeWidth={2.4} />
+                                Trocar
+                            </button>
+                        )}
 
                         {/* Trash zone */}
                         {dragging && (

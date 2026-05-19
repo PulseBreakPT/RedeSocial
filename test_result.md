@@ -836,6 +836,33 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+frontend:
+  - task: "Stories — aura ring (seen=gray transparent / unseen=vivid gradient), media object-contain with blurred backdrop, layout polish"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/stories/stories.css, /app/frontend/src/components/StoriesBar.js, /app/frontend/src/components/stories/StoryViewer.js, /app/frontend/src/components/stories/StoryComposer.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            UI ONLY (não auto-testar). Ajustes ao módulo Stories:
+              1. AURA / RING:
+                 · .sv-ring agora usa conic-gradient animado (rosa→coral→laranja→amarelo→roxo, rotação 9s) com sombra branca subtil.
+                 · .sv-ring.is-seen = rgba(0,0,0,0.16) (cinzento transparente), sem animação.
+                 · .hl-ring (highlights) atualizado com a mesma paleta vibrante e .is-seen cinzento.
+              2. IMAGEM SEM ZOOM:
+                 · Novo container .sv-media-fit em CSS: imagem/vídeo em object-contain (vê-se a imagem inteira) + cópia em fundo com filtro blur(36px) saturate(1.25) brightness(0.7) que preenche o resto do canvas (padrão Instagram).
+                 · StoryViewer.js: media de image/video agora usa <div class="sv-media-fit"> com .sv-media-bg (blur) e .sv-media-fg (object-contain).
+                 · StoryComposer.js: preview de image/video também usa esta estrutura.
+              3. POLISH / "QI INFINITO":
+                 · StoriesBar: novo badge .sb-thumb-count no canto superior-direito quando há mais de um story (mostra unseen-count se houver, ou total). Hover lift sutil (translateY -2px).
+                 · Label do thumb fica preto vivo se unseen, cinzento se já visto.
+                 · StoryViewer header: novo contador "X/N" inline quando o grupo tem >1 story, ajuda navegação.
+                 · StoryComposer: novo botão flutuante "Trocar" (canto superior-esquerdo do canvas) quando já há media carregada, permite trocar imagem/vídeo sem ter de o remover primeiro (data-testid composer-change-image / composer-change-video).
+
 agent_communication:
     - agent: "testing"
       message: |

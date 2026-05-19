@@ -363,6 +363,11 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                             <span>@{group.author.username}</span>
                             <span>·</span>
                             <span>{relativeTime(story.created_at)}</span>
+                            {group.stories.length > 1 && (
+                                <span className="sv-counter px-1.5 py-0.5 rounded-full bg-black/35 text-white/90 text-[9.5px]">
+                                    {si + 1}/{group.stories.length}
+                                </span>
+                            )}
                             {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-black/35 text-white text-[9.5px]">{audienceTag}</span>}
                         </div>
                     </div>
@@ -410,16 +415,27 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                         </div>
                     </div>
                 ) : story.media_type === "video" ? (
-                    <video
-                        ref={videoRef}
-                        src={story.video}
-                        autoPlay loop playsInline
-                        muted={muted}
-                        className="absolute inset-0 w-full h-full object-cover bg-black"
-                        data-testid="story-video"
-                    />
+                    <div className="sv-media-fit">
+                        <video
+                            src={story.video}
+                            autoPlay loop playsInline muted
+                            className="sv-media-bg"
+                            aria-hidden
+                        />
+                        <video
+                            ref={videoRef}
+                            src={story.video}
+                            autoPlay loop playsInline
+                            muted={muted}
+                            className="sv-media-fg"
+                            data-testid="story-video"
+                        />
+                    </div>
                 ) : (
-                    <img src={story.image} alt="" className="absolute inset-0 w-full h-full object-cover bg-black" />
+                    <div className="sv-media-fit">
+                        <img src={story.image} alt="" className="sv-media-bg" aria-hidden />
+                        <img src={story.image} alt="" className="sv-media-fg" />
+                    </div>
                 )}
 
                 {/* Subtle bottom gradient for readability */}

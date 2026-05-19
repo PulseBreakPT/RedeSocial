@@ -109,11 +109,14 @@ export function StoriesBar() {
 function StoryThumb({ group, label, onClick }) {
     const unseen = group.has_unseen;
     const hot = (group.max_eqs || 0) >= 0.55;
+    const total = group.stories?.length || 0;
+    const unseenCount = group.stories?.filter((s) => !s.is_viewed).length || 0;
+    const showCount = total > 1;
     return (
         <button
             onClick={onClick}
             data-testid={`story-thumb-${group.author.username}`}
-            className="flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink snap-start-x"
+            className="sb-thumb-wrap flex flex-col items-center gap-2 flex-shrink-0 group tap-shrink snap-start-x"
         >
             <div className="relative">
                 <div className={`sv-ring ${unseen ? "" : "is-seen"}`}>
@@ -121,17 +124,26 @@ function StoryThumb({ group, label, onClick }) {
                         <Avatar user={group.author} size={62} />
                     </div>
                 </div>
+                {showCount && (
+                    <span
+                        className="sb-thumb-count"
+                        data-testid={`story-count-${group.author.username}`}
+                        aria-label={`${total} stories`}
+                    >
+                        {unseen && unseenCount > 0 ? unseenCount : total}
+                    </span>
+                )}
                 {hot && (
                     <div
                         title="Story em destaque"
                         data-testid={`story-hot-${group.author.username}`}
-                        className="absolute -top-0.5 -right-0.5 px-1.5 py-0.5 rounded-full bg-black text-white text-[8.5px] font-bold tracking-wider uppercase shadow border-[1.5px] border-white"
+                        className="absolute -bottom-0.5 -right-0.5 px-1.5 py-0.5 rounded-full bg-black text-white text-[8.5px] font-bold tracking-wider uppercase shadow border-[1.5px] border-white"
                     >
                         Hot
                     </div>
                 )}
             </div>
-            <span className="text-[11px] font-medium tracking-tight text-black/55 group-hover:text-black max-w-[72px] sm:max-w-[82px] truncate">
+            <span className={`text-[11px] font-medium tracking-tight max-w-[72px] sm:max-w-[82px] truncate ${unseen ? "text-black" : "text-black/45"} group-hover:text-black`}>
                 {label}
             </span>
         </button>
