@@ -9,7 +9,7 @@ import { DynamicWord } from "../components/DynamicWord";
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
 const REGISTER_HERO =
-    "https://images.unsplash.com/photo-1690467521792-8e38e841e000?auto=format&fit=crop&w=1600&q=75";
+    "/hero/register.jpg";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 

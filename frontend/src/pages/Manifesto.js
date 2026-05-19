@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck } f
 // Cinematic Portuguese hero — contemplative scene by the Tagus.
 // Visual embodiment of the manifesto's core line: "Queremos-te bem."
 const MANIFESTO_IMAGE =
-    "https://images.unsplash.com/photo-1556268397-4b97d760d8f7?auto=format&fit=crop&w=1600&q=75";
+    "/hero/manifesto.jpg";
 
 /**
  * /manifesto — public page declaring the 6 anti-dark-pattern promises.
