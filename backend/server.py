@@ -7547,6 +7547,14 @@ async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
     key = conv_key(user["id"], other["id"])
     kind = (payload.kind or "text").lower()
     content = (payload.content or "").strip()
+    # Image payload: defensive size guard — frontend caps at 4MB raw (~5.6MB base64).
+    # Allow up to 8MB of base64 string; reject anything larger explicitly so the
+    # client gets a clear error rather than silently truncating (which used to
+    # corrupt the data URL and break "Imagens não ficam"/persistence).
+    image_data = payload.image or ""
+    if kind == "image":
+        if len(image_data) > 8_000_000:
+            raise HTTPException(413, "Imagem demasiado grande (máx ~5MB)")
     if kind == "vibe" and payload.vibe:
         content = payload.vibe.strip()[:8]
     elif kind == "location" and payload.location:
@@ -7559,7 +7567,7 @@ async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
         "id": str(uuid.uuid4()), "conversation_key": key,
         "sender_id": user["id"], "recipient_id": other["id"],
         "content": content, "kind": kind,
-        "image": (payload.image or "")[:200000] if kind == "image" else "",
+        "image": image_data if kind == "image" else "",
         "location": payload.location if kind == "location" else None,
         "reply_to": payload.reply_to,
         "read": False, "created_at": now_iso(),

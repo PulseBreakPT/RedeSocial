@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
     Send, ArrowLeft, MessageCircle, Search, Pin, Archive, ArchiveRestore,
-    X, Check, CheckCheck, Plus, Coffee, MapPin, MoreHorizontal,
+    X, Check, CheckCheck, Plus, MapPin, MoreHorizontal,
     Smile, Reply, Edit3, Copy, Forward, Trash2, BellOff, Image as ImageIcon,
     Sparkles, MailWarning, Images,
 } from "lucide-react";
@@ -441,11 +441,18 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     const isRecent = peerId && pulse.recent_set.has(peerId);
                     const showHalo = isLive || isTyping || isRecent;
                     return (
-                    <button key={c.key} data-testid={`conversation-${c.other_user?.username}`} type="button"
+                    <div key={c.key} data-testid={`conversation-${c.other_user?.username}`}
+                        role="button" tabIndex={0}
                         className={`group w-full flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.015] transition cursor-pointer text-left relative ${
                             activeId === c.other_user?.id ? "bg-black/[0.025]" : ""
                         } ${showHalo ? "conv-halo-live" : ""}`}
-                        onClick={() => onSelect(c.other_user)}>
+                        onClick={() => c.other_user && onSelect(c.other_user)}
+                        onKeyDown={(e) => {
+                            if ((e.key === "Enter" || e.key === " ") && c.other_user) {
+                                e.preventDefault();
+                                onSelect(c.other_user);
+                            }
+                        }}>
                         <Avatar user={c.other_user} size={48} showOnline />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
@@ -482,6 +489,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                         </div>
                         <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition relative" ref={rowMenu === c.key ? rowMenuRef : null}>
                             <button
+                                type="button"
                                 onClick={(e) => { e.stopPropagation(); setRowMenu(rowMenu === c.key ? null : c.key); }}
                                 data-testid={`conv-more-${c.other_user?.username}`}
                                 title="Mais ações"
@@ -516,7 +524,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                                 </div>
                             )}
                         </div>
-                    </button>
+                    </div>
                     );
                 })
             )}
@@ -802,10 +810,6 @@ function ChatView({ other, onBack }) {
     const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
     const headerMenuRef = useRef(null);
 
-    const cafeKey = `vm_cafe_receipt_${other?.id || ""}`;
-    const [cafeReceipt, setCafeReceipt] = useState(() => {
-        try { return localStorage.getItem(cafeKey) === "1"; } catch { return false; }
-    });
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
     const typingTimerRef = useRef(null);
@@ -817,13 +821,8 @@ function ChatView({ other, onBack }) {
         try {
             const { data } = await api.get(`/messages/${other.id}`);
             setMessages(data.messages || []);
-            // B-023 — Server-side Cafezinho state (per-conversation or global)
-            if (typeof data.cafezinho_active === "boolean") {
-                setCafeReceipt(data.cafezinho_active);
-                try { localStorage.setItem(cafeKey, data.cafezinho_active ? "1" : "0"); } catch { /* ignore */ }
-            }
         } catch { /* silent */ }
-    }, [other.id, cafeKey]);
+    }, [other.id]);
     const checkTyping = useCallback(async () => {
         try {
             const { data } = await api.get(`/messages/${other.id}/typing-status`);
@@ -854,11 +853,8 @@ function ChatView({ other, onBack }) {
                 if (arr.some((x) => x.id === m.id)) return arr;
                 return [...arr, m];
             });
-            // Mark this inbound msg as read on the wire if Cafezinho is NOT on
-            try {
-                const cafeOn = localStorage.getItem(`vm_cafe_receipt_${otherId}`) === "1";
-                if (!cafeOn) load();
-            } catch {}
+            // Refresh to auto-mark inbound as read
+            load();
         } else if (evt.type === "message_read") {
             // Sender side — flip read indicator
             setMessages((arr) => arr.map((x) => (x.id === evt.message_id ? { ...x, read: true, read_at: new Date().toISOString() } : x)));
@@ -943,30 +939,64 @@ function ChatView({ other, onBack }) {
         }
     };
 
-    const onPickImage = async (file) => {
-        if (!file) return;
-        if (file.size > 4 * 1024 * 1024) { toast.error("Imagem demasiado grande (máx 4MB)"); return; }
+    // Downscale + JPEG-compress images client-side to keep payloads small.
+    // Targets: max 1600px on the longest side, JPEG quality 0.82.
+    // Returns a data URL (base64) ready to send.
+    const compressImage = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = async (e) => {
-            const dataUrl = e.target.result;
-            const tempId = `temp_${Date.now()}`;
-            const optimistic = {
-                id: tempId, sender_id: me?.id, recipient_id: other.id,
-                content: "📷 Imagem", kind: "image", image: dataUrl,
-                created_at: new Date().toISOString(), read: false, _pending: true,
+        reader.onerror = () => reject(new Error("read_failed"));
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error("decode_failed"));
+            img.onload = () => {
+                try {
+                    const MAX = 1600;
+                    let { width, height } = img;
+                    if (width > MAX || height > MAX) {
+                        if (width >= height) { height = Math.round(height * (MAX / width)); width = MAX; }
+                        else { width = Math.round(width * (MAX / height)); height = MAX; }
+                    }
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // PNG with alpha → keep PNG; otherwise JPEG (smaller).
+                    const isPng = (file.type || "").toLowerCase().includes("png");
+                    const out = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", 0.82);
+                    resolve(out);
+                } catch (err) { reject(err); }
             };
-            setMessages((m) => [...m, optimistic]);
-            try {
-                const { data } = await api.post("/messages/v2", {
-                    to_user_id: other.id, kind: "image", image: dataUrl,
-                });
-                setMessages((m) => m.map((x) => (x.id === tempId ? data : x)));
-            } catch (er) {
-                setMessages((m) => m.map((x) => (x.id === tempId ? { ...x, _pending: false, _failed: true } : x)));
-                toastApiError(er);
-            }
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
+    });
+
+    const onPickImage = async (file) => {
+        if (!file) return;
+        if (file.size > 8 * 1024 * 1024) { toast.error("Imagem demasiado grande (máx 8MB)"); return; }
+        let dataUrl;
+        try {
+            dataUrl = await compressImage(file);
+        } catch {
+            toast.error("Não foi possível processar a imagem.");
+            return;
+        }
+        const tempId = `temp_${Date.now()}`;
+        const optimistic = {
+            id: tempId, sender_id: me?.id, recipient_id: other.id,
+            content: "📷 Imagem", kind: "image", image: dataUrl,
+            created_at: new Date().toISOString(), read: false, _pending: true,
+        };
+        setMessages((m) => [...m, optimistic]);
+        try {
+            const { data } = await api.post("/messages/v2", {
+                to_user_id: other.id, kind: "image", image: dataUrl,
+            });
+            setMessages((m) => m.map((x) => (x.id === tempId ? data : x)));
+        } catch (er) {
+            setMessages((m) => m.map((x) => (x.id === tempId ? { ...x, _pending: false, _failed: true } : x)));
+            toastApiError(er);
+        }
     };
 
     const sendLocation = async () => {
@@ -1040,35 +1070,6 @@ function ChatView({ other, onBack }) {
         try {
             const { data } = await api.post(`/conversations/${other.id}/mark-unread`);
             if (data.marked) toast.success("Marcada como não lida"); else toast("Nada para marcar");
-        } catch (e) { toastApiError(e); }
-    };
-    const toggleCafe = async () => {
-        // B-023 — Persist Cafezinho preference server-side (and mirror to localStorage for UI)
-        const next = !cafeReceipt;
-        setCafeReceipt(next);
-        try { localStorage.setItem(cafeKey, next ? "1" : "0"); } catch { /* ignore */ }
-        try {
-            const { data } = await api.post(`/conversations/${other.id}/cafezinho`);
-            // Server is the source of truth — sync state if we got a divergence
-            if (typeof data.active === "boolean" && data.active !== next) {
-                setCafeReceipt(data.active);
-                try { localStorage.setItem(cafeKey, data.active ? "1" : "0"); } catch { /* ignore */ }
-            }
-            toast.success(next ? "“Café” ligado — vais marcar quando leres com calma." : "“Café” desligado.");
-        } catch (e) {
-            // Rollback on error
-            setCafeReceipt(!next);
-            try { localStorage.setItem(cafeKey, !next ? "1" : "0"); } catch { /* ignore */ }
-            toastApiError(e);
-        }
-    };
-
-    const markAllRead = async () => {
-        // B-023 — Bulk manual-read (used by Cafezinho's "Marcar como lido")
-        try {
-            const { data } = await api.post(`/conversations/${other.id}/read-all`);
-            if (data.updated > 0) toast.success("Marcadas como lidas");
-            setMessages((arr) => arr.map((x) => (x.sender_id === other.id && !x.read ? { ...x, read: true, read_at: new Date().toISOString() } : x)));
         } catch (e) { toastApiError(e); }
     };
 
@@ -1182,19 +1183,6 @@ function ChatView({ other, onBack }) {
                         </div>
                     </div>
                 </Link>
-                <button onClick={toggleCafe} data-testid="chat-cafe-toggle"
-                    title={cafeReceipt ? "Café ligado — vais marcar quando leres" : "Ligar Café (adia o visto até decidires)"}
-                    aria-pressed={cafeReceipt}
-                    className={`h-9 pl-2.5 pr-3 rounded-full inline-flex items-center gap-1.5 transition border ${
-                        cafeReceipt
-                            ? "bg-[color:var(--coral-500)]/10 text-[color:var(--coral-500)] border-[color:var(--coral-500)]/30"
-                            : "bg-black/[0.04] text-black/70 border-transparent hover:bg-black/[0.08]"
-                    }`}>
-                    <Coffee size={14} fill={cafeReceipt ? "currentColor" : "none"} />
-                    <span className="text-[12px] font-medium tracking-tight">
-                        {cafeReceipt ? "Café · ligado" : "Café"}
-                    </span>
-                </button>
                 <div className="relative" ref={headerMenuRef}>
                     <button onClick={() => setHeaderMenuOpen((o) => !o)} data-testid="chat-more-btn"
                         title="Mais ações da conversa"
@@ -1360,19 +1348,6 @@ function ChatView({ other, onBack }) {
                 </div>
                 <p className="text-[10.5px] text-black/35 font-mono mt-1.5 px-1 hidden sm:block">
                     Enter para enviar · Shift+Enter nova linha · Duplo-clique para reagir ❤️
-                    {cafeReceipt && (
-                        <>
-                            <span className="ml-2 text-[color:var(--coral-500)]">· “Café” ligado</span>
-                            <button
-                                type="button"
-                                onClick={markAllRead}
-                                data-testid="mark-all-read"
-                                className="ml-2 underline decoration-dotted underline-offset-2 hover:text-black/70 text-black/50"
-                            >
-                                marcar como lido
-                            </button>
-                        </>
-                    )}
                 </p>
             </div>
 
@@ -1407,6 +1382,10 @@ export default function Messages() {
     }, [userId, navigate]);
 
     const open = (u) => {
+        if (!u || !u.id) {
+            toast.error("Não foi possível abrir esta conversa.");
+            return;
+        }
         setActive(u);
         navigate(`/messages/${u.id}`);
         setNewOpen(false);
