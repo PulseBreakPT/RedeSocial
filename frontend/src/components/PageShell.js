@@ -12,8 +12,15 @@ export function PageShell({ children, max = "max-w-5xl" }) {
     );
 }
 
-/** Hero header: title, subtitle, icon, actions. Stronger hierarchy than PageHeader. */
-export function PageHero({ icon: Icon, title, subtitle, badge, actions, children }) {
+/** Hero header: title, subtitle, icon, actions. Stronger hierarchy than PageHeader.
+ *  Editorial-by-default: o título usa Fraunces italic (serif editorial) com
+ *  optical sizing display. Para casos onde queremos voltar ao sans-serif
+ *  Inter (ex: títulos com números grandes, dashboards), passar `editorial={false}`.
+ */
+export function PageHero({ icon: Icon, title, subtitle, badge, actions, children, editorial = true }) {
+    const titleClass = editorial
+        ? "editorial-hero flex items-center gap-3 text-black"
+        : "font-display text-3xl lg:text-4xl font-bold tracking-tight leading-none flex items-center gap-3 text-black";
     return (
         <div className="mb-6 lg:mb-8" data-testid="page-hero">
             <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -23,9 +30,9 @@ export function PageHero({ icon: Icon, title, subtitle, badge, actions, children
                             {badge}
                         </span>
                     )}
-                    <h1 className="font-display text-3xl lg:text-4xl font-bold tracking-tight leading-none flex items-center gap-3 text-black">
-                        {Icon && <Icon size={28} strokeWidth={1.6} className="text-black/70" />}
-                        {title}
+                    <h1 className={titleClass}>
+                        {Icon && <Icon size={28} strokeWidth={1.6} className="text-black/65 not-italic shrink-0" style={{ fontStyle: "normal" }} />}
+                        <span>{title}</span>
                     </h1>
                     {subtitle && (
                         <p className="mt-2 text-[14px] lg:text-[15px] font-mono text-black/55 max-w-2xl leading-relaxed">

@@ -239,7 +239,8 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         </p>
                         <h1
                             data-testid="legal-title"
-                            className="font-display text-[32px] sm:text-[36px] lg:text-[44px] font-bold tracking-tight leading-[1.04] text-black"
+                            className="editorial-hero leading-[1.04] text-black"
+                            style={{ fontSize: "clamp(32px, 4.2vw, 52px)" }}
                         >
                             {title}
                         </h1>

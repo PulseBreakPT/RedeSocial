@@ -96,7 +96,7 @@ export default function Login() {
 
                 <div className="px-6 sm:px-8 pt-10 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
-                        <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Entrar na conta</h2>
+                        <h2 className="editorial-hero leading-[1.02]" style={{ fontSize: "clamp(34px, 4vw, 42px)" }}>Entrar na conta</h2>
                     <p className="text-black/55 text-[14px] mt-2">Bem-vindo de volta.</p>
 
                     <form onSubmit={submit} className="mt-8 space-y-4" data-testid="login-form">
@@ -157,8 +157,8 @@ export default function Login() {
                         <p className="text-[10.5px] uppercase tracking-[0.14em] text-black/45 font-mono mb-2.5">
                             Da nossa cozinha
                         </p>
-                        <blockquote className="font-display text-[19px] leading-[1.25] tracking-tight text-black max-w-[34ch]">
-                            “Não é sobre quantos seguem. É sobre <span className="silver-foil">quem está à mesa</span>.”
+                        <blockquote className="editorial-quote text-black max-w-[36ch]" style={{ fontSize: "20px" }}>
+                            "Não é sobre quantos seguem. É sobre quem está à mesa."
                         </blockquote>
                         <p className="mt-3 text-[12px] text-black/55 leading-relaxed">
                             Aqui não há streaks que punam, nem notificações entre as 23h e as 8h.{" "}

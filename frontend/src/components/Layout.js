@@ -104,7 +104,9 @@ export function Layout() {
             <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,640px)_340px] max-w-[1320px] mx-auto gap-0 lg:gap-6 px-0 lg:px-6">
                 <LeftSidebar onCompose={() => openCompose()} />
                 <main className="lg:border-x lg:border-black/[0.07] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
-                    <Outlet context={{ openCompose, openChat: () => setChatOpen(true) }} />
+                    <div key={location.pathname} className="page-reveal">
+                        <Outlet context={{ openCompose, openChat: () => setChatOpen(true) }} />
+                    </div>
                 </main>
                 <RightSidebar />
             </div>

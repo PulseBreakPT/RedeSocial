@@ -91,9 +91,10 @@ export default function Manifesto() {
                 </p>
                 <h1
                     data-testid="manifesto-title"
-                    className="font-display text-[40px] sm:text-[56px] lg:text-[72px] font-bold tracking-tight leading-[1.0] text-black max-w-[14ch]"
+                    className="font-editorial text-[44px] sm:text-[64px] lg:text-[84px] font-normal italic tracking-tight leading-[1.0] text-black max-w-[15ch]"
+                    style={{ fontVariationSettings: '"opsz" 144', fontWeight: 380 }}
                 >
-                    Não te queremos viciado. <span className="silver-foil">Queremos-te bem.</span>
+                    Não te queremos viciado. <span className="not-italic font-display font-bold text-black/85" style={{ fontVariationSettings: 'normal' }}>Queremos-te bem.</span>
                 </h1>
                 <p className="mt-6 text-[16px] lg:text-[18px] text-black/70 leading-relaxed max-w-[60ch]">
                     O Lusorae é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos

@@ -313,7 +313,7 @@ export default function Register() {
                         <p className="text-[11px] uppercase tracking-[0.16em] text-black/45 font-mono mb-2">
                             Passo {step} de 3
                         </p>
-                        <h2 className="font-display text-[30px] lg:text-[36px] tracking-tight leading-[1.05]">
+                        <h2 className="editorial-hero leading-[1.02]" style={{ fontSize: "clamp(30px, 3.4vw, 38px)" }}>
                             {step === 1 && "Cria a tua conta"}
                             {step === 2 && "De onde és?"}
                             {step === 3 && "Última coisa, juramos"}

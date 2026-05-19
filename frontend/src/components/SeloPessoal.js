@@ -104,9 +104,10 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 <text
                     x="18"
                     y="6"
-                    fontFamily="Georgia, 'Times New Roman', serif"
+                    fontFamily="Fraunces, Georgia, 'Times New Roman', serif"
                     fontSize="22"
-                    fontWeight="700"
+                    fontWeight="500"
+                    fontStyle="italic"
                     fill="#161616"
                 >
                     lusorae
@@ -148,15 +149,16 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 Nº {num} DA CASA
             </text>
 
-            {/* big display name */}
+            {/* big display name — editorial italic, Fraunces if available */}
             <text
                 x="40"
                 y="220"
-                fontFamily="Georgia, 'Times New Roman', serif"
-                fontSize="46"
-                fontWeight="700"
+                fontFamily="Fraunces, Georgia, 'Times New Roman', serif"
+                fontSize="48"
+                fontWeight="400"
+                fontStyle="italic"
                 fill="#0d0d0e"
-                letterSpacing="-1.5"
+                letterSpacing="-1.2"
             >
                 {truncate(name, 22)}
             </text>
