@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { VermillionSeal } from "../components/VermillionSeal";
-import { DynamicSlogan } from "../components/DynamicSlogan";
 
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
 // Frames the "welcome back" moment in saudade (solitary, contemplative).
@@ -97,7 +96,6 @@ export default function Login() {
 
                 <div className="px-6 sm:px-8 pt-10 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
-                        <DynamicSlogan className="mb-6" testId="login-dynamic-slogan" />
                         <h2 className="font-display text-[34px] lg:text-[40px] tracking-tight leading-[1.05]">Entrar na conta</h2>
                     <p className="text-black/55 text-[14px] mt-2">Bem-vindo de volta.</p>
 

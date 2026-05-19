@@ -5,7 +5,6 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { VermillionSeal } from "../components/VermillionSeal";
-import { DynamicSlogan } from "../components/DynamicSlogan";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
@@ -298,8 +297,6 @@ export default function Register() {
 
                 <div className="px-6 sm:px-8 pt-8 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
                     <div className="max-w-sm w-full mx-auto">
-                        <DynamicSlogan className="mb-6" testId="register-dynamic-slogan" />
-
                         {/* Step indicator — 3 steps */}
                         <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
                             {[1, 2, 3].map((n) => (
