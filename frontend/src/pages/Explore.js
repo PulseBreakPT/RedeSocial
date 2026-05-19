@@ -5,7 +5,7 @@ import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
-import { Compass, Search, Users, Hash, Layers, MapPin, Flame, Clock, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
+import { Compass, Search, Users, Hash, Layers, MapPin, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { toast } from "sonner";
@@ -122,14 +122,7 @@ export default function Explore() {
                         )}
                     </div>
                     {tab === "posts" && (
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setSort("trending")} title="Tendências" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "trending" ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"}`}>
-                                <Flame size={14} />
-                            </button>
-                            <button onClick={() => setSort("recent")} title="Recentes" className={`w-8 h-8 rounded-full grid place-items-center transition ${sort === "recent" ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"}`}>
-                                <Clock size={14} />
-                            </button>
-                        </div>
+                        <div className="flex items-center gap-1" />
                     )}
                 </div>
                 <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide pb-2 hairline-t pt-2">

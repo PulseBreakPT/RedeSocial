@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
+import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 
 export function MobileTopBar({ onOpenChat }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [unread, setUnread] = useState(0);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     const isExplore = location.pathname.startsWith("/explore");
     const isNotif = location.pathname.startsWith("/notifications");
@@ -32,15 +34,18 @@ export function MobileTopBar({ onOpenChat }) {
             data-testid="mobile-topbar"
         >
             <div className="flex items-center gap-3 px-4 h-[var(--mobile-topbar-h)]">
-                {/* Avatar — direct link to own profile (no dropdown) */}
-                <Link
-                    to={user?.username ? `/u/${user.username}` : "/"}
-                    aria-label="Ir para o meu perfil"
+                {/* Avatar — opens the unified profile sidebar drawer */}
+                <button
+                    type="button"
+                    onClick={() => setDrawerOpen(true)}
+                    aria-label="Abrir menu do perfil"
+                    aria-haspopup="dialog"
+                    aria-expanded={drawerOpen}
                     data-testid="mobile-topbar-avatar"
                     className="tap-shrink rounded-full p-0.5 -ml-0.5 hover:bg-black/[0.05] transition shrink-0"
                 >
                     <Avatar user={user} size={32} showOnline />
-                </Link>
+                </button>
 
                 <Link to="/" className="flex items-center gap-1.5 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
                     <span className="font-display text-[24px] leading-none tracking-tight text-black flex items-baseline gap-1">
@@ -85,6 +90,9 @@ export function MobileTopBar({ onOpenChat }) {
                     )}
                 </button>
             </div>
+
+            {/* Unified profile drawer (also used by desktop LeftSidebar) */}
+            <ProfileSidebarMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </header>
     );
 }

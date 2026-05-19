@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import {
     Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
-    FileText, Clock, User, Settings, PenSquare, LogOut, MoreHorizontal,
+    FileText, Clock, PenSquare, MoreHorizontal,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { api } from "../lib/api";
-import { useClickOutside } from "../hooks/useClickOutside";
+import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 
 // Vertical primary nav (social-network standard, X/Bluesky style)
 const NAV_ITEMS = [
@@ -24,12 +24,10 @@ const NAV_ITEMS = [
 ];
 
 export function LeftSidebar({ onCompose }) {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const [counts, setCounts] = useState({ notif: 0, msg: 0 });
     const [draftCount, setDraftCount] = useState(0);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const menuRef = useClickOutside(() => setMenuOpen(false), menuOpen);
-    const navigate = useNavigate();
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -64,13 +62,7 @@ export function LeftSidebar({ onCompose }) {
         return () => { alive = false; clearInterval(id); };
     }, [user?.username]);
 
-    const handleLogout = async () => {
-        await logout();
-        setMenuOpen(false);
-        navigate("/login");
-    };
-
-    const profileTo = user?.username ? `/u/${user.username}` : "/";
+    // (profile target navigation now handled via the drawer)
 
     return (
         <aside
@@ -133,46 +125,6 @@ export function LeftSidebar({ onCompose }) {
                         </NavLink>
                     );
                 })}
-
-                {/* Profile + Settings — kept slightly apart visually */}
-                <div className="mt-1 pt-1 hairline-t flex flex-col gap-0.5">
-                    <NavLink
-                        to={profileTo}
-                        data-testid="nav-profile"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
-                                isActive
-                                    ? "bg-black text-white font-semibold"
-                                    : "text-black/85 hover:bg-black/[0.05] hover:text-black"
-                            }`
-                        }
-                    >
-                        {({ isActive }) => (
-                            <>
-                                <User size={20} strokeWidth={isActive ? 2.1 : 1.7} />
-                                <span className="text-[15px] tracking-tight">Perfil</span>
-                            </>
-                        )}
-                    </NavLink>
-                    <NavLink
-                        to="/settings"
-                        data-testid="nav-settings"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
-                                isActive
-                                    ? "bg-black text-white font-semibold"
-                                    : "text-black/85 hover:bg-black/[0.05] hover:text-black"
-                            }`
-                        }
-                    >
-                        {({ isActive }) => (
-                            <>
-                                <Settings size={20} strokeWidth={isActive ? 2.1 : 1.7} />
-                                <span className="text-[15px] tracking-tight">Definições</span>
-                            </>
-                        )}
-                    </NavLink>
-                </div>
             </nav>
 
             {/* Big Publicar — lusorae CTA com indicador de rascunhos */}
@@ -200,13 +152,16 @@ export function LeftSidebar({ onCompose }) {
                 )}
             </button>
 
-            {/* User mini-card with logout menu */}
+            {/* User mini-card — opens the unified profile sidebar drawer */}
             {user && (
-                <div className="relative shrink-0" ref={menuRef}>
+                <div className="shrink-0">
                     <button
-                        onClick={() => setMenuOpen((v) => !v)}
+                        onClick={() => setDrawerOpen(true)}
                         data-testid="left-sidebar-user-btn"
-                        className="w-full flex items-center gap-3 px-2.5 py-2 rounded-full hover:bg-black/[0.05] transition tap-shrink text-left"
+                        aria-haspopup="dialog"
+                        aria-expanded={drawerOpen}
+                        aria-label="Abrir menu do perfil"
+                        className="w-full flex items-center gap-3 px-2.5 py-2 rounded-full hover:bg-black/[0.05] active:bg-black/[0.08] transition tap-shrink text-left"
                     >
                         <Avatar user={user} size={40} showOnline />
                         <div className="flex-1 min-w-0">
@@ -218,37 +173,11 @@ export function LeftSidebar({ onCompose }) {
                         </div>
                         <MoreHorizontal size={16} className="text-black/45 shrink-0" />
                     </button>
-                    {menuOpen && (
-                        <div className="absolute bottom-full left-0 right-0 mb-2 card-premium rounded-2xl py-1.5 shadow-2xl z-30 anim-fade-up">
-                            <Link
-                                to={profileTo}
-                                onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-black/80 hover:bg-black/[0.04] transition"
-                                data-testid="user-menu-profile"
-                            >
-                                <User size={15} strokeWidth={1.7} /> Ver perfil
-                            </Link>
-                            <Link
-                                to="/settings"
-                                onClick={() => setMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-black/80 hover:bg-black/[0.04] transition"
-                                data-testid="user-menu-settings"
-                            >
-                                <Settings size={15} strokeWidth={1.7} /> Definições
-                            </Link>
-                            <div className="hairline-t my-1" />
-                            <button
-                                onClick={handleLogout}
-                                data-testid="user-menu-logout"
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-coral-600 hover:bg-coral-50/60 transition text-left"
-                                style={{ color: "var(--coral-500)" }}
-                            >
-                                <LogOut size={15} strokeWidth={1.7} /> Sair da conta
-                            </button>
-                        </div>
-                    )}
                 </div>
             )}
+
+            {/* The unified profile drawer (rendered as a portal-like fixed overlay) */}
+            <ProfileSidebarMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </aside>
     );
 }
