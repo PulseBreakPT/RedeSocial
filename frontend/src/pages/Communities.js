@@ -4,6 +4,7 @@ import { Users, Plus, X, Search, Flame, Clock, TrendingUp } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { PageShell, PageHero, FilterBar, Chip, Grid, Empty } from "../components/PageShell";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
+import { RowSkeletonList } from "../components/Skeleton";
 import { toast } from "sonner";
 
 const TABS = [
@@ -169,7 +170,7 @@ export default function Communities() {
             )}
 
             {loading ? (
-                <div className="p-12 text-center type-overline">a carregar…</div>
+                <RowSkeletonList count={6} />
             ) : filtered.length === 0 ? (
                 <Empty
                     icon={Users}

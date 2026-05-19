@@ -61,3 +61,55 @@ export function ConvSkeleton() {
         </div>
     );
 }
+
+/* ---------- New skeletons ---------- */
+
+export function NotifSkeleton() {
+    return (
+        <div className="flex items-start gap-3 px-4 lg:px-5 py-3 hairline-b animate-pulse" data-testid="notif-skeleton">
+            <div className="w-8 h-8 rounded-full bg-black/[0.05] flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+                <div className="h-3 w-2/3 bg-black/[0.05] rounded" />
+                <div className="h-3 w-1/3 bg-black/[0.04] rounded" />
+            </div>
+            <div className="w-2 h-2 rounded-full bg-black/[0.05] mt-3" />
+        </div>
+    );
+}
+
+export function NotifSkeletonList({ count = 6 }) {
+    return (
+        <div>
+            {Array.from({ length: count }).map((_, i) => (
+                <NotifSkeleton key={i} />
+            ))}
+        </div>
+    );
+}
+
+/**
+ * Generic row skeleton — for Trending tags, Communities list, etc.
+ * Each row: small badge/icon + title + meta line.
+ */
+export function RowSkeleton() {
+    return (
+        <div className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b animate-pulse" data-testid="row-skeleton">
+            <div className="w-10 h-10 rounded-xl bg-black/[0.05] flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+                <div className="h-3.5 w-40 bg-black/[0.05] rounded" />
+                <div className="h-2.5 w-24 bg-black/[0.04] rounded" />
+            </div>
+            <div className="h-7 w-16 bg-black/[0.05] rounded-full" />
+        </div>
+    );
+}
+
+export function RowSkeletonList({ count = 6 }) {
+    return (
+        <div>
+            {Array.from({ length: count }).map((_, i) => (
+                <RowSkeleton key={i} />
+            ))}
+        </div>
+    );
+}

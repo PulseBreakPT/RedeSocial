@@ -10,6 +10,7 @@ import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 import { confirmDialog } from "../components/ConfirmDialog";
+import { NotifSkeletonList } from "../components/Skeleton";
 
 const iconFor = (type) => {
     if (type === "like") return <Heart size={16} strokeWidth={1.6} className="text-red-soft" fill="currentColor" />;
@@ -206,7 +207,7 @@ export default function Notifications() {
             </PageHeader>
 
             {loading ? (
-                <div className="p-12 text-center type-overline">a carregar…</div>
+                <NotifSkeletonList count={6} />
             ) : filter === "priority" && priorityGroups ? (
                 <div data-testid="notif-priority-view">
                     {[

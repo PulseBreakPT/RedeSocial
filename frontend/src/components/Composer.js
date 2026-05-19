@@ -85,6 +85,15 @@ const RINGS = [
 ];
 const MAX_IMAGES = 4;
 
+function relativeSavedLabel(ts) {
+    if (!ts) return "";
+    const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (diff < 5) return "agora";
+    if (diff < 60) return `há ${diff}s`;
+    if (diff < 3600) return `há ${Math.floor(diff / 60)}m`;
+    return `há ${Math.floor(diff / 3600)}h`;
+}
+
 export function Composer({ onPosted, asModal = false, onClose, communityId = null, initialPost = null }) {
     const { user } = useAuth();
     const draftKey = communityId ? `draft:c:${communityId}` : "draft:global";
@@ -112,6 +121,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [fullscreen, setFullscreen] = useState(false);
     const [previewMode, setPreviewMode] = useState("desktop"); /* "desktop" | "mobile" */
     const [savedAt, setSavedAt] = useState(null);
+    const [isTyping, setIsTyping] = useState(false);
+    const [, setNowTick] = useState(0); // forces re-render so "há Xs" stays fresh
     // Pre-publish preview modal
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
@@ -130,10 +141,24 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
 
     // Auto-save indicator (lightweight, useLocalDraft already persists on every change)
     useEffect(() => {
-        if (!content) return;
-        const t = setTimeout(() => setSavedAt(Date.now()), 600);
+        if (!content) {
+            setIsTyping(false);
+            return;
+        }
+        setIsTyping(true);
+        const t = setTimeout(() => {
+            setSavedAt(Date.now());
+            setIsTyping(false);
+        }, 600);
         return () => clearTimeout(t);
     }, [content]);
+
+    // Tick once every 15s so "guardado há Xs" updates without re-typing
+    useEffect(() => {
+        if (!savedAt) return;
+        const id = setInterval(() => setNowTick((n) => n + 1), 15000);
+        return () => clearInterval(id);
+    }, [savedAt]);
 
     const clearComposer = async () => {
         if (!content && images.length === 0 && !pollOpen && !scheduleOpen) {
@@ -363,9 +388,22 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             </button>
                         </div>
                         {/* Auto-save indicator */}
-                        {savedAt && content && (
-                            <div data-testid="composer-autosave" className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-black/45">
-                                <Check size={10} strokeWidth={2} className="text-emerald-600" /> guardado
+                        {content && (savedAt || isTyping) && (
+                            <div
+                                data-testid="composer-autosave"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-black/45"
+                            >
+                                {isTyping ? (
+                                    <>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                        a guardar…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={10} strokeWidth={2} className="text-emerald-600" />
+                                        guardado {relativeSavedLabel(savedAt)}
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

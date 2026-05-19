@@ -4,6 +4,7 @@ import { TrendingUp, Hash, MapPin, Users, Layers, Sparkles, Flame } from "lucide
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
+import { RowSkeletonList } from "../components/Skeleton";
 
 const RANGES = [
     { key: "1h", label: "1h" },
@@ -132,7 +133,7 @@ export default function Trending() {
             </PageHeader>
 
             {loading ? (
-                <div className="p-12 text-center type-overline">a carregar…</div>
+                <RowSkeletonList count={8} />
             ) : tab === "hashtags" ? (
                 <HashtagsList items={data.hashtags} />
             ) : tab === "pessoas" ? (
