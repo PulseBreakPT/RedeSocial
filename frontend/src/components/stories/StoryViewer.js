@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
     X, Heart, Send, MoreHorizontal, Eye, Volume2, VolumeX, Trash2, Star,
-    BellOff, Sparkles, Pause, BarChart3, Flame,
+    BellOff, Sparkles, BarChart3, Flame,
 } from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
 import { Avatar } from "../Avatar";
@@ -53,6 +53,7 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
     const elapsedRef = useRef(0);
     const videoRef = useRef(null);
     const dragRef = useRef(null);
+    const longPressRef = useRef(null);
 
     const group = groups[gi];
     const baseStory = group?.stories[si];
@@ -238,13 +239,42 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         } catch (e) { toastApiError(e); }
     };
 
-    /* ---------- gesture handlers (swipe vertical = close, horizontal = nav) ---------- */
-    const onShellPointerDown = (e) => {
-        // Skip drags that originate on reply input / buttons
-        if (e.target.closest("input, textarea, button, a, [data-no-drag]")) return;
-        dragRef.current = { x: e.clientX, y: e.clientY, dx: 0, dy: 0, axis: null, t0: performance.now() };
-        setPaused(true);
+    /* ---------- gesture handlers ----------
+       - Quick tap (no significant move, released within ~350ms): navigate left/right (zones)
+       - Long press (held >= 220ms with no significant move): pause story; release = resume
+       - Swipe horizontal: navigate prev/next
+       - Swipe vertical down: dismiss
+    */
+    const LONG_PRESS_MS = 220;
+    const TAP_MAX_MS = 350;
+    const TAP_MAX_MOVE = 8;
+
+    const clearLongPress = () => {
+        if (longPressRef.current) {
+            clearTimeout(longPressRef.current);
+            longPressRef.current = null;
+        }
     };
+
+    const onShellPointerDown = (e) => {
+        // Ignore drags originating on interactive zones (header / bottom actions / inputs)
+        if (e.target.closest("input, textarea, button, a, [data-no-drag]")) return;
+        dragRef.current = {
+            x: e.clientX, y: e.clientY, dx: 0, dy: 0, axis: null,
+            t0: performance.now(), pointerId: e.pointerId, didPause: false,
+        };
+        // Arm long-press → pause after threshold (don't pause immediately, so quick taps stay responsive)
+        clearLongPress();
+        longPressRef.current = setTimeout(() => {
+            const st = dragRef.current;
+            if (st && !st.axis) {
+                st.didPause = true;
+                setPaused(true);
+            }
+            longPressRef.current = null;
+        }, LONG_PRESS_MS);
+    };
+
     const onShellPointerMove = (e) => {
         const st = dragRef.current;
         if (!st) return;
@@ -252,34 +282,55 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
         st.dy = e.clientY - st.y;
         if (!st.axis && Math.hypot(st.dx, st.dy) > 10) {
             st.axis = Math.abs(st.dx) > Math.abs(st.dy) ? "x" : "y";
+            // Movement detected — cancel pending long-press
+            clearLongPress();
+            if (st.didPause) {
+                // Was paused by long-press but user started moving → keep paused for swipe, release after up
+            }
         }
         if (st.axis === "y" && st.dy > 0) setDragY(st.dy);
     };
+
     const onShellPointerUp = (e) => {
+        clearLongPress();
         const st = dragRef.current;
         if (!st) { setPaused(false); return; }
+
         const elapsed = performance.now() - st.t0;
-        const isTap = Math.hypot(st.dx, st.dy) < 8 && elapsed < 250;
-        if (isTap) {
-            // Determine prev/next tap zone based on x-position
+        const moved = Math.hypot(st.dx, st.dy);
+        const isQuickTap = moved < TAP_MAX_MOVE && elapsed < TAP_MAX_MS && !st.didPause;
+
+        // Reset drag state immediately so subsequent renders are clean
+        dragRef.current = null;
+        setDragY(0);
+        // Always resume (a long-press release should also resume)
+        setPaused(false);
+
+        if (isQuickTap) {
             const rect = e.currentTarget.getBoundingClientRect();
             const xRel = (e.clientX - rect.left) / rect.width;
-            // Trigger ripple feedback
             setRipple({ id: Math.random().toString(36).slice(2), x: e.clientX - rect.left, y: e.clientY - rect.top });
-            setTimeout(() => setRipple(null), 400);
+            setTimeout(() => setRipple(null), 380);
             if (xRel < 0.33) prev();
             else if (xRel > 0.66) next();
-            // middle tap = toggle pause briefly? skip — used by quick-heart on bottom
-        } else if (st.axis === "y" && st.dy > SWIPE_DISMISS_THRESHOLD) {
+            // middle zone: nothing (left to long-press for pause)
+            return;
+        }
+
+        // Long-press release with no swipe → just resume (already done above)
+        if (st.didPause && st.axis !== "y" && st.axis !== "x") return;
+
+        // Swipe handling
+        if (st.axis === "y" && st.dy > SWIPE_DISMISS_THRESHOLD) {
             onClose();
         } else if (st.axis === "x") {
             if (st.dx < -SWIPE_NAV_THRESHOLD) next();
             else if (st.dx > SWIPE_NAV_THRESHOLD) prev();
         }
-        dragRef.current = null;
-        setDragY(0);
-        setPaused(false);
     };
+
+    // Cleanup long-press timer if the viewer unmounts mid-press
+    useEffect(() => () => clearLongPress(), []);
 
     if (!story) return null;
 
@@ -321,54 +372,77 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                     aria-hidden
                 />
 
-                {/* Progress bars */}
-                <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-[max(10px,env(safe-area-inset-top))] z-40">
-                    {group.stories.map((_, i) => (
+                {/* Progress bar — only the current story, with soft aura-style gradient */}
+                <div className="absolute top-0 left-0 right-0 px-3 pt-[max(10px,env(safe-area-inset-top))] z-40">
+                    <div className="relative h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.22)" }}>
                         <div
-                            key={i}
-                            className="flex-1 h-[3px] rounded-full overflow-hidden"
-                            style={{ background: "rgba(255,255,255,0.32)" }}
-                        >
-                            <div
-                                className="h-full"
-                                style={{
-                                    width: `${i < si ? 100 : i === si ? progress : 0}%`,
-                                    background: "#ffffff",
-                                    transition: i === si ? "none" : "width 200ms ease-out",
-                                    boxShadow: "0 0 6px rgba(255,255,255,0.4)",
-                                }}
-                            />
+                            className="absolute inset-y-0 left-0 sv-progress-aura"
+                            style={{
+                                width: `${progress}%`,
+                                transition: "width 80ms linear",
+                            }}
+                        />
+                    </div>
+                    {group.stories.length > 1 && (
+                        <div className="mt-1 flex justify-center gap-1" aria-hidden>
+                            {group.stories.map((_, i) => (
+                                <span
+                                    key={i}
+                                    className="block rounded-full"
+                                    style={{
+                                        width: i === si ? 14 : 4,
+                                        height: 3,
+                                        background: i === si
+                                            ? "linear-gradient(90deg,#ff8aa6,#ffb87a,#d49aff)"
+                                            : i < si
+                                                ? "rgba(255,255,255,0.55)"
+                                                : "rgba(255,255,255,0.22)",
+                                        transition: "width 220ms cubic-bezier(.22,.61,.36,1), background 220ms ease",
+                                    }}
+                                />
+                            ))}
                         </div>
-                    ))}
+                    )}
                 </div>
 
                 {/* Header */}
-                <div className="absolute top-[max(20px,calc(env(safe-area-inset-top)+12px))] left-3 right-3 flex items-center gap-2.5 z-40" data-no-drag>
+                <div className="absolute top-[max(28px,calc(env(safe-area-inset-top)+20px))] left-3 right-3 flex items-center gap-2.5 z-40" data-no-drag>
                     <div className="sv-ring">
                         <div className="bg-black rounded-full p-[2px]">
                             <Avatar user={group.author} size={36} />
                         </div>
                     </div>
                     <div className="flex-1 min-w-0" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.55)" }}>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-white font-heading font-medium text-[14px] tracking-tight truncate">{group.author.name}</span>
-                            {group.author.verified && <Sparkles size={12} className="text-white" />}
-                            {(paused || replyFocus) && (
-                                <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/80">
-                                    <Pause size={10} strokeWidth={2.4} /> pausa
-                                </span>
+                        <div className="flex items-baseline gap-1.5 min-w-0">
+                            <span className="text-white font-heading font-medium text-[14px] tracking-tight truncate max-w-[60%]">
+                                {group.author.name}
+                            </span>
+                            {group.author.verified && (
+                                <Sparkles size={12} className="text-white flex-shrink-0" />
                             )}
+                            <span
+                                className="text-white/55 font-mono text-[11.5px] tracking-tight truncate"
+                                data-testid="story-username-handle"
+                            >
+                                @{group.author.username}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-2 text-white/80 font-mono text-[10.5px]">
-                            <span>@{group.author.username}</span>
-                            <span>·</span>
+                        <div className="flex items-center gap-1.5 text-white/70 font-mono text-[10px] mt-[1px]">
                             <span>{relativeTime(story.created_at)}</span>
                             {group.stories.length > 1 && (
-                                <span className="sv-counter px-1.5 py-0.5 rounded-full bg-black/35 text-white/90 text-[9.5px]">
-                                    {si + 1}/{group.stories.length}
-                                </span>
+                                <>
+                                    <span className="text-white/35">·</span>
+                                    <span className="sv-counter">
+                                        {si + 1}/{group.stories.length}
+                                    </span>
+                                </>
                             )}
-                            {audienceTag && <span className="px-1.5 py-0.5 rounded-full bg-black/35 text-white text-[9.5px]">{audienceTag}</span>}
+                            {audienceTag && (
+                                <>
+                                    <span className="text-white/35">·</span>
+                                    <span>{audienceTag}</span>
+                                </>
+                            )}
                         </div>
                     </div>
                     {story.media_type === "video" && (
@@ -481,13 +555,6 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                         </div>
                     ))}
                 </div>
-
-                {/* Paused indicator */}
-                {(paused || replyFocus) && (
-                    <div className="absolute top-[max(72px,calc(env(safe-area-inset-top)+60px))] left-1/2 -translate-x-1/2 z-40 sv-paused-pill px-3 py-1 rounded-full bg-black/70 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 pointer-events-none">
-                        <Pause size={10} strokeWidth={2.6} /> em pausa
-                    </div>
-                )}
 
                 {/* Bottom actions */}
                 <div className="absolute bottom-0 left-0 right-0 z-40 px-3 pt-12 pb-[max(16px,env(safe-area-inset-bottom))]" data-no-drag>

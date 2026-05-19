@@ -62,6 +62,22 @@
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.55);
 }
 
+/* Aura-style gradient progress (less saturated, soft) — matches sv-ring palette. */
+.sv-progress-aura {
+    background: linear-gradient(
+        90deg,
+        #ff8aa6 0%,
+        #ffa088 22%,
+        #ffb87a 45%,
+        #f0c9a3 68%,
+        #d49aff 100%
+    );
+    border-radius: 9999px;
+    box-shadow:
+        0 0 8px rgba(255, 138, 166, 0.45),
+        0 0 14px rgba(212, 154, 255, 0.35);
+}
+
 .sv-tap-feedback {
     position: absolute;
     pointer-events: none;
