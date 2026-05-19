@@ -1434,11 +1434,63 @@ backend:
           POST /api/stories with stickers=[{type:"music", data:{title:"X", artist:"Y"}}, {type:"link", data:{url:"https://x.com"}}, {type:"hashtag", data:{tag:"oi"}}].
           Story is saved but the music/link stickers are dropped — only the hashtag remains. GET /api/stories confirms.
 
+  - task: "Live presence — GET /api/posts/activity-pulse (batched feed pulse)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          NEW endpoint: GET /api/posts/activity-pulse?ids=p1,p2,p3
+          - Query: ?ids=<comma-separated up to 60>
+          - Public (no auth required)
+          - Returns: { posts: { <post_id>: { live_viewers:int, recent_comments_15m:int, last_comment_at:string|null, heat:"frio|morno|quente|em_brasa|a_ferver", is_hot:bool } } }
+          - live_viewers comes from ws_manager.viewers_by_post (in-memory)
+          - recent_comments_15m aggregates db.comments where post_id in ids and created_at >= now-15min
+          - Heat: score = recent*8 + viewers*4 → >=70 a_ferver, >=45 em_brasa, >=25 quente, >=10 morno, else frio
+          - Empty ids → {"posts": {}}
+          - Invalid/non-existent ids → still returned with zeros and heat="frio"
+
+          TEST PLAN:
+          1) GET /api/posts/activity-pulse?ids=  → 200, {posts:{}}
+          2) GET /api/posts/activity-pulse?ids=fake1,fake2 → 200, both with live_viewers=0, recent_comments_15m=0, heat="frio", is_hot=false
+          3) Login admin → create a post (POST /api/posts), grab id. GET pulse for that id → 200, heat="frio".
+          4) Add several comments (POST /api/posts/{id}/comments) → GET pulse → recent_comments_15m equals # comments, heat shifts up if >=2 comments. (1 comment = score 8 → frio still. 2 comments = score 16 → morno.)
+          5) Cap test: 70+ ids → should accept up to 60, ignore rest gracefully (no 500).
+
+  - task: "Live presence — GET /api/conversations/pulse (DMs activity)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          NEW endpoint: GET /api/conversations/pulse (auth required)
+          Returns:
+            - active_total:int (cardinality of union(my_typing, my_recent, my_online))
+            - my_typing:list[str] peer ids currently typing to me (db.typing_state, expires_at > now)
+            - my_recent:list[str] peer ids that sent me a msg in last 5min (db.messages.recipient_id=me)
+            - my_online:list[str] peer ids currently online (ws_manager.active intersection with my conv peers)
+
+          TEST PLAN:
+          1) GET /api/conversations/pulse without auth → 401.
+          2) Login admin → GET → 200, all four fields present with correct types.
+          3) Create a second user (B). B → POST /api/messages/{admin_id}/typing → admin GET pulse → my_typing contains B_id. After 6s the typing expires; pulse drops B from my_typing.
+          4) B → POST /api/messages with to_user_id=admin → admin GET pulse → my_recent contains B_id (within 5min window).
+          5) Ensure my_online is a subset of peers known via past messages (no random users in there).
+
 test_plan:
   current_focus:
-    - "One reaction per user enforcement on POST /api/posts/{id}/react"
-    - "Stories accept caption_pos field"
-    - "Stories reject music/link sticker types"
+    - "Live presence — GET /api/posts/activity-pulse (batched feed pulse)"
+    - "Live presence — GET /api/conversations/pulse (DMs activity)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -1451,3 +1503,24 @@ agent_communication:
        • POST /api/stories accepts optional caption_pos {x,y} 0..1.
        • Music/link sticker types removed from VALID_STICKER_TYPES.
       Please run the three backend test cases above. Frontend changes (composer, post action bar, postmenu, stories drag) will be tested separately on user approval.
+
+  - agent: "main"
+    message: |
+      NEW Lusorae "live presence" backend endpoints to validate (high priority).
+      Auth: admin@vermillion.app / admin123 (see /app/memory/test_credentials.md).
+
+      1) GET /api/posts/activity-pulse?ids=p1,p2,p3
+         - Public (no auth)
+         - Returns {posts: {<id>: {live_viewers, recent_comments_15m, last_comment_at, heat, is_hot}}}
+         - Heat bands: frio(<10) · morno(10-24) · quente(25-44) · em_brasa(45-69) · a_ferver(70+)
+           where score = recent_comments_15m*8 + live_viewers*4
+         - See test plan in the task entry.
+
+      2) GET /api/conversations/pulse (auth required)
+         - Returns {active_total, my_typing, my_recent, my_online}
+         - my_typing pulled from db.typing_state (expires_at > now)
+         - my_recent: messages received in last 5min
+         - my_online: intersection of my conv peers with currently WS-connected users
+         - See test plan in the task entry.
+
+      Do NOT test frontend — only the two backend endpoints + ensure no regression on /api/posts, /api/posts/{id}/comments, /api/messages, /api/messages/{id}/typing.

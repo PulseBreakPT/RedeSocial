@@ -1849,6 +1849,82 @@
     }
     .anim-appear-up { animation: appearUp 420ms cubic-bezier(.22,.61,.36,1) both; }
 
+    /* ---------------- Live signals on PostCard footer ---------------- */
+
+    /* Halo subtil em volta de PostCards "quentes" (heat = quente/em_brasa/a_ferver).
+       Pensamento: gradiente quase imperceptível à esquerda + glow muito leve.
+       Nunca agressivo. Só dá a sensação de "este post está vivo agora". */
+    @keyframes liveHotHalo {
+        0%, 100% {
+            box-shadow:
+                inset 2px 0 0 0 rgba(245, 158, 11, 0.22),
+                0 0 0 0 rgba(245, 158, 11, 0.00);
+        }
+        50% {
+            box-shadow:
+                inset 2px 0 0 0 rgba(245, 158, 11, 0.42),
+                0 0 18px -10px rgba(245, 158, 11, 0.25);
+        }
+    }
+    .post-card-hot { animation: liveHotHalo 4.6s ease-in-out infinite; }
+
+    /* Mais intenso para "em_brasa" e "a_ferver" — coral/rose */
+    @keyframes liveBrasaHalo {
+        0%, 100% {
+            box-shadow:
+                inset 2px 0 0 0 rgba(244, 114, 91, 0.30),
+                0 0 0 0 rgba(244, 114, 91, 0.00);
+        }
+        50% {
+            box-shadow:
+                inset 2px 0 0 0 rgba(244, 114, 91, 0.55),
+                0 0 22px -8px rgba(244, 114, 91, 0.32);
+        }
+    }
+    .post-card-brasa { animation: liveBrasaHalo 4.0s ease-in-out infinite; }
+
+    /* Faixa de sinais subtil por baixo da action-bar — micro fade-in */
+    @keyframes liveSignalsRow {
+        0%   { opacity: 0; transform: translateY(2px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .live-signals-row { animation: liveSignalsRow 360ms ease-out both; }
+
+    /* Tabular pulse on counter increase (used by live signals row counts) */
+    @keyframes countTick {
+        0%   { transform: translateY(0); }
+        45%  { transform: translateY(-2px); opacity: 0.65; }
+        100% { transform: translateY(0); }
+    }
+    .anim-count-tick { animation: countTick 360ms ease-out both; }
+
+    /* Mini "pulse" usado em heat pills (a aquecer / em brasa) */
+    @keyframes heatPulse {
+        0%, 100% { opacity: 0.72; }
+        50%      { opacity: 1; }
+    }
+    .anim-heat-pulse { animation: heatPulse 2.4s ease-in-out infinite; }
+
+    /* Glow ring usado em conversas DM com peer online + typing */
+    @keyframes convHaloBreathe {
+        0%, 100% { box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0.0); }
+        50%      { box-shadow: inset 2px 0 0 0 rgba(16, 185, 129, 0.4); }
+    }
+    .conv-halo-live { animation: convHaloBreathe 3.4s ease-in-out infinite; }
+
+    /* Honra prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+        .post-card-hot,
+        .post-card-brasa,
+        .live-signals-row,
+        .anim-count-tick,
+        .anim-heat-pulse,
+        .conv-halo-live {
+            animation: none !important;
+        }
+    }
+
+
     /* Honra prefers-reduced-motion: tudo congela */
     @media (prefers-reduced-motion: reduce) {
         .anim-live-dot,

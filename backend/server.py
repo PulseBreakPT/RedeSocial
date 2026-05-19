@@ -2152,6 +2152,132 @@ async def post_viewers(post_id: str, user=Depends(get_current_user)):
     return {"viewers": out, "total_distinct": len(post.get("viewers", [])), "views": post.get("views", 0)}
 
 
+@api.get("/posts/activity-pulse")
+async def posts_activity_pulse(ids: str = ""):
+    """Lightweight 'is this post alive right now?' batch endpoint.
+
+    Used by the Feed to surface subtle social signals under each PostCard
+    without requiring per-post WS subscriptions.
+
+    Query: ?ids=p1,p2,p3  (comma-separated, max 60)
+    Returns: { posts: { "<post_id>": { live_viewers, recent_comments_15m,
+                                        last_comment_at, heat, is_hot } } }
+    Heat band derived from recent_comments_15m + live_viewers:
+      frio | morno | quente | em_brasa | a_ferver
+    """
+    pid_list = [s.strip() for s in (ids or "").split(",") if s.strip()][:60]
+    if not pid_list:
+        return {"posts": {}}
+    now = datetime.now(timezone.utc)
+    cutoff = (now - timedelta(minutes=15)).isoformat()
+    out: dict = {}
+    # Recent comments per post (last 15min)
+    cursor = db.comments.aggregate([
+        {"$match": {"post_id": {"$in": pid_list}, "created_at": {"$gte": cutoff}}},
+        {"$group": {
+            "_id": "$post_id",
+            "count": {"$sum": 1},
+            "last": {"$max": "$created_at"},
+        }},
+    ])
+    recent_map: dict = {}
+    async for row in cursor:
+        recent_map[row["_id"]] = {"count": int(row.get("count", 0)),
+                                   "last": row.get("last")}
+    for pid in pid_list:
+        live = len(ws_manager.viewers_by_post.get(pid, set()))
+        rc = int(recent_map.get(pid, {}).get("count", 0))
+        last_at = recent_map.get(pid, {}).get("last")
+        # Heat scoring (intentionally simple, atmospheric)
+        score = rc * 8 + live * 4
+        if score >= 70:
+            heat = "a_ferver"
+        elif score >= 45:
+            heat = "em_brasa"
+        elif score >= 25:
+            heat = "quente"
+        elif score >= 10:
+            heat = "morno"
+        else:
+            heat = "frio"
+        is_hot = heat in ("quente", "em_brasa", "a_ferver")
+        out[pid] = {
+            "live_viewers": live,
+            "recent_comments_15m": rc,
+            "last_comment_at": last_at,
+            "heat": heat,
+            "is_hot": is_hot,
+        }
+    return {"posts": out}
+
+
+@api.get("/conversations/pulse")
+async def conversations_pulse(user=Depends(get_current_user)):
+    """Lightweight presence signals for the DMs list.
+
+    Returns:
+      - active_total: int (peers currently typing to me OR sent me a msg in last 5min OR currently online and in my conv list)
+      - my_typing:    list[str] peer ids currently typing to me
+      - my_recent:    list[str] peer ids that messaged me in last 5min
+      - my_online:    list[str] peer ids currently online (intersection with my conv list)
+    """
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    cutoff_5m = (now - timedelta(minutes=5)).isoformat()
+
+    # Peers typing to me right now (typing_state docs not yet expired)
+    typing_cursor = db.typing_state.find(
+        {"recipient_id": user["id"], "expires_at": {"$gt": now_iso}},
+        {"_id": 0, "sender_id": 1},
+    )
+    my_typing: list[str] = []
+    async for row in typing_cursor:
+        sid = row.get("sender_id")
+        if sid and sid != user["id"]:
+            my_typing.append(sid)
+    my_typing = list(dict.fromkeys(my_typing))
+
+    # Peers that sent me a message in the last 5min
+    recent_cursor = db.messages.find(
+        {"recipient_id": user["id"], "created_at": {"$gte": cutoff_5m}},
+        {"_id": 0, "sender_id": 1},
+    ).sort("created_at", -1).limit(80)
+    my_recent_set = set()
+    async for row in recent_cursor:
+        sid = row.get("sender_id")
+        if sid and sid != user["id"]:
+            my_recent_set.add(sid)
+    my_recent = list(my_recent_set)
+
+    # My conversation peers — pull from existing conversations index if any
+    conv_peers: set[str] = set()
+    try:
+        async for row in db.messages.find(
+            {"$or": [{"sender_id": user["id"]}, {"recipient_id": user["id"]}]},
+            {"_id": 0, "sender_id": 1, "recipient_id": 1},
+        ).limit(400):
+            sid = row.get("sender_id")
+            rid = row.get("recipient_id")
+            if sid and sid != user["id"]:
+                conv_peers.add(sid)
+            if rid and rid != user["id"]:
+                conv_peers.add(rid)
+    except Exception:
+        pass
+
+    # Peers currently online (WS connected) that are in my conv list
+    online_set = set(ws_manager.active.keys())
+    my_online = list(conv_peers & online_set)
+
+    active_set = set(my_typing) | my_recent_set | set(my_online)
+    return {
+        "active_total": len(active_set),
+        "my_typing": my_typing,
+        "my_recent": my_recent,
+        "my_online": my_online,
+    }
+
+
 @api.post("/posts/{post_id}/pin")
 async def pin_post(post_id: str, user=Depends(get_current_user)):
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})

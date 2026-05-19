@@ -15,6 +15,7 @@ import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
+import { useConversationsPulse, refreshConversationsPulse } from "../hooks/useConversationsPulse";
 import { toast } from "sonner";
 import { confirmDialog, promptDialog } from "../components/ConfirmDialog";
 
@@ -235,6 +236,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
     const [filter, setFilter] = useState("all");
     const [q, setQ] = useState("");
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const pulse = useConversationsPulse();
     useLiveTime(30000);
 
     // Load "Online agora" users (moved here from the right sidebar)
@@ -263,6 +265,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
     const onWs = useCallback((evt) => {
         if (!evt || (evt.type !== "new_message" && evt.type !== "message_read" && evt.type !== "message_read_bulk")) return;
         load();
+        refreshConversationsPulse();
     }, [load]);
     useWsMessages(onWs);
 
@@ -297,6 +300,35 @@ function ConversationList({ activeId, onSelect, onNew }) {
 
     return (
         <div data-testid="conversations-list">
+            {/* Activity pulse header — "X conversas ativas agora" (subtle, atmospheric) */}
+            {pulse.active_total >= 2 && (
+                <div
+                    className="px-4 lg:px-5 pt-3 pb-2 flex items-center gap-2 hairline-b"
+                    data-testid="dms-activity-pulse"
+                >
+                    <span className="relative inline-flex w-1.5 h-1.5">
+                        <span className="absolute inset-0 rounded-full bg-emerald-500/85 anim-live-dot" />
+                    </span>
+                    <p className="type-overline text-black/55 m-0">
+                        {pulse.active_total >= 12
+                            ? "muitas conversas ativas agora"
+                            : pulse.active_total >= 6
+                            ? "várias conversas ativas agora"
+                            : `${pulse.active_total} conversas ativas agora`}
+                    </p>
+                    {pulse.typing_set.size > 0 && (
+                        <>
+                            <span className="text-black/15 select-none" aria-hidden>·</span>
+                            <span className="font-mono text-[10.5px] uppercase tracking-wider text-emerald-700/75">
+                                {pulse.typing_set.size === 1
+                                    ? "alguém a escrever"
+                                    : `${Math.min(pulse.typing_set.size, 9)} a escrever`}
+                            </span>
+                        </>
+                    )}
+                </div>
+            )}
+
             {/* Online agora — moved here from the global right sidebar */}
             {onlineUsers.length > 0 && (
                 <div className="px-3 lg:px-4 pt-3 pb-2 hairline-b" data-testid="dms-online-now">
@@ -388,11 +420,15 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     // last message is fresh (< 5 min). Subtle halo, not a counter.
                     const lastTs = c.last_at ? new Date(c.last_at).getTime() : 0;
                     const isLive = !!c.other_user?.online && lastTs && (Date.now() - lastTs) < 5 * 60 * 1000;
+                    const peerId = c.other_user?.id;
+                    const isTyping = peerId && pulse.typing_set.has(peerId);
+                    const isRecent = peerId && pulse.recent_set.has(peerId);
+                    const showHalo = isLive || isTyping || isRecent;
                     return (
                     <button key={c.key} data-testid={`conversation-${c.other_user?.username}`} type="button"
                         className={`group w-full flex items-center gap-3 p-4 hairline-b hover:bg-black/[0.015] transition cursor-pointer text-left relative ${
                             activeId === c.other_user?.id ? "bg-black/[0.025]" : ""
-                        } ${isLive ? "anim-halo-breathe" : ""}`}
+                        } ${showHalo ? "conv-halo-live" : ""}`}
                         onClick={() => onSelect(c.other_user)}>
                         <Avatar user={c.other_user} size={48} showOnline />
                         <div className="flex-1 min-w-0">
@@ -405,7 +441,19 @@ function ConversationList({ activeId, onSelect, onNew }) {
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className={`text-[13px] truncate flex-1 ${c.unread > 0 ? "text-black font-medium" : "text-black/55"}`}>
-                                    {c.last_message || "—"}
+                                    {isTyping ? (
+                                        <span
+                                            className="inline-flex items-center gap-1.5 text-emerald-700/85 font-mono text-[12px]"
+                                            data-testid={`conv-typing-${c.other_user?.username}`}
+                                        >
+                                            está a escrever
+                                            <span className="typing-dots inline-flex gap-0.5" aria-hidden>
+                                                <span /><span /><span />
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        c.last_message || "—"
+                                    )}
                                 </div>
                                 {c.unread > 0 && (
                                     <span data-testid={`conv-unread-${c.other_user?.username}`}

@@ -31,6 +31,8 @@ import { PostReactions } from "./PostReactions";
 import { EditHistoryButton } from "./EditHistoryModal";
 import { ReasonChip } from "./ReasonChip";
 import { ThermometerFetch } from "./ThermometerFetch";
+import { PostLiveSignals } from "./PostLiveSignals";
+import { useFeedPulse } from "../hooks/useFeedPulse";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { haptic } from "../lib/haptics";
@@ -429,6 +431,9 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             refreshKey={`${liked}-${likes}`}
                             testid={`social-proof-${post.id}`}
                         />
+
+                        {/* Live signals — "X em conversa · N respostas há pouco · a aquecer" */}
+                        <PostLiveSignals postId={post.id} commentsCount={post.comments_count || 0} />
                     </div>
                 </div>
             </div>
@@ -491,7 +496,13 @@ function usePostLiveActivity(postId) {
 export function PostCard({ post, onChange, onDelete, clickable = true }) {
     const innerId = post?.repost_of?.id || post?.id;
     const { hasLive, chipKey } = usePostLiveActivity(innerId);
+    const { pulse } = useFeedPulse(innerId);
     const liveCls = hasLive ? "live-border-left" : "";
+    // Atmospheric halo for hot conversations — never both halos at once;
+    // post-card-brasa wins over post-card-hot to avoid visual stacking.
+    let heatCls = "";
+    if (pulse?.heat === "em_brasa" || pulse?.heat === "a_ferver") heatCls = "post-card-brasa";
+    else if (pulse?.heat === "quente") heatCls = "post-card-hot";
 
     const newReplyChip = chipKey > 0 ? (
         <div
@@ -511,7 +522,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
         return (
             <article
                 data-testid={`post-${post.id}`}
-                className={`relative px-4 lg:px-6 pt-4 pb-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls}`}
+                className={`relative px-4 lg:px-6 pt-4 pb-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls} ${heatCls}`}
             >
                 {newReplyChip}
                 <div className="flex items-center gap-2 type-overline ml-12 mb-2 normal-case tracking-[0.16em]">
@@ -528,7 +539,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
     return (
         <article
             data-testid={`post-${post.id}`}
-            className={`relative px-4 py-5 lg:px-6 lg:py-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls}`}
+            className={`relative px-4 py-5 lg:px-6 lg:py-6 hairline-b active:bg-black/[0.02] lg:hover:bg-black/[0.012] transition-colors anim-fade-up ${liveCls} ${heatCls}`}
         >
             {newReplyChip}
             <PostBody post={post} onChange={onChange} clickable={clickable} onDelete={onDelete} />
