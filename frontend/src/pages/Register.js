@@ -377,10 +377,14 @@ export default function Register() {
                                                 maxLength={20}
                                                 pattern="[a-zA-Z0-9_]+"
                                                 placeholder="o_teu_user"
-                                                className={`vm-input pr-9 ${
-                                                    usernameState.status === "available" ? "border-emerald-500/60" :
-                                                    (usernameState.status === "taken" || usernameState.status === "invalid") ? "border-red-soft/60" : ""
-                                                }`}
+                                                className="vm-input pr-9"
+                                                style={
+                                                    usernameState.status === "available"
+                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
+                                                        : (usernameState.status === "taken" || usernameState.status === "invalid")
+                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
+                                                        : undefined
+                                                }
                                                 autoComplete="off"
                                                 autoCapitalize="off"
                                                 spellCheck={false}
@@ -413,10 +417,14 @@ export default function Register() {
                                                 data-testid="register-email"
                                                 type="email" value={form.email} onChange={update("email")} required
                                                 placeholder="tu@exemplo.com"
-                                                className={`vm-input pr-9 ${
-                                                    emailState.status === "available" ? "border-emerald-500/60" :
-                                                    (emailState.status === "taken" || emailState.status === "invalid") ? "border-red-soft/60" : ""
-                                                }`}
+                                                className="vm-input pr-9"
+                                                style={
+                                                    emailState.status === "available"
+                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
+                                                        : (emailState.status === "taken" || emailState.status === "invalid")
+                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
+                                                        : undefined
+                                                }
                                                 autoComplete="email"
                                                 inputMode="email"
                                                 autoCapitalize="off"
@@ -465,6 +473,16 @@ export default function Register() {
                                                 minLength={8}
                                                 placeholder="Mínimo 8 caracteres"
                                                 className="vm-input pr-10"
+                                                style={(() => {
+                                                    if (!form.password) return undefined;
+                                                    // Override max-strength black with green so border still signals "secure"
+                                                    const borderColor = pwdEval.score >= 4 ? "#16a34a" : pwdEval.color;
+                                                    return {
+                                                        borderColor,
+                                                        borderWidth: 2,
+                                                        boxShadow: `0 0 0 3px ${borderColor}1A`,
+                                                    };
+                                                })()}
                                                 autoComplete="new-password"
                                             />
                                             <button
@@ -519,10 +537,14 @@ export default function Register() {
                                                 required
                                                 minLength={8}
                                                 placeholder="Escreve novamente"
-                                                className={`vm-input pr-10 ${
-                                                    pwdMatches ? "border-emerald-500/60" :
-                                                    pwdMismatch ? "border-red-soft/60" : ""
-                                                }`}
+                                                className="vm-input pr-10"
+                                                style={
+                                                    pwdMatches
+                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
+                                                        : pwdMismatch
+                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
+                                                        : undefined
+                                                }
                                                 autoComplete="new-password"
                                             />
                                             <button

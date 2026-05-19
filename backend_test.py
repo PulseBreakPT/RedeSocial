@@ -10,7 +10,7 @@ import base64
 from typing import Optional, Dict, Any
 
 # Backend URL from frontend/.env
-BASE_URL = "https://story-ui-enhancement.preview.emergentagent.com/api"
+BASE_URL = "https://password-validator-14.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"
