@@ -1057,6 +1057,8 @@ class StoryIn(BaseModel):
     text_style: Optional[str] = "plain"   # plain | highlight | outline | glow
     # Overlay/caption (image/video stories)
     caption: Optional[str] = ""
+    # Caption position as draggable text overlay (0..1 normalized).
+    caption_pos: Optional[dict] = None
     # Stickers interactivos posicionados no canvas
     # cada um: {id, type, x, y, rotation, scale, data}
     stickers: Optional[List[dict]] = None
@@ -2367,12 +2369,23 @@ async def react_post(post_id: str, payload: PostReactIn, user=Depends(get_curren
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
     reactions = post.get("reactions") or {}
-    users = list(reactions.get(payload.emoji, []))
-    if user["id"] in users:
-        users.remove(user["id"])
+
+    # One reaction per user: clean every other reaction this user might have.
+    already = False
+    for key, lst in list(reactions.items()):
+        users_list = list(lst or [])
+        if user["id"] in users_list:
+            if key == payload.emoji:
+                already = True
+            users_list.remove(user["id"])
+        reactions[key] = users_list
+
+    if already:
+        # toggling off: leave him out of every list
         active = False
     else:
-        users.append(user["id"])
+        reactions.setdefault(payload.emoji, [])
+        reactions[payload.emoji].append(user["id"])
         active = True
         if post["author_id"] != user["id"]:
             await create_notification(
@@ -2380,7 +2393,7 @@ async def react_post(post_id: str, payload: PostReactIn, user=Depends(get_curren
                 f"@{user['username']} reagiu {payload.emoji} à tua publicação",
                 extra={"emoji": payload.emoji},
             )
-    reactions[payload.emoji] = users
+
     await db.posts.update_one({"id": post_id}, {"$set": {"reactions": reactions}})
     fresh = await db.posts.find_one({"id": post_id}, {"_id": 0})
     enriched = await enrich_post(fresh, user)
@@ -2718,8 +2731,23 @@ VALID_STORY_AUDIENCES = {"everyone", "roda", "following"}
 STORY_REACTION_EMOJIS = {"❤️", "🔥", "👏", "😂", "😢", "💯", "🫶", "🥹"}
 VALID_STICKER_TYPES = {
     "poll", "question", "slider", "mention", "hashtag",
-    "location", "countdown", "music", "link",
+    "location", "countdown",
 }
+
+
+def _normalize_caption_pos(raw):
+    """Caption position as 0..1 normalized. Defaults to bottom-center."""
+    if not raw or not isinstance(raw, dict):
+        return None
+    try:
+        x = float(raw.get("x", 0.5))
+        y = float(raw.get("y", 0.82))
+        return {
+            "x": max(0.05, min(0.95, x)),
+            "y": max(0.06, min(0.94, y)),
+        }
+    except Exception:
+        return None
 
 
 def _normalize_stickers(raw):
@@ -3092,6 +3120,7 @@ async def _enrich_story_for_viewer(story: dict, viewer_id: str) -> dict:
         "font_style": story.get("font_style", "modern"),
         "text_style": story.get("text_style", "plain"),
         "caption": story.get("caption", "") or story.get("content", ""),
+        "caption_pos": story.get("caption_pos"),
         "stickers": stickers,
         "audience": story.get("audience", "everyone"),
         "allow_replies": story.get("allow_replies", True),
@@ -3194,6 +3223,7 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         "font_style": font_style,
         "text_style": text_style,
         "caption": caption,
+        "caption_pos": _normalize_caption_pos(payload.caption_pos),
         "stickers": stickers,
         "audience": audience,
         "allow_replies": bool(payload.allow_replies if payload.allow_replies is not None else True),

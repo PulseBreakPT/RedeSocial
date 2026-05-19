@@ -7,27 +7,32 @@
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
+    overscroll-behavior: contain;
 }
 
-.sc-canvas .sc-sticker {
+/* Universal draggable layer (stickers + caption text) */
+.sc-canvas .sc-draggable {
     cursor: grab;
-    transition: transform 120ms ease, filter 120ms ease;
-    will-change: transform;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    will-change: transform, left, top;
+    transition: filter 120ms ease, box-shadow 120ms ease;
 }
-.sc-canvas .sc-sticker:active,
-.sc-canvas .sc-sticker.is-dragging {
+.sc-canvas .sc-draggable:active,
+.sc-canvas .sc-draggable.sc-dragging {
     cursor: grabbing;
-    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
     z-index: 60 !important;
 }
 
+/* Trash zone */
 .sc-trash {
-    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+    will-change: transform, opacity, background-color;
 }
-.sc-trash.is-armed {
-    transform: scale(1.15);
+.sc-trash[data-armed="true"] {
     background: rgba(239, 68, 68, 0.95) !important;
-    color: #fff !important;
+    color: #ffffff !important;
 }
 
 /* Composer toolbars */

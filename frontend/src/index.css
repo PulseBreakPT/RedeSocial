@@ -1045,16 +1045,17 @@
     }
     .tap-press:active { transform: scale(0.97); background-color: rgba(13, 13, 16, 0.04); }
 
-    /* Engagement icon button — bigger tap target */
+    /* Engagement icon button — solid tap target, no negative margins (avoids overlap) */
     .eng-btn {
         display: inline-flex; align-items: center; gap: 0.4rem;
-        padding: 0.5rem 0.65rem; border-radius: 999px;
+        padding: 0.4rem 0.6rem; border-radius: 999px;
         font-size: 13px; font-weight: 500;
-        color: #0a0a0a;
+        color: rgba(13, 13, 16, 0.65);
+        line-height: 1;
         transition: background-color 200ms ease, color 200ms ease, transform 140ms var(--ease-out-soft);
-        margin: -0.4rem -0.55rem;
     }
-    .eng-btn:hover { background-color: rgba(13, 13, 16, 0.05); color: #0a0a0a; }
+    .eng-btn > svg { flex: 0 0 auto; }
+    .eng-btn:hover { background-color: rgba(13, 13, 16, 0.06); color: #0a0a0a; }
     .eng-btn:active { transform: scale(0.94); }
     .eng-btn.is-liked { color: var(--coral-500); }
     .eng-btn.is-liked:hover { background-color: var(--coral-50); color: var(--coral-500); }
@@ -1063,6 +1064,41 @@
     .eng-btn.is-commented:hover { background-color: var(--atl-50); color: var(--atl-500); }
     .eng-btn.is-bookmarked { color: var(--sun-500); }
     .eng-btn.is-bookmarked:hover { background-color: var(--sun-50); color: var(--sun-500); }
+    .eng-btn.is-react:hover { background-color: var(--sun-50); color: var(--sun-500); }
+    .eng-btn.is-react.is-active { color: var(--sun-500); }
+
+    /* Action bar: gives breathing room between buttons so they never overlap */
+    .post-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .post-actions-cluster { display: inline-flex; align-items: center; gap: 0.25rem; }
+    @media (min-width: 640px) { .post-actions-cluster { gap: 0.5rem; } }
+
+    /* Reaction chips (one reaction per user, with feedback) */
+    .reaction-chip { will-change: transform; }
+    .reaction-chip--mine {
+        background: linear-gradient(135deg, var(--coral-500), var(--coral-deep, #c43d31));
+    }
+    @keyframes reaction-chip-pulse {
+        0%   { transform: scale(1);     box-shadow: 0 0 0 0 rgba(232, 93, 79, 0.45); }
+        45%  { transform: scale(1.10);  box-shadow: 0 0 0 9px rgba(232, 93, 79, 0); }
+        100% { transform: scale(1);     box-shadow: 0 0 0 0 rgba(232, 93, 79, 0); }
+    }
+    .reaction-chip--pulse { animation: reaction-chip-pulse 480ms var(--ease-out-soft); }
+
+    /* Post "..." dropdown menu — solid, modern, accessible */
+    .post-menu-pop {
+        backdrop-filter: none; /* explicitly solid — no blur, no transparency */
+        background: #ffffff;
+    }
+    .post-menu-pop button:focus-visible {
+        outline: none;
+        background: rgba(13, 13, 16, 0.06);
+        box-shadow: inset 0 0 0 2px rgba(13, 13, 16, 0.18);
+    }
+    .post-menu-divider {
+        height: 1px;
+        background: rgba(13, 13, 16, 0.06);
+        margin: 4px 8px;
+    }
 
     .scroll-mom { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .no-scrollbar::-webkit-scrollbar { display: none; }

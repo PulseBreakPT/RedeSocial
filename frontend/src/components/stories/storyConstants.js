@@ -62,8 +62,6 @@ export const STICKER_TYPES = [
     { key: "hashtag",   label: "Hashtag",    emoji: "#" },
     { key: "location",  label: "Localização", emoji: "📍" },
     { key: "countdown", label: "Contagem",   emoji: "⏱" },
-    { key: "link",      label: "Link",       emoji: "🔗" },
-    { key: "music",     label: "Música",     emoji: "🎵" },
 ];
 
 export const bgPreset = (key) =>

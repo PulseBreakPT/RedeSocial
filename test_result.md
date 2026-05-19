@@ -1332,7 +1332,7 @@ frontend:
               - All interactions smooth and responsive
             
             Test Credentials: admin@vermillion.app / admin123
-            Test URL: https://social-flow-preview.preview.emergentagent.com/settings
+            Test URL: https://post-structure-logic.preview.emergentagent.com/settings
             
             CONCLUSION:
             The settings page restructuring is COMPLETE and WORKING perfectly.
@@ -1364,3 +1364,90 @@ agent_communication:
         All 11 original tabs' content still accessible inside the 6 new groups.
         
         Ready for user acceptance or summary.
+
+
+---
+
+## 2026-05-19 — UX/UI overhaul (Posts · Composer · Explore · PostMenu · Stories)
+
+### Backend changes — must be tested
+
+- **POST `/api/posts/{post_id}/react`** — Enforced **one reaction per user**:
+  - When a user reacts, every previous reaction by that user (any emoji) is removed first.
+  - Reacting with the same emoji currently held → toggles it OFF.
+  - Reacting with a different emoji → switches (replaces) the previous one atomically.
+  - Response still returns `{reactions, active, emoji}` (same shape).
+
+- **POST `/api/stories`** — New optional field `caption_pos: {x, y}` (0..1 normalized) for draggable caption position. Sanitized server-side via `_normalize_caption_pos`.
+
+- **VALID_STICKER_TYPES** — Removed `"music"` and `"link"` from accepted types. The existing `MusicSticker`/`LinkSticker` viewers stay for backwards compatibility with old stories, but composer no longer creates new ones (and backend rejects them silently on create).
+
+- Stories enrichment now exposes `caption_pos`.
+
+### Test scope for backend agent
+
+backend:
+  - task: "One reaction per user enforcement on POST /api/posts/{id}/react"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Test plan:
+          1. Auth as admin@vermillion.app / admin123
+          2. Pick (or create) a post.
+          3. POST /api/posts/{id}/react {"emoji":"saudade"} → expect active:true, saudade count +1.
+          4. POST /api/posts/{id}/react {"emoji":"bombou"} → expect active:true, saudade count -1, bombou +1 (REPLACE).
+          5. POST /api/posts/{id}/react {"emoji":"bombou"} → expect active:false (toggle off), bombou -1.
+          6. Verify the reaction dict for the user is fully cleared after step 5.
+
+  - task: "Stories accept caption_pos field"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          POST /api/stories with media_type=image and caption_pos={"x":0.4,"y":0.6}.
+          Then GET /api/stories — story should be returned with caption_pos preserved (clamped 0.05..0.95 / 0.06..0.94).
+
+  - task: "Stories reject music/link sticker types"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          POST /api/stories with stickers=[{type:"music", data:{title:"X", artist:"Y"}}, {type:"link", data:{url:"https://x.com"}}, {type:"hashtag", data:{tag:"oi"}}].
+          Story is saved but the music/link stickers are dropped — only the hashtag remains. GET /api/stories confirms.
+
+test_plan:
+  current_focus:
+    - "One reaction per user enforcement on POST /api/posts/{id}/react"
+    - "Stories accept caption_pos field"
+    - "Stories reject music/link sticker types"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implemented UX overhaul. Backend touched:
+       • POST /api/posts/{id}/react now enforces single-reaction-per-user (replaces previous).
+       • POST /api/stories accepts optional caption_pos {x,y} 0..1.
+       • Music/link sticker types removed from VALID_STICKER_TYPES.
+      Please run the three backend test cases above. Frontend changes (composer, post action bar, postmenu, stories drag) will be tested separately on user approval.

@@ -3,7 +3,14 @@ import { Repeat2, Quote } from "lucide-react";
 
 const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
 
-export function RepostMenu({ reposted, onRepost, onQuote }) {
+function formatNum(n) {
+    if (!n) return "0";
+    if (n < 1000) return String(n);
+    if (n < 1000000) return `${(n / 1000).toFixed(1).replace(".0", "")}K`;
+    return `${(n / 1000000).toFixed(1).replace(".0", "")}M`;
+}
+
+export function RepostMenu({ reposted, count = 0, onRepost, onQuote, postId }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
@@ -22,11 +29,19 @@ export function RepostMenu({ reposted, onRepost, onQuote }) {
                     e.stopPropagation();
                     setOpen(!open);
                 }}
-                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-green-soft-bg hover:text-green-soft transition ${
-                    reposted ? "text-green-soft" : "text-black/55"
-                }`}
+                data-testid={postId ? `repost-btn-${postId}` : undefined}
+                className={`eng-btn ${reposted ? "is-reposted" : ""}`}
+                aria-label="Republicar ou citar"
+                aria-haspopup="menu"
+                aria-expanded={open}
             >
-                <Repeat2 size={16} strokeWidth={1.7} />
+                <Repeat2 size={18} strokeWidth={1.7} />
+                <span
+                    className="text-[12.5px] tabular-nums"
+                    data-testid={postId ? `repost-count-${postId}` : undefined}
+                >
+                    {formatNum(count)}
+                </span>
             </button>
             {open && (
                 <div

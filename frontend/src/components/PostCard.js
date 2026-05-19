@@ -68,8 +68,6 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const [editing, setEditing] = useState(false);
     const [quoting, setQuoting] = useState(false);
     const [analytics, setAnalytics] = useState(false);
-    const [quickReactOpen, setQuickReactOpen] = useState(false);
-    const longPressTimer = useRef(null);
     const viewedRef = useRef(false);
     const isOwn = user?.id === post.author?.id;
     const audience = post.reply_audience || "everyone";
@@ -198,25 +196,6 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     };
 
     const openDetail = () => clickable && navigate(`/post/${post.id}`);
-
-    const onHeartPressStart = (e) => {
-        e.stopPropagation();
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = setTimeout(() => setQuickReactOpen(true), 380);
-    };
-    const onHeartPressEnd = () => clearTimeout(longPressTimer.current);
-
-    const quickReact = async (emoji) => {
-        setQuickReactOpen(false);
-        try {
-            const { data } = await api.post(`/posts/${post.id}/react`, { emoji });
-            setReactions(data.reactions);
-            onChange?.({ ...post, reactions: data.reactions });
-            toast.success(`Reagiste com ${emoji}`);
-        } catch (err) { toastApiError(err); }
-    };
-
-    const QUICK_REACT_LIST = ["❤️", "🔥", "😂", "😢", "👏", "🤔", "✨"];
 
     return (
         <>
@@ -380,9 +359,9 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-1 mt-4 pr-1" data-testid={`actions-${post.id}`}>
+                        <div className="post-actions mt-4" data-testid={`actions-${post.id}`}>
                             {/* Left cluster — primary engagement */}
-                            <div className="flex items-center gap-1">
+                            <div className="post-actions-cluster">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -395,68 +374,33 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     <MessageCircle size={18} strokeWidth={1.7} />
                                     <span className="text-[12.5px] tabular-nums">{formatNum(post.comments_count || 0)}</span>
                                 </button>
-                                <div className="flex items-center">
-                                    <RepostMenu
-                                        reposted={reposted}
-                                        onRepost={doRepost}
-                                        onQuote={() => setQuoting(true)}
-                                    />
-                                    <span data-testid={`repost-count-${post.id}`} className={`-ml-1 text-[12.5px] tabular-nums ${reposted ? "text-green-soft font-medium" : "text-black/55"}`}>
-                                        {formatNum(reposts)}
-                                    </span>
-                                </div>
-                                <div className="relative">
-                                    <button
-                                        onClick={toggleLike}
-                                        onMouseDown={onHeartPressStart}
-                                        onMouseUp={onHeartPressEnd}
-                                        onMouseLeave={onHeartPressEnd}
-                                        onTouchStart={onHeartPressStart}
-                                        onTouchEnd={onHeartPressEnd}
-                                        onContextMenu={(e) => { e.preventDefault(); setQuickReactOpen(true); }}
-                                        data-testid={`like-btn-${post.id}`}
-                                        className={`eng-btn ${liked ? "is-liked" : ""}`}
-                                        title="Gosto (segura para reagir)"
+                                <RepostMenu
+                                    postId={post.id}
+                                    reposted={reposted}
+                                    count={reposts}
+                                    onRepost={doRepost}
+                                    onQuote={() => setQuoting(true)}
+                                />
+                                <button
+                                    onClick={toggleLike}
+                                    data-testid={`like-btn-${post.id}`}
+                                    className={`eng-btn ${liked ? "is-liked" : ""}`}
+                                    title="Gosto"
+                                    aria-label="Gosto"
+                                >
+                                    <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                    <span
+                                        key={likes}
+                                        className={`text-[12.5px] tabular-nums inline-block ${animLike ? "anim-count-roll" : ""}`}
                                     >
-                                        <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
-                                        <span
-                                            key={likes}
-                                            className={`text-[12.5px] tabular-nums inline-block ${animLike ? "anim-count-roll" : ""}`}
-                                        >
-                                            {formatNum(likes)}
-                                        </span>
-                                    </button>
-                                    {quickReactOpen && (
-                                        <>
-                                            <button
-                                                aria-label="Fechar"
-                                                onClick={(e) => { e.stopPropagation(); setQuickReactOpen(false); }}
-                                                className="fixed inset-0 z-30 cursor-default"
-                                            />
-                                            <div
-                                                onClick={(e) => e.stopPropagation()}
-                                                data-testid={`quick-react-palette-${post.id}`}
-                                                className="absolute z-40 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white rounded-full shadow-xl border border-black/[0.08] flex gap-0.5 px-2 py-1.5 anim-fade-up"
-                                            >
-                                                {QUICK_REACT_LIST.map((emoji) => (
-                                                    <button
-                                                        key={emoji}
-                                                        onClick={(e) => { e.stopPropagation(); quickReact(emoji); }}
-                                                        data-testid={`quick-react-${emoji}-${post.id}`}
-                                                        className="text-[20px] w-8 h-8 grid place-items-center hover:bg-black/[0.05] rounded-full transition hover:scale-125"
-                                                    >
-                                                        {emoji}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                        {formatNum(likes)}
+                                    </span>
+                                </button>
                             </div>
 
                             {/* Right cluster — utility actions */}
-                            <div className="flex items-center gap-1">
-                                <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45 mr-1" title="visualizações">
+                            <div className="post-actions-cluster">
+                                <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45" title="visualizações">
                                     <Eye size={14} strokeWidth={1.6} /> {formatNum(views)}
                                 </span>
                                 <button

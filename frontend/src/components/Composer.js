@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "react";
 import {
     Image as ImageIcon,
     X,
-    Smile,
     FileText,
     Hash,
     AtSign,
@@ -57,7 +56,7 @@ function detectMoodClient(text) {
     return null;
 }
 
-const EMOJIS = ["🔥", "✨", "🚀", "❤️", "👀", "💯", "😂", "🙌", "⚡", "🌙"];
+
 const AUDIENCES = [
     { id: "everyone", label: "Toda a gente", Icon: Globe },
     { id: "following", label: "Quem sigo", Icon: UsersIcon },
@@ -93,7 +92,6 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [images, setImages] = useState(initialPost?.images || []);
     const [busy, setBusy] = useState(false);
     const [hadDraft, setHadDraft] = useState(false);
-    const [emojiOpen, setEmojiOpen] = useState(false);
     const [audOpen, setAudOpen] = useState(false);
     const [audience, setAudience] = useState("everyone");
     // F2.4 — Identity ring (publico | amigos | tasca)
@@ -123,7 +121,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     // Click-outside / ESC handling for each popover
     const audRef = useClickOutside(() => setAudOpen(false), audOpen);
     const ringRef = useClickOutside(() => setRingOpen(false), ringOpen);
-    const emojiRef = useClickOutside(() => setEmojiOpen(false), emojiOpen);
+
 
     useEffect(() => {
         if (content && content.trim().length > 0) setHadDraft(true);
@@ -657,26 +655,6 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             <ComposerIconBtn onClick={() => insertText("@")} label="menção">
                                 <AtSign size={18} />
                             </ComposerIconBtn>
-                            <div className="relative" ref={emojiRef}>
-                                <ComposerIconBtn onClick={() => setEmojiOpen((v) => !v)} data-testid="composer-emoji-btn" label="emoji">
-                                    <Smile size={18} />
-                                </ComposerIconBtn>
-                                {emojiOpen && (
-                                    <div
-                                        className="absolute left-0 top-full mt-1 flex bg-white border border-black/[0.08] rounded-2xl px-2 py-1.5 gap-0.5 z-30 shadow-xl anim-fade-up"
-                                    >
-                                        {EMOJIS.map((emj) => (
-                                            <button
-                                                key={emj}
-                                                onClick={() => { insertText(emj); setEmojiOpen(false); }}
-                                                className="hover:bg-black/[0.05] rounded-full w-8 h-8 grid place-items-center text-base tap-shrink"
-                                            >
-                                                {emj}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             {content.length > 0 && (

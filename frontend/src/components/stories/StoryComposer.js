@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import {
-    X, Image as ImageIcon, Video, Type, Sticker, Loader2, Globe2, Users2, UserCheck,
+    X, Image as ImageIcon, Type, Sticker, Loader2, Globe2, Users2, UserCheck,
     MessageCircle, Heart, Check, Trash2, Palette, Sparkles, ChevronRight, Plus,
 } from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
@@ -14,7 +14,6 @@ import {
 import "./stories.css";
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 4.5 * 1024 * 1024;
 
 let _stickerSeq = 0;
 const stickerId = () => `sk-${Date.now()}-${++_stickerSeq}`;
@@ -28,11 +27,17 @@ const PANELS = {
     AUDIENCE: "audience",
     STICKER_PICK: "stickerPick",
     STICKER_EDIT: "stickerEdit",
+    CAPTION_EDIT: "captionEdit",
 };
 
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+/** Default placement when adding a new draggable item. Slight offset to avoid stacking. */
+const placement = (index) => ({ x: 0.5, y: 0.4 + (index % 4) * 0.12 });
+
 export function StoryComposer({ onClose, onCreated }) {
-    const [tab, setTab] = useState("image");
-    const [media, setMedia] = useState({ image: "", video: "" });
+    const [tab, setTab] = useState("image"); // image | text — video mode hidden
+    const [media, setMedia] = useState({ image: "" });
     const [caption, setCaption] = useState("");
     const [textContent, setTextContent] = useState("");
     const [background, setBackground] = useState("fado");
@@ -40,55 +45,54 @@ export function StoryComposer({ onClose, onCreated }) {
     const [fontStyleKey, setFontStyleKey] = useState("modern");
     const [textStyle, setTextStyle] = useState("plain");
     const [stickers, setStickers] = useState([]);
+    // Caption as a draggable text-sticker over photo (advanced).
+    const [captionPos, setCaptionPos] = useState({ x: 0.5, y: 0.82 });
     const [audience, setAudience] = useState("everyone");
     const [allowReplies, setAllowReplies] = useState(true);
     const [allowReactions, setAllowReactions] = useState(true);
     const [busy, setBusy] = useState(false);
     const [panel, setPanel] = useState(PANELS.NONE);
     const [editorType, setEditorType] = useState(null);
-    const [armedTrash, setArmedTrash] = useState(false);
-    const [dragging, setDragging] = useState(false);
+
     const fileImgRef = useRef(null);
-    const fileVidRef = useRef(null);
     const canvasRef = useRef(null);
+    const trashRef = useRef(null);
     const dragStateRef = useRef(null);
+    const rafIdRef = useRef(null);
+    const elementsRef = useRef({}); // id -> HTMLElement (for direct DOM mutation)
 
     useEscapeKey(() => {
         if (panel) setPanel(PANELS.NONE);
         else onClose();
     }, true);
 
-    const handleFile = (file, kind) => {
+    const handleFile = (file) => {
         if (!file) return;
-        const maxBytes = kind === "video" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-        if (file.size > maxBytes) {
-            toast.error(kind === "video" ? "Vídeo > 4.5 MB. Encurta antes de carregar." : "Imagem > 2 MB.");
+        if (file.size > MAX_IMAGE_BYTES) {
+            toast.error("Imagem > 2 MB.");
             return;
         }
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            if (kind === "video") setMedia((m) => ({ ...m, video: ev.target.result }));
-            else setMedia((m) => ({ ...m, image: ev.target.result }));
-        };
+        reader.onload = (ev) => setMedia({ image: ev.target.result });
         reader.readAsDataURL(file);
     };
 
     const publish = async () => {
         if (tab === "image" && !media.image) { toast.error("Adiciona uma imagem"); return; }
-        if (tab === "video" && !media.video) { toast.error("Adiciona um vídeo"); return; }
         if (tab === "text" && !textContent.trim()) { toast.error("Escreve algo"); return; }
         setBusy(true);
         try {
             const payload = {
                 media_type: tab,
                 image: tab === "image" ? media.image : "",
-                video: tab === "video" ? media.video : "",
+                video: "",
                 text_content: tab === "text" ? textContent : "",
                 background: tab === "text" ? background : "coral",
                 text_color: textColor,
                 font_style: fontStyleKey,
                 text_style: textStyle,
                 caption: tab !== "text" ? caption : "",
+                caption_pos: tab === "image" ? captionPos : null,
                 stickers,
                 audience,
                 allow_replies: allowReplies,
@@ -103,70 +107,130 @@ export function StoryComposer({ onClose, onCreated }) {
     };
 
     const addSticker = (sticker) => {
+        const { x, y } = placement(stickers.length);
         const newSticker = {
             ...sticker,
             id: sticker.id || stickerId(),
-            x: 0.5,
-            y: 0.45 + (stickers.length % 3) * 0.12,
+            x, y,
             rotation: 0,
             scale: 1,
         };
         setStickers((s) => [...s, newSticker]);
     };
 
-    const updateSticker = (id, patch) => {
-        setStickers((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    };
-
     const removeSticker = (id) => {
         setStickers((s) => s.filter((x) => x.id !== id));
     };
 
-    /* ---- drag stickers ---- */
-    const onStickerPointerDown = (e, sticker) => {
-        e.stopPropagation();
+    /* ============================================================
+       DRAG SYSTEM — refs + RAF + direct DOM mutation.
+       No React state updates during the move → no jitter, no lag.
+       ============================================================ */
+
+    const setTrashVisible = (visible, armed = false) => {
+        const tn = trashRef.current;
+        if (!tn) return;
+        tn.style.opacity = visible ? "1" : "0";
+        tn.style.transform = `translateX(-50%) translateY(${visible ? 0 : 30}px) scale(${armed ? 1.2 : 1})`;
+        tn.dataset.armed = armed ? "true" : "false";
+    };
+
+    const beginDrag = useCallback((e, kind, id, initialPos) => {
         if (!canvasRef.current) return;
+        // Only primary pointer
+        if (e.button != null && e.button !== 0) return;
+        e.stopPropagation();
+        e.preventDefault?.();
+
         const rect = canvasRef.current.getBoundingClientRect();
+        const el = e.currentTarget;
+        elementsRef.current[`${kind}:${id}`] = el;
+
         dragStateRef.current = {
-            id: sticker.id,
+            kind, // "sticker" | "caption"
+            id,
             rect,
             startX: e.clientX,
             startY: e.clientY,
-            originalX: sticker.x,
-            originalY: sticker.y,
+            originalX: initialPos.x,
+            originalY: initialPos.y,
+            currentX: initialPos.x,
+            currentY: initialPos.y,
             moved: false,
+            armedTrash: false,
         };
-        try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /**/ }
-        e.currentTarget.classList.add("is-dragging");
-        setDragging(true);
-    };
+        try { el.setPointerCapture(e.pointerId); } catch { /* */ }
+        el.classList.add("sc-dragging");
+        setTrashVisible(true, false);
+    }, []);
 
-    const onStickerPointerMove = (e) => {
+    const onPointerMove = useCallback((e) => {
         const st = dragStateRef.current;
         if (!st) return;
+
         const dx = e.clientX - st.startX;
         const dy = e.clientY - st.startY;
         if (!st.moved && Math.hypot(dx, dy) > 4) st.moved = true;
+
+        // Compute next position in 0..1 normalized space.
         const newX = clamp(st.originalX + dx / st.rect.width, 0.05, 0.95);
         const newY = clamp(st.originalY + dy / st.rect.height, 0.06, 0.94);
-        updateSticker(st.id, { x: newX, y: newY });
+        st.currentX = newX;
+        st.currentY = newY;
+
+        // Trash arming detection (canvas-relative).
         const bottomThreshold = st.rect.top + st.rect.height - 70;
         const armed = e.clientY > bottomThreshold && Math.abs(e.clientX - (st.rect.left + st.rect.width / 2)) < 80;
-        setArmedTrash(armed);
-    };
-
-    const onStickerPointerUp = (e, sticker) => {
-        const st = dragStateRef.current;
-        e.currentTarget.classList.remove("is-dragging");
-        if (st && armedTrash) {
-            removeSticker(sticker.id);
-        } else if (st && !st.moved) {
-            if (window.confirm("Remover este sticker?")) removeSticker(sticker.id);
+        if (armed !== st.armedTrash) {
+            st.armedTrash = armed;
+            setTrashVisible(true, armed);
         }
+
+        // Schedule DOM update (no React re-render).
+        if (rafIdRef.current == null) {
+            rafIdRef.current = requestAnimationFrame(() => {
+                rafIdRef.current = null;
+                const el = elementsRef.current[`${st.kind}:${st.id}`];
+                if (!el) return;
+                el.style.left = `${st.currentX * 100}%`;
+                el.style.top = `${st.currentY * 100}%`;
+            });
+        }
+    }, []);
+
+    const endDrag = useCallback((e) => {
+        const st = dragStateRef.current;
+        if (!st) return;
+        const el = elementsRef.current[`${st.kind}:${st.id}`];
+        if (el) {
+            try { el.releasePointerCapture?.(e.pointerId); } catch { /* */ }
+            el.classList.remove("sc-dragging");
+        }
+        if (rafIdRef.current != null) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+        }
+
+        if (st.armedTrash && st.moved) {
+            // Dropped on trash → remove (only stickers; caption is just hidden by clearing).
+            if (st.kind === "sticker") removeSticker(st.id);
+            else setCaption("");
+        } else if (st.moved) {
+            // Commit final position
+            if (st.kind === "sticker") {
+                setStickers((arr) => arr.map((s) => (s.id === st.id ? { ...s, x: st.currentX, y: st.currentY } : s)));
+            } else {
+                setCaptionPos({ x: st.currentX, y: st.currentY });
+            }
+        } else {
+            // No move = tap. For sticker -> open edit (silent: no confirm).
+            // For caption -> open caption editor.
+            if (st.kind === "caption") setPanel(PANELS.CAPTION_EDIT);
+        }
+
+        setTrashVisible(false, false);
         dragStateRef.current = null;
-        setArmedTrash(false);
-        setDragging(false);
-    };
+    }, []);
 
     const audienceMeta = STORY_AUDIENCES.find((a) => a.key === audience);
     const isLightBg = LIGHT_BG_KEYS.has(background);
@@ -203,12 +267,11 @@ export function StoryComposer({ onClose, onCreated }) {
                     </button>
                 </div>
 
-                {/* ============ TABS ============ */}
+                {/* ============ TABS (video removed) ============ */}
                 <div className="flex-shrink-0 px-3 sm:px-4 py-2.5 flex justify-center border-b border-black/[0.05]">
                     <div className="inline-flex items-center bg-black/[0.05] rounded-full p-1 gap-0.5">
                         {[
                             { k: "image", label: "Foto",  Icon: ImageIcon },
-                            { k: "video", label: "Vídeo", Icon: Video },
                             { k: "text",  label: "Texto", Icon: Type },
                         ].map(({ k, label, Icon }) => (
                             <button
@@ -229,7 +292,6 @@ export function StoryComposer({ onClose, onCreated }) {
 
                 {/* ============ CANVAS + TOOLBAR ============ */}
                 <div className="flex-1 min-h-0 overflow-hidden bg-zinc-50 relative flex items-center justify-center px-3 sm:px-4 py-3">
-                    {/* Canvas */}
                     <div
                         ref={canvasRef}
                         className="sc-canvas relative w-full max-w-[340px] aspect-[9/16] rounded-3xl overflow-hidden bg-black shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.06]"
@@ -276,41 +338,33 @@ export function StoryComposer({ onClose, onCreated }) {
                                 </button>
                             )
                         )}
-                        {tab === "video" && (
-                            media.video ? (
-                                <div className="sv-media-fit">
-                                    <video src={media.video} autoPlay loop muted playsInline className="sv-media-bg" aria-hidden />
-                                    <video src={media.video} autoPlay loop muted playsInline className="sv-media-fg" />
-                                </div>
-                            ) : (
-                                <button
-                                    onClick={() => fileVidRef.current?.click()}
-                                    data-testid="composer-pick-video"
-                                    className="absolute inset-0 grid place-items-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-black/55 hover:text-black transition"
-                                >
-                                    <div className="text-center px-4">
-                                        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-white shadow-sm grid place-items-center">
-                                            <Video size={22} strokeWidth={1.6} />
-                                        </div>
-                                        <div className="font-mono text-[10.5px] uppercase tracking-[0.16em]">Carregar vídeo</div>
-                                        <div className="font-mono text-[10px] mt-1 text-black/35">MP4/WEBM · até ~10 s</div>
-                                    </div>
-                                </button>
-                            )
-                        )}
 
-                        {/* Caption preview (image/video) */}
-                        {tab !== "text" && caption && (
+                        {/* Caption as DRAGGABLE text on image */}
+                        {tab === "image" && media.image && caption && (
                             <div
-                                className="absolute bottom-12 left-3 right-3 z-30 text-center pointer-events-none"
+                                className="sc-draggable absolute z-30"
                                 style={{
+                                    left: `${captionPos.x * 100}%`,
+                                    top: `${captionPos.y * 100}%`,
+                                    transform: "translate(-50%, -50%)",
+                                    maxWidth: "82%",
+                                    textAlign: "center",
                                     fontFamily: fStyle.fontFamily,
                                     fontWeight: fStyle.fontWeight,
+                                    fontStyle: fStyle.fontStyle,
+                                    letterSpacing: fStyle.letterSpacing,
                                     color: textColor,
                                     fontSize: "17px",
+                                    lineHeight: 1.15,
                                     textShadow: "0 2px 14px rgba(0,0,0,0.7)",
                                     ...decorStyle,
                                 }}
+                                onPointerDown={(e) => beginDrag(e, "caption", "caption", captionPos)}
+                                onPointerMove={onPointerMove}
+                                onPointerUp={endDrag}
+                                onPointerCancel={endDrag}
+                                data-testid="composer-caption-overlay"
+                                title="Arrasta para reposicionar · toca para editar"
                             >
                                 {caption}
                             </div>
@@ -320,18 +374,18 @@ export function StoryComposer({ onClose, onCreated }) {
                         {stickers.map((s) => (
                             <div
                                 key={s.id}
-                                className="sc-sticker absolute z-30"
+                                className="sc-draggable absolute z-30"
                                 style={{
                                     left: `${s.x * 100}%`,
                                     top: `${s.y * 100}%`,
                                     transform: `translate(-50%, -50%) rotate(${s.rotation || 0}deg) scale(${s.scale || 1})`,
                                 }}
-                                onPointerDown={(e) => onStickerPointerDown(e, s)}
-                                onPointerMove={onStickerPointerMove}
-                                onPointerUp={(e) => onStickerPointerUp(e, s)}
-                                onPointerCancel={(e) => onStickerPointerUp(e, s)}
+                                onPointerDown={(e) => beginDrag(e, "sticker", s.id, { x: s.x, y: s.y })}
+                                onPointerMove={onPointerMove}
+                                onPointerUp={endDrag}
+                                onPointerCancel={endDrag}
                                 data-testid={`preview-sticker-${s.type}`}
-                                title="Arrasta para reposicionar"
+                                title="Arrasta para reposicionar · larga no caixote para apagar"
                             >
                                 <StickerPreview sticker={s} />
                             </div>
@@ -347,7 +401,7 @@ export function StoryComposer({ onClose, onCreated }) {
                             <span>{audienceMeta?.label}</span>
                         </button>
 
-                        {/* Replace / clear media buttons */}
+                        {/* Replace media button */}
                         {tab === "image" && media.image && (
                             <button
                                 onClick={() => fileImgRef.current?.click()}
@@ -359,32 +413,24 @@ export function StoryComposer({ onClose, onCreated }) {
                                 Trocar
                             </button>
                         )}
-                        {tab === "video" && media.video && (
-                            <button
-                                onClick={() => fileVidRef.current?.click()}
-                                data-testid="composer-change-video"
-                                className="absolute top-2.5 left-2.5 z-40 px-2.5 h-7 rounded-full bg-black/55 backdrop-blur text-white text-[10px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 hover:bg-black/75 sc-toolbar-btn"
-                                title="Trocar vídeo"
-                            >
-                                <Video size={11} strokeWidth={2.4} />
-                                Trocar
-                            </button>
-                        )}
 
-                        {/* Trash zone */}
-                        {dragging && (
-                            <div
-                                className={`sc-trash absolute bottom-4 left-1/2 -translate-x-1/2 z-50 w-14 h-14 rounded-full grid place-items-center bg-black/75 text-white backdrop-blur ${
-                                    armedTrash ? "is-armed" : ""
-                                }`}
-                            >
-                                <Trash2 size={18} strokeWidth={2.2} />
-                            </div>
-                        )}
+                        {/* Trash zone (DOM-controlled visibility for perf) */}
+                        <div
+                            ref={trashRef}
+                            className="sc-trash absolute bottom-4 left-1/2 z-50 w-14 h-14 rounded-full grid place-items-center bg-black/75 text-white backdrop-blur pointer-events-none"
+                            style={{
+                                opacity: 0,
+                                transform: "translateX(-50%) translateY(30px) scale(1)",
+                                transition: "opacity 160ms ease, transform 180ms cubic-bezier(.34,1.56,.64,1), background 180ms ease",
+                            }}
+                            aria-hidden
+                        >
+                            <Trash2 size={18} strokeWidth={2.2} />
+                        </div>
                     </div>
                 </div>
 
-                {/* ============ TOOL ROW (horizontal, mobile-friendly) ============ */}
+                {/* ============ TOOL ROW (works in BOTH photo + text mode) ============ */}
                 <div className="flex-shrink-0 border-t border-black/[0.06] bg-white">
                     <div className="px-3 sm:px-4 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                         <ToolButton
@@ -395,28 +441,27 @@ export function StoryComposer({ onClose, onCreated }) {
                             badge={stickers.length || null}
                         />
                         {tab === "text" && (
-                            <>
-                                <ToolButton
-                                    testId="composer-bg-btn"
-                                    onClick={() => setPanel(PANELS.BACKGROUND)}
-                                    swatch={bgCss(background)}
-                                    label="Fundo"
-                                />
-                                <ToolButton
-                                    testId="composer-font-btn"
-                                    onClick={() => setPanel(PANELS.FONT)}
-                                    text="Aa"
-                                    textStyle={fStyle}
-                                    label="Fonte"
-                                />
-                                <ToolButton
-                                    testId="composer-style-btn"
-                                    onClick={() => setPanel(PANELS.STYLE)}
-                                    Icon={Sparkles}
-                                    label="Estilo"
-                                />
-                            </>
+                            <ToolButton
+                                testId="composer-bg-btn"
+                                onClick={() => setPanel(PANELS.BACKGROUND)}
+                                swatch={bgCss(background)}
+                                label="Fundo"
+                            />
                         )}
+                        {/* Fonte / Estilo / Cor — visíveis em AMBOS os modos */}
+                        <ToolButton
+                            testId="composer-font-btn"
+                            onClick={() => setPanel(PANELS.FONT)}
+                            text="Aa"
+                            textStyle={fStyle}
+                            label="Fonte"
+                        />
+                        <ToolButton
+                            testId="composer-style-btn"
+                            onClick={() => setPanel(PANELS.STYLE)}
+                            Icon={Sparkles}
+                            label="Estilo"
+                        />
                         <ToolButton
                             testId="composer-color-btn"
                             onClick={() => setPanel(PANELS.COLOR)}
@@ -432,7 +477,7 @@ export function StoryComposer({ onClose, onCreated }) {
                             <input
                                 value={caption}
                                 onChange={(e) => setCaption(e.target.value.slice(0, 200))}
-                                placeholder="Adiciona uma legenda…"
+                                placeholder="Adiciona uma legenda… (arrasta para mover)"
                                 data-testid="composer-caption-input"
                                 className="w-full h-11 px-4 rounded-2xl border border-black/[0.08] bg-black/[0.03] text-black text-[14px] outline-none focus:bg-white focus:border-black/60"
                             />
@@ -463,8 +508,7 @@ export function StoryComposer({ onClose, onCreated }) {
                     </div>
                 </div>
 
-                <input ref={fileImgRef} type="file" accept="image/*" hidden onChange={(e) => handleFile(e.target.files?.[0], "image")} data-testid="composer-img-file" />
-                <input ref={fileVidRef} type="file" accept="video/*" hidden onChange={(e) => handleFile(e.target.files?.[0], "video")} data-testid="composer-vid-file" />
+                <input ref={fileImgRef} type="file" accept="image/*" hidden onChange={(e) => handleFile(e.target.files?.[0])} data-testid="composer-img-file" />
 
                 {/* ============ PANELS ============ */}
                 {panel === PANELS.AUDIENCE && (
@@ -490,6 +534,14 @@ export function StoryComposer({ onClose, onCreated }) {
                         addSticker({ ...sticker, type: editorType });
                         setPanel(PANELS.NONE);
                     }} />
+                )}
+                {panel === PANELS.CAPTION_EDIT && (
+                    <CaptionEditSheet
+                        value={caption}
+                        onChange={setCaption}
+                        onRemove={() => { setCaption(""); setPanel(PANELS.NONE); }}
+                        onClose={() => setPanel(PANELS.NONE)}
+                    />
                 )}
             </div>
         </div>
@@ -521,7 +573,6 @@ function ToolButton({ Icon, swatch, text, textStyle, label, badge, dot, onClick,
 /* ============================================================
    Helpers
 ============================================================ */
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function textPreviewSize(text) {
     const n = (text || "").length;
     if (n < 30)  return "30px";
@@ -544,8 +595,6 @@ function StickerPreview({ sticker }) {
     if (sticker.type === "hashtag")  return <div className="bg-black text-white rounded-full shadow px-2.5 py-0.5 text-[10.5px] font-semibold">#{sticker.data?.tag}</div>;
     if (sticker.type === "location") return <div className={base}>📍 {sticker.data?.place}</div>;
     if (sticker.type === "countdown")return <div className="bg-black/85 text-white rounded-xl shadow px-2.5 py-0.5 text-[10.5px] font-medium">⏱ {sticker.data?.title}</div>;
-    if (sticker.type === "link")     return <div className={base}>🔗 {sticker.data?.label}</div>;
-    if (sticker.type === "music")    return <div className={base}>🎵 {sticker.data?.title}</div>;
     return null;
 }
 
@@ -706,6 +755,35 @@ function TextStyleSheet({ value, fontKey, onSelect, onClose }) {
     );
 }
 
+function CaptionEditSheet({ value, onChange, onRemove, onClose }) {
+    return (
+        <Sheet title="Editar legenda" onClose={onClose} testId="caption-edit-sheet">
+            <textarea
+                autoFocus
+                value={value}
+                onChange={(e) => onChange(e.target.value.slice(0, 200))}
+                rows={3}
+                placeholder="Escreve aqui…"
+                className="w-full px-3 py-3 rounded-xl border border-black/15 outline-none focus:border-coral text-[15px] bg-white resize-none"
+            />
+            <div className="mt-3 flex items-center justify-between">
+                <button
+                    onClick={onRemove}
+                    className="text-[12px] font-mono text-red-soft hover:underline"
+                >
+                    Remover legenda
+                </button>
+                <button
+                    onClick={onClose}
+                    className="px-4 h-10 rounded-full bg-black text-white font-mono uppercase text-[11px] tracking-wider hover:bg-black/85"
+                >
+                    OK
+                </button>
+            </div>
+        </Sheet>
+    );
+}
+
 function StickerPicker({ onSelect, onClose }) {
     return (
         <Sheet title="Adicionar sticker" onClose={onClose} testId="sticker-picker">
@@ -736,8 +814,6 @@ function StickerEditor({ type, onSubmit, onClose }) {
             case "hashtag":   return { tag: "" };
             case "location":  return { place: "" };
             case "countdown": return { title: "Contagem", ends_at: defaultCountdownIso() };
-            case "link":      return { url: "", label: "Saber mais" };
-            case "music":     return { title: "", artist: "" };
             default:          return {};
         }
     });
@@ -748,8 +824,6 @@ function StickerEditor({ type, onSubmit, onClose }) {
         if (type === "mention" && !draft.username.trim()) { toast.error("Indica o utilizador"); return; }
         if (type === "hashtag" && !draft.tag.trim()) { toast.error("Indica a hashtag"); return; }
         if (type === "location" && !draft.place.trim()) { toast.error("Indica o local"); return; }
-        if (type === "link" && !/^https?:\/\//i.test(draft.url.trim())) { toast.error("Link tem de começar com http(s)://"); return; }
-        if (type === "music" && !draft.title.trim()) { toast.error("Indica o título"); return; }
         if (type === "countdown" && !draft.ends_at) { toast.error("Define a data"); return; }
         onSubmit({ data: { ...draft } });
     };
@@ -810,18 +884,6 @@ function StickerEditor({ type, onSubmit, onClose }) {
                 <div className="space-y-2">
                     <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Título (ex: Concerto)" className={cssInput} />
                     <input type="datetime-local" value={draft.ends_at?.slice(0, 16) || ""} onChange={(e) => setDraft({ ...draft, ends_at: new Date(e.target.value).toISOString() })} className={cssInput} />
-                </div>
-            )}
-            {type === "link" && (
-                <div className="space-y-2">
-                    <input value={draft.url} onChange={(e) => setDraft({ ...draft, url: e.target.value })} placeholder="https://..." className={cssInput} />
-                    <input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} placeholder="Etiqueta" className={cssInput} />
-                </div>
-            )}
-            {type === "music" && (
-                <div className="space-y-2">
-                    <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Título da música" className={cssInput} />
-                    <input value={draft.artist} onChange={(e) => setDraft({ ...draft, artist: e.target.value })} placeholder="Artista" className={cssInput} />
                 </div>
             )}
             <button

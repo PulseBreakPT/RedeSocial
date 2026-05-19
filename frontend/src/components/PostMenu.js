@@ -1,27 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import {
     MoreHorizontal, Trash2, Pencil, Pin, PinOff, Flag, Link2, Type,
-    Users2, Languages, VolumeX, ThumbsDown, ThumbsUp, FolderPlus, Bell, BellOff,
-    FileText, Clock, BarChart3,
+    Users2, VolumeX, Bell, BellOff,
+    FileText, Clock,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { toast } from "sonner";
-import { confirmDialog, promptDialog } from "./ConfirmDialog";
+import { promptDialog } from "./ConfirmDialog";
 import { CollabModal } from "./CollabModal";
 import { ReportModal } from "./ReportModal";
 import {
-    muteAuthor, muteTopic, seeLessOfTopic, seeMoreOfTopic,
+    muteAuthor,
     setPostNote, getPostNote,
-    convertToStory, addToCollection,
+    convertToStory,
     toggleWatchPost, isWatchingPost, dismissPost,
 } from "../lib/interestSignals";
 
-const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
-
-function firstHashtag(content) {
-    const m = (content || "").match(/#([\w\u00C0-\u017F]+)/);
-    return m ? m[1] : null;
-}
+const itemCls = "w-full px-3.5 py-2.5 text-[13px] font-body text-left flex items-center gap-3 text-black/85 hover:bg-black/[0.05] active:bg-black/[0.08] transition-colors duration-150 rounded-lg";
+const itemClsDanger = "w-full px-3.5 py-2.5 text-[13px] font-body text-left flex items-center gap-3 text-red-soft hover:bg-red-soft-bg active:bg-red-soft-bg transition-colors duration-150 rounded-lg";
+const iconCls = "text-black/55";
 
 export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
     const [open, setOpen] = useState(false);
@@ -35,8 +32,13 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
         const close = (e) => {
             if (ref.current && !ref.current.contains(e.target)) setOpen(false);
         };
+        const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
         document.addEventListener("mousedown", close);
-        return () => document.removeEventListener("mousedown", close);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", close);
+            document.removeEventListener("keydown", onKey);
+        };
     }, []);
 
     const close = () => setOpen(false);
@@ -84,100 +86,19 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
         close();
     };
 
-    const handleTranslate = (e) => {
-        e.stopPropagation();
-        const txt = encodeURIComponent(post.content || "");
-        window.open(`https://translate.google.com/?sl=auto&tl=pt&text=${txt}&op=translate`, "_blank", "noopener");
-        toast.success("A abrir tradução no Google");
-        close();
-    };
     const handleMuteAuthor = async (e) => {
         e.stopPropagation();
         await muteAuthor(post.author?.username || "");
         close();
     };
-    const handleMuteTopic = async (e) => {
-        e.stopPropagation();
-        const tag = firstHashtag(post.content);
-        if (!tag) { toast.info("Este post não tem hashtag para silenciar"); close(); return; }
-        await muteTopic(tag);
-        close();
-    };
-    const handleSeeLess = async (e) => {
-        e.stopPropagation();
-        const tag = firstHashtag(post.content);
-        if (!tag) { toast.info("Este post não tem hashtag — não é possível filtrar por tema"); close(); return; }
-        await seeLessOfTopic(tag);
-        close();
-    };
-    const handleSeeMore = async (e) => {
-        e.stopPropagation();
-        const tag = firstHashtag(post.content) || "este tema";
-        await seeMoreOfTopic(tag); close();
-    };
-    const handleAddCollection = async (e) => {
-        e.stopPropagation();
-        close();
-        try {
-            const { data } = await api.get("/bookmark-collections");
-            const cols = data || [];
-            if (cols.length === 0) {
-                const create = await confirmDialog({
-                    title: "Sem coleções ainda",
-                    description: "Cria a tua primeira coleção para organizares posts guardados.",
-                    confirmText: "Criar coleção",
-                    cancelText: "Cancelar",
-                });
-                if (!create) return;
-                const name = await promptDialog({
-                    title: "Nova coleção",
-                    label: "Nome da coleção",
-                    placeholder: "Ex: Inspiração",
-                    defaultValue: "Inspiração",
-                    maxLength: 60,
-                    confirmText: "Criar e adicionar",
-                });
-                if (!name) return;
-                const r = await api.post("/bookmark-collections", { name });
-                await addToCollection(r.data.id, post.id);
-                return;
-            }
-            const labels = cols.map((c, i) => `${i + 1}. ${c.name}`).join("\n");
-            const choice = await promptDialog({
-                title: "Adicionar a coleção",
-                description: `Coleções existentes:\n${labels}\n\nEscreve o número de uma coleção ou o nome de uma nova.`,
-                label: "Número ou nome",
-                placeholder: "1",
-                defaultValue: "1",
-                multiline: false,
-                maxLength: 60,
-                confirmText: "Adicionar",
-            });
-            if (!choice) return;
-            const idx = parseInt(choice, 10);
-            if (!isNaN(idx) && idx >= 1 && idx <= cols.length) {
-                await addToCollection(cols[idx - 1].id, post.id);
-            } else {
-                const r = await api.post("/bookmark-collections", { name: String(choice).trim() });
-                await addToCollection(r.data.id, post.id);
-            }
-        } catch (err) { toastApiError(err); }
-    };
+
     const handleNotInterested = async (e) => {
         e.stopPropagation();
         close();
         const ok = await dismissPost(post.id);
-        if (ok) onDelete?.(post.id); // local removal feels right after dismiss
+        if (ok) onDelete?.(post.id);
     };
-    const handleWhy = async (e) => {
-        e.stopPropagation();
-        close();
-        try {
-            const { data } = await api.post(`/posts/${post.id}/why`);
-            const lines = (data.reasons || []).map((r) => `• ${r.label}`).join("\n");
-            toast.message(lines || "Recomendação sem contexto adicional.");
-        } catch (err) { toastApiError(err); }
-    };
+
     const handleNote = async (e) => {
         e.stopPropagation();
         const current = getPostNote(post.id) || "";
@@ -196,6 +117,7 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
         if (note === null) return;
         await setPostNote(post.id, note);
     };
+
     const handleConvertStory = async (e) => {
         e.stopPropagation();
         close();
@@ -206,6 +128,7 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
         }
         await convertToStory({ image: img, content: post.content || "" });
     };
+
     const handleWatch = async (e) => {
         e.stopPropagation();
         const next = await toggleWatchPost(post.id);
@@ -221,104 +144,101 @@ export function PostMenu({ post, isOwn, onEdit, onDelete, onPinToggle }) {
             <button
                 onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
                 data-testid={`post-menu-${post.id}`}
-                className="text-black/45 hover:text-black p-1.5 rounded-full hover:bg-black/[0.04] transition"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                aria-label="Mais opções"
+                className={`p-1.5 rounded-full transition-colors duration-150 ${open ? "bg-black/[0.06] text-black" : "text-black/45 hover:text-black hover:bg-black/[0.04]"}`}
             >
                 <MoreHorizontal size={16} strokeWidth={1.7} />
             </button>
             {open && (
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-1.5 z-30 bg-white border border-black/[0.08] rounded-xl py-1.5 min-w-[230px] max-h-[80vh] overflow-y-auto shadow-[0_20px_50px_-12px_rgba(13,13,16,0.18)] anim-fade-up"
+                    role="menu"
+                    className="post-menu-pop absolute right-0 top-full mt-2 z-50 bg-white border border-black/[0.06] rounded-2xl py-1.5 min-w-[240px] max-w-[280px] overflow-hidden anim-fade-up"
+                    style={{
+                        boxShadow:
+                            "0 1px 2px rgba(13,13,16,0.04), 0 8px 16px -4px rgba(13,13,16,0.08), 0 24px 56px -16px rgba(13,13,16,0.22)",
+                    }}
                 >
-                    {/* === Universal === */}
-                    <button onClick={handleCopy} data-testid={`copy-link-${post.id}`} className={itemCls}>
-                        <Link2 size={14} strokeWidth={1.6} className="text-black/55" /> Copiar link
-                    </button>
-                    {post.content && (
-                        <button onClick={handleCopyText} data-testid={`copy-text-${post.id}`} className={itemCls}>
-                            <Type size={14} strokeWidth={1.6} className="text-black/55" /> Copiar texto
+                    <div className="px-1">
+                        <button onClick={handleCopy} data-testid={`copy-link-${post.id}`} className={itemCls} role="menuitem">
+                            <Link2 size={15} strokeWidth={1.7} className={iconCls} /> Copiar link
                         </button>
-                    )}
-                    {post.content && (
-                        <button onClick={handleTranslate} data-testid={`translate-${post.id}`} className={itemCls}>
-                            <Languages size={14} strokeWidth={1.6} className="text-black/55" /> Traduzir
-                        </button>
-                    )}
-                    <button onClick={handleAddCollection} data-testid={`add-collection-${post.id}`} className={itemCls}>
-                        <FolderPlus size={14} strokeWidth={1.6} className="text-black/55" /> Adicionar à coleção
-                    </button>
-                    <button onClick={handleWatch} data-testid={`watch-${post.id}`} className={itemCls}>
-                        {watching ? (
-                            <><BellOff size={14} strokeWidth={1.6} className="text-black/55" /> Deixar de seguir post</>
-                        ) : (
-                            <><Bell size={14} strokeWidth={1.6} className="text-black/55" /> Seguir respostas (Watch)</>
+                        {post.content && (
+                            <button onClick={handleCopyText} data-testid={`copy-text-${post.id}`} className={itemCls} role="menuitem">
+                                <Type size={15} strokeWidth={1.7} className={iconCls} /> Copiar texto
+                            </button>
                         )}
-                    </button>
-
-                    <div className="hairline-t my-1" />
+                        <button onClick={handleWatch} data-testid={`watch-${post.id}`} className={itemCls} role="menuitem">
+                            {watching ? (
+                                <><BellOff size={15} strokeWidth={1.7} className={iconCls} /> Deixar de seguir post</>
+                            ) : (
+                                <><Bell size={15} strokeWidth={1.7} className={iconCls} /> Seguir respostas</>
+                            )}
+                        </button>
+                    </div>
 
                     {isOwn && (
                         <>
-                            <button onClick={(e) => { e.stopPropagation(); setCollabOpen(true); close(); }} data-testid={`collab-btn-${post.id}`} className={itemCls}>
-                                <Users2 size={14} strokeWidth={1.6} className="text-black/55" /> Colaboradores
-                            </button>
-                            <button onClick={handlePin} data-testid={`pin-${post.id}`} className={itemCls}>
-                                {post.pinned
-                                    ? <><PinOff size={14} strokeWidth={1.6} className="text-black/55" /> Desafixar do perfil</>
-                                    : <><Pin size={14} strokeWidth={1.6} className="text-black/55" /> Fixar no perfil · Showcase</>}
-                            </button>
-                            <button onClick={handleNote} data-testid={`note-${post.id}`} className={itemCls}>
-                                <FileText size={14} strokeWidth={1.6} className="text-black/55" /> Adicionar nota privada
-                            </button>
-                            <button onClick={handleConvertStory} data-testid={`story-${post.id}`} className={itemCls}>
-                                <Clock size={14} strokeWidth={1.6} className="text-black/55" /> Converter em story 24h
-                            </button>
-                            <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls}>
-                                {threadMuted
-                                    ? <><Bell size={14} strokeWidth={1.6} className="text-black/55" /> Reativar notificações da discussão</>
-                                    : <><BellOff size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar discussão</>}
-                            </button>
-                            {canEdit && (
-                                <button onClick={(e) => { e.stopPropagation(); onEdit?.(); close(); }} data-testid={`edit-post-${post.id}`} className={itemCls}>
-                                    <Pencil size={14} strokeWidth={1.6} className="text-black/55" /> Editar
+                            <div className="post-menu-divider" />
+                            <div className="px-1">
+                                <button onClick={(e) => { e.stopPropagation(); setCollabOpen(true); close(); }} data-testid={`collab-btn-${post.id}`} className={itemCls} role="menuitem">
+                                    <Users2 size={15} strokeWidth={1.7} className={iconCls} /> Colaboradores
                                 </button>
-                            )}
-                            <div className="hairline-t my-1" />
-                            <button onClick={(e) => { e.stopPropagation(); onDelete?.(); close(); }} className="w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-red-soft-bg text-red-soft flex items-center gap-3 transition">
-                                <Trash2 size={14} strokeWidth={1.6} /> Apagar
-                            </button>
+                                <button onClick={handlePin} data-testid={`pin-${post.id}`} className={itemCls} role="menuitem">
+                                    {post.pinned
+                                        ? <><PinOff size={15} strokeWidth={1.7} className={iconCls} /> Desafixar do perfil</>
+                                        : <><Pin size={15} strokeWidth={1.7} className={iconCls} /> Fixar no perfil</>}
+                                </button>
+                                <button onClick={handleNote} data-testid={`note-${post.id}`} className={itemCls} role="menuitem">
+                                    <FileText size={15} strokeWidth={1.7} className={iconCls} /> Adicionar nota privada
+                                </button>
+                                <button onClick={handleConvertStory} data-testid={`story-${post.id}`} className={itemCls} role="menuitem">
+                                    <Clock size={15} strokeWidth={1.7} className={iconCls} /> Converter em story 24h
+                                </button>
+                                <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls} role="menuitem">
+                                    {threadMuted
+                                        ? <><Bell size={15} strokeWidth={1.7} className={iconCls} /> Reativar notificações</>
+                                        : <><BellOff size={15} strokeWidth={1.7} className={iconCls} /> Silenciar discussão</>}
+                                </button>
+                                {canEdit && (
+                                    <button onClick={(e) => { e.stopPropagation(); onEdit?.(); close(); }} data-testid={`edit-post-${post.id}`} className={itemCls} role="menuitem">
+                                        <Pencil size={15} strokeWidth={1.7} className={iconCls} /> Editar
+                                    </button>
+                                )}
+                            </div>
+                            <div className="post-menu-divider" />
+                            <div className="px-1">
+                                <button onClick={(e) => { e.stopPropagation(); onDelete?.(); close(); }} className={itemClsDanger} role="menuitem">
+                                    <Trash2 size={15} strokeWidth={1.7} /> Apagar
+                                </button>
+                            </div>
                         </>
                     )}
 
                     {!isOwn && (
                         <>
-                            <button onClick={handleSeeLess} data-testid={`see-less-${post.id}`} className={itemCls}>
-                                <ThumbsDown size={14} strokeWidth={1.6} className="text-black/55" /> Ver menos deste tema
-                            </button>
-                            <button onClick={handleSeeMore} data-testid={`see-more-${post.id}`} className={itemCls}>
-                                <ThumbsUp size={14} strokeWidth={1.6} className="text-black/55" /> Ver mais deste tema
-                            </button>
-                            <button onClick={handleNotInterested} data-testid={`not-interested-${post.id}`} className={itemCls}>
-                                <ThumbsDown size={14} strokeWidth={1.6} className="text-black/55" /> Não interessado
-                            </button>
-                            <button onClick={handleWhy} data-testid={`why-${post.id}`} className={itemCls}>
-                                <BarChart3 size={14} strokeWidth={1.6} className="text-black/55" /> Porque vejo isto?
-                            </button>
-                            <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls}>
-                                {threadMuted
-                                    ? <><Bell size={14} strokeWidth={1.6} className="text-black/55" /> Reativar notificações da discussão</>
-                                    : <><BellOff size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar discussão</>}
-                            </button>
-                            <button onClick={handleMuteTopic} data-testid={`mute-topic-${post.id}`} className={itemCls}>
-                                <VolumeX size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar tópico
-                            </button>
-                            <button onClick={handleMuteAuthor} data-testid={`mute-author-${post.id}`} className={itemCls}>
-                                <VolumeX size={14} strokeWidth={1.6} className="text-black/55" /> Silenciar @{post.author?.username}
-                            </button>
-                            <div className="hairline-t my-1" />
-                            <button onClick={handleReport} data-testid={`report-${post.id}`} className={itemCls}>
-                                <Flag size={14} strokeWidth={1.6} className="text-black/55" /> Reportar
-                            </button>
+                            <div className="post-menu-divider" />
+                            <div className="px-1">
+                                <button onClick={handleNotInterested} data-testid={`not-interested-${post.id}`} className={itemCls} role="menuitem">
+                                    <VolumeX size={15} strokeWidth={1.7} className={iconCls} /> Não interessado
+                                </button>
+                                <button onClick={handleMuteThread} data-testid={`mute-thread-${post.id}`} className={itemCls} role="menuitem">
+                                    {threadMuted
+                                        ? <><Bell size={15} strokeWidth={1.7} className={iconCls} /> Reativar notificações</>
+                                        : <><BellOff size={15} strokeWidth={1.7} className={iconCls} /> Silenciar discussão</>}
+                                </button>
+                                <button onClick={handleMuteAuthor} data-testid={`mute-author-${post.id}`} className={itemCls} role="menuitem">
+                                    <VolumeX size={15} strokeWidth={1.7} className={iconCls} /> Silenciar @{post.author?.username}
+                                </button>
+                            </div>
+                            <div className="post-menu-divider" />
+                            <div className="px-1">
+                                <button onClick={handleReport} data-testid={`report-${post.id}`} className={itemClsDanger} role="menuitem">
+                                    <Flag size={15} strokeWidth={1.7} /> Reportar
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>

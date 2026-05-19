@@ -515,21 +515,45 @@ export function StoryViewer({ groups, startIndex, startSubIndex = 0, onClose, on
                 {/* Subtle bottom gradient for readability */}
                 <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10" />
 
-                {/* Caption */}
+                {/* Caption — uses positioned coords when present (text-as-sticker) */}
                 {story.caption && story.media_type !== "text" && (
-                    <div
-                        className="absolute bottom-32 left-4 right-4 z-30 text-center pointer-events-none"
-                        style={{
-                            fontFamily: fStyle.fontFamily,
-                            fontWeight: fStyle.fontWeight,
-                            color: textColor,
-                            fontSize: "20px",
-                            textShadow: "0 2px 16px rgba(0,0,0,0.7)",
-                            ...decorStyle,
-                        }}
-                    >
-                        {story.caption}
-                    </div>
+                    story.caption_pos ? (
+                        <div
+                            className="absolute z-30 pointer-events-none"
+                            style={{
+                                left: `${(story.caption_pos.x ?? 0.5) * 100}%`,
+                                top: `${(story.caption_pos.y ?? 0.82) * 100}%`,
+                                transform: "translate(-50%, -50%)",
+                                maxWidth: "82%",
+                                textAlign: "center",
+                                fontFamily: fStyle.fontFamily,
+                                fontWeight: fStyle.fontWeight,
+                                fontStyle: fStyle.fontStyle,
+                                letterSpacing: fStyle.letterSpacing,
+                                color: textColor,
+                                fontSize: "20px",
+                                lineHeight: 1.15,
+                                textShadow: "0 2px 14px rgba(0,0,0,0.75)",
+                                ...decorStyle,
+                            }}
+                        >
+                            {story.caption}
+                        </div>
+                    ) : (
+                        <div
+                            className="absolute bottom-32 left-4 right-4 z-30 text-center pointer-events-none"
+                            style={{
+                                fontFamily: fStyle.fontFamily,
+                                fontWeight: fStyle.fontWeight,
+                                color: textColor,
+                                fontSize: "20px",
+                                textShadow: "0 2px 16px rgba(0,0,0,0.7)",
+                                ...decorStyle,
+                            }}
+                        >
+                            {story.caption}
+                        </div>
+                    )
                 )}
 
                 {/* Stickers overlay */}
