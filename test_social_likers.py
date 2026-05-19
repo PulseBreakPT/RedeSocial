@@ -9,7 +9,7 @@ import json
 from typing import Optional, Dict, Any
 
 # Backend URL
-BASE_URL = "https://password-validator-14.preview.emergentagent.com/api"
+BASE_URL = "https://social-flow-preview.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"
