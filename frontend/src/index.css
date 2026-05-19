@@ -285,22 +285,13 @@
 /* ============================================================
    ✦ PREMIUM MOTION SYSTEM
    Easings e durações coreografadas. Toda a app respira ao mesmo
-   ritmo — entrada de páginas, hovers, listas com stagger.
+   ritmo nos hovers e presses.
+
+   NOTA: as animações de entrada (page-reveal, reveal-up,
+   stagger-children) foram REMOVIDAS a pedido do utilizador —
+   o conteúdo das rotas aparece instantaneamente.
    ============================================================ */
 @layer utilities {
-    /* Page reveal — DESATIVADO a pedido do utilizador.
-       O conteúdo das rotas aparece instantaneamente, sem fade-in.
-       Mantém-se a classe `.page-reveal` como no-op para não quebrar
-       eventuais usos noutros pontos da app. As keyframes ficam vivas
-       para uso manual via `.reveal-up` (que continua disponível). */
-    .page-reveal {
-        animation: none;
-    }
-    @keyframes pageReveal {
-        from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
     /* Lift-on-hover — cards/buttons sobem -1px com sombra suave */
     .lift-on-hover {
         transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -325,38 +316,7 @@
         transition-duration: 60ms;
     }
 
-    /* Stagger children — itens de lista aparecem em cascata suave */
-    .stagger-children > * {
-        animation: pageReveal 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-    .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
-    .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
-    .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
-    .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
-    .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
-    .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
-    .stagger-children > *:nth-child(8) { animation-delay: 280ms; }
-    .stagger-children > *:nth-child(n+9) { animation-delay: 320ms; }
-
-    /* Reveal up — apply manually to a specific element if needed */
-    .reveal-up {
-        animation: pageReveal 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    .reveal-up-delay-1 { animation-delay: 80ms; }
-    .reveal-up-delay-2 { animation-delay: 160ms; }
-    .reveal-up-delay-3 { animation-delay: 240ms; }
-    .reveal-up-delay-4 { animation-delay: 320ms; }
-    .reveal-up-delay-5 { animation-delay: 400ms; }
-
     @media (prefers-reduced-motion: reduce) {
-        .page-reveal,
-        .stagger-children > *,
-        .reveal-up {
-            animation: none !important;
-            opacity: 1;
-            transform: none;
-        }
         .lift-on-hover { transition: none; }
         .lift-on-hover:hover { transform: none; box-shadow: none; }
         .press-soft:active { transform: none; }
