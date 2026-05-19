@@ -288,9 +288,13 @@
    ritmo — entrada de páginas, hovers, listas com stagger.
    ============================================================ */
 @layer utilities {
-    /* Page reveal — toda a página fade-in + 6px translate ao montar */
+    /* Page reveal — DESATIVADO a pedido do utilizador.
+       O conteúdo das rotas aparece instantaneamente, sem fade-in.
+       Mantém-se a classe `.page-reveal` como no-op para não quebrar
+       eventuais usos noutros pontos da app. As keyframes ficam vivas
+       para uso manual via `.reveal-up` (que continua disponível). */
     .page-reveal {
-        animation: pageReveal 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: none;
     }
     @keyframes pageReveal {
         from { opacity: 0; transform: translateY(6px); }
