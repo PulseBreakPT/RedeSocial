@@ -1091,6 +1091,25 @@
     @keyframes slideOutRight { from { transform: translateX(0); } to { transform: translateX(100%); } }
     .anim-pop { animation: pop 360ms var(--ease-pop) both; }
     @keyframes pop { 0% { transform: scale(0.6); opacity: 0.4; } 60% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
+    /* Double-tap heart burst overlay (post images) */
+    @keyframes heart-burst {
+        0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); }
+        18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(0deg); }
+        55%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+    }
+    .anim-heart-burst {
+        animation: heart-burst 780ms cubic-bezier(.22,.61,.36,1) forwards;
+        filter: drop-shadow(0 6px 24px rgba(255, 0, 80, 0.55));
+    }
+    /* Count roll animation when number increments */
+    @keyframes count-roll-up {
+        0%   { transform: translateY(0); opacity: 1; }
+        45%  { transform: translateY(-9px); opacity: 0; }
+        55%  { transform: translateY(9px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+    .anim-count-roll { animation: count-roll-up 360ms var(--ease-out-soft) both; }
     @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.4); } }
     .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }

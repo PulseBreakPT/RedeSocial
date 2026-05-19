@@ -2439,6 +2439,52 @@ async def like_post(post_id: str, user=Depends(get_current_user)):
     return {"liked": True, "likes_count": len(post.get("likes", [])) + 1}
 
 
+@api.get("/posts/{post_id}/social-likers")
+async def post_social_likers(post_id: str, request: Request):
+    """Social-proof: 3 likers the viewer follows + remaining count.
+    Falls back to most-followed likers if viewer is anonymous or follows no one who liked it.
+    """
+    post = await db.posts.find_one({"id": post_id}, {"_id": 0, "likes": 1, "author_id": 1})
+    if not post:
+        raise HTTPException(404, "Publicação não encontrada")
+    likes = post.get("likes", []) or []
+    total = len(likes)
+    if total == 0:
+        return {"users": [], "total": 0, "followed_total": 0}
+
+    viewer = await maybe_user(request)
+    viewer_following = set((viewer.get("following") if viewer else []) or [])
+    # Don't include the viewer themselves in the proof row
+    if viewer:
+        likes = [uid for uid in likes if uid != viewer["id"]]
+
+    followed_liker_ids = [uid for uid in likes if uid in viewer_following]
+    pool_ids = followed_liker_ids if followed_liker_ids else likes
+    # Cap to 24 to limit DB load when computing ranking
+    sample_ids = pool_ids[:24]
+    users = await db.users.find(
+        {"id": {"$in": sample_ids}},
+        {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1, "followers": 1},
+    ).to_list(length=24)
+    # Rank by followers desc as a stable, useful tie-breaker
+    users.sort(key=lambda u: len(u.get("followers", []) or []), reverse=True)
+    cards = [
+        {
+            "id": u["id"],
+            "username": u.get("username", ""),
+            "name": u.get("name", ""),
+            "avatar": u.get("avatar", ""),
+            "verified": bool(u.get("verified", False)),
+        }
+        for u in users[:3]
+    ]
+    return {
+        "users": cards,
+        "total": total,
+        "followed_total": len(followed_liker_ids),
+    }
+
+
 @api.post("/posts/{post_id}/bookmark")
 async def bookmark_post(post_id: str, user=Depends(get_current_user)):
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})

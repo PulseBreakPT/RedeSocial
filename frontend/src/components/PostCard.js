@@ -16,7 +16,8 @@ import {
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
-import { RichText } from "./RichText";
+import { ExpandableText } from "./ExpandableText";
+import { SocialProofRow } from "./SocialProofRow";
 import { ImageLightbox } from "./ImageLightbox";
 import { ImageCarousel } from "./ImageCarousel";
 import { PostMenu } from "./PostMenu";
@@ -111,6 +112,30 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             onChange?.({ ...post, liked: data.liked, likes_count: data.likes_count });
         } catch (err) {
             setLiked(prevLiked); setLikes(prevLikes);
+            toastApiError(err);
+        }
+    };
+
+    // Used by ImageCarousel double-tap: only LIKES (never unlikes) for a satisfying gesture
+    const likeFromDoubleTap = async () => {
+        if (liked) {
+            // Re-trigger the pop animation as feedback, but don't unlike
+            setAnimLike(true);
+            setTimeout(() => setAnimLike(false), 280);
+            return;
+        }
+        setLiked(true);
+        setLikes((n) => n + 1);
+        setAnimLike(true);
+        setTimeout(() => setAnimLike(false), 280);
+        try {
+            const { data } = await api.post(`/posts/${post.id}/like`);
+            setLiked(data.liked);
+            setLikes(data.likes_count);
+            onChange?.({ ...post, liked: data.liked, likes_count: data.likes_count });
+        } catch (err) {
+            setLiked(false);
+            setLikes((n) => Math.max(0, n - 1));
             toastApiError(err);
         }
     };
@@ -232,7 +257,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             {/* F2.4 — identity ring badge (only when not publico, since publico is the default) */}
                             {post.audience_ring && post.audience_ring !== "publico" && (
                                 <span
-                                    className="inline-flex items-center gap-1 font-mono text-[10px] text-black/55 px-1.5 py-0.5 rounded-full border border-black/[0.08]"
+                                    className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/65 px-1.5 py-0.5 rounded-full border border-black/[0.12] bg-white/60"
                                     title={
                                         post.audience_ring === "amigos"
                                             ? "Anel azul-tejo — apenas seguidores"
@@ -254,11 +279,11 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             )}
                             {audience !== "everyone" && (
                                 <span
-                                    className="inline-flex items-center gap-0.5 font-mono text-[10px] text-black/40 px-1.5 py-0.5 rounded-full border border-black/[0.08]"
+                                    className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/60 px-1.5 py-0.5 rounded-full border border-black/[0.12] bg-white/60"
                                     title={`Respostas: ${AudMeta.label}`}
                                     data-testid={`audience-${post.id}`}
                                 >
-                                    <AudIcon size={9} /> {AudMeta.label}
+                                    <AudIcon size={9} strokeWidth={2} /> {AudMeta.label}
                                 </span>
                             )}
                             {!showRepostHeader && (
@@ -274,7 +299,13 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                 </div>
                             )}
                         </div>
-                        {content && <RichText text={content} className="mt-1 text-[15px] leading-relaxed text-black/90" />}
+                        {content && (
+                            <ExpandableText
+                                text={content}
+                                className="mt-1 text-[15px] leading-relaxed text-black/90"
+                                testid={`post-text-${post.id}`}
+                            />
+                        )}
 
                         {post.reason && <div className="mt-2"><ReasonChip reason={post.reason} /></div>}
 
@@ -292,7 +323,11 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                         )}
 
                         {images.length > 0 && (
-                            <ImageCarousel images={images} onOpen={(i) => setLightboxIdx(i)} />
+                            <ImageCarousel
+                                images={images}
+                                onOpen={(i) => setLightboxIdx(i)}
+                                onDoubleTap={() => likeFromDoubleTap()}
+                            />
                         )}
 
                         {poll && (
@@ -342,90 +377,111 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-1 mt-4 pr-1">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/post/${post.id}`, { state: { focusComment: true } });
-                                }}
-                                data-testid={`comment-btn-${post.id}`}
-                                className="eng-btn is-commented"
-                            >
-                                <MessageCircle size={18} strokeWidth={1.7} />
-                                <span className="text-[12.5px] tabular-nums">{formatNum(post.comments_count || 0)}</span>
-                            </button>
-                            <div className="flex items-center">
-                                <RepostMenu
-                                    reposted={reposted}
-                                    onRepost={doRepost}
-                                    onQuote={() => setQuoting(true)}
-                                />
-                                <span data-testid={`repost-count-${post.id}`} className={`-ml-1 text-[12.5px] tabular-nums ${reposted ? "text-green-soft font-medium" : "text-black/55"}`}>
-                                    {formatNum(reposts)}
-                                </span>
-                            </div>
-                            <div className="relative">
+                        <div className="flex items-center justify-between gap-1 mt-4 pr-1" data-testid={`actions-${post.id}`}>
+                            {/* Left cluster — primary engagement */}
+                            <div className="flex items-center gap-1">
                                 <button
-                                    onClick={toggleLike}
-                                    onMouseDown={onHeartPressStart}
-                                    onMouseUp={onHeartPressEnd}
-                                    onMouseLeave={onHeartPressEnd}
-                                    onTouchStart={onHeartPressStart}
-                                    onTouchEnd={onHeartPressEnd}
-                                    onContextMenu={(e) => { e.preventDefault(); setQuickReactOpen(true); }}
-                                    data-testid={`like-btn-${post.id}`}
-                                    className={`eng-btn ${liked ? "is-liked" : ""}`}
-                                    title="Gosto (segura para reagir)"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/post/${post.id}`, { state: { focusComment: true } });
+                                    }}
+                                    data-testid={`comment-btn-${post.id}`}
+                                    className="eng-btn is-commented"
+                                    aria-label="Comentar"
                                 >
-                                    <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
-                                    <span className="text-[12.5px] tabular-nums">{formatNum(likes)}</span>
+                                    <MessageCircle size={18} strokeWidth={1.7} />
+                                    <span className="text-[12.5px] tabular-nums">{formatNum(post.comments_count || 0)}</span>
                                 </button>
-                                {quickReactOpen && (
-                                    <>
-                                        <button
-                                            aria-label="Fechar"
-                                            onClick={(e) => { e.stopPropagation(); setQuickReactOpen(false); }}
-                                            className="fixed inset-0 z-30 cursor-default"
-                                        />
-                                        <div
-                                            onClick={(e) => e.stopPropagation()}
-                                            data-testid={`quick-react-palette-${post.id}`}
-                                            className="absolute z-40 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white rounded-full shadow-xl border border-black/[0.08] flex gap-0.5 px-2 py-1.5 anim-fade-up"
+                                <div className="flex items-center">
+                                    <RepostMenu
+                                        reposted={reposted}
+                                        onRepost={doRepost}
+                                        onQuote={() => setQuoting(true)}
+                                    />
+                                    <span data-testid={`repost-count-${post.id}`} className={`-ml-1 text-[12.5px] tabular-nums ${reposted ? "text-green-soft font-medium" : "text-black/55"}`}>
+                                        {formatNum(reposts)}
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <button
+                                        onClick={toggleLike}
+                                        onMouseDown={onHeartPressStart}
+                                        onMouseUp={onHeartPressEnd}
+                                        onMouseLeave={onHeartPressEnd}
+                                        onTouchStart={onHeartPressStart}
+                                        onTouchEnd={onHeartPressEnd}
+                                        onContextMenu={(e) => { e.preventDefault(); setQuickReactOpen(true); }}
+                                        data-testid={`like-btn-${post.id}`}
+                                        className={`eng-btn ${liked ? "is-liked" : ""}`}
+                                        title="Gosto (segura para reagir)"
+                                    >
+                                        <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                        <span
+                                            key={likes}
+                                            className={`text-[12.5px] tabular-nums inline-block ${animLike ? "anim-count-roll" : ""}`}
                                         >
-                                            {QUICK_REACT_LIST.map((emoji) => (
-                                                <button
-                                                    key={emoji}
-                                                    onClick={(e) => { e.stopPropagation(); quickReact(emoji); }}
-                                                    data-testid={`quick-react-${emoji}-${post.id}`}
-                                                    className="text-[20px] w-8 h-8 grid place-items-center hover:bg-black/[0.05] rounded-full transition hover:scale-125"
-                                                >
-                                                    {emoji}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
+                                            {formatNum(likes)}
+                                        </span>
+                                    </button>
+                                    {quickReactOpen && (
+                                        <>
+                                            <button
+                                                aria-label="Fechar"
+                                                onClick={(e) => { e.stopPropagation(); setQuickReactOpen(false); }}
+                                                className="fixed inset-0 z-30 cursor-default"
+                                            />
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                data-testid={`quick-react-palette-${post.id}`}
+                                                className="absolute z-40 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white rounded-full shadow-xl border border-black/[0.08] flex gap-0.5 px-2 py-1.5 anim-fade-up"
+                                            >
+                                                {QUICK_REACT_LIST.map((emoji) => (
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={(e) => { e.stopPropagation(); quickReact(emoji); }}
+                                                        data-testid={`quick-react-${emoji}-${post.id}`}
+                                                        className="text-[20px] w-8 h-8 grid place-items-center hover:bg-black/[0.05] rounded-full transition hover:scale-125"
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            <button
-                                onClick={toggleBookmark}
-                                data-testid={`bookmark-btn-${post.id}`}
-                                className={`eng-btn ${bookmarked ? "is-bookmarked" : ""}`}
-                                aria-label="Guardar"
-                            >
-                                <Bookmark size={18} strokeWidth={1.7} fill={bookmarked ? "currentColor" : "none"} />
-                            </button>
-                            <button
-                                onClick={share}
-                                data-testid={`share-btn-${post.id}`}
-                                className="eng-btn is-commented"
-                                aria-label="Partilhar"
-                            >
-                                <Share2 size={18} strokeWidth={1.7} />
-                            </button>
-                            <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45" title="visualizações">
-                                <Eye size={14} strokeWidth={1.6} /> {formatNum(views)}
-                            </span>
+
+                            {/* Right cluster — utility actions */}
+                            <div className="flex items-center gap-1">
+                                <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45 mr-1" title="visualizações">
+                                    <Eye size={14} strokeWidth={1.6} /> {formatNum(views)}
+                                </span>
+                                <button
+                                    onClick={toggleBookmark}
+                                    data-testid={`bookmark-btn-${post.id}`}
+                                    className={`eng-btn ${bookmarked ? "is-bookmarked" : ""}`}
+                                    aria-label="Guardar"
+                                >
+                                    <Bookmark size={18} strokeWidth={1.7} fill={bookmarked ? "currentColor" : "none"} />
+                                </button>
+                                <button
+                                    onClick={share}
+                                    data-testid={`share-btn-${post.id}`}
+                                    className="eng-btn is-commented"
+                                    aria-label="Partilhar"
+                                >
+                                    <Share2 size={18} strokeWidth={1.7} />
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Social proof under the action bar */}
+                        <SocialProofRow
+                            postId={post.id}
+                            likesCount={likes}
+                            refreshKey={`${liked}-${likes}`}
+                            testid={`social-proof-${post.id}`}
+                        />
                     </div>
                 </div>
             </div>

@@ -113,6 +113,101 @@ user_problem_statement: |
       é gamificação.
 
 backend:
+  - task: "GET /api/posts/{post_id}/social-likers — social-proof avatars for likers"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Endpoint novo para o "social proof row" por baixo dos likes nos posts:
+              GET /api/posts/{post_id}/social-likers (auth opcional via maybe_user)
+            Comportamento:
+              · Sem auth: 200 com top-3 likers (ordenados por followers desc), total = post.likes.length, followed_total = 0.
+              · Com auth, viewer segue alguns dos likers: até 3 cards (id, username, name, avatar, verified) só dos likers seguidos. followed_total = N. Viewer NUNCA aparece em users[].
+              · Com auth, viewer não segue nenhum liker: fallback a top-3 likers globais; followed_total = 0.
+              · Post sem likes: { users: [], total: 0, followed_total: 0 }.
+              · Post inexistente: 404.
+            Cenários de teste sugeridos:
+              T1) Anon GET após user A dar like a post P → 200, users contém A, total=1, followed_total=0.
+              T2) User B autenticado, B NÃO segue A, A deu like a P → 200, users=[A], total=1, followed_total=0.
+              T3) B passa a seguir A → GET → 200, users=[A], followed_total=1.
+              T4) C e D dão like; B segue A e C → GET com B → users contém A e C ordenados por followers desc; followed_total=2; total=3 (excluindo B se também der like; total=3 sem B).
+              T5) B dá like a P e GET com B → users NÃO contém B; total inclui B.
+              T6) GET de post-id inexistente → 404.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ ALL 6 TESTS PASSED (100%) — Social Likers Endpoint Validation Complete
+            
+            Comprehensive test suite executed with all scenarios from review request:
+            
+            ✓ Test T1 - Anonymous GET after user A liked post P:
+              - Status: 200 OK
+              - Response shape validated: {users: [{id, username, name, avatar, verified}], total: int, followed_total: int}
+              - total = 1 (admin liked the post)
+              - followed_total = 0 (anonymous user)
+              - users contains admin ✓
+            
+            ✓ Test T2 - User B authenticated (NOT following A):
+              - Status: 200 OK
+              - Response shape validated ✓
+              - total = 1
+              - followed_total = 0 (B doesn't follow A yet)
+              - users contains admin ✓
+            
+            ✓ Test T3 - B follows A then GETs:
+              - B successfully followed admin
+              - Status: 200 OK
+              - Response shape validated ✓
+              - total = 1
+              - followed_total = 1 (B now follows A) ✓
+              - users contains admin ✓
+            
+            ✓ Test T4 - Multiple likers (C and D added); B follows A and C:
+              - Created users C and D
+              - C and D liked the post
+              - B followed C (already follows A from T3)
+              - Status: 200 OK
+              - Response shape validated ✓
+              - total = 3 (admin, C, D)
+              - followed_total = 2 (admin and C, both followed by B) ✓
+              - users contains both admin and userc ✓
+              - Ordering by followers desc working correctly
+            
+            ✓ Test T5 - Self-exclusion (B likes post, then GETs as B):
+              - B liked the post
+              - Status: 200 OK
+              - Response shape validated ✓
+              - total = 4 (admin, B, C, D)
+              - followed_total = 2 (admin and C, excluding self)
+              - users does NOT contain userb (self-exclusion working correctly) ✓
+            
+            ✓ Test T6 - GET on non-existent post:
+              - Status: 404 (correctly rejected) ✓
+            
+            All response shapes strictly validated:
+              - users[] array with exactly {id, username, name, avatar, verified} fields ✓
+              - total and followed_total as integers ✓
+              - No missing fields, no extra fields ✓
+            
+            Edge cases verified:
+              - Anonymous access works (no auth required) ✓
+              - Authenticated access with optional auth works ✓
+              - Follow relationships correctly reflected in followed_total ✓
+              - Self-exclusion from users[] array works ✓
+              - Ordering by followers desc works ✓
+              - 404 for non-existent posts ✓
+            
+            Test credentials used: admin@vermillion.app / admin123
+            Test users created: userb, userc, userd
+            
+            Endpoint is COMPLETE and WORKING correctly.
+
   - task: "Remoção de gamificação — backend (stubs neutros + remoção de XP/level/streak/reputação de public_user e get_profile)"
     implemented: true
     working: true
@@ -402,6 +497,26 @@ frontend:
           agent: "main"
           comment: "Frontend Phase 2 implemented; do NOT auto-test — wait for explicit user permission."
 
+  - task: "Posts module — double-tap-to-like on images, ExpandableText (ver mais), action bar reorg, social proof row, carousel polish, pill contrast"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/PostCard.js, /app/frontend/src/components/ImageCarousel.js, /app/frontend/src/components/ExpandableText.js, /app/frontend/src/components/SocialProofRow.js, /app/frontend/src/index.css"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Mudanças no módulo de posts (UI ONLY — não auto-testar):
+              · #1 Double-tap nas imagens dispara LIKE (nunca unlike) com heart-burst overlay animado (CSS .anim-heart-burst). Single-tap mantém abrir lightbox (defer 250ms para diferenciar do duplo).
+              · #2 Novo componente ExpandableText: posts com >320 chars ou >6 linhas mostram corte ao limite de palavra/frase + botão "Ver mais" / "Mostrar menos" inline (sem navegar).
+              · #7 Novo componente SocialProofRow: carrega lazily via IntersectionObserver e chama GET /api/posts/{id}/social-likers. Mostra mini-avatares stacked + "Gostado por @x, @y e mais N que segues". Re-fetch quando like muda.
+              · #15 Action bar reorganizada: cluster esquerdo (comment | repost | like) e cluster direito (views | bookmark | share) com `justify-between`.
+              · #16 Carousel: dots agora são botões clicáveis; counter `i/n` com font-medium e tabular-nums; burst sobre a imagem ao duplo-tap.
+              · #17 Pills de audience e ring com contraste melhorado: text-black/65, font-medium, bg-white/60, border 0.12.
+              · Animação extra: contador de likes faz roll subtil (.anim-count-roll) quando muda.
+
 metadata:
   created_by: "main_agent"
   version: "2.1"
@@ -409,13 +524,49 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Buttons forensic remediation — Settings prefs cross-device persistence + draft edit flow + new PATCH /posts capabilities (images, scheduled_at, draft bypass of 24h window)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
+    - agent: "main"
+      message: |
+        NOVO endpoint para testar (backend isolado, sem mudanças noutras rotas):
+          GET /api/posts/{post_id}/social-likers
+        Usa Depends opcional via maybe_user(request). Devolve {users:[{id,username,name,avatar,verified}], total, followed_total}. Detalhes completos e cenários T1-T6 estão na descrição do task. Credenciais admin: admin@vermillion.app / admin123 (ver /app/memory/test_credentials.md se existir).
+        NÃO testar frontend.
+    - agent: "testing"
+      message: |
+        ✅ SOCIAL LIKERS ENDPOINT VALIDATION COMPLETE — ALL 6 TESTS PASSED (100%)
+        
+        Executed comprehensive test suite covering all scenarios from review request:
+        • T1: Anonymous GET after user A liked post → 200 OK, correct response shape, total=1, followed_total=0 ✓
+        • T2: User B authenticated (not following A) → 200 OK, total=1, followed_total=0 ✓
+        • T3: B follows A then GETs → 200 OK, followed_total=1 (correctly reflects follow relationship) ✓
+        • T4: Multiple likers (C, D added); B follows A and C → 200 OK, total=3, followed_total=2, users contains both A and C ✓
+        • T5: B likes post, then GETs as B → 200 OK, total=4, users does NOT contain B (self-exclusion working) ✓
+        • T6: GET on non-existent post → 404 (correctly rejected) ✓
+        
+        Response shape strictly validated for all tests:
+        • users[] array with exactly {id, username, name, avatar, verified} fields ✓
+        • total and followed_total as integers ✓
+        • No missing or extra fields ✓
+        
+        Edge cases verified:
+        • Anonymous access (no auth) works correctly ✓
+        • Optional authentication via maybe_user works ✓
+        • Follow relationships correctly reflected in followed_total ✓
+        • Self-exclusion from users[] array works ✓
+        • Ordering by followers desc works ✓
+        • 404 for non-existent posts ✓
+        
+        Test file created: /app/test_social_likers.py
+        Test credentials: admin@vermillion.app / admin123
+        Test users created: userb, userc, userd
+        
+        No critical issues found. Endpoint is ready for production.
+        Backend testing complete for this task.
     - agent: "main"
       message: |
         Phase 2 backend complete — broad expansion. Please test ALL endpoints listed in the new "Fase 2" backend task description. Use admin@vermillion.app / admin123 (admin already seeded with PT demo data). Skip Phase 1 retest; only test Phase 2 + legacy sanity checks listed in the task. DO NOT test frontend yet.
