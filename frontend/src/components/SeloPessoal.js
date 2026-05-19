@@ -263,41 +263,8 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
                 </text>
             </g>
 
-            {/* the Lusorae Seal — same signature mark, larger, centered.
-                Assinatura cursiva em "Caveat" (handwritten font) para
-                garantir leitura clara da palavra "lusorae". */}
-            <g transform="translate(150, 540)">
-                <defs>
-                    <clipPath id="selo-pessoal-reveal">
-                        <rect
-                            className="selo-pessoal-reveal"
-                            x="0"
-                            y="0"
-                            width={animated ? "0" : "240"}
-                            height="80"
-                        />
-                    </clipPath>
-                </defs>
-                <text
-                    className="selo-pessoal-signature"
-                    x="2"
-                    y="58"
-                    fontFamily="'Caveat', 'Brush Script MT', cursive"
-                    fontWeight="700"
-                    fontSize="68"
-                    fill="#161616"
-                    letterSpacing="-0.5"
-                    fontStyle="italic"
-                    clipPath="url(#selo-pessoal-reveal)"
-                >
-                    lusorae
-                </text>
-                <path
-                    className="selo-pessoal-stamp"
-                    d="M 240 36 L 250 46 L 240 56 L 230 46 Z"
-                    fill="#e85d4f"
-                />
-            </g>
+            {/* No handwritten signature anymore — kept clean with just the
+                wordmark in serif (top of card) and the footer below. */}
 
             {/* footer */}
             <line

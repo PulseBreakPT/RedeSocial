@@ -7,7 +7,6 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
 import { Spinner } from "./Spinner";
 import { TrendingPulse } from "./TrendingPulse";
-import { VermillionSeal } from "./VermillionSeal";
 import { useClickOutside } from "../hooks/useClickOutside";
 
 export function RightSidebar() {
@@ -191,12 +190,9 @@ export function RightSidebar() {
 
             {/* "Quem seguir" moved to the Descobrir (Explore) page. */}
 
-            <p className="type-overline px-2 mt-auto pt-2 sr-only">
-                © lusorae · {new Date().getFullYear()} · feito à mão
+            <p className="type-overline px-2 mt-auto pt-2 text-black/35 text-[10.5px] tracking-[0.18em]">
+                © lusorae · {new Date().getFullYear()}
             </p>
-            <div className="mt-auto pt-3 pl-2">
-                <VermillionSeal size="sm" tone="ink" />
-            </div>
         </aside>
     );
 }

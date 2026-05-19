@@ -10,7 +10,6 @@ import { ActivityHeatmap } from "../../components/ActivityHeatmap";
 import { FingerprintGrid } from "./FingerprintGrid";
 import { RhythmPanel } from "./RhythmPanel";
 import { PresencePicker } from "../../components/PresencePicker";
-import { VermillionSeal } from "../../components/VermillionSeal";
 import { useEscapeKey } from "../../hooks/useClickOutside";
 
 const shortcutCards = [
@@ -172,8 +171,8 @@ export function PainelPessoalDrawer({ open, onClose, profile, stats, heatmap, fi
                             <Link to="/manifesto" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
                             <Link to="/legal" onClick={handleLinkClick} className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
                         </div>
-                        <div className="pt-2 flex justify-center">
-                            <VermillionSeal size="sm" tone="ink" align="center" />
+                        <div className="pt-2 flex justify-center text-[10.5px] text-black/35 tracking-[0.18em] uppercase">
+                            © lusorae · {new Date().getFullYear()}
                         </div>
                     </div>
                 </div>

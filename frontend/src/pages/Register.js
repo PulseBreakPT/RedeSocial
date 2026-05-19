@@ -4,7 +4,6 @@ import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2, 
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
-import { VermillionSeal } from "../components/VermillionSeal";
 import { DynamicWord } from "../components/DynamicWord";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
@@ -265,8 +264,8 @@ export default function Register() {
                         Conta criada em 30 segundos. Duas perguntas — e estás dentro.
                     </p>
                 </div>
-                <div className="relative text-[12px] text-white/60 font-medium">
-                    <VermillionSeal size="md" tone="light" />
+                <div className="relative text-[12px] text-white/55 font-medium tracking-[0.18em] uppercase">
+                    © lusorae · {new Date().getFullYear()}
                 </div>
             </div>
 
@@ -683,9 +682,9 @@ export default function Register() {
                             </div>
                         </div>
 
-                        {/* O Selo (animated brand signature) — visível também no mobile */}
-                        <div className="lg:hidden mt-8 mb-2 flex justify-center">
-                            <VermillionSeal size="sm" tone="ink" align="center" />
+                        {/* Mobile footer copyright */}
+                        <div className="lg:hidden mt-8 mb-2 flex justify-center text-[11px] text-black/40 tracking-[0.18em] uppercase">
+                            © lusorae · {new Date().getFullYear()}
                         </div>
                     </div>
                 </div>

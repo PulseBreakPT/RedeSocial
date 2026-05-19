@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-    ArrowLeft, ArrowUp, BookOpen, Check, Cookie, FileText,
+    ArrowLeft, ArrowUp, Check, Cookie, FileText,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
 
@@ -11,7 +11,6 @@ const NAV = [
     { to: "/legal/privacy",    label: "Política de Privacidade",short: "Privacidade", icon: ShieldCheck,  key: "privacy" },
     { to: "/legal/cookies",    label: "Política de Cookies",    short: "Cookies",     icon: Cookie,       key: "cookies" },
     { to: "/legal/community",  label: "Diretrizes",             short: "Diretrizes",  icon: Sparkle,      key: "community" },
-    { to: "/legal/glossary",   label: "Glossário",              short: "Glossário",   icon: BookOpen,     key: "glossary" },
 ];
 
 function slugify(s) {

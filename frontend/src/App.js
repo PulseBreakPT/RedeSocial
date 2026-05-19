@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
+import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -28,7 +29,6 @@ import Terms from "./pages/legal/Terms";
 import Privacy from "./pages/legal/Privacy";
 import Cookies from "./pages/legal/Cookies";
 import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
-import Glossary from "./pages/legal/Glossary";
 import Manifesto from "./pages/Manifesto";
 import Visitors from "./pages/Visitors";
 import SeriesPage from "./pages/SeriesPage";
@@ -39,6 +39,7 @@ function App() {
         <div className="App">
             <AuthProvider>
                 <BrowserRouter>
+                    <ScrollToTopOnNavigate />
                     <Toaster
                         theme="light"
                         position="bottom-right"
@@ -62,7 +63,6 @@ function App() {
                         <Route path="/legal/privacy" element={<Privacy />} />
                         <Route path="/legal/cookies" element={<Cookies />} />
                         <Route path="/legal/community" element={<CommunityGuidelines />} />
-                        <Route path="/legal/glossary" element={<Glossary />} />
                         <Route path="/manifesto" element={<Manifesto />} />
                         <Route
                             element={

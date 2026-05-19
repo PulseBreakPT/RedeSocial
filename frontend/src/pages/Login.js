@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { VermillionSeal } from "../components/VermillionSeal";
 import { DynamicWord } from "../components/DynamicWord";
 
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
@@ -62,8 +61,8 @@ export default function Login() {
                         Lusorae — uma rede social rápida, simples e sem distracções, feita para conversas que valem.
                     </p>
                 </div>
-                <div className="relative text-[12px] text-white/60 font-medium">
-                    <VermillionSeal size="md" tone="light" />
+                <div className="relative text-[12px] text-white/55 font-medium tracking-[0.18em] uppercase">
+                    © lusorae · {new Date().getFullYear()}
                 </div>
             </div>
 
@@ -186,9 +185,9 @@ export default function Login() {
                         </div>
                     </div>
 
-                    {/* O Selo (animated brand signature) — visível também no mobile, fechando a página */}
-                    <div className="lg:hidden mt-8 mb-2 flex justify-center">
-                        <VermillionSeal size="sm" tone="ink" align="center" />
+                    {/* Mobile footer copyright */}
+                    <div className="lg:hidden mt-8 mb-2 flex justify-center text-[11px] text-black/40 tracking-[0.18em] uppercase">
+                        © lusorae · {new Date().getFullYear()}
                     </div>
                 </div>
                 </div>
