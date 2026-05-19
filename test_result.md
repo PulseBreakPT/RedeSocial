@@ -1231,3 +1231,136 @@ agent_communication:
         
         Test file: /app/backend_test.py (35 comprehensive tests)
         Credentials: /app/memory/test_credentials.md
+
+
+frontend:
+  - task: "Settings page — 6 grouped categories consolidation (desktop sidebar + mobile tabs + jump bars + search filtering)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Settings.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Settings page restructured from 11 flat tabs to 6 logical groups, each containing 1-2 sub-sections:
+              1. Visão geral (hub) — single section
+              2. Perfil (perfil) — 2 sections: Conta e bio, Identidade e cidade
+              3. Conteúdo e feed (conteudo) — 2 sections: Algoritmo Para Ti, Notificações
+              4. Privacidade & Segurança (priv-seg) — 2 sections: Privacidade, Segurança
+              5. Aparência & Atalhos (aparencia) — 2 sections: Aparência, Atalhos de teclado
+              6. Dados & Legal (dados-legal) — 2 sections: Dados pessoais, Centro legal
+            
+            Desktop: vertical sidebar with search box, 6 group buttons (data-testid: settings-side-{groupKey})
+            Mobile: horizontal chip tabs (data-testid: settings-tab-{groupKey})
+            Jump bar: "Nesta secção" inline pills appear when group has >1 section (data-testid: settings-jump-{sectionKey})
+            Search: filters groups by label, keywords, or section labels (data-testid: settings-search)
+            
+            All 11 original tabs' content preserved, just better organized.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ ALL TESTS PASSED (10/10) — Settings Page 6-Group Structure Verification Complete
+            
+            Comprehensive UI testing executed with Playwright on desktop viewport (1920x1080):
+            
+            ✓ Test 1 - Desktop Sidebar Structure:
+              - Verified exactly 6 grouped categories visible in left sidebar
+              - All groups have correct data-testid attributes (settings-side-{groupKey})
+              - Labels match specification: Visão geral, Perfil, Conteúdo e feed, Privacidade & Segurança, Aparência & Atalhos, Dados & Legal
+              - No remnants of old 11-tab structure
+            
+            ✓ Test 2 - Mobile Chip-Tab Strip:
+              - All 6 mobile tabs exist in DOM with correct data-testid (settings-tab-{groupKey})
+              - Hidden on desktop (lg:hidden) but present for mobile breakpoints
+            
+            ✓ Test 3 - "Perfil" Group (2 sections):
+              - Both sections render correctly: conta (Conta e bio), ident (Identidade e cidade)
+              - Jump bar "Nesta secção" visible with 2 pills (settings-jump-conta, settings-jump-ident)
+              - Avatar upload button visible (data-testid: avatar-upload-btn)
+              - Banner upload button visible (data-testid: banner-upload-btn)
+              - City input visible in ident section (data-testid: settings-city)
+              - Both sections stacked vertically with divider
+            
+            ✓ Test 4 - "Privacidade & Segurança" Group (2 sections):
+              - Section priv (Privacidade) renders correctly
+              - Section seg (Segurança) renders correctly
+              - Both sections separated by thin divider with section headings
+            
+            ✓ Test 5 - "Conteúdo e feed" Group (2 sections):
+              - Section foryou (Algoritmo Para Ti) renders correctly
+              - Section notif (Notificações) renders correctly
+            
+            ✓ Test 6 - "Aparência & Atalhos" Group (2 sections):
+              - Section apar (Aparência) renders correctly
+              - Section atalhos (Atalhos de teclado) renders correctly
+            
+            ✓ Test 7 - "Dados & Legal" Group (2 sections):
+              - Section dados (Dados pessoais) renders correctly
+              - Section legal (Centro legal) renders correctly
+            
+            ✓ Test 8 - "Visão geral" Group (single section):
+              - Section hub renders correctly as ONLY section
+              - Jump bar correctly hidden (no "Nesta secção" pills for single-section groups)
+            
+            ✓ Test 9 - Search Box Filtering:
+              - Search "password" → correctly filters to "Privacidade & Segurança" group
+              - Search "tema" → correctly filters to "Aparência & Atalhos" group
+              - Search "cookies" → correctly filters to "Dados & Legal" group
+              - Search box has correct data-testid (settings-search)
+              - Clear button works correctly
+            
+            ✓ Test 10 - Screenshot Capture:
+              - Desktop view with "Perfil" group selected captured successfully
+              - Shows both stacked sub-sections (Conta e bio, Identidade e cidade)
+              - Jump bar visible at top with 2 pills
+              - Screenshot saved: .screenshots/settings_perfil_desktop.png
+            
+            Visual Quality Assessment:
+              - Layout is clean and well-organized
+              - All sections render without visual bugs
+              - No broken layouts or missing content
+              - Dividers between sections are subtle and appropriate
+              - Jump bar pills are clickable and styled correctly
+              - Search box is prominent and functional
+            
+            Console Logs:
+              - No JavaScript errors detected
+              - No error messages visible on page
+              - All interactions smooth and responsive
+            
+            Test Credentials: admin@vermillion.app / admin123
+            Test URL: https://password-validator-14.preview.emergentagent.com/settings
+            
+            CONCLUSION:
+            The settings page restructuring is COMPLETE and WORKING perfectly.
+            All 11 original tabs' content is still accessible, just better organized into 6 logical groups.
+            Structure is clean, intuitive, and maintains all functionality.
+            No critical issues found. Ready for production.
+
+agent_communication:
+    - agent: "testing"
+      message: |
+        ✅ SETTINGS PAGE 6-GROUP STRUCTURE — ALL TESTS PASSED (10/10)
+        
+        Comprehensive UI testing completed for /settings route restructuring.
+        
+        VERIFIED:
+        • Desktop sidebar shows exactly 6 grouped categories (not 11) ✓
+        • Mobile chip-tab strip has all 6 items ✓
+        • "Perfil" group shows 2 stacked sections with jump bar ✓
+        • "Privacidade & Segurança" shows 2 sections ✓
+        • "Conteúdo e feed" shows 2 sections ✓
+        • "Aparência & Atalhos" shows 2 sections ✓
+        • "Dados & Legal" shows 2 sections ✓
+        • "Visão geral" shows only 1 section (no jump bar) ✓
+        • Search box filtering works correctly ✓
+        • Screenshot captured successfully ✓
+        
+        NO CRITICAL ISSUES FOUND.
+        Layout is clean, well-organized, and all functionality preserved.
+        All 11 original tabs' content still accessible inside the 6 new groups.
+        
+        Ready for user acceptance or summary.

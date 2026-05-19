@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-    X, User, Settings, Archive, LogOut, Bookmark, FileText, Clock,
+    User, Settings, Archive, LogOut, Bookmark, FileText, Clock,
     Shield, ChevronRight,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -9,45 +10,136 @@ import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 
 /**
- * ProfileSidebarMenu
- * ──────────────────
- * Left-side slide-in drawer that opens when the profile avatar is pressed.
- * Holds the user's "painel pessoal" (perfil), arquivo de stories, definições
- * e ações de conta (sair). Designed to be the single canonical entry point
- * for personal navigation — pulled out of the LeftSidebar's main nav and
- * the bottom-anchored popup so there is exactly one way to reach them.
+ * ProfileDropdownMenu  (file kept as "ProfileSidebarMenu" for import compat)
+ * ─────────────────────────────────────────────────────────────────────────
+ * A floating dropdown menu (NOT a side-drawer) anchored to the profile
+ * avatar / user mini-card. Opens on click of the trigger, closes on:
+ *   - click outside
+ *   - escape key
+ *   - route change
+ *   - clicking any nav item
+ *
+ * Holds the unified personal navigation:
+ *   • Painel pessoal  (perfil, guardados, rascunhos, agendados)
+ *   • Stories         (arquivo de stories)
+ *   • Conta           (definições, centro legal)
+ *   • Sair da conta
  *
  * Props:
- *   open      bool      — controls visibility
- *   onClose   ()=>void  — close handler (backdrop click, escape, X, item nav)
+ *   open        bool                — visibility
+ *   onClose     () => void          — close handler
+ *   triggerRef  React.RefObject     — DOM ref of the trigger element used
+ *                                     for anchored positioning
+ *   placement   "top" | "bottom"    — preferred direction relative to trigger
+ *                                     (default "bottom"; "top" for sidebar mini-card)
+ *   align       "start" | "end"     — horizontal alignment to trigger
+ *                                     ("start" → left edges align, default)
  */
-export function ProfileSidebarMenu({ open, onClose }) {
+export function ProfileSidebarMenu({
+    open,
+    onClose,
+    triggerRef,
+    placement = "bottom",
+    align = "start",
+}) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const panelRef = useRef(null);
+    const [pos, setPos] = useState({ top: 0, left: 0, ready: false });
 
-    // Body scroll lock + ESC to close
+    const PANEL_WIDTH = 296;
+    const VIEWPORT_PAD = 10;
+    const GAP = 8;
+
+    // Position the floating panel relative to its trigger
+    const recompute = () => {
+        const trig = triggerRef?.current;
+        if (!trig) return;
+        const r = trig.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Horizontal
+        let left = align === "end" ? r.right - PANEL_WIDTH : r.left;
+        left = Math.min(Math.max(VIEWPORT_PAD, left), vw - PANEL_WIDTH - VIEWPORT_PAD);
+
+        // Vertical
+        const panelH = panelRef.current?.offsetHeight || 460;
+        let top;
+        if (placement === "top") {
+            top = r.top - panelH - GAP;
+            if (top < VIEWPORT_PAD) {
+                // not enough space above → flip below
+                top = r.bottom + GAP;
+            }
+        } else {
+            top = r.bottom + GAP;
+            if (top + panelH > vh - VIEWPORT_PAD) {
+                const altTop = r.top - panelH - GAP;
+                if (altTop >= VIEWPORT_PAD) top = altTop;
+                else top = Math.max(VIEWPORT_PAD, vh - panelH - VIEWPORT_PAD);
+            }
+        }
+
+        setPos({ top, left, ready: true });
+    };
+
+    useLayoutEffect(() => {
+        if (!open) {
+            setPos((p) => ({ ...p, ready: false }));
+            return;
+        }
+        recompute();
+        const onWin = () => recompute();
+        window.addEventListener("resize", onWin);
+        window.addEventListener("scroll", onWin, true);
+        return () => {
+            window.removeEventListener("resize", onWin);
+            window.removeEventListener("scroll", onWin, true);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, placement, align]);
+
+    // Re-measure once after first paint (so flip with real height works)
     useEffect(() => {
         if (!open) return;
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        const id = requestAnimationFrame(() => recompute());
+        return () => cancelAnimationFrame(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
+    // Click-outside + ESC
+    useEffect(() => {
+        if (!open) return;
+        const onDown = (e) => {
+            const panel = panelRef.current;
+            const trig = triggerRef?.current;
+            if (!panel) return;
+            if (panel.contains(e.target)) return;
+            if (trig && trig.contains(e.target)) return;
+            onClose?.();
+        };
         const onKey = (e) => {
             if (e.key === "Escape") onClose?.();
         };
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("touchstart", onDown, { passive: true });
         window.addEventListener("keydown", onKey);
         return () => {
-            document.body.style.overflow = prev;
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("touchstart", onDown);
             window.removeEventListener("keydown", onKey);
         };
-    }, [open, onClose]);
+    }, [open, onClose, triggerRef]);
 
-    // Close drawer on route change (defensive — every item already calls onClose)
+    // Close on route change (defensive)
     useEffect(() => {
         if (open) onClose?.();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname]);
 
-    if (!user) return null;
+    if (!user || !open) return null;
 
     const profileTo = user?.username ? `/u/${user.username}` : "/";
 
@@ -57,163 +149,124 @@ export function ProfileSidebarMenu({ open, onClose }) {
         navigate("/login");
     };
 
-    // Main organized sections
     const SECTIONS = [
         {
             title: "Painel pessoal",
             items: [
-                { to: profileTo, label: "O meu perfil", icon: User, testid: "drawer-profile",
-                  helper: `@${user.username}` },
-                { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "drawer-bookmarks",
-                  helper: "Posts que marcaste" },
-                { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "drawer-drafts",
-                  helper: "Por publicar" },
-                { to: "/scheduled", label: "Agendados", icon: Clock, testid: "drawer-scheduled",
-                  helper: "A publicar mais tarde" },
+                { to: profileTo, label: "O meu perfil", icon: User, testid: "drawer-profile" },
+                { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "drawer-bookmarks" },
+                { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "drawer-drafts" },
+                { to: "/scheduled", label: "Agendados", icon: Clock, testid: "drawer-scheduled" },
             ],
         },
         {
             title: "Stories",
             items: [
-                { to: "/stories/archive", label: "Arquivo de stories", icon: Archive, testid: "drawer-stories-archive",
-                  helper: "Histórico dos teus stories" },
+                { to: "/stories/archive", label: "Arquivo de stories", icon: Archive, testid: "drawer-stories-archive" },
             ],
         },
         {
             title: "Conta",
             items: [
-                { to: "/settings", label: "Definições", icon: Settings, testid: "drawer-settings",
-                  helper: "Privacidade, segurança, conta" },
-                { to: "/legal", label: "Centro legal", icon: Shield, testid: "drawer-legal",
-                  helper: "Termos, privacidade, cookies" },
+                { to: "/settings", label: "Definições", icon: Settings, testid: "drawer-settings" },
+                { to: "/legal", label: "Centro legal", icon: Shield, testid: "drawer-legal" },
             ],
         },
     ];
 
-    return (
-        <>
-            {/* Backdrop */}
-            <div
+    return createPortal(
+        <div
+            ref={panelRef}
+            role="menu"
+            aria-label="Menu do perfil"
+            data-testid="profile-sidebar-drawer"
+            data-placement={placement}
+            style={{
+                position: "fixed",
+                top: pos.top,
+                left: pos.left,
+                width: PANEL_WIDTH,
+                zIndex: 110,
+                opacity: pos.ready ? 1 : 0,
+                transform: pos.ready ? "translateY(0) scale(1)" : "translateY(-4px) scale(0.985)",
+                transformOrigin: placement === "top" ? "bottom left" : "top left",
+                transition: "opacity 160ms ease, transform 160ms ease",
+                pointerEvents: pos.ready ? "auto" : "none",
+            }}
+            className="bg-white rounded-2xl border border-black/[0.08] shadow-[0_20px_50px_-12px_rgba(13,13,16,0.28),_0_4px_12px_-4px_rgba(13,13,16,0.10)] overflow-hidden flex flex-col max-h-[min(560px,80vh)]"
+        >
+            {/* Identity header */}
+            <Link
+                to={profileTo}
                 onClick={onClose}
-                aria-hidden
-                data-testid="drawer-backdrop"
-                className={`fixed inset-0 z-[100] bg-black/35 backdrop-blur-[2px] transition-opacity duration-200 ${
-                    open ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-            />
-
-            {/* Drawer */}
-            <aside
-                role="dialog"
-                aria-modal="true"
-                aria-label="Menu do perfil"
-                data-testid="profile-sidebar-drawer"
-                className={`fixed top-0 left-0 z-[101] h-full w-[320px] max-w-[88vw] bg-white shadow-[0_40px_100px_-10px_rgba(13,13,16,0.45)] border-r border-black/[0.08] flex flex-col transform transition-transform duration-300 ease-out pt-safe pb-safe ${
-                    open ? "translate-x-0" : "-translate-x-full"
-                }`}
+                data-testid="drawer-identity-card"
+                className="flex items-center gap-3 px-4 py-3.5 hairline-b hover:bg-black/[0.025] transition"
             >
-                {/* Header — identity card */}
-                <div className="relative px-5 pt-5 pb-4 hairline-b bg-paper grain isolate">
-                    <button
-                        onClick={onClose}
-                        data-testid="drawer-close"
-                        aria-label="Fechar menu"
-                        className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.06] active:bg-black/[0.10] text-black/55 transition"
-                    >
-                        <X size={16} strokeWidth={1.8} />
-                    </button>
-
-                    <Link
-                        to={profileTo}
-                        onClick={onClose}
-                        data-testid="drawer-identity-card"
-                        className="flex items-center gap-3 pr-9 tap-shrink"
-                    >
-                        <Avatar user={user} size={52} showOnline />
-                        <div className="min-w-0 flex-1">
-                            <div className="font-heading font-semibold text-[15.5px] tracking-tight text-black truncate flex items-center gap-1.5">
-                                {user.name}
-                                {user.verified && <VerifiedBadge size={11} />}
-                            </div>
-                            <div className="font-mono text-[11.5px] text-black/50 truncate mt-0.5">
-                                @{user.username}
-                            </div>
-                        </div>
-                    </Link>
-
-                    <Link
-                        to={profileTo}
-                        onClick={onClose}
-                        data-testid="drawer-view-profile"
-                        className="mt-3.5 inline-flex items-center gap-1.5 text-[12px] font-mono uppercase tracking-[0.10em] text-black/60 hover:text-black transition"
-                    >
-                        Ver perfil completo <ChevronRight size={12} />
-                    </Link>
+                <Avatar user={user} size={42} showOnline />
+                <div className="min-w-0 flex-1">
+                    <div className="font-heading font-semibold text-[14px] tracking-tight text-black truncate flex items-center gap-1.5">
+                        {user.name}
+                        {user.verified && <VerifiedBadge size={10} />}
+                    </div>
+                    <div className="font-mono text-[11px] text-black/50 truncate mt-0.5">
+                        @{user.username}
+                    </div>
                 </div>
+                <ChevronRight size={14} className="text-black/35 shrink-0" />
+            </Link>
 
-                {/* Scrollable sections */}
-                <nav className="flex-1 overflow-y-auto px-2 py-3 no-scrollbar">
-                    {SECTIONS.map((section, idx) => (
-                        <div key={section.title} className={idx > 0 ? "mt-1.5 pt-2 hairline-t" : ""}>
-                            <p className="px-3 pt-1 pb-1.5 text-[10.5px] uppercase tracking-[0.14em] font-mono text-black/40 select-none">
-                                {section.title}
-                            </p>
-                            <ul className="flex flex-col">
-                                {section.items.map((item) => {
-                                    const Icon = item.icon;
-                                    const active = location.pathname === item.to ||
-                                        (item.to !== "/" && location.pathname.startsWith(item.to));
-                                    return (
-                                        <li key={item.to}>
-                                            <Link
-                                                to={item.to}
-                                                onClick={onClose}
-                                                data-testid={item.testid}
-                                                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all tap-shrink ${
-                                                    active
-                                                        ? "bg-black/[0.05] text-black"
-                                                        : "text-black/85 hover:bg-black/[0.04] hover:text-black"
-                                                }`}
-                                            >
-                                                <span className="shrink-0 w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] group-hover:bg-black/[0.07] transition">
-                                                    <Icon size={16} strokeWidth={1.75} className="text-black/75" />
-                                                </span>
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="block text-[14px] font-medium leading-tight">
-                                                        {item.label}
-                                                    </span>
-                                                    {item.helper && (
-                                                        <span className="block text-[11px] text-black/45 mt-0.5 truncate">
-                                                            {item.helper}
-                                                        </span>
-                                                    )}
-                                                </span>
-                                                <ChevronRight size={14} className="text-black/30 group-hover:text-black/55 shrink-0 transition" />
-                                            </Link>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                    ))}
-                </nav>
+            {/* Scrollable sections */}
+            <div className="flex-1 overflow-y-auto py-1.5 no-scrollbar">
+                {SECTIONS.map((section, idx) => (
+                    <div key={section.title} className={idx > 0 ? "mt-1 pt-1.5 hairline-t" : ""}>
+                        <p className="px-4 pt-1.5 pb-1 text-[9.5px] uppercase tracking-[0.16em] font-mono text-black/40 select-none">
+                            {section.title}
+                        </p>
+                        <ul className="flex flex-col px-1.5">
+                            {section.items.map((item) => {
+                                const Icon = item.icon;
+                                const active = location.pathname === item.to ||
+                                    (item.to !== "/" && location.pathname.startsWith(item.to));
+                                return (
+                                    <li key={item.to}>
+                                        <Link
+                                            to={item.to}
+                                            onClick={onClose}
+                                            data-testid={item.testid}
+                                            role="menuitem"
+                                            className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition tap-shrink ${
+                                                active
+                                                    ? "bg-black/[0.06] text-black"
+                                                    : "text-black/82 hover:bg-black/[0.04] hover:text-black"
+                                            }`}
+                                        >
+                                            <Icon size={15} strokeWidth={1.7} className="text-black/70 shrink-0" />
+                                            <span className="text-[13.5px] font-medium tracking-tight truncate">
+                                                {item.label}
+                                            </span>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                ))}
+            </div>
 
-                {/* Footer — logout */}
-                <div className="px-3 py-3 hairline-t bg-white">
-                    <button
-                        onClick={handleLogout}
-                        data-testid="drawer-logout"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full border border-black/[0.10] hover:border-coral-300 hover:bg-coral-50/60 transition text-[13.5px] font-medium tap-shrink"
-                        style={{ color: "var(--coral-500)" }}
-                    >
-                        <LogOut size={15} strokeWidth={1.9} /> Sair da conta
-                    </button>
-                    <p className="mt-2.5 text-center text-[10.5px] text-black/35 font-mono tracking-wider uppercase">
-                        © lusorae · {new Date().getFullYear()}
-                    </p>
-                </div>
-            </aside>
-        </>
+            {/* Logout footer */}
+            <div className="px-2 py-2 hairline-t bg-white">
+                <button
+                    onClick={handleLogout}
+                    data-testid="drawer-logout"
+                    role="menuitem"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-coral-50/70 transition text-[13.5px] font-medium tap-shrink text-left"
+                    style={{ color: "var(--coral-500)" }}
+                >
+                    <LogOut size={15} strokeWidth={1.8} /> Sair da conta
+                </button>
+            </div>
+        </div>,
+        document.body
     );
 }
 

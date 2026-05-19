@@ -22,21 +22,92 @@ import { DataTab } from "./settings/DataTab";
 import { ShortcutsTab } from "./settings/ShortcutsTab";
 
 /* ============================================================
-   TABS — keywords power the global search
+   GROUPS — consolidated from 11 tabs to 6 logical categories.
+   Each group bundles 1-2 sections (rendered stacked) so nothing
+   is lost from the previous structure, just better organized.
    ============================================================ */
-const TABS = [
-    { key: "hub",    label: "Hub",            icon: LayoutDashboard, keywords: ["resumo", "overview", "saúde", "completude", "stats", "score"] },
-    { key: "conta",  label: "Conta",          icon: UserIcon,        keywords: ["nome", "bio", "avatar", "capa", "banner", "privada", "perfil"] },
-    { key: "ident",  label: "Identidade",     icon: MapPin,          keywords: ["cidade", "região", "freguesia", "mood", "time", "portugal", "slots"] },
-    { key: "notif",  label: "Notificações",   icon: Bell,            keywords: ["gostos", "comentários", "menções", "boa noite", "cafezinho", "modos"] },
-    { key: "priv",   label: "Privacidade",    icon: Shield,          keywords: ["online", "escrever", "pesquisa", "dados", "rgpd"] },
-    { key: "seg",    label: "Segurança",      icon: ShieldCheck,     keywords: ["palavra-passe", "password", "2fa", "sessões", "login", "alertas", "google", "github"] },
-    { key: "apar",   label: "Aparência",      icon: Palette,         keywords: ["tema", "claro", "sépia", "sistema", "densidade", "idioma", "animações"] },
-    { key: "foryou", label: "Para Ti",        icon: Sliders,         keywords: ["algoritmo", "feed", "interesses", "afinar"] },
-    { key: "dados",  label: "Dados",          icon: Database,        keywords: ["armazenamento", "exportar", "json", "csv", "cache", "apagar conta"] },
-    { key: "atalhos",label: "Atalhos",        icon: Keyboard,        keywords: ["teclado", "shortcuts", "shortcut", "kb", "teclas"] },
-    { key: "legal",  label: "Legal",          icon: FileText,        keywords: ["termos", "privacidade", "cookies", "comunidade", "rgpd", "dpo"] },
+const GROUPS = [
+    {
+        key: "hub",
+        label: "Visão geral",
+        icon: LayoutDashboard,
+        keywords: ["resumo", "overview", "saúde", "completude", "stats", "score", "hub"],
+        sections: [{ key: "hub", label: null }],
+    },
+    {
+        key: "perfil",
+        label: "Perfil",
+        icon: UserIcon,
+        keywords: [
+            "nome", "bio", "avatar", "capa", "banner", "privada", "perfil",
+            "cidade", "região", "freguesia", "mood", "time", "portugal", "slots", "identidade",
+        ],
+        sections: [
+            { key: "conta", label: "Conta e bio" },
+            { key: "ident", label: "Identidade e cidade" },
+        ],
+    },
+    {
+        key: "conteudo",
+        label: "Conteúdo e feed",
+        icon: Sliders,
+        keywords: [
+            "algoritmo", "feed", "interesses", "afinar", "para ti",
+            "gostos", "comentários", "menções", "boa noite", "cafezinho", "modos", "notificações",
+        ],
+        sections: [
+            { key: "foryou", label: "Algoritmo Para Ti" },
+            { key: "notif", label: "Notificações" },
+        ],
+    },
+    {
+        key: "priv-seg",
+        label: "Privacidade & Segurança",
+        icon: Shield,
+        keywords: [
+            "online", "escrever", "pesquisa", "dados", "rgpd", "privacidade",
+            "palavra-passe", "password", "2fa", "sessões", "login", "alertas", "google", "github", "segurança",
+        ],
+        sections: [
+            { key: "priv", label: "Privacidade" },
+            { key: "seg", label: "Segurança" },
+        ],
+    },
+    {
+        key: "aparencia",
+        label: "Aparência & Atalhos",
+        icon: Palette,
+        keywords: [
+            "tema", "claro", "sépia", "sistema", "densidade", "idioma", "animações", "aparência",
+            "teclado", "shortcuts", "shortcut", "kb", "teclas", "atalhos",
+        ],
+        sections: [
+            { key: "apar", label: "Aparência" },
+            { key: "atalhos", label: "Atalhos de teclado" },
+        ],
+    },
+    {
+        key: "dados-legal",
+        label: "Dados & Legal",
+        icon: Database,
+        keywords: [
+            "armazenamento", "exportar", "json", "csv", "cache", "apagar conta", "dados",
+            "termos", "privacidade", "cookies", "comunidade", "dpo", "legal",
+        ],
+        sections: [
+            { key: "dados", label: "Dados pessoais" },
+            { key: "legal", label: "Centro legal" },
+        ],
+    },
 ];
+
+/* Back-compat: a flat lookup of legacy sub-tab keys → group key,
+   so any deep-link or hash anchor that referenced an old tab still works. */
+const LEGACY_TAB_TO_GROUP = (() => {
+    const m = {};
+    GROUPS.forEach((g) => g.sections.forEach((s) => { m[s.key] = g.key; }));
+    return m;
+})();
 
 const BIO_SLOTS = [
     { key: "mood_today",      label: "Mood do dia",      placeholder: "saudade · tasca · festa…" },
@@ -70,7 +141,7 @@ const THEMES = [
 
 export default function Settings() {
     const { user, setUser, logout } = useAuth();
-    const [tab, setTab] = useState("hub");
+    const [tab, setTab] = useState("hub"); // now holds a GROUP key (legacy state name preserved)
     const [search, setSearch] = useState("");
     const searchRef = useRef(null);
 
@@ -221,13 +292,14 @@ export default function Settings() {
         toast.info("Alterações descartadas");
     };
 
-    /* Filter tabs by search query */
+    /* Filter groups by search query (label OR aggregated keywords from sub-sections) */
     const filteredTabs = useMemo(() => {
-        if (!search.trim()) return TABS;
+        if (!search.trim()) return GROUPS;
         const q = search.toLowerCase().trim();
-        return TABS.filter((t) =>
-            t.label.toLowerCase().includes(q) ||
-            (t.keywords || []).some((k) => k.toLowerCase().includes(q))
+        return GROUPS.filter((g) =>
+            g.label.toLowerCase().includes(q) ||
+            (g.keywords || []).some((k) => k.toLowerCase().includes(q)) ||
+            (g.sections || []).some((s) => (s.label || "").toLowerCase().includes(q))
         );
     }, [search]);
 
@@ -249,6 +321,15 @@ export default function Settings() {
             setTab(filteredTabs[0].key);
         }
     }, [search, filteredTabs, tab]);
+
+    /* Back-compat: if some external link sets a legacy sub-tab key, redirect to its group */
+    useEffect(() => {
+        if (LEGACY_TAB_TO_GROUP[tab] && LEGACY_TAB_TO_GROUP[tab] !== tab) {
+            setTab(LEGACY_TAB_TO_GROUP[tab]);
+        }
+    }, [tab]);
+
+    const activeGroup = GROUPS.find((g) => g.key === tab) || GROUPS[0];
 
     return (
         <div data-testid="settings-page" className="pb-32">
@@ -345,57 +426,86 @@ export default function Settings() {
                     </div>
                 </aside>
 
-                {/* Main content area */}
+                {/* Main content area — renders all sections of the active group, stacked */}
                 <main className="min-w-0">
-                    {tab === "hub" && (
-                        <HubTab user={user} form={form} prefs={prefs} stats={stats} setActiveTab={setTab} />
-                    )}
-
-                    {tab === "conta" && (
-                        <ContaTab
-                            user={user} form={form} setForm={setForm}
-                            avatarRef={avatarRef} bannerRef={bannerRef} readFile={readFile}
-                            save={save} busy={busy} logout={logout}
-                        />
-                    )}
-
-                    {tab === "ident" && (
-                        <IdentTab form={form} setForm={setForm} save={save} busy={busy} />
-                    )}
-
-                    {tab === "notif" && (
-                        <NotifTab form={form} setForm={setForm} prefs={prefs} setPref={setPref} save={save} busy={busy} />
-                    )}
-
-                    {tab === "priv" && (
-                        <PrivTab prefs={prefs} setPref={setPref} user={user} />
-                    )}
-
-                    {tab === "seg" && (
-                        <SecurityTab prefs={prefs} setPref={setPref} />
-                    )}
-
-                    {tab === "apar" && (
-                        <AparTab prefs={prefs} setPref={setPref} />
-                    )}
-
-                    {tab === "foryou" && (
-                        <div className="px-4 lg:px-6 py-5 max-w-2xl">
-                            <ForYouTuner />
+                    {activeGroup.sections.length > 1 && (
+                        <div className="px-4 lg:px-6 pt-5 pb-1 flex items-center gap-2 flex-wrap">
+                            <span className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-black/40">
+                                Nesta secção
+                            </span>
+                            {activeGroup.sections.map((s) => (
+                                <a
+                                    key={s.key}
+                                    href={`#sec-${s.key}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        document.getElementById(`sec-${s.key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }}
+                                    data-testid={`settings-jump-${s.key}`}
+                                    className="text-[12px] font-medium px-2.5 py-1 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-black/70 hover:text-black transition"
+                                >
+                                    {s.label}
+                                </a>
+                            ))}
                         </div>
                     )}
 
-                    {tab === "dados" && (
-                        <DataTab user={user} prefs={prefs} />
-                    )}
+                    {activeGroup.sections.map((sec, idx) => (
+                        <section
+                            key={sec.key}
+                            id={`sec-${sec.key}`}
+                            data-testid={`settings-section-${sec.key}`}
+                            className={idx > 0 ? "mt-6 pt-6 border-t border-black/[0.06]" : ""}
+                        >
+                            {sec.label && idx > 0 && (
+                                <div className="px-4 lg:px-6 mb-1">
+                                    <h2 className="font-heading text-[18px] tracking-tight text-black">
+                                        {sec.label}
+                                    </h2>
+                                </div>
+                            )}
 
-                    {tab === "atalhos" && (
-                        <ShortcutsTab />
-                    )}
-
-                    {tab === "legal" && (
-                        <LegalTab />
-                    )}
+                            {sec.key === "hub" && (
+                                <HubTab user={user} form={form} prefs={prefs} stats={stats} setActiveTab={setTab} />
+                            )}
+                            {sec.key === "conta" && (
+                                <ContaTab
+                                    user={user} form={form} setForm={setForm}
+                                    avatarRef={avatarRef} bannerRef={bannerRef} readFile={readFile}
+                                    save={save} busy={busy} logout={logout}
+                                />
+                            )}
+                            {sec.key === "ident" && (
+                                <IdentTab form={form} setForm={setForm} save={save} busy={busy} />
+                            )}
+                            {sec.key === "notif" && (
+                                <NotifTab form={form} setForm={setForm} prefs={prefs} setPref={setPref} save={save} busy={busy} />
+                            )}
+                            {sec.key === "priv" && (
+                                <PrivTab prefs={prefs} setPref={setPref} user={user} />
+                            )}
+                            {sec.key === "seg" && (
+                                <SecurityTab prefs={prefs} setPref={setPref} />
+                            )}
+                            {sec.key === "apar" && (
+                                <AparTab prefs={prefs} setPref={setPref} />
+                            )}
+                            {sec.key === "foryou" && (
+                                <div className="px-4 lg:px-6 py-5 max-w-2xl">
+                                    <ForYouTuner />
+                                </div>
+                            )}
+                            {sec.key === "dados" && (
+                                <DataTab user={user} prefs={prefs} />
+                            )}
+                            {sec.key === "atalhos" && (
+                                <ShortcutsTab />
+                            )}
+                            {sec.key === "legal" && (
+                                <LegalTab />
+                            )}
+                        </section>
+                    ))}
                 </main>
             </div>
 

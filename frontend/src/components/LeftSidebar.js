@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
     Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
@@ -28,6 +28,7 @@ export function LeftSidebar({ onCompose }) {
     const [counts, setCounts] = useState({ notif: 0, msg: 0 });
     const [draftCount, setDraftCount] = useState(0);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const userBtnRef = useRef(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -156,9 +157,10 @@ export function LeftSidebar({ onCompose }) {
             {user && (
                 <div className="shrink-0">
                     <button
-                        onClick={() => setDrawerOpen(true)}
+                        ref={userBtnRef}
+                        onClick={() => setDrawerOpen((v) => !v)}
                         data-testid="left-sidebar-user-btn"
-                        aria-haspopup="dialog"
+                        aria-haspopup="menu"
                         aria-expanded={drawerOpen}
                         aria-label="Abrir menu do perfil"
                         className="w-full flex items-center gap-3 px-2.5 py-2 rounded-full hover:bg-black/[0.05] active:bg-black/[0.08] transition tap-shrink text-left"
@@ -176,8 +178,14 @@ export function LeftSidebar({ onCompose }) {
                 </div>
             )}
 
-            {/* The unified profile drawer (rendered as a portal-like fixed overlay) */}
-            <ProfileSidebarMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+            {/* The unified profile dropdown menu (rendered via portal) */}
+            <ProfileSidebarMenu
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                triggerRef={userBtnRef}
+                placement="top"
+                align="start"
+            />
         </aside>
     );
 }

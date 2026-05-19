@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Bell, Search, MessageCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -12,6 +12,7 @@ export function MobileTopBar({ onOpenChat }) {
     const location = useLocation();
     const [unread, setUnread] = useState(0);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const avatarBtnRef = useRef(null);
 
     const isExplore = location.pathname.startsWith("/explore");
     const isNotif = location.pathname.startsWith("/notifications");
@@ -34,12 +35,13 @@ export function MobileTopBar({ onOpenChat }) {
             data-testid="mobile-topbar"
         >
             <div className="flex items-center gap-3 px-4 h-[var(--mobile-topbar-h)]">
-                {/* Avatar — opens the unified profile sidebar drawer */}
+                {/* Avatar — opens the unified profile dropdown menu */}
                 <button
+                    ref={avatarBtnRef}
                     type="button"
-                    onClick={() => setDrawerOpen(true)}
+                    onClick={() => setDrawerOpen((v) => !v)}
                     aria-label="Abrir menu do perfil"
-                    aria-haspopup="dialog"
+                    aria-haspopup="menu"
                     aria-expanded={drawerOpen}
                     data-testid="mobile-topbar-avatar"
                     className="tap-shrink rounded-full p-0.5 -ml-0.5 hover:bg-black/[0.05] transition shrink-0"
@@ -91,8 +93,14 @@ export function MobileTopBar({ onOpenChat }) {
                 </button>
             </div>
 
-            {/* Unified profile drawer (also used by desktop LeftSidebar) */}
-            <ProfileSidebarMenu open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+            {/* Unified profile dropdown menu (also used by desktop LeftSidebar) */}
+            <ProfileSidebarMenu
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                triggerRef={avatarBtnRef}
+                placement="bottom"
+                align="start"
+            />
         </header>
     );
 }
