@@ -95,6 +95,49 @@ hashtag, cidade, mood, post ou conversa — com **5 estados nomeados** e score
 - **Apenas em posts (rev 2):** o chip aparece exclusivamente no header de cada `PostCard`, ao lado do timestamp. Trending, RightSidebar, TagPage e Cidades já não mostram chip de temperatura (decisão UX: o termómetro é uma assinatura *do post*, não de listas).
 - 25 testes E2E em `/app/backend/tests/test_thermometer.py` (pure-math + endpoint + legacy-compat + error paths).
 
+### Sprint 6 — Definições SSS Tier (19 Maio 2026)
+Reescrita completa do módulo Definições com arquitectura modular, design
+SSS tier e dados 100% reais (sem mocks).
+
+**Bugs críticos corrigidos:**
+- `SecurityTab` estava a receber props erradas (`prefs`/`setPref`) em vez de
+  `user`/`onUserUpdate` — palavra-passe, recovery email, login alerts e 2FA
+  estavam parcialmente partidos. Agora recebem dados reais do user.
+- `HubTab` lia `prefs.two_fa_enabled` e `prefs.login_alerts` que **não
+  existiam** no estado — sugestões falsas substituídas por flags reais do
+  user (`user.two_fa_enabled`, `user.login_alerts_enabled`, etc).
+- `ShortcutsTab.js` órfão removido (importado mas nunca renderizado).
+
+**Arquitectura modular (`/app/frontend/src/pages/settings/`):**
+- `_shared.js` — primitivas (SectionHeader, SwitchPill, StatusPill, LinkRow)
+- `HubTab.js` — visão geral com 2 rings + stats reais do `/users/{username}/stats`
+- `ContaTab.js` — capa + avatar + nome/bio/cidade/conta-privada
+- `AppearanceTab.js` — tema / densidade / idioma / reduzir movimento
+- `NotifTab.js` — modos saudáveis + tipos + som & vibração
+- `PrivacyTab.js` — 3 toggles de visibilidade
+- `SecurityTab.js` — 2FA + sessões + recovery + login alerts + password
+- `DataTab.js` — exportar JSON/CSV + limpeza local + zona perigosa
+- `LegalTab.js` — termos, privacidade, cookies, DPO, CNPD
+
+**Features funcionais novas:**
+- **Aparência** como sub-secção do Perfil — theme/density/language persistem
+  via `PATCH /users/me` (já suportado no schema).
+- **Regenerate 2FA backup codes** wired a `POST /auth/2fa/regenerate-backup`.
+- **Stats reais no Hub** (`likes_received`, `engagement_rate`, `comments_received`).
+- **Storage size estimate** no DataTab (bytes em localStorage).
+- **Sugestões dinâmicas** no Hub baseadas apenas em dados verdadeiros do user.
+
+**Design SSS tier:**
+- Sidebar com brand row, search com `/` shortcut, accent amarelo nos itens
+  activos, footer com lista de atalhos.
+- Header de grupo com icon tinted, overline mono, h1 display 32px.
+- Section headers numerados (01/02/03 pad-zero) em mono caps.
+- Cards `card-lux` com hover shadows, tinted icon containers per type.
+- Toggle `SwitchPill` premium (role=switch, aria-checked, transition).
+- 2 rings concêntricos no hero do Hub (perfil + segurança lado a lado).
+- Asymmetric grids: 7/5, 8/4, 6/6 — nada de monótono 50/50.
+- 12-col responsive em todas as secções (mobile-first colapsa para 1-col).
+
 ### Sprint 5.1 — UX cleanup (18 Fev 2026 rev 2)
 Polimentos pedidos pelo utilizador para reduzir ruído visual:
 - Removida a fila de chips de moods (`Todos / Saudade / Tasca / …`) em `/explore` — o filtro mood agora vive só por deep-link.

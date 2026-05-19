@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ShieldCheck, KeyRound, Smartphone, Monitor, AlertCircle, CheckCircle2,
-    Lock, Clock, X, Loader2, Trash2, MailCheck, Bell, ShieldAlert, Copy,
+    Clock, X, Loader2, Trash2, MailCheck, Bell, ShieldAlert, Copy,
+    RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, toastApiError } from "../../lib/api";
 import { confirmDialog } from "../../components/ConfirmDialog";
+import { SectionHeader, SwitchPill, StatusPill } from "./_shared";
+
+/* =============================================================
+   SecurityTab — Sessões · 2FA · Email de recuperação · Login alerts
+   · Mudança de palavra-passe. Tudo wired ao backend real.
+   ============================================================= */
 
 function formatRelative(iso) {
     if (!iso) return null;
@@ -27,11 +34,11 @@ function formatRelative(iso) {
     }
 }
 
-// =====================================================================
-// 2FA modal — setup flow (scan QR → confirm code → show backup codes)
-// =====================================================================
+/* =====================================================================
+   2FA setup flow modal — scan QR → confirm code → show backup codes
+   ===================================================================== */
 function TwoFaSetupModal({ onClose, onDone }) {
-    const [step, setStep] = useState("loading"); /* loading | scan | verify | backup */
+    const [step, setStep] = useState("loading");
     const [setup, setSetup] = useState(null);
     const [code, setCode] = useState("");
     const [busy, setBusy] = useState(false);
@@ -74,16 +81,13 @@ function TwoFaSetupModal({ onClose, onDone }) {
 
     return (
         <div
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm grid place-items-center px-4"
+            className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm grid place-items-center px-4"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
             data-testid="twofa-modal"
         >
             <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-black/[0.06] overflow-hidden">
-                <button
-                    onClick={onClose}
-                    aria-label="Fechar"
-                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] z-10"
-                ><X size={14} /></button>
+                <button onClick={onClose} aria-label="Fechar"
+                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] z-10"><X size={14} /></button>
 
                 <div className="p-6">
                     <p className="type-overline mb-1">Autenticação em dois passos</p>
@@ -107,20 +111,13 @@ function TwoFaSetupModal({ onClose, onDone }) {
                                 <label className="type-overline">Chave manual</label>
                                 <div className="mt-1 flex items-center gap-2 px-3 py-2 bg-black/[0.04] rounded-xl border border-black/[0.06]">
                                     <code className="flex-1 text-[12px] font-mono tracking-wider break-all text-black/70">{setup.secret}</code>
-                                    <button
-                                        type="button"
+                                    <button type="button"
                                         onClick={() => { navigator.clipboard.writeText(setup.secret); toast.success("Copiado"); }}
-                                        className="text-black/55 hover:text-black"
-                                        aria-label="Copiar chave"
-                                    ><Copy size={13} /></button>
+                                        className="text-black/55 hover:text-black" aria-label="Copiar chave"><Copy size={13} /></button>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setStep("verify")}
-                                className="btn-obsidian w-full mt-5 py-2.5 text-[12px]"
-                                data-testid="twofa-next"
-                            >
+                            <button type="button" onClick={() => setStep("verify")}
+                                className="btn-obsidian w-full mt-5 py-2.5 text-[12px]" data-testid="twofa-next">
                                 Já adicionei — continuar
                             </button>
                         </>
@@ -130,26 +127,17 @@ function TwoFaSetupModal({ onClose, onDone }) {
                         <>
                             <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">Confirma o código</h3>
                             <p className="text-[12px] text-black/55 mt-1">Introduz o código de 6 dígitos da tua app.</p>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={8}
-                                value={code}
+                            <input type="text" inputMode="numeric" maxLength={8} value={code}
                                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
                                 placeholder="000000"
                                 className="mt-4 vm-input text-center text-[22px] font-mono tracking-[0.5em] tabular-nums"
-                                data-testid="twofa-code-input"
-                                autoFocus
-                            />
+                                data-testid="twofa-code-input" autoFocus />
                             <div className="flex gap-2 mt-4">
-                                <button type="button" onClick={() => setStep("scan")} className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40">Voltar</button>
-                                <button
-                                    type="button"
-                                    onClick={verify}
-                                    disabled={busy || code.trim().length < 6}
+                                <button type="button" onClick={() => setStep("scan")}
+                                    className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40">Voltar</button>
+                                <button type="button" onClick={verify} disabled={busy || code.trim().length < 6}
                                     className="flex-1 btn-obsidian px-3 py-2 text-[12px] disabled:opacity-40"
-                                    data-testid="twofa-verify-btn"
-                                >
+                                    data-testid="twofa-verify-btn">
                                     {busy ? <Loader2 size={12} className="animate-spin inline mr-1" /> : null}
                                     Ativar 2FA
                                 </button>
@@ -169,10 +157,12 @@ function TwoFaSetupModal({ onClose, onDone }) {
                                 ))}
                             </div>
                             <div className="flex gap-2 mt-4">
-                                <button type="button" onClick={copyBackups} className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40 inline-flex items-center justify-center gap-1.5">
+                                <button type="button" onClick={copyBackups}
+                                    className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40 inline-flex items-center justify-center gap-1.5">
                                     <Copy size={12} /> Copiar
                                 </button>
-                                <button type="button" onClick={onClose} className="flex-1 btn-obsidian px-3 py-2 text-[12px]" data-testid="twofa-done">
+                                <button type="button" onClick={onClose}
+                                    className="flex-1 btn-obsidian px-3 py-2 text-[12px]" data-testid="twofa-done">
                                     Concluído
                                 </button>
                             </div>
@@ -184,9 +174,9 @@ function TwoFaSetupModal({ onClose, onDone }) {
     );
 }
 
-// =====================================================================
-// Disable 2FA — password + TOTP/backup
-// =====================================================================
+/* =====================================================================
+   Disable 2FA modal — password + TOTP/backup
+   ===================================================================== */
 function TwoFaDisableModal({ onClose, onDone }) {
     const [password, setPassword] = useState("");
     const [code, setCode] = useState("");
@@ -205,22 +195,25 @@ function TwoFaDisableModal({ onClose, onDone }) {
         } finally { setBusy(false); }
     };
     return (
-        <div
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm grid place-items-center px-4"
-            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        >
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm grid place-items-center px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-black/[0.06] overflow-hidden p-6">
-                <button onClick={onClose} aria-label="Fechar" className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05]"><X size={14} /></button>
+                <button onClick={onClose} aria-label="Fechar"
+                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05]"><X size={14} /></button>
                 <p className="type-overline mb-1">Desativar 2FA</p>
                 <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">Confirma a tua identidade</h3>
                 <p className="text-[12px] text-black/55 mt-1">Vais perder a camada extra de segurança até reativares.</p>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                     placeholder="Palavra-passe atual" className="mt-4 vm-input" autoFocus />
-                <input type="text" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                <input type="text" inputMode="numeric" value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
                     placeholder="Código 2FA ou backup" className="mt-2 vm-input font-mono tracking-widest" />
                 <div className="flex gap-2 mt-4">
-                    <button type="button" onClick={onClose} className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40">Cancelar</button>
-                    <button type="button" onClick={disable} disabled={busy} className="flex-1 px-3 py-2 rounded-full text-[12px] bg-red-soft text-white hover:opacity-90 disabled:opacity-40" data-testid="twofa-disable-confirm">
+                    <button type="button" onClick={onClose}
+                        className="flex-1 px-3 py-2 rounded-full border border-black/15 text-[12px] hover:border-black/40">Cancelar</button>
+                    <button type="button" onClick={disable} disabled={busy}
+                        className="flex-1 px-3 py-2 rounded-full text-[12px] bg-red-soft text-white hover:opacity-90 disabled:opacity-40"
+                        data-testid="twofa-disable-confirm">
                         {busy ? <Loader2 size={12} className="animate-spin inline mr-1" /> : null}
                         Desativar
                     </button>
@@ -230,9 +223,9 @@ function TwoFaDisableModal({ onClose, onDone }) {
     );
 }
 
-// =====================================================================
-// Main SecurityTab
-// =====================================================================
+/* =====================================================================
+   Main SecurityTab — accepts `user` + `onUserUpdate` real props.
+   ===================================================================== */
 export function SecurityTab({ user, onUserUpdate }) {
     const [pwdForm, setPwdForm] = useState({ current: "", next: "", confirm: "" });
     const [busy, setBusy] = useState(false);
@@ -246,11 +239,14 @@ export function SecurityTab({ user, onUserUpdate }) {
     const [twoFaStatus, setTwoFaStatus] = useState({ enabled: false, backup_codes_left: 0 });
     const [twoFaSetupOpen, setTwoFaSetupOpen] = useState(false);
     const [twoFaDisableOpen, setTwoFaDisableOpen] = useState(false);
+    const [regenBusy, setRegenBusy] = useState(false);
 
-    // Recovery email + login alerts
+    // Recovery email
     const [recoveryEmail, setRecoveryEmail] = useState(user?.recovery_email || "");
     const [recoveryDirty, setRecoveryDirty] = useState(false);
     const [recoveryBusy, setRecoveryBusy] = useState(false);
+
+    // Login alerts
     const [loginAlerts, setLoginAlerts] = useState(user?.login_alerts_enabled !== false);
     const [loginAlertsBusy, setLoginAlertsBusy] = useState(false);
 
@@ -356,157 +352,177 @@ export function SecurityTab({ user, onUserUpdate }) {
     };
 
     // ----- login alerts toggle -----
-    const toggleLoginAlerts = async () => {
-        const next = !loginAlerts;
+    const toggleLoginAlerts = async (next) => {
         setLoginAlerts(next);
         setLoginAlertsBusy(true);
         try {
             const { data } = await api.patch("/users/me", { login_alerts_enabled: next });
             onUserUpdate?.(data);
-            toast.success(next ? "Alertas de início de sessão: ON" : "Alertas de início de sessão: OFF");
+            toast.success(next ? "Alertas de início de sessão ligados" : "Alertas de início de sessão desligados");
         } catch (e) {
             setLoginAlerts(!next);
             toastApiError(e);
         } finally { setLoginAlertsBusy(false); }
     };
 
+    // ----- regenerate backup codes -----
+    const regenerateBackup = async () => {
+        const ok = await confirmDialog({
+            title: "Gerar novos códigos de backup?",
+            body: "Os códigos antigos vão deixar de funcionar imediatamente. Mostramos-te os novos uma única vez.",
+            confirmLabel: "Gerar novos",
+            danger: false,
+        });
+        if (!ok) return;
+        setRegenBusy(true);
+        try {
+            const { data } = await api.post("/auth/2fa/regenerate-backup");
+            const codes = (data?.backup_codes || []).join("\n");
+            await navigator.clipboard.writeText(codes).catch(() => {});
+            toast.success("Códigos copiados — guarda-os já num sítio seguro");
+            loadTwoFa();
+        } catch (e) { toastApiError(e); }
+        finally { setRegenBusy(false); }
+    };
+
     const otherSessionsCount = useMemo(() => sessions.filter((s) => !s.current).length, [sessions]);
 
     return (
-        <div className="px-4 lg:px-6 py-5 space-y-7 max-w-2xl" data-testid="settings-security">
-            {/* ============================== */}
-            {/* Active sessions (B-029)        */}
-            {/* ============================== */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck size={14} strokeWidth={1.8} className="text-black/60" />
-                        <p className="type-overline mb-0">Sessões ativas</p>
-                    </div>
-                    {otherSessionsCount > 0 && (
-                        <button
-                            type="button"
-                            onClick={revokeAllOthers}
-                            data-testid="sessions-revoke-all"
-                            className="text-[10.5px] font-mono uppercase tracking-wider text-red-soft hover:underline"
-                        >
-                            Terminar todas as outras
-                        </button>
-                    )}
-                </div>
+        <div className="px-4 lg:px-8 py-5 lg:py-7" data-testid="settings-security">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 max-w-5xl">
 
-                {sessionsLoading ? (
-                    <div className="card-lux p-4 text-[12px] text-black/50 font-mono">
-                        <Loader2 size={12} className="animate-spin inline mr-2" /> A carregar sessões…
-                    </div>
-                ) : sessions.length === 0 ? (
-                    <div className="card-lux p-4 text-[12px] text-black/50">Sem sessões registadas.</div>
-                ) : (
-                    <ul className="space-y-2" data-testid="sessions-list">
-                        {sessions.map((s) => {
-                            const Icon = s.device === "mobile" ? Smartphone : Monitor;
-                            return (
-                                <li key={s.id} className="card-lux p-4 flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${s.current ? "bg-emerald-50 text-emerald-700" : "bg-black/[0.04] text-black/60"}`}>
-                                        <Icon size={17} strokeWidth={1.7} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1.5 flex-wrap">
-                                            {s.browser} em {s.os}
-                                            {s.current && <span className="text-[9.5px] font-mono uppercase tracking-[0.1em] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Atual</span>}
-                                            <span className="text-[9.5px] font-mono uppercase tracking-[0.1em] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/55">{s.device}</span>
-                                        </div>
-                                        <div className="text-[11.5px] text-black/55 mt-0.5 inline-flex items-center gap-1.5 flex-wrap">
-                                            <Clock size={10} /> {formatRelative(s.last_seen_at) || "—"}
-                                            {s.ip && <span className="font-mono text-black/45">· {s.ip}</span>}
-                                        </div>
-                                    </div>
-                                    {!s.current && (
-                                        <button
-                                            type="button"
-                                            onClick={() => revokeSession(s.id)}
-                                            disabled={revokingId === s.id}
-                                            data-testid={`session-revoke-${s.id}`}
-                                            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-black/[0.04] text-black/70 hover:bg-red-soft/15 hover:text-red-soft transition disabled:opacity-40"
-                                            aria-label="Terminar sessão"
-                                        >
-                                            {revokingId === s.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-                                            Terminar
-                                        </button>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </section>
-
-            {/* ============================== */}
-            {/* 2FA (B-013)                    */}
-            {/* ============================== */}
-            <section>
-                <div className="flex items-center gap-2 mb-3">
-                    <ShieldCheck size={14} strokeWidth={1.8} className="text-black/60" />
-                    <p className="type-overline mb-0">Autenticação em dois passos</p>
-                </div>
-                <div className="card-lux p-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black flex items-center gap-2">
-                                Estado
-                                {twoFaStatus.enabled ? (
-                                    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Ativo</span>
-                                ) : (
-                                    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/[0.05] text-black/55">Inativo</span>
+                {/* ============== 2FA ============== */}
+                <SectionHeader
+                    idx={1}
+                    overline="Autenticação em dois passos"
+                    title="Camada extra contra acessos não autorizados"
+                    desc="Mesmo que descubram a tua palavra-passe, não entram sem um código TOTP."
+                />
+                <div className="lg:col-span-12 card-lux p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                            <div className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${twoFaStatus.enabled ? "bg-emerald-100 text-emerald-700" : "bg-black/[0.05] text-black/55"}`}>
+                                <ShieldCheck size={17} strokeWidth={1.7} />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="font-heading font-semibold text-[14.5px] tracking-tight text-black flex items-center gap-2 flex-wrap">
+                                    Estado actual
+                                    {twoFaStatus.enabled
+                                        ? <StatusPill tone="success">Ativo</StatusPill>
+                                        : <StatusPill tone="neutral">Inativo</StatusPill>}
+                                </div>
+                                <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                                    {twoFaStatus.enabled
+                                        ? "A tua conta está protegida com TOTP. Guarda os códigos de backup num sítio seguro."
+                                        : "Recomendamos ativar 2FA usando Google Authenticator, 1Password, Authy ou outra app TOTP."}
+                                </p>
+                                {twoFaStatus.enabled && (
+                                    <p className="text-[11.5px] text-black/55 mt-2 font-mono">
+                                        Códigos de backup restantes: <span className="text-black font-bold">{twoFaStatus.backup_codes_left}</span>
+                                    </p>
                                 )}
                             </div>
-                            <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
-                                Protege a tua conta com uma app de códigos (TOTP). Acrescenta uma camada extra mesmo que descubram a palavra-passe.
-                            </p>
-                            {twoFaStatus.enabled && (
-                                <p className="text-[11.5px] text-black/50 mt-2 font-mono">
-                                    Códigos de backup restantes: <span className="text-black">{twoFaStatus.backup_codes_left}</span>
-                                </p>
-                            )}
                         </div>
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex items-center gap-2 flex-wrap">
                             {twoFaStatus.enabled ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setTwoFaDisableOpen(true)}
-                                    className="px-3 py-2 rounded-full border border-red-soft/40 text-red-soft text-[11.5px] font-mono uppercase tracking-wider hover:bg-red-soft/10 inline-flex items-center gap-1.5"
-                                    data-testid="twofa-disable-btn"
-                                >
-                                    <ShieldAlert size={12} /> Desativar
-                                </button>
+                                <>
+                                    <button type="button" onClick={regenerateBackup} disabled={regenBusy}
+                                        data-testid="twofa-regenerate-btn"
+                                        className="px-3 py-2 rounded-full border border-black/15 hover:border-black/40 text-[11.5px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 disabled:opacity-50">
+                                        {regenBusy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Backup
+                                    </button>
+                                    <button type="button" onClick={() => setTwoFaDisableOpen(true)}
+                                        className="px-3 py-2 rounded-full border border-red-soft/40 text-red-soft text-[11.5px] font-mono uppercase tracking-wider hover:bg-red-soft/10 inline-flex items-center gap-1.5"
+                                        data-testid="twofa-disable-btn">
+                                        <ShieldAlert size={12} /> Desativar
+                                    </button>
+                                </>
                             ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => setTwoFaSetupOpen(true)}
-                                    className="btn-obsidian px-4 py-2 text-[12px] inline-flex items-center gap-1.5"
-                                    data-testid="twofa-enable-btn"
-                                >
+                                <button type="button" onClick={() => setTwoFaSetupOpen(true)}
+                                    className="btn-obsidian px-4 py-2.5 text-[12px] inline-flex items-center gap-1.5"
+                                    data-testid="twofa-enable-btn">
                                     <ShieldCheck size={12} /> Ativar 2FA
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
-            </section>
 
-            {/* ============================== */}
-            {/* Recovery email (B-015)         */}
-            {/* ============================== */}
-            <section>
-                <div className="flex items-center gap-2 mb-3">
-                    <MailCheck size={14} strokeWidth={1.8} className="text-black/60" />
-                    <p className="type-overline mb-0">Email de recuperação</p>
+                {/* ============== Sessões ============== */}
+                <SectionHeader
+                    idx={2}
+                    overline="Sessões ativas"
+                    title="Onde tens a conta aberta"
+                    desc="Cada dispositivo onde fizeste login. Termina o que não reconheces."
+                    action={otherSessionsCount > 0 && (
+                        <button type="button" onClick={revokeAllOthers} data-testid="sessions-revoke-all"
+                            className="text-[10.5px] font-mono uppercase tracking-wider text-red-soft hover:underline">
+                            Terminar {otherSessionsCount} {otherSessionsCount === 1 ? "outra" : "outras"}
+                        </button>
+                    )}
+                />
+                <div className="lg:col-span-12">
+                    {sessionsLoading ? (
+                        <div className="card-lux p-4 text-[12px] text-black/50 font-mono">
+                            <Loader2 size={12} className="animate-spin inline mr-2" /> A carregar sessões…
+                        </div>
+                    ) : sessions.length === 0 ? (
+                        <div className="card-lux p-4 text-[12px] text-black/50">Sem sessões registadas.</div>
+                    ) : (
+                        <ul className="space-y-2" data-testid="sessions-list">
+                            {sessions.map((s) => {
+                                const Icon = s.device === "mobile" ? Smartphone : Monitor;
+                                return (
+                                    <li key={s.id} className="card-lux p-4 flex items-center gap-3">
+                                        <div className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${s.current ? "bg-emerald-50 text-emerald-700" : "bg-black/[0.04] text-black/60"}`}>
+                                            <Icon size={17} strokeWidth={1.7} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1.5 flex-wrap">
+                                                {s.browser} em {s.os}
+                                                {s.current && <StatusPill tone="success">Atual</StatusPill>}
+                                            </div>
+                                            <div className="text-[11.5px] text-black/55 mt-0.5 inline-flex items-center gap-1.5 flex-wrap">
+                                                <Clock size={10} /> {formatRelative(s.last_seen_at) || "—"}
+                                                {s.ip && <span className="font-mono text-black/45">· {s.ip}</span>}
+                                            </div>
+                                        </div>
+                                        {!s.current && (
+                                            <button type="button" onClick={() => revokeSession(s.id)} disabled={revokingId === s.id}
+                                                data-testid={`session-revoke-${s.id}`}
+                                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-black/[0.04] text-black/70 hover:bg-red-soft/15 hover:text-red-soft transition disabled:opacity-40"
+                                                aria-label="Terminar sessão">
+                                                {revokingId === s.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                                                Terminar
+                                            </button>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
                 </div>
-                <div className="card-lux p-5">
-                    <p className="text-[12px] text-black/55 leading-relaxed">
-                        Se perderes acesso ao email principal, podes pedir recuperação por este endereço. É opcional mas recomendado.
-                    </p>
-                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+
+                {/* ============== Email de recuperação ============== */}
+                <SectionHeader
+                    idx={3}
+                    overline="Email de recuperação"
+                    title="Salva-vidas para a tua conta"
+                    desc="Se perderes acesso ao email principal, podes pedir recuperação por este endereço alternativo."
+                />
+                <div className="lg:col-span-12 card-lux p-5">
+                    <div className="flex items-start gap-3 mb-3">
+                        <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 grid place-items-center shrink-0">
+                            <MailCheck size={16} strokeWidth={1.7} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Endereço alternativo</div>
+                            <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                                Tem de ser diferente do email principal. Não vai aparecer no teu perfil público.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             type="email"
                             value={recoveryEmail}
@@ -515,96 +531,73 @@ export function SecurityTab({ user, onUserUpdate }) {
                             className="vm-input flex-1"
                             data-testid="recovery-email-input"
                         />
-                        <button
-                            type="button"
-                            onClick={saveRecovery}
-                            disabled={!recoveryDirty || recoveryBusy}
+                        <button type="button" onClick={saveRecovery} disabled={!recoveryDirty || recoveryBusy}
                             className="btn-obsidian px-4 py-2.5 text-[12px] disabled:opacity-40 inline-flex items-center justify-center gap-1.5"
-                            data-testid="recovery-email-save"
-                        >
+                            data-testid="recovery-email-save">
                             {recoveryBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                             Guardar
                         </button>
                     </div>
                 </div>
-            </section>
 
-            {/* ============================== */}
-            {/* Login alerts (B-014)           */}
-            {/* ============================== */}
-            <section>
-                <div className="flex items-center gap-2 mb-3">
-                    <Bell size={14} strokeWidth={1.8} className="text-black/60" />
-                    <p className="type-overline mb-0">Alertas de novo início de sessão</p>
-                </div>
-                <div className="card-lux p-5 flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                        <p className="font-heading font-semibold text-[14px] tracking-tight text-black">Notificar entradas suspeitas</p>
-                        <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
-                            Recebes uma notificação sempre que iniciamos sessão de um dispositivo/IP novo.
-                        </p>
+                {/* ============== Login alerts ============== */}
+                <SectionHeader
+                    idx={4}
+                    overline="Alertas de início de sessão"
+                    title="Sabe quando alguém entra"
+                    desc="Recebes uma notificação sempre que iniciamos sessão de um dispositivo ou IP novo."
+                />
+                <div className="lg:col-span-12 card-lux p-5 flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-700 grid place-items-center shrink-0">
+                            <Bell size={16} strokeWidth={1.7} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Notificar entradas suspeitas</div>
+                            <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                                Email + push imediato. Recomendado.
+                            </p>
+                        </div>
                     </div>
-                    <button
-                        type="button"
-                        role="switch"
-                        aria-checked={loginAlerts}
-                        onClick={toggleLoginAlerts}
+                    <SwitchPill
+                        checked={loginAlerts}
+                        onChange={toggleLoginAlerts}
                         disabled={loginAlertsBusy}
-                        className={`relative w-11 h-6 rounded-full transition shrink-0 ${loginAlerts ? "bg-black" : "bg-black/[0.1]"} ${loginAlertsBusy ? "opacity-50" : ""}`}
-                        data-testid="login-alerts-toggle"
-                    >
-                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${loginAlerts ? "translate-x-5" : ""}`} />
-                    </button>
+                        testid="login-alerts-toggle"
+                    />
                 </div>
-            </section>
 
-            {/* ============================== */}
-            {/* Change password                */}
-            {/* ============================== */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <Lock size={14} strokeWidth={1.8} className="text-black/60" />
-                        <p className="type-overline mb-0">Alterar palavra-passe</p>
-                    </div>
-                    {lastChange && (
+                {/* ============== Mudar palavra-passe ============== */}
+                <SectionHeader
+                    idx={5}
+                    overline="Palavra-passe"
+                    title="Alterar palavra-passe"
+                    desc="Recomendamos renovar pelo menos uma vez por ano."
+                    action={lastChange && (
                         <span className="text-[10.5px] font-mono tracking-wider uppercase text-black/45 inline-flex items-center gap-1">
                             <CheckCircle2 size={11} /> alterada {lastChange}
                         </span>
                     )}
-                </div>
-                <form onSubmit={onChangePassword} className="card-lux p-5 space-y-3" autoComplete="off">
+                />
+                <form onSubmit={onChangePassword} className="lg:col-span-12 card-lux p-5 space-y-3" autoComplete="off">
                     <div>
                         <label className="type-overline">Palavra-passe atual</label>
-                        <input
-                            type="password"
-                            value={pwdForm.current}
+                        <input type="password" value={pwdForm.current}
                             onChange={(e) => setPwdForm({ ...pwdForm, current: e.target.value })}
-                            data-testid="security-pwd-current"
-                            className="mt-1.5 vm-input"
-                            autoComplete="current-password"
-                            required
-                        />
+                            data-testid="security-pwd-current" className="mt-1.5 vm-input"
+                            autoComplete="current-password" required />
                     </div>
                     <div>
                         <label className="type-overline">Nova palavra-passe</label>
-                        <input
-                            type="password"
-                            value={pwdForm.next}
+                        <input type="password" value={pwdForm.next}
                             onChange={(e) => setPwdForm({ ...pwdForm, next: e.target.value })}
-                            data-testid="security-pwd-next"
-                            className="mt-1.5 vm-input"
-                            autoComplete="new-password"
-                            minLength={8}
-                            required
-                        />
+                            data-testid="security-pwd-next" className="mt-1.5 vm-input"
+                            autoComplete="new-password" minLength={8} required />
                         {pwdStrength != null && (
                             <div className="mt-2 flex items-center gap-2">
                                 <div className="flex-1 h-1.5 bg-black/[0.06] rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full rounded-full transition-all duration-300"
-                                        style={{ width: `${(pwdStrength / 5) * 100}%`, background: pwdColor }}
-                                    />
+                                    <div className="h-full rounded-full transition-all duration-300"
+                                        style={{ width: `${(pwdStrength / 5) * 100}%`, background: pwdColor }} />
                                 </div>
                                 <span className="text-[10.5px] font-mono tracking-wider uppercase tabular-nums" style={{ color: pwdColor }}>{pwdLabel}</span>
                             </div>
@@ -615,15 +608,10 @@ export function SecurityTab({ user, onUserUpdate }) {
                     </div>
                     <div>
                         <label className="type-overline">Confirmar nova palavra-passe</label>
-                        <input
-                            type="password"
-                            value={pwdForm.confirm}
+                        <input type="password" value={pwdForm.confirm}
                             onChange={(e) => setPwdForm({ ...pwdForm, confirm: e.target.value })}
-                            data-testid="security-pwd-confirm"
-                            className="mt-1.5 vm-input"
-                            autoComplete="new-password"
-                            required
-                        />
+                            data-testid="security-pwd-confirm" className="mt-1.5 vm-input"
+                            autoComplete="new-password" required />
                         {pwdForm.next && pwdForm.confirm && pwdForm.next !== pwdForm.confirm && (
                             <div className="mt-1.5 text-[11px] text-red-soft flex items-center gap-1">
                                 <AlertCircle size={11} /> Não coincidem
@@ -631,29 +619,19 @@ export function SecurityTab({ user, onUserUpdate }) {
                         )}
                     </div>
                     <div className="flex justify-end pt-1">
-                        <button
-                            type="submit"
-                            disabled={busy}
-                            data-testid="security-pwd-submit"
-                            className="btn-obsidian px-5 py-2.5 text-[12px] disabled:opacity-50 inline-flex items-center gap-1.5"
-                        >
+                        <button type="submit" disabled={busy} data-testid="security-pwd-submit"
+                            className="btn-obsidian px-5 py-2.5 text-[12px] disabled:opacity-50 inline-flex items-center gap-1.5">
                             <KeyRound size={12} /> {busy ? "A alterar…" : "Alterar palavra-passe"}
                         </button>
                     </div>
                 </form>
-            </section>
+            </div>
 
             {twoFaSetupOpen && (
-                <TwoFaSetupModal
-                    onClose={() => setTwoFaSetupOpen(false)}
-                    onDone={() => { loadTwoFa(); }}
-                />
+                <TwoFaSetupModal onClose={() => setTwoFaSetupOpen(false)} onDone={() => { loadTwoFa(); onUserUpdate?.({ two_fa_enabled: true }); }} />
             )}
             {twoFaDisableOpen && (
-                <TwoFaDisableModal
-                    onClose={() => setTwoFaDisableOpen(false)}
-                    onDone={() => { loadTwoFa(); }}
-                />
+                <TwoFaDisableModal onClose={() => setTwoFaDisableOpen(false)} onDone={() => { loadTwoFa(); onUserUpdate?.({ two_fa_enabled: false }); }} />
             )}
         </div>
     );
