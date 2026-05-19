@@ -236,10 +236,12 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                 </div>
 
                 {/* STATS — 4 cards reais (likes recebidos, comments, reposts, engagement) */}
-                <div className="lg:col-span-3"><StatCard icon={Activity} value={fmtNumber(rich?.posts_count ?? 0)} label="Publicações" sub={`média ${fmtNumber(Math.round(rich?.avg_likes || 0))} gostos/post`} tint="bg-indigo-50 text-indigo-700" /></div>
-                <div className="lg:col-span-3"><StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tint="bg-rose-50 text-rose-700" /></div>
-                <div className="lg:col-span-3"><StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tint="bg-amber-50 text-amber-700" /></div>
-                <div className="lg:col-span-3"><StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tint="bg-emerald-50 text-emerald-700" /></div>
+                <div className="lg:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                    <StatCard icon={Activity} value={fmtNumber(rich?.posts_count ?? 0)} label="Publicações" sub={`média ${fmtNumber(Math.round(rich?.avg_likes || 0))} gostos/post`} tint="bg-indigo-50 text-indigo-700" />
+                    <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tint="bg-rose-50 text-rose-700" />
+                    <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tint="bg-amber-50 text-amber-700" />
+                    <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tint="bg-emerald-50 text-emerald-700" />
+                </div>
 
                 {/* SCORES — completude + segurança detalhada */}
                 <div className="lg:col-span-7 card-lux p-5">
