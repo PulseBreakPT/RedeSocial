@@ -1,23 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 /**
- * O Selo Lusorae — a hand-drawn animated signature that "writes itself"
- * when scrolled into view. The single most distinctive detail of the app:
- * a flowing cursive mark of the word "lusorae" and a coral diamond
- * "seal" that stamps down at the end (◆). Below, a tiny mono-cap caption.
+ * O Selo Lusorae — uma assinatura cursiva legível que "se escreve sozinha"
+ * quando entra no viewport, terminada pelo losango coral que carimba.
  *
- *  Anatomy of the path (single fluid stroke):
- *    · l  — tall ascender that loops back to baseline
- *    · u  — two valleys
- *    · s  — top curl + lower tail
- *    · o  — closed counter-clockwise loop
- *    · r  — short ascender + hook
- *    · a  — closed top loop + descending stem
- *    · e  — loop with crossbar, tail trails right into the seal
- *
- * "Lusorae" has no dotted letters (no i, no j) — the two ink-dots from
- * the previous mark are intentionally removed, keeping the signature
- * cleaner and faster to read.
+ * Refinamento: a assinatura passou a ser composta com uma webfont cursiva
+ * (Caveat 700) para garantir que se lê mesmo a palavra "lusorae". O efeito
+ * de escrita é obtido com um clipPath cujo rect cresce da esquerda para
+ * a direita, sincronizado com o stamp do losango coral no fim.
  *
  * Props:
  *   - size: "sm" | "md" | "lg"  (default "md")
@@ -35,6 +25,10 @@ export function VermillionSeal({
 }) {
     const ref = useRef(null);
     const [drawing, setDrawing] = useState(false);
+    const reactId = useId();
+    // useId may include ":" which is invalid in some CSS contexts when used
+    // as a fragment identifier — normalise it.
+    const clipId = `seal-clip-${reactId.replace(/[:]/g, "")}`;
 
     useEffect(() => {
         const el = ref.current;
@@ -62,7 +56,7 @@ export function VermillionSeal({
         lg: { w: 232, h: 66 },
     }[size] || { w: 176, h: 50 };
 
-    const inkColor = tone === "light" ? "rgba(255,255,255,0.92)" : "#161616";
+    const inkColor = tone === "light" ? "rgba(255,255,255,0.96)" : "#161616";
     const captionColor =
         tone === "light" ? "rgba(255,255,255,0.62)" : "rgba(0,0,0,0.50)";
 
@@ -85,47 +79,39 @@ export function VermillionSeal({
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
             >
-                {/* Main cursive signature — one fluid stroke spelling "lusorae".
-                    pathLength="1" normalises stroke-dasharray independent of
-                    path length so the writing animation feels even. */}
-                <path
+                <defs>
+                    {/* clipPath cujo rect cresce de 0 → 210 da esquerda para
+                        a direita, criando a ilusão de escrita à mão. */}
+                    <clipPath id={clipId}>
+                        <rect
+                            className="seal-reveal"
+                            x="0"
+                            y="0"
+                            width="0"
+                            height="70"
+                        />
+                    </clipPath>
+                </defs>
+
+                {/* Assinatura cursiva, legível, em Caveat (handwritten).
+                    O letterSpacing negativo aperta as letras tornando-as
+                    mais ligadas, como uma assinatura real. */}
+                <text
                     className="seal-signature"
-                    pathLength="1"
-                    d="M 10 44
-                       C 6 28 12 8 20 8
-                       C 24 8 22 22 22 32
-                       L 22 44
-                       C 28 44 30 22 34 22
-                       C 34 38 38 46 42 44
-                       C 46 44 44 22 48 22
-                       L 48 44
-                       C 56 22 60 26 58 32
-                       C 56 38 46 36 50 40
-                       C 54 44 62 44 66 40
-                       C 68 30 78 22 84 26
-                       C 90 32 88 44 78 44
-                       C 68 44 66 36 74 36
-                       C 80 36 82 22 90 22
-                       C 94 22 94 30 92 36
-                       C 98 36 108 22 116 22
-                       C 124 22 126 38 118 40
-                       C 112 40 112 34 118 34
-                       L 120 44
-                       C 128 44 134 22 142 22
-                       C 150 22 152 34 146 36
-                       C 142 36 142 34 146 34
-                       C 152 40 168 42 184 38
-                       Q 198 34 208 32"
-                    stroke={inkColor}
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
+                    x="2"
+                    y="50"
+                    fontFamily="'Caveat', 'Brush Script MT', cursive"
+                    fontWeight="700"
+                    fontSize="54"
+                    fill={inkColor}
+                    letterSpacing="-0.5"
+                    clipPath={`url(#${clipId})`}
+                    style={{ fontStyle: "italic" }}
+                >
+                    lusorae
+                </text>
 
-                {/* No ink-dots: "lusorae" has no dotted letters. */}
-
-                {/* THE SEAL — coral diamond stamps down at the end.
-                    transform-origin set inline to ensure correct pivot. */}
+                {/* THE SEAL — coral diamond stamps down at the end. */}
                 <g
                     className="seal-stamp"
                     style={{ transformOrigin: "215px 36px", transformBox: "fill-box" }}

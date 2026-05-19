@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -1127,10 +1127,18 @@
     }
     .vermillion-seal svg { overflow: visible; display: block; }
 
-    /* Stroke: comprimento normalizado por pathLength="1" */
+    /* Reveal animado: o rect dentro do clipPath cresce de 0 → 210,
+       como se uma mão estivesse a escrever da esquerda para a direita.
+       O texto da assinatura usa Caveat 700 (handwritten) e portanto é
+       sempre legível como "lusorae", mesmo em mid-animation. */
+    .vermillion-seal .seal-reveal {
+        width: 0;
+    }
     .vermillion-seal .seal-signature {
-        stroke-dasharray: 1;
-        stroke-dashoffset: 1;
+        font-family: "Caveat", "Brush Script MT", cursive;
+        font-weight: 700;
+        /* Garante render nítido mesmo em ecrãs de alta densidade */
+        paint-order: stroke fill;
         filter: drop-shadow(0 0.5px 0 rgba(0,0,0,0.02));
     }
     .vermillion-seal .seal-dot {
@@ -1152,8 +1160,8 @@
         transform-box: fill-box;
     }
 
-    .vermillion-seal.is-drawing .seal-signature {
-        animation: sealWrite 2200ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    .vermillion-seal.is-drawing .seal-reveal {
+        animation: sealReveal 2200ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
     }
     .vermillion-seal.is-drawing .seal-stamp {
         animation: sealStamp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -1164,6 +1172,10 @@
         animation-delay: 2620ms;
     }
 
+    @keyframes sealReveal {
+        from { width: 0; }
+        to   { width: 210px; }
+    }
     @keyframes sealWrite {
         to { stroke-dashoffset: 0; }
     }
@@ -1211,8 +1223,10 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        .vermillion-seal .seal-reveal {
+            width: 210px;
+        }
         .vermillion-seal .seal-signature {
-            stroke-dashoffset: 0;
             animation: none !important;
         }
         .vermillion-seal .seal-dot,
@@ -1230,10 +1244,9 @@
        Preview animado dentro do modal. O SVG é auto-suficiente para
        exportação a PNG; estas regras só aplicam ao preview em ecrã. */
     .selo-pessoal-wrap svg.selo-pessoal { width: 100%; height: auto; display: block; }
-    .selo-pessoal.is-animated .selo-pessoal-signature {
-        stroke-dasharray: 1;
-        stroke-dashoffset: 1;
-        animation: sealWrite 2200ms cubic-bezier(0.65, 0, 0.35, 1) 250ms forwards;
+    .selo-pessoal.is-animated .selo-pessoal-reveal {
+        width: 0;
+        animation: seloPessoalReveal 2200ms cubic-bezier(0.65, 0, 0.35, 1) 250ms forwards;
     }
     .selo-pessoal.is-animated .selo-pessoal-dot {
         opacity: 0;
@@ -1254,7 +1267,15 @@
         transform-box: fill-box;
         animation: sealStamp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 2460ms forwards;
     }
+    @keyframes seloPessoalReveal {
+        from { width: 0; }
+        to   { width: 240px; }
+    }
     @media (prefers-reduced-motion: reduce) {
+        .selo-pessoal.is-animated .selo-pessoal-reveal {
+            width: 240px;
+            animation: none !important;
+        }
         .selo-pessoal.is-animated .selo-pessoal-signature,
         .selo-pessoal.is-animated .selo-pessoal-dot,
         .selo-pessoal.is-animated .selo-pessoal-stamp {

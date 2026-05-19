@@ -264,21 +264,37 @@ export const SeloPessoal = forwardRef(function SeloPessoal(
             </g>
 
             {/* the Lusorae Seal — same signature mark, larger, centered.
-                "lusorae" has no dotted letters, so no ink-dots are rendered. */}
-            <g transform="translate(155, 540)">
-                <path
+                Assinatura cursiva em "Caveat" (handwritten font) para
+                garantir leitura clara da palavra "lusorae". */}
+            <g transform="translate(150, 540)">
+                <defs>
+                    <clipPath id="selo-pessoal-reveal">
+                        <rect
+                            className="selo-pessoal-reveal"
+                            x="0"
+                            y="0"
+                            width={animated ? "0" : "240"}
+                            height="80"
+                        />
+                    </clipPath>
+                </defs>
+                <text
                     className="selo-pessoal-signature"
-                    pathLength="1"
-                    d="M 10 44 C 6 28 12 8 20 8 C 24 8 22 22 22 32 L 22 44 C 28 44 30 22 34 22 C 34 38 38 46 42 44 C 46 44 44 22 48 22 L 48 44 C 56 22 60 26 58 32 C 56 38 46 36 50 40 C 54 44 62 44 66 40 C 68 30 78 22 84 26 C 90 32 88 44 78 44 C 68 44 66 36 74 36 C 80 36 82 22 90 22 C 94 22 94 30 92 36 C 98 36 108 22 116 22 C 124 22 126 38 118 40 C 112 40 112 34 118 34 L 120 44 C 128 44 134 22 142 22 C 150 22 152 34 146 36 C 142 36 142 34 146 34 C 152 40 168 42 184 38 Q 198 34 208 32"
-                    stroke="#161616"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                />
+                    x="2"
+                    y="58"
+                    fontFamily="'Caveat', 'Brush Script MT', cursive"
+                    fontWeight="700"
+                    fontSize="68"
+                    fill="#161616"
+                    letterSpacing="-0.5"
+                    fontStyle="italic"
+                    clipPath="url(#selo-pessoal-reveal)"
+                >
+                    lusorae
+                </text>
                 <path
                     className="selo-pessoal-stamp"
-                    d="M 215 30 L 221 36 L 215 42 L 209 36 Z"
+                    d="M 240 36 L 250 46 L 240 56 L 230 46 Z"
                     fill="#e85d4f"
                 />
             </g>
