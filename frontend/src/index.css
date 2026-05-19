@@ -270,6 +270,21 @@
         letter-spacing: -0.004em;
     }
 
+    /* Body editorial — para posts longos (>280 chars), serif upright,
+       optical sizing de leitura. Sinaliza visualmente "isto é uma
+       crónica, não um tweet". Inspirado em Medium / NYT body. */
+    .editorial-body {
+        font-family: "Fraunces", "Times New Roman", Georgia, serif;
+        font-optical-sizing: auto;
+        font-variation-settings: "opsz" 18;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 17px;
+        line-height: 1.58;
+        letter-spacing: -0.003em;
+        color: hsl(var(--ink));
+    }
+
     /* Marca/wordmark serif (variant da "lusorae" italic). Pequenos
        moments tipo footer, badges editoriais, "edição de 2026". */
     .editorial-mark {
