@@ -5471,173 +5471,33 @@ async def startup():
     # B-029 — sessions indexes
     await db.sessions.create_index("jti", unique=True)
     await db.sessions.create_index([("user_id", 1), ("revoked", 1), ("last_seen_at", -1)])
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@vermillion.app").lower()
-    admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
-    existing = await db.users.find_one({"email": admin_email})
-    if not existing:
-        await db.users.insert_one({
-            "id": str(uuid.uuid4()), "email": admin_email, "username": "admin",
-            "name": "Lusorae", "password_hash": hash_password(admin_password),
-            "bio": "Conta oficial. Bem-vindo ao Lusorae ✦",
-            "avatar": "", "banner": "",
-            "verified": True, "private": False, "onboarded": True,
-            "followers": [], "following": [], "bookmarks": [],
-            "last_seen": now_iso(), "created_at": now_iso(),
-        })
-        logger.info("Admin seeded")
-    else:
-        if not verify_password(admin_password, existing["password_hash"]):
-            await db.users.update_one(
-                {"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}},
-            )
-        await db.users.update_one({"email": admin_email}, {"$set": {"verified": True, "onboarded": True, "name": "Lusorae", "bio": "Conta oficial. Bem-vindo ao Lusorae ✦"}})
+    admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
+    admin_password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
+    admin_username = (os.environ.get("ADMIN_USERNAME") or "admin").strip().lower()
+    admin_name = (os.environ.get("ADMIN_NAME") or "Lusorae").strip()
+    # Admin bootstrap is OPT-IN: only seeds if BOTH ADMIN_EMAIL and
+    # ADMIN_PASSWORD env vars are explicitly set and non-empty. The default
+    # database is empty — a real first user must register through /auth/register.
+    if admin_email and admin_password:
+        existing = await db.users.find_one({"email": admin_email})
+        if not existing:
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()), "email": admin_email, "username": admin_username,
+                "name": admin_name, "password_hash": hash_password(admin_password),
+                "bio": "",
+                "avatar": "", "banner": "",
+                "verified": True, "private": False, "onboarded": True,
+                "followers": [], "following": [], "bookmarks": [],
+                "last_seen": now_iso(), "created_at": now_iso(),
+            })
+            logger.info("Admin account bootstrapped from env")
+        else:
+            if not verify_password(admin_password, existing["password_hash"]):
+                await db.users.update_one(
+                    {"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}},
+                )
 
-    # Demo Portuguese community — only if posts collection is empty
-    if await db.posts.count_documents({}) == 0:
-        await seed_pt_demo()
-
-
-PT_DEMO_USERS = [
-    {"username": "bea.lx", "name": "Beatriz Carvalho", "bio": "Lisbon · designer & flâneuse · café com leite forte ☕",
-     "verified": True},
-    {"username": "tiago.cit", "name": "Tiago Ramalho", "bio": "Jornalista cultural · escrevo sobre o que a cidade sussurra · Porto/Lisboa",
-     "verified": True},
-    {"username": "mari.estudio", "name": "Mariana Sousa", "bio": "Estúdio de cerâmica em Alfama · feito à mão, à pressa de quem ama",
-     "verified": False},
-    {"username": "joao.bairro", "name": "João Almeida", "bio": "Bairro Alto antes das 22h · fotografia de rua · Leica",
-     "verified": False},
-    {"username": "ines.fado", "name": "Inês Pinto", "bio": "Fadista · próxima atuação: Tasca do Chico ✨",
-     "verified": True},
-    {"username": "rui.surf", "name": "Rui Veloso", "bio": "Costa da Caparica · ondas pequenas, paciência grande",
-     "verified": False},
-    {"username": "cat.pastel", "name": "Catarina Lopes", "bio": "Pastéis, padaria & ressacas domingueiras · @ Belém",
-     "verified": False},
-    {"username": "diogo.tasca", "name": "Diogo Martins", "bio": "Caçador de tascas com alma · vinho da casa, sempre",
-     "verified": True},
-    {"username": "filipa.azul", "name": "Filipa Nunes", "bio": "Azulejos, Pessoa e gatos pretos · doutoranda em História da Arte",
-     "verified": False},
-    {"username": "pedro.metro", "name": "Pedro Tavares", "bio": "Engenheiro civil · só comento dois temas: pontes e Benfica",
-     "verified": False},
-    {"username": "sofiaf", "name": "Sofia Ferreira", "bio": "Atriz · entre o D. Maria e a cinemateca",
-     "verified": True},
-    {"username": "miguelc", "name": "Miguel Costa", "bio": "Cozinheiro · bacalhau é serviço público · @ Cascais",
-     "verified": False},
-]
-
-PT_DEMO_POSTS = [
-    ("bea.lx", "Cheguei a Lisboa às 6h. A luz do Tejo a esta hora é praticamente uma decisão estética. #Lisboa #LuzDoTejo"),
-    ("tiago.cit", "Crónica de hoje: o Porto não é uma cidade — é um estado de espírito húmido. #Porto #Ribeira"),
-    ("ines.fado", "Esta noite na Tasca do Chico, 22h. Trago a casaca preta e umas saudades novas em folha. #Fado #BairroAlto"),
-    ("mari.estudio", "Saiu do forno a primeira fornada de chávenas azul-cobalto. Cada uma demorou três tentativas — e provavelmente vai durar três gerações. #Cerâmica #Alfama"),
-    ("joao.bairro", "Travessa da Queimada às 19h47. Não há filtro que substitua a luz a esta hora. #BairroAlto #StreetPhoto"),
-    ("rui.surf", "Mar pequeno, vento de Leste, mas remei na mesma. Há manhãs em que o melhor surf é o silêncio antes do trabalho. #SurfAlgarve #CostaDaCaparica"),
-    ("cat.pastel", "Pastel de nata, café duplo, sol de Belém. Há manhãs em que Lisboa parece desenhada à mão. #Pastel #Belém"),
-    ("diogo.tasca", "Almoço de hoje: bitoque a 8,50€ no fim da Rua dos Anjos. Servido por uma senhora que me chamou 'menino'. Tudo certo. #Tasca #Lisboa"),
-    ("filipa.azul", "Encontrei um painel de azulejos do séc. XVIII numa loja de bairro em Arroios. O dono nem sabia o que tinha. Coração apertado. #Azulejo #PatrimónioPT"),
-    ("pedro.metro", "Linha azul. Carruagem 3. Senhora a cantar fado para o telemóvel. Lisboa é assim — ninguém pediu, ninguém parou de ouvir. #Metro #Lisboa"),
-    ("sofiaf", "Estreia esta sexta no D. Maria II. Texto novo, palco velho, frio igual ao do ano passado. Já tenho saudades. #Teatro #DonaMaria"),
-    ("miguelc", "Receita do dia: bacalhau à Brás como o meu avô fazia — sem batata palha de saco. Há linhas que não se atravessam. #Bacalhau #CozinhaPT"),
-    ("bea.lx", "Café da manhã: bica, torrada do Versailles, e uma teoria nova sobre porque o Tejo nos calma. #Lisboa #Versailles"),
-    ("tiago.cit", "O São João do Porto resume tudo: martelos de plástico, manjericos, e uma cidade inteira a recusar dormir. #SãoJoão #Porto"),
-    ("rui.surf", "Hoje na Praia do Norte: respeito. Sempre. #Nazaré #Surf"),
-    ("ines.fado", "Saudade não é tristeza — é uma forma educada de amar à distância. Boa noite. #Fado"),
-    ("joao.bairro", "Miradouro de Santa Catarina. Casal a discutir em voz baixa. Gaivota a discutir em voz alta. Empate técnico. #Lisboa"),
-    ("cat.pastel", "Spoiler: os melhores pastéis de nata de Lisboa não estão em Belém. Mas isso fica entre nós. #Pastel #Lisboa"),
-    ("diogo.tasca", "Vinho da casa, azeitonas e três horas a falar de futebol com um sr. que conheci há 20 minutos. Portugal. #Tasca"),
-    ("filipa.azul", "Pessoa hoje teria 137 anos. Eu hoje tenho 28 e ainda não decidi quem sou. Coincidência? Não. #Pessoa #Heterónimo"),
-    ("pedro.metro", "Benfica 2 - 0. Estádio cheio. O resto é literatura. #Benfica #SLB"),
-    ("sofiaf", "Cinemateca às 21h30. Bergman. Quem quiser vir, tenho um lugar na fila 4. #Cinemateca #Lisboa"),
-    ("miguelc", "Polvo à lagareiro hoje na ementa. Aviso à navegação. #Cascais #Restaurante"),
-    ("mari.estudio", "Atelier aberto este sábado das 11h às 18h. Tragam dúvidas, levo café. #Alfama #Cerâmica"),
-]
-
-
-async def seed_pt_demo():
-    """Populate the database with realistic Portuguese demo content."""
-    import random
-    logger.info("🇵🇹 Seeding Portuguese demo community…")
-    user_ids = {}
-    base_pwd = hash_password("demo123")
-    for u in PT_DEMO_USERS:
-        uid = str(uuid.uuid4())
-        user_ids[u["username"]] = uid
-        await db.users.insert_one({
-            "id": uid,
-            "email": f"{u['username'].replace('.', '')}@vermillion.demo",
-            "username": u["username"],
-            "name": u["name"],
-            "password_hash": base_pwd,
-            "bio": u["bio"],
-            "avatar": "", "banner": "",
-            "verified": u.get("verified", False),
-            "private": False, "onboarded": True,
-            "followers": [], "following": [], "bookmarks": [],
-            "last_seen": now_iso(), "created_at": now_iso(),
-        })
-
-    # Create cross follows — each user follows 4–6 others
-    usernames = list(user_ids.keys())
-    for u in usernames:
-        peers = [p for p in usernames if p != u]
-        random.shuffle(peers)
-        chosen = peers[: random.randint(4, 6)]
-        await db.users.update_one(
-            {"id": user_ids[u]},
-            {"$set": {"following": [user_ids[c] for c in chosen]}},
-        )
-        for c in chosen:
-            await db.users.update_one(
-                {"id": user_ids[c]},
-                {"$addToSet": {"followers": user_ids[u]}},
-            )
-
-    # Posts with staggered timestamps (newest first goes last hour, oldest goes ~5 days)
-    base_dt = datetime.now(timezone.utc)
-    for idx, (uname, content) in enumerate(PT_DEMO_POSTS):
-        author_id = user_ids[uname]
-        created = (base_dt - timedelta(minutes=idx * 73 + random.randint(0, 40))).isoformat()
-        # Random likes from other demo users
-        likers = random.sample(
-            [uid for uname2, uid in user_ids.items() if uid != author_id],
-            k=random.randint(2, 8),
-        )
-        post = {
-            "id": str(uuid.uuid4()),
-            "author_id": author_id,
-            "content": content,
-            "image": "", "images": [],
-            "likes": likers,
-            "bookmarks": [],
-            "reposts": random.sample(likers, k=min(2, len(likers))) if random.random() < 0.3 else [],
-            "reactions": {},
-            "hashtags": extract_hashtags(content),
-            "community_id": None,
-            "quote_of": None,
-            "poll": None,
-            "reply_audience": "everyone",
-            "is_draft": False,
-            "scheduled_at": None,
-            "edit_history": [],
-            "views": random.randint(40, 2400),
-            "created_at": created,
-        }
-        await db.posts.insert_one(post)
-    logger.info("🇵🇹 PT demo seeded: %d users, %d posts", len(PT_DEMO_USERS), len(PT_DEMO_POSTS))
-
-    # Admin auto-follows the verified PT crew so the "Seguindo" feed feels alive
-    admin = await db.users.find_one({"username": "admin"})
-    if admin:
-        verified_demos = [u for u in PT_DEMO_USERS if u.get("verified")]
-        follow_ids = [user_ids[u["username"]] for u in verified_demos]
-        await db.users.update_one(
-            {"id": admin["id"]},
-            {"$set": {"following": follow_ids}},
-        )
-        for fid in follow_ids:
-            await db.users.update_one(
-                {"id": fid},
-                {"$addToSet": {"followers": admin["id"]}},
-            )
+    # No demo / seed data. Database starts empty.
 
 
 @app.on_event("shutdown")

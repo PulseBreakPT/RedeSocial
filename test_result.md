@@ -1506,21 +1506,13 @@ agent_communication:
 
   - agent: "main"
     message: |
-      NEW Lusorae "live presence" backend endpoints to validate (high priority).
-      Auth: admin@vermillion.app / admin123 (see /app/memory/test_credentials.md).
-
-      1) GET /api/posts/activity-pulse?ids=p1,p2,p3
-         - Public (no auth)
-         - Returns {posts: {<id>: {live_viewers, recent_comments_15m, last_comment_at, heat, is_hot}}}
-         - Heat bands: frio(<10) · morno(10-24) · quente(25-44) · em_brasa(45-69) · a_ferver(70+)
-           where score = recent_comments_15m*8 + live_viewers*4
-         - See test plan in the task entry.
-
-      2) GET /api/conversations/pulse (auth required)
-         - Returns {active_total, my_typing, my_recent, my_online}
-         - my_typing pulled from db.typing_state (expires_at > now)
-         - my_recent: messages received in last 5min
-         - my_online: intersection of my conv peers with currently WS-connected users
-         - See test plan in the task entry.
-
-      Do NOT test frontend — only the two backend endpoints + ensure no regression on /api/posts, /api/posts/{id}/comments, /api/messages, /api/messages/{id}/typing.
+      DATABASE RESET — clean-slate launch state.
+       • Removed seed_pt_demo() + PT_DEMO_USERS + PT_DEMO_POSTS entirely.
+       • Admin bootstrap is now OPT-IN via ADMIN_EMAIL + ADMIN_PASSWORD env vars
+         (no hardcoded "admin123" fallback). .env defaults are empty.
+       • Wiped all collections (users, posts, communities, events, stories, etc.).
+       • test_credentials.md updated: no default credentials. Register fresh users
+         for any auth-related testing.
+      The two NEW live-presence endpoints (posts/activity-pulse + conversations/pulse)
+      remain in place and still need backend testing. For conversations/pulse you'll
+      need to register a fresh admin (or any user) via POST /api/auth/register first.
