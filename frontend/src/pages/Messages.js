@@ -278,18 +278,33 @@ function ConversationList({ activeId, onSelect, onNew }) {
         );
     }, [q, convs]);
 
+    const [rowMenu, setRowMenu] = useState(null);
+    const rowMenuRef = useRef(null);
+    useEffect(() => {
+        const onDoc = (e) => {
+            if (rowMenuRef.current && !rowMenuRef.current.contains(e.target)) setRowMenu(null);
+        };
+        if (rowMenu) {
+            document.addEventListener("mousedown", onDoc);
+            return () => document.removeEventListener("mousedown", onDoc);
+        }
+    }, [rowMenu]);
+
     const togglePin = async (c, e) => {
         e.stopPropagation();
+        setRowMenu(null);
         try { await api.post(`/conversations/${c.other_user.id}/pin`); load(); }
         catch (e2) { toastApiError(e2); }
     };
     const toggleArchive = async (c, e) => {
         e.stopPropagation();
+        setRowMenu(null);
         try { await api.post(`/conversations/${c.other_user.id}/archive`); load(); }
         catch (e2) { toastApiError(e2); }
     };
     const markUnread = async (c, e) => {
         e.stopPropagation();
+        setRowMenu(null);
         try {
             const { data } = await api.post(`/conversations/${c.other_user.id}/mark-unread`);
             if (data.marked) toast.success("Marcada como não lida");
@@ -375,10 +390,11 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     )}
                 </div>
                 <button onClick={onNew} data-testid="messages-new-btn"
-                    className="shrink-0 w-9 h-9 rounded-full grid place-items-center text-white tap-shrink"
+                    className="shrink-0 h-9 pl-2.5 pr-3.5 rounded-full inline-flex items-center gap-1.5 text-white tap-shrink shadow-sm"
                     style={{ background: "linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%)" }}
                     title="Nova conversa" aria-label="Nova conversa">
-                    <Plus size={17} strokeWidth={2.2} />
+                    <Plus size={15} strokeWidth={2.3} />
+                    <span className="text-[12px] font-semibold tracking-tight">Nova</span>
                 </button>
             </div>
             <div className="px-3 lg:px-4 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
@@ -464,22 +480,41 @@ function ConversationList({ activeId, onSelect, onNew }) {
                                 )}
                             </div>
                         </div>
-                        <div className="hidden sm:flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
-                            <button onClick={(e) => togglePin(c, e)} data-testid={`conv-pin-${c.other_user?.username}`}
-                                title={c.pinned ? "Desafixar" : "Fixar"}
-                                className={`w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.05] ${c.pinned ? "text-amber-500" : "text-black/40"}`}>
-                                <Pin size={12} fill={c.pinned ? "currentColor" : "none"} />
+                        <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition relative" ref={rowMenu === c.key ? rowMenuRef : null}>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setRowMenu(rowMenu === c.key ? null : c.key); }}
+                                data-testid={`conv-more-${c.other_user?.username}`}
+                                title="Mais ações"
+                                aria-label="Mais ações"
+                                aria-haspopup="menu"
+                                aria-expanded={rowMenu === c.key}
+                                className="w-7 h-7 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/55"
+                            >
+                                <MoreHorizontal size={14} />
                             </button>
-                            <button onClick={(e) => toggleArchive(c, e)} data-testid={`conv-archive-${c.other_user?.username}`}
-                                title={c.archived ? "Desarquivar" : "Arquivar"}
-                                className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-black/[0.05]">
-                                {c.archived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
-                            </button>
-                            <button onClick={(e) => markUnread(c, e)} data-testid={`conv-unread-mark-${c.other_user?.username}`}
-                                title="Marcar como não lida"
-                                className="w-7 h-7 grid place-items-center rounded-full text-black/40 hover:bg-black/[0.05]">
-                                <MailWarning size={12} />
-                            </button>
+                            {rowMenu === c.key && (
+                                <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-9 z-30 bg-white rounded-2xl shadow-xl border border-black/[0.06] py-1.5 w-52 anim-fade-up"
+                                    role="menu"
+                                >
+                                    <BubbleMenuRow
+                                        onClick={(e) => togglePin(c, e)}
+                                        icon={Pin}
+                                        label={c.pinned ? "Desafixar conversa" : "Fixar conversa"}
+                                    />
+                                    <BubbleMenuRow
+                                        onClick={(e) => toggleArchive(c, e)}
+                                        icon={c.archived ? ArchiveRestore : Archive}
+                                        label={c.archived ? "Desarquivar conversa" : "Arquivar conversa"}
+                                    />
+                                    <BubbleMenuRow
+                                        onClick={(e) => markUnread(c, e)}
+                                        icon={MailWarning}
+                                        label="Marcar como não lida"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </button>
                     );
@@ -764,6 +799,8 @@ function ChatView({ other, onBack }) {
     const [galleryOpen, setGalleryOpen] = useState(false);
     const [attachOpen, setAttachOpen] = useState(false);
     const [vibeOpen, setVibeOpen] = useState(false);
+    const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+    const headerMenuRef = useRef(null);
 
     const cafeKey = `vm_cafe_receipt_${other?.id || ""}`;
     const [cafeReceipt, setCafeReceipt] = useState(() => {
@@ -846,12 +883,15 @@ function ChatView({ other, onBack }) {
             if (attachRef.current && !attachRef.current.contains(e.target)) {
                 setAttachOpen(false); setVibeOpen(false);
             }
+            if (headerMenuRef.current && !headerMenuRef.current.contains(e.target)) {
+                setHeaderMenuOpen(false);
+            }
         };
-        if (attachOpen || vibeOpen) {
+        if (attachOpen || vibeOpen || headerMenuOpen) {
             document.addEventListener("mousedown", onDoc);
             return () => document.removeEventListener("mousedown", onDoc);
         }
-    }, [attachOpen, vibeOpen]);
+    }, [attachOpen, vibeOpen, headerMenuOpen]);
 
     const handleType = (v) => {
         setText(v);
@@ -1142,27 +1182,58 @@ function ChatView({ other, onBack }) {
                         </div>
                     </div>
                 </Link>
-                <button onClick={() => setGalleryOpen(true)} title="Ver media" data-testid="chat-gallery"
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55">
-                    <Images size={15} />
-                </button>
                 <button onClick={toggleCafe} data-testid="chat-cafe-toggle"
-                    title={cafeReceipt ? "Café ligado" : "Ligar Café (read receipt opt-in)"}
-                    className={`w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] transition ${cafeReceipt ? "text-[color:var(--coral-500)]" : "text-black/45"}`}>
-                    <Coffee size={15} fill={cafeReceipt ? "currentColor" : "none"} />
+                    title={cafeReceipt ? "Café ligado — vais marcar quando leres" : "Ligar Café (adia o visto até decidires)"}
+                    aria-pressed={cafeReceipt}
+                    className={`h-9 pl-2.5 pr-3 rounded-full inline-flex items-center gap-1.5 transition border ${
+                        cafeReceipt
+                            ? "bg-[color:var(--coral-500)]/10 text-[color:var(--coral-500)] border-[color:var(--coral-500)]/30"
+                            : "bg-black/[0.04] text-black/70 border-transparent hover:bg-black/[0.08]"
+                    }`}>
+                    <Coffee size={14} fill={cafeReceipt ? "currentColor" : "none"} />
+                    <span className="text-[12px] font-medium tracking-tight">
+                        {cafeReceipt ? "Café · ligado" : "Café"}
+                    </span>
                 </button>
-                <button onClick={markUnread} title="Marcar não lida" data-testid="chat-mark-unread"
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55">
-                    <MailWarning size={15} />
-                </button>
-                <button onClick={pin} title="Fixar conversa" data-testid="chat-pin"
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55">
-                    <Pin size={15} />
-                </button>
-                <button onClick={archive} title="Arquivar" data-testid="chat-archive"
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55">
-                    <Archive size={15} />
-                </button>
+                <div className="relative" ref={headerMenuRef}>
+                    <button onClick={() => setHeaderMenuOpen((o) => !o)} data-testid="chat-more-btn"
+                        title="Mais ações da conversa"
+                        aria-haspopup="menu"
+                        aria-expanded={headerMenuOpen}
+                        className="h-9 pl-2.5 pr-3 rounded-full inline-flex items-center gap-1.5 bg-black/[0.04] hover:bg-black/[0.08] text-black/70 transition">
+                        <MoreHorizontal size={15} />
+                        <span className="text-[12px] font-medium tracking-tight hidden sm:inline">Mais</span>
+                    </button>
+                    {headerMenuOpen && (
+                        <div
+                            role="menu"
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-11 z-50 bg-white rounded-2xl shadow-xl border border-black/[0.06] py-1.5 w-60 anim-fade-up"
+                            data-testid="chat-more-menu"
+                        >
+                            <BubbleMenuRow
+                                onClick={() => { setHeaderMenuOpen(false); setGalleryOpen(true); }}
+                                icon={Images}
+                                label="Ver media partilhada"
+                            />
+                            <BubbleMenuRow
+                                onClick={() => { setHeaderMenuOpen(false); markUnread(); }}
+                                icon={MailWarning}
+                                label="Marcar como não lida"
+                            />
+                            <BubbleMenuRow
+                                onClick={() => { setHeaderMenuOpen(false); pin(); }}
+                                icon={Pin}
+                                label="Fixar / desafixar conversa"
+                            />
+                            <BubbleMenuRow
+                                onClick={() => { setHeaderMenuOpen(false); archive(); }}
+                                icon={Archive}
+                                label="Arquivar / desarquivar"
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Body */}
@@ -1244,10 +1315,14 @@ function ChatView({ other, onBack }) {
                         <button
                             onClick={() => { setAttachOpen((o) => !o); setVibeOpen(false); }}
                             data-testid="chat-attach-btn"
-                            className="w-11 h-11 grid place-items-center rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-black/65 transition"
+                            className="h-11 pl-3 pr-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] text-black/70 transition inline-flex items-center gap-1.5"
                             aria-label="Anexar"
+                            aria-haspopup="menu"
+                            aria-expanded={attachOpen || vibeOpen}
+                            title="Anexar imagem, localização ou vibe"
                         >
-                            <Plus size={17} />
+                            <Plus size={16} strokeWidth={2.1} />
+                            <span className="text-[12px] font-medium tracking-tight hidden sm:inline">Anexar</span>
                         </button>
                         {attachOpen && (
                             <div className="absolute bottom-12 left-0 z-40 bg-white rounded-2xl shadow-xl border border-black/[0.06] py-1.5 w-56 anim-fade-up">
