@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { VermillionSeal } from "../components/VermillionSeal";
+import { DynamicWord } from "../components/DynamicWord";
 
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
 // Frames the "welcome back" moment in saudade (solitary, contemplative).
@@ -55,7 +56,7 @@ export default function Login() {
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
-                        A tua cidade tem <span className="silver-foil">voz</span>.
+                        A tua cidade tem <DynamicWord variant="hero" testId="login-hero-dynamic-word" />
                     </h2>
                     <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
                         Lusorae — uma rede social rápida, simples e sem distracções, feita para conversas que valem.
@@ -89,7 +90,7 @@ export default function Login() {
                             <span className="silver-foil">◆</span> lusorae
                         </h1>
                         <p className="text-white/85 font-body text-[13px] mt-2.5">
-                            A tua cidade tem voz.
+                            A tua cidade tem <DynamicWord variant="compact" testId="login-mobile-dynamic-word" />
                         </p>
                     </div>
                 </div>

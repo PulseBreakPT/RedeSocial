@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { VermillionSeal } from "../components/VermillionSeal";
+import { DynamicWord } from "../components/DynamicWord";
 
 // Convivial Portuguese hero — street decorated for Santos Populares.
 // Frames the "come to the table" moment with community / festa popular.
@@ -258,7 +259,7 @@ export default function Register() {
                 </div>
                 <div className="relative max-w-md">
                     <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
-                        A tua cidade tem <span className="silver-foil">voz</span>.
+                        A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />
                     </h2>
                     <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
                         Conta criada em 30 segundos. Duas perguntas — e estás dentro.
@@ -291,7 +292,9 @@ export default function Register() {
                         <h1 className="font-display text-[32px] leading-none tracking-tight text-white">
                             <span className="silver-foil">◆</span> lusorae
                         </h1>
-                        <p className="text-white/85 font-body text-[13px] mt-2">A tua cidade tem voz.</p>
+                        <p className="text-white/85 font-body text-[13px] mt-2">
+                            A tua cidade tem <DynamicWord variant="compact" testId="register-mobile-dynamic-word" />
+                        </p>
                     </div>
                 </div>
 

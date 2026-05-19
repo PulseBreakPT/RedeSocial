@@ -1338,4 +1338,60 @@
         .dynamic-slogan__live { position: static; }
         .dynamic-slogan__ghost { display: none; }
     }
+
+    /* ─── DynamicWord ────────────────────────────────────────────────
+       Palavra rotativa em type/erase para usar DENTRO de um headline
+       existente (ex: hero "A tua cidade tem ___."). Herda fonte, tamanho
+       e cor do elemento pai — apenas a palavra rotativa recebe estilo
+       próprio (silver-foil na variante hero). Layout estável via ghost. */
+    .dynamic-word {
+        position: relative;
+        display: inline-block;
+        white-space: nowrap;
+        vertical-align: baseline;
+    }
+    .dynamic-word__ghost {
+        visibility: hidden;
+        pointer-events: none;
+        white-space: pre;
+        /* small reserve for cursor + descender to avoid jitter */
+        padding-right: 0.18em;
+    }
+    .dynamic-word__live {
+        position: absolute;
+        left: 0;
+        top: 0;
+        white-space: pre;
+        display: inline-flex;
+        align-items: baseline;
+    }
+    .dynamic-word__text { white-space: pre; }
+    .dynamic-word__suffix {
+        color: inherit;
+        font-weight: inherit;
+        font-style: normal;
+    }
+    .dynamic-word__cursor {
+        display: inline-block;
+        width: 1px;
+        margin: 0 2px 0 1px;
+        font-weight: 300;
+        animation: dynamicWordCursorBlink 1.05s steps(2, start) infinite;
+    }
+    .dynamic-word__cursor--hero {
+        color: rgba(255, 255, 255, 0.85);
+        transform: translateY(-0.08em);
+    }
+    .dynamic-word__cursor--compact {
+        color: rgba(255, 255, 255, 0.7);
+        transform: translateY(-0.02em);
+    }
+    @keyframes dynamicWordCursorBlink {
+        50% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .dynamic-word__cursor { display: none; }
+        .dynamic-word__live { position: static; }
+        .dynamic-word__ghost { display: none; }
+    }
 }
