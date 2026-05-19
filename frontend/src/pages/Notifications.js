@@ -5,6 +5,7 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { PageHeader } from "../components/PageHeader";
+import { NotificationReplyPreview } from "../components/NotificationReplyPreview";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
@@ -277,6 +278,7 @@ export default function Notifications() {
                                                 {!n.read && (<span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" aria-label="não lida" />)}
                                             </div>
                                             <p className="mt-1.5 text-sm text-black/70 leading-relaxed line-clamp-2">{n.text}</p>
+                                            <NotificationReplyPreview notif={n} />
                                         </Link>
                                         <div className="flex flex-col gap-1 opacity-60 group-hover:opacity-100 transition">
                                             {canReply && (

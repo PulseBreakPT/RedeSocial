@@ -66,6 +66,35 @@ export function SocialProofRow({ postId, likesCount, refreshKey, testid }) {
     const remaining = Math.max(0, total - users.length);
     const friendsContext = followed_total > 0;
 
+    // When followed-likers >= 3, show the punchier "X que segues gostaram disto"
+    // (more impactful than listing names).
+    if (friendsContext && followed_total >= 3) {
+        return (
+            <div
+                ref={rootRef}
+                data-testid={testid}
+                className="mt-2 inline-flex items-center gap-2 text-[11.5px] leading-tight text-black/60"
+            >
+                <div className="flex -space-x-2">
+                    {users.slice(0, 3).map((u) => (
+                        <Link
+                            key={u.id}
+                            to={`/u/${u.username}`}
+                            onClick={(e) => e.stopPropagation()}
+                            title={`@${u.username}`}
+                            className="inline-block ring-2 ring-white rounded-full hover:translate-y-[-1px] transition-transform"
+                        >
+                            <Avatar user={u} size={18} />
+                        </Link>
+                    ))}
+                </div>
+                <span className="font-mono tracking-tight">
+                    <span className="text-black/80 tabular-nums">{followed_total}</span> pessoas que segues gostaram disto
+                </span>
+            </div>
+        );
+    }
+
     return (
         <div
             ref={rootRef}

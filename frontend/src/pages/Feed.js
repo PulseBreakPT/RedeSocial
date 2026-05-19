@@ -10,6 +10,20 @@ import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
+import { haptic } from "../lib/haptics";
+
+// Frases curadas pt-PT mostradas no pull-to-refresh.
+// Rotativas para dar sensação humana e mexer com o utilizador.
+const PTR_PHRASES = [
+    "A ver o que se passa…",
+    "Novas conversas a chegar…",
+    "A tua cidade acordou.",
+    "A buscar o que importa…",
+    "À procura de fado novo…",
+    "A atualizar a tasca digital…",
+    "Saudades a chegar…",
+    "Mais um café e já volta…",
+];
 
 export default function Feed() {
     const { user } = useAuth();
@@ -49,6 +63,12 @@ export default function Feed() {
                 setPosts(data);
                 knownIdsRef.current = new Set(data.map((p) => p.id));
                 setNewCount(0);
+                // Track post order for swipe-between-posts navigation
+                try {
+                    // Lazy import to keep main bundle slim
+                    const { trackPostList } = await import("../lib/postTrack");
+                    trackPostList(which, data.map((p) => p.id));
+                } catch {}
             } finally {
                 setLoading(false);
                 setRefreshing(false);
@@ -102,23 +122,45 @@ export default function Feed() {
     const { pull, refreshing: ptrRefreshing, threshold } = usePullToRefresh(refresh);
     const showPtr = pull > 4 || ptrRefreshing;
     const ptrProgress = Math.min(1, pull / threshold);
+    // Pick a stable phrase per "pull session" — index advances each time the
+    // user starts a new gesture, never mid-pull (avoids flicker).
+    const [ptrPhraseIdx, setPtrPhraseIdx] = useState(() => Math.floor(Math.random() * PTR_PHRASES.length));
+    useEffect(() => {
+        if (pull > 6 && pull < 14) {
+            // Start of pull — advance phrase
+            setPtrPhraseIdx((i) => (i + 1) % PTR_PHRASES.length);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pull > 6]);
+    useEffect(() => {
+        if (ptrRefreshing) haptic("tap");
+    }, [ptrRefreshing]);
 
     return (
         <div data-testid="feed-page">
             <div
                 className="ptr-indicator lg:hidden"
-                style={{ height: ptrRefreshing ? 48 : pull }}
+                style={{ height: ptrRefreshing ? 56 : pull }}
                 aria-hidden
             >
                 {showPtr && (
-                    <RefreshCw
-                        size={20}
-                        className={`text-black/60 ${ptrRefreshing ? "ptr-spin" : ""}`}
-                        style={{
-                            transform: ptrRefreshing ? "none" : `rotate(${ptrProgress * 270}deg)`,
-                            opacity: 0.3 + ptrProgress * 0.7,
-                        }}
-                    />
+                    <div className="flex items-center gap-2.5">
+                        <RefreshCw
+                            size={18}
+                            className={`text-black/60 ${ptrRefreshing ? "ptr-spin" : ""}`}
+                            style={{
+                                transform: ptrRefreshing ? "none" : `rotate(${ptrProgress * 270}deg)`,
+                                opacity: 0.3 + ptrProgress * 0.7,
+                            }}
+                        />
+                        <span
+                            className="font-mono text-[11px] uppercase tracking-[0.14em] text-black/60"
+                            style={{ opacity: Math.min(1, Math.max(0, (ptrProgress - 0.25) / 0.75)) }}
+                            data-testid="ptr-phrase"
+                        >
+                            {PTR_PHRASES[ptrPhraseIdx]}
+                        </span>
+                    </div>
                 )}
             </div>
 

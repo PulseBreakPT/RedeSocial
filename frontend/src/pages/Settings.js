@@ -14,6 +14,8 @@ import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
 import { openCookiePreferences } from "../components/CookieBanner";
+import { isNotifSoundEnabled, setNotifSoundEnabled, playNotifSound } from "../lib/sound";
+import { isHapticsEnabled, setHapticsEnabled, haptic } from "../lib/haptics";
 import { toast } from "sonner";
 
 import { HubTab } from "./settings/HubTab";
@@ -764,7 +766,68 @@ function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
             <ToggleRow label="Novos seguidores" k="notif_follows" prefs={prefs} setPref={setPref} />
             <ToggleRow label="Menções" sub="Quando alguém te marca com @" k="notif_mentions" prefs={prefs} setPref={setPref} />
             <ToggleRow label="Mensagens diretas" k="notif_dm" prefs={prefs} setPref={setPref} />
+
+            <NotifSoundHapticsBlock />
         </div>
+    );
+}
+
+/* Som de notificação + vibração — preferências locais (não sincronizadas).
+   Som é sintetizado em runtime (Web Audio), sem ficheiro externo. */
+function NotifSoundHapticsBlock() {
+    const [soundOn, setSoundOn] = useState(() => isNotifSoundEnabled());
+    const [hapticsOn, setHapticsOn] = useState(() => isHapticsEnabled());
+    return (
+        <>
+            <p className="type-overline pt-3">Som & vibração</p>
+            <label className="flex items-center justify-between p-4 card-lux cursor-pointer hover:shadow-md transition" data-testid="pref-notif-sound-toggle">
+                <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06] text-black/70">
+                        <Bell size={15} />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Som de notificação</div>
+                        <div className="font-mono text-[11px] text-black/50 mt-0.5">Pequeno toque ao chegar uma notificação nova. Suave e curto.</div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); playNotifSound({ force: true }); }}
+                        data-testid="pref-notif-sound-preview"
+                        className="font-mono text-[10.5px] uppercase tracking-[0.1em] px-2.5 py-1 rounded-full border border-black/[0.12] hover:bg-black/[0.04] text-black/65 hover:text-black tap-shrink"
+                    >
+                        ouvir
+                    </button>
+                    <input
+                        type="checkbox"
+                        checked={soundOn}
+                        onChange={(e) => { setSoundOn(e.target.checked); setNotifSoundEnabled(e.target.checked); if (e.target.checked) playNotifSound({ force: true }); }}
+                        className="w-5 h-5 accent-black"
+                        data-testid="pref-notif-sound-checkbox"
+                    />
+                </div>
+            </label>
+
+            <label className="flex items-center justify-between p-4 card-lux cursor-pointer hover:shadow-md transition" data-testid="pref-haptics-toggle">
+                <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full grid place-items-center bg-black/[0.04] border border-black/[0.06] text-black/70">
+                        <Sliders size={15} />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Vibração no mobile</div>
+                        <div className="font-mono text-[11px] text-black/50 mt-0.5">Toques curtos em likes, follow, comentário e publicação. Só em mobile.</div>
+                    </div>
+                </div>
+                <input
+                    type="checkbox"
+                    checked={hapticsOn}
+                    onChange={(e) => { setHapticsOn(e.target.checked); setHapticsEnabled(e.target.checked); if (e.target.checked) haptic("success"); }}
+                    className="w-5 h-5 accent-black"
+                    data-testid="pref-haptics-checkbox"
+                />
+            </label>
+        </>
     );
 }
 

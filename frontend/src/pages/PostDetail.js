@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
     MessageCircle, CornerDownRight, X, BellOff, BellRing,
-    Clock, Sparkles, History, Check, ChevronDown,
+    Clock, Sparkles, History, Check, ChevronDown, Flame,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
@@ -10,17 +10,22 @@ import { PageHeader } from "../components/PageHeader";
 import { Avatar } from "../components/Avatar";
 import { Spinner } from "../components/Spinner";
 import { CommentItem } from "../components/CommentItem";
+import { CommentTypingIndicator } from "../components/CommentTypingIndicator";
+import { PostViewersBadge } from "../components/PostViewersBadge";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
+import { useCommentTyping } from "../hooks/useCommentTyping";
+import { haptic } from "../lib/haptics";
 import { toast } from "sonner";
 
 const MAX_DEPTH = 6;
 const INDENT_PX = 14;
 
 const SORT_OPTIONS = [
-    { value: "new",  label: "Mais recentes", short: "Recentes", Icon: Clock,    hint: "ordem cronológica" },
-    { value: "best", label: "Melhores",      short: "Melhores", Icon: Sparkles, hint: "mais reagidos" },
-    { value: "old",  label: "Mais antigos",  short: "Antigos",  Icon: History,  hint: "ordem inversa" },
+    { value: "new",           label: "Mais recentes", short: "Recentes",   Icon: Clock,    hint: "ordem cronológica" },
+    { value: "best",          label: "Melhores",      short: "Melhores",   Icon: Sparkles, hint: "mais reagidos" },
+    { value: "controversial", label: "Polémicos",     short: "Polémicos",  Icon: Flame,    hint: "muitas respostas, poucos likes" },
+    { value: "old",           label: "Mais antigos",  short: "Antigos",    Icon: History,  hint: "ordem inversa" },
 ];
 
 function buildTree(comments) {
@@ -67,6 +72,21 @@ function sortRoots(roots, mode) {
             if (sa !== sb) return sb - sa;
             return new Date(a.created_at) - new Date(b.created_at);
         });
+    } else if (mode === "controversial") {
+        const cscore = (c) => {
+            const r = c.replies_count || 0;
+            const lk = c.likes_count || 0;
+            if (r < 2) return 0;
+            return r * (1 + Math.log(r + 1)) / (lk + 2);
+        };
+        arr.sort((a, b) => {
+            const pa = a.pinned_by_author ? 1 : 0;
+            const pb = b.pinned_by_author ? 1 : 0;
+            if (pa !== pb) return pb - pa;
+            const sa = cscore(a), sb = cscore(b);
+            if (sa !== sb) return sb - sa;
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
     } else if (mode === "old") {
         arr.sort((a, b) => {
             const pa = a.pinned_by_author ? 1 : 0;
@@ -100,13 +120,93 @@ export default function PostDetail() {
     const [inlineFor, setInlineFor] = useState(null);
     const [inlineText, setInlineText] = useState("");
     const [inlineBusy, setInlineBusy] = useState(false);
-    const [sortMode, setSortMode] = useState("new"); // new | best | old
+    const [sortMode, setSortMode] = useState("new"); // new | best | controversial | old
     const [sortMenuOpen, setSortMenuOpen] = useState(false);
     const sortMenuRef = useRef(null);
     const [threadFollowed, setThreadFollowed] = useState(false);
     const [threadMuted, setThreadMuted] = useState(false);
+    const [highlightIds, setHighlightIds] = useState(() => new Set());
+    const [neighbors, setNeighbors] = useState(null); // { prev, next, index, total }
+    const [swipeDx, setSwipeDx] = useState(0);
+    const swipeStartRef = useRef(null);
     const rootInputRef = useRef(null);
     const inlineRef = useRef(null);
+
+    // Lookup sibling posts (prev/next) for swipe & keyboard navigation.
+    useEffect(() => {
+        if (!postId) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { findNeighbors } = await import("../lib/postTrack");
+                const n = findNeighbors(postId);
+                if (!cancelled) setNeighbors(n);
+            } catch { /* ignore */ }
+        })();
+        return () => { cancelled = true; };
+    }, [postId]);
+
+    const goSibling = useCallback((dir) => {
+        if (!neighbors) return;
+        const target = dir > 0 ? neighbors.next : neighbors.prev;
+        if (!target) return;
+        haptic("tap");
+        navigate(`/post/${target}`, { state: { from: "swipe" } });
+    }, [neighbors, navigate]);
+
+    // Keyboard arrows for sibling navigation (desktop)
+    useEffect(() => {
+        const onKey = (e) => {
+            // Don't intercept when typing in inputs / textareas / contenteditable
+            const tag = (e.target?.tagName || "").toLowerCase();
+            if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (e.key === "ArrowLeft") { goSibling(-1); }
+            else if (e.key === "ArrowRight") { goSibling(1); }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [goSibling]);
+
+    // Comment typing indicator (real-time WS)
+    const { typers, notifyTyping } = useCommentTyping(postId);
+
+    // Listen to live "new_comment" events for this post — fetch the comment and
+    // append + highlight. Avoid duplicates if it's ours (we already inserted).
+    useEffect(() => {
+        if (!postId) return;
+        const onNew = async (e) => {
+            const d = e.detail;
+            if (!d || d.post_id !== postId) return;
+            if (d.author_id === user?.id) return; // self-create handled locally
+            if (!d.comment_id) return;
+            // Avoid double-add
+            setComments((prev) => {
+                if (prev.some((c) => c.id === d.comment_id)) return prev;
+                return prev;
+            });
+            try {
+                // Fetch full thread snapshot to ensure consistent enrichment.
+                const { data } = await api.get(`/posts/${postId}/comments?sort=${sortMode}`);
+                setComments(data);
+                setHighlightIds((prev) => {
+                    const n = new Set(prev);
+                    n.add(d.comment_id);
+                    return n;
+                });
+                // Clear highlight after animation
+                setTimeout(() => {
+                    setHighlightIds((prev) => {
+                        const n = new Set(prev);
+                        n.delete(d.comment_id);
+                        return n;
+                    });
+                }, 2600);
+            } catch { /* ignore */ }
+        };
+        window.addEventListener("vmln:new_comment", onNew);
+        return () => window.removeEventListener("vmln:new_comment", onNew);
+    }, [postId, sortMode, user?.id]);
 
     const load = useCallback(async () => {
         try {
@@ -195,6 +295,7 @@ export default function PostDetail() {
             } else {
                 setPost((p) => ({ ...p, comments_count: (p.comments_count || 0) + 1 }));
             }
+            haptic("comment");
             return data;
         } catch (e) {
             toastApiError(e);
@@ -313,11 +414,57 @@ export default function PostDetail() {
 
     const totalComments = comments.length;
 
+    // Touch swipe handlers — horizontal swipe navigates to prev/next post.
+    const onTouchStart = (e) => {
+        const t = e.touches?.[0];
+        if (!t) return;
+        swipeStartRef.current = { x: t.clientX, y: t.clientY, t: Date.now(), aborted: false };
+    };
+    const onTouchMove = (e) => {
+        const s = swipeStartRef.current;
+        if (!s || s.aborted) return;
+        const t = e.touches?.[0];
+        if (!t) return;
+        const dx = t.clientX - s.x;
+        const dy = t.clientY - s.y;
+        // Cancel swipe if it's mostly vertical
+        if (Math.abs(dy) > Math.abs(dx) * 0.8) {
+            s.aborted = true;
+            setSwipeDx(0);
+            return;
+        }
+        // Only allow movement if a neighbor exists in that direction
+        const allowLeft = neighbors?.next;   // swipe left → next
+        const allowRight = neighbors?.prev;  // swipe right → prev
+        let nx = dx;
+        if (nx < 0 && !allowLeft) nx = nx * 0.25;
+        if (nx > 0 && !allowRight) nx = nx * 0.25;
+        // Clamp
+        nx = Math.max(-160, Math.min(160, nx));
+        setSwipeDx(nx);
+    };
+    const onTouchEnd = () => {
+        const s = swipeStartRef.current;
+        swipeStartRef.current = null;
+        const dx = swipeDx;
+        setSwipeDx(0);
+        if (!s || s.aborted) return;
+        if (Math.abs(dx) < 70) return;
+        if (dx < 0) goSibling(1);
+        else goSibling(-1);
+    };
+
     return (
-        <div data-testid="post-detail-page">
+        <div
+            data-testid="post-detail-page"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            style={{ transform: swipeDx ? `translateX(${swipeDx * 0.4}px)` : undefined, transition: swipeDx ? "none" : "transform 220ms cubic-bezier(.22,.61,.36,1)" }}
+        >
             <PageHeader
                 title="Publicação"
-                subtitle={`${totalComments} ${totalComments === 1 ? "comentário" : "comentários"}`}
+                subtitle={`${totalComments} ${totalComments === 1 ? "comentário" : "comentários"}${neighbors?.total ? ` · ${neighbors.index + 1}/${neighbors.total}` : ""}`}
                 back
                 testid="postdetail-header"
             />
@@ -328,6 +475,12 @@ export default function PostDetail() {
                 onChange={(np) => setPost(np)}
                 onDelete={() => navigate("/")}
             />
+
+            {/* Live viewers — discreet badge */}
+            <div className="px-4 lg:px-5 -mt-1 pb-2 flex items-center gap-2 anim-fade-up">
+                <PostViewersBadge postId={post.id} />
+                <CommentTypingIndicator typers={typers} currentUserId={user?.id} className="!px-0 !py-0" />
+            </div>
 
             {/* Discussion controls */}
             <div className="px-4 lg:px-5 py-3 flex items-center gap-2 hairline-b bg-paper">
@@ -459,7 +612,7 @@ export default function PostDetail() {
                         <textarea
                             ref={rootInputRef}
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={(e) => { setText(e.target.value); notifyTyping(); }}
                             data-testid="comment-input"
                             placeholder={replyingTo ? `Responde a @${replyingTo.author?.username}…` : "Adiciona um comentário…"}
                             rows={2}
@@ -513,7 +666,7 @@ export default function PostDetail() {
                         const isReplyOpen = inlineFor === node.id;
 
                         return (
-                            <div key={node.id}>
+                            <div key={node.id} className={highlightIds.has(node.id) ? "comment-new-highlight" : ""}>
                                 <CommentItem
                                     node={node}
                                     depth={depth}
@@ -547,7 +700,7 @@ export default function PostDetail() {
                                                 <textarea
                                                     ref={inlineRef}
                                                     value={inlineText}
-                                                    onChange={(e) => setInlineText(e.target.value)}
+                                                    onChange={(e) => { setInlineText(e.target.value); notifyTyping(); }}
                                                     placeholder={`Responde a @${node.author?.username}…`}
                                                     rows={2}
                                                     maxLength={300}

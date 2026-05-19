@@ -3,6 +3,8 @@ import { Home, Compass, MessageCircle, User, Plus, PenSquare, Image as ImageIcon
 import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useHideOnScroll } from "../hooks/useHideOnScroll";
+import { haptic as centralHaptic } from "../lib/haptics";
 
 const navItems = [
     { to: "/", icon: Home, testid: "mnav-home", end: true, label: "Início" },
@@ -16,9 +18,9 @@ const navItems = [
 const WHISPER_KEY = "vm:fab-whisper:v1";
 
 function haptic(ms = 12) {
-    try {
-        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(ms);
-    } catch {}
+    // Bridge to central haptics (respects user prefs + reduced-motion).
+    // `ms` is treated as a generic tap.
+    centralHaptic([ms]);
 }
 
 export function MobileBottomNav({ onCompose }) {
@@ -29,6 +31,10 @@ export function MobileBottomNav({ onCompose }) {
     const [quickOpen, setQuickOpen] = useState(false);
     const [pressed, setPressed] = useState(false);
     const [showWhisper, setShowWhisper] = useState(false);
+
+    // Smart FAB — hides the centre compose button when scrolling down, reappears
+    // when scrolling up or near top. Keeps the rest of the nav visible.
+    const fabHidden = useHideOnScroll(140) && !quickOpen;
 
     const longPressTimer = useRef(null);
     const longPressFired = useRef(false);
@@ -235,7 +241,7 @@ export function MobileBottomNav({ onCompose }) {
                                     aria-label={quickOpen ? "Fechar opções de criação" : (draftCount > 0 ? `Criar — ${draftCount} rascunho${draftCount === 1 ? "" : "s"} guardado${draftCount === 1 ? "" : "s"}` : "Criar publicação")}
                                     aria-haspopup="menu"
                                     aria-expanded={quickOpen}
-                                    className={`fab-compose -mt-7 w-14 h-14 rounded-full text-white grid place-items-center ring-[6px] ring-white ${pressed ? "is-pressed" : ""}`}
+                                    className={`fab-compose chrome-transition -mt-7 w-14 h-14 rounded-full text-white grid place-items-center ring-[6px] ring-white ${pressed ? "is-pressed" : ""} ${fabHidden ? "chrome-hide-down" : ""}`}
                                 >
                                     <Icon className="fab-compose-icon" size={26} strokeWidth={2.4} />
                                     {draftCount > 0 && (

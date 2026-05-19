@@ -33,6 +33,7 @@ import { ReasonChip } from "./ReasonChip";
 import { ThermometerFetch } from "./ThermometerFetch";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
+import { haptic } from "../lib/haptics";
 import { toast } from "sonner";
 
 function formatNum(n) {
@@ -104,6 +105,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         setLiked(!prevLiked);
         setLikes(prevLiked ? prevLikes - 1 : prevLikes + 1);
         setAnimLike(true);
+        haptic("like");
         setTimeout(() => setAnimLike(false), 280);
         try {
             const { data } = await api.post(`/posts/${post.id}/like`);
@@ -118,6 +120,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
 
     // Used by ImageCarousel double-tap: only LIKES (never unlikes) for a satisfying gesture
     const likeFromDoubleTap = async () => {
+        haptic("like");
         if (liked) {
             // Re-trigger the pop animation as feedback, but don't unlike
             setAnimLike(true);

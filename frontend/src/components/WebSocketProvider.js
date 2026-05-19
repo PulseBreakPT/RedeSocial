@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { playNotifSound } from "../lib/sound";
 
 // Mood → ring gradient mapping
 const MOOD_RINGS = {
@@ -24,6 +25,10 @@ function notifyListeners() {
     wsListeners.forEach((fn) => { try { fn(wsState); } catch {} });
 }
 
+function emit(name, detail) {
+    try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch {}
+}
+
 export function getWsState() { return wsState; }
 
 export function setupWebSocket(token) {
@@ -34,6 +39,7 @@ export function setupWebSocket(token) {
     notifyListeners();
     try {
         globalWs = new WebSocket(wsUrl);
+        if (typeof window !== "undefined") window.__VMLN_WS__ = globalWs;
     } catch (e) {
         wsState = "offline";
         notifyListeners();
@@ -42,6 +48,8 @@ export function setupWebSocket(token) {
     globalWs.onopen = () => {
         wsState = "live";
         notifyListeners();
+        if (typeof window !== "undefined") window.__VMLN_WS__ = globalWs;
+        emit("vmln:ws-open", { at: Date.now() });
         // ping every 25s
         if (globalWs._pingTimer) clearInterval(globalWs._pingTimer);
         globalWs._pingTimer = setInterval(() => {
@@ -51,6 +59,29 @@ export function setupWebSocket(token) {
     globalWs.onmessage = (evt) => {
         try {
             const data = JSON.parse(evt.data);
+            // Dispatch domain events for hooks/components to subscribe via window events
+            try {
+                switch (data?.type) {
+                    case "post_viewers":
+                        emit("vmln:post_viewers", data);
+                        break;
+                    case "c_typing":
+                        emit("vmln:c_typing", data);
+                        break;
+                    case "new_comment":
+                        emit("vmln:new_comment", data);
+                        break;
+                    case "notification":
+                    case "notif":
+                    case "new_notification":
+                        emit("vmln:notif", data);
+                        // Play sound if user has it enabled (no-op otherwise)
+                        try { playNotifSound(); } catch {}
+                        break;
+                    default:
+                        break;
+                }
+            } catch {}
             wsListeners.forEach((fn) => {
                 if (fn.__type === "message") {
                     try { fn(data); } catch {}
@@ -61,6 +92,9 @@ export function setupWebSocket(token) {
     globalWs.onclose = () => {
         wsState = "offline";
         notifyListeners();
+        if (typeof window !== "undefined") {
+            try { delete window.__VMLN_WS__; } catch { window.__VMLN_WS__ = null; }
+        }
         if (globalWs._pingTimer) clearInterval(globalWs._pingTimer);
         // reconnect with backoff
         if (reconnectTimer) clearTimeout(reconnectTimer);

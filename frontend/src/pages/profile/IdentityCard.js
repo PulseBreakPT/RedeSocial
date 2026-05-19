@@ -10,6 +10,9 @@ import { RodaButton } from "../../components/RodaButton";
 import { FollowButton } from "../../components/FollowButton";
 import { ProfileMoreMenu } from "./ProfileMoreMenu";
 import { SeloPessoalModal } from "../../components/SeloPessoalModal";
+import { ExpandableBio } from "../../components/ExpandableBio";
+import { FollowsYouBadge } from "../../components/FollowsYouBadge";
+import { joinedHumanPT } from "../../lib/timeHumanPT";
 import { api, toastApiError } from "../../lib/api";
 import { toast } from "sonner";
 
@@ -41,6 +44,7 @@ export function IdentityCard({
     const joined = profile.created_at
         ? new Date(profile.created_at).toLocaleDateString("pt-PT", { month: "long", year: "numeric" })
         : "";
+    const joinedHuman = joinedHumanPT(profile.created_at);
     const filledSlots = BIO_SLOT_META.filter((s) => (profile.bio_slots?.[s.key] || "").trim()).slice(0, 6);
 
     // Fetch real favourite state from /api2/users/{username}/relation
@@ -197,6 +201,9 @@ export function IdentityCard({
                     {profile.name}
                     {profile.verified && <VerifiedBadge size={18} />}
                     {profile.private && <Lock size={14} className="text-black/40" />}
+                    {!profile.is_self && profile.follows_me && (
+                        <FollowsYouBadge show className="align-middle ml-0.5" />
+                    )}
                 </h2>
                 <p className="font-mono text-[12px] text-black/45 mt-1.5">
                     @{profile.username}
@@ -253,9 +260,7 @@ export function IdentityCard({
                 </div>
 
                 {profile.bio && (
-                    <p className="mt-4 text-black/80 leading-relaxed text-[15px] max-w-[60ch]">
-                        {profile.bio}
-                    </p>
+                    <ExpandableBio text={profile.bio} className="mt-4" />
                 )}
 
                 {filledSlots.length > 0 && (
@@ -277,11 +282,11 @@ export function IdentityCard({
 
                 <div className="flex items-center gap-2 mt-4 text-black/45 font-mono text-[11px]">
                     <CalendarDays size={13} />
-                    <span>Membro desde {joined}</span>
-                    {stats?.joined_days !== undefined && (
+                    <span data-testid="profile-joined-human">{joinedHuman || `Membro desde ${joined}`}</span>
+                    {joinedHuman && joined && (
                         <>
                             <span className="text-black/20">·</span>
-                            <span>{stats.joined_days}d na rede</span>
+                            <span className="text-black/35">desde {joined}</span>
                         </>
                     )}
                 </div>

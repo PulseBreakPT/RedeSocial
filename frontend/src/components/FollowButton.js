@@ -62,9 +62,17 @@ export function FollowButton({ profile, onChange, size = "default", showLabel = 
     const isNotified = !!profile?.is_notified;
     const isFavorited = !!profile?.is_favorited;
 
-    // Tiny haptic ping on touch devices (no-op elsewhere)
+    // Tiny haptic ping on touch devices (no-op elsewhere) — routed through
+    // the central haptics helper to honor user prefs + reduced-motion.
     const haptic = (pattern) => {
-        try { navigator.vibrate?.(pattern); } catch { /* ignore */ }
+        try {
+            // Lazy import to avoid circular deps; safe because module is tiny.
+            // eslint-disable-next-line global-require
+            const m = require("../lib/haptics");
+            m.haptic(pattern);
+        } catch {
+            try { navigator.vibrate?.(pattern); } catch { /* ignore */ }
+        }
     };
 
     // ----- Primary action (follow / unfollow) ----------------------------

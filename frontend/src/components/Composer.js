@@ -21,6 +21,7 @@ import {
     Smartphone,
     Monitor,
     Check,
+    Eye,
 } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
@@ -30,6 +31,8 @@ import { useClickOutside } from "../hooks/useClickOutside";
 import { Spinner } from "./Spinner";
 import { HashtagSuggester } from "./HashtagSuggester";
 import { MentionSuggester } from "./MentionSuggester";
+import { ComposerPreview } from "./ComposerPreview";
+import { haptic } from "../lib/haptics";
 import { confirmDialog } from "./ConfirmDialog";
 import { toast } from "sonner";
 
@@ -111,6 +114,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [fullscreen, setFullscreen] = useState(false);
     const [previewMode, setPreviewMode] = useState("desktop"); /* "desktop" | "mobile" */
     const [savedAt, setSavedAt] = useState(null);
+    // Pre-publish preview modal
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
     const fileRef = useRef(null);
     const textareaRef = useRef(null);
@@ -274,6 +279,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             setScheduledAt("");
             setScheduleOpen(false);
             onPosted?.(data);
+            haptic("publish");
             toast.success(isDraft ? "Rascunho guardado" : isScheduled ? "Agendado" : "Publicado");
             onClose?.();
         } catch (e) {
@@ -698,6 +704,16 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 <Save size={13} /> rascunho
                             </button>
                             <button
+                                type="button"
+                                onClick={() => setPreviewModalOpen(true)}
+                                disabled={busy || (!content.trim() && images.length === 0 && !pollOpen)}
+                                data-testid="composer-preview-btn"
+                                className="hidden sm:inline-flex font-mono text-[11px] uppercase tracking-wide text-black/65 hover:text-black px-3 py-2 tap-shrink disabled:opacity-40 items-center gap-1.5 border border-black/[0.10] rounded-full hover:bg-black/[0.04]"
+                                title="Pré-visualizar como vai aparecer"
+                            >
+                                <Eye size={13} /> Pré-visualizar
+                            </button>
+                            <button
                                 disabled={busy || (!content.trim() && images.length === 0 && !pollOpen) || remaining < 0}
                                 onClick={() => submit("publish")}
                                 data-testid="composer-publish-btn"
@@ -710,6 +726,21 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                     </div>
                 </div>
             </div>
+            <ComposerPreview
+                open={previewModalOpen}
+                onClose={() => setPreviewModalOpen(false)}
+                content={content}
+                images={images}
+                ring={ring}
+                audience={audience}
+                poll={pollOpen ? {
+                    options: pollOptions.map((s) => s.trim()).filter(Boolean),
+                    allow_multiple: pollMultiple,
+                    ends_in_minutes: pollDuration,
+                } : null}
+                publishing={busy}
+                onPublish={() => { setPreviewModalOpen(false); submit("publish"); }}
+            />
         </div>
     );
 }

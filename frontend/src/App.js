@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import { Toaster } from "sonner";
 import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
@@ -35,6 +36,19 @@ import SeriesPage from "./pages/SeriesPage";
 import StoryArchive from "./pages/StoryArchive";
 
 function App() {
+    // Activa scroll suave global (CSS-only; respeita prefers-reduced-motion).
+    useEffect(() => {
+        try {
+            document.documentElement.classList.add("smooth-scroll");
+            document.body.classList.add("smooth-scroll");
+        } catch {}
+        return () => {
+            try {
+                document.documentElement.classList.remove("smooth-scroll");
+                document.body.classList.remove("smooth-scroll");
+            } catch {}
+        };
+    }, []);
     return (
         <div className="App">
             <AuthProvider>

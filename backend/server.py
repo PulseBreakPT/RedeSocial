@@ -2559,6 +2559,17 @@ async def list_comments(post_id: str, sort: str = "new", viewer: Optional[dict] 
             return (c.get("likes_count", 0) * 2) + (c.get("replies_count", 0) * 1.5)
         # Stable: pinned first, then by score desc, then by date asc
         enriched.sort(key=lambda c: (not c.get("pinned_by_author"), -score(c), c.get("created_at", "")))
+    elif sort == "controversial":
+        # "Polémicos": muitas respostas em proporção aos likes
+        # Score = replies * (1 + log(replies+1)) / (likes+2). Mais respostas com poucos likes = polémico.
+        import math as _math
+        def cscore(c):
+            r = c.get("replies_count", 0) or 0
+            lk = c.get("likes_count", 0) or 0
+            if r < 2:
+                return 0.0
+            return float(r) * (1.0 + _math.log(r + 1.0)) / float(lk + 2)
+        enriched.sort(key=lambda c: (not c.get("pinned_by_author"), -cscore(c), c.get("created_at", "")))
     elif sort == "old":
         enriched.sort(key=lambda c: (not c.get("pinned_by_author"), c.get("created_at", "")))
     else:  # new
@@ -2601,6 +2612,10 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
     await db.comments.insert_one(comment)
     await daily_checkin(user["id"])
     await award_xp(user["id"], "create_comment")
+    # Preview snippet for richer notifications (mini-preview in notification list)
+    preview_snippet = (payload.content or "").strip()
+    if len(preview_snippet) > 140:
+        preview_snippet = preview_snippet[:137].rstrip() + "…"
     # Bump parent replies_count
     if parent:
         await db.comments.update_one(
@@ -2611,15 +2626,38 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
             await create_notification(
                 parent["author_id"], "reply", user["id"], post_id,
                 f"@{user['username']} respondeu ao teu comentário",
-                extra={"parent_id": parent["id"]},
+                extra={
+                    "parent_id": parent["id"],
+                    "comment_id": comment["id"],
+                    "comment_preview": preview_snippet,
+                },
             )
     else:
         if post["author_id"] != user["id"]:
             await create_notification(
                 post["author_id"], "comment", user["id"], post_id,
                 f"@{user['username']} comentou na tua publicação",
+                extra={
+                    "comment_id": comment["id"],
+                    "comment_preview": preview_snippet,
+                },
             )
     await handle_mentions(payload.content, user, post_id)
+    # Notify post-viewers (incl. author) that a new comment was just posted (so they can highlight it live)
+    try:
+        await ws_manager.broadcast_to_post_viewers(
+            post_id,
+            {
+                "type": "new_comment",
+                "post_id": post_id,
+                "comment_id": comment["id"],
+                "parent_id": parent["id"] if parent else None,
+                "author_id": user["id"],
+            },
+            exclude_user=user["id"],
+        )
+    except Exception:
+        pass
     return await _enrich_comment(comment, user)
 
 
@@ -4236,6 +4274,9 @@ async def list_notifications(user=Depends(get_current_user)):
             "post_id": n.get("post_id"),
             "starred": bool(n.get("starred")),
             "snoozed_until": n.get("snoozed_until"),
+            "comment_id": n.get("comment_id"),
+            "parent_id": n.get("parent_id"),
+            "comment_preview": n.get("comment_preview"),
             "from_user": public_user(from_user) if from_user else None,
         })
     return out
@@ -6933,6 +6974,9 @@ from fastapi import WebSocket, WebSocketDisconnect
 class ConnectionManager:
     def __init__(self):
         self.active: dict[str, list[WebSocket]] = {}  # user_id -> sockets
+        # Per-post viewers (real presence tracking — feature: "x pessoas a ver este post")
+        self.viewers_by_post: dict[str, set[str]] = {}   # post_id -> set(user_id)
+        self.posts_by_user: dict[str, set[str]] = {}     # user_id -> set(post_id)
 
     async def connect(self, user_id: str, ws: WebSocket):
         await ws.accept()
@@ -6963,6 +7007,48 @@ class ConnectionManager:
                     await ws.send_json(message)
                 except Exception:
                     pass
+
+    # --- Post viewers (real-time presence per post) ---
+    async def add_post_viewer(self, user_id: str, post_id: str) -> int:
+        s = self.viewers_by_post.setdefault(post_id, set())
+        s.add(user_id)
+        self.posts_by_user.setdefault(user_id, set()).add(post_id)
+        count = len(s)
+        await self._broadcast_post_viewers(post_id, count)
+        return count
+
+    async def remove_post_viewer(self, user_id: str, post_id: str) -> int:
+        s = self.viewers_by_post.get(post_id)
+        if s and user_id in s:
+            s.discard(user_id)
+            if not s:
+                self.viewers_by_post.pop(post_id, None)
+        ps = self.posts_by_user.get(user_id)
+        if ps:
+            ps.discard(post_id)
+            if not ps:
+                self.posts_by_user.pop(user_id, None)
+        count = len(self.viewers_by_post.get(post_id, set()))
+        await self._broadcast_post_viewers(post_id, count)
+        return count
+
+    async def cleanup_user_posts(self, user_id: str):
+        post_ids = list(self.posts_by_user.get(user_id, set()))
+        for pid in post_ids:
+            await self.remove_post_viewer(user_id, pid)
+
+    async def _broadcast_post_viewers(self, post_id: str, count: int):
+        # Only push to viewers of this post (low traffic)
+        msg = {"type": "post_viewers", "post_id": post_id, "count": count}
+        for uid in list(self.viewers_by_post.get(post_id, set())):
+            await self.send_personal(uid, msg)
+
+    # --- Comment typing per post ---
+    async def broadcast_to_post_viewers(self, post_id: str, message: dict, exclude_user: Optional[str] = None):
+        for uid in list(self.viewers_by_post.get(post_id, set())):
+            if uid == exclude_user:
+                continue
+            await self.send_personal(uid, message)
 
 
 ws_manager = ConnectionManager()
@@ -7013,12 +7099,47 @@ async def websocket_endpoint(ws: WebSocket):
                     "status": data.get("status", "online"),
                     "emoji": data.get("emoji", ""),
                 }, exclude_user=user_id)
+            elif t == "post_view":
+                # User started viewing a post — register & broadcast viewer count
+                post_id = data.get("post_id")
+                if isinstance(post_id, str) and post_id:
+                    await ws_manager.add_post_viewer(user_id, post_id)
+            elif t == "post_unview":
+                # User stopped viewing the post (scrolled away / unmounted)
+                post_id = data.get("post_id")
+                if isinstance(post_id, str) and post_id:
+                    await ws_manager.remove_post_viewer(user_id, post_id)
+            elif t == "c_typing":
+                # Comment typing — broadcast to other viewers of the post
+                post_id = data.get("post_id")
+                if not (isinstance(post_id, str) and post_id):
+                    continue
+                user_doc = await db.users.find_one(
+                    {"id": user_id},
+                    {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1},
+                )
+                if not user_doc:
+                    continue
+                await ws_manager.broadcast_to_post_viewers(
+                    post_id,
+                    {
+                        "type": "c_typing",
+                        "post_id": post_id,
+                        "user": public_user(user_doc),
+                    },
+                    exclude_user=user_id,
+                )
     except WebSocketDisconnect:
         pass
     except Exception:
         pass
     finally:
         ws_manager.disconnect(user_id, ws)
+        # Clean up any post-viewer registrations from this connection
+        try:
+            await ws_manager.cleanup_user_posts(user_id)
+        except Exception:
+            pass
         await ws_manager.broadcast({
             "type": "presence",
             "user_id": user_id,
