@@ -6,6 +6,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 import os
 import re
+import json
 import math
 import uuid
 import logging
@@ -2389,6 +2390,11 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
         muted_authors = list(set(viewer.get("muted_authors", []) or []))
         if muted_authors:
             query["author_id"] = {"$nin": muted_authors}
+    # Admin hashtag blacklist — exclude posts with any blacklisted hashtag
+    blacklist_rows = await db.hashtag_blacklist.find({}, {"_id": 0, "tag": 1}).to_list(length=500)
+    blacklist = [(b.get("tag") or "").lower() for b in blacklist_rows]
+    if blacklist:
+        query["hashtags"] = {"$nin": blacklist}
     posts = await db.posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
     if viewer:
         muted_topics = set((t or "").lower() for t in (viewer.get("muted_topics", []) or []))
@@ -4712,11 +4718,15 @@ async def send_message(payload: MessageIn, user=Depends(get_current_user)):
 @api.get("/trending")
 async def trending(range: str = "7d"):
     """Top hashtags com taxa de crescimento (velocity %) + temperatura social.
-    range: 1h | 24h | 7d | 30d (default 7d)."""
+    range: 1h | 24h | 7d | 30d (default 7d). Hashtags em blacklist (gerida no
+    painel admin) são excluídas do output."""
     hours = range_to_hours(range)
     now = datetime.now(timezone.utc)
     curr_cut = (now - timedelta(hours=hours)).isoformat()
     prev_cut = (now - timedelta(hours=hours * 2)).isoformat()
+    # Hashtag blacklist (admin) — set of lowercase tags
+    blacklist_rows = await db.hashtag_blacklist.find({}, {"_id": 0, "tag": 1}).to_list(length=500)
+    blacklist = {(b.get("tag") or "").lower() for b in blacklist_rows}
     curr_posts = await db.posts.find(
         {"hashtags": {"$exists": True, "$ne": []},
          "is_draft": {"$ne": True},
@@ -4737,12 +4747,18 @@ async def trending(range: str = "7d"):
     by_tag_prev: dict[str, list] = {}
     for p in curr_posts:
         for t in p.get("hashtags", []):
-            curr_counts[t] = curr_counts.get(t, 0) + 1
-            by_tag_curr.setdefault(t, []).append(p)
+            tl = (t or "").lower()
+            if tl in blacklist:
+                continue
+            curr_counts[tl] = curr_counts.get(tl, 0) + 1
+            by_tag_curr.setdefault(tl, []).append(p)
     for p in prev_posts:
         for t in p.get("hashtags", []):
-            prev_counts[t] = prev_counts.get(t, 0) + 1
-            by_tag_prev.setdefault(t, []).append(p)
+            tl = (t or "").lower()
+            if tl in blacklist:
+                continue
+            prev_counts[tl] = prev_counts.get(tl, 0) + 1
+            by_tag_prev.setdefault(tl, []).append(p)
     items = sorted(curr_counts.items(), key=lambda kv: kv[1], reverse=True)[:30]
     weights = TEMP_PROFILES["tag"]
     out = []
@@ -5515,6 +5531,14 @@ async def startup():
     # B-029 — sessions indexes
     await db.sessions.create_index("jti", unique=True)
     await db.sessions.create_index([("user_id", 1), ("revoked", 1), ("last_seen_at", -1)])
+    # Admin panel indexes
+    await db.admin_audit.create_index([("created_at", -1)])
+    await db.admin_audit.create_index("action")
+    await db.admin_audit.create_index("actor_id")
+    await db.hashtag_blacklist.create_index("tag", unique=True)
+    await db.comments.create_index("post_id")
+    await db.comments.create_index("author_id")
+    await db.reports.create_index("status")
     admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
     admin_password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
     admin_username = (os.environ.get("ADMIN_USERNAME") or "admin").strip().lower()
@@ -8695,6 +8719,592 @@ async def admin_audit_list(
     cursor = db.admin_audit.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
     rows = await cursor.to_list(length=limit)
     return {"total": total, "page": page, "limit": limit, "items": rows}
+
+
+# ----------------- COMMENTS -----------------
+
+@api2.get("/admin/comments")
+async def admin_list_comments(
+    admin=Depends(require_admin),
+    q: str = "",
+    page: int = 1,
+    limit: int = 25,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 25)))
+    query: dict = {}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"content": rgx}, {"id": q.strip()}, {"post_id": q.strip()}]
+    total = await db.comments.count_documents(query)
+    cursor = db.comments.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    author_ids = list({c.get("author_id") for c in rows if c.get("author_id")})
+    authors = {}
+    if author_ids:
+        async for u in db.users.find({"id": {"$in": author_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            authors[u["id"]] = u
+    out = []
+    for c in rows:
+        a = authors.get(c.get("author_id"), {})
+        out.append({
+            "id": c.get("id"),
+            "post_id": c.get("post_id"),
+            "parent_id": c.get("parent_id"),
+            "content": (c.get("content") or "")[:400],
+            "author_id": c.get("author_id"),
+            "author_username": a.get("username", ""),
+            "author_name": a.get("name", ""),
+            "author_avatar": a.get("avatar", ""),
+            "likes_count": len(c.get("likes", []) or []),
+            "replies_count": int(c.get("replies_count", 0) or 0),
+            "created_at": c.get("created_at"),
+        })
+    return {"total": total, "page": page, "limit": limit, "items": out}
+
+
+async def _cascade_delete_comment(comment_id: str) -> int:
+    """Recursively delete a comment and ALL its descendants. Returns total deleted."""
+    deleted = 0
+    stack = [comment_id]
+    while stack:
+        cid = stack.pop()
+        children = await db.comments.find({"parent_id": cid}, {"_id": 0, "id": 1}).to_list(length=1000)
+        for ch in children:
+            stack.append(ch["id"])
+        r = await db.comments.delete_one({"id": cid})
+        deleted += r.deleted_count
+    return deleted
+
+
+@api2.delete("/admin/comments/{comment_id}")
+async def admin_delete_comment(comment_id: str, admin=Depends(require_admin)):
+    c = await db.comments.find_one({"id": comment_id}, {"_id": 0, "id": 1, "post_id": 1, "content": 1, "author_id": 1})
+    if c is None:
+        raise HTTPException(404, "Comentário não encontrado")
+    n = await _cascade_delete_comment(comment_id)
+    # Recompute the post's comments_count
+    if c.get("post_id"):
+        new_count = await db.comments.count_documents({"post_id": c["post_id"]})
+        await db.posts.update_one({"id": c["post_id"]}, {"$set": {"comments_count": new_count}})
+    await db.reports.delete_many({"kind": "comment", "target_id": comment_id})
+    await admin_audit(admin, "comment.delete", "comment", comment_id, {
+        "post_id": c.get("post_id"), "author_id": c.get("author_id"),
+        "deleted": n, "snippet": (c.get("content") or "")[:120],
+    })
+    return {"ok": True, "deleted": n}
+
+
+# ----------------- STORIES -----------------
+
+@api2.get("/admin/stories")
+async def admin_list_stories(
+    admin=Depends(require_admin),
+    q: str = "",
+    filter: str = "active",   # active | expired | all
+    page: int = 1,
+    limit: int = 25,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 25)))
+    now = now_iso()
+    query: dict = {}
+    if filter == "active":
+        query["expires_at"] = {"$gte": now}
+    elif filter == "expired":
+        query["expires_at"] = {"$lt": now}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [
+            {"caption": rgx}, {"text_content": rgx},
+            {"id": q.strip()}, {"author_id": q.strip()},
+        ]
+    total = await db.stories.count_documents(query)
+    cursor = db.stories.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    author_ids = list({s.get("author_id") for s in rows if s.get("author_id")})
+    authors = {}
+    if author_ids:
+        async for u in db.users.find({"id": {"$in": author_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            authors[u["id"]] = u
+    out = []
+    for s in rows:
+        a = authors.get(s.get("author_id"), {})
+        out.append({
+            "id": s.get("id"),
+            "author_id": s.get("author_id"),
+            "author_username": a.get("username", ""),
+            "author_name": a.get("name", ""),
+            "author_avatar": a.get("avatar", ""),
+            "media_type": s.get("media_type", "image"),
+            "caption": (s.get("caption") or s.get("text_content") or "")[:200],
+            "audience": s.get("audience", "everyone"),
+            "viewers_count": len(s.get("viewers", []) or []),
+            "reactions_count": sum(len(v) for v in (s.get("reactions") or {}).values() if isinstance(v, list)),
+            "created_at": s.get("created_at"),
+            "expires_at": s.get("expires_at"),
+            "is_active": (s.get("expires_at") or "") >= now,
+        })
+    return {"total": total, "page": page, "limit": limit, "items": out}
+
+
+@api2.delete("/admin/stories/{story_id}")
+async def admin_delete_story(story_id: str, admin=Depends(require_admin)):
+    s = await db.stories.find_one({"id": story_id}, {"_id": 0, "id": 1, "author_id": 1, "caption": 1, "text_content": 1})
+    if not s:
+        raise HTTPException(404, "Story não encontrada")
+    await db.stories.delete_one({"id": story_id})
+    # Remove from any highlights
+    await db.highlights.update_many({}, {"$pull": {"story_ids": story_id}})
+    await admin_audit(admin, "story.delete", "story", story_id, {
+        "author_id": s.get("author_id"),
+        "snippet": (s.get("caption") or s.get("text_content") or "")[:120],
+    })
+    return {"ok": True, "deleted": True}
+
+
+# ----------------- HASHTAGS BLACKLIST -----------------
+
+@api2.get("/admin/hashtags")
+async def admin_list_hashtags(
+    admin=Depends(require_admin),
+    q: str = "",
+    filter: str = "all",   # all | blacklisted | active
+    page: int = 1,
+    limit: int = 30,
+):
+    """Lista hashtags com contagem global + estado de blacklist.
+    Inclui blacklisted mesmo que já não tenham posts (mostram count=0)."""
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 30)))
+    # Aggregate tag counts from posts
+    pipeline = [
+        {"$match": {"hashtags": {"$exists": True, "$ne": []}, "is_draft": {"$ne": True}}},
+        {"$unwind": "$hashtags"},
+        {"$group": {"_id": "$hashtags", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 1000},
+    ]
+    agg = await db.posts.aggregate(pipeline).to_list(length=1000)
+    blacklist_rows = await db.hashtag_blacklist.find({}, {"_id": 0}).to_list(length=1000)
+    bl_map = {(b.get("tag") or "").lower(): b for b in blacklist_rows}
+    items: list[dict] = []
+    seen = set()
+    for row in agg:
+        tag = (row.get("_id") or "").lower()
+        if not tag:
+            continue
+        seen.add(tag)
+        items.append({
+            "tag": tag,
+            "count": int(row.get("count") or 0),
+            "blacklisted": tag in bl_map,
+            "blacklist_reason": (bl_map.get(tag) or {}).get("reason", "") if tag in bl_map else "",
+            "blacklisted_at": (bl_map.get(tag) or {}).get("created_at") if tag in bl_map else None,
+        })
+    # Add blacklisted tags that no longer have posts
+    for tag, doc in bl_map.items():
+        if tag in seen:
+            continue
+        items.append({
+            "tag": tag, "count": 0, "blacklisted": True,
+            "blacklist_reason": doc.get("reason", ""),
+            "blacklisted_at": doc.get("created_at"),
+        })
+    # Filter
+    if q:
+        ql = q.strip().lower().lstrip("#")
+        items = [it for it in items if ql in it["tag"]]
+    if filter == "blacklisted":
+        items = [it for it in items if it["blacklisted"]]
+    elif filter == "active":
+        items = [it for it in items if not it["blacklisted"]]
+    total = len(items)
+    start = (page - 1) * limit
+    items = items[start:start + limit]
+    return {"total": total, "page": page, "limit": limit, "items": items}
+
+
+class AdminHashtagBlacklistIn(BaseModel):
+    reason: Optional[str] = ""
+
+
+@api2.post("/admin/hashtags/{tag}/blacklist")
+async def admin_toggle_hashtag_blacklist(
+    tag: str,
+    payload: Optional[AdminHashtagBlacklistIn] = None,
+    admin=Depends(require_admin),
+):
+    """Toggle: se já está em blacklist, remove; caso contrário, adiciona."""
+    tag_l = (tag or "").strip().lower().lstrip("#")
+    if not tag_l or len(tag_l) > 80:
+        raise HTTPException(400, "Hashtag inválida")
+    existing = await db.hashtag_blacklist.find_one({"tag": tag_l})
+    if existing:
+        await db.hashtag_blacklist.delete_one({"tag": tag_l})
+        await admin_audit(admin, "hashtag.blacklist", "hashtag", tag_l, {"blacklisted": False})
+        return {"ok": True, "tag": tag_l, "blacklisted": False}
+    reason = ((payload.reason if payload else "") or "")[:300]
+    await db.hashtag_blacklist.insert_one({
+        "id": str(uuid.uuid4()), "tag": tag_l, "reason": reason,
+        "created_at": now_iso(), "created_by": admin["id"],
+    })
+    await admin_audit(admin, "hashtag.blacklist", "hashtag", tag_l, {"blacklisted": True, "reason": reason})
+    return {"ok": True, "tag": tag_l, "blacklisted": True}
+
+
+# ----------------- BROADCAST NOTIFICATION -----------------
+
+class AdminBroadcastIn(BaseModel):
+    text: str
+    audience: Optional[str] = "all"   # all | verified | non_banned | new_accounts_7d | admins
+    link: Optional[str] = ""          # opcional, abre em frontend (notification.extra.link)
+    city: Optional[str] = ""          # filtro adicional
+
+
+@api2.post("/admin/broadcast")
+async def admin_broadcast_notification(payload: AdminBroadcastIn, admin=Depends(require_admin)):
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(400, "Texto vazio")
+    if len(text) > 280:
+        raise HTTPException(400, "Texto demasiado longo (máx 280)")
+    audience = (payload.audience or "all").lower()
+    if audience not in {"all", "verified", "non_banned", "new_accounts_7d", "admins"}:
+        raise HTTPException(400, "Audiência inválida")
+    link = (payload.link or "").strip()[:300]
+    city = (payload.city or "").strip().lower()[:60]
+
+    query: dict = {}
+    if audience == "verified":
+        query["verified"] = True
+    elif audience == "non_banned":
+        query["banned"] = {"$ne": True}
+    elif audience == "new_accounts_7d":
+        cut = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        query["created_at"] = {"$gte": cut}
+    elif audience == "admins":
+        query["is_admin"] = True
+    if city:
+        query["city"] = {"$regex": f"^{re.escape(city)}$", "$options": "i"}
+
+    target_ids = []
+    async for u in db.users.find(query, {"_id": 0, "id": 1}):
+        target_ids.append(u["id"])
+    if not target_ids:
+        return {"ok": True, "sent": 0}
+
+    batch_id = str(uuid.uuid4())
+    now = now_iso()
+    docs = []
+    for uid in target_ids:
+        docs.append({
+            "id": str(uuid.uuid4()),
+            "user_id": uid,
+            "type": "broadcast",
+            "from_user_id": admin["id"],
+            "post_id": None,
+            "text": text,
+            "extra": {"link": link, "broadcast_id": batch_id, "from_admin": admin.get("username")},
+            "read": False,
+            "created_at": now,
+        })
+    # Bulk insert
+    if docs:
+        await db.notifications.insert_many(docs)
+    # Try to push WS notifications (best effort)
+    try:
+        if "ws_manager" in globals():
+            for d in docs:
+                await ws_manager.send_personal(d["user_id"], {
+                    "type": "new_notification",
+                    "notification": {
+                        "id": d["id"], "type": "broadcast", "text": d["text"],
+                        "created_at": d["created_at"], "extra": d["extra"],
+                    },
+                })
+    except Exception:
+        pass
+    await admin_audit(admin, "broadcast.send", "broadcast", batch_id, {
+        "audience": audience, "city": city, "count": len(docs),
+        "snippet": text[:80], "link": link,
+    })
+    return {"ok": True, "sent": len(docs), "audience": audience, "broadcast_id": batch_id}
+
+
+@api2.get("/admin/broadcast/audience-count")
+async def admin_broadcast_audience_count(
+    admin=Depends(require_admin),
+    audience: str = "all",
+    city: str = "",
+):
+    """Preview do nº de utilizadores que recebem uma broadcast antes de enviar."""
+    audience_l = (audience or "all").lower()
+    query: dict = {}
+    if audience_l == "verified":
+        query["verified"] = True
+    elif audience_l == "non_banned":
+        query["banned"] = {"$ne": True}
+    elif audience_l == "new_accounts_7d":
+        cut = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        query["created_at"] = {"$gte": cut}
+    elif audience_l == "admins":
+        query["is_admin"] = True
+    city_l = (city or "").strip().lower()
+    if city_l:
+        query["city"] = {"$regex": f"^{re.escape(city_l)}$", "$options": "i"}
+    count = await db.users.count_documents(query)
+    return {"count": count, "audience": audience_l, "city": city_l}
+
+
+# ----------------- BULK OPERATIONS -----------------
+
+class AdminBulkUsersIn(BaseModel):
+    ids: list[str]
+    action: str   # verify | unverify | ban | unban | force_logout
+    reason: Optional[str] = ""
+
+
+@api2.post("/admin/users/bulk")
+async def admin_bulk_users(payload: AdminBulkUsersIn, admin=Depends(require_admin)):
+    action = (payload.action or "").lower()
+    if action not in {"verify", "unverify", "ban", "unban", "force_logout"}:
+        raise HTTPException(400, "Acção inválida")
+    ids = [i for i in (payload.ids or []) if i and i != admin["id"]]
+    ids = ids[:200]
+    if not ids:
+        return {"ok": True, "updated": 0}
+    reason = (payload.reason or "")[:300]
+    updated = 0
+    if action == "verify":
+        r = await db.users.update_many({"id": {"$in": ids}}, {"$set": {"verified": True}})
+        updated = r.modified_count
+    elif action == "unverify":
+        r = await db.users.update_many({"id": {"$in": ids}}, {"$set": {"verified": False}})
+        updated = r.modified_count
+    elif action == "ban":
+        # Skip admins
+        candidates = []
+        async for u in db.users.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "is_admin": 1}):
+            if not u.get("is_admin"):
+                candidates.append(u["id"])
+        if candidates:
+            r = await db.users.update_many(
+                {"id": {"$in": candidates}},
+                {"$set": {"banned": True, "ban_reason": reason, "banned_at": now_iso(), "banned_by": admin["id"]}},
+            )
+            updated = r.modified_count
+            await db.sessions.update_many(
+                {"user_id": {"$in": candidates}, "revoked": {"$ne": True}},
+                {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "ban_bulk"}},
+            )
+    elif action == "unban":
+        r = await db.users.update_many(
+            {"id": {"$in": ids}},
+            {"$set": {"banned": False, "ban_reason": "", "unbanned_at": now_iso(), "unbanned_by": admin["id"]}},
+        )
+        updated = r.modified_count
+    elif action == "force_logout":
+        r = await db.sessions.update_many(
+            {"user_id": {"$in": ids}, "revoked": {"$ne": True}},
+            {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "admin_force_logout_bulk"}},
+        )
+        updated = r.modified_count
+    await admin_audit(admin, "user.bulk", "user", "", {
+        "action": action, "ids_count": len(ids), "updated": updated, "reason": reason,
+    })
+    return {"ok": True, "action": action, "updated": updated, "requested": len(ids)}
+
+
+class AdminBulkPostsIn(BaseModel):
+    ids: list[str]
+    action: str   # feature | unfeature | delete
+
+
+@api2.post("/admin/posts/bulk")
+async def admin_bulk_posts(payload: AdminBulkPostsIn, admin=Depends(require_admin)):
+    action = (payload.action or "").lower()
+    if action not in {"feature", "unfeature", "delete"}:
+        raise HTTPException(400, "Acção inválida")
+    ids = [i for i in (payload.ids or []) if i][:200]
+    if not ids:
+        return {"ok": True, "updated": 0}
+    updated = 0
+    if action == "feature":
+        r = await db.posts.update_many({"id": {"$in": ids}}, {"$set": {"featured": True}})
+        updated = r.modified_count
+    elif action == "unfeature":
+        r = await db.posts.update_many({"id": {"$in": ids}}, {"$set": {"featured": False}})
+        updated = r.modified_count
+    elif action == "delete":
+        r = await db.posts.delete_many({"id": {"$in": ids}})
+        updated = r.deleted_count
+        await db.comments.delete_many({"post_id": {"$in": ids}})
+        await db.reports.delete_many({"kind": "post", "target_id": {"$in": ids}})
+    await admin_audit(admin, "post.bulk", "post", "", {
+        "action": action, "ids_count": len(ids), "updated": updated,
+    })
+    return {"ok": True, "action": action, "updated": updated, "requested": len(ids)}
+
+
+# ----------------- USER DRAWER (extra detail endpoints) -----------------
+
+@api2.get("/admin/users/{user_id}/posts")
+async def admin_user_posts(user_id: str, admin=Depends(require_admin), page: int = 1, limit: int = 20):
+    page = max(1, int(page or 1))
+    limit = max(1, min(50, int(limit or 20)))
+    total = await db.posts.count_documents({"author_id": user_id})
+    cursor = db.posts.find({"author_id": user_id}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [_admin_post_card(p) for p in rows],
+    }
+
+
+@api2.get("/admin/users/{user_id}/comments")
+async def admin_user_comments(user_id: str, admin=Depends(require_admin), page: int = 1, limit: int = 20):
+    page = max(1, int(page or 1))
+    limit = max(1, min(50, int(limit or 20)))
+    total = await db.comments.count_documents({"author_id": user_id})
+    cursor = db.comments.find({"author_id": user_id}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    items = []
+    for c in rows:
+        items.append({
+            "id": c.get("id"), "post_id": c.get("post_id"), "parent_id": c.get("parent_id"),
+            "content": (c.get("content") or "")[:300],
+            "likes_count": len(c.get("likes", []) or []),
+            "created_at": c.get("created_at"),
+        })
+    return {"total": total, "page": page, "limit": limit, "items": items}
+
+
+@api2.get("/admin/users/{user_id}/reports")
+async def admin_user_reports(user_id: str, admin=Depends(require_admin)):
+    """Reports relacionados ao utilizador: feitos contra ele + feitos por ele."""
+    against = await db.reports.find(
+        {"$or": [{"kind": "user", "target_id": user_id}, {"target_user_id": user_id}]},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(50).to_list(length=50)
+    by = await db.reports.find(
+        {"reporter_id": user_id}, {"_id": 0},
+    ).sort("created_at", -1).limit(50).to_list(length=50)
+    return {"against": against, "by": by}
+
+
+@api2.get("/admin/users/{user_id}/sessions")
+async def admin_user_sessions(user_id: str, admin=Depends(require_admin)):
+    rows = await db.sessions.find(
+        {"user_id": user_id}, {"_id": 0},
+    ).sort("last_seen_at", -1).limit(50).to_list(length=50)
+    return {"items": rows}
+
+
+# ----------------- SYSTEM HEALTH -----------------
+
+@api2.get("/admin/health")
+async def admin_health(admin=Depends(require_admin)):
+    """Saúde do sistema: tamanhos de coleções, WS clients ativos, blacklist size."""
+    coll_names = [
+        "users", "posts", "comments", "stories", "highlights",
+        "messages", "conversations", "notifications", "reports",
+        "communities", "events", "sessions", "admin_audit",
+        "hashtag_blacklist", "bookmarks", "bookmark_collections",
+    ]
+    collections = {}
+    for name in coll_names:
+        try:
+            cnt = await db[name].count_documents({})
+            collections[name] = cnt
+        except Exception:
+            collections[name] = -1
+    # WS info
+    ws_clients = 0
+    ws_users = 0
+    viewers_total = 0
+    try:
+        if "ws_manager" in globals():
+            ws_users = len(ws_manager.active)
+            ws_clients = sum(len(v) for v in ws_manager.active.values())
+            viewers_total = sum(len(s) for s in ws_manager.viewers_by_post.values())
+    except Exception:
+        pass
+    # Blacklist size
+    bl_size = await db.hashtag_blacklist.count_documents({})
+    return {
+        "collections": collections,
+        "websocket": {
+            "users_connected": ws_users,
+            "sockets": ws_clients,
+            "post_viewers": viewers_total,
+        },
+        "hashtag_blacklist_size": bl_size,
+        "checked_at": now_iso(),
+    }
+
+
+# ----------------- EXPORT CSV -----------------
+
+def _csv_escape(v) -> str:
+    s = "" if v is None else str(v)
+    if any(c in s for c in [",", "\"", "\n", "\r"]):
+        return "\"" + s.replace("\"", "\"\"") + "\""
+    return s
+
+
+@api2.get("/admin/export/users.csv")
+async def admin_export_users_csv(admin=Depends(require_admin)):
+    headers = [
+        "id", "username", "email", "name", "verified", "is_admin", "banned",
+        "ban_reason", "private", "followers_count", "following_count",
+        "city", "created_at", "last_seen",
+    ]
+    lines = [",".join(headers)]
+    async for u in db.users.find({}, {"_id": 0, "password_hash": 0, "two_fa_secret": 0, "two_fa_backup_codes": 0}):
+        row = [
+            u.get("id", ""), u.get("username", ""), u.get("email", ""), u.get("name", ""),
+            "1" if u.get("verified") else "0",
+            "1" if u.get("is_admin") else "0",
+            "1" if u.get("banned") else "0",
+            u.get("ban_reason", "") if u.get("banned") else "",
+            "1" if u.get("private") else "0",
+            len(u.get("followers", []) or []),
+            len(u.get("following", []) or []),
+            u.get("city", ""),
+            u.get("created_at", ""),
+            u.get("last_seen", ""),
+        ]
+        lines.append(",".join(_csv_escape(v) for v in row))
+    await admin_audit(admin, "export.users", "export", "", {"rows": len(lines) - 1})
+    csv = "\n".join(lines)
+    from fastapi.responses import Response
+    return Response(
+        content=csv,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=lusorae_users.csv"},
+    )
+
+
+@api2.get("/admin/export/audit.csv")
+async def admin_export_audit_csv(admin=Depends(require_admin)):
+    headers = ["id", "created_at", "actor_username", "action", "target_kind", "target_id", "detail"]
+    lines = [",".join(headers)]
+    async for a in db.admin_audit.find({}, {"_id": 0}).sort("created_at", -1).limit(5000):
+        row = [
+            a.get("id", ""), a.get("created_at", ""), a.get("actor_username", ""),
+            a.get("action", ""), a.get("target_kind", ""), a.get("target_id", ""),
+            json.dumps(a.get("detail") or {}, ensure_ascii=False),
+        ]
+        lines.append(",".join(_csv_escape(v) for v in row))
+    await admin_audit(admin, "export.audit", "export", "", {"rows": len(lines) - 1})
+    csv = "\n".join(lines)
+    from fastapi.responses import Response
+    return Response(
+        content=csv,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=lusorae_audit.csv"},
+    )
 
 
 app.include_router(api2)

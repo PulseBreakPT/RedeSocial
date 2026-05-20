@@ -1489,8 +1489,14 @@ backend:
 
 test_plan:
   current_focus:
-    - "Live presence — GET /api/posts/activity-pulse (batched feed pulse)"
-    - "Live presence — GET /api/conversations/pulse (DMs activity)"
+    - "Admin Panel — Comments moderation (GET /admin/comments, DELETE /admin/comments/{id} with cascade)"
+    - "Admin Panel — Stories moderation (GET /admin/stories with filter, DELETE /admin/stories/{id})"
+    - "Admin Panel — Hashtags (GET /admin/hashtags, POST /admin/hashtags/{tag}/blacklist toggle, blacklist enforced in /trending + /posts/explore)"
+    - "Admin Panel — Broadcast (POST /admin/broadcast for each audience, GET /admin/broadcast/audience-count)"
+    - "Admin Panel — Bulk ops (POST /admin/users/bulk verify/unverify/ban/unban/force_logout; POST /admin/posts/bulk feature/unfeature/delete)"
+    - "Admin Panel — User detail drawer (GET /admin/users/{id}/posts, /comments, /reports, /sessions)"
+    - "Admin Panel — System health (GET /admin/health)"
+    - "Admin Panel — CSV exports (GET /admin/export/users.csv, /admin/export/audit.csv)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -1516,3 +1522,64 @@ agent_communication:
       The two NEW live-presence endpoints (posts/activity-pulse + conversations/pulse)
       remain in place and still need backend testing. For conversations/pulse you'll
       need to register a fresh admin (or any user) via POST /api/auth/register first.
+
+  - agent: "main"
+    message: |
+      ADMIN PANEL EXPANSION — 11 novos endpoints + 4 novos tabs + bulk ops.
+      Admin user auto-bootstrap: admin@lusorae.app / Admin#Lusorae2025 (criado em startup via ADMIN_EMAIL/ADMIN_PASSWORD em backend/.env).
+
+      NOVOS ENDPOINTS BACKEND (todos com require_admin + admin_audit):
+       • GET  /api/admin/comments?q&page&limit               — listagem com pesquisa
+       • DEL  /api/admin/comments/{id}                       — apaga + cascata de respostas + ajusta posts.comments_count + remove reports
+       • GET  /api/admin/stories?q&filter=active|expired|all — listagem com filtro temporal
+       • DEL  /api/admin/stories/{id}                        — apaga + remove de highlights
+       • GET  /api/admin/hashtags?q&filter=all|active|blacklisted — listagem com counts agregados + estado
+       • POST /api/admin/hashtags/{tag}/blacklist {reason}   — TOGGLE blacklist (idempotente: adiciona/remove)
+       • POST /api/admin/broadcast {text, audience, link, city} — cria notificações reais em db.notifications + push WS
+       • GET  /api/admin/broadcast/audience-count?audience&city — preview do nº destinatários
+       • POST /api/admin/users/bulk {ids, action, reason}    — verify/unverify/ban/unban/force_logout (max 200, skip self+admins em ban)
+       • POST /api/admin/posts/bulk {ids, action}            — feature/unfeature/delete (max 200, cascata em delete)
+       • GET  /api/admin/users/{id}/posts                    — posts do user (drawer)
+       • GET  /api/admin/users/{id}/comments                 — comments do user (drawer)
+       • GET  /api/admin/users/{id}/reports                  — reports against + by (drawer)
+       • GET  /api/admin/users/{id}/sessions                 — sessions do user (drawer)
+       • GET  /api/admin/health                              — collection sizes + WS clients + blacklist size
+       • GET  /api/admin/export/users.csv                    — CSV download (Content-Disposition)
+       • GET  /api/admin/export/audit.csv                    — CSV download (max 5000 rows)
+
+      ENFORCEMENT DE BLACKLIST (importante!):
+       • /api/trending: hashtags em db.hashtag_blacklist são FILTRADAS do output (não aparecem).
+       • /api/posts/explore: posts com qualquer hashtag em blacklist são EXCLUÍDOS da listagem.
+       • Posts continuam visíveis no perfil do autor (não destruídos).
+
+      AUDIT LOG: novas acções registadas — comment.delete, story.delete, hashtag.blacklist,
+      broadcast.send, user.bulk, post.bulk, export.users, export.audit.
+
+      NOVOS ÍNDICES: db.admin_audit (created_at, action, actor_id), db.hashtag_blacklist (tag unique),
+      db.comments (post_id, author_id), db.reports (status).
+
+      CASOS DE TESTE PRIORITÁRIOS para o testing agent:
+        1) Login admin (admin@lusorae.app / Admin#Lusorae2025) → todos os endpoints abaixo precisam Bearer token.
+        2) Hashtags blacklist:
+           a) Criar 2 posts com hashtag #spam_test e 1 com #ok_test (user normal).
+           b) POST /api/admin/hashtags/spam_test/blacklist → blacklisted=true.
+           c) GET /api/trending → spam_test NÃO aparece; ok_test aparece.
+           d) GET /api/posts/explore → posts com #spam_test NÃO aparecem; post com #ok_test aparece.
+           e) POST /api/admin/hashtags/spam_test/blacklist (de novo) → blacklisted=false (toggle).
+           f) GET /api/trending → spam_test volta a aparecer (se velocity permitir).
+        3) Comments cascade delete: criar post → 2 comments (A, B) → 1 reply ao A.
+           DELETE /api/admin/comments/{A.id} → deleted ≥ 2; post.comments_count desce.
+        4) Broadcast: GET /api/admin/broadcast/audience-count?audience=all → count = total users.
+           POST /api/admin/broadcast {text, audience=all, link='/trending'} → sent = count.
+           Verificar db.notifications: novos docs com type='broadcast' e extra.link='/trending'.
+        5) Bulk users: criar 3 users → POST /api/admin/users/bulk {ids:[3], action:'verify'} → updated=3,
+           todos verified=true. action:'ban' com admin no ids → skip do admin.
+        6) Bulk posts: criar 3 posts → action:'feature' → todos featured=true → action:'delete' → 3 apagados
+           e comments associados apagados.
+        7) User drawer endpoints: criar user com 1 post, 1 comment; GET /api/admin/users/{id}/posts → items≥1;
+           /comments → items≥1; /reports → {against:[], by:[]}; /sessions → items≥1 (após login).
+        8) Health: GET /api/admin/health → collections.users ≥ 1, websocket.users_connected ≥ 0, hashtag_blacklist_size matches.
+        9) Export CSV: GET /api/admin/export/users.csv → 200, content-type csv, primeira linha = headers,
+           audit.csv idem. Verificar audit log: export.users + export.audit registadas.
+       10) Auth: chamar qualquer endpoint /api/admin/* sem token → 401; com token de user NÃO admin → 403.
+
