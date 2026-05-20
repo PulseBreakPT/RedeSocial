@@ -25,6 +25,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
 
@@ -33,6 +34,25 @@ JWT_SECRET = os.environ["JWT_SECRET"]
 mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
+
+# ─── Deployment hardening config (read from env, with safe dev defaults) ───────
+# APP_ENV: "development" | "staging" | "production". Controls error verbosity,
+# cookie secure flag default, and CORS strictness.
+APP_ENV = os.environ.get("APP_ENV", "development").lower().strip()
+IS_PRODUCTION = APP_ENV in {"production", "prod"}
+
+# COOKIE_SECURE: forces Secure flag on auth cookies. Defaults to True in
+# production, False in dev (so local http:// testing still works).
+_cookie_secure_env = os.environ.get("COOKIE_SECURE")
+if _cookie_secure_env is None:
+    COOKIE_SECURE = IS_PRODUCTION
+else:
+    COOKIE_SECURE = _cookie_secure_env.lower().strip() in {"1", "true", "yes", "on"}
+
+# COOKIE_SAMESITE: "lax" (default), "strict" or "none". "none" requires Secure.
+COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower().strip()
+if COOKIE_SAMESITE not in {"lax", "strict", "none"}:
+    COOKIE_SAMESITE = "lax"
 
 app = FastAPI(title="Lusorae Social")
 api = APIRouter(prefix="/api")
@@ -43,6 +63,100 @@ _PROCESS_STARTED_AT_ISO = datetime.now(timezone.utc).isoformat()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("vermillion")
+
+
+# ─── Rate limiting (per-IP, in-memory) ────────────────────────────────────────
+# slowapi-backed. Defaults to a permissive limit globally; sensitive auth
+# endpoints get explicit, tighter @limiter.limit("…") decorators below.
+# Behind a proxy we honour X-Forwarded-For (first hop) — Kubernetes ingress
+# already strips/rewrites this so it's safe to trust the leftmost value.
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+
+def _real_ip(request: Request) -> str:
+    xff = request.headers.get("x-forwarded-for", "") or ""
+    if xff:
+        # First entry is the original client per RFC 7239 convention
+        return xff.split(",")[0].strip()
+    return get_remote_address(request)
+
+
+# storage_uri stays default (memory:) — fine for a single-replica MVP. For
+# multi-replica, switch to "redis://…" via RATE_LIMIT_STORAGE env var.
+limiter = Limiter(
+    key_func=_real_ip,
+    storage_uri=os.environ.get("RATE_LIMIT_STORAGE", "memory://"),
+    default_limits=[os.environ.get("RATE_LIMIT_DEFAULT", "300/minute")],
+    headers_enabled=True,
+)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    # Don't leak rate-limit internals; return a clean 429.
+    logger.info(f"⏱️  Rate limit hit on {request.method} {request.url.path} from {_real_ip(request)}")
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Demasiados pedidos. Tenta novamente daqui a pouco."},
+    )
+
+
+# ─── Global exception handler ─────────────────────────────────────────────────
+# Catches anything not converted to HTTPException. In production we return a
+# generic message so we don't leak stack traces / framework internals / SQL
+# errors / file paths. In dev we expose the type+message to ease debugging.
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception):
+    # HTTPException is handled by FastAPI's own handler with higher priority,
+    # so we only reach here on truly unexpected errors.
+    try:
+        path = request.url.path
+        method = request.method
+    except Exception:
+        path, method = "?", "?"
+    logger.exception(f"💥 Unhandled error on {method} {path}: {type(exc).__name__}: {exc}")
+    if IS_PRODUCTION:
+        return JSONResponse(status_code=500, content={"detail": "Erro interno do servidor"})
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__},
+    )
+
+
+# ─── Health & readiness probes (Kubernetes / load-balancer friendly) ──────────
+@api.get("/health")
+async def health_check():
+    """Liveness probe: the process is up. Does NOT touch the DB."""
+    return {
+        "status": "ok",
+        "service": "lusorae-backend",
+        "env": APP_ENV,
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "uptime_s": int(time.time() - _PROCESS_STARTED_AT),
+    }
+
+
+@api.get("/ready")
+async def readiness_check():
+    """Readiness probe: dependencies (MongoDB) are reachable. Returns 503 if not."""
+    checks = {"mongodb": False}
+    try:
+        await db.command("ping")
+        checks["mongodb"] = True
+    except Exception as e:
+        logger.warning(f"Readiness: MongoDB ping failed: {e}")
+    all_ok = all(checks.values())
+    return JSONResponse(
+        status_code=200 if all_ok else 503,
+        content={
+            "status": "ok" if all_ok else "degraded",
+            "checks": checks,
+            "ts": datetime.now(timezone.utc).isoformat(),
+        },
+    )
 
 HASHTAG_RE = re.compile(r"#([\wáéíóúâêîôûãõçÁÉÍÓÚÂÊÎÔÛÃÕÇ-]+)", re.UNICODE)
 MENTION_RE = re.compile(r"@([a-zA-Z0-9_]+)")
@@ -335,8 +449,8 @@ async def maybe_emit_login_alert(user: dict, request: Request) -> None:
 
 def set_auth_cookie(response: Response, token: str) -> None:
     response.set_cookie(
-        key="access_token", value=token, httponly=True, secure=False,
-        samesite="lax", max_age=60 * 60 * 24 * 7, path="/",
+        key="access_token", value=token, httponly=True, secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE, max_age=60 * 60 * 24 * 7, path="/",
     )
 
 
@@ -1005,17 +1119,17 @@ class ResetPasswordIn(BaseModel):
 
 
 class UpdateProfileIn(BaseModel):
-    name: Optional[str] = None
-    bio: Optional[str] = None
-    avatar: Optional[str] = None
-    banner: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=80)
+    bio: Optional[str] = Field(default=None, max_length=500)
+    avatar: Optional[str] = Field(default=None, max_length=5000)
+    banner: Optional[str] = Field(default=None, max_length=5000)
     private: Optional[bool] = None
     # PT identity / place graph
-    city: Optional[str] = None
-    freguesia: Optional[str] = None
-    region: Optional[str] = None
-    mood_initial: Optional[str] = None
-    team: Optional[str] = None
+    city: Optional[str] = Field(default=None, max_length=80)
+    freguesia: Optional[str] = Field(default=None, max_length=80)
+    region: Optional[str] = Field(default=None, max_length=40)
+    mood_initial: Optional[str] = Field(default=None, max_length=40)
+    team: Optional[str] = Field(default=None, max_length=40)
     # Bio slots (semantic profile fields, all optional)
     bio_slots: Optional[dict] = None  # {city, mood_today, soundtrack, reading, favourite_place, quote_of_month}
     # Healthy-mode preferences
@@ -1181,7 +1295,8 @@ class EventIn(BaseModel):
 # Auth
 # ============================================================
 @api.get("/auth/check-username")
-async def check_username(u: str = ""):
+@limiter.limit("30/minute")
+async def check_username(request: Request, response: Response, u: str = ""):
     """Public, unauthenticated endpoint used by the registration form to give
     real-time availability feedback on the player ID (username)."""
     raw = (u or "").strip()
@@ -1220,7 +1335,8 @@ _DISPOSABLE_DOMAINS = {
 
 
 @api.get("/auth/check-email")
-async def check_email(e: str = ""):
+@limiter.limit("30/minute")
+async def check_email(request: Request, response: Response, e: str = ""):
     """Public, unauthenticated endpoint that mirrors check-username for emails.
     Returns one of: empty | invalid | disposable | taken | available."""
     raw = (e or "").strip().lower()
@@ -1243,6 +1359,7 @@ async def check_email(e: str = ""):
 
 
 @api.post("/auth/register")
+@limiter.limit("5/minute")
 async def register(payload: RegisterIn, request: Request, response: Response):
     # Grupo A: signup_open feature flag (admins não passam aqui por isto ser registo).
     if not await is_feature_enabled("signup_open"):
@@ -1295,6 +1412,7 @@ async def register(payload: RegisterIn, request: Request, response: Response):
 
 
 @api.post("/auth/login")
+@limiter.limit("10/minute")
 async def login(payload: LoginIn, request: Request, response: Response):
     email = payload.email.lower()
     user = await db.users.find_one({"email": email})
@@ -1376,7 +1494,8 @@ async def me(request: Request):
 
 
 @api.post("/auth/forgot-password")
-async def forgot_password(payload: ForgotPasswordIn):
+@limiter.limit("5/minute")
+async def forgot_password(payload: ForgotPasswordIn, request: Request, response: Response):
     email = payload.email.lower()
     # B-015 — Try primary email first, then recovery_email
     user = await db.users.find_one({"email": email}, {"_id": 0})
@@ -1392,12 +1511,19 @@ async def forgot_password(payload: ForgotPasswordIn):
             "delivered_to": email, "via_recovery": used_recovery,
         })
         logger.info(f"🔐 Password reset token for {email} (via_recovery={used_recovery}): {token}")
+        # Security: NEVER expose the reset token in the API response — it would
+        # allow anyone to reset anyone's password just by hitting forgot-password.
+        # The token is delivered out-of-band (email in prod, logs in dev).
+        if IS_PRODUCTION:
+            return {"ok": True}
+        # In dev/staging we expose it only to ease local testing.
         return {"ok": True, "dev_token": token, "via_recovery": used_recovery}
     return {"ok": True}
 
 
 @api.post("/auth/reset-password")
-async def reset_password(payload: ResetPasswordIn):
+@limiter.limit("10/minute")
+async def reset_password(payload: ResetPasswordIn, request: Request, response: Response):
     rec = await db.password_resets.find_one({"token": payload.token, "used": False}, {"_id": 0})
     if not rec:
         raise HTTPException(400, "Token inválido")
@@ -7413,13 +7539,83 @@ async def ws_broadcast_activity(event_type: str, payload: dict):
 
 
 app.include_router(api)
+
+# ─── CORS (deploy-hardened) ────────────────────────────────────────────────────
+# CORS_ORIGINS must be a comma-separated list of explicit origins in production.
+# Browsers refuse the wildcard "*" combined with credentials, so when we detect
+# "*" we force allow_credentials=False to avoid silently broken CORS.
+_raw_cors_origins = os.environ.get("CORS_ORIGINS", "*")
+_cors_origins_list = [o.strip() for o in _raw_cors_origins.split(",") if o.strip()]
+_cors_allow_credentials = True
+if "*" in _cors_origins_list:
+    if IS_PRODUCTION:
+        logger.error(
+            "🔴 CORS_ORIGINS='*' in production is unsafe. Set CORS_ORIGINS to your explicit domains."
+        )
+    else:
+        logger.warning(
+            "⚠️  CORS_ORIGINS='*' with credentials=True is invalid; disabling credentials. "
+            "Set CORS_ORIGINS to explicit domains for production."
+        )
+    _cors_allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
+    allow_origins=_cors_origins_list or ["*"],
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Security headers middleware ──────────────────────────────────────────────
+# Best-practice headers for any API/SPA backend. Values picked to be safe by
+# default while not breaking the React SPA hosted on the same origin.
+#   - HSTS only emitted in production (HSTS over HTTP would be ignored anyway,
+#     but emitting it in dev can confuse local browsers with previous https sessions).
+#   - CSP defaults to report-only to avoid breaking any in-flight feature; can be
+#     flipped to enforce via CSP_ENFORCE=true.
+#   - Frame protection set to DENY (this is an API, never embedded).
+#   - X-Content-Type-Options: nosniff — disables MIME sniffing.
+_CSP_DEFAULT = (
+    "default-src 'self'; "
+    "img-src 'self' data: blob: https:; "
+    "media-src 'self' blob: https:; "
+    "font-src 'self' data: https:; "
+    "style-src 'self' 'unsafe-inline' https:; "
+    "script-src 'self'; "
+    "connect-src 'self' https: wss: ws:; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'"
+)
+CSP_POLICY = os.environ.get("CSP_POLICY", _CSP_DEFAULT)
+CSP_ENFORCE = os.environ.get("CSP_ENFORCE", "false").lower() in {"1", "true", "yes", "on"}
+HSTS_MAX_AGE = int(os.environ.get("HSTS_MAX_AGE", "31536000"))  # 1 year default
+
+
+@app.middleware("http")
+async def _security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    # Always-on hardening (cheap, broadly compatible)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()",
+    )
+    # HSTS — only meaningful (and only emitted) in production over HTTPS.
+    if IS_PRODUCTION:
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            f"max-age={HSTS_MAX_AGE}; includeSubDomains",
+        )
+    # CSP — report-only by default so we don't break in-flight features; flip
+    # CSP_ENFORCE=true once you've cleaned violations from the report endpoint.
+    header_name = "Content-Security-Policy" if CSP_ENFORCE else "Content-Security-Policy-Report-Only"
+    response.headers.setdefault(header_name, CSP_POLICY)
+    return response
 
 
 # ============================================================
@@ -11451,4 +11647,3 @@ async def admin_post_reports(post_id: str, admin=Depends(require_admin), limit: 
 
 
 app.include_router(api2)
-de_router(api2)
