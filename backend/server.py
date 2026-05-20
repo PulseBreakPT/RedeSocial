@@ -148,8 +148,9 @@ PT_BADGES_DEFS = [
 ]
 
 
-def normalize_images(payload_images, single_image) -> List[str]:
-    """Coalesce legacy `image` + new `images` array into a clean list."""
+def normalize_images(payload_images, single_image, max_images: Optional[int] = None) -> List[str]:
+    """Coalesce legacy `image` + new `images` array into a clean list.
+    max_images: override the global MAX_IMAGES_PER_POST (used for admin-set runtime limit)."""
     out: List[str] = []
     if payload_images:
         for s in payload_images:
@@ -157,7 +158,8 @@ def normalize_images(payload_images, single_image) -> List[str]:
                 out.append(s.strip())
     if single_image and isinstance(single_image, str) and single_image.strip() and single_image not in out:
         out.append(single_image.strip())
-    return out[:MAX_IMAGES_PER_POST]
+    cap = int(max_images) if max_images and max_images > 0 else MAX_IMAGES_PER_POST
+    return out[:cap]
 
 
 def build_poll(raw: Optional[dict]) -> Optional[dict]:
@@ -225,10 +227,11 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(user_id: str, email: str, jti: Optional[str] = None) -> str:
+def create_access_token(user_id: str, email: str, jti: Optional[str] = None, ttl_days: Optional[int] = None) -> str:
+    days = int(ttl_days) if ttl_days and ttl_days > 0 else 7
     payload = {
         "sub": user_id, "email": email, "type": "access",
-        "exp": datetime.now(timezone.utc) + timedelta(days=7),
+        "exp": datetime.now(timezone.utc) + timedelta(days=days),
     }
     if jti:
         payload["jti"] = jti
@@ -1058,7 +1061,7 @@ class DeleteAccountIn(BaseModel):
 
 
 class PostIn(BaseModel):
-    content: str = Field(min_length=0, max_length=500)
+    content: str = Field(min_length=0, max_length=10000)
     image: Optional[str] = ""
     images: Optional[List[str]] = None  # multi-image (up to 4)
     community_id: Optional[str] = None
@@ -1071,7 +1074,7 @@ class PostIn(BaseModel):
 
 
 class PostEditIn(BaseModel):
-    content: Optional[str] = Field(default=None, max_length=500)
+    content: Optional[str] = Field(default=None, max_length=10000)
     images: Optional[List[str]] = None  # only used when editing a draft / scheduled
     scheduled_at: Optional[str] = None  # rescheduling a scheduled post
 
@@ -1089,13 +1092,13 @@ class MessageReactIn(BaseModel):
 
 
 class CommentIn(BaseModel):
-    content: str = Field(min_length=1, max_length=300)
+    content: str = Field(min_length=1, max_length=5000)
     parent_id: Optional[str] = None  # for nested replies
 
 
 class MessageIn(BaseModel):
     to_user_id: str
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=10000)
 
 
 class StoryIn(BaseModel):
@@ -1241,6 +1244,9 @@ async def check_email(e: str = ""):
 
 @api.post("/auth/register")
 async def register(payload: RegisterIn, request: Request, response: Response):
+    # Grupo A: signup_open feature flag (admins não passam aqui por isto ser registo).
+    if not await is_feature_enabled("signup_open"):
+        raise HTTPException(503, SETTINGS_BY_KEY["signup_open"].get("off_message") or "Registos fechados")
     email = payload.email.lower()
     username = payload.username.lower().strip()
     if await db.users.find_one({"email": email}):
@@ -1280,7 +1286,8 @@ async def register(payload: RegisterIn, request: Request, response: Response):
     }
     await db.users.insert_one(user)
     jti = await create_session(user["id"], request, source="register")
-    token = create_access_token(user["id"], email, jti=jti)
+    _ttl = await get_limit("session_ttl_days")
+    token = create_access_token(user["id"], email, jti=jti, ttl_days=_ttl)
     set_auth_cookie(response, token)
     return {"user": public_user(user), "token": token}
 
@@ -1304,7 +1311,8 @@ async def login(payload: LoginIn, request: Request, response: Response):
     # B-014 — login alert before creating new session
     await maybe_emit_login_alert(user, request)
     jti = await create_session(user["id"], request, source="login")
-    token = create_access_token(user["id"], email, jti=jti)
+    _ttl = await get_limit("session_ttl_days")
+    token = create_access_token(user["id"], email, jti=jti, ttl_days=_ttl)
     set_auth_cookie(response, token)
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
     return {"user": public_user(user), "token": token}
@@ -2057,6 +2065,22 @@ async def complete_onboarding(user=Depends(get_current_user)):
 # ============================================================
 @api.post("/posts")
 async def create_post(payload: PostIn, user=Depends(get_current_user)):
+    # Grupo A: feature gates + read-only mode + global per-hour limit (admins bypass)
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("posts_enabled", user)
+    await _assert_global_hourly_limit(user, "posts")
+    # Dynamic char limit (Pydantic max is the cap; this enforces admin-set ceiling)
+    _img_cap = None
+    if not user.get("is_admin"):
+        _max_chars = await get_limit("max_post_chars")
+        if _max_chars and len((payload.content or "")) > _max_chars:
+            raise HTTPException(400, f"Publicação demasiado longa (máx {_max_chars} caracteres).")
+        if payload.poll and not await is_feature_enabled("polls_enabled"):
+            raise HTTPException(503, SETTINGS_BY_KEY["polls_enabled"].get("off_message"))
+        _has_imgs = bool(payload.images) or bool(payload.image)
+        if _has_imgs and not await is_feature_enabled("uploads_enabled"):
+            raise HTTPException(503, SETTINGS_BY_KEY["uploads_enabled"].get("off_message"))
+        _img_cap = await get_limit("max_images_per_post")
     # Admin restrictions: mute + rate-limit (real, not mocked)
     await _aassert_can_post(user)
     community_id = None
@@ -2072,7 +2096,7 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         # F4.2 — repost curado: requires meaningful context to reduce viral spam
         if len((payload.content or "").strip()) < 5:
             raise HTTPException(400, "Acrescenta pelo menos uma frase ao repostar (5+ caracteres). É a regra da casa: republicar exige contexto.")
-    images = normalize_images(payload.images, payload.image)
+    images = normalize_images(payload.images, payload.image, max_images=_img_cap)
     poll = build_poll(payload.poll) if payload.poll else None
     if not payload.content.strip() and not images and not poll and not payload.quote_of:
         raise HTTPException(400, "Publicação vazia")
@@ -2572,6 +2596,9 @@ async def vote_poll(post_id: str, payload: PostVoteIn, user=Depends(get_current_
 
 @api.post("/posts/{post_id}/react")
 async def react_post(post_id: str, payload: PostReactIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + reactions_enabled gates
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("reactions_enabled", user)
     if payload.emoji not in ALLOWED_REACTIONS:
         raise HTTPException(400, "Reação inválida")
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
@@ -2802,6 +2829,14 @@ async def list_comments(post_id: str, sort: str = "new", viewer: Optional[dict] 
 
 @api.post("/posts/{post_id}/comments")
 async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + comments_enabled + char limit + global per-hour limit
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("comments_enabled", user)
+    await _assert_global_hourly_limit(user, "comments")
+    if not user.get("is_admin"):
+        _max_c = await get_limit("max_comment_chars")
+        if _max_c and len((payload.content or "")) > _max_c:
+            raise HTTPException(400, f"Comentário demasiado longo (máx {_max_c} caracteres).")
     # Admin restrictions: mute + rate-limit + frozen + maintenance (real)
     await _aassert_can_comment(user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
@@ -3383,6 +3418,9 @@ async def _author_followers(author_id: str) -> list[str]:
 
 @api.post("/stories")
 async def create_story(payload: StoryIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + stories_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("stories_enabled", user)
     media_type = (payload.media_type or "image").lower()
     if media_type not in {"image", "video", "text"}:
         media_type = "image"
@@ -4718,6 +4756,14 @@ async def get_typing(other_user_id: str, user=Depends(get_current_user)):
 
 @api.post("/messages")
 async def send_message(payload: MessageIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + dm_enabled + char limit + global per-hour limit
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("dm_enabled", user)
+    await _assert_global_hourly_limit(user, "dms")
+    if not user.get("is_admin"):
+        _max_d = await get_limit("max_dm_chars")
+        if _max_d and len((payload.content or "")) > _max_d:
+            raise HTTPException(400, f"Mensagem demasiado longa (máx {_max_d} caracteres).")
     _assert_not_frozen(user)
     await _aassert_not_maintenance(user)
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
@@ -4760,6 +4806,9 @@ async def trending(range: str = "7d"):
     """Top hashtags com taxa de crescimento (velocity %) + temperatura social.
     range: 1h | 24h | 7d | 30d (default 7d). Hashtags em blacklist (gerida no
     painel admin) são excluídas do output."""
+    # Grupo A: trending_enabled feature flag
+    if not await is_feature_enabled("trending_enabled"):
+        return []
     hours = range_to_hours(range)
     now = datetime.now(timezone.utc)
     curr_cut = (now - timedelta(hours=hours)).isoformat()
@@ -7620,12 +7669,12 @@ async def post_relation(post_id: str, user=Depends(get_current_user)):
 # SSS — Messages: edit, mark unread, forward, send v2 (image/location/vibe), reply_to
 # ============================================================
 class MessageEditIn(BaseModel):
-    content: str = Field(min_length=1, max_length=2000)
+    content: str = Field(min_length=1, max_length=10000)
 
 
 class MessageInV2(BaseModel):
     to_user_id: str
-    content: Optional[str] = Field(default="", max_length=2000)
+    content: Optional[str] = Field(default="", max_length=10000)
     reply_to: Optional[str] = None
     kind: Optional[str] = "text"  # text | image | location | vibe | gif
     image: Optional[str] = ""
@@ -7674,6 +7723,14 @@ async def mark_conv_unread(other_user_id: str, user=Depends(get_current_user)):
 
 @api2.post("/messages/v2")
 async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
+    # Grupo A: read-only + dm_enabled + char limit + global per-hour limit
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("dm_enabled", user)
+    await _assert_global_hourly_limit(user, "dms")
+    if not user.get("is_admin"):
+        _max_d = await get_limit("max_dm_chars")
+        if _max_d and len((payload.content or "")) > _max_d:
+            raise HTTPException(400, f"Mensagem demasiado longa (máx {_max_d} caracteres).")
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
     if not other:
         raise HTTPException(404, "Utilizador não encontrado")
@@ -8355,6 +8412,324 @@ async def _aassert_not_maintenance(user: dict) -> None:
         raise HTTPException(status_code=503, detail=msg)
 
 
+# ============================================================
+# RUNTIME SETTINGS — Grupo A: Feature Flags + Limites globais
+# Persistido em db.system_config (doc key="runtime").
+# Cache em memória 5s para alta performance.
+# Cada flag/limite AFETA endpoints REAIS em runtime.
+# Admins fazem bypass de TODAS as flags para conseguirem testar.
+# ============================================================
+SETTINGS_REGISTRY = [
+    # ---------- FEATURE FLAGS (bool) ----------
+    {"key": "signup_open",        "group": "flags", "type": "bool", "default": True,
+     "label": "Registos abertos",
+     "description": "Quando desligado, ninguém se pode registar (POST /auth/register devolve 503).",
+     "applies_to": ["POST /api/auth/register"],
+     "off_message": "Os registos estão temporariamente fechados."},
+
+    {"key": "posts_enabled",      "group": "flags", "type": "bool", "default": True,
+     "label": "Criar publicações",
+     "description": "Quando desligado, ninguém (excepto admins) consegue criar novas publicações.",
+     "applies_to": ["POST /api/posts"],
+     "off_message": "A criação de publicações está temporariamente suspensa."},
+
+    {"key": "comments_enabled",   "group": "flags", "type": "bool", "default": True,
+     "label": "Comentários",
+     "description": "Quando desligado, ninguém consegue comentar publicações.",
+     "applies_to": ["POST /api/posts/{id}/comments"],
+     "off_message": "Os comentários estão temporariamente desativados."},
+
+    {"key": "dm_enabled",         "group": "flags", "type": "bool", "default": True,
+     "label": "Mensagens diretas (DMs)",
+     "description": "Quando desligado, ninguém consegue enviar DMs.",
+     "applies_to": ["POST /api/messages", "POST /api/messages/v2"],
+     "off_message": "As mensagens diretas estão temporariamente desativadas."},
+
+    {"key": "stories_enabled",    "group": "flags", "type": "bool", "default": True,
+     "label": "Stories",
+     "description": "Quando desligado, ninguém consegue publicar stories novas.",
+     "applies_to": ["POST /api/stories"],
+     "off_message": "As stories estão temporariamente desativadas."},
+
+    {"key": "reactions_enabled",  "group": "flags", "type": "bool", "default": True,
+     "label": "Reações emoji",
+     "description": "Quando desligado, ninguém consegue reagir com emoji a publicações.",
+     "applies_to": ["POST /api/posts/{id}/react"],
+     "off_message": "As reações estão temporariamente desativadas."},
+
+    {"key": "polls_enabled",      "group": "flags", "type": "bool", "default": True,
+     "label": "Sondagens em posts",
+     "description": "Quando desligado, novas publicações não podem incluir sondagem.",
+     "applies_to": ["POST /api/posts (campo poll)"],
+     "off_message": "As sondagens estão temporariamente desativadas."},
+
+    {"key": "uploads_enabled",    "group": "flags", "type": "bool", "default": True,
+     "label": "Uploads de imagens",
+     "description": "Quando desligado, publicações novas não podem incluir imagens.",
+     "applies_to": ["POST /api/posts (campo images)"],
+     "off_message": "Os uploads de imagens estão temporariamente desativados."},
+
+    {"key": "trending_enabled",   "group": "flags", "type": "bool", "default": True,
+     "label": "Tendências públicas",
+     "description": "Quando desligado, GET /trending devolve lista vazia (admin painel não afetado).",
+     "applies_to": ["GET /api/trending"],
+     "off_message": ""},
+
+    {"key": "read_only_mode",     "group": "flags", "type": "bool", "default": False,
+     "label": "Modo só-leitura global",
+     "description": "Quando LIGADO, bloqueia TODAS as escritas para não-admins (post, comment, DM, story, reação). Override mais forte que maintenance.",
+     "applies_to": ["TODAS as escritas"],
+     "off_message": "Plataforma em modo só-leitura. Tenta de novo em breve."},
+
+    # ---------- LIMITES (int) ----------
+    {"key": "max_post_chars",        "group": "limits", "type": "int", "default": 500,
+     "min": 50,   "max": 10000,
+     "label": "Caracteres máximos por post",
+     "description": "Limite de caracteres no conteúdo de uma publicação.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "max_comment_chars",     "group": "limits", "type": "int", "default": 300,
+     "min": 20,   "max": 5000,
+     "label": "Caracteres máximos por comentário",
+     "description": "Limite de caracteres num comentário.",
+     "applies_to": ["POST /api/posts/{id}/comments"]},
+
+    {"key": "max_dm_chars",          "group": "limits", "type": "int", "default": 2000,
+     "min": 50,   "max": 10000,
+     "label": "Caracteres máximos por DM",
+     "description": "Limite de caracteres numa mensagem direta.",
+     "applies_to": ["POST /api/messages", "POST /api/messages/v2"]},
+
+    {"key": "max_posts_per_hour",    "group": "limits", "type": "int", "default": 30,
+     "min": 1,    "max": 500,
+     "label": "Posts/hora por utilizador (global)",
+     "description": "Teto global de publicações por hora. O rate-limit individual de cada user (definido em Anti-spam) tem prioridade se for mais restritivo.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "max_comments_per_hour", "group": "limits", "type": "int", "default": 120,
+     "min": 1,    "max": 1000,
+     "label": "Comentários/hora por utilizador (global)",
+     "description": "Teto global de comentários por hora.",
+     "applies_to": ["POST /api/posts/{id}/comments"]},
+
+    {"key": "max_dms_per_hour",      "group": "limits", "type": "int", "default": 200,
+     "min": 1,    "max": 2000,
+     "label": "DMs/hora por utilizador (global)",
+     "description": "Teto global de mensagens diretas por hora.",
+     "applies_to": ["POST /api/messages", "POST /api/messages/v2"]},
+
+    {"key": "max_images_per_post",   "group": "limits", "type": "int", "default": 4,
+     "min": 1,    "max": 10,
+     "label": "Imagens máximas por post",
+     "description": "Número máximo de imagens anexadas a uma publicação.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "session_ttl_days",      "group": "limits", "type": "int", "default": 30,
+     "min": 1,    "max": 365,
+     "label": "Validade da sessão (dias)",
+     "description": "Quantos dias um token JWT/sessão fica válido (só afeta NOVAS sessões; tokens já emitidos mantêm o TTL original).",
+     "applies_to": ["POST /api/auth/login", "POST /api/auth/register"]},
+]
+
+DEFAULT_SETTINGS = {item["key"]: item["default"] for item in SETTINGS_REGISTRY}
+SETTINGS_BY_KEY = {item["key"]: item for item in SETTINGS_REGISTRY}
+
+_settings_cache: dict = {"loaded_at": 0.0, "values": dict(DEFAULT_SETTINGS), "doc": None}
+_SETTINGS_TTL = 5  # seconds
+
+
+async def reload_settings_cache():
+    """Re-read settings from db.system_config (key=runtime) into the in-memory cache."""
+    doc = await db.system_config.find_one({"key": "runtime"}, {"_id": 0}) or {}
+    values = dict(DEFAULT_SETTINGS)
+    overrides = (doc or {}).get("values") or {}
+    for k, v in overrides.items():
+        if k in DEFAULT_SETTINGS:
+            spec = SETTINGS_BY_KEY[k]
+            if spec["type"] == "bool":
+                values[k] = bool(v)
+            elif spec["type"] == "int":
+                try:
+                    values[k] = int(v)
+                except Exception:
+                    values[k] = spec["default"]
+    _settings_cache["values"] = values
+    _settings_cache["doc"] = doc
+    _settings_cache["loaded_at"] = time.time()
+    return values
+
+
+async def get_settings() -> dict:
+    if time.time() - _settings_cache["loaded_at"] >= _SETTINGS_TTL:
+        await reload_settings_cache()
+    return _settings_cache["values"]
+
+
+async def get_setting(key: str):
+    s = await get_settings()
+    return s.get(key, DEFAULT_SETTINGS.get(key))
+
+
+async def is_feature_enabled(key: str) -> bool:
+    return bool(await get_setting(key))
+
+
+async def get_limit(key: str) -> int:
+    return int(await get_setting(key) or 0)
+
+
+def _coerce_setting_value(key: str, raw):
+    """Validate + coerce a single setting value. Returns coerced or raises HTTPException."""
+    spec = SETTINGS_BY_KEY.get(key)
+    if not spec:
+        raise HTTPException(400, f"Definição desconhecida: {key}")
+    if spec["type"] == "bool":
+        if isinstance(raw, bool):
+            return raw
+        if isinstance(raw, (int, float)):
+            return bool(raw)
+        if isinstance(raw, str):
+            return raw.strip().lower() in {"1", "true", "yes", "on"}
+        raise HTTPException(400, f"{key} requer booleano")
+    if spec["type"] == "int":
+        try:
+            v = int(raw)
+        except Exception:
+            raise HTTPException(400, f"{key} requer inteiro")
+        mn, mx = spec.get("min"), spec.get("max")
+        if mn is not None and v < mn:
+            raise HTTPException(400, f"{key}: mínimo {mn}")
+        if mx is not None and v > mx:
+            raise HTTPException(400, f"{key}: máximo {mx}")
+        return v
+    raise HTTPException(400, f"Tipo desconhecido para {key}")
+
+
+async def update_settings(updates: dict, actor: dict) -> dict:
+    """Validate + persist + append to history. Returns {updated: {k: {from, to}}}."""
+    valid: dict = {}
+    for k, v in (updates or {}).items():
+        if k not in SETTINGS_BY_KEY:
+            continue
+        valid[k] = _coerce_setting_value(k, v)
+    if not valid:
+        return {"updated": {}}
+    doc = await db.system_config.find_one({"key": "runtime"}, {"_id": 0}) or {}
+    current = dict(doc.get("values") or {})
+    history = list(doc.get("history") or [])
+    changed: dict = {}
+    for k, v in valid.items():
+        prev = current.get(k, DEFAULT_SETTINGS.get(k))
+        if prev != v:
+            changed[k] = {"from": prev, "to": v}
+            current[k] = v
+    if not changed:
+        return {"updated": {}}
+    now = now_iso()
+    for k, ch in changed.items():
+        history.append({
+            "key": k, "from": ch["from"], "to": ch["to"],
+            "actor_id": actor.get("id"), "actor_username": actor.get("username"),
+            "at": now,
+        })
+    history = history[-50:]
+    await db.system_config.update_one(
+        {"key": "runtime"},
+        {"$set": {
+            "key": "runtime",
+            "values": current,
+            "history": history,
+            "updated_at": now,
+            "updated_by": actor.get("id"),
+        }},
+        upsert=True,
+    )
+    _settings_cache["loaded_at"] = 0.0  # invalidate
+    return {"updated": changed}
+
+
+async def reset_setting(key: str, actor: dict) -> dict:
+    """Remove key from overrides, reverting to default."""
+    spec = SETTINGS_BY_KEY.get(key)
+    if not spec:
+        raise HTTPException(404, "Definição desconhecida")
+    doc = await db.system_config.find_one({"key": "runtime"}, {"_id": 0}) or {}
+    current = dict(doc.get("values") or {})
+    if key not in current:
+        return {"reset": True, "already_default": True, "value": spec["default"]}
+    history = list(doc.get("history") or [])
+    history.append({
+        "key": key, "from": current.get(key), "to": spec["default"],
+        "actor_id": actor.get("id"), "actor_username": actor.get("username"),
+        "at": now_iso(), "reason": "reset",
+    })
+    current.pop(key, None)
+    await db.system_config.update_one(
+        {"key": "runtime"},
+        {"$set": {
+            "values": current,
+            "history": history[-50:],
+            "updated_at": now_iso(),
+            "updated_by": actor.get("id"),
+        }},
+        upsert=True,
+    )
+    _settings_cache["loaded_at"] = 0.0
+    return {"reset": True, "value": spec["default"]}
+
+
+# ---- Runtime gating helpers (used by write endpoints) ----
+async def _assert_feature_or_503(key: str, user: dict):
+    """Block non-admins if a feature flag is OFF. Admins bypass."""
+    if user and user.get("is_admin"):
+        return
+    spec = SETTINGS_BY_KEY.get(key)
+    if not spec:
+        return
+    if not await is_feature_enabled(key):
+        raise HTTPException(
+            status_code=503,
+            detail=spec.get("off_message") or "Funcionalidade temporariamente desativada.",
+        )
+
+
+async def _assert_writes_open(user: dict):
+    """Global read-only mode kill switch. Admins always bypass."""
+    if user and user.get("is_admin"):
+        return
+    if await is_feature_enabled("read_only_mode"):
+        raise HTTPException(
+            status_code=503,
+            detail=SETTINGS_BY_KEY["read_only_mode"].get("off_message")
+                   or "Plataforma em modo só-leitura.",
+        )
+
+
+async def _assert_global_hourly_limit(user: dict, kind: str):
+    """Enforce a global per-hour rate limit defined in system_config.
+    kind: posts | comments | dms . Admins bypass."""
+    if user and user.get("is_admin"):
+        return
+    kmap = {
+        "posts":    ("max_posts_per_hour",    db.posts,    {"author_id": user["id"]},  "publicações"),
+        "comments": ("max_comments_per_hour", db.comments, {"author_id": user["id"]},  "comentários"),
+        "dms":      ("max_dms_per_hour",      db.messages, {"sender_id": user["id"]},  "mensagens"),
+    }
+    if kind not in kmap:
+        return
+    limit_key, coll, filt, label = kmap[kind]
+    limit = await get_limit(limit_key)
+    if not limit or limit <= 0:
+        return
+    since = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    cnt = await coll.count_documents({**filt, "created_at": {"$gte": since}})
+    if cnt >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Limite global de {label} atingido ({limit}/hora). Tenta mais tarde.",
+        )
+
+
 async def _shadow_muted_ids_excluding(viewer_id: str) -> list[str]:
     """Returns IDs of users currently shadow-muted (excluding the viewer themselves
     — a shadow-muted user still sees their own content)."""
@@ -8426,6 +8801,65 @@ def _admin_post_card(p: dict, author: Optional[dict] = None) -> dict:
         "replies_frozen": bool(p.get("replies_frozen")),
         "reduce_reach": bool(p.get("reduce_reach")),
     }
+
+
+# ============================================================
+# ADMIN — RUNTIME SETTINGS (Grupo A): feature flags + limites
+# ============================================================
+class AdminSettingsPatchIn(BaseModel):
+    updates: dict
+
+
+class AdminSettingsResetIn(BaseModel):
+    key: Optional[str] = None
+    all: Optional[bool] = False
+
+
+@api2.get("/admin/settings")
+async def admin_get_settings(admin=Depends(require_admin)):
+    """Returns full registry + current values + last update info + history (tail 20)."""
+    values = await get_settings()
+    doc = await db.system_config.find_one({"key": "runtime"}, {"_id": 0}) or {}
+    overrides = doc.get("values") or {}
+    history = list(doc.get("history") or [])
+    return {
+        "registry": SETTINGS_REGISTRY,
+        "values": values,
+        "defaults": DEFAULT_SETTINGS,
+        "overrides": overrides,           # keys that have admin-set values (≠ default)
+        "updated_at": doc.get("updated_at"),
+        "updated_by": doc.get("updated_by"),
+        "history": history[-20:][::-1],   # newest first
+    }
+
+
+@api2.patch("/admin/settings")
+async def admin_patch_settings(payload: AdminSettingsPatchIn, admin=Depends(require_admin)):
+    """Bulk patch one or more settings. Validates types + min/max + appends history."""
+    if not isinstance(payload.updates, dict) or not payload.updates:
+        raise HTTPException(400, "updates obrigatório (dict)")
+    result = await update_settings(payload.updates, admin)
+    # Audit each individual change
+    for k, ch in (result.get("updated") or {}).items():
+        await admin_audit(admin, "settings.update", "setting", k, {"from": ch.get("from"), "to": ch.get("to")})
+    return result
+
+
+@api2.post("/admin/settings/reset")
+async def admin_reset_settings(payload: AdminSettingsResetIn, admin=Depends(require_admin)):
+    """Reset one setting to default (key=...) or reset ALL (all=True)."""
+    if payload.all:
+        doc = await db.system_config.find_one({"key": "runtime"}, {"_id": 0}) or {}
+        keys = list((doc.get("values") or {}).keys())
+        for k in keys:
+            await reset_setting(k, admin)
+            await admin_audit(admin, "settings.reset", "setting", k, {"to_default": DEFAULT_SETTINGS.get(k)})
+        return {"reset_count": len(keys), "keys": keys}
+    if not payload.key:
+        raise HTTPException(400, "key obrigatório (ou all=True)")
+    out = await reset_setting(payload.key, admin)
+    await admin_audit(admin, "settings.reset", "setting", payload.key, {"to_default": DEFAULT_SETTINGS.get(payload.key)})
+    return out
 
 
 @api2.get("/admin/stats")

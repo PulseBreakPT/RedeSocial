@@ -29,7 +29,8 @@ import {
     VolumeX, Ghost, Pause, Award, ShieldOff, KeyRound, Flag, ShieldAlert,
     Users2, Smartphone, Globe, Bell, ClipboardList, Inbox, Heart as HeartIcon,
     Snowflake, Power, TrendingDown, Wrench, Eraser, Lock, MessageCircle,
-    Menu, PanelLeftClose, PanelLeftOpen,
+    Menu, PanelLeftClose, PanelLeftOpen, Settings2, ToggleLeft, ToggleRight,
+    RotateCcw, Info,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -111,6 +112,7 @@ const NAV_GROUPS = [
     {
         label: "Sistema",
         items: [
+            { key: "settings",   label: "Definições", icon: Settings2 },
             { key: "system",     label: "Sistema",   icon: Server },
             { key: "audit",      label: "Audit log", icon: History },
         ],
@@ -2003,7 +2005,351 @@ const ACTION_LABELS = {
     "session.revoke": "Revogar sessão",
     "export.users": "Export utilizadores",
     "export.audit": "Export audit log",
+    "settings.update": "Definição alterada",
+    "settings.reset": "Definição reposta",
 };
+
+// -----------------------------------------------------------------
+// SETTINGS — Grupo A: Feature Flags + Limites Globais
+// Tudo real, persistido em db.system_config, afeta endpoints
+// em runtime. Cache 5s no servidor. Admins bypass todas as flags.
+// -----------------------------------------------------------------
+function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, saving }) {
+    const enabled = !!currentValue;
+    const isDestructiveOn = spec.key === "read_only_mode"; // ligar = mau (read-only global)
+    const goodWhen = isDestructiveOn ? !enabled : enabled;
+    return (
+        <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+            <div className="flex items-start gap-3">
+                <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => onChange(!enabled)}
+                    className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-emerald-500" : "bg-black/15"} ${saving ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
+                    aria-pressed={enabled}
+                    data-testid={`flag-${spec.key}`}
+                    title={enabled ? "Desligar" : "Ligar"}
+                >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="font-semibold text-[14px] text-black">{spec.label}</div>
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${goodWhen ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                            {enabled ? "Ligado" : "Desligado"}
+                        </span>
+                        {isOverride && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700" title="Valor alterado pelo admin (≠ default)">
+                                Custom
+                            </span>
+                        )}
+                    </div>
+                    <div className="text-[12px] text-black/55 mt-0.5">{spec.description}</div>
+                    {(spec.applies_to || []).length > 0 && (
+                        <div className="mt-1.5 text-[11px] text-black/40 font-mono">
+                            {spec.applies_to.slice(0, 3).join("  •  ")}
+                            {(spec.applies_to || []).length > 3 ? "  •  …" : ""}
+                        </div>
+                    )}
+                </div>
+                {isOverride && (
+                    <button
+                        type="button"
+                        onClick={onReset}
+                        disabled={saving}
+                        className="text-[11px] text-black/60 hover:text-black px-2 py-1 rounded-md hover:bg-black/[0.05] flex items-center gap-1"
+                        title={`Repor default (${spec.default ? "Ligado" : "Desligado"})`}
+                        data-testid={`flag-reset-${spec.key}`}
+                    >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Repor
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving }) {
+    const [local, setLocal] = useState(String(currentValue ?? spec.default));
+    useEffect(() => { setLocal(String(currentValue ?? spec.default)); }, [currentValue, spec.default]);
+    const dirty = String(currentValue) !== String(local);
+    const numVal = Number(local);
+    const valid = Number.isFinite(numVal) && numVal >= (spec.min ?? -Infinity) && numVal <= (spec.max ?? Infinity);
+    const commit = () => {
+        if (!dirty || !valid) return;
+        onChange(numVal);
+    };
+    return (
+        <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+            <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="font-semibold text-[14px] text-black">{spec.label}</div>
+                        {isOverride && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700" title="Valor alterado pelo admin (≠ default)">
+                                Custom
+                            </span>
+                        )}
+                    </div>
+                    <div className="text-[12px] text-black/55 mt-0.5">{spec.description}</div>
+                    <div className="text-[11px] text-black/40 mt-1">
+                        Mín: <b>{spec.min}</b> · Máx: <b>{spec.max}</b> · Default: <b>{spec.default}</b>
+                    </div>
+                    {(spec.applies_to || []).length > 0 && (
+                        <div className="mt-1 text-[11px] text-black/40 font-mono">
+                            {spec.applies_to.slice(0, 3).join("  •  ")}
+                            {(spec.applies_to || []).length > 3 ? "  •  …" : ""}
+                        </div>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <input
+                        type="number"
+                        value={local}
+                        min={spec.min}
+                        max={spec.max}
+                        onChange={(e) => setLocal(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
+                        disabled={saving}
+                        className={`w-24 px-2.5 py-1.5 rounded-lg border text-[13px] font-mono text-right ${valid ? "border-black/15 focus:border-black/40" : "border-red-400 focus:border-red-500"} bg-white disabled:opacity-60`}
+                        data-testid={`limit-input-${spec.key}`}
+                    />
+                    <button
+                        type="button"
+                        onClick={commit}
+                        disabled={saving || !dirty || !valid}
+                        className={`text-[12px] px-3 py-1.5 rounded-lg font-medium transition-colors ${dirty && valid ? "bg-black text-white hover:bg-black/85" : "bg-black/[0.06] text-black/30 cursor-not-allowed"}`}
+                        data-testid={`limit-save-${spec.key}`}
+                    >
+                        Guardar
+                    </button>
+                    {isOverride && (
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            disabled={saving}
+                            className="text-[11px] text-black/60 hover:text-black px-2 py-1 rounded-md hover:bg-black/[0.05] flex items-center gap-1"
+                            title={`Repor default (${spec.default})`}
+                            data-testid={`limit-reset-${spec.key}`}
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Repor
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SettingsTab() {
+    const [data, setData] = useState(null);  // {registry, values, defaults, overrides, history}
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [reloadAt, setReloadAt] = useState(Date.now());
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/admin/settings");
+            setData(res.data);
+        } catch (e) { apiError(e); }
+        finally { setLoading(false); }
+    }, []);
+    useEffect(() => { load(); }, [load, reloadAt]);
+
+    const patchOne = async (key, value) => {
+        setSaving(true);
+        try {
+            const res = await api.patch("/admin/settings", { updates: { [key]: value } });
+            const updated = res.data?.updated || {};
+            if (Object.keys(updated).length === 0) {
+                toast.message("Sem alterações");
+            } else {
+                const ch = updated[key];
+                const lbl = data?.registry?.find((s) => s.key === key)?.label || key;
+                toast.success(`${lbl}: ${formatVal(ch.from)} → ${formatVal(ch.to)}`);
+            }
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); }
+        finally { setSaving(false); }
+    };
+
+    const resetOne = async (key) => {
+        const ok = await confirmDialog({
+            title: "Repor default",
+            message: `Queres mesmo repor "${data?.registry?.find(s => s.key === key)?.label || key}" para o valor default?`,
+            confirmLabel: "Repor",
+        });
+        if (!ok) return;
+        setSaving(true);
+        try {
+            await api.post("/admin/settings/reset", { key });
+            toast.success("Reposto para default");
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); }
+        finally { setSaving(false); }
+    };
+
+    const resetAll = async () => {
+        const ok = await confirmDialog({
+            title: "Repor TUDO",
+            message: "Vais repor todas as definições alteradas para os valores default. Continuar?",
+            confirmLabel: "Repor tudo",
+            destructive: true,
+        });
+        if (!ok) return;
+        setSaving(true);
+        try {
+            const res = await api.post("/admin/settings/reset", { all: true });
+            toast.success(`${res.data?.reset_count || 0} definição(ões) reposta(s)`);
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); }
+        finally { setSaving(false); }
+    };
+
+    if (loading && !data) {
+        return <div className="flex items-center justify-center py-16 text-black/45"><Loader2 className="animate-spin" /></div>;
+    }
+    if (!data) return null;
+
+    const flags = (data.registry || []).filter((s) => s.group === "flags");
+    const limits = (data.registry || []).filter((s) => s.group === "limits");
+    const overrideKeys = Object.keys(data.overrides || {});
+    const totalCustom = overrideKeys.length;
+
+    return (
+        <div className="space-y-5">
+            {/* Header */}
+            <div className="bg-white border border-black/[0.06] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-[var(--coral-500)]/10 flex items-center justify-center shrink-0">
+                        <Settings2 className="h-5 w-5 text-[var(--coral-500)]" />
+                    </div>
+                    <div>
+                        <div className="font-display text-[20px] leading-tight text-black">Definições da Plataforma</div>
+                        <div className="text-[12px] text-black/55 mt-0.5">
+                            Feature flags + limites globais. Aplicam-se em runtime (cache 5s). Admins fazem bypass de todas as flags para conseguirem testar.
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-[11px] text-black/45 font-mono whitespace-nowrap">
+                        {totalCustom > 0 ? `${totalCustom} customizada(s)` : "todas em default"}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setReloadAt(Date.now())}
+                        disabled={saving || loading}
+                        className="h-9 px-3 rounded-lg border border-black/10 text-[12px] text-black/70 hover:bg-black/[0.04] flex items-center gap-1.5"
+                        title="Recarregar"
+                    >
+                        <RefreshCcw className="h-3.5 w-3.5" />
+                    </button>
+                    {totalCustom > 0 && (
+                        <button
+                            type="button"
+                            onClick={resetAll}
+                            disabled={saving}
+                            className="h-9 px-3 rounded-lg border border-red-200 text-[12px] text-red-600 hover:bg-red-50 flex items-center gap-1.5"
+                            data-testid="settings-reset-all"
+                        >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            Repor tudo
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* FEATURE FLAGS */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                    <ToggleRight className="h-3.5 w-3.5" />
+                    Feature Flags <span className="text-black/30">({flags.length})</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+                    {flags.map((spec) => (
+                        <FeatureFlagRow
+                            key={spec.key}
+                            spec={spec}
+                            currentValue={data.values?.[spec.key]}
+                            isOverride={spec.key in (data.overrides || {})}
+                            onChange={(v) => patchOne(spec.key, v)}
+                            onReset={() => resetOne(spec.key)}
+                            saving={saving}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* LIMITES */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                    <Gauge className="h-3.5 w-3.5" />
+                    Limites Globais <span className="text-black/30">({limits.length})</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+                    {limits.map((spec) => (
+                        <LimitRow
+                            key={spec.key}
+                            spec={spec}
+                            currentValue={data.values?.[spec.key]}
+                            isOverride={spec.key in (data.overrides || {})}
+                            onChange={(v) => patchOne(spec.key, v)}
+                            onReset={() => resetOne(spec.key)}
+                            saving={saving}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* HISTÓRICO */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                    <History className="h-3.5 w-3.5" />
+                    Histórico de alterações <span className="text-black/30">(últimas {(data.history || []).length})</span>
+                </div>
+                <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden shadow-sm">
+                    {(data.history || []).length === 0 ? (
+                        <div className="px-4 py-8 text-center text-[13px] text-black/45 flex flex-col items-center gap-2">
+                            <Info className="h-5 w-5 text-black/30" />
+                            Sem alterações registadas ainda.
+                        </div>
+                    ) : (
+                        <ul className="divide-y divide-black/[0.05]">
+                            {(data.history || []).map((h, i) => {
+                                const label = data.registry?.find((s) => s.key === h.key)?.label || h.key;
+                                return (
+                                    <li key={i} className="px-4 py-2.5 flex items-center justify-between gap-3 text-[12.5px]">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-black font-medium truncate">{label}</div>
+                                            <div className="text-[11px] text-black/45 font-mono">
+                                                {formatVal(h.from)} → <b className="text-black/80">{formatVal(h.to)}</b>
+                                                {h.reason === "reset" && <span className="ml-2 text-amber-600">(reset)</span>}
+                                            </div>
+                                        </div>
+                                        <div className="text-[11px] text-black/50 text-right whitespace-nowrap">
+                                            <div>@{h.actor_username || "?"}</div>
+                                            <div className="text-black/35">{fmtRelative(h.at)}</div>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function formatVal(v) {
+    if (v === true) return "Ligado";
+    if (v === false) return "Desligado";
+    if (v == null) return "—";
+    return String(v);
+}
 
 function AuditTab() {
     const [action, setAction] = useState("");
@@ -3730,6 +4076,7 @@ export default function Admin() {
                     {tab === "communities" && <CommunitiesTab />}
                     {tab === "events" && <EventsTab />}
                     {tab === "sessions" && <SessionsTab />}
+                    {tab === "settings" && <SettingsTab />}
                     {tab === "audit" && <AuditTab />}
                 </div>
             </main>
