@@ -29,6 +29,7 @@ import {
     VolumeX, Ghost, Pause, Award, ShieldOff, KeyRound, Flag, ShieldAlert,
     Users2, Smartphone, Globe, Bell, ClipboardList, Inbox, Heart as HeartIcon,
     Snowflake, Power, TrendingDown, Wrench, Eraser, Lock, MessageCircle,
+    Menu, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -71,22 +72,54 @@ const apiError = (e) => {
 // -----------------------------------------------------------------
 // Tab nav
 // -----------------------------------------------------------------
-const TABS = [
-    { key: "overview", label: "Visão geral", icon: Activity },
-    { key: "system", label: "Sistema", icon: Server },
-    { key: "users", label: "Utilizadores", icon: UsersIcon },
-    { key: "posts", label: "Publicações", icon: FileText },
-    { key: "comments", label: "Comentários", icon: MessageSquare },
-    { key: "stories", label: "Stories", icon: Sparkles },
-    { key: "hashtags", label: "Hashtags", icon: Hash },
-    { key: "reports", label: "Reports", icon: AlertTriangle },
-    { key: "antispam", label: "Anti-spam", icon: ShieldAlert },
-    { key: "broadcast", label: "Broadcast", icon: Megaphone },
-    { key: "communities", label: "Comunidades", icon: Layers },
-    { key: "events", label: "Eventos", icon: CalendarDays },
-    { key: "sessions", label: "Sessões", icon: LogOut },
-    { key: "audit", label: "Audit log", icon: History },
+// -----------------------------------------------------------------
+// NAV GROUPS — categorias ordenadas por importância (top → bottom)
+// -----------------------------------------------------------------
+const NAV_GROUPS = [
+    {
+        label: "Operações",
+        items: [
+            { key: "overview",   label: "Visão geral", icon: Activity },
+            { key: "antispam",   label: "Anti-spam",   icon: ShieldAlert },
+            { key: "reports",    label: "Reports",     icon: AlertTriangle, badge: "reports" },
+        ],
+    },
+    {
+        label: "Pessoas",
+        items: [
+            { key: "users",      label: "Utilizadores", icon: UsersIcon },
+            { key: "sessions",   label: "Sessões",      icon: LogOut },
+        ],
+    },
+    {
+        label: "Conteúdo",
+        items: [
+            { key: "posts",      label: "Publicações", icon: FileText },
+            { key: "comments",   label: "Comentários", icon: MessageSquare },
+            { key: "stories",    label: "Stories",     icon: Sparkles },
+            { key: "hashtags",   label: "Hashtags",    icon: Hash },
+        ],
+    },
+    {
+        label: "Plataforma",
+        items: [
+            { key: "broadcast",   label: "Broadcast",   icon: Megaphone },
+            { key: "communities", label: "Comunidades", icon: Layers },
+            { key: "events",      label: "Eventos",     icon: CalendarDays },
+        ],
+    },
+    {
+        label: "Sistema",
+        items: [
+            { key: "system",     label: "Sistema",   icon: Server },
+            { key: "audit",      label: "Audit log", icon: History },
+        ],
+    },
 ];
+
+// Flat lookup helpers
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+const NAV_KEY_TO_ITEM = ALL_NAV_ITEMS.reduce((acc, it) => { acc[it.key] = it; return acc; }, {});
 
 // -----------------------------------------------------------------
 // Sparkline (inline SVG, no libs)
@@ -3429,6 +3462,155 @@ function ActivityRow({ u, count, unit = "", onClick }) {
 
 
 // -----------------------------------------------------------------
+// SIDEBAR — fixed on desktop, collapsible, mobile-drawer
+// -----------------------------------------------------------------
+function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
+    // Auto-close mobile drawer on selection
+    const choose = useCallback((k) => {
+        setTab(k);
+        setMobileOpen(false);
+    }, [setTab, setMobileOpen]);
+
+    // Close mobile drawer with Escape
+    useEffect(() => {
+        if (!mobileOpen) return undefined;
+        const onKey = (e) => { if (e.key === "Escape") setMobileOpen(false); };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [mobileOpen, setMobileOpen]);
+
+    return (
+        <>
+            {/* Mobile overlay */}
+            <div
+                onClick={() => setMobileOpen(false)}
+                aria-hidden={!mobileOpen}
+                className={`fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[55] lg:hidden transition-opacity duration-200 ${
+                    mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                data-testid="admin-sidebar-overlay"
+            />
+            <aside
+                data-testid="admin-sidebar"
+                aria-label="Navegação do painel admin"
+                className={`
+                    fixed lg:sticky top-0 lg:top-14 left-0 z-[60] lg:z-10
+                    h-screen lg:h-[calc(100vh-3.5rem)]
+                    bg-white border-r border-black/[0.06]
+                    flex flex-col
+                    transition-[transform,width] duration-300 ease-out
+                    w-[256px]
+                    ${collapsed ? "lg:w-[64px]" : "lg:w-[232px]"}
+                    ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+                    shrink-0
+                `}
+            >
+                {/* Mobile-only top brand + close */}
+                <div className="lg:hidden flex items-center gap-2 px-3 h-14 border-b border-black/[0.06]">
+                    <span className="w-8 h-8 rounded-xl bg-black text-white grid place-items-center shrink-0">
+                        <Shield size={15} />
+                    </span>
+                    <span className="font-display text-[15px] tracking-tight flex-1 truncate">Admin</span>
+                    <button
+                        onClick={() => setMobileOpen(false)}
+                        aria-label="Fechar navegação"
+                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/65"
+                        data-testid="admin-sidebar-mobile-close"
+                    ><XIcon size={16} /></button>
+                </div>
+
+                {/* Scrollable list */}
+                <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 no-scrollbar">
+                    {NAV_GROUPS.map((group) => (
+                        <div key={group.label} className="mb-3 last:mb-1">
+                            <div
+                                aria-hidden={collapsed}
+                                className={`px-2.5 mb-1 text-[10px] uppercase tracking-[0.12em] font-mono text-black/40 transition-opacity duration-200 ${
+                                    collapsed ? "lg:opacity-0 lg:h-0 lg:overflow-hidden lg:mb-0" : "opacity-100"
+                                }`}
+                            >{group.label}</div>
+                            <ul className="space-y-0.5">
+                                {group.items.map((it) => {
+                                    const Icon = it.icon;
+                                    const active = tab === it.key;
+                                    const showBadge = it.badge === "reports" && openReports != null && openReports > 0;
+                                    return (
+                                        <li key={it.key}>
+                                            <button
+                                                onClick={() => choose(it.key)}
+                                                data-testid={`admin-nav-${it.key}`}
+                                                title={collapsed ? it.label : undefined}
+                                                aria-label={it.label}
+                                                aria-current={active ? "page" : undefined}
+                                                className={`
+                                                    w-full group relative
+                                                    h-10 rounded-xl flex items-center gap-2.5
+                                                    text-[13px] font-medium
+                                                    transition-colors duration-150
+                                                    ${collapsed ? "lg:px-0 lg:justify-center px-2.5" : "px-2.5"}
+                                                    ${active
+                                                        ? "bg-black text-white shadow-sm"
+                                                        : "text-black/70 hover:bg-black/[0.05] hover:text-black"}
+                                                `}
+                                            >
+                                                {/* Active rail */}
+                                                {active && !collapsed && (
+                                                    <span aria-hidden className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-white/70 lg:hidden" />
+                                                )}
+                                                <span className={`grid place-items-center w-5 h-5 shrink-0 ${active ? "" : "text-black/55 group-hover:text-black"}`}>
+                                                    <Icon size={16} />
+                                                </span>
+                                                <span className={`flex-1 text-left truncate transition-[opacity,max-width] duration-200 ${
+                                                    collapsed ? "lg:opacity-0 lg:max-w-0 lg:overflow-hidden" : "opacity-100 max-w-[180px]"
+                                                }`}>{it.label}</span>
+                                                {showBadge && (
+                                                    <span
+                                                        data-testid={it.key === "reports" ? "admin-reports-badge" : undefined}
+                                                        className={`
+                                                            min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-semibold
+                                                            inline-flex items-center justify-center shrink-0
+                                                            ${active ? "bg-white text-black" : "bg-red-500 text-white"}
+                                                            ${collapsed ? "lg:absolute lg:top-1 lg:right-1 lg:min-w-[14px] lg:h-[14px] lg:text-[9px]" : ""}
+                                                        `}
+                                                    >{openReports > 99 ? "99+" : openReports}</span>
+                                                )}
+                                                {/* Tooltip on collapsed (desktop only) */}
+                                                {collapsed && (
+                                                    <span className="hidden lg:group-hover:block absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg bg-black text-white text-[11.5px] whitespace-nowrap pointer-events-none z-50 shadow-lg">
+                                                        {it.label}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    ))}
+                </nav>
+
+                {/* Footer: collapse toggle (desktop only) */}
+                <div className="hidden lg:flex border-t border-black/[0.06] p-2">
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        data-testid="admin-sidebar-collapse"
+                        aria-label={collapsed ? "Expandir navegação" : "Colapsar navegação"}
+                        title={collapsed ? "Expandir" : "Colapsar"}
+                        className={`w-full h-9 rounded-xl text-black/55 hover:text-black hover:bg-black/[0.05] inline-flex items-center gap-2 text-[12px] transition-colors ${
+                            collapsed ? "justify-center" : "px-2.5"
+                        }`}
+                    >
+                        {collapsed
+                            ? <PanelLeftOpen size={15} />
+                            : <><PanelLeftClose size={15} /><span>Colapsar</span></>}
+                    </button>
+                </div>
+            </aside>
+        </>
+    );
+}
+
+// -----------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------
 export default function Admin() {
@@ -3436,6 +3618,34 @@ export default function Admin() {
     const [tab, setTab] = useState("overview");
     const [drawerUser, setDrawerUser] = useState(null);
     const [openReports, setOpenReports] = useState(null);
+    const [collapsed, setCollapsed] = useState(() => {
+        try { return localStorage.getItem("admin.sidebar.collapsed") === "1"; }
+        catch { return false; }
+    });
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Persist collapse state
+    useEffect(() => {
+        try { localStorage.setItem("admin.sidebar.collapsed", collapsed ? "1" : "0"); }
+        catch { /* ignore */ }
+    }, [collapsed]);
+
+    // Lock body scroll while mobile drawer is open
+    useEffect(() => {
+        if (!mobileOpen) return undefined;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = prev; };
+    }, [mobileOpen]);
+
+    // Close mobile drawer when crossing to desktop
+    useEffect(() => {
+        const onResize = () => {
+            if (window.innerWidth >= 1024) setMobileOpen(false);
+        };
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
 
     // Poll open reports count for badge
     useEffect(() => {
@@ -3459,66 +3669,70 @@ export default function Admin() {
         return <Navigate to="/" replace />;
     }
 
+    const currentItem = NAV_KEY_TO_ITEM[tab] || NAV_KEY_TO_ITEM.overview;
+    const CurrentIcon = currentItem.icon;
+
     return (
-        <div className="w-full max-w-5xl mx-auto px-2.5 sm:px-5 py-3 sm:py-5" data-testid="admin-page">
-            <header className="mb-3 sm:mb-5">
-                <div className="flex items-start sm:items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-2xl grid place-items-center bg-black text-white shrink-0">
-                        <Shield size={18} />
+        <div className="flex w-full min-h-[calc(100vh-3.5rem)]" data-testid="admin-page">
+            <AdminSidebar
+                tab={tab} setTab={setTab}
+                openReports={openReports}
+                collapsed={collapsed} setCollapsed={setCollapsed}
+                mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}
+            />
+
+            <main className="flex-1 min-w-0 flex flex-col" data-testid="admin-main-content">
+                {/* MOBILE sub-header — hamburger + current section */}
+                <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur-xl border-b border-black/[0.06] h-12 flex items-center gap-2 px-3"
+                    data-testid="admin-mobile-subheader">
+                    <button
+                        onClick={() => setMobileOpen(true)}
+                        aria-label="Abrir navegação"
+                        className="w-9 h-9 -ml-1 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/70"
+                        data-testid="admin-mobile-menu"
+                    ><Menu size={18} /></button>
+                    <span className="w-7 h-7 rounded-lg bg-black/[0.05] grid place-items-center text-black/65 shrink-0">
+                        <CurrentIcon size={14} />
                     </span>
-                    <div className="min-w-0">
-                        <h1 className="font-display text-[18px] sm:text-[26px] leading-tight tracking-tight">Painel administrativo</h1>
-                        <p className="text-[11.5px] sm:text-[12.5px] text-black/55 mt-0.5 sm:mt-1">
-                            <span className="hidden sm:inline">Logado como </span>
-                            <strong>@{user.username}</strong>
-                            <span className="hidden sm:inline"> · todas as acções ficam registadas no audit log.</span>
-                        </p>
-                    </div>
+                    <span className="font-display text-[15px] tracking-tight truncate flex-1">{currentItem.label}</span>
+                    {tab === "reports" && openReports != null && openReports > 0 && (
+                        <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-red-500 text-white text-[10.5px] font-mono font-semibold inline-flex items-center justify-center shrink-0">
+                            {openReports > 99 ? "99+" : openReports}
+                        </span>
+                    )}
                 </div>
-            </header>
 
-            <nav className="mb-3 sm:mb-5 overflow-x-auto no-scrollbar -mx-2.5 sm:-mx-1 px-2.5 sm:px-1" data-testid="admin-tabs">
-                <div className="inline-flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
-                    {TABS.map((t) => {
-                        const Icon = t.icon;
-                        const active = tab === t.key;
-                        const showBadge = t.key === "reports" && openReports != null && openReports > 0;
-                        return (
-                            <button key={t.key} onClick={() => setTab(t.key)}
-                                data-testid={`admin-tab-${t.key}`}
-                                className={`h-9 pl-2.5 pr-3 sm:pl-3 sm:pr-3.5 rounded-full inline-flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium whitespace-nowrap transition relative ${
-                                    active ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"
-                                }`}>
-                                <Icon size={14} /> {t.label}
-                                {showBadge && (
-                                    <span
-                                        data-testid="admin-reports-badge"
-                                        className={`ml-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-semibold inline-flex items-center justify-center ${active ? "bg-white text-black" : "bg-red-500 text-white"}`}>
-                                        {openReports > 99 ? "99+" : openReports}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
+                {/* DESKTOP breadcrumb — slim context line (sections já têm h2 próprio) */}
+                <div className="hidden lg:flex items-center gap-1.5 px-6 xl:px-8 pt-5 pb-1 text-[11px] font-mono text-black/40 uppercase tracking-[0.14em]"
+                    data-testid="admin-desktop-header">
+                    <Shield size={11} />
+                    <span>Painel</span>
+                    <ChevronRight size={11} />
+                    <CurrentIcon size={11} />
+                    <span className="text-black/65">{currentItem.label}</span>
+                    <span className="ml-auto normal-case tracking-normal">
+                        @{user.username}
+                    </span>
                 </div>
-            </nav>
 
-            <div data-testid={`admin-tab-content-${tab}`}>
-                {tab === "overview" && <OverviewTab onNavigate={setTab} />}
-                {tab === "system" && <SystemTab />}
-                {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
-                {tab === "posts" && <PostsTab />}
-                {tab === "comments" && <CommentsTab />}
-                {tab === "stories" && <StoriesTab />}
-                {tab === "hashtags" && <HashtagsTab />}
-                {tab === "reports" && <ReportsTab onOpenUser={setDrawerUser} />}
-                {tab === "antispam" && <AntiSpamTab onOpenDrawer={setDrawerUser} />}
-                {tab === "broadcast" && <BroadcastTab />}
-                {tab === "communities" && <CommunitiesTab />}
-                {tab === "events" && <EventsTab />}
-                {tab === "sessions" && <SessionsTab />}
-                {tab === "audit" && <AuditTab />}
-            </div>
+                <div className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 lg:py-4"
+                    data-testid={`admin-tab-content-${tab}`}>
+                    {tab === "overview" && <OverviewTab onNavigate={setTab} />}
+                    {tab === "system" && <SystemTab />}
+                    {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
+                    {tab === "posts" && <PostsTab />}
+                    {tab === "comments" && <CommentsTab />}
+                    {tab === "stories" && <StoriesTab />}
+                    {tab === "hashtags" && <HashtagsTab />}
+                    {tab === "reports" && <ReportsTab onOpenUser={setDrawerUser} />}
+                    {tab === "antispam" && <AntiSpamTab onOpenDrawer={setDrawerUser} />}
+                    {tab === "broadcast" && <BroadcastTab />}
+                    {tab === "communities" && <CommunitiesTab />}
+                    {tab === "events" && <EventsTab />}
+                    {tab === "sessions" && <SessionsTab />}
+                    {tab === "audit" && <AuditTab />}
+                </div>
+            </main>
 
             {drawerUser && <UserDrawer user={drawerUser} onClose={() => setDrawerUser(null)} />}
         </div>
