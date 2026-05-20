@@ -16,7 +16,7 @@
  *   - Sessions      (revoke individual)
  *   - Audit log     (filterable history of admin actions)
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -28,6 +28,7 @@ import {
     Server, Database, Cpu, Bug, FileCode, Clock, Zap, Gauge, Wifi,
     VolumeX, Ghost, Pause, Award, ShieldOff, KeyRound, Flag, ShieldAlert,
     Users2, Smartphone, Globe, Bell, ClipboardList, Inbox, Heart as HeartIcon,
+    Snowflake, Power, TrendingDown, Wrench, Eraser, Lock, MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -79,6 +80,7 @@ const TABS = [
     { key: "stories", label: "Stories", icon: Sparkles },
     { key: "hashtags", label: "Hashtags", icon: Hash },
     { key: "reports", label: "Reports", icon: AlertTriangle },
+    { key: "antispam", label: "Anti-spam", icon: ShieldAlert },
     { key: "broadcast", label: "Broadcast", icon: Megaphone },
     { key: "communities", label: "Comunidades", icon: Layers },
     { key: "events", label: "Eventos", icon: CalendarDays },
@@ -118,7 +120,7 @@ function StatCard({ label, value, sub, accent = "var(--coral-500)", series, "dat
 // -----------------------------------------------------------------
 // OVERVIEW
 // -----------------------------------------------------------------
-function OverviewTab() {
+function OverviewTab({ onNavigate }) {
     const [stats, setStats] = useState(null);
     const [health, setHealth] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -251,6 +253,35 @@ function OverviewTab() {
                 Gerado a {fmtDate(stats.generated_at)}
                 {autoRefresh > 0 && <> · auto-refresh a cada {autoRefresh}s</>}
             </div>
+
+            {/* QUICK-LINKS — Dashboard shortcuts */}
+            {typeof onNavigate === "function" && (
+                <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-overview-shortcuts">
+                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Atalhos rápidos</div>
+                    <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => onNavigate("audit")} data-testid="admin-overview-go-audit"
+                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            <History size={13} /> Ver atividade
+                        </button>
+                        <button onClick={() => onNavigate("reports")} data-testid="admin-overview-go-reports"
+                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            <AlertTriangle size={13} /> Ver reports
+                        </button>
+                        <button onClick={() => onNavigate("antispam")} data-testid="admin-overview-go-antispam"
+                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            <ShieldAlert size={13} /> Anti-spam
+                        </button>
+                        <button onClick={() => onNavigate("system")} data-testid="admin-overview-go-system"
+                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            <Server size={13} /> Ver sistema
+                        </button>
+                        <button onClick={() => onNavigate("sessions")} data-testid="admin-overview-go-sessions"
+                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            <LogOut size={13} /> Ver sessões
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -371,7 +402,9 @@ function SystemTab() {
     const [uptime, setUptime] = useState(null);
     const [errLog, setErrLog] = useState(null);
     const [outLog, setOutLog] = useState(null);
+    const [maint, setMaint] = useState(null);
     const [loading, setLoading] = useState({});
+    const [actionBusy, setActionBusy] = useState(null);
 
     const _load = useCallback(async (key, url, setter) => {
         setLoading((s) => ({ ...s, [key]: true }));
@@ -392,10 +425,69 @@ function SystemTab() {
             _load("uptime", "/admin/system/uptime", setUptime),
             _load("errLog", "/admin/system/errors?lines=120", setErrLog),
             _load("outLog", "/admin/system/logs?lines=120", setOutLog),
+            _load("maint", "/admin/system/maintenance", setMaint),
         ]);
     }, [_load]);
 
     useEffect(() => { loadAll(); }, [loadAll]);
+
+    const restartSockets = async () => {
+        const ok = await confirmDialog({
+            title: "Reiniciar todos os sockets?",
+            body: "Todas as conexões WebSocket serão terminadas. Os clientes irão reconectar automaticamente em alguns segundos.",
+            confirmLabel: "Reiniciar sockets",
+            danger: true,
+        });
+        if (!ok) return;
+        setActionBusy("restart");
+        try {
+            const { data } = await api.post("/admin/system/restart-sockets");
+            toast.success(`${data.closed} socket(s) fechados`);
+            _load("ws", "/admin/system/websocket", setWs);
+        } catch (e) { apiError(e); }
+        finally { setActionBusy(null); }
+    };
+
+    const clearCache = async () => {
+        const ok = await confirmDialog({
+            title: "Limpar caches em memória?",
+            body: "Os caches in-memory (maintenance, presenca de viewers, lru_cache) serão limpos. As consultas seguintes serão um pouco mais lentas até reaquecer.",
+            confirmLabel: "Limpar cache",
+        });
+        if (!ok) return;
+        setActionBusy("clear");
+        try {
+            const { data } = await api.post("/admin/system/clear-cache");
+            toast.success(`Cache limpo (${Object.keys(data.cleared || {}).length} grupos)`);
+        } catch (e) { apiError(e); }
+        finally { setActionBusy(null); }
+    };
+
+    const toggleMaintenance = async () => {
+        const enabling = !(maint && maint.enabled);
+        let message = maint?.message || "";
+        if (enabling) {
+            const r = window.prompt("Mensagem para os utilizadores (opcional):", message || "Plataforma em manutenção. Volta em breve.");
+            if (r === null) return;
+            message = r;
+        }
+        const ok = await confirmDialog({
+            title: enabling ? "Ativar modo manutenção?" : "Desativar modo manutenção?",
+            body: enabling
+                ? "Todos os utilizadores não-admin ficarão impedidos de publicar, comentar, gostar, seguir ou enviar mensagens. Ações de leitura continuam disponíveis."
+                : "Os utilizadores voltam a poder usar a plataforma normalmente.",
+            confirmLabel: enabling ? "Ativar manutenção" : "Desativar manutenção",
+            danger: enabling,
+        });
+        if (!ok) return;
+        setActionBusy("maint");
+        try {
+            const { data } = await api.post("/admin/system/maintenance", { enabled: enabling, message });
+            setMaint({ ...maint, enabled: data.enabled, message: data.message });
+            toast.success(data.enabled ? "Manutenção ATIVA" : "Manutenção desativada");
+        } catch (e) { apiError(e); }
+        finally { setActionBusy(null); }
+    };
 
     return (
         <div className="space-y-4" data-testid="admin-system">
@@ -406,6 +498,48 @@ function SystemTab() {
                     data-testid="admin-system-refresh-all"
                     className="h-9 px-3 rounded-full bg-black text-white text-[12.5px] font-medium inline-flex items-center gap-1.5 hover:bg-black/85"
                 ><RefreshCcw size={13} /> Atualizar tudo</button>
+            </div>
+
+            {/* MAINTENANCE banner if active */}
+            {maint?.enabled && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3 text-[13px] text-red-800 flex items-start gap-2"
+                    data-testid="admin-system-maint-banner">
+                    <AlertCircle size={15} className="mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <strong>Modo de manutenção ATIVO</strong> — utilizadores não-admin não podem fazer escritas.
+                        {maint.message && <div className="mt-1 text-[12.5px] italic">"{maint.message}"</div>}
+                        {maint.set_at && <div className="mt-0.5 text-[11px] font-mono text-red-700/70">desde {fmtRelative(maint.set_at)}</div>}
+                    </div>
+                </div>
+            )}
+
+            {/* QUICK ACTIONS */}
+            <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-system-actions">
+                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Acções de sistema</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button onClick={restartSockets} disabled={actionBusy === "restart"}
+                        data-testid="admin-system-restart-sockets"
+                        className="h-10 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                        {actionBusy === "restart" ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
+                        Reiniciar sockets
+                    </button>
+                    <button onClick={clearCache} disabled={actionBusy === "clear"}
+                        data-testid="admin-system-clear-cache"
+                        className="h-10 px-3 rounded-2xl bg-black/[0.05] hover:bg-black/[0.1] text-black/80 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                        {actionBusy === "clear" ? <Loader2 size={14} className="animate-spin" /> : <Eraser size={14} />}
+                        Limpar cache
+                    </button>
+                    <button onClick={toggleMaintenance} disabled={actionBusy === "maint"}
+                        data-testid="admin-system-maintenance"
+                        className={`h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40 ${
+                            maint?.enabled
+                                ? "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800"
+                                : "bg-red-500/10 hover:bg-red-500/20 text-red-700"
+                        }`}>
+                        {actionBusy === "maint" ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
+                        {maint?.enabled ? "Desativar manutenção" : "Ativar manutenção"}
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -965,6 +1099,7 @@ function PostsTab() {
     const [reloadAt, setReloadAt] = useState(0);
     const [selected, setSelected] = useState(() => new Set());
     const [bulkBusy, setBulkBusy] = useState(false);
+    const [drawer, setDrawer] = useState(null); // {post, view: 'replies' | 'reports'}
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -1025,6 +1160,16 @@ function PostsTab() {
     const onFeature = (p) => act(p.id, async () => {
         const { data } = await api.post(`/admin/posts/${p.id}/feature`);
         toast.success(data.featured ? "Publicação destacada" : "Destaque removido");
+    });
+
+    const onFreezeReplies = (p) => act(p.id, async () => {
+        const { data } = await api.post(`/admin/posts/${p.id}/freeze-replies`);
+        toast.success(data.replies_frozen ? "Respostas congeladas" : "Respostas reabertas");
+    });
+
+    const onReduceReach = (p) => act(p.id, async () => {
+        const { data } = await api.post(`/admin/posts/${p.id}/reduce-reach`);
+        toast.success(data.reduce_reach ? "Alcance reduzido (escondido do feed/explore)" : "Alcance normal restaurado");
     });
 
     const onDelete = (p) => confirmDialog({
@@ -1133,18 +1278,49 @@ function PostsTab() {
                                     {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">c/{p.community_slug}</span>}
                                 </div>
                                 <div className="text-[13px] text-black mt-1 line-clamp-3 whitespace-pre-wrap break-words">{p.content || "—"}</div>
-                                <div className="text-[11px] text-black/45 mt-1 font-mono">
-                                    {p.likes_count} ♥ · {p.comments_count} 💬 · {fmtRelative(p.created_at)} · {p.id.slice(0, 8)}
+                                <div className="text-[11px] text-black/45 mt-1 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span>{p.likes_count} ♥ · {p.comments_count} 💬 · {fmtRelative(p.created_at)} · {p.id.slice(0, 8)}</span>
+                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
+                                    {p.reduce_reach && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700 inline-flex items-center gap-0.5"><TrendingDown size={9} /> alcance reduzido</span>}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[210px]">
+                                <a href={`/post/${p.id}`} target="_blank" rel="noopener noreferrer"
+                                    data-testid={`admin-post-view-${p.id}`}
+                                    title="Ver publicação"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                ><Eye size={14} /></a>
+                                <button
+                                    onClick={() => setDrawer({ post: p, view: "replies" })}
+                                    data-testid={`admin-post-replies-${p.id}`}
+                                    title="Ver respostas"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                ><MessageCircle size={14} /></button>
+                                <button
+                                    onClick={() => setDrawer({ post: p, view: "reports" })}
+                                    data-testid={`admin-post-reports-${p.id}`}
+                                    title="Ver reports"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                ><Flag size={14} /></button>
+                                <button
+                                    onClick={() => onFreezeReplies(p)} disabled={busyId === p.id}
+                                    data-testid={`admin-post-freeze-replies-${p.id}`}
+                                    title={p.replies_frozen ? "Reabrir respostas" : "Congelar respostas"}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.replies_frozen ? "bg-purple-500/15 text-purple-700" : "hover:bg-purple-500/10 text-purple-600"}`}
+                                ><Snowflake size={14} /></button>
+                                <button
+                                    onClick={() => onReduceReach(p)} disabled={busyId === p.id}
+                                    data-testid={`admin-post-reduce-reach-${p.id}`}
+                                    title={p.reduce_reach ? "Restaurar alcance" : "Reduzir alcance"}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.reduce_reach ? "bg-orange-500/15 text-orange-700" : "hover:bg-orange-500/10 text-orange-600"}`}
+                                ><TrendingDown size={14} /></button>
                                 <button
                                     onClick={() => onFeature(p)} disabled={busyId === p.id}
                                     data-testid={`admin-post-feature-${p.id}`}
                                     title={p.featured ? "Remover destaque" : "Destacar"}
                                     className="w-8 h-8 grid place-items-center rounded-full hover:bg-amber-500/10 disabled:opacity-40 text-amber-600"
                                 >
-                                    <Star size={15} fill={p.featured ? "currentColor" : "none"} />
+                                    <Star size={14} fill={p.featured ? "currentColor" : "none"} />
                                 </button>
                                 <button
                                     onClick={() => onDelete(p)} disabled={busyId === p.id}
@@ -1152,7 +1328,7 @@ function PostsTab() {
                                     title="Eliminar publicação"
                                     className="w-8 h-8 grid place-items-center rounded-full hover:bg-red-500/15 disabled:opacity-40 text-red-600"
                                 >
-                                    <Trash2 size={15} />
+                                    <Trash2 size={14} />
                                 </button>
                             </div>
                         </li>
@@ -1161,6 +1337,159 @@ function PostsTab() {
                 </ul>
                 <div className="px-4 pb-3"><Pager page={page} total={data.total} limit={data.limit} onChange={setPage} /></div>
             </div>
+            {drawer && <PostInspector post={drawer.post} initialView={drawer.view} onClose={() => setDrawer(null)} />}
+        </div>
+    );
+}
+
+// -----------------------------------------------------------------
+// POST INSPECTOR — replies + reports drawer
+// -----------------------------------------------------------------
+function PostInspector({ post, initialView = "replies", onClose }) {
+    const [view, setView] = useState(initialView);
+    const [replies, setReplies] = useState(null);
+    const [reports, setReports] = useState(null);
+    const [page, setPage] = useState(1);
+    const [busyId, setBusyId] = useState(null);
+
+    const loadReplies = useCallback(async () => {
+        try {
+            const { data } = await api.get(`/admin/posts/${post.id}/comments`, { params: { page, limit: 30 } });
+            setReplies(data);
+        } catch (e) { apiError(e); }
+    }, [post.id, page]);
+
+    const loadReports = useCallback(async () => {
+        try {
+            const { data } = await api.get(`/admin/posts/${post.id}/reports`);
+            setReports(data);
+        } catch (e) { apiError(e); }
+    }, [post.id]);
+
+    useEffect(() => {
+        if (view === "replies" && replies === null) loadReplies();
+        if (view === "reports" && reports === null) loadReports();
+    }, [view, replies, reports, loadReplies, loadReports]);
+
+    useEffect(() => {
+        if (view === "replies") loadReplies();
+    }, [page, view, loadReplies]);
+
+    const deleteComment = async (c) => {
+        const ok = await confirmDialog({
+            title: "Eliminar comentário?",
+            body: "O comentário e respostas em árvore serão removidos.",
+            confirmLabel: "Eliminar",
+            danger: true,
+        });
+        if (!ok) return;
+        setBusyId(c.id);
+        try {
+            await api.delete(`/admin/comments/${c.id}`);
+            toast.success("Comentário eliminado");
+            loadReplies();
+        } catch (e) { apiError(e); }
+        finally { setBusyId(null); }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[80]" data-testid="admin-post-inspector">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+            <aside className="absolute right-0 top-0 bottom-0 w-full sm:max-w-[560px] bg-white shadow-2xl flex flex-col">
+                <header className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-2">
+                    <FileText size={16} className="text-black/55" />
+                    <div className="flex-1 min-w-0">
+                        <div className="font-display text-[15px] tracking-tight truncate">Publicação @{post.author_username || "—"}</div>
+                        <div className="text-[11px] text-black/45 font-mono truncate">{post.id.slice(0, 12)} · {post.comments_count} respostas</div>
+                    </div>
+                    <a href={`/post/${post.id}`} target="_blank" rel="noopener noreferrer"
+                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] inline-flex items-center gap-1.5"
+                    ><Eye size={13} /> Abrir</a>
+                    <button onClick={onClose} aria-label="Fechar" className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05]"><XIcon size={16} /></button>
+                </header>
+                <nav className="px-3 pt-3 flex items-center gap-1 border-b border-black/[0.04]">
+                    <button onClick={() => setView("replies")} data-testid="admin-post-inspector-tab-replies"
+                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "replies" ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}>
+                        Respostas ({post.comments_count})
+                    </button>
+                    <button onClick={() => setView("reports")} data-testid="admin-post-inspector-tab-reports"
+                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "reports" ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}>
+                        Reports
+                    </button>
+                </nav>
+                <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
+                    {view === "replies" && (
+                        replies === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        replies.items.length === 0 ? <div className="text-center text-black/45 py-10 text-[13px]">Sem respostas.</div> :
+                        <>
+                            <ul className="space-y-2" data-testid="admin-post-inspector-replies">
+                                {replies.items.map((c) => (
+                                    <li key={c.id} className="px-3 py-2 rounded-xl bg-black/[0.03]">
+                                        <div className="flex items-center gap-1.5 text-[11.5px] flex-wrap">
+                                            <span className="font-medium">@{c.author_username || "—"}</span>
+                                            {c.author_verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
+                                            {c.author_banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
+                                            {c.parent_id && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-purple-500/10 text-purple-700">resposta</span>}
+                                            <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(c.created_at)}</span>
+                                        </div>
+                                        <div className="text-[13px] text-black/85 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
+                                        <div className="flex items-center justify-between mt-1.5">
+                                            <span className="text-[10.5px] text-black/45 font-mono">{c.replies_count} respostas</span>
+                                            <button onClick={() => deleteComment(c)} disabled={busyId === c.id}
+                                                data-testid={`admin-post-inspector-delete-${c.id}`}
+                                                className="h-7 px-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 text-[11px] font-medium disabled:opacity-40 inline-flex items-center gap-1">
+                                                <Trash2 size={11} /> Eliminar
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Pager page={page} total={replies.total} limit={replies.limit} onChange={setPage} />
+                        </>
+                    )}
+
+                    {view === "reports" && (
+                        reports === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        (reports.post_reports.length === 0 && reports.comment_reports.length === 0) ? <div className="text-center text-black/45 py-10 text-[13px]">Sem reports.</div> :
+                        <div className="space-y-3" data-testid="admin-post-inspector-reports">
+                            {reports.post_reports.length > 0 && (
+                                <div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra a publicação ({reports.post_reports.length})</div>
+                                    <ul className="space-y-1.5">{reports.post_reports.map((r) => (
+                                        <li key={r.id} className="px-3 py-1.5 rounded-xl bg-red-500/[0.06] text-[12px]">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-700">{r.kind}</span>
+                                                <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
+                                                {r.reason && <span className="text-black/65">{r.reason}</span>}
+                                                <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                            </div>
+                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-black/55">"{r.detail}"</div>}
+                                            {r.reporter && <div className="mt-1 text-[10.5px] text-black/45 font-mono">por @{r.reporter.username}</div>}
+                                        </li>
+                                    ))}</ul>
+                                </div>
+                            )}
+                            {reports.comment_reports.length > 0 && (
+                                <div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra comentários ({reports.comment_reports.length})</div>
+                                    <ul className="space-y-1.5">{reports.comment_reports.map((r) => (
+                                        <li key={r.id} className="px-3 py-1.5 rounded-xl bg-orange-500/[0.06] text-[12px]">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700">comentário</span>
+                                                <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
+                                                {r.reason && <span className="text-black/65">{r.reason}</span>}
+                                                <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                            </div>
+                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-black/55">"{r.detail}"</div>}
+                                            {r.reporter && <div className="mt-1 text-[10.5px] text-black/45 font-mono">por @{r.reporter.username} · alvo {r.target_id?.slice(0, 8)}</div>}
+                                        </li>
+                                    ))}</ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </aside>
         </div>
     );
 }
@@ -1168,7 +1497,7 @@ function PostsTab() {
 // -----------------------------------------------------------------
 // REPORTS
 // -----------------------------------------------------------------
-function ReportsTab() {
+function ReportsTab({ onOpenUser }) {
     const [status, setStatus] = useState("open");
     const [kind, setKind] = useState("all");
     const [page, setPage] = useState(1);
@@ -1204,6 +1533,53 @@ function ReportsTab() {
             })
             .catch(apiError)
             .finally(() => setBusyId(null));
+    };
+
+    const suspendTarget = async (r) => {
+        if (!r.target_user_id) return;
+        const minStr = window.prompt("Suspender este utilizador por quantos minutos? (1440 = 24h)", "1440");
+        if (minStr === null) return;
+        const minutes = parseInt(minStr, 10);
+        if (!Number.isFinite(minutes) || minutes <= 0) return toast.error("Valor inválido");
+        const ok = await confirmDialog({
+            title: `Suspender @${r.target_username || "—"}?`,
+            body: `Vai ficar impedido de iniciar sessão durante ${minutes} minutos.`,
+            confirmLabel: "Suspender",
+            danger: true,
+        });
+        if (!ok) return;
+        setBusyId(r.id);
+        try {
+            await api.post(`/admin/users/${r.target_user_id}/suspend`, { minutes, reason: `report:${r.id}` });
+            toast.success("Utilizador suspenso");
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); }
+        finally { setBusyId(null); }
+    };
+
+    const banTarget = async (r) => {
+        if (!r.target_user_id) return;
+        const ok = await confirmDialog({
+            title: `Banir @${r.target_username || "—"}?`,
+            body: "O utilizador perde acesso permanentemente. Esta ação é reversível por outro admin.",
+            confirmLabel: "Banir",
+            danger: true,
+        });
+        if (!ok) return;
+        setBusyId(r.id);
+        try {
+            await api.post(`/admin/users/${r.target_user_id}/ban`);
+            toast.success("Utilizador banido");
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); }
+        finally { setBusyId(null); }
+    };
+
+    const openContentLink = (r) => {
+        if (r.kind === "post" && r.target_id) return `/post/${r.target_id}`;
+        if (r.kind === "comment" && r.target_preview?.post_id) return `/post/${r.target_preview.post_id}#c-${r.target_id}`;
+        if (r.kind === "user" && r.target_username) return `/${r.target_username}`;
+        return null;
     };
 
     return (
@@ -1269,15 +1645,22 @@ function ReportsTab() {
                             </div>
                             {r.status === "open" && (
                                 <div className="flex flex-col gap-1.5 shrink-0">
+                                    {openContentLink(r) && (
+                                        <a href={openContentLink(r)} target="_blank" rel="noopener noreferrer"
+                                            data-testid={`admin-report-open-${r.id}`}
+                                            className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium text-center inline-flex items-center justify-center gap-1">
+                                            <Eye size={12} /> Abrir
+                                        </a>
+                                    )}
                                     <button onClick={() => resolve(r, "resolved")} disabled={busyId === r.id}
                                         data-testid={`admin-report-resolve-${r.id}`}
                                         className="h-8 px-3 rounded-full bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 text-[12px] font-medium disabled:opacity-40">
-                                        Resolver
+                                        Aprovar
                                     </button>
                                     <button onClick={() => resolve(r, "dismissed")} disabled={busyId === r.id}
                                         data-testid={`admin-report-dismiss-${r.id}`}
                                         className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium disabled:opacity-40">
-                                        Descartar
+                                        Ignorar
                                     </button>
                                     {(r.kind === "post" || r.kind === "comment") && (
                                         <button onClick={() => resolve(r, "removed")} disabled={busyId === r.id}
@@ -1285,6 +1668,27 @@ function ReportsTab() {
                                             className="h-8 px-3 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 text-[12px] font-medium disabled:opacity-40">
                                             Remover
                                         </button>
+                                    )}
+                                    {r.target_user_id && (
+                                        <>
+                                            <button onClick={() => suspendTarget(r)} disabled={busyId === r.id}
+                                                data-testid={`admin-report-suspend-user-${r.id}`}
+                                                className="h-8 px-3 rounded-full bg-amber-500/15 text-amber-800 hover:bg-amber-500/25 text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
+                                                <Pause size={11} /> Suspender
+                                            </button>
+                                            <button onClick={() => banTarget(r)} disabled={busyId === r.id}
+                                                data-testid={`admin-report-ban-user-${r.id}`}
+                                                className="h-8 px-3 rounded-full bg-red-500/15 text-red-700 hover:bg-red-500/25 text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
+                                                <Ban size={11} /> Banir
+                                            </button>
+                                            {typeof onOpenUser === "function" && (
+                                                <button onClick={() => onOpenUser({ id: r.target_user_id, username: r.target_username })}
+                                                    data-testid={`admin-report-open-user-${r.id}`}
+                                                    className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
+                                                    <UserCheck size={11} /> Perfil
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -2359,6 +2763,16 @@ function UserDrawer({ user, onClose }) {
         if (!window.confirm("Forçar logout em TODAS as sessões deste utilizador?")) return;
         return act("logout", () => api.post(`/admin/users/${u.id}/force-logout`), "Sessões revogadas.");
     };
+    const doFreeze = () => {
+        if (u.frozen) {
+            if (!window.confirm("Descongelar conta? O utilizador volta a poder publicar/comentar/gostar/seguir.")) return;
+            return act("freeze", () => api.post(`/admin/users/${u.id}/unfreeze`), "Conta descongelada.");
+        }
+        const r = promptStr("Motivo (opcional):", "");
+        if (r === null) return;
+        if (!window.confirm("Congelar conta? Vai impedir todas as interações (post/comment/like/follow/mensagem) e revoga todas as sessões. Ler continua a funcionar.")) return;
+        return act("freeze", () => api.post(`/admin/users/${u.id}/freeze`, { reason: r }), "Conta congelada.");
+    };
     const doReset2FA = () => {
         if (!window.confirm("Reset 2FA: o utilizador perderá o gerador atual e códigos de backup. Continuar?")) return;
         return act("reset2fa", () => api.post(`/admin/users/${u.id}/reset-2fa`), "2FA reposto.");
@@ -2398,6 +2812,7 @@ function UserDrawer({ user, onClose }) {
                             {u.suspended_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">suspenso</span>}
                             {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700">silenciado</span>}
                             {u.shadow_muted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
+                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700">congelado</span>}
                             {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-700">suspeito</span>}
                         </div>
                         <div className="text-[11.5px] sm:text-[12px] text-black/55 truncate font-mono">@{u.username} · {u.email}</div>
@@ -2443,6 +2858,7 @@ function UserDrawer({ user, onClose }) {
                                 ["Suspenso", u.suspended_active ? `até ${fmtDate(u.suspended_until)} — ${u.suspend_reason || "(sem motivo)"}` : "não"],
                                 ["Silenciado", u.muted_active ? `até ${fmtDate(u.muted_until)} — ${u.mute_reason || "(sem motivo)"}` : "não"],
                                 ["Shadow mute", u.shadow_muted ? `sim — ${u.shadow_mute_reason || "(sem motivo)"}` : "não"],
+                                ["Congelado", u.frozen ? `sim — ${u.frozen_reason || "(sem motivo)"}` : "não"],
                                 ["Suspeito", u.flagged_suspicious ? `sim — ${u.suspicious_reason || "(sem motivo)"}` : "não"],
                                 ["Rate limit", (u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `posts ${u.rate_limit.max_posts ?? "∞"} / coments ${u.rate_limit.max_comments ?? "∞"} por ${u.rate_limit.window_hours}h` : "sem limite"],
                                 ["Posts", u.posts_count],
@@ -2711,7 +3127,8 @@ function UserDrawer({ user, onClose }) {
                                     <ActionButton icon={Ghost} label={u.shadow_muted ? "Sair shadow" : "Shadow mute"} onClick={doShadowMute} testid="admin-action-shadow-mute" disabled={actionBusy === "shadow"} kind={u.shadow_muted ? "good" : "warn"} />
                                     <ActionButton icon={Pause} label={u.suspended_active ? "Tirar suspensão" : "Suspender"} onClick={u.suspended_active ? doUnsuspend : doSuspend} testid="admin-action-suspend" disabled={actionBusy === "suspend" || actionBusy === "unsuspend"} kind={u.suspended_active ? "good" : "danger"} />
                                     <ActionButton icon={Ban} label={u.banned ? "Desbanir" : "Banir"} onClick={doBan} testid="admin-action-ban" disabled={actionBusy === "ban" || actionBusy === "unban"} kind={u.banned ? "good" : "danger"} />
-                                    <ActionButton icon={UserX} label="Forçar logout" onClick={doForceLogout} testid="admin-action-force-logout" disabled={actionBusy === "logout"} kind="warn" title="Revoga TODAS as sessões" />
+                                    <ActionButton icon={Snowflake} label={u.frozen ? "Descongelar conta" : "Congelar conta"} onClick={doFreeze} testid="admin-action-freeze" disabled={actionBusy === "freeze"} kind={u.frozen ? "good" : "warn"} title="Bloqueia todas as interações (read-only) e revoga sessões" />
+                                    <ActionButton icon={UserX} label="Terminar sessões" onClick={doForceLogout} testid="admin-action-force-logout" disabled={actionBusy === "logout"} kind="warn" title="Revoga TODAS as sessões" />
                                     <ActionButton icon={KeyRound} label="Reset 2FA" onClick={doReset2FA} testid="admin-action-reset-2fa" disabled={actionBusy === "reset2fa" || !u.two_fa_enabled} kind="warn" title={u.two_fa_enabled ? "Reset 2FA do utilizador" : "2FA não está activo"} />
                                 </div>
                             </div>
@@ -2747,6 +3164,268 @@ function UserDrawer({ user, onClose }) {
     );
 }
 
+
+
+// -----------------------------------------------------------------
+// ANTI-SPAM — real-time overview + suspicious activity feed
+// -----------------------------------------------------------------
+function AntiSpamTab({ onOpenDrawer }) {
+    const [overview, setOverview] = useState(null);
+    const [activity, setActivity] = useState(null);
+    const [filter, setFilter] = useState("all");
+    const [users, setUsers] = useState({ items: [], total: 0, limit: 30 });
+    const [page, setPage] = useState(1);
+    const [loadingActivity, setLoadingActivity] = useState(false);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [reloadAt, setReloadAt] = useState(0);
+    const [busyId, setBusyId] = useState(null);
+
+    const loadOverview = useCallback(async () => {
+        try {
+            const { data } = await api.get("/admin/anti-spam/overview");
+            setOverview(data);
+        } catch (e) { apiError(e); }
+    }, []);
+
+    const loadActivity = useCallback(async () => {
+        setLoadingActivity(true);
+        try {
+            const { data } = await api.get("/admin/anti-spam/activity", { params: { limit: 30 } });
+            setActivity(data);
+        } catch (e) { apiError(e); }
+        finally { setLoadingActivity(false); }
+    }, []);
+
+    const loadUsers = useCallback(async () => {
+        setLoadingUsers(true);
+        try {
+            const { data } = await api.get("/admin/anti-spam/suspicious", { params: { filter, page, limit: 30 } });
+            setUsers(data);
+        } catch (e) { apiError(e); }
+        finally { setLoadingUsers(false); }
+    }, [filter, page]);
+
+    useEffect(() => { loadOverview(); loadActivity(); }, [loadOverview, loadActivity, reloadAt]);
+    useEffect(() => { loadUsers(); }, [loadUsers, reloadAt]);
+
+    const doFreeze = async (u) => {
+        if (u.frozen) {
+            if (!window.confirm("Descongelar conta?")) return;
+            setBusyId(u.id);
+            try {
+                await api.post(`/admin/users/${u.id}/unfreeze`);
+                toast.success("Conta descongelada");
+                setReloadAt(Date.now());
+            } catch (e) { apiError(e); } finally { setBusyId(null); }
+            return;
+        }
+        const r = window.prompt("Motivo (opcional):", "");
+        if (r === null) return;
+        if (!window.confirm(`Congelar @${u.username}? Vai bloquear todas as interações e revogar sessões.`)) return;
+        setBusyId(u.id);
+        try {
+            await api.post(`/admin/users/${u.id}/freeze`, { reason: r || "" });
+            toast.success("Conta congelada");
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); } finally { setBusyId(null); }
+    };
+
+    const doRateLimit = async (u) => {
+        const p = window.prompt("Limite de POSTS por janela (vazio = sem limite):", String((u.rate_limit && u.rate_limit.max_posts) || ""));
+        if (p === null) return;
+        const c = window.prompt("Limite de COMENTÁRIOS por janela (vazio = sem limite):", String((u.rate_limit && u.rate_limit.max_comments) || ""));
+        if (c === null) return;
+        const w = window.prompt("Janela (horas):", String((u.rate_limit && u.rate_limit.window_hours) || 1));
+        if (w === null) return;
+        setBusyId(u.id);
+        try {
+            await api.post(`/admin/users/${u.id}/rate-limit`, {
+                max_posts: p === "" ? null : parseInt(p, 10),
+                max_comments: c === "" ? null : parseInt(c, 10),
+                window_hours: parseInt(w, 10) || 1,
+                reason: "anti-spam",
+            });
+            toast.success("Rate-limit aplicado");
+            setReloadAt(Date.now());
+        } catch (e) { apiError(e); } finally { setBusyId(null); }
+    };
+
+    const filters = [
+        { k: "all", l: "Tudo" },
+        { k: "flagged", l: "Suspeitos" },
+        { k: "muted", l: "Silenciados" },
+        { k: "shadow", l: "Shadow" },
+        { k: "rate_limited", l: "Rate-limited" },
+        { k: "frozen", l: "Congelados" },
+        { k: "mass_reported", l: "Mass-reported (7d)" },
+    ];
+
+    return (
+        <div className="space-y-4" data-testid="admin-antispam">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Anti-spam</h2>
+                <button onClick={() => setReloadAt(Date.now())}
+                    data-testid="admin-antispam-refresh"
+                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                ><RefreshCcw size={14} /> Atualizar</button>
+            </div>
+
+            {/* COUNTERS */}
+            {overview && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="admin-antispam-counters">
+                    <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-orange-500/15 text-orange-700" icon={ShieldAlert} />
+                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-purple-500/15 text-purple-700" icon={VolumeX} />
+                    <CounterCard label="Shadow" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
+                    <CounterCard label="Rate-limited" value={overview.users.rate_limited} accent="bg-yellow-500/15 text-yellow-700" icon={Gauge} />
+                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-cyan-500/15 text-cyan-700" icon={Snowflake} />
+                    <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} />
+                    <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-amber-500/15 text-amber-700" icon={Flag} />
+                    <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-orange-500/15 text-orange-700" icon={TrendingDown} />
+                </div>
+            )}
+
+            {/* ACTIVITY FEED */}
+            <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-antispam-activity">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold tracking-tight">Atividade suspeita recente</h3>
+                    <span className="text-[10.5px] text-black/40 font-mono">{loadingActivity ? "a atualizar…" : (activity?.checked_at ? fmtRelative(activity.checked_at) : "")}</span>
+                </div>
+                {!activity ? (
+                    <div className="text-black/45 text-[12px] py-2"><Loader2 className="animate-spin inline" size={13} /> A carregar…</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <ActivityBlock title="Burst de publicações (24h)" empty="Sem rajadas.">
+                            {(activity.burst_posters || []).map(({ user: u, count }) => (
+                                <ActivityRow key={u.id} u={u} count={count} unit="posts" onClick={() => onOpenDrawer && onOpenDrawer(u)} />
+                            ))}
+                        </ActivityBlock>
+                        <ActivityBlock title="Burst de comentários (24h)" empty="Sem rajadas.">
+                            {(activity.burst_commenters || []).map(({ user: u, count }) => (
+                                <ActivityRow key={u.id} u={u} count={count} unit="comments" onClick={() => onOpenDrawer && onOpenDrawer(u)} />
+                            ))}
+                        </ActivityBlock>
+                        <ActivityBlock title="Reports na última hora" empty="Sem reports recentes.">
+                            {(activity.recent_reports || []).slice(0, 8).map((r) => (
+                                <div key={r.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] text-[12px] flex items-center gap-2">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">{r.kind}</span>
+                                    <span className="truncate text-black/70 flex-1">{r.reason || "—"}</span>
+                                    <span className="text-[10.5px] text-black/45 font-mono">{fmtRelative(r.created_at)}</span>
+                                </div>
+                            ))}
+                        </ActivityBlock>
+                        <ActivityBlock title="Contas novas (24h)" empty="Sem registos novos.">
+                            {(activity.fresh_users || []).slice(0, 8).map((u) => (
+                                <ActivityRow key={u.id} u={u} count={null} onClick={() => onOpenDrawer && onOpenDrawer(u)} />
+                            ))}
+                        </ActivityBlock>
+                    </div>
+                )}
+            </div>
+
+            {/* USERS BY FILTER */}
+            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+                <div className="px-3 sm:px-4 pt-3 flex items-center gap-2 flex-wrap">
+                    <h3 className="text-[13px] font-semibold tracking-tight">Utilizadores</h3>
+                    <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 ml-auto overflow-x-auto no-scrollbar max-w-full">
+                        {filters.map((f) => (
+                            <button key={f.k} onClick={() => { setFilter(f.k); setPage(1); }}
+                                data-testid={`admin-antispam-filter-${f.k}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            >{f.l}</button>
+                        ))}
+                    </div>
+                </div>
+                {loadingUsers && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {!loadingUsers && users.items.length === 0 && (
+                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem utilizadores neste filtro.</div>
+                )}
+                <ul className="divide-y divide-black/[0.05]">
+                    {users.items.map((u) => (
+                        <li key={u.id} className="px-3 sm:px-4 py-2.5 flex items-center gap-2.5"
+                            data-testid={`admin-antispam-user-${u.id}`}>
+                            <button onClick={() => onOpenDrawer && onOpenDrawer(u)} className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-80">
+                                <Avatar user={u} size={32} />
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                        <span className="font-medium text-[13.5px] truncate">@{u.username}</span>
+                                        {u.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
+                                        {u.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
+                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-purple-500/10 text-purple-700">muted</span>}
+                                        {u.shadow_muted && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
+                                        {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700">congelado</span>}
+                                        {u.flagged_suspicious && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-orange-500/10 text-orange-700">suspeito</span>}
+                                        {typeof u.report_count_7d === "number" && (
+                                            <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/15 text-red-700">{u.report_count_7d} reports</span>
+                                        )}
+                                    </div>
+                                    <div className="text-[10.5px] text-black/45 font-mono truncate">{u.email} · criado {fmtRelative(u.created_at)}</div>
+                                </div>
+                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => doRateLimit(u)} disabled={busyId === u.id}
+                                    data-testid={`admin-antispam-rate-${u.id}`}
+                                    title="Limitar ações"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-yellow-500/15 disabled:opacity-40 text-yellow-700">
+                                    <Gauge size={13} />
+                                </button>
+                                <button onClick={() => doFreeze(u)} disabled={busyId === u.id}
+                                    data-testid={`admin-antispam-freeze-${u.id}`}
+                                    title={u.frozen ? "Descongelar conta" : "Congelar conta"}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${u.frozen ? "bg-cyan-500/15 text-cyan-700" : "hover:bg-cyan-500/10 text-cyan-600"}`}>
+                                    <Snowflake size={13} />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+                <div className="px-4 pb-3"><Pager page={page} total={users.total} limit={users.limit} onChange={setPage} /></div>
+            </div>
+        </div>
+    );
+}
+
+function CounterCard({ label, value, accent, icon: Icon }) {
+    return (
+        <div className="bg-white rounded-2xl border border-black/[0.06] p-3 flex items-center gap-2">
+            <span className={`w-8 h-8 rounded-xl grid place-items-center ${accent}`}><Icon size={15} /></span>
+            <div className="min-w-0">
+                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono">{label}</div>
+                <div className="text-[18px] font-display tracking-tight tabular-nums">{fmtNum(value || 0)}</div>
+            </div>
+        </div>
+    );
+}
+
+function ActivityBlock({ title, empty, children }) {
+    const items = React.Children.toArray(children);
+    return (
+        <div>
+            <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">{title}</div>
+            {items.length === 0 ? (
+                <div className="text-[12px] text-black/40 italic px-2.5 py-2">{empty}</div>
+            ) : (
+                <div className="space-y-1">{items}</div>
+            )}
+        </div>
+    );
+}
+
+function ActivityRow({ u, count, unit = "", onClick }) {
+    return (
+        <button onClick={onClick}
+            className="w-full px-2.5 py-1.5 rounded-xl bg-black/[0.03] hover:bg-black/[0.07] flex items-center gap-2 text-left"
+            data-testid={`admin-antispam-activity-row-${u.id}`}>
+            <Avatar user={u} size={24} />
+            <div className="min-w-0 flex-1">
+                <div className="text-[12px] font-medium truncate">@{u.username}</div>
+                <div className="text-[10.5px] text-black/45 font-mono truncate">{u.email}</div>
+            </div>
+            {count !== null && count !== undefined && (
+                <span className="text-[10.5px] font-mono font-semibold px-1.5 py-0.5 rounded-full bg-black/[0.06]">{count} {unit}</span>
+            )}
+        </button>
+    );
+}
 
 
 // -----------------------------------------------------------------
@@ -2825,14 +3504,15 @@ export default function Admin() {
             </nav>
 
             <div data-testid={`admin-tab-content-${tab}`}>
-                {tab === "overview" && <OverviewTab />}
+                {tab === "overview" && <OverviewTab onNavigate={setTab} />}
                 {tab === "system" && <SystemTab />}
                 {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
                 {tab === "posts" && <PostsTab />}
                 {tab === "comments" && <CommentsTab />}
                 {tab === "stories" && <StoriesTab />}
                 {tab === "hashtags" && <HashtagsTab />}
-                {tab === "reports" && <ReportsTab />}
+                {tab === "reports" && <ReportsTab onOpenUser={setDrawerUser} />}
+                {tab === "antispam" && <AntiSpamTab onOpenDrawer={setDrawerUser} />}
                 {tab === "broadcast" && <BroadcastTab />}
                 {tab === "communities" && <CommunitiesTab />}
                 {tab === "events" && <EventsTab />}

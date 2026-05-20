@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 # Base URL from frontend/.env
-BASE_URL = "https://mobile-button-audit.preview.emergentagent.com/api"
+BASE_URL = "https://moderation-hub-61.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "admin@vermillion.app"

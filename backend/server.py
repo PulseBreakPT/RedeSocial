@@ -1943,6 +1943,7 @@ async def list_following(username: str, viewer=Depends(get_current_user)):
 
 @api.post("/users/{username}/follow")
 async def follow_user(username: str, user=Depends(get_current_user)):
+    _assert_not_frozen(user)
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
         raise HTTPException(404, "Utilizador não encontrado")
@@ -2371,6 +2372,11 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
         "is_draft": {"$ne": True},
         "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
     }
+    # Admin reduce-reach: hide reduced posts from others (author still sees own)
+    query["$and"] = [{"$or": [
+        {"reduce_reach": {"$ne": True}},
+        {"author_id": user["id"]},
+    ]}]
     if mood and mood in MOODS:
         rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
         query["content"] = {"$regex": rx, "$options": "i"}
@@ -2400,6 +2406,8 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
         "is_draft": {"$ne": True},
         "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
     }
+    # Admin reduce-reach: explore never shows reduced posts (even to author — explore is discovery)
+    query["reduce_reach"] = {"$ne": True}
     if mood and mood in MOODS:
         rx = "|".join(re.escape(k) for k in MOODS[mood]["keywords"])
         query["content"] = {"$regex": rx, "$options": "i"}
@@ -2638,6 +2646,7 @@ async def delete_post(post_id: str, user=Depends(get_current_user)):
 
 @api.post("/posts/{post_id}/like")
 async def like_post(post_id: str, user=Depends(get_current_user)):
+    _assert_not_frozen(user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
@@ -2793,11 +2802,13 @@ async def list_comments(post_id: str, sort: str = "new", viewer: Optional[dict] 
 
 @api.post("/posts/{post_id}/comments")
 async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_current_user)):
-    # Admin restrictions: mute + rate-limit (real, not mocked)
+    # Admin restrictions: mute + rate-limit + frozen + maintenance (real)
     await _aassert_can_comment(user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
+    # Admin-imposed: comments frozen on this post (replies_frozen=true)
+    _assert_post_replies_open(post)
     # Reply audience enforcement
     audience = post.get("reply_audience", "everyone")
     author_id = post["author_id"]
@@ -4707,6 +4718,8 @@ async def get_typing(other_user_id: str, user=Depends(get_current_user)):
 
 @api.post("/messages")
 async def send_message(payload: MessageIn, user=Depends(get_current_user)):
+    _assert_not_frozen(user)
+    await _aassert_not_maintenance(user)
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
     if not other:
         raise HTTPException(404, "Utilizador não encontrado")
@@ -7174,6 +7187,24 @@ class ConnectionManager:
             await self.send_personal(uid, message)
 
 
+    async def disconnect_all(self) -> int:
+        """Admin action: forcefully closes every active WebSocket.
+        Returns count of sockets closed."""
+        n = 0
+        for uid, sockets in list(self.active.items()):
+            for ws in list(sockets):
+                try:
+                    await ws.close(code=1012)
+                except Exception:
+                    pass
+                n += 1
+            self.active.pop(uid, None)
+        # Wipe presence state so per-post counters reset
+        self.viewers_by_post.clear()
+        self.posts_by_user.clear()
+        return n
+
+
 ws_manager = ConnectionManager()
 
 
@@ -8177,6 +8208,13 @@ class AdminRateLimitIn(BaseModel):
     window_hours: Optional[int] = 1
     reason: Optional[str] = ""
 
+class AdminFreezeIn(BaseModel):
+    reason: Optional[str] = ""
+
+class AdminMaintenanceIn(BaseModel):
+    enabled: bool = False
+    message: Optional[str] = ""
+
 
 # ---- Restriction helpers (mute / suspend / rate-limit / shadow mute) ----
 def _restriction_active(user: dict, field: str) -> bool:
@@ -8215,7 +8253,9 @@ def _assert_can_post(user: dict) -> None:
 
 
 async def _aassert_can_post(user: dict) -> None:
-    """Async variant: enforces mute + post-rate-limit."""
+    """Async variant: enforces mute + post-rate-limit + freeze + maintenance."""
+    await _aassert_not_maintenance(user)
+    _assert_not_frozen(user)
     if _restriction_active(user, "muted_until"):
         raise HTTPException(
             status_code=403,
@@ -8238,7 +8278,9 @@ async def _aassert_can_post(user: dict) -> None:
 
 
 async def _aassert_can_comment(user: dict) -> None:
-    """Async variant: enforces mute + comment-rate-limit."""
+    """Async variant: enforces mute + comment-rate-limit + freeze + maintenance."""
+    await _aassert_not_maintenance(user)
+    _assert_not_frozen(user)
     if _restriction_active(user, "muted_until"):
         raise HTTPException(
             status_code=403,
@@ -8258,6 +8300,59 @@ async def _aassert_can_comment(user: dict) -> None:
                 status_code=429,
                 detail=f"Limite de comentários atingido ({int(mc)}/{window_h}h). Tenta mais tarde.",
             )
+
+
+def _assert_not_frozen(user: dict) -> None:
+    """Raise 403 if user account is frozen (full-stop read-only by admin)."""
+    if user and user.get("frozen"):
+        raise HTTPException(
+            status_code=403,
+            detail="Conta congelada por um administrador. Não podes interagir.",
+        )
+
+
+def _assert_post_replies_open(post: dict) -> None:
+    """Raise 403 if post.replies_frozen is True."""
+    if post and post.get("replies_frozen"):
+        raise HTTPException(
+            status_code=403,
+            detail="As respostas a esta publicação foram congeladas por um administrador.",
+        )
+
+
+# ---- Maintenance mode (system-wide) ----
+# Cached in-memory; refreshed every 30s and on toggle.
+_maintenance_cache: dict = {"loaded_at": 0.0, "enabled": False, "message": "", "set_at": None, "set_by": None}
+_MAINTENANCE_TTL = 30  # seconds
+
+
+async def _get_maintenance() -> dict:
+    """Returns current maintenance config; refreshes cache every TTL."""
+    import time as _t
+    now = _t.time()
+    if now - _maintenance_cache.get("loaded_at", 0.0) >= _MAINTENANCE_TTL:
+        doc = await db.system_config.find_one({"key": "maintenance"}, {"_id": 0})
+        if doc:
+            _maintenance_cache.update({
+                "enabled": bool(doc.get("enabled")),
+                "message": doc.get("message") or "",
+                "set_at": doc.get("set_at"),
+                "set_by": doc.get("set_by"),
+            })
+        else:
+            _maintenance_cache.update({"enabled": False, "message": "", "set_at": None, "set_by": None})
+        _maintenance_cache["loaded_at"] = now
+    return _maintenance_cache
+
+
+async def _aassert_not_maintenance(user: dict) -> None:
+    """Block write actions for non-admins when maintenance mode is active."""
+    if user and user.get("is_admin"):
+        return
+    cfg = await _get_maintenance()
+    if cfg.get("enabled"):
+        msg = cfg.get("message") or "Plataforma em modo de manutenção. Tenta novamente em breve."
+        raise HTTPException(status_code=503, detail=msg)
 
 
 async def _shadow_muted_ids_excluding(viewer_id: str) -> list[str]:
@@ -8304,6 +8399,10 @@ def _admin_user_card(u: dict) -> dict:
         "suspicious_reason": u.get("suspicious_reason", "") if u.get("flagged_suspicious") else "",
         "featured_account": bool(u.get("featured_account")),
         "rate_limit": u.get("rate_limit") or {},
+        # Frozen (no interactions allowed)
+        "frozen": bool(u.get("frozen")),
+        "frozen_reason": u.get("frozen_reason", "") if u.get("frozen") else "",
+        "frozen_at": u.get("frozen_at") if u.get("frozen") else None,
     }
 
 
@@ -8323,6 +8422,9 @@ def _admin_post_card(p: dict, author: Optional[dict] = None) -> dict:
         "scheduled_at": p.get("scheduled_at"),
         "community_slug": p.get("community_slug"),
         "created_at": p.get("created_at"),
+        # Admin moderation state on the post
+        "replies_frozen": bool(p.get("replies_frozen")),
+        "reduce_reach": bool(p.get("reduce_reach")),
     }
 
 
@@ -8646,24 +8748,36 @@ async def admin_list_reports(
     out = []
     for r in rows:
         target_preview = {}
+        target_user_id = None
+        target_username = None
         tk, tid = r.get("kind"), r.get("target_id")
         if tk == "post" and tid:
             p = await db.posts.find_one({"id": tid}, {"_id": 0, "id": 1, "content": 1, "author_id": 1})
             if p:
                 target_preview = {"content": (p.get("content") or "")[:200], "author_id": p.get("author_id")}
+                target_user_id = p.get("author_id")
         elif tk == "comment" and tid:
             c = await db.comments.find_one({"id": tid}, {"_id": 0, "id": 1, "content": 1, "author_id": 1, "post_id": 1})
             if c:
                 target_preview = {"content": (c.get("content") or "")[:200], "author_id": c.get("author_id"), "post_id": c.get("post_id")}
+                target_user_id = c.get("author_id")
         elif tk == "user" and tid:
             tu = await db.users.find_one({"id": tid}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1})
             if tu:
                 target_preview = {"username": tu.get("username"), "name": tu.get("name"), "avatar": tu.get("avatar", "")}
+                target_user_id = tid
+                target_username = tu.get("username")
+        if target_user_id and not target_username:
+            tu2 = await db.users.find_one({"id": target_user_id}, {"_id": 0, "username": 1})
+            if tu2:
+                target_username = tu2.get("username")
         rep = reporters.get(r.get("reporter_id"), {})
         out.append({
             "id": r.get("id"),
             "kind": r.get("kind"),
             "target_id": r.get("target_id"),
+            "target_user_id": target_user_id,
+            "target_username": target_username,
             "reason": r.get("reason"),
             "detail": r.get("detail", ""),
             "status": r.get("status", "open"),
@@ -10161,6 +10275,451 @@ async def admin_export_audit_csv(admin=Depends(require_admin)):
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=lusorae_audit.csv"},
     )
+
+
+# ============================================================
+# NEW: SYSTEM ACTIONS — restart sockets / clear cache / maintenance
+# ============================================================
+
+@api2.post("/admin/system/restart-sockets")
+async def admin_restart_sockets(admin=Depends(require_admin)):
+    """Disconnect every active WebSocket (clients auto-reconnect).
+    Returns number of sockets closed."""
+    n = 0
+    try:
+        n = await ws_manager.disconnect_all()
+    except Exception as e:
+        logger.warning(f"restart_sockets failed: {e}")
+    await admin_audit(admin, "system.restart_sockets", "system", "ws", {"closed": n})
+    return {"ok": True, "closed": n, "checked_at": now_iso()}
+
+
+@api2.post("/admin/system/clear-cache")
+async def admin_clear_cache(admin=Depends(require_admin)):
+    """Clear all in-memory caches. Returns what got cleared."""
+    cleared = {}
+    # Maintenance cache → reload from DB next request
+    try:
+        _maintenance_cache.update({"loaded_at": 0.0})
+        cleared["maintenance_cache"] = True
+    except Exception:
+        cleared["maintenance_cache"] = False
+    # Post-viewers presence (kept here — cheap to rebuild via WS pings)
+    try:
+        ws_manager.viewers_by_post.clear()
+        ws_manager.posts_by_user.clear()
+        cleared["post_viewers"] = True
+    except Exception:
+        cleared["post_viewers"] = False
+    # Any other LRU/memo we might add later
+    try:
+        # Best-effort: clear functools.lru_cache wrappers exposed at module top
+        import functools as _f
+        for name, obj in list(globals().items()):
+            if hasattr(obj, "cache_clear") and isinstance(getattr(obj, "__wrapped__", None), type(lambda: None)):
+                try:
+                    obj.cache_clear()
+                    cleared.setdefault("lru_caches_cleared", []).append(name)
+                except Exception:
+                    pass
+        del _f
+    except Exception:
+        pass
+    await admin_audit(admin, "system.clear_cache", "system", "cache", cleared)
+    return {"ok": True, "cleared": cleared, "checked_at": now_iso()}
+
+
+@api2.get("/admin/system/maintenance")
+async def admin_get_maintenance(admin=Depends(require_admin)):
+    """Current maintenance config (real, persisted in db.system_config)."""
+    cfg = await _get_maintenance()
+    return {
+        "enabled": bool(cfg.get("enabled")),
+        "message": cfg.get("message") or "",
+        "set_at": cfg.get("set_at"),
+        "set_by": cfg.get("set_by"),
+        "checked_at": now_iso(),
+    }
+
+
+@api2.post("/admin/system/maintenance")
+async def admin_set_maintenance(payload: AdminMaintenanceIn, admin=Depends(require_admin)):
+    """Toggle / set maintenance mode. When enabled, non-admin write actions return 503."""
+    msg = (payload.message or "").strip()[:300]
+    doc = {
+        "key": "maintenance",
+        "enabled": bool(payload.enabled),
+        "message": msg,
+        "set_at": now_iso(),
+        "set_by": admin["id"],
+    }
+    await db.system_config.update_one({"key": "maintenance"}, {"$set": doc}, upsert=True)
+    # Invalidate cache immediately
+    _maintenance_cache.update({"loaded_at": 0.0})
+    await admin_audit(admin, "system.maintenance", "system", "maintenance", {
+        "enabled": bool(payload.enabled), "message": msg,
+    })
+    # Broadcast to all connected sockets so clients can show a banner
+    try:
+        await ws_manager.broadcast({
+            "type": "maintenance",
+            "enabled": bool(payload.enabled),
+            "message": msg,
+        })
+    except Exception:
+        pass
+    return {"ok": True, "enabled": bool(payload.enabled), "message": msg, "checked_at": now_iso()}
+
+
+# Public read of maintenance state (so frontends can detect and show banner)
+@api2.get("/system/maintenance-status")
+async def public_maintenance_status():
+    cfg = await _get_maintenance()
+    return {
+        "enabled": bool(cfg.get("enabled")),
+        "message": cfg.get("message") or "",
+        "checked_at": now_iso(),
+    }
+
+
+# ============================================================
+# NEW: ANTI-SPAM overview & suspicious activity feed
+# ============================================================
+
+@api2.get("/admin/anti-spam/overview")
+async def admin_anti_spam_overview(admin=Depends(require_admin)):
+    """Real-time aggregated counters for the anti-spam dashboard."""
+    now = datetime.now(timezone.utc)
+    iso_24h = (now - timedelta(hours=24)).isoformat()
+    iso_7d = (now - timedelta(days=7)).isoformat()
+    flagged = await db.users.count_documents({"flagged_suspicious": True})
+    muted_active = await db.users.count_documents({"muted_until": {"$gt": now.isoformat()}})
+    shadow_muted = await db.users.count_documents({"shadow_muted": True})
+    suspended_active = await db.users.count_documents({"suspended_until": {"$gt": now.isoformat()}})
+    rate_limited = await db.users.count_documents({"rate_limit": {"$exists": True, "$ne": None}})
+    frozen = await db.users.count_documents({"frozen": True})
+    banned = await db.users.count_documents({"banned": True})
+    reports_24h = await db.reports.count_documents({"created_at": {"$gte": iso_24h}})
+    reports_open = await db.reports.count_documents({"status": "open"})
+    reports_7d = await db.reports.count_documents({"created_at": {"$gte": iso_7d}})
+    posts_reduced = await db.posts.count_documents({"reduce_reach": True})
+    posts_frozen_replies = await db.posts.count_documents({"replies_frozen": True})
+    blacklisted_tags = await db.hashtag_blacklist.count_documents({})
+    return {
+        "users": {
+            "flagged_suspicious": flagged,
+            "muted_active": muted_active,
+            "shadow_muted": shadow_muted,
+            "suspended_active": suspended_active,
+            "rate_limited": rate_limited,
+            "frozen": frozen,
+            "banned": banned,
+        },
+        "content": {
+            "reports_24h": reports_24h,
+            "reports_open": reports_open,
+            "reports_7d": reports_7d,
+            "posts_reduced": posts_reduced,
+            "posts_frozen_replies": posts_frozen_replies,
+            "blacklisted_tags": blacklisted_tags,
+        },
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/anti-spam/suspicious")
+async def admin_anti_spam_suspicious(
+    admin=Depends(require_admin),
+    filter: str = "all",  # all | flagged | muted | shadow | rate_limited | frozen | mass_reported
+    page: int = 1,
+    limit: int = 30,
+):
+    """List of users currently in some suspicious / restricted state."""
+    page = max(1, int(page or 1))
+    limit = max(5, min(100, int(limit or 30)))
+    now_iso_s = datetime.now(timezone.utc).isoformat()
+
+    query: dict = {}
+    if filter == "flagged":
+        query = {"flagged_suspicious": True}
+    elif filter == "muted":
+        query = {"muted_until": {"$gt": now_iso_s}}
+    elif filter == "shadow":
+        query = {"shadow_muted": True}
+    elif filter == "rate_limited":
+        query = {"rate_limit": {"$exists": True, "$ne": None}}
+    elif filter == "frozen":
+        query = {"frozen": True}
+    elif filter == "mass_reported":
+        # Aggregate from reports to find top reported users in last 7d
+        iso_7d = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        pipeline = [
+            {"$match": {"created_at": {"$gte": iso_7d}, "$or": [
+                {"kind": "user"}, {"target_user_id": {"$exists": True, "$ne": None}},
+            ]}},
+            {"$group": {"_id": {"$ifNull": ["$target_user_id", "$target_id"]}, "count": {"$sum": 1}}},
+            {"$match": {"count": {"$gte": 2}}},
+            {"$sort": {"count": -1}},
+            {"$limit": limit * 4},
+        ]
+        agg = await db.reports.aggregate(pipeline).to_list(length=limit * 4)
+        ids = [a["_id"] for a in agg if a.get("_id")]
+        if not ids:
+            return {"page": page, "limit": limit, "total": 0, "items": []}
+        users = await db.users.find({"id": {"$in": ids}}, {"_id": 0}).to_list(length=limit * 4)
+        by_id = {u["id"]: u for u in users}
+        items = []
+        for a in agg:
+            uid = a.get("_id")
+            u = by_id.get(uid)
+            if not u:
+                continue
+            card = _admin_user_card(u)
+            card["report_count_7d"] = int(a.get("count") or 0)
+            items.append(card)
+        total = len(items)
+        start = (page - 1) * limit
+        return {"page": page, "limit": limit, "total": total, "items": items[start:start + limit]}
+    else:  # all
+        query = {"$or": [
+            {"flagged_suspicious": True},
+            {"muted_until": {"$gt": now_iso_s}},
+            {"shadow_muted": True},
+            {"rate_limit": {"$exists": True, "$ne": None}},
+            {"frozen": True},
+        ]}
+    total = await db.users.count_documents(query)
+    rows = await db.users.find(query, {"_id": 0, "password_hash": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(length=limit)
+    items = [_admin_user_card(u) for u in rows]
+    return {"page": page, "limit": limit, "total": total, "items": items}
+
+
+@api2.get("/admin/anti-spam/activity")
+async def admin_anti_spam_activity(admin=Depends(require_admin), limit: int = 30):
+    """Recent suspicious events (signups in last 24h, mass-create patterns,
+    reports filed in last hour)."""
+    limit = max(5, min(200, int(limit or 30)))
+    now = datetime.now(timezone.utc)
+    iso_24h = (now - timedelta(hours=24)).isoformat()
+    iso_1h = (now - timedelta(hours=1)).isoformat()
+
+    # 1) Recent reports (last 1h)
+    recent_reports = await db.reports.find(
+        {"created_at": {"$gte": iso_1h}}, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+
+    # 2) Burst posters: users with >=10 posts in last 24h
+    pipeline_posts = [
+        {"$match": {"created_at": {"$gte": iso_24h}}},
+        {"$group": {"_id": "$author_id", "count": {"$sum": 1}}},
+        {"$match": {"count": {"$gte": 10}}},
+        {"$sort": {"count": -1}},
+        {"$limit": limit},
+    ]
+    burst_posts = await db.posts.aggregate(pipeline_posts).to_list(length=limit)
+
+    # 3) Burst commenters: >=30 comments in last 24h
+    pipeline_comments = [
+        {"$match": {"created_at": {"$gte": iso_24h}}},
+        {"$group": {"_id": "$author_id", "count": {"$sum": 1}}},
+        {"$match": {"count": {"$gte": 30}}},
+        {"$sort": {"count": -1}},
+        {"$limit": limit},
+    ]
+    burst_comments = await db.comments.aggregate(pipeline_comments).to_list(length=limit)
+
+    # 4) Fresh accounts (registered in last 24h)
+    fresh_users = await db.users.find(
+        {"created_at": {"$gte": iso_24h}}, {"_id": 0, "password_hash": 0}
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+
+    # Enrich author ids → cards
+    uid_set = set([b["_id"] for b in burst_posts if b.get("_id")] +
+                  [b["_id"] for b in burst_comments if b.get("_id")])
+    cards: dict = {}
+    if uid_set:
+        async for u in db.users.find({"id": {"$in": list(uid_set)}}, {"_id": 0, "password_hash": 0}):
+            cards[u["id"]] = _admin_user_card(u)
+
+    return {
+        "recent_reports": recent_reports,
+        "burst_posters": [{"user": cards.get(b["_id"]), "count": b["count"]} for b in burst_posts if cards.get(b["_id"])],
+        "burst_commenters": [{"user": cards.get(b["_id"]), "count": b["count"]} for b in burst_comments if cards.get(b["_id"])],
+        "fresh_users": [_admin_user_card(u) for u in fresh_users],
+        "checked_at": now_iso(),
+    }
+
+
+# ============================================================
+# NEW: USER FREEZE
+# ============================================================
+
+@api2.post("/admin/users/{user_id}/freeze")
+async def admin_user_freeze(user_id: str, payload: AdminFreezeIn, admin=Depends(require_admin)):
+    """Congelar conta: ainda lê, mas não pode publicar/comentar/gostar/seguir/mensagens.
+    Idempotente; revoga sessões na primeira chamada."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1, "frozen": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if user_id == admin["id"]:
+        raise HTTPException(400, "Não te podes congelar a ti próprio")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes congelar outro administrador.")
+    reason = (payload.reason or "")[:300]
+    if u.get("frozen"):
+        return {"ok": True, "frozen": True, "already": True}
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "frozen": True,
+        "frozen_reason": reason,
+        "frozen_by": admin["id"],
+        "frozen_at": now_iso(),
+    }})
+    # Force-logout all current sessions
+    await db.sessions.update_many(
+        {"user_id": user_id, "revoked": {"$ne": True}},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "freeze"}},
+    )
+    await admin_audit(admin, "user.freeze", "user", user_id, {"reason": reason})
+    return {"ok": True, "frozen": True}
+
+
+@api2.post("/admin/users/{user_id}/unfreeze")
+async def admin_user_unfreeze(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.users.update_one({"id": user_id}, {
+        "$set": {"frozen": False},
+        "$unset": {"frozen_reason": "", "frozen_by": "", "frozen_at": ""},
+    })
+    await admin_audit(admin, "user.unfreeze", "user", user_id)
+    return {"ok": True, "frozen": False}
+
+
+# ============================================================
+# NEW: POST-LEVEL — replies_frozen + reduce_reach + view replies + view reports
+# ============================================================
+
+@api2.post("/admin/posts/{post_id}/freeze-replies")
+async def admin_post_freeze_replies(post_id: str, admin=Depends(require_admin)):
+    """Toggle replies_frozen on a post. When true, /posts/{id}/comments POST returns 403."""
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1, "replies_frozen": 1})
+    if not p:
+        raise HTTPException(404, "Publicação não encontrada")
+    new_val = not bool(p.get("replies_frozen"))
+    update = {"replies_frozen": new_val}
+    if new_val:
+        update["replies_frozen_at"] = now_iso()
+        update["replies_frozen_by"] = admin["id"]
+    else:
+        update["replies_frozen_at"] = None
+        update["replies_frozen_by"] = None
+    await db.posts.update_one({"id": post_id}, {"$set": update})
+    await admin_audit(admin, "post.freeze_replies", "post", post_id, {"replies_frozen": new_val})
+    return {"ok": True, "replies_frozen": new_val}
+
+
+@api2.post("/admin/posts/{post_id}/reduce-reach")
+async def admin_post_reduce_reach(post_id: str, admin=Depends(require_admin)):
+    """Toggle reduce_reach on a post. When true, post is hidden from feed/explore
+    (except for the author themselves on their own feed/profile)."""
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1, "reduce_reach": 1})
+    if not p:
+        raise HTTPException(404, "Publicação não encontrada")
+    new_val = not bool(p.get("reduce_reach"))
+    update = {"reduce_reach": new_val}
+    if new_val:
+        update["reduce_reach_at"] = now_iso()
+        update["reduce_reach_by"] = admin["id"]
+    else:
+        update["reduce_reach_at"] = None
+        update["reduce_reach_by"] = None
+    await db.posts.update_one({"id": post_id}, {"$set": update})
+    await admin_audit(admin, "post.reduce_reach", "post", post_id, {"reduce_reach": new_val})
+    return {"ok": True, "reduce_reach": new_val}
+
+
+@api2.get("/admin/posts/{post_id}/comments")
+async def admin_post_comments(post_id: str, admin=Depends(require_admin), page: int = 1, limit: int = 30):
+    """List comments on a specific post (paginated). For the moderation drawer."""
+    page = max(1, int(page or 1))
+    limit = max(5, min(100, int(limit or 30)))
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1, "author_id": 1, "comments_count": 1})
+    if not p:
+        raise HTTPException(404, "Publicação não encontrada")
+    total = await db.comments.count_documents({"post_id": post_id})
+    rows = await db.comments.find({"post_id": post_id}, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(length=limit)
+    # Enrich authors
+    aids = list({r.get("author_id") for r in rows if r.get("author_id")})
+    authors: dict = {}
+    if aids:
+        async for u in db.users.find({"id": {"$in": aids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1, "banned": 1}):
+            authors[u["id"]] = u
+    items = []
+    for c in rows:
+        a = authors.get(c.get("author_id")) or {}
+        items.append({
+            "id": c.get("id"),
+            "content": c.get("content"),
+            "created_at": c.get("created_at"),
+            "parent_id": c.get("parent_id"),
+            "replies_count": int(c.get("replies_count") or 0),
+            "author_id": c.get("author_id"),
+            "author_username": a.get("username", ""),
+            "author_name": a.get("name", ""),
+            "author_avatar": a.get("avatar", ""),
+            "author_banned": bool(a.get("banned")),
+            "author_verified": bool(a.get("verified")),
+        })
+    return {"page": page, "limit": limit, "total": total, "items": items}
+
+
+@api2.get("/admin/posts/{post_id}/reports")
+async def admin_post_reports(post_id: str, admin=Depends(require_admin), limit: int = 50):
+    """Reports filed against this post or any of its comments."""
+    limit = max(5, min(200, int(limit or 50)))
+    # Reports against the post itself
+    post_reports = await db.reports.find(
+        {"kind": "post", "target_id": post_id}, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+    # Reports against any comment on the post
+    comment_ids_rows = await db.comments.find({"post_id": post_id}, {"_id": 0, "id": 1}).to_list(length=2000)
+    comment_ids = [c["id"] for c in comment_ids_rows]
+    comment_reports = []
+    if comment_ids:
+        comment_reports = await db.reports.find(
+            {"kind": "comment", "target_id": {"$in": comment_ids}}, {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(length=limit)
+    # Enrich reporters
+    rids = list({r.get("reporter_id") for r in (post_reports + comment_reports) if r.get("reporter_id")})
+    reporters: dict = {}
+    if rids:
+        async for u in db.users.find({"id": {"$in": rids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            reporters[u["id"]] = u
+    def _shape(r):
+        rep = reporters.get(r.get("reporter_id")) or {}
+        return {
+            "id": r.get("id"),
+            "kind": r.get("kind"),
+            "status": r.get("status"),
+            "reason": r.get("reason"),
+            "detail": r.get("detail"),
+            "target_id": r.get("target_id"),
+            "created_at": r.get("created_at"),
+            "resolved_at": r.get("resolved_at"),
+            "resolved_action": r.get("resolved_action"),
+            "reporter": {
+                "id": rep.get("id"),
+                "username": rep.get("username", ""),
+                "name": rep.get("name", ""),
+                "avatar": rep.get("avatar", ""),
+            } if rep else None,
+        }
+    return {
+        "post_reports": [_shape(r) for r in post_reports],
+        "comment_reports": [_shape(r) for r in comment_reports],
+        "total": len(post_reports) + len(comment_reports),
+    }
 
 
 app.include_router(api2)

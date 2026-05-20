@@ -1332,7 +1332,7 @@ frontend:
               - All interactions smooth and responsive
             
             Test Credentials: admin@vermillion.app / admin123
-            Test URL: https://mobile-button-audit.preview.emergentagent.com/settings
+            Test URL: https://moderation-hub-61.preview.emergentagent.com/settings
             
             CONCLUSION:
             The settings page restructuring is COMPLETE and WORKING perfectly.
@@ -1583,3 +1583,82 @@ agent_communication:
            audit.csv idem. Verificar audit log: export.users + export.audit registadas.
        10) Auth: chamar qualquer endpoint /api/admin/* sem token → 401; com token de user NÃO admin → 403.
 
+
+agent_communication:
+    - agent: "main"
+      message: |
+        🆕 NEW WAVE (July 2025) — admin panel actions catalogue completion.
+
+        Added BACKEND endpoints (all under /api, admin-only unless noted) — NO AI / NO billing-dependent ops, only real-time DB + WS + filesystem queries:
+          • POST /api/admin/system/restart-sockets    → closes every active WS via ws_manager.disconnect_all() (returns count); audits "system.restart_sockets".
+          • POST /api/admin/system/clear-cache        → clears _maintenance_cache + ws_manager.viewers_by_post + posts_by_user + best-effort lru_caches. Returns {cleared}; audits "system.clear_cache".
+          • GET  /api/admin/system/maintenance        → returns current maintenance config from db.system_config (cached 30s).
+          • POST /api/admin/system/maintenance        → toggle/set maintenance (body: {enabled, message?}); persists in db.system_config, broadcasts WS "maintenance" event, audits "system.maintenance".
+          • GET  /api/system/maintenance-status       → PUBLIC read of maintenance state (for clients).
+          • GET  /api/admin/anti-spam/overview        → real-time aggregate counters (flagged/muted/shadow/suspended/rate-limited/frozen/banned + reports_24h/open/7d + posts_reduced/frozen_replies + blacklisted_tags).
+          • GET  /api/admin/anti-spam/suspicious      → paginated users by filter ∈ {all|flagged|muted|shadow|rate_limited|frozen|mass_reported}. mass_reported aggregates against /reports of last 7d.
+          • GET  /api/admin/anti-spam/activity        → recent suspicious events (recent_reports last 1h, burst_posters ≥10 posts/24h, burst_commenters ≥30 comments/24h, fresh_users last 24h).
+          • POST /api/admin/users/{id}/freeze         → idempotent; sets {frozen:true, frozen_reason, frozen_by, frozen_at}, revokes all sessions, audits "user.freeze". Blocks admin self-freeze + freezing other admins.
+          • POST /api/admin/users/{id}/unfreeze       → clears frozen state, audits "user.unfreeze".
+          • POST /api/admin/posts/{id}/freeze-replies → toggle replies_frozen on a post; audits.
+          • POST /api/admin/posts/{id}/reduce-reach   → toggle reduce_reach on a post; audits.
+          • GET  /api/admin/posts/{id}/comments       → paginated list of comments + author info for admin drawer.
+          • GET  /api/admin/posts/{id}/reports        → list of reports against the post + against its comments, enriched with reporter info.
+
+        REAL enforcement (added to write endpoints — not mocks):
+          • _assert_not_frozen(user) → 403 if user.frozen=True.  Wired into: POST /posts (via _aassert_can_post), POST /posts/{id}/comments (via _aassert_can_comment), POST /posts/{id}/like, POST /users/{username}/follow, POST /messages.
+          • _aassert_not_maintenance(user) → 503 for non-admins when maintenance enabled. Wired into _aassert_can_post, _aassert_can_comment, send_message.
+          • _assert_post_replies_open(post) → 403 if post.replies_frozen=True. Wired into POST /posts/{id}/comments.
+          • Feed filter: query.$and includes {reduce_reach: not True OR author_id = viewer}.  Explore filter: {reduce_reach: not True}.
+
+        Helpers also exposed in admin payloads:
+          • _admin_user_card now returns {frozen, frozen_reason, frozen_at}.
+          • _admin_post_card now returns {replies_frozen, reduce_reach}.
+          • /admin/reports response now returns {target_user_id, target_username} so the UI can suspend/ban directly from a report.
+
+        FRONTEND (Admin.js, ~3500 lines total now):
+          • New TAB "Anti-spam" (icon ShieldAlert) — counters grid + suspicious activity blocks (burst posters/commenters, fresh users, recent reports) + filterable users list with inline Freeze + Rate-limit actions and Avatar→drawer.
+          • Overview gained "Atalhos rápidos" row (Ver atividade / Reports / Anti-spam / Sistema / Sessões).
+          • System tab gained banner when maintenance active + 3 big quick-action buttons: Reiniciar sockets, Limpar cache, Ativar/Desativar manutenção (prompts for message).
+          • Posts list rows now have 6 inline actions: Ver publicação (link), Ver respostas, Ver reports, Congelar respostas (toggle), Reduzir alcance (toggle), Destacar, Eliminar.  New <PostInspector/> drawer shows replies (with delete) and reports (post + comment reports).
+          • Reports list now exposes inline: Abrir conteúdo (target link), Aprovar (resolved), Ignorar (dismissed), Remover, Suspender utilizador, Banir utilizador, Perfil (open user drawer).
+          • UserDrawer gained "Congelar conta" action button (Snowflake icon) next to Banir; profile section shows Frozen state; "Terminar sessões" label (replacing "Forçar logout").
+
+        CASOS DE TESTE PRIORITÁRIOS (please cover end-to-end as admin admin@lusorae.app):
+          1) Maintenance toggle:
+             a) POST /api/admin/system/maintenance {enabled:true, message:"em manutenção"} → ok=true, enabled=true.
+             b) GET  /api/system/maintenance-status → enabled=true.
+             c) Como NON-admin token: POST /api/posts → 503 com a mensagem.
+             d) Como admin token: POST /api/posts → 200 (admin bypassa).
+             e) POST /api/admin/system/maintenance {enabled:false} → enabled=false; non-admin pode voltar a postar.
+          2) Restart sockets: POST /api/admin/system/restart-sockets → {ok:true, closed≥0}. Audit log tem entry "system.restart_sockets".
+          3) Clear cache: POST /api/admin/system/clear-cache → {ok:true, cleared:{maintenance_cache:true, post_viewers:true}}. Audit "system.clear_cache".
+          4) Freeze user:
+             a) Criar user normal, login.
+             b) Como admin: POST /api/admin/users/{u.id}/freeze {reason:"teste"} → frozen=true.
+             c) Como user (token revogado pelo freeze) → /api/auth/me deve 401 (sessões revogadas).
+             d) Re-login do user, depois: POST /api/posts → 403 "Conta congelada".
+             e) Mesmo user: POST /api/posts/{id}/like → 403. POST /api/users/{x}/follow → 403. POST /api/messages → 403. POST /api/posts/{id}/comments → 403.
+             f) GET /api/posts/feed continua a funcionar (read-only).
+             g) POST /api/admin/users/{u.id}/unfreeze → frozen=false; user volta a poder postar.
+             h) Tentar congelar a si próprio (admin→admin id) → 400. Tentar congelar outro admin → 400.
+          5) Post freeze-replies:
+             a) Criar post via user A. POST /api/admin/posts/{p.id}/freeze-replies → replies_frozen=true.
+             b) Como user B: POST /api/posts/{p.id}/comments → 403 "respostas congeladas".
+             c) Toggle de novo → replies_frozen=false; user B comenta normalmente.
+          6) Reduce reach:
+             a) Criar post via user A (que B segue). POST /api/admin/posts/{p.id}/reduce-reach → reduce_reach=true.
+             b) GET /api/posts/feed como user B → post não aparece.
+             c) GET /api/posts/feed como user A (autor) → post aparece (vê o seu próprio).
+             d) GET /api/posts/explore → post não aparece.
+             e) Toggle → reduce_reach=false; B volta a ver no feed.
+          7) Anti-spam overview/suspicious/activity:
+             a) GET /api/admin/anti-spam/overview → todas as chaves esperadas presentes; números coerentes (cf. counts em users/posts/reports).
+             b) GET /api/admin/anti-spam/suspicious?filter=all → items só com users em algum estado restrito.
+             c) Filters: flagged, muted, shadow, rate_limited, frozen, mass_reported — cada um devolve apenas os matches do filtro.
+             d) GET /api/admin/anti-spam/activity → recent_reports, burst_posters, burst_commenters, fresh_users (vazio é OK em ambientes limpos).
+          8) Admin posts/{id}/comments + /reports:
+             a) Criar post com 3 comentários, dos quais 1 com 1 resposta. GET /api/admin/posts/{p.id}/comments → total≥4, items enriquecidos com author_username/avatar.
+             b) Criar 1 report contra o post e 1 contra um comentário. GET /api/admin/posts/{p.id}/reports → post_reports[1], comment_reports[1], total=2.
+          9) Reports response shape: GET /api/admin/reports?status=open → items[].target_user_id e target_username preenchidos para post/comment/user kinds.
+         10) Auth: chamar QUALQUER novo endpoint sem token → 401; com token de não-admin → 403.
