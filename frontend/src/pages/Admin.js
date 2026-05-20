@@ -25,6 +25,9 @@ import {
     UserCheck, RefreshCcw, ChevronLeft, ChevronRight, Loader2, UserX,
     MessageSquare, Sparkles, Hash, Megaphone, X as XIcon, Download,
     Check, EyeOff, Eye, Heart, Image as ImageIcon, Video, AlertCircle,
+    Server, Database, Cpu, Bug, FileCode, Clock, Zap, Gauge, Wifi,
+    VolumeX, Ghost, Pause, Award, ShieldOff, KeyRound, Flag, ShieldAlert,
+    Users2, Smartphone, Globe, Bell, ClipboardList, Inbox, Heart as HeartIcon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -69,6 +72,7 @@ const apiError = (e) => {
 // -----------------------------------------------------------------
 const TABS = [
     { key: "overview", label: "Visão geral", icon: Activity },
+    { key: "system", label: "Sistema", icon: Server },
     { key: "users", label: "Utilizadores", icon: UsersIcon },
     { key: "posts", label: "Publicações", icon: FileText },
     { key: "comments", label: "Comentários", icon: MessageSquare },
@@ -160,34 +164,36 @@ function OverviewTab() {
     if (!stats) return null;
 
     return (
-        <div className="space-y-5" data-testid="admin-overview">
+        <div className="space-y-4 sm:space-y-5" data-testid="admin-overview">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Visão geral</h2>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                    <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1" title="Auto-atualização">
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Visão geral</h2>
+                <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-0.5 sm:gap-1 bg-black/[0.04] rounded-full p-1" title="Auto-atualização">
                         {[{v:0,l:"Off"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
                             <button key={o.v}
                                 onClick={() => setAutoRefresh(o.v)}
                                 data-testid={`admin-overview-autorefresh-${o.v}`}
-                                className={`h-7 px-2.5 rounded-full text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                                className={`h-7 px-2 sm:px-2.5 rounded-full text-[11px] sm:text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                             >{o.l}</button>
                         ))}
                     </div>
                     <button
                         onClick={() => downloadCsv("/admin/export/users.csv", "lusorae_users.csv")}
                         data-testid="admin-export-users-csv"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                        className="h-9 px-2.5 sm:px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
                         title="Exportar utilizadores em CSV"
+                        aria-label="Exportar utilizadores em CSV"
                     >
-                        <Download size={14} /> Users CSV
+                        <Download size={14} /> <span className="hidden xs:inline">Users CSV</span>
                     </button>
                     <button
                         onClick={() => setReloadAt(Date.now())}
                         data-testid="admin-overview-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                        className="h-9 px-2.5 sm:px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
                         title="Atualizar agora"
+                        aria-label="Atualizar agora"
                     >
-                        <RefreshCcw size={14} className={loading ? "animate-spin" : ""} /> Atualizar
+                        <RefreshCcw size={14} className={loading ? "animate-spin" : ""} /> <span className="hidden xs:inline">Atualizar</span>
                     </button>
                 </div>
             </div>
@@ -256,11 +262,11 @@ function Pager({ page, total, limit, onChange }) {
     const last = Math.max(1, Math.ceil((total || 0) / (limit || 1)));
     if (last <= 1) return null;
     return (
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/[0.06]">
-            <div className="text-[12px] text-black/55 font-mono">
-                Página {page} de {last} · {total} no total
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/[0.06] gap-2">
+            <div className="text-[11px] sm:text-[12px] text-black/55 font-mono min-w-0 truncate">
+                <span className="hidden xs:inline sm:inline">Página </span>{page}<span className="hidden sm:inline"> de </span><span className="sm:hidden">/</span>{last} · {total}<span className="hidden sm:inline"> no total</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
                 <button
                     onClick={() => onChange(Math.max(1, page - 1))}
                     disabled={page <= 1}
@@ -291,6 +297,325 @@ const USER_FILTERS = [
     { key: "admins", label: "Admins" },
     { key: "banned", label: "Banidos" },
 ];
+
+// -----------------------------------------------------------------
+// SYSTEM TAB — backend / DB / WS / load / errors / logs / latency / uptime
+// -----------------------------------------------------------------
+const fmtBytes = (n) => {
+    n = Number(n) || 0;
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+    return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+};
+const fmtKbToBytes = (kb) => fmtBytes((Number(kb) || 0) * 1024);
+const fmtUptime = (sec) => {
+    sec = Number(sec) || 0;
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+};
+
+function SystemPanel({ title, icon: Icon, accent = "text-emerald-600", testid, children, onRefresh, loading }) {
+    return (
+        <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid={testid}>
+            <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="font-display text-[14px] sm:text-[16px] tracking-tight inline-flex items-center gap-1.5">
+                    <Icon size={14} className={accent} /> {title}
+                </h3>
+                {onRefresh && (
+                    <button
+                        onClick={onRefresh}
+                        aria-label={`Atualizar ${title}`}
+                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55"
+                        title="Atualizar"
+                    ><RefreshCcw size={13} className={loading ? "animate-spin" : ""} /></button>
+                )}
+            </div>
+            {children}
+        </div>
+    );
+}
+
+function KV({ k, v, mono = false, color = "text-black/85" }) {
+    return (
+        <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-2 py-1.5 border-b border-black/[0.04] last:border-0">
+            <div className="xs:w-36 shrink-0 text-[10.5px] uppercase tracking-wider text-black/45 font-mono">{k}</div>
+            <div className={`flex-1 break-all text-[12.5px] ${color} ${mono ? "font-mono" : ""}`}>{v == null || v === "" ? "—" : v}</div>
+        </div>
+    );
+}
+
+function LogTail({ lines, empty = "Sem entradas." }) {
+    if (!Array.isArray(lines) || lines.length === 0) {
+        return <div className="text-[12px] text-black/45 italic">{empty}</div>;
+    }
+    return (
+        <pre className="bg-black/90 text-emerald-300 rounded-xl p-2 sm:p-3 text-[10.5px] sm:text-[11px] leading-relaxed font-mono overflow-auto max-h-[280px] whitespace-pre-wrap break-all">
+            {lines.join("\n")}
+        </pre>
+    );
+}
+
+function SystemTab() {
+    const [status, setStatus] = useState(null);
+    const [ws, setWs] = useState(null);
+    const [database, setDatabase] = useState(null);
+    const [load, setLoad] = useState(null);
+    const [latency, setLatency] = useState(null);
+    const [uptime, setUptime] = useState(null);
+    const [errLog, setErrLog] = useState(null);
+    const [outLog, setOutLog] = useState(null);
+    const [loading, setLoading] = useState({});
+
+    const _load = useCallback(async (key, url, setter) => {
+        setLoading((s) => ({ ...s, [key]: true }));
+        try {
+            const { data } = await api.get(url);
+            setter(data);
+        } catch (e) { apiError(e); }
+        finally { setLoading((s) => ({ ...s, [key]: false })); }
+    }, []);
+
+    const loadAll = useCallback(async () => {
+        await Promise.all([
+            _load("status", "/admin/system/status", setStatus),
+            _load("ws", "/admin/system/websocket", setWs),
+            _load("database", "/admin/system/database", setDatabase),
+            _load("load", "/admin/system/load", setLoad),
+            _load("latency", "/admin/system/latency", setLatency),
+            _load("uptime", "/admin/system/uptime", setUptime),
+            _load("errLog", "/admin/system/errors?lines=120", setErrLog),
+            _load("outLog", "/admin/system/logs?lines=120", setOutLog),
+        ]);
+    }, [_load]);
+
+    useEffect(() => { loadAll(); }, [loadAll]);
+
+    return (
+        <div className="space-y-4" data-testid="admin-system">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sistema</h2>
+                <button
+                    onClick={loadAll}
+                    data-testid="admin-system-refresh-all"
+                    className="h-9 px-3 rounded-full bg-black text-white text-[12.5px] font-medium inline-flex items-center gap-1.5 hover:bg-black/85"
+                ><RefreshCcw size={13} /> Atualizar tudo</button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* STATUS */}
+                <SystemPanel
+                    title="Estado do backend"
+                    icon={Server}
+                    accent="text-emerald-600"
+                    testid="sys-status"
+                    loading={loading.status}
+                    onRefresh={() => _load("status", "/admin/system/status", setStatus)}
+                >
+                    {status ? (
+                        <dl>
+                            <KV k="Serviço" v={status.service} mono />
+                            <KV k="Hostname" v={status.hostname} mono />
+                            <KV k="PID" v={status.pid} mono />
+                            <KV k="Python" v={status.python} mono />
+                            <KV k="Platform" v={status.platform} mono />
+                            <KV k="DB name" v={status.env?.db_name} mono />
+                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-emerald-700" : "text-red-600"} />
+                            <KV k="Verificado" v={fmtRelative(status.checked_at)} />
+                        </dl>
+                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                </SystemPanel>
+
+                {/* UPTIME */}
+                <SystemPanel
+                    title="Uptime"
+                    icon={Clock}
+                    accent="text-blue-600"
+                    testid="sys-uptime"
+                    loading={loading.uptime}
+                    onRefresh={() => _load("uptime", "/admin/system/uptime", setUptime)}
+                >
+                    {uptime ? (
+                        <dl>
+                            <KV k="Processo" v={fmtUptime(uptime.process?.uptime_seconds)} mono />
+                            <KV k="Arrancou" v={fmtDate(uptime.process?.started_at)} mono />
+                            <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono />
+                            <KV k="Verificado" v={fmtRelative(uptime.checked_at)} />
+                        </dl>
+                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                </SystemPanel>
+
+                {/* WS */}
+                <SystemPanel
+                    title="WebSocket"
+                    icon={Wifi}
+                    accent="text-emerald-600"
+                    testid="sys-ws"
+                    loading={loading.ws}
+                    onRefresh={() => _load("ws", "/admin/system/websocket", setWs)}
+                >
+                    {ws ? (
+                        <>
+                            <dl>
+                                <KV k="Users conectados" v={fmtNum(ws.users_connected)} mono />
+                                <KV k="Sockets totais" v={fmtNum(ws.sockets)} mono />
+                                <KV k="Post viewers" v={fmtNum(ws.post_viewers_total)} mono />
+                            </dl>
+                            {Array.isArray(ws.top_users) && ws.top_users.length > 0 && (
+                                <div className="mt-3">
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Top users (sockets)</div>
+                                    <ul className="space-y-1">
+                                        {ws.top_users.slice(0, 5).map((u) => (
+                                            <li key={u.user_id} className="text-[12px] flex items-center justify-between gap-2">
+                                                <span className="font-mono text-black/70 truncate">@{u.username || u.user_id.slice(0,8)}</span>
+                                                <span className="font-mono text-black/55">{u.sockets}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </>
+                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                </SystemPanel>
+
+                {/* LATENCY */}
+                <SystemPanel
+                    title="Latência DB"
+                    icon={Zap}
+                    accent="text-amber-600"
+                    testid="sys-latency"
+                    loading={loading.latency}
+                    onRefresh={() => _load("latency", "/admin/system/latency", setLatency)}
+                >
+                    {latency ? (
+                        <dl>
+                            <KV k="Min" v={latency.min_ms != null ? `${latency.min_ms} ms` : "—"} mono />
+                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-amber-700" : "text-emerald-700"} />
+                            <KV k="Máx" v={latency.max_ms != null ? `${latency.max_ms} ms` : "—"} mono />
+                            <KV k="Amostras" v={(latency.samples_ms || []).map((s) => `${s}ms`).join(" · ")} mono />
+                        </dl>
+                    ) : <div className="text-[12px] text-black/45">A medir…</div>}
+                </SystemPanel>
+
+                {/* DATABASE */}
+                <SystemPanel
+                    title="Base de dados"
+                    icon={Database}
+                    accent="text-purple-600"
+                    testid="sys-database"
+                    loading={loading.database}
+                    onRefresh={() => _load("database", "/admin/system/database", setDatabase)}
+                >
+                    {database?.db ? (
+                        <>
+                            <dl>
+                                <KV k="DB" v={database.db.db_name} mono />
+                                <KV k="Coleções" v={fmtNum(database.db.collections)} mono />
+                                <KV k="Documentos" v={fmtNum(database.db.objects)} mono />
+                                <KV k="Data size" v={fmtBytes(database.db.data_size_bytes)} mono />
+                                <KV k="Storage size" v={fmtBytes(database.db.storage_size_bytes)} mono />
+                                <KV k="Index size" v={fmtBytes(database.db.index_size_bytes)} mono />
+                                <KV k="Índices" v={fmtNum(database.db.indexes)} mono />
+                            </dl>
+                            {Array.isArray(database.collections) && (
+                                <div className="mt-3 max-h-[180px] overflow-y-auto">
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Coleções por contagem</div>
+                                    <ul className="space-y-0.5">
+                                        {database.collections.slice(0, 8).map((c) => (
+                                            <li key={c.name} className="text-[12px] flex items-center justify-between gap-2">
+                                                <span className="font-mono text-black/70 truncate">{c.name}</span>
+                                                <span className="font-mono text-black/55">{fmtNum(c.count)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </>
+                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                </SystemPanel>
+
+                {/* LOAD */}
+                <SystemPanel
+                    title="Carga"
+                    icon={Gauge}
+                    accent="text-rose-600"
+                    testid="sys-load"
+                    loading={loading.load}
+                    onRefresh={() => _load("load", "/admin/system/load", setLoad)}
+                >
+                    {load ? (
+                        <dl>
+                            <KV k="CPUs" v={load.cpu_count} mono />
+                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-emerald-700"} />
+                            <KV k="Load 5m" v={load.load_avg?.["5m"]?.toFixed?.(2) ?? "—"} mono />
+                            <KV k="Load 15m" v={load.load_avg?.["15m"]?.toFixed?.(2) ?? "—"} mono />
+                            {load.memory && (
+                                <>
+                                    <KV k="Memória total" v={fmtKbToBytes(load.memory.total_kb)} mono />
+                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-emerald-700"} />
+                                    <KV k="Disponível" v={fmtKbToBytes(load.memory.available_kb)} mono />
+                                </>
+                            )}
+                        </dl>
+                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                </SystemPanel>
+            </div>
+
+            {/* ERRORS LOG */}
+            <SystemPanel
+                title="Erros (stderr)"
+                icon={Bug}
+                accent="text-red-600"
+                testid="sys-errors"
+                loading={loading.errLog}
+                onRefresh={() => _load("errLog", "/admin/system/errors?lines=120", setErrLog)}
+            >
+                {errLog ? (
+                    <>
+                        <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">
+                            {errLog.file || "sem ficheiro"} · {errLog.count} linhas
+                        </div>
+                        <LogTail lines={errLog.lines} empty="Sem erros registados." />
+                    </>
+                ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+            </SystemPanel>
+
+            {/* LOGS */}
+            <SystemPanel
+                title="Logs (stdout)"
+                icon={FileCode}
+                accent="text-emerald-600"
+                testid="sys-logs"
+                loading={loading.outLog}
+                onRefresh={() => _load("outLog", "/admin/system/logs?lines=120", setOutLog)}
+            >
+                {outLog ? (
+                    <>
+                        <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">
+                            {outLog.file || "sem ficheiro"} · {outLog.count} linhas
+                        </div>
+                        <LogTail lines={outLog.lines} empty="Sem entradas." />
+                    </>
+                ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+            </SystemPanel>
+
+            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-3 sm:px-4 py-2.5 text-[11.5px] text-amber-900/85 flex items-start gap-2">
+                <AlertCircle size={13} className="mt-0.5 shrink-0" />
+                <div>
+                    <strong>Ver filas</strong> não foi implementado: este sistema não usa filas externas (Celery/Redis). Tudo o resto é dado em tempo real.
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
 
 function UsersTab({ onOpenDrawer }) {
     const { user: me } = useAuth();
@@ -426,7 +751,7 @@ function UsersTab({ onOpenDrawer }) {
     return (
         <div className="space-y-4" data-testid="admin-users">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Utilizadores</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Utilizadores</h2>
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-users-refresh"
@@ -437,7 +762,7 @@ function UsersTab({ onOpenDrawer }) {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
                     <input
                         type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
@@ -446,12 +771,12 @@ function UsersTab({ onOpenDrawer }) {
                         className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {USER_FILTERS.map((f) => (
                         <button key={f.key}
                             onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-users-filter-${f.key}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                         >{f.label}</button>
                     ))}
                 </div>
@@ -459,39 +784,41 @@ function UsersTab({ onOpenDrawer }) {
 
             {/* BULK TOOLBAR */}
             {selected.size > 0 && (
-                <div className="bg-black text-white rounded-2xl px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
+                <div className="bg-black text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
                     data-testid="admin-users-bulk-toolbar">
-                    <div className="text-[13px] font-medium">
+                    <div className="text-[12.5px] sm:text-[13px] font-medium">
                         {selected.size} selecionado(s)
                     </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                         <button onClick={() => runBulk("verify")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-verify"
-                            className="h-8 px-3 rounded-full bg-white/15 hover:bg-white/25 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5">
-                            <ShieldCheck size={13} /> Verificar
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-white/15 hover:bg-white/25 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
+                            <ShieldCheck size={13} /> <span className="hidden xs:inline sm:inline">Verificar</span>
                         </button>
                         <button onClick={() => runBulk("unverify")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-unverify"
-                            className="h-8 px-3 rounded-full bg-white/15 hover:bg-white/25 text-[12px] font-medium disabled:opacity-40">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-white/15 hover:bg-white/25 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
                             Desverificar
                         </button>
                         <button onClick={() => runBulk("ban")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-ban"
-                            className="h-8 px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Ban size={13} /> Banir
                         </button>
                         <button onClick={() => runBulk("unban")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-unban"
-                            className="h-8 px-3 rounded-full bg-emerald-500/85 hover:bg-emerald-500 text-[12px] font-medium disabled:opacity-40">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-emerald-500/85 hover:bg-emerald-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
                             Desbanir
                         </button>
                         <button onClick={() => runBulk("force_logout")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-logout"
-                            className="h-8 px-3 rounded-full bg-white/15 hover:bg-white/25 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5">
-                            <UserX size={13} /> Force logout
+                            title="Forçar logout"
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-white/15 hover:bg-white/25 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
+                            <UserX size={13} /> <span className="hidden sm:inline">Force logout</span>
                         </button>
                         <button onClick={() => setSelected(new Set())}
-                            className="h-8 px-2.5 rounded-full hover:bg-white/15 text-[12px] inline-flex items-center gap-1">
+                            aria-label="Limpar seleção"
+                            className="h-8 px-2 rounded-full hover:bg-white/15 text-[12px] inline-flex items-center gap-1">
                             <XIcon size={13} />
                         </button>
                     </div>
@@ -518,13 +845,13 @@ function UsersTab({ onOpenDrawer }) {
                         const canSelect = !isMe && !u.is_admin;
                         const isSel = selected.has(u.id);
                         return (
-                            <li key={u.id} data-testid={`admin-user-row-${u.username}`} className={`px-4 py-3 flex items-center gap-3 ${isSel ? "bg-amber-500/[0.06]" : ""}`}>
+                            <li key={u.id} data-testid={`admin-user-row-${u.username}`} className={`px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-2.5 sm:gap-3 ${isSel ? "bg-amber-500/[0.06]" : ""}`}>
                                 <input type="checkbox"
                                     checked={isSel}
                                     disabled={!canSelect}
                                     onChange={() => toggleSelect(u.id)}
                                     data-testid={`admin-user-select-${u.username}`}
-                                    className="w-4 h-4 accent-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="w-4 h-4 accent-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed mt-1.5 sm:mt-0"
                                 />
                                 <button
                                     onClick={() => onOpenDrawer && onOpenDrawer(u)}
@@ -536,7 +863,7 @@ function UsersTab({ onOpenDrawer }) {
                                 </button>
                                 <button
                                     onClick={() => onOpenDrawer && onOpenDrawer(u)}
-                                    className="flex-1 min-w-0 text-left hover:bg-black/[0.02] rounded-xl px-2 -mx-2 py-1 -my-1 transition"
+                                    className="flex-1 min-w-0 basis-[60%] sm:basis-auto text-left hover:bg-black/[0.02] rounded-xl px-2 -mx-2 py-1 -my-1 transition"
                                     title="Abrir detalhes"
                                 >
                                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -555,7 +882,7 @@ function UsersTab({ onOpenDrawer }) {
                                     )}
                                 </button>
 
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto sm:ml-0 basis-full sm:basis-auto justify-end sm:justify-start pt-1 sm:pt-0 border-t sm:border-t-0 border-black/[0.04] sm:border-0 mt-1 sm:mt-0">
                                     <button
                                         onClick={() => onVerify(u)} disabled={busy}
                                         data-testid={`admin-user-verify-${u.username}`}
@@ -715,7 +1042,7 @@ function PostsTab() {
     return (
         <div className="space-y-4" data-testid="admin-posts">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Publicações</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Publicações</h2>
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-posts-refresh"
@@ -726,7 +1053,7 @@ function PostsTab() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
                     <input
                         type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
@@ -735,38 +1062,39 @@ function PostsTab() {
                         className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {POST_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-posts-filter-${f.key}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                         >{f.label}</button>
                     ))}
                 </div>
             </div>
 
             {selected.size > 0 && (
-                <div className="bg-black text-white rounded-2xl px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
+                <div className="bg-black text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
                     data-testid="admin-posts-bulk-toolbar">
-                    <div className="text-[13px] font-medium">{selected.size} selecionada(s)</div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="text-[12.5px] sm:text-[13px] font-medium">{selected.size} selecionada(s)</div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                         <button onClick={() => runBulk("feature")} disabled={bulkBusy}
                             data-testid="admin-posts-bulk-feature"
-                            className="h-8 px-3 rounded-full bg-amber-500/85 hover:bg-amber-500 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-amber-500/85 hover:bg-amber-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Star size={13} /> Destacar
                         </button>
                         <button onClick={() => runBulk("unfeature")} disabled={bulkBusy}
                             data-testid="admin-posts-bulk-unfeature"
-                            className="h-8 px-3 rounded-full bg-white/15 hover:bg-white/25 text-[12px] font-medium disabled:opacity-40">
-                            Remover destaque
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-white/15 hover:bg-white/25 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
+                            <span className="hidden sm:inline">Remover destaque</span><span className="sm:hidden">Remover</span>
                         </button>
                         <button onClick={() => runBulk("delete")} disabled={bulkBusy}
                             data-testid="admin-posts-bulk-delete"
-                            className="h-8 px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Trash2 size={13} /> Eliminar
                         </button>
                         <button onClick={() => setSelected(new Set())}
-                            className="h-8 px-2.5 rounded-full hover:bg-white/15 text-[12px]">
+                            aria-label="Limpar seleção"
+                            className="h-8 px-2 rounded-full hover:bg-white/15 text-[12px]">
                             <XIcon size={13} />
                         </button>
                     </div>
@@ -881,7 +1209,7 @@ function ReportsTab() {
     return (
         <div className="space-y-4" data-testid="admin-reports">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Reports</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Reports</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-reports-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -889,20 +1217,20 @@ function ReportsTab() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["open", "closed", "all"].map((s) => (
                         <button key={s} onClick={() => { setStatus(s); setPage(1); }}
                             data-testid={`admin-reports-status-${s}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${status === s ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${status === s ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                         >{s === "open" ? "Abertos" : s === "closed" ? "Resolvidos" : "Todos"}</button>
                     ))}
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["all", "post", "comment", "user"].map((k) => (
                         <button key={k} onClick={() => { setKind(k); setPage(1); }}
                             data-testid={`admin-reports-kind-${k}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${kind === k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
-                        >{k === "all" ? "Tudo" : k === "post" ? "Posts" : k === "comment" ? "Comentários" : "Utilizadores"}</button>
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${kind === k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                        >{k === "all" ? "Tudo" : k === "post" ? "Posts" : k === "comment" ? "Coment." : "Users"}</button>
                     ))}
                 </div>
             </div>
@@ -1007,7 +1335,7 @@ function CommunitiesTab() {
     return (
         <div className="space-y-4" data-testid="admin-communities">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Comunidades</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comunidades</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-communities-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1092,7 +1420,7 @@ function EventsTab() {
     return (
         <div className="space-y-4" data-testid="admin-events">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Eventos</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Eventos</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-events-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1174,7 +1502,7 @@ function SessionsTab() {
     return (
         <div className="space-y-4" data-testid="admin-sessions">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Sessões ativas</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sessões ativas</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-sessions-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1274,7 +1602,7 @@ function AuditTab() {
     return (
         <div className="space-y-4" data-testid="admin-audit">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Audit log</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Audit log</h2>
                 <div className="flex items-center gap-1.5">
                     <button onClick={downloadCsv}
                         data-testid="admin-audit-export"
@@ -1361,7 +1689,7 @@ function CommentsTab() {
     return (
         <div className="space-y-4" data-testid="admin-comments">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Comentários</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comentários</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-comments-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1466,7 +1794,7 @@ function StoriesTab() {
     return (
         <div className="space-y-4" data-testid="admin-stories">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Stories</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Stories</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-stories-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1474,7 +1802,7 @@ function StoriesTab() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
                     <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar por legenda, ID ou autor"
@@ -1482,11 +1810,11 @@ function StoriesTab() {
                         className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {STORY_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-stories-filter-${f.key}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                         >{f.label}</button>
                     ))}
                 </div>
@@ -1608,7 +1936,7 @@ function HashtagsTab() {
     return (
         <div className="space-y-4" data-testid="admin-hashtags">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[22px] tracking-tight">Hashtags</h2>
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Hashtags</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-hashtags-refresh"
                     className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1624,7 +1952,7 @@ function HashtagsTab() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[200px]">
+                <div className="relative flex-1 min-w-[160px] sm:min-w-[200px]">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
                     <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar hashtag…"
@@ -1632,11 +1960,11 @@ function HashtagsTab() {
                         className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
+                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {HASHTAG_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-hashtags-filter-${f.key}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
                         >{f.label}</button>
                     ))}
                 </div>
@@ -1767,7 +2095,7 @@ function BroadcastTab() {
 
     return (
         <div className="space-y-4" data-testid="admin-broadcast">
-            <h2 className="font-display text-[22px] tracking-tight">Broadcast</h2>
+            <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Broadcast</h2>
 
             <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-4 py-3 text-[12.5px] text-amber-900/85 flex items-start gap-2">
                 <Megaphone size={14} className="mt-0.5 shrink-0" />
@@ -1842,6 +2170,30 @@ function BroadcastTab() {
 // -----------------------------------------------------------------
 // USER DRAWER
 // -----------------------------------------------------------------
+// -----------------------------------------------------------------
+// USER DRAWER — multi-tab, full moderation surface
+// -----------------------------------------------------------------
+function ActionButton({ icon: Icon, label, onClick, kind = "default", testid, disabled, title }) {
+    const tone = {
+        default: "bg-black/[0.04] hover:bg-black/[0.08] text-black/80",
+        danger: "bg-red-500/10 hover:bg-red-500/20 text-red-700",
+        warn: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-800",
+        good: "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800",
+        primary: "bg-black text-white hover:bg-black/85",
+    }[kind] || "bg-black/[0.04] hover:bg-black/[0.08] text-black/80";
+    return (
+        <button
+            onClick={onClick}
+            data-testid={testid}
+            disabled={disabled}
+            title={title}
+            className={`h-9 sm:h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 transition disabled:opacity-40 disabled:cursor-not-allowed ${tone}`}
+        >
+            <Icon size={13} />{label}
+        </button>
+    );
+}
+
 function UserDrawer({ user, onClose }) {
     const [tab, setTab] = useState("profile");
     const [detail, setDetail] = useState(null);
@@ -1849,64 +2201,210 @@ function UserDrawer({ user, onClose }) {
     const [comments, setComments] = useState(null);
     const [reports, setReports] = useState(null);
     const [sessions, setSessions] = useState(null);
+    const [activity, setActivity] = useState(null);
+    const [presence, setPresence] = useState(null);
+    const [history, setHistory] = useState(null);
+    const [followers, setFollowers] = useState(null);
+    const [mutuals, setMutuals] = useState(null);
+    const [conversations, setConversations] = useState(null);
+    const [ips, setIps] = useState(null);
+    const [devices, setDevices] = useState(null);
+    const [loginAlerts, setLoginAlerts] = useState(null);
+    const [recentActions, setRecentActions] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [actionBusy, setActionBusy] = useState(null);
 
-    useEffect(() => {
+    const reloadDetail = useCallback(async () => {
         if (!user) return;
         setLoading(true);
-        api.get(`/admin/users/${user.id}`)
-            .then(({ data }) => setDetail(data))
-            .catch(apiError)
-            .finally(() => setLoading(false));
+        try {
+            const { data } = await api.get(`/admin/users/${user.id}`);
+            setDetail(data);
+        } catch (e) { apiError(e); }
+        finally { setLoading(false); }
     }, [user]);
+
+    useEffect(() => { reloadDetail(); }, [reloadDetail]);
 
     useEffect(() => {
         if (!user) return;
-        if (tab === "posts" && posts === null) {
-            api.get(`/admin/users/${user.id}/posts`, { params: { page: 1, limit: 20 } })
-                .then(({ data }) => setPosts(data)).catch(apiError);
+        const lazy = async (cond, fn) => { if (cond) { try { await fn(); } catch (e) { apiError(e); } } };
+        lazy(tab === "posts" && posts === null, async () => {
+            const { data } = await api.get(`/admin/users/${user.id}/posts`, { params: { page: 1, limit: 20 } });
+            setPosts(data);
+        });
+        lazy(tab === "comments" && comments === null, async () => {
+            const { data } = await api.get(`/admin/users/${user.id}/comments`, { params: { page: 1, limit: 20 } });
+            setComments(data);
+        });
+        lazy(tab === "reports" && reports === null, async () => {
+            const { data } = await api.get(`/admin/users/${user.id}/reports`);
+            setReports(data);
+        });
+        lazy(tab === "activity" && activity === null, async () => {
+            const [a, pr, h, ra, la] = await Promise.all([
+                api.get(`/admin/users/${user.id}/activity`),
+                api.get(`/admin/users/${user.id}/presence`),
+                api.get(`/admin/users/${user.id}/history?limit=30`),
+                api.get(`/admin/users/${user.id}/recent-actions?limit=30`),
+                api.get(`/admin/users/${user.id}/login-alerts?limit=20`),
+            ]);
+            setActivity(a.data); setPresence(pr.data); setHistory(h.data); setRecentActions(ra.data); setLoginAlerts(la.data);
+        });
+        lazy(tab === "connections" && followers === null, async () => {
+            const [f, m, c] = await Promise.all([
+                api.get(`/admin/users/${user.id}/followers?limit=100`),
+                api.get(`/admin/users/${user.id}/mutuals?limit=100`),
+                api.get(`/admin/users/${user.id}/conversations`),
+            ]);
+            setFollowers(f.data); setMutuals(m.data); setConversations(c.data);
+        });
+        lazy(tab === "access" && sessions === null, async () => {
+            const [s, ipsR, dvs] = await Promise.all([
+                api.get(`/admin/users/${user.id}/sessions`),
+                api.get(`/admin/users/${user.id}/ips`),
+                api.get(`/admin/users/${user.id}/devices`),
+            ]);
+            setSessions(s.data); setIps(ipsR.data); setDevices(dvs.data);
+        });
+    }, [tab, user, posts, comments, reports, activity, followers, sessions]);
+
+    // ---- moderation actions ----
+    const act = async (key, doIt, msg) => {
+        setActionBusy(key);
+        try {
+            await doIt();
+            toast.success(msg);
+            await reloadDetail();
+            // Invalidate dependent tabs
+            setSessions(null);
+            setRecentActions(null);
+        } catch (e) { apiError(e); }
+        finally { setActionBusy(null); }
+    };
+
+    const promptInt = (label, def) => {
+        const raw = window.prompt(label, String(def));
+        if (raw === null) return null;
+        const n = parseInt(raw, 10);
+        if (isNaN(n) || n <= 0) { toast.error("Valor inválido"); return null; }
+        return n;
+    };
+    const promptStr = (label, def = "") => {
+        const r = window.prompt(label, def);
+        if (r === null) return null;
+        return String(r).trim();
+    };
+
+    const doMute = () => {
+        const m = promptInt("Silenciar por quantos minutos?", 60);
+        if (m === null) return;
+        const r = promptStr("Motivo (opcional):", "");
+        if (r === null) return;
+        return act("mute", () => api.post(`/admin/users/${u.id}/mute`, { minutes: m, reason: r }), "Conta silenciada.");
+    };
+    const doUnmute = () => act("unmute", () => api.post(`/admin/users/${u.id}/unmute`), "Silêncio removido.");
+    const doShadowMute = () => {
+        const r = promptStr(u.shadow_muted ? "Remover shadow-mute. Confirmas? (deixa vazio para sim)" : "Motivo do shadow-mute (opcional):", "");
+        if (r === null) return;
+        return act("shadow", () => api.post(`/admin/users/${u.id}/shadow-mute`, { reason: r }), u.shadow_muted ? "Shadow-mute removido." : "Shadow-mute aplicado.");
+    };
+    const doSuspend = () => {
+        const m = promptInt("Suspender por quantos minutos? (1440 = 24h)", 1440);
+        if (m === null) return;
+        const r = promptStr("Motivo (obrigatório):", "");
+        if (r === null) return;
+        if (!r) { toast.error("Motivo obrigatório"); return; }
+        return act("suspend", () => api.post(`/admin/users/${u.id}/suspend`, { minutes: m, reason: r }), "Conta suspensa.");
+    };
+    const doUnsuspend = () => act("unsuspend", () => api.post(`/admin/users/${u.id}/unsuspend`), "Suspensão removida.");
+    const doRateLimit = () => {
+        const p = promptStr("Limite de POSTS por janela (vazio = sem limite):", String((u.rate_limit && u.rate_limit.max_posts) || ""));
+        if (p === null) return;
+        const c = promptStr("Limite de COMENTÁRIOS por janela (vazio = sem limite):", String((u.rate_limit && u.rate_limit.max_comments) || ""));
+        if (c === null) return;
+        const w = promptInt("Janela (horas):", (u.rate_limit && u.rate_limit.window_hours) || 1);
+        if (w === null) return;
+        const r = promptStr("Motivo (opcional):", (u.rate_limit && u.rate_limit.reason) || "");
+        if (r === null) return;
+        const payload = {
+            max_posts: p === "" ? null : parseInt(p, 10),
+            max_comments: c === "" ? null : parseInt(c, 10),
+            window_hours: w,
+            reason: r,
+        };
+        return act("ratelimit", () => api.post(`/admin/users/${u.id}/rate-limit`, payload), "Rate-limit aplicado.");
+    };
+    const doFeature = () => act("feature", () => api.post(`/admin/users/${u.id}/feature`), u.featured_account ? "Destaque removido." : "Conta destacada.");
+    const doSuspicious = () => {
+        const r = promptStr(u.flagged_suspicious ? "Remover flag. Confirma? (deixa vazio para sim)" : "Motivo de suspeita:", "");
+        if (r === null) return;
+        return act("suspicious", () => api.post(`/admin/users/${u.id}/mark-suspicious`, { reason: r }), u.flagged_suspicious ? "Flag removida." : "Marcado como suspeito.");
+    };
+    const doSafe = () => {
+        if (!window.confirm("Marcar como SEGURO? Isto limpa: suspeito, mute, shadow-mute e suspensão.")) return;
+        return act("safe", () => api.post(`/admin/users/${u.id}/mark-safe`), "Conta marcada como segura.");
+    };
+    const doVerify = () => act("verify", () => api.post(`/admin/users/${u.id}/verify`, { verified: !u.verified }), u.verified ? "Verificação removida." : "Conta verificada.");
+    const doBan = () => {
+        if (u.banned) {
+            return act("unban", () => api.post(`/admin/users/${u.id}/unban`), "Conta desbanida.");
         }
-        if (tab === "comments" && comments === null) {
-            api.get(`/admin/users/${user.id}/comments`, { params: { page: 1, limit: 20 } })
-                .then(({ data }) => setComments(data)).catch(apiError);
-        }
-        if (tab === "reports" && reports === null) {
-            api.get(`/admin/users/${user.id}/reports`)
-                .then(({ data }) => setReports(data)).catch(apiError);
-        }
-        if (tab === "sessions" && sessions === null) {
-            api.get(`/admin/users/${user.id}/sessions`)
-                .then(({ data }) => setSessions(data)).catch(apiError);
-        }
-    }, [tab, user, posts, comments, reports, sessions]);
+        const r = promptStr("Motivo do banimento:", "");
+        if (r === null) return;
+        if (!r) { toast.error("Motivo obrigatório"); return; }
+        return act("ban", () => api.post(`/admin/users/${u.id}/ban`, { reason: r }), "Conta banida.");
+    };
+    const doForceLogout = () => {
+        if (!window.confirm("Forçar logout em TODAS as sessões deste utilizador?")) return;
+        return act("logout", () => api.post(`/admin/users/${u.id}/force-logout`), "Sessões revogadas.");
+    };
+    const doReset2FA = () => {
+        if (!window.confirm("Reset 2FA: o utilizador perderá o gerador atual e códigos de backup. Continuar?")) return;
+        return act("reset2fa", () => api.post(`/admin/users/${u.id}/reset-2fa`), "2FA reposto.");
+    };
+    const doAdminToggle = () => {
+        const msg = u.is_admin ? "Remover privilégios de administrador?" : "Promover a administrador?";
+        if (!window.confirm(msg)) return;
+        return act("admin", () => api.post(`/admin/users/${u.id}/admin`, { is_admin: !u.is_admin }), u.is_admin ? "Privilégios removidos." : "Promovido a admin.");
+    };
 
     if (!user) return null;
     const u = detail || user;
     const drawerTabs = [
         { k: "profile", l: "Perfil" },
+        { k: "activity", l: "Atividade" },
+        { k: "connections", l: "Conexões" },
         { k: "posts", l: "Posts" },
-        { k: "comments", l: "Comentários" },
+        { k: "comments", l: "Coment." },
+        { k: "access", l: "Acesso" },
         { k: "reports", l: "Reports" },
-        { k: "sessions", l: "Sessões" },
+        { k: "actions", l: "Ações" },
     ];
 
     return (
         <div className="fixed inset-0 z-[80]" data-testid="admin-user-drawer">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
-            <aside className="absolute right-0 top-0 bottom-0 w-full max-w-[520px] bg-white shadow-2xl flex flex-col">
-                <header className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-3">
-                    <Avatar user={u} size={42} />
+            <aside className="absolute right-0 top-0 bottom-0 w-full sm:max-w-[560px] bg-white shadow-2xl flex flex-col">
+                <header className="px-3 sm:px-4 py-3 border-b border-black/[0.06] flex items-center gap-2.5 sm:gap-3">
+                    <Avatar user={u} size={40} />
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-display text-[16px] tracking-tight truncate">{u.name || u.username}</span>
+                            <span className="font-display text-[15px] sm:text-[16px] tracking-tight truncate">{u.name || u.username}</span>
                             {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">verified</span>}
                             {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">admin</span>}
+                            {u.featured_account && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">destacado</span>}
                             {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
+                            {u.suspended_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">suspenso</span>}
+                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700">silenciado</span>}
+                            {u.shadow_muted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
+                            {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-700">suspeito</span>}
                         </div>
-                        <div className="text-[12px] text-black/55 truncate font-mono">@{u.username} · {u.email}</div>
+                        <div className="text-[11.5px] sm:text-[12px] text-black/55 truncate font-mono">@{u.username} · {u.email}</div>
                     </div>
                     <button onClick={onClose} data-testid="admin-user-drawer-close"
-                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05]">
+                        aria-label="Fechar"
+                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] shrink-0">
                         <XIcon size={16} />
                     </button>
                 </header>
@@ -1920,10 +2418,12 @@ function UserDrawer({ user, onClose }) {
                     ))}
                 </nav>
 
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
                     {loading && !detail && <div className="flex items-center justify-center py-10 text-black/45"><Loader2 className="animate-spin" /></div>}
+
+                    {/* PROFILE */}
                     {tab === "profile" && detail && (
-                        <dl className="space-y-2 text-[13px]">
+                        <dl className="space-y-2 text-[13px]" data-testid="admin-user-drawer-profile">
                             {[
                                 ["ID", u.id],
                                 ["Username", `@${u.username}`],
@@ -1937,7 +2437,14 @@ function UserDrawer({ user, onClose }) {
                                 ["Privado", u.private ? "sim" : "não"],
                                 ["Verificado", u.verified ? "sim" : "não"],
                                 ["Admin", u.is_admin ? "sim" : "não"],
+                                ["Destacada", u.featured_account ? "sim" : "não"],
+                                ["2FA", u.two_fa_enabled ? "activo" : "inactivo"],
                                 ["Banido", u.banned ? `sim — ${u.ban_reason || "(sem motivo)"}` : "não"],
+                                ["Suspenso", u.suspended_active ? `até ${fmtDate(u.suspended_until)} — ${u.suspend_reason || "(sem motivo)"}` : "não"],
+                                ["Silenciado", u.muted_active ? `até ${fmtDate(u.muted_until)} — ${u.mute_reason || "(sem motivo)"}` : "não"],
+                                ["Shadow mute", u.shadow_muted ? `sim — ${u.shadow_mute_reason || "(sem motivo)"}` : "não"],
+                                ["Suspeito", u.flagged_suspicious ? `sim — ${u.suspicious_reason || "(sem motivo)"}` : "não"],
+                                ["Rate limit", (u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `posts ${u.rate_limit.max_posts ?? "∞"} / coments ${u.rate_limit.max_comments ?? "∞"} por ${u.rate_limit.window_hours}h` : "sem limite"],
                                 ["Posts", u.posts_count],
                                 ["Comentários", u.comments_count],
                                 ["Stories", u.stories_count],
@@ -1945,13 +2452,129 @@ function UserDrawer({ user, onClose }) {
                                 ["Reports feitos", u.reports_made_count],
                                 ["Sessões ativas", u.active_sessions],
                             ].map(([k, v]) => (
-                                <div key={k} className="flex items-start gap-2 py-1 border-b border-black/[0.04]">
-                                    <dt className="w-32 shrink-0 text-[11.5px] uppercase tracking-wider text-black/45 font-mono">{k}</dt>
-                                    <dd className="flex-1 break-words text-black/85">{v == null || v === "" ? "—" : String(v)}</dd>
+                                <div key={k} className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-2 py-1.5 border-b border-black/[0.04]">
+                                    <dt className="sm:w-32 shrink-0 text-[10.5px] sm:text-[11.5px] uppercase tracking-wider text-black/45 font-mono">{k}</dt>
+                                    <dd className="flex-1 break-words text-black/85 text-[12.5px] sm:text-[13px]">{v == null || v === "" ? "—" : String(v)}</dd>
                                 </div>
                             ))}
                         </dl>
                     )}
+
+                    {/* ACTIVITY */}
+                    {tab === "activity" && (
+                        activity === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        <div className="space-y-4" data-testid="admin-user-drawer-activity">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Posts 24h/7d</div><div className="font-display text-[18px]">{activity.posts.d1}/{activity.posts.d7}</div></div>
+                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Coment. 24h/7d</div><div className="font-display text-[18px]">{activity.comments.d1}/{activity.comments.d7}</div></div>
+                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Stories ativos</div><div className="font-display text-[18px]">{activity.stories_active}</div></div>
+                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Likes dados</div><div className="font-display text-[18px]">{activity.likes_given}</div></div>
+                            </div>
+                            {presence && (
+                                <div className="bg-emerald-500/[0.06] border border-emerald-500/15 rounded-2xl px-3 py-2.5 text-[12.5px]">
+                                    <strong>Presença:</strong> {presence.online ? "online" : "offline"} · {presence.ws_sockets} socket(s) · {presence.active_sessions} sessões ativas · visto {fmtRelative(presence.last_seen)}
+                                </div>
+                            )}
+                            {history && history.items.length > 0 && (
+                                <div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Histórico recente ({history.count})</div>
+                                    <ul className="space-y-1.5">
+                                        {history.items.slice(0, 15).map((e, idx) => (
+                                            <li key={`${e.kind}-${e.id || idx}`} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.08] font-medium">{e.kind}</span>
+                                                    <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(e.created_at)}</span>
+                                                </div>
+                                                {e.content && <div className="mt-1 line-clamp-2">{e.content}</div>}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {recentActions && recentActions.items.length > 0 && (
+                                <div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Ações admin recentes ({recentActions.total})</div>
+                                    <ul className="space-y-1">
+                                        {recentActions.items.slice(0, 10).map((a) => (
+                                            <li key={a.id} className="px-3 py-1.5 rounded-xl bg-amber-500/[0.06] text-[12px]">
+                                                <span className="font-mono text-[10.5px] text-amber-700">{a.action}</span>
+                                                <span className="text-black/55 ml-1.5">· {fmtRelative(a.created_at)}</span>
+                                                {a.payload && Object.keys(a.payload).length > 0 && (
+                                                    <div className="text-[10.5px] text-black/55 mt-0.5 font-mono break-all">{JSON.stringify(a.payload)}</div>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {loginAlerts && loginAlerts.items.length > 0 && (
+                                <div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Login alerts ({loginAlerts.total})</div>
+                                    <ul className="space-y-1">
+                                        {loginAlerts.items.slice(0, 10).map((a, i) => (
+                                            <li key={a.id || i} className="px-3 py-1.5 rounded-xl bg-orange-500/[0.06] text-[12px]">
+                                                <span className="font-mono text-[10.5px] text-orange-700">login_alert</span>
+                                                <span className="ml-1.5 text-black/65">{a.title || a.message || ""}</span>
+                                                <span className="ml-auto text-[10.5px] text-black/45 float-right">{fmtRelative(a.created_at)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* CONNECTIONS */}
+                    {tab === "connections" && (
+                        followers === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        <div className="space-y-4" data-testid="admin-user-drawer-connections">
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Seguidores ({followers?.total || 0})</div>
+                                {(!followers || followers.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <ul className="space-y-1">{followers.items.slice(0, 30).map((f) => (
+                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] text-[12px] flex items-center gap-2">
+                                            <Avatar user={f} size={26} />
+                                            <span className="font-medium truncate">{f.name || f.username}</span>
+                                            <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
+                                            {f.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
+                                            {f.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">b</span>}
+                                            <span className={`ml-auto w-2 h-2 rounded-full ${f.online ? "bg-emerald-500" : "bg-black/15"}`} />
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Mutuals ({mutuals?.total || 0})</div>
+                                {(!mutuals || mutuals.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <ul className="space-y-1">{mutuals.items.slice(0, 30).map((f) => (
+                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.06] text-[12px] flex items-center gap-2">
+                                            <Avatar user={f} size={26} />
+                                            <span className="font-medium truncate">{f.name || f.username}</span>
+                                            <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Conversas DM ({conversations?.total || 0})</div>
+                                {(!conversations || conversations.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhuma conversa</div> :
+                                    <ul className="space-y-1">{conversations.items.slice(0, 20).map((c, i) => (
+                                        <li key={c.key || i} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                            <div className="flex items-center gap-1.5">
+                                                <MessageSquare size={11} className="text-black/45" />
+                                                <span className="font-medium">@{c.peer_username || c.peer_id?.slice(0,8) || "?"}</span>
+                                                {c.peer_banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
+                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(c.last_at)}</span>
+                                            </div>
+                                            {c.last_message_preview && <div className="text-[11.5px] text-black/55 mt-0.5 italic line-clamp-1">"{c.last_message_preview}"</div>}
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                        </div>
+                    )}
+
+                    {/* POSTS */}
                     {tab === "posts" && (
                         posts === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         posts.items.length === 0 ? <div className="text-black/45 text-[13px] py-6 text-center">Sem posts.</div> :
@@ -1969,6 +2592,8 @@ function UserDrawer({ user, onClose }) {
                             ))}
                         </ul>
                     )}
+
+                    {/* COMMENTS */}
                     {tab === "comments" && (
                         comments === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         comments.items.length === 0 ? <div className="text-black/45 text-[13px] py-6 text-center">Sem comentários.</div> :
@@ -1983,6 +2608,61 @@ function UserDrawer({ user, onClose }) {
                             ))}
                         </ul>
                     )}
+
+                    {/* ACCESS — sessions + IPs + devices */}
+                    {tab === "access" && (
+                        sessions === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        <div className="space-y-4" data-testid="admin-user-drawer-access">
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Sessões ({sessions?.items?.length || 0})</div>
+                                {(!sessions || sessions.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Sem sessões</div> :
+                                    <ul className="space-y-1.5">{sessions.items.map((s) => (
+                                        <li key={s.jti} className="px-3 py-2 rounded-xl bg-black/[0.03] text-[12px]">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-black/[0.08] text-black/55" : "bg-emerald-500/15 text-emerald-700"}`}>
+                                                    {s.revoked ? "revogada" : "ativa"}
+                                                </span>
+                                                <span className="font-mono text-[10.5px] text-black/55 truncate">{(s.user_agent || "").slice(0, 60) || "—"}</span>
+                                            </div>
+                                            <div className="text-[11px] text-black/45 mt-0.5 font-mono">
+                                                {s.ip || "—"} · visto {fmtRelative(s.last_seen_at)} · jti {s.jti?.slice(0,8)}
+                                            </div>
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5 inline-flex items-center gap-1.5"><Globe size={11} /> IPs distintos ({ips?.total || 0})</div>
+                                {(!ips || ips.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <ul className="space-y-1">{ips.items.slice(0, 20).map((i) => (
+                                        <li key={i.ip} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="font-mono">{i.ip}</span>
+                                                <span className="text-[10.5px] text-black/55">· {i.sessions} sessões ({i.active_sessions} ativas)</span>
+                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">visto {fmtRelative(i.last_seen)}</span>
+                                            </div>
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5 inline-flex items-center gap-1.5"><Smartphone size={11} /> Dispositivos ({devices?.total || 0})</div>
+                                {(!devices || devices.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <ul className="space-y-1">{devices.items.slice(0, 20).map((d, i) => (
+                                        <li key={i} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="font-medium">{d.browser || "?"} · {d.os || "?"} · {d.device || "desktop"}</span>
+                                                <span className="text-[10.5px] text-black/55">· {d.sessions} sessões</span>
+                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">visto {fmtRelative(d.last_seen)}</span>
+                                            </div>
+                                        </li>
+                                    ))}</ul>
+                                }
+                            </div>
+                        </div>
+                    )}
+
+                    {/* REPORTS */}
                     {tab === "reports" && (
                         reports === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         (reports.against.length === 0 && reports.by.length === 0) ?
@@ -2020,28 +2700,53 @@ function UserDrawer({ user, onClose }) {
                                 </div>
                             </div>
                     )}
-                    {tab === "sessions" && (
-                        sessions === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
-                        sessions.items.length === 0 ? <div className="text-black/45 text-[13px] py-6 text-center">Sem sessões registadas.</div> :
-                        <ul className="space-y-1.5" data-testid="admin-user-drawer-sessions-list">{sessions.items.map((s) => (
-                            <li key={s.jti} className="px-3 py-2 rounded-xl bg-black/[0.03] text-[12px]">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-black/[0.08] text-black/55" : "bg-emerald-500/15 text-emerald-700"}`}>
-                                        {s.revoked ? "revogada" : "ativa"}
-                                    </span>
-                                    <span className="font-mono text-[10.5px] text-black/55 truncate">{(s.user_agent || "").slice(0, 60) || "—"}</span>
+
+                    {/* ACTIONS — full moderation surface */}
+                    {tab === "actions" && (
+                        <div className="space-y-4" data-testid="admin-user-drawer-actions">
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Acesso</div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    <ActionButton icon={u.muted_active ? Eye : VolumeX} label={u.muted_active ? "Desilenciar" : "Silenciar"} onClick={u.muted_active ? doUnmute : doMute} testid="admin-action-mute" disabled={actionBusy === "mute" || actionBusy === "unmute"} kind={u.muted_active ? "good" : "warn"} />
+                                    <ActionButton icon={Ghost} label={u.shadow_muted ? "Sair shadow" : "Shadow mute"} onClick={doShadowMute} testid="admin-action-shadow-mute" disabled={actionBusy === "shadow"} kind={u.shadow_muted ? "good" : "warn"} />
+                                    <ActionButton icon={Pause} label={u.suspended_active ? "Tirar suspensão" : "Suspender"} onClick={u.suspended_active ? doUnsuspend : doSuspend} testid="admin-action-suspend" disabled={actionBusy === "suspend" || actionBusy === "unsuspend"} kind={u.suspended_active ? "good" : "danger"} />
+                                    <ActionButton icon={Ban} label={u.banned ? "Desbanir" : "Banir"} onClick={doBan} testid="admin-action-ban" disabled={actionBusy === "ban" || actionBusy === "unban"} kind={u.banned ? "good" : "danger"} />
+                                    <ActionButton icon={UserX} label="Forçar logout" onClick={doForceLogout} testid="admin-action-force-logout" disabled={actionBusy === "logout"} kind="warn" title="Revoga TODAS as sessões" />
+                                    <ActionButton icon={KeyRound} label="Reset 2FA" onClick={doReset2FA} testid="admin-action-reset-2fa" disabled={actionBusy === "reset2fa" || !u.two_fa_enabled} kind="warn" title={u.two_fa_enabled ? "Reset 2FA do utilizador" : "2FA não está activo"} />
                                 </div>
-                                <div className="text-[11px] text-black/45 mt-0.5 font-mono">
-                                    {s.ip || "—"} · visto {fmtRelative(s.last_seen_at)} · jti {s.jti?.slice(0,8)}
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Limites</div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar rate-limit (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / replies / posts"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
                                 </div>
-                            </li>
-                        ))}</ul>
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Flags</div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <ActionButton icon={ShieldAlert} label={u.flagged_suspicious ? "Tirar flag suspeito" : "Marcar suspeito"} onClick={doSuspicious} testid="admin-action-suspicious" disabled={actionBusy === "suspicious"} kind={u.flagged_suspicious ? "good" : "warn"} />
+                                    <ActionButton icon={ShieldCheck} label="Marcar seguro" onClick={doSafe} testid="admin-action-mark-safe" disabled={actionBusy === "safe"} kind="good" title="Limpa suspeito + mute + shadow + suspensão" />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Privilégios</div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    <ActionButton icon={Check} label={u.verified ? "Desverificar" : "Verificar"} onClick={doVerify} testid="admin-action-verify" disabled={actionBusy === "verify"} kind={u.verified ? "default" : "primary"} />
+                                    <ActionButton icon={Award} label={u.featured_account ? "Tirar destaque" : "Destacar conta"} onClick={doFeature} testid="admin-action-feature" disabled={actionBusy === "feature"} kind={u.featured_account ? "default" : "primary"} />
+                                    <ActionButton icon={Shield} label={u.is_admin ? "Remover admin" : "Promover admin"} onClick={doAdminToggle} testid="admin-action-admin-toggle" disabled={actionBusy === "admin"} kind={u.is_admin ? "danger" : "primary"} />
+                                </div>
+                            </div>
+                            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-3 py-2.5 text-[11.5px] text-amber-900/85">
+                                <strong>Ações registadas:</strong> todas estas ações geram entradas no audit log e ficam visíveis no separador "Atividade" deste utilizador.
+                            </div>
+                        </div>
                     )}
                 </div>
             </aside>
         </div>
     );
 }
+
 
 
 // -----------------------------------------------------------------
@@ -2076,15 +2781,15 @@ export default function Admin() {
     }
 
     return (
-        <div className="w-full max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-5" data-testid="admin-page">
-            <header className="mb-4 sm:mb-5">
+        <div className="w-full max-w-5xl mx-auto px-2.5 sm:px-5 py-3 sm:py-5" data-testid="admin-page">
+            <header className="mb-3 sm:mb-5">
                 <div className="flex items-start sm:items-center gap-2.5">
                     <span className="w-9 h-9 rounded-2xl grid place-items-center bg-black text-white shrink-0">
                         <Shield size={18} />
                     </span>
                     <div className="min-w-0">
-                        <h1 className="font-display text-[20px] sm:text-[26px] leading-tight tracking-tight">Painel administrativo</h1>
-                        <p className="text-[12px] sm:text-[12.5px] text-black/55 mt-1">
+                        <h1 className="font-display text-[18px] sm:text-[26px] leading-tight tracking-tight">Painel administrativo</h1>
+                        <p className="text-[11.5px] sm:text-[12.5px] text-black/55 mt-0.5 sm:mt-1">
                             <span className="hidden sm:inline">Logado como </span>
                             <strong>@{user.username}</strong>
                             <span className="hidden sm:inline"> · todas as acções ficam registadas no audit log.</span>
@@ -2093,7 +2798,7 @@ export default function Admin() {
                 </div>
             </header>
 
-            <nav className="mb-4 sm:mb-5 overflow-x-auto no-scrollbar -mx-3 sm:-mx-1 px-3 sm:px-1" data-testid="admin-tabs">
+            <nav className="mb-3 sm:mb-5 overflow-x-auto no-scrollbar -mx-2.5 sm:-mx-1 px-2.5 sm:px-1" data-testid="admin-tabs">
                 <div className="inline-flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
                     {TABS.map((t) => {
                         const Icon = t.icon;
@@ -2121,6 +2826,7 @@ export default function Admin() {
 
             <div data-testid={`admin-tab-content-${tab}`}>
                 {tab === "overview" && <OverviewTab />}
+                {tab === "system" && <SystemTab />}
                 {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
                 {tab === "posts" && <PostsTab />}
                 {tab === "comments" && <CommentsTab />}

@@ -1332,7 +1332,7 @@ frontend:
               - All interactions smooth and responsive
             
             Test Credentials: admin@vermillion.app / admin123
-            Test URL: https://network-admin-hub-2.preview.emergentagent.com/settings
+            Test URL: https://mobile-button-audit.preview.emergentagent.com/settings
             
             CONCLUSION:
             The settings page restructuring is COMPLETE and WORKING perfectly.

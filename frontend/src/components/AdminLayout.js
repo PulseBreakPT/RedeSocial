@@ -128,7 +128,7 @@ export function AdminLayout() {
                 className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-black/[0.07]"
                 data-testid="admin-topbar"
             >
-                <div className="max-w-5xl mx-auto px-3 sm:px-5 h-14 flex items-center gap-2 sm:gap-3">
+                <div className="max-w-5xl mx-auto px-2.5 sm:px-5 h-14 flex items-center gap-1.5 sm:gap-3">
                     <Link
                         to="/admin"
                         className="flex items-center gap-2 shrink-0 group"
@@ -138,8 +138,8 @@ export function AdminLayout() {
                         <span className="w-8 h-8 rounded-xl bg-black text-white grid place-items-center shrink-0">
                             <Shield size={15} />
                         </span>
-                        <div className="hidden xs:flex sm:flex flex-col leading-none">
-                            <span className="font-display text-[16px] sm:text-[18px] tracking-tight">Admin</span>
+                        <div className="flex flex-col leading-none">
+                            <span className="font-display text-[15px] sm:text-[18px] tracking-tight">Admin</span>
                             <span className="font-mono text-[9.5px] text-black/45 uppercase tracking-wider hidden sm:block">
                                 lusorae · painel
                             </span>

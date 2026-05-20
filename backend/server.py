@@ -15,6 +15,9 @@ import bcrypt
 import jwt
 import base64
 import io
+import time
+import socket
+import platform
 import pyotp
 import qrcode
 from datetime import datetime, timezone, timedelta
@@ -33,6 +36,10 @@ db = client[os.environ["DB_NAME"]]
 
 app = FastAPI(title="Lusorae Social")
 api = APIRouter(prefix="/api")
+
+# Process start timestamp — used by /admin/system/uptime (real, computed at boot)
+_PROCESS_STARTED_AT = time.time()
+_PROCESS_STARTED_AT_ISO = datetime.now(timezone.utc).isoformat()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("vermillion")
@@ -706,6 +713,12 @@ async def get_current_user(request: Request) -> dict:
             raise HTTPException(status_code=401, detail="Utilizador não encontrado")
         if user.get("banned"):
             raise HTTPException(status_code=403, detail="Conta suspensa")
+        # Temporary suspension (admin-imposed)
+        if _restriction_active(user, "suspended_until"):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Conta suspensa temporariamente até {user.get('suspended_until')}",
+            )
         # B-029 — session revocation check
         jti = payload.get("jti")
         if jti:
@@ -2043,6 +2056,8 @@ async def complete_onboarding(user=Depends(get_current_user)):
 # ============================================================
 @api.post("/posts")
 async def create_post(payload: PostIn, user=Depends(get_current_user)):
+    # Admin restrictions: mute + rate-limit (real, not mocked)
+    await _aassert_can_post(user)
     community_id = None
     if payload.community_id:
         c = await db.communities.find_one({"id": payload.community_id}, {"_id": 0})
@@ -2346,9 +2361,11 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
     await auto_publish_due_posts()
     ids = user.get("following", []) + [user["id"]]
     muted_authors = set(user.get("muted_authors", []) or [])
+    # Admin shadow-mute: exclude shadow-muted authors (but the user still sees their own)
+    shadow_ids = set(await _shadow_muted_ids_excluding(user["id"]))
     muted_topics = set((t or "").lower() for t in (user.get("muted_topics", []) or []))
     dismissed = set(user.get("dismissed_posts", []) or [])
-    visible_ids = [aid for aid in ids if aid not in muted_authors]
+    visible_ids = [aid for aid in ids if aid not in muted_authors and aid not in shadow_ids]
     query: dict = {
         "author_id": {"$in": visible_ids},
         "is_draft": {"$ne": True},
@@ -2388,8 +2405,16 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
         query["content"] = {"$regex": rx, "$options": "i"}
     if viewer:
         muted_authors = list(set(viewer.get("muted_authors", []) or []))
-        if muted_authors:
-            query["author_id"] = {"$nin": muted_authors}
+        # Admin shadow-mute filter
+        shadow_ids = await _shadow_muted_ids_excluding(viewer["id"])
+        combined = list(set(muted_authors + shadow_ids))
+        if combined:
+            query["author_id"] = {"$nin": combined}
+    else:
+        # Anonymous viewers also don't see shadow-muted authors
+        shadow_ids = await _shadow_muted_ids_excluding("")
+        if shadow_ids:
+            query["author_id"] = {"$nin": shadow_ids}
     # Admin hashtag blacklist — exclude posts with any blacklisted hashtag
     blacklist_rows = await db.hashtag_blacklist.find({}, {"_id": 0, "tag": 1}).to_list(length=500)
     blacklist = [(b.get("tag") or "").lower() for b in blacklist_rows]
@@ -2768,6 +2793,8 @@ async def list_comments(post_id: str, sort: str = "new", viewer: Optional[dict] 
 
 @api.post("/posts/{post_id}/comments")
 async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_current_user)):
+    # Admin restrictions: mute + rate-limit (real, not mocked)
+    await _aassert_can_comment(user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
@@ -8135,6 +8162,114 @@ class AdminReportResolveIn(BaseModel):
     note: Optional[str] = ""
 
 
+# ---- New moderation action payloads ----
+class AdminMuteIn(BaseModel):
+    minutes: Optional[int] = 60     # duration; ignored when unmuting
+    reason: Optional[str] = ""
+
+class AdminSuspendIn(BaseModel):
+    minutes: Optional[int] = 1440   # default 24h
+    reason: Optional[str] = ""
+
+class AdminRateLimitIn(BaseModel):
+    max_posts: Optional[int] = None      # per window; null = unlimited
+    max_comments: Optional[int] = None
+    window_hours: Optional[int] = 1
+    reason: Optional[str] = ""
+
+
+# ---- Restriction helpers (mute / suspend / rate-limit / shadow mute) ----
+def _restriction_active(user: dict, field: str) -> bool:
+    """Returns True if user[field] is an ISO datetime in the future."""
+    val = user.get(field)
+    if not val:
+        return False
+    try:
+        dt = datetime.fromisoformat(str(val).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt > datetime.now(timezone.utc)
+    except Exception:
+        return False
+
+
+def _assert_not_suspended(user: dict) -> None:
+    """Raise 403 if user is currently under temporary suspension."""
+    if _restriction_active(user, "suspended_until"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Conta suspensa temporariamente até {user.get('suspended_until')}",
+        )
+
+
+def _assert_can_post(user: dict) -> None:
+    """Sync stub. Use the async variant `_aassert_can_post` in request handlers."""
+    if _restriction_active(user, "muted_until"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Conta silenciada até {user.get('muted_until')}",
+        )
+    rl = user.get("rate_limit") or {}
+    if rl.get("max_posts") is not None:
+        raise RuntimeError("use _aassert_can_post in async context")
+
+
+async def _aassert_can_post(user: dict) -> None:
+    """Async variant: enforces mute + post-rate-limit."""
+    if _restriction_active(user, "muted_until"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Conta silenciada até {user.get('muted_until')}",
+        )
+    rl = user.get("rate_limit") or {}
+    mp = rl.get("max_posts")
+    if mp is not None and int(mp) >= 0:
+        window_h = max(1, int(rl.get("window_hours") or 1))
+        since = (datetime.now(timezone.utc) - timedelta(hours=window_h)).isoformat()
+        cnt = await db.posts.count_documents({
+            "author_id": user["id"],
+            "created_at": {"$gte": since},
+        })
+        if cnt >= int(mp):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Limite de publicações atingido ({int(mp)}/{window_h}h). Tenta mais tarde.",
+            )
+
+
+async def _aassert_can_comment(user: dict) -> None:
+    """Async variant: enforces mute + comment-rate-limit."""
+    if _restriction_active(user, "muted_until"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Conta silenciada até {user.get('muted_until')}",
+        )
+    rl = user.get("rate_limit") or {}
+    mc = rl.get("max_comments")
+    if mc is not None and int(mc) >= 0:
+        window_h = max(1, int(rl.get("window_hours") or 1))
+        since = (datetime.now(timezone.utc) - timedelta(hours=window_h)).isoformat()
+        cnt = await db.comments.count_documents({
+            "author_id": user["id"],
+            "created_at": {"$gte": since},
+        })
+        if cnt >= int(mc):
+            raise HTTPException(
+                status_code=429,
+                detail=f"Limite de comentários atingido ({int(mc)}/{window_h}h). Tenta mais tarde.",
+            )
+
+
+async def _shadow_muted_ids_excluding(viewer_id: str) -> list[str]:
+    """Returns IDs of users currently shadow-muted (excluding the viewer themselves
+    — a shadow-muted user still sees their own content)."""
+    rows = await db.users.find(
+        {"shadow_muted": True, "id": {"$ne": viewer_id}},
+        {"_id": 0, "id": 1},
+    ).to_list(length=2000)
+    return [r["id"] for r in rows]
+
+
 def _admin_user_card(u: dict) -> dict:
     """Compact admin-side user representation (more data than public_user)."""
     return {
@@ -8156,6 +8291,19 @@ def _admin_user_card(u: dict) -> dict:
         "online": is_online(u.get("last_seen")),
         "created_at": u.get("created_at"),
         "two_fa_enabled": bool(u.get("two_fa_enabled")),
+        # ---- moderation state (real fields) ----
+        "muted_until": u.get("muted_until"),
+        "muted_active": _restriction_active(u, "muted_until"),
+        "mute_reason": u.get("mute_reason", "") if _restriction_active(u, "muted_until") else "",
+        "shadow_muted": bool(u.get("shadow_muted")),
+        "shadow_mute_reason": u.get("shadow_mute_reason", "") if u.get("shadow_muted") else "",
+        "suspended_until": u.get("suspended_until"),
+        "suspended_active": _restriction_active(u, "suspended_until"),
+        "suspend_reason": u.get("suspend_reason", "") if _restriction_active(u, "suspended_until") else "",
+        "flagged_suspicious": bool(u.get("flagged_suspicious")),
+        "suspicious_reason": u.get("suspicious_reason", "") if u.get("flagged_suspicious") else "",
+        "featured_account": bool(u.get("featured_account")),
+        "rate_limit": u.get("rate_limit") or {},
     }
 
 
@@ -9242,6 +9390,714 @@ async def admin_health(admin=Depends(require_admin)):
         "hashtag_blacklist_size": bl_size,
         "checked_at": now_iso(),
     }
+
+
+# ----------------- SYSTEM PANEL (new) -----------------
+
+def _read_proc_meminfo() -> dict:
+    """Parse /proc/meminfo. Returns kB values. Empty dict if unavailable."""
+    out: dict = {}
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                k, _, v = line.partition(":")
+                v = v.strip().split()
+                if v:
+                    try:
+                        out[k.strip()] = int(v[0])
+                    except ValueError:
+                        pass
+    except Exception:
+        pass
+    return out
+
+
+def _tail_file(path: str, n: int = 200, max_bytes: int = 200_000) -> list[str]:
+    """Return last `n` lines of a text file, reading at most `max_bytes`."""
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            sz = f.tell()
+            start = max(0, sz - max_bytes)
+            f.seek(start)
+            data = f.read().decode("utf-8", errors="replace")
+        lines = data.splitlines()
+        return lines[-n:]
+    except Exception:
+        return []
+
+
+@api2.get("/admin/system/status")
+async def admin_system_status(admin=Depends(require_admin)):
+    """Real backend status: process, version, env mode, host."""
+    return {
+        "ok": True,
+        "service": "lusorae-backend",
+        "hostname": socket.gethostname(),
+        "pid": os.getpid(),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "started_at": _PROCESS_STARTED_AT_ISO,
+        "uptime_seconds": int(time.time() - _PROCESS_STARTED_AT),
+        "env": {
+            "db_name": os.environ.get("DB_NAME", ""),
+            "has_jwt_secret": bool(os.environ.get("JWT_SECRET")),
+            "admin_email_configured": bool(os.environ.get("ADMIN_EMAIL")),
+        },
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/system/websocket")
+async def admin_system_websocket(admin=Depends(require_admin)):
+    """Real WebSocket manager state."""
+    ws_users = 0
+    ws_sockets = 0
+    by_user: list = []
+    viewers_total = 0
+    viewers_top: list = []
+    try:
+        if "ws_manager" in globals():
+            ws_users = len(ws_manager.active)
+            ws_sockets = sum(len(v) for v in ws_manager.active.values())
+            # Top 10 users by socket count
+            pairs = [(uid, len(socks)) for uid, socks in ws_manager.active.items()]
+            pairs.sort(key=lambda x: x[1], reverse=True)
+            top_ids = [uid for uid, _ in pairs[:10]]
+            users_meta = {}
+            if top_ids:
+                async for u in db.users.find({"id": {"$in": top_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1}):
+                    users_meta[u["id"]] = u
+            by_user = [
+                {
+                    "user_id": uid,
+                    "username": users_meta.get(uid, {}).get("username", ""),
+                    "sockets": cnt,
+                }
+                for uid, cnt in pairs[:10]
+            ]
+            viewers_total = sum(len(s) for s in ws_manager.viewers_by_post.values())
+            # Top posts being viewed
+            vp = [(pid, len(uset)) for pid, uset in ws_manager.viewers_by_post.items()]
+            vp.sort(key=lambda x: x[1], reverse=True)
+            viewers_top = [{"post_id": pid, "viewers": cnt} for pid, cnt in vp[:10]]
+    except Exception as e:
+        logger.warning(f"admin_system_websocket: {e}")
+    return {
+        "users_connected": ws_users,
+        "sockets": ws_sockets,
+        "post_viewers_total": viewers_total,
+        "top_users": by_user,
+        "top_posts_being_viewed": viewers_top,
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/system/database")
+async def admin_system_database(admin=Depends(require_admin)):
+    """MongoDB dbStats + per-collection stats."""
+    out: dict = {"ok": True, "checked_at": now_iso()}
+    try:
+        stats = await db.command("dbStats", scale=1)
+        out["db"] = {
+            "db_name": stats.get("db"),
+            "collections": stats.get("collections"),
+            "objects": stats.get("objects"),
+            "data_size_bytes": stats.get("dataSize"),
+            "storage_size_bytes": stats.get("storageSize"),
+            "index_size_bytes": stats.get("indexSize"),
+            "indexes": stats.get("indexes"),
+        }
+    except Exception as e:
+        out["db"] = {"error": str(e)}
+    # Top collections by document count
+    coll_names = [
+        "users", "posts", "comments", "stories", "messages",
+        "conversations", "notifications", "reports", "sessions",
+        "admin_audit", "hashtag_blacklist", "bookmarks",
+        "communities", "events", "highlights",
+    ]
+    collections: list = []
+    for name in coll_names:
+        try:
+            cnt = await db[name].count_documents({})
+        except Exception:
+            cnt = -1
+        collections.append({"name": name, "count": cnt})
+    collections.sort(key=lambda x: x["count"], reverse=True)
+    out["collections"] = collections
+    return out
+
+
+@api2.get("/admin/system/load")
+async def admin_system_load(admin=Depends(require_admin)):
+    """System load average + memory usage from /proc."""
+    out: dict = {"checked_at": now_iso()}
+    try:
+        load = os.getloadavg()
+        out["load_avg"] = {"1m": load[0], "5m": load[1], "15m": load[2]}
+    except Exception:
+        out["load_avg"] = None
+    out["cpu_count"] = os.cpu_count()
+    mem = _read_proc_meminfo()
+    if mem:
+        total_kb = mem.get("MemTotal", 0)
+        avail_kb = mem.get("MemAvailable", mem.get("MemFree", 0))
+        used_kb = max(0, total_kb - avail_kb)
+        out["memory"] = {
+            "total_kb": total_kb,
+            "available_kb": avail_kb,
+            "used_kb": used_kb,
+            "used_pct": round((used_kb / total_kb) * 100, 1) if total_kb else 0,
+        }
+    else:
+        out["memory"] = None
+    return out
+
+
+@api2.get("/admin/system/errors")
+async def admin_system_errors(admin=Depends(require_admin), lines: int = 200):
+    """Tail of backend.err.log (stderr) — supervisor log."""
+    lines = max(10, min(2000, int(lines or 200)))
+    candidates = [
+        "/var/log/supervisor/backend.err.log",
+    ]
+    # Some setups produce timestamped files like backend.err.<pid>.log
+    try:
+        for fn in os.listdir("/var/log/supervisor"):
+            if fn.startswith("backend.err") and fn.endswith(".log"):
+                p = f"/var/log/supervisor/{fn}"
+                if p not in candidates:
+                    candidates.append(p)
+    except Exception:
+        pass
+    used = None
+    out_lines: list = []
+    for p in candidates:
+        if os.path.exists(p):
+            out_lines = _tail_file(p, n=lines)
+            used = p
+            if out_lines:
+                break
+    return {
+        "file": used,
+        "lines": out_lines,
+        "count": len(out_lines),
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/system/logs")
+async def admin_system_logs(admin=Depends(require_admin), lines: int = 200):
+    """Tail of backend.out.log (stdout) — supervisor log."""
+    lines = max(10, min(2000, int(lines or 200)))
+    candidates = [
+        "/var/log/supervisor/backend.out.log",
+    ]
+    try:
+        for fn in os.listdir("/var/log/supervisor"):
+            if fn.startswith("backend.out") and fn.endswith(".log"):
+                p = f"/var/log/supervisor/{fn}"
+                if p not in candidates:
+                    candidates.append(p)
+    except Exception:
+        pass
+    used = None
+    out_lines: list = []
+    for p in candidates:
+        if os.path.exists(p):
+            out_lines = _tail_file(p, n=lines)
+            used = p
+            if out_lines:
+                break
+    return {
+        "file": used,
+        "lines": out_lines,
+        "count": len(out_lines),
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/system/latency")
+async def admin_system_latency(admin=Depends(require_admin)):
+    """Measures real DB ping latency (multiple samples)."""
+    samples: list = []
+    for _ in range(5):
+        t0 = time.perf_counter()
+        try:
+            await db.command("ping")
+            samples.append((time.perf_counter() - t0) * 1000.0)
+        except Exception:
+            samples.append(-1.0)
+    valid = [s for s in samples if s >= 0]
+    out = {
+        "samples_ms": [round(s, 3) for s in samples],
+        "min_ms": round(min(valid), 3) if valid else None,
+        "max_ms": round(max(valid), 3) if valid else None,
+        "avg_ms": round(sum(valid) / len(valid), 3) if valid else None,
+        "checked_at": now_iso(),
+    }
+    return out
+
+
+@api2.get("/admin/system/uptime")
+async def admin_system_uptime(admin=Depends(require_admin)):
+    """Process uptime + host uptime from /proc/uptime."""
+    proc_up = int(time.time() - _PROCESS_STARTED_AT)
+    host_up = None
+    try:
+        with open("/proc/uptime", "r") as f:
+            host_up = float(f.read().split()[0])
+    except Exception:
+        host_up = None
+    return {
+        "process": {
+            "started_at": _PROCESS_STARTED_AT_ISO,
+            "uptime_seconds": proc_up,
+        },
+        "host": {
+            "uptime_seconds": int(host_up) if host_up is not None else None,
+        },
+        "checked_at": now_iso(),
+    }
+
+
+# ----------------- PER-USER INSPECTION (new) -----------------
+
+@api2.get("/admin/users/{user_id}/activity")
+async def admin_user_activity(user_id: str, admin=Depends(require_admin)):
+    """Real counts of recent activity (posts, comments, likes, reports)."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    now = datetime.now(timezone.utc)
+    iso_24h = (now - timedelta(hours=24)).isoformat()
+    iso_7d = (now - timedelta(days=7)).isoformat()
+    iso_30d = (now - timedelta(days=30)).isoformat()
+    posts_24h = await db.posts.count_documents({"author_id": user_id, "created_at": {"$gte": iso_24h}})
+    posts_7d = await db.posts.count_documents({"author_id": user_id, "created_at": {"$gte": iso_7d}})
+    posts_30d = await db.posts.count_documents({"author_id": user_id, "created_at": {"$gte": iso_30d}})
+    comments_24h = await db.comments.count_documents({"author_id": user_id, "created_at": {"$gte": iso_24h}})
+    comments_7d = await db.comments.count_documents({"author_id": user_id, "created_at": {"$gte": iso_7d}})
+    stories_active = await db.stories.count_documents({"author_id": user_id, "expires_at": {"$gte": now.isoformat()}})
+    likes_given = await db.posts.count_documents({"likes": user_id})
+    messages_24h = await db.messages.count_documents({"sender_id": user_id, "created_at": {"$gte": iso_24h}})
+    reports_against = await db.reports.count_documents({"$or": [{"kind": "user", "target_id": user_id}, {"target_user_id": user_id}]})
+    reports_made = await db.reports.count_documents({"reporter_id": user_id})
+    last_post = await db.posts.find_one({"author_id": user_id}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
+    last_comment = await db.comments.find_one({"author_id": user_id}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
+    return {
+        "posts": {"d1": posts_24h, "d7": posts_7d, "d30": posts_30d},
+        "comments": {"d1": comments_24h, "d7": comments_7d},
+        "stories_active": stories_active,
+        "likes_given": likes_given,
+        "messages_24h": messages_24h,
+        "reports_against": reports_against,
+        "reports_made": reports_made,
+        "last_post_at": (last_post or {}).get("created_at"),
+        "last_comment_at": (last_comment or {}).get("created_at"),
+        "last_seen": u.get("last_seen"),
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/users/{user_id}/presence")
+async def admin_user_presence(user_id: str, admin=Depends(require_admin)):
+    """Real-time presence: WebSocket connection + last_seen heuristic."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "username": 1, "last_seen": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    ws_sockets = 0
+    try:
+        if "ws_manager" in globals():
+            ws_sockets = len(ws_manager.active.get(user_id, []))
+    except Exception:
+        ws_sockets = 0
+    active_sessions = await db.sessions.count_documents({"user_id": user_id, "revoked": {"$ne": True}})
+    return {
+        "user_id": user_id,
+        "username": u.get("username"),
+        "online": ws_sockets > 0 or is_online(u.get("last_seen")),
+        "ws_sockets": ws_sockets,
+        "active_sessions": active_sessions,
+        "last_seen": u.get("last_seen"),
+        "checked_at": now_iso(),
+    }
+
+
+@api2.get("/admin/users/{user_id}/history")
+async def admin_user_history(user_id: str, admin=Depends(require_admin), limit: int = 50):
+    """Combined chronological timeline: posts + comments (last N events)."""
+    limit = max(5, min(200, int(limit or 50)))
+    posts = await db.posts.find({"author_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    comments = await db.comments.find({"author_id": user_id}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    events: list = []
+    for p in posts:
+        events.append({
+            "kind": "post", "id": p.get("id"), "created_at": p.get("created_at"),
+            "content": (p.get("content") or "")[:200],
+            "image": bool(p.get("image")),
+            "community_slug": p.get("community_slug"),
+        })
+    for c in comments:
+        events.append({
+            "kind": "comment", "id": c.get("id"), "post_id": c.get("post_id"),
+            "created_at": c.get("created_at"),
+            "content": (c.get("content") or "")[:200],
+        })
+    events.sort(key=lambda e: e.get("created_at") or "", reverse=True)
+    return {"items": events[:limit], "count": len(events[:limit])}
+
+
+@api2.get("/admin/users/{user_id}/conversations")
+async def admin_user_conversations(user_id: str, admin=Depends(require_admin)):
+    """Lists DM conversation peers for this user (no message content shown)."""
+    convs = await db.conversations.find({"participants": user_id}, {"_id": 0}).sort("last_at", -1).limit(100).to_list(100)
+    peer_ids = set()
+    items: list = []
+    for c in convs:
+        parts = c.get("participants") or []
+        other = next((p for p in parts if p != user_id), None)
+        if other:
+            peer_ids.add(other)
+        items.append({
+            "key": c.get("key") or conv_key(parts[0], parts[1]) if len(parts) >= 2 else None,
+            "peer_id": other,
+            "last_at": c.get("last_at"),
+            "last_message_preview": (c.get("last_message") or "")[:120],
+        })
+    peers: dict = {}
+    if peer_ids:
+        async for u in db.users.find({"id": {"$in": list(peer_ids)}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "banned": 1}):
+            peers[u["id"]] = u
+    for it in items:
+        p = peers.get(it["peer_id"]) or {}
+        it["peer_username"] = p.get("username", "")
+        it["peer_name"] = p.get("name", "")
+        it["peer_avatar"] = p.get("avatar", "")
+        it["peer_banned"] = bool(p.get("banned"))
+    return {"total": len(items), "items": items}
+
+
+@api2.get("/admin/users/{user_id}/followers")
+async def admin_user_followers(user_id: str, admin=Depends(require_admin), limit: int = 100):
+    """Followers list (slice)."""
+    limit = max(10, min(500, int(limit or 100)))
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "followers": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    ids = list(u.get("followers", []) or [])[:limit]
+    if not ids:
+        return {"total": 0, "items": []}
+    rows = await db.users.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1, "banned": 1, "last_seen": 1}).to_list(length=limit)
+    items = [{
+        "id": r.get("id"), "username": r.get("username"), "name": r.get("name"),
+        "avatar": r.get("avatar", ""), "verified": bool(r.get("verified")),
+        "banned": bool(r.get("banned")),
+        "online": is_online(r.get("last_seen")),
+    } for r in rows]
+    return {"total": len(u.get("followers", []) or []), "items": items}
+
+
+@api2.get("/admin/users/{user_id}/mutuals")
+async def admin_user_mutuals(user_id: str, admin=Depends(require_admin), limit: int = 100):
+    """Users that both follow and are followed by this user."""
+    limit = max(10, min(500, int(limit or 100)))
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "followers": 1, "following": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    followers = set(u.get("followers", []) or [])
+    following = set(u.get("following", []) or [])
+    mutual_ids = list(followers & following)[:limit]
+    if not mutual_ids:
+        return {"total": 0, "items": []}
+    rows = await db.users.find({"id": {"$in": mutual_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1, "banned": 1, "last_seen": 1}).to_list(length=limit)
+    return {
+        "total": len(followers & following),
+        "items": [{
+            "id": r.get("id"), "username": r.get("username"), "name": r.get("name"),
+            "avatar": r.get("avatar", ""), "verified": bool(r.get("verified")),
+            "banned": bool(r.get("banned")),
+            "online": is_online(r.get("last_seen")),
+        } for r in rows],
+    }
+
+
+@api2.get("/admin/users/{user_id}/ips")
+async def admin_user_ips(user_id: str, admin=Depends(require_admin)):
+    """Distinct IPs seen for this user across all sessions, with usage stats."""
+    rows = await db.sessions.find({"user_id": user_id}, {"_id": 0, "ip": 1, "last_ip": 1, "created_at": 1, "last_seen_at": 1, "revoked": 1}).to_list(length=2000)
+    by_ip: dict = {}
+    for s in rows:
+        for ip in {s.get("ip") or "", s.get("last_ip") or ""}:
+            if not ip:
+                continue
+            row = by_ip.setdefault(ip, {"ip": ip, "sessions": 0, "first_seen": None, "last_seen": None, "active_sessions": 0})
+            row["sessions"] += 1
+            if not s.get("revoked"):
+                row["active_sessions"] += 1
+            ca = s.get("created_at"); la = s.get("last_seen_at")
+            if ca and (row["first_seen"] is None or ca < row["first_seen"]):
+                row["first_seen"] = ca
+            if la and (row["last_seen"] is None or la > row["last_seen"]):
+                row["last_seen"] = la
+    items = sorted(by_ip.values(), key=lambda x: x["last_seen"] or "", reverse=True)
+    return {"total": len(items), "items": items}
+
+
+@api2.get("/admin/users/{user_id}/devices")
+async def admin_user_devices(user_id: str, admin=Depends(require_admin)):
+    """Distinct devices (browser+os+device) inferred from session UAs."""
+    rows = await db.sessions.find({"user_id": user_id}, {"_id": 0, "browser": 1, "os": 1, "device": 1, "ua": 1, "created_at": 1, "last_seen_at": 1, "revoked": 1}).to_list(length=2000)
+    by_fp: dict = {}
+    for s in rows:
+        fp = f"{s.get('browser','')}|{s.get('os','')}|{s.get('device','')}"
+        row = by_fp.setdefault(fp, {
+            "browser": s.get("browser"), "os": s.get("os"), "device": s.get("device"),
+            "sessions": 0, "active_sessions": 0,
+            "first_seen": None, "last_seen": None, "sample_ua": s.get("ua", "")[:200],
+        })
+        row["sessions"] += 1
+        if not s.get("revoked"):
+            row["active_sessions"] += 1
+        ca = s.get("created_at"); la = s.get("last_seen_at")
+        if ca and (row["first_seen"] is None or ca < row["first_seen"]):
+            row["first_seen"] = ca
+        if la and (row["last_seen"] is None or la > row["last_seen"]):
+            row["last_seen"] = la
+    items = sorted(by_fp.values(), key=lambda x: x["last_seen"] or "", reverse=True)
+    return {"total": len(items), "items": items}
+
+
+@api2.get("/admin/users/{user_id}/login-alerts")
+async def admin_user_login_alerts(user_id: str, admin=Depends(require_admin), limit: int = 50):
+    """Login alert notifications (B-014) sent to this user."""
+    limit = max(5, min(200, int(limit or 50)))
+    rows = await db.notifications.find(
+        {"user_id": user_id, "type": "login_alert"}, {"_id": 0},
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+    return {"total": len(rows), "items": rows}
+
+
+@api2.get("/admin/users/{user_id}/recent-actions")
+async def admin_user_recent_actions(user_id: str, admin=Depends(require_admin), limit: int = 50):
+    """Admin audit log entries that target THIS user."""
+    limit = max(5, min(200, int(limit or 50)))
+    rows = await db.admin_audit.find(
+        {"target_kind": "user", "target_id": user_id}, {"_id": 0},
+    ).sort("created_at", -1).limit(limit).to_list(length=limit)
+    return {"total": len(rows), "items": rows}
+
+
+# ----------------- USER MODERATION ACTIONS (new) -----------------
+
+def _minutes_to_iso_until(minutes: int) -> str:
+    minutes = max(1, min(60 * 24 * 365, int(minutes or 60)))
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+
+
+@api2.post("/admin/users/{user_id}/mute")
+async def admin_user_mute(user_id: str, payload: AdminMuteIn, admin=Depends(require_admin)):
+    """Silenciar: bloqueia criação de posts/comments durante N minutos.
+    Idempotente: chamada com mute ativo estende o prazo."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes silenciar outro administrador.")
+    until = _minutes_to_iso_until(payload.minutes or 60)
+    reason = (payload.reason or "")[:300]
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "muted_until": until,
+        "mute_reason": reason,
+        "muted_by": admin["id"],
+        "muted_at": now_iso(),
+    }})
+    await admin_audit(admin, "user.mute", "user", user_id, {"until": until, "reason": reason})
+    return {"ok": True, "muted_until": until}
+
+
+@api2.post("/admin/users/{user_id}/unmute")
+async def admin_user_unmute(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.users.update_one({"id": user_id}, {
+        "$unset": {"muted_until": "", "mute_reason": "", "muted_by": "", "muted_at": ""},
+    })
+    await admin_audit(admin, "user.unmute", "user", user_id)
+    return {"ok": True, "muted_until": None}
+
+
+@api2.post("/admin/users/{user_id}/shadow-mute")
+async def admin_user_shadow_mute(user_id: str, payload: AdminBanIn, admin=Depends(require_admin)):
+    """Shadow mute: posts do utilizador deixam de aparecer em feed/explore para outros.
+    O próprio continua a ver os próprios posts."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1, "shadow_muted": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes shadow-mute um administrador.")
+    new_val = not bool(u.get("shadow_muted"))
+    reason = (payload.reason or "")[:300]
+    if new_val:
+        await db.users.update_one({"id": user_id}, {"$set": {
+            "shadow_muted": True,
+            "shadow_mute_reason": reason,
+            "shadow_muted_by": admin["id"],
+            "shadow_muted_at": now_iso(),
+        }})
+    else:
+        await db.users.update_one({"id": user_id}, {
+            "$set": {"shadow_muted": False},
+            "$unset": {"shadow_mute_reason": "", "shadow_muted_by": "", "shadow_muted_at": ""},
+        })
+    await admin_audit(admin, "user.shadow_mute", "user", user_id, {"shadow_muted": new_val, "reason": reason})
+    return {"ok": True, "shadow_muted": new_val}
+
+
+@api2.post("/admin/users/{user_id}/suspend")
+async def admin_user_suspend(user_id: str, payload: AdminSuspendIn, admin=Depends(require_admin)):
+    """Suspender: bloqueia login (returns 403 em get_current_user) por N minutos."""
+    if user_id == admin["id"]:
+        raise HTTPException(400, "Não te podes suspender a ti próprio")
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes suspender outro administrador.")
+    until = _minutes_to_iso_until(payload.minutes or 1440)
+    reason = (payload.reason or "")[:300]
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "suspended_until": until,
+        "suspend_reason": reason,
+        "suspended_by": admin["id"],
+        "suspended_at": now_iso(),
+    }})
+    # Revoke active sessions while suspended
+    await db.sessions.update_many(
+        {"user_id": user_id, "revoked": {"$ne": True}},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "suspend"}},
+    )
+    await admin_audit(admin, "user.suspend", "user", user_id, {"until": until, "reason": reason})
+    return {"ok": True, "suspended_until": until}
+
+
+@api2.post("/admin/users/{user_id}/unsuspend")
+async def admin_user_unsuspend(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.users.update_one({"id": user_id}, {
+        "$unset": {"suspended_until": "", "suspend_reason": "", "suspended_by": "", "suspended_at": ""},
+    })
+    await admin_audit(admin, "user.unsuspend", "user", user_id)
+    return {"ok": True, "suspended_until": None}
+
+
+@api2.post("/admin/users/{user_id}/rate-limit")
+async def admin_user_rate_limit(user_id: str, payload: AdminRateLimitIn, admin=Depends(require_admin)):
+    """Limitar ações: define limite de posts/comments por janela. Aplicado em /posts e /posts/{id}/comments."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    rl: dict = {}
+    if payload.max_posts is not None:
+        rl["max_posts"] = max(0, int(payload.max_posts))
+    if payload.max_comments is not None:
+        rl["max_comments"] = max(0, int(payload.max_comments))
+    rl["window_hours"] = max(1, min(168, int(payload.window_hours or 1)))
+    rl["reason"] = (payload.reason or "")[:300]
+    rl["set_at"] = now_iso()
+    rl["set_by"] = admin["id"]
+    # If both null and no fields → clear
+    if payload.max_posts is None and payload.max_comments is None:
+        await db.users.update_one({"id": user_id}, {"$unset": {"rate_limit": ""}})
+        await admin_audit(admin, "user.rate_limit_clear", "user", user_id)
+        return {"ok": True, "rate_limit": None}
+    await db.users.update_one({"id": user_id}, {"$set": {"rate_limit": rl}})
+    await admin_audit(admin, "user.rate_limit", "user", user_id, rl)
+    return {"ok": True, "rate_limit": rl}
+
+
+@api2.post("/admin/users/{user_id}/mark-suspicious")
+async def admin_user_mark_suspicious(user_id: str, payload: AdminBanIn, admin=Depends(require_admin)):
+    """Sinaliza conta como suspeita (não bloqueia — só anota para revisão)."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "flagged_suspicious": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    new_val = not bool(u.get("flagged_suspicious"))
+    reason = (payload.reason or "")[:300]
+    if new_val:
+        await db.users.update_one({"id": user_id}, {"$set": {
+            "flagged_suspicious": True,
+            "suspicious_reason": reason,
+            "flagged_by": admin["id"],
+            "flagged_at": now_iso(),
+        }})
+    else:
+        await db.users.update_one({"id": user_id}, {
+            "$set": {"flagged_suspicious": False},
+            "$unset": {"suspicious_reason": "", "flagged_by": "", "flagged_at": ""},
+        })
+    await admin_audit(admin, "user.mark_suspicious", "user", user_id, {"flagged": new_val, "reason": reason})
+    return {"ok": True, "flagged_suspicious": new_val}
+
+
+@api2.post("/admin/users/{user_id}/mark-safe")
+async def admin_user_mark_safe(user_id: str, admin=Depends(require_admin)):
+    """Marca como seguro: limpa flag de suspeito + mute + shadow mute + suspensão."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.users.update_one({"id": user_id}, {
+        "$set": {"flagged_suspicious": False, "shadow_muted": False},
+        "$unset": {
+            "suspicious_reason": "", "flagged_by": "", "flagged_at": "",
+            "shadow_mute_reason": "", "shadow_muted_by": "", "shadow_muted_at": "",
+            "muted_until": "", "mute_reason": "", "muted_by": "", "muted_at": "",
+            "suspended_until": "", "suspend_reason": "", "suspended_by": "", "suspended_at": "",
+        },
+    })
+    await admin_audit(admin, "user.mark_safe", "user", user_id)
+    return {"ok": True}
+
+
+@api2.post("/admin/users/{user_id}/reset-2fa")
+async def admin_user_reset_2fa(user_id: str, admin=Depends(require_admin)):
+    """Reset 2FA: desativa e remove segredo + códigos de backup do utilizador.
+    Usado quando o utilizador perde acesso ao gerador. Requer login + setup novo."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "two_fa_enabled": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    had_2fa = bool(u.get("two_fa_enabled"))
+    await db.users.update_one({"id": user_id}, {
+        "$set": {"two_fa_enabled": False},
+        "$unset": {
+            "two_fa_secret": "",
+            "two_fa_backup_codes": "",
+            "two_fa_pending_secret": "",
+            "two_fa_pending_started_at": "",
+        },
+    })
+    await admin_audit(admin, "user.reset_2fa", "user", user_id, {"had_2fa": had_2fa})
+    return {"ok": True, "had_2fa": had_2fa}
+
+
+@api2.post("/admin/users/{user_id}/feature")
+async def admin_user_feature(user_id: str, admin=Depends(require_admin)):
+    """Destacar conta (toggle featured_account)."""
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "featured_account": 1})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    new_val = not bool(u.get("featured_account"))
+    await db.users.update_one({"id": user_id}, {"$set": {
+        "featured_account": new_val,
+        "featured_account_at": now_iso() if new_val else None,
+        "featured_account_by": admin["id"] if new_val else None,
+    }})
+    await admin_audit(admin, "user.feature", "user", user_id, {"featured": new_val})
+    return {"ok": True, "featured_account": new_val}
 
 
 # ----------------- EXPORT CSV -----------------

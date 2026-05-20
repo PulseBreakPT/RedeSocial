@@ -12,7 +12,7 @@ import base64
 from typing import Optional
 
 # Backend URL from frontend/.env
-BASE_URL = "https://network-admin-hub-2.preview.emergentagent.com/api"
+BASE_URL = "https://mobile-button-audit.preview.emergentagent.com/api"
 
 # Test credentials from /app/memory/test_credentials.md
 ADMIN_EMAIL = "admin@vermillion.app"
