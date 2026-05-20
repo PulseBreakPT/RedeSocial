@@ -5,6 +5,7 @@ import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
+import { AdminLayout } from "./components/AdminLayout";
 import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
@@ -104,6 +105,15 @@ function App() {
                             <Route path="/visitors" element={<Visitors />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
                             <Route path="/stories/archive" element={<StoryArchive />} />
+                        </Route>
+                        {/* Admin panel uses its own minimalist chrome */}
+                        <Route
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout />
+                                </ProtectedRoute>
+                            }
+                        >
                             <Route path="/admin" element={<Admin />} />
                         </Route>
                     </Routes>

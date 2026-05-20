@@ -2076,22 +2076,24 @@ export default function Admin() {
     }
 
     return (
-        <div className="w-full max-w-5xl mx-auto px-3 sm:px-5 py-5" data-testid="admin-page">
-            <header className="mb-5">
-                <div className="flex items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-2xl grid place-items-center bg-black text-white">
+        <div className="w-full max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-5" data-testid="admin-page">
+            <header className="mb-4 sm:mb-5">
+                <div className="flex items-start sm:items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-2xl grid place-items-center bg-black text-white shrink-0">
                         <Shield size={18} />
                     </span>
-                    <div>
-                        <h1 className="font-display text-[26px] leading-none tracking-tight">Painel administrativo</h1>
-                        <p className="text-[12.5px] text-black/55 mt-1">
-                            Logado como <strong>@{user.username}</strong> · todas as acções ficam registadas no audit log.
+                    <div className="min-w-0">
+                        <h1 className="font-display text-[20px] sm:text-[26px] leading-tight tracking-tight">Painel administrativo</h1>
+                        <p className="text-[12px] sm:text-[12.5px] text-black/55 mt-1">
+                            <span className="hidden sm:inline">Logado como </span>
+                            <strong>@{user.username}</strong>
+                            <span className="hidden sm:inline"> · todas as acções ficam registadas no audit log.</span>
                         </p>
                     </div>
                 </div>
             </header>
 
-            <nav className="mb-5 overflow-x-auto no-scrollbar -mx-1 px-1" data-testid="admin-tabs">
+            <nav className="mb-4 sm:mb-5 overflow-x-auto no-scrollbar -mx-3 sm:-mx-1 px-3 sm:px-1" data-testid="admin-tabs">
                 <div className="inline-flex items-center gap-1 bg-black/[0.04] rounded-full p-1">
                     {TABS.map((t) => {
                         const Icon = t.icon;
@@ -2100,7 +2102,7 @@ export default function Admin() {
                         return (
                             <button key={t.key} onClick={() => setTab(t.key)}
                                 data-testid={`admin-tab-${t.key}`}
-                                className={`h-9 pl-3 pr-3.5 rounded-full inline-flex items-center gap-1.5 text-[12.5px] font-medium whitespace-nowrap transition relative ${
+                                className={`h-9 pl-2.5 pr-3 sm:pl-3 sm:pr-3.5 rounded-full inline-flex items-center gap-1.5 text-[12px] sm:text-[12.5px] font-medium whitespace-nowrap transition relative ${
                                     active ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"
                                 }`}>
                                 <Icon size={14} /> {t.label}
