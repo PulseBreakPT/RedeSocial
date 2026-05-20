@@ -1254,11 +1254,13 @@ async def register(payload: RegisterIn, request: Request, response: Response):
     if await db.users.find_one({"username": username}):
         raise HTTPException(400, "Username já em uso")
     now = now_iso()
+    # Grupo A: new_users_auto_verify
+    auto_verified = bool(await is_feature_enabled("new_users_auto_verify"))
     user = {
         "id": str(uuid.uuid4()), "email": email, "username": username,
         "name": payload.name, "password_hash": hash_password(payload.password),
         "bio": "", "avatar": "", "banner": "",
-        "verified": False, "private": False, "onboarded": False,
+        "verified": auto_verified, "private": False, "onboarded": False,
         "followers": [], "following": [], "bookmarks": [],
         "last_seen": now, "created_at": now,
         # PT identity
@@ -1682,6 +1684,9 @@ async def user_suggestions(user=Depends(get_current_user)):
 async def global_search(q: str = "", viewer: Optional[dict] = Depends(maybe_user)):
     if not q.strip():
         return {"users": [], "posts": [], "tags": []}
+    # Grupo A: search_enabled — admins ainda recebem resultados
+    if not (viewer and viewer.get("is_admin")) and not await is_feature_enabled("search_enabled"):
+        return {"users": [], "posts": [], "tags": []}
     regex = {"$regex": re.escape(q), "$options": "i"}
     users = await db.users.find(
         {"$or": [{"username": regex}, {"name": regex}]}, {"_id": 0},
@@ -1951,6 +1956,9 @@ async def list_following(username: str, viewer=Depends(get_current_user)):
 
 @api.post("/users/{username}/follow")
 async def follow_user(username: str, user=Depends(get_current_user)):
+    # Grupo A: read-only + follows_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("follows_enabled", user)
     _assert_not_frozen(user)
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
@@ -1962,6 +1970,11 @@ async def follow_user(username: str, user=Depends(get_current_user)):
         await db.users.update_one({"id": target["id"]}, {"$pull": {"followers": user["id"]}})
         await db.users.update_one({"id": user["id"]}, {"$pull": {"following": target["id"]}})
         return {"following": False}
+    # Grupo A: max_follows_per_user
+    if not user.get("is_admin"):
+        _follow_cap = await get_limit("max_follows_per_user")
+        if _follow_cap and len(user.get("following", []) or []) >= _follow_cap:
+            raise HTTPException(429, f"Atingiste o máximo de pessoas seguidas ({_follow_cap}).")
     await db.users.update_one({"id": target["id"]}, {"$addToSet": {"followers": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$addToSet": {"following": target["id"]}})
     await create_notification(target["id"], "follow", user["id"], None, f"@{user['username']} começou a seguir-te")
@@ -1971,6 +1984,16 @@ async def follow_user(username: str, user=Depends(get_current_user)):
 @api.patch("/users/me")
 async def update_me(payload: UpdateProfileIn, user=Depends(get_current_user)):
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # Grupo A: limites dinâmicos para bio + display name (admins bypass)
+    if not user.get("is_admin"):
+        if "bio" in update and isinstance(update["bio"], str):
+            _max_bio = await get_limit("max_bio_chars")
+            if _max_bio and len(update["bio"]) > _max_bio:
+                raise HTTPException(400, f"Bio demasiado longa (máx {_max_bio} caracteres).")
+        if "name" in update and isinstance(update["name"], str):
+            _max_n = await get_limit("max_display_name_chars")
+            if _max_n and len(update["name"]) > _max_n:
+                raise HTTPException(400, f"Nome demasiado longo (máx {_max_n} caracteres).")
     # B-015 — basic validation/normalization of recovery_email
     if "recovery_email" in update:
         rec = (update["recovery_email"] or "").strip().lower()
@@ -1997,6 +2020,8 @@ async def delete_my_account(payload: DeleteAccountIn, response: Response, user=D
     and removes the user_id from communities.members and other users'
     followers/following/blocked/favorites/notify_users/muted_users lists.
     """
+    # Grupo A: account_deletion_enabled
+    await _assert_feature_or_503("account_deletion_enabled", user)
     if payload.confirm != "APAGAR":
         raise HTTPException(400, "Confirmação inválida — escreve APAGAR")
     fresh = await db.users.find_one({"id": user["id"]})
@@ -2090,6 +2115,8 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
             raise HTTPException(403, "Tens de entrar na comunidade primeiro")
         community_id = c["id"]
     if payload.quote_of:
+        if not user.get("is_admin") and not await is_feature_enabled("reposts_enabled"):
+            raise HTTPException(503, SETTINGS_BY_KEY["reposts_enabled"].get("off_message"))
         q = await db.posts.find_one({"id": payload.quote_of}, {"_id": 0})
         if not q:
             raise HTTPException(404, "Publicação citada não encontrada")
@@ -2164,6 +2191,10 @@ async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_
         raise HTTPException(403, "Sem permissão")
     is_draft = bool(post.get("is_draft"))
     is_scheduled = bool(post.get("scheduled_at"))
+    # Grupo A: edit_post_enabled — só bloqueia edição de posts LIVE (drafts/scheduled continuam editáveis)
+    if not user.get("is_admin") and not is_draft and not is_scheduled:
+        if not await is_feature_enabled("edit_post_enabled"):
+            raise HTTPException(503, SETTINGS_BY_KEY["edit_post_enabled"].get("off_message"))
     update_set = {}
     # Content updates
     if payload.content is not None:
@@ -2419,6 +2450,10 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
         )[:100]
     else:
         posts = posts[:100]
+    # Grupo A: feed_page_size — cap default da página (admins vêm o máximo)
+    if not user.get("is_admin"):
+        _fps = await get_limit("feed_page_size") or 20
+        posts = posts[: max(_fps, 5)]
     return [await enrich_post(p, user) for p in posts]
 
 
@@ -2665,6 +2700,9 @@ async def delete_post(post_id: str, user=Depends(get_current_user)):
         raise HTTPException(404, "Publicação não encontrada")
     if post["author_id"] != user["id"]:
         raise HTTPException(403, "Sem permissão")
+    # Grupo A: delete_own_post_enabled (admins bypass)
+    if not user.get("is_admin") and not await is_feature_enabled("delete_own_post_enabled"):
+        raise HTTPException(503, SETTINGS_BY_KEY["delete_own_post_enabled"].get("off_message"))
     await db.posts.delete_one({"id": post_id})
     await db.posts.delete_many({"repost_of": post_id})
     await db.comments.delete_many({"post_id": post_id})
@@ -2673,6 +2711,9 @@ async def delete_post(post_id: str, user=Depends(get_current_user)):
 
 @api.post("/posts/{post_id}/like")
 async def like_post(post_id: str, user=Depends(get_current_user)):
+    # Grupo A: read-only + likes_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("likes_enabled", user)
     _assert_not_frozen(user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
@@ -2737,6 +2778,9 @@ async def post_social_likers(post_id: str, request: Request):
 
 @api.post("/posts/{post_id}/bookmark")
 async def bookmark_post(post_id: str, user=Depends(get_current_user)):
+    # Grupo A: read-only + bookmarks_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("bookmarks_enabled", user)
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
@@ -2750,6 +2794,9 @@ async def bookmark_post(post_id: str, user=Depends(get_current_user)):
 
 @api.post("/posts/{post_id}/repost")
 async def repost(post_id: str, user=Depends(get_current_user)):
+    # Grupo A: read-only + reposts_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("reposts_enabled", user)
     original = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not original:
         raise HTTPException(404, "Publicação não encontrada")
@@ -4381,6 +4428,9 @@ async def stories_catalog():
 # ============================================================
 @api.post("/communities")
 async def create_community(payload: CommunityIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + communities_create_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("communities_create_enabled", user)
     slug = slugify(payload.name)
     if await db.communities.find_one({"slug": slug}):
         slug = f"{slug}-{str(uuid.uuid4())[:4]}"
@@ -4455,6 +4505,9 @@ def _community_public(c: dict, viewer: Optional[dict]) -> dict:
 # ============================================================
 @api.post("/events")
 async def create_event(payload: EventIn, user=Depends(get_current_user)):
+    # Grupo A: read-only + events_create_enabled
+    await _assert_writes_open(user)
+    await _assert_feature_or_503("events_create_enabled", user)
     cat = payload.category if payload.category in EVENT_CATEGORIES else "outros"
     e = {
         "id": str(uuid.uuid4()), "title": payload.title,
@@ -7532,6 +7585,7 @@ class ReportIn(BaseModel):
 
 @api2.post("/posts/{post_id}/report")
 async def report_post(post_id: str, payload: ReportIn, user=Depends(get_current_user)):
+    await _assert_reports_quota(user)
     p = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not p:
         raise HTTPException(404, "Publicação não encontrada")
@@ -7614,6 +7668,7 @@ async def edit_comment(comment_id: str, payload: CommentEditIn, user=Depends(get
 
 @api2.post("/comments/{comment_id}/report")
 async def report_comment(comment_id: str, payload: ReportIn, user=Depends(get_current_user)):
+    await _assert_reports_quota(user)
     c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
     if not c:
         raise HTTPException(404, "Comentário não encontrado")
@@ -7885,6 +7940,7 @@ async def mute_user_account(username: str, user=Depends(get_current_user)):
 
 @api2.post("/users/{username}/report")
 async def report_user(username: str, payload: ReportIn, user=Depends(get_current_user)):
+    await _assert_reports_quota(user)
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
         raise HTTPException(404, "Utilizador não encontrado")
@@ -8529,6 +8585,173 @@ SETTINGS_REGISTRY = [
      "label": "Validade da sessão (dias)",
      "description": "Quantos dias um token JWT/sessão fica válido (só afeta NOVAS sessões; tokens já emitidos mantêm o TTL original).",
      "applies_to": ["POST /api/auth/login", "POST /api/auth/register"]},
+
+    # ---------- FEATURE FLAGS — INTERAÇÕES ----------
+    {"key": "likes_enabled",          "group": "flags", "type": "bool", "default": True,
+     "label": "Likes",
+     "description": "Quando desligado, ninguém consegue dar like em publicações.",
+     "applies_to": ["POST /api/posts/{id}/like"],
+     "off_message": "Os likes estão temporariamente desativados."},
+
+    {"key": "reposts_enabled",        "group": "flags", "type": "bool", "default": True,
+     "label": "Reposts (republicar)",
+     "description": "Quando desligado, ninguém consegue republicar/citar publicações.",
+     "applies_to": ["POST /api/posts/{id}/repost", "POST /api/posts (campo quote_of)"],
+     "off_message": "Os reposts estão temporariamente desativados."},
+
+    {"key": "bookmarks_enabled",      "group": "flags", "type": "bool", "default": True,
+     "label": "Bookmarks (guardar)",
+     "description": "Quando desligado, ninguém consegue guardar publicações nos bookmarks.",
+     "applies_to": ["POST /api/posts/{id}/bookmark"],
+     "off_message": "Os bookmarks estão temporariamente desativados."},
+
+    {"key": "follows_enabled",        "group": "flags", "type": "bool", "default": True,
+     "label": "Seguir (follows)",
+     "description": "Quando desligado, ninguém consegue começar a seguir outros utilizadores.",
+     "applies_to": ["POST /api/users/{username}/follow"],
+     "off_message": "Os follows estão temporariamente desativados."},
+
+    {"key": "search_enabled",         "group": "flags", "type": "bool", "default": True,
+     "label": "Pesquisa global",
+     "description": "Quando desligado, a pesquisa devolve resultados vazios (admin painel não afetado).",
+     "applies_to": ["GET /api/search"],
+     "off_message": ""},
+
+    {"key": "reports_enabled",        "group": "flags", "type": "bool", "default": True,
+     "label": "Reportar conteúdo",
+     "description": "Quando desligado, utilizadores não conseguem reportar posts/comments/users.",
+     "applies_to": ["POST /api/posts/{id}/report", "POST /api/comments/{id}/report", "POST /api/users/{u}/report"],
+     "off_message": "Os reports estão temporariamente desativados."},
+
+    # ---------- FEATURE FLAGS — CRIAÇÃO ----------
+    {"key": "communities_create_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Criar comunidades",
+     "description": "Quando desligado, utilizadores não podem criar novas comunidades (as existentes mantêm-se).",
+     "applies_to": ["POST /api/communities"],
+     "off_message": "A criação de comunidades está temporariamente suspensa."},
+
+    {"key": "events_create_enabled",  "group": "flags", "type": "bool", "default": True,
+     "label": "Criar eventos",
+     "description": "Quando desligado, utilizadores não podem criar novos eventos (os existentes mantêm-se).",
+     "applies_to": ["POST /api/events"],
+     "off_message": "A criação de eventos está temporariamente suspensa."},
+
+    {"key": "edit_post_enabled",      "group": "flags", "type": "bool", "default": True,
+     "label": "Editar publicações",
+     "description": "Quando desligado, utilizadores não podem editar publicações já publicadas (rascunhos/agendados continuam editáveis).",
+     "applies_to": ["PATCH /api/posts/{id}"],
+     "off_message": "A edição de publicações está temporariamente desativada."},
+
+    {"key": "delete_own_post_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Apagar próprias publicações",
+     "description": "Quando desligado, utilizadores não conseguem apagar as próprias publicações (admins continuam a poder).",
+     "applies_to": ["DELETE /api/posts/{id}"],
+     "off_message": "Apagar publicações está temporariamente desativado."},
+
+    {"key": "account_deletion_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Apagar conta",
+     "description": "Quando desligado, utilizadores não conseguem apagar a própria conta via app.",
+     "applies_to": ["DELETE /api/users/me"],
+     "off_message": "A eliminação de conta está temporariamente desativada. Contacta o suporte."},
+
+    # ---------- FEATURE FLAGS — REGISTOS ----------
+    {"key": "new_users_auto_verify",  "group": "flags", "type": "bool", "default": False,
+     "label": "Verificar novos registos automaticamente",
+     "description": "Quando LIGADO, todos os novos utilizadores recebem o badge verificado imediatamente ao registar.",
+     "applies_to": ["POST /api/auth/register"],
+     "off_message": ""},
+
+    # ---------- LIMITES ADICIONAIS ----------
+    {"key": "max_follows_per_user",   "group": "limits", "type": "int", "default": 7500,
+     "min": 10,   "max": 100000,
+     "label": "Máximo de pessoas seguidas",
+     "description": "Limite global de pessoas que um utilizador pode seguir.",
+     "applies_to": ["POST /api/users/{username}/follow"]},
+
+    {"key": "max_bio_chars",          "group": "limits", "type": "int", "default": 280,
+     "min": 50,   "max": 2000,
+     "label": "Caracteres máximos na bio",
+     "description": "Tamanho máximo do campo bio no perfil.",
+     "applies_to": ["PATCH /api/users/me"]},
+
+    {"key": "max_display_name_chars", "group": "limits", "type": "int", "default": 50,
+     "min": 10,   "max": 200,
+     "label": "Caracteres máximos no nome",
+     "description": "Tamanho máximo do nome a apresentar (display name).",
+     "applies_to": ["PATCH /api/users/me"]},
+
+    {"key": "max_stories_per_day",    "group": "limits", "type": "int", "default": 30,
+     "min": 1,    "max": 500,
+     "label": "Stories/dia por utilizador",
+     "description": "Quantas stories um utilizador pode publicar em 24h.",
+     "applies_to": ["POST /api/stories"]},
+
+    {"key": "max_reports_per_day",    "group": "limits", "type": "int", "default": 20,
+     "min": 1,    "max": 200,
+     "label": "Reports/dia por utilizador",
+     "description": "Quantos reports um utilizador pode submeter em 24h (anti-abuso).",
+     "applies_to": ["POST /api/posts/{id}/report", "POST /api/comments/{id}/report", "POST /api/users/{u}/report"]},
+
+    {"key": "feed_page_size",         "group": "limits", "type": "int", "default": 20,
+     "min": 5,    "max": 100,
+     "label": "Tamanho da página do feed",
+     "description": "Quantas publicações o feed devolve por página por defeito.",
+     "applies_to": ["GET /api/posts/feed"]},
+
+    # ---------- BRANDING & CONTEÚDO (string) ----------
+    {"key": "platform_name",          "group": "content", "type": "string", "default": "Lusorae",
+     "min_len": 1, "max_len": 60,
+     "label": "Nome da plataforma",
+     "description": "Aparece no título do site, emails, etc. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "platform_tagline",       "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 160,
+     "label": "Slogan da plataforma",
+     "description": "Texto curto de apresentação (ex: 'A rede social portuguesa'). Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "support_email",          "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 120,
+     "label": "Email de suporte",
+     "description": "Email mostrado em mensagens de erro/contacto. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "announcement_banner_text",  "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 280,
+     "label": "Banner de anúncio (texto)",
+     "description": "Texto que aparece num banner no topo do site para todos os utilizadores. Vazio = banner desligado.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "announcement_banner_level", "group": "content", "type": "string", "default": "info",
+     "min_len": 1, "max_len": 16, "choices": ["info", "warning", "critical"],
+     "label": "Banner de anúncio (nível)",
+     "description": "Nível visual do banner: info (azul) · warning (amarelo) · critical (vermelho).",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "welcome_message",        "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 280,
+     "label": "Mensagem de boas-vindas",
+     "description": "Texto mostrado aos utilizadores recém-registados na primeira visita.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "terms_url",              "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300,
+     "label": "URL dos Termos de Serviço",
+     "description": "URL apontando para a página de Termos. Vazio = link escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "privacy_url",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300,
+     "label": "URL da Política de Privacidade",
+     "description": "URL apontando para a página de Privacidade. Vazio = link escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "maintenance_message",    "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 280,
+     "label": "Mensagem de manutenção (custom)",
+     "description": "Mensagem mostrada quando o modo manutenção (em Sistema) está ativo. Vazio = mensagem default.",
+     "applies_to": ["Maintenance gate"]},
 ]
 
 DEFAULT_SETTINGS = {item["key"]: item["default"] for item in SETTINGS_REGISTRY}
@@ -8552,6 +8775,11 @@ async def reload_settings_cache():
                 try:
                     values[k] = int(v)
                 except Exception:
+                    values[k] = spec["default"]
+            elif spec["type"] == "string":
+                if isinstance(v, str):
+                    values[k] = v
+                else:
                     values[k] = spec["default"]
     _settings_cache["values"] = values
     _settings_cache["doc"] = doc
@@ -8602,6 +8830,25 @@ def _coerce_setting_value(key: str, raw):
         if mx is not None and v > mx:
             raise HTTPException(400, f"{key}: máximo {mx}")
         return v
+    if spec["type"] == "string":
+        if raw is None:
+            raw = ""
+        if not isinstance(raw, str):
+            try:
+                raw = str(raw)
+            except Exception:
+                raise HTTPException(400, f"{key} requer texto")
+        raw = raw.strip()
+        mn = spec.get("min_len")
+        mx = spec.get("max_len")
+        if mn is not None and len(raw) < mn:
+            raise HTTPException(400, f"{key}: mínimo {mn} caracteres")
+        if mx is not None and len(raw) > mx:
+            raise HTTPException(400, f"{key}: máximo {mx} caracteres")
+        choices = spec.get("choices")
+        if choices and raw and raw not in choices:
+            raise HTTPException(400, f"{key}: valor inválido (opções: {', '.join(choices)})")
+        return raw
     raise HTTPException(400, f"Tipo desconhecido para {key}")
 
 
@@ -8728,6 +8975,34 @@ async def _assert_global_hourly_limit(user: dict, kind: str):
             status_code=429,
             detail=f"Limite global de {label} atingido ({limit}/hora). Tenta mais tarde.",
         )
+
+
+async def _assert_reports_quota(user: dict):
+    """Limita reports por dia. Admins bypass."""
+    if user and user.get("is_admin"):
+        return
+    if not await is_feature_enabled("reports_enabled"):
+        raise HTTPException(503, SETTINGS_BY_KEY["reports_enabled"].get("off_message"))
+    limit = await get_limit("max_reports_per_day")
+    if not limit or limit <= 0:
+        return
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    cnt = await db.reports.count_documents({"reporter_id": user["id"], "created_at": {"$gte": since}})
+    if cnt >= limit:
+        raise HTTPException(429, f"Limite diário de reports atingido ({limit}/dia).")
+
+
+async def _assert_stories_quota(user: dict):
+    """Limita stories por dia. Admins bypass."""
+    if user and user.get("is_admin"):
+        return
+    limit = await get_limit("max_stories_per_day")
+    if not limit or limit <= 0:
+        return
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    cnt = await db.stories.count_documents({"author_id": user["id"], "created_at": {"$gte": since}})
+    if cnt >= limit:
+        raise HTTPException(429, f"Limite diário de stories atingido ({limit}/dia).")
 
 
 async def _shadow_muted_ids_excluding(viewer_id: str) -> list[str]:
@@ -8859,6 +9134,25 @@ async def admin_reset_settings(payload: AdminSettingsResetIn, admin=Depends(requ
         raise HTTPException(400, "key obrigatório (ou all=True)")
     out = await reset_setting(payload.key, admin)
     await admin_audit(admin, "settings.reset", "setting", payload.key, {"to_default": DEFAULT_SETTINGS.get(payload.key)})
+    return out
+
+
+# Subset of settings exposed PUBLICLY (no auth required) so the frontend
+# can read branding + announcement banner + public flags before login.
+PUBLIC_SETTINGS_KEYS = {
+    "platform_name", "platform_tagline", "support_email",
+    "announcement_banner_text", "announcement_banner_level",
+    "welcome_message", "terms_url", "privacy_url", "maintenance_message",
+    "signup_open", "read_only_mode",
+}
+
+
+@api.get("/public/settings")
+async def public_settings():
+    """Public, no-auth endpoint for branding/announcement banner + a few public flags.
+    Cached server-side (5s) — safe for high-traffic polling from frontend."""
+    s = await get_settings()
+    out = {k: s.get(k) for k in PUBLIC_SETTINGS_KEYS if k in s}
     return out
 
 
@@ -11157,3 +11451,4 @@ async def admin_post_reports(post_id: str, admin=Depends(require_admin), limit: 
 
 
 app.include_router(api2)
+de_router(api2)
