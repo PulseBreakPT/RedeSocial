@@ -678,6 +678,10 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "boosted_posts": user.get("boosted_posts", []),
         "post_notes": user.get("post_notes") or {},
         "followed_threads": user.get("followed_threads", []),
+        # Admin / moderation flags
+        "is_admin": bool(user.get("is_admin", False)),
+        "banned": bool(user.get("banned", False)),
+        "ban_reason": user.get("ban_reason", "") if user.get("banned") else "",
     }
     if extra:
         data.update(extra)
@@ -699,6 +703,8 @@ async def get_current_user(request: Request) -> dict:
         user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
         if not user:
             raise HTTPException(status_code=401, detail="Utilizador não encontrado")
+        if user.get("banned"):
+            raise HTTPException(status_code=403, detail="Conta suspensa")
         # B-029 — session revocation check
         jti = payload.get("jti")
         if jti:
@@ -727,6 +733,41 @@ async def maybe_user(request: Request) -> Optional[dict]:
         return await get_current_user(request)
     except HTTPException:
         return None
+
+
+async def require_admin(request: Request) -> dict:
+    """Dependency: ensures the caller is an authenticated admin user.
+
+    Raises 403 for any non-admin (or non-authenticated) caller. Used by every
+    /api/admin/* endpoint. Audit log records the admin id on every successful call.
+    """
+    user = await get_current_user(request)
+    if not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
+    return user
+
+
+async def admin_audit(
+    actor: dict,
+    action: str,
+    target_kind: str = "",
+    target_id: str = "",
+    detail: Optional[dict] = None,
+) -> None:
+    """Append a single admin action to db.admin_audit. Best-effort, never raises."""
+    try:
+        await db.admin_audit.insert_one({
+            "id": str(uuid.uuid4()),
+            "actor_id": actor.get("id"),
+            "actor_username": actor.get("username"),
+            "action": action,
+            "target_kind": target_kind,
+            "target_id": target_id,
+            "detail": detail or {},
+            "created_at": now_iso(),
+        })
+    except Exception as e:
+        logger.warning(f"admin_audit failed: {e}")
 
 
 def conv_key(a: str, b: str) -> str:
@@ -1236,6 +1277,9 @@ async def login(payload: LoginIn, request: Request, response: Response):
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(401, "Credenciais inválidas")
+    # Banned users cannot log in
+    if user.get("banned"):
+        raise HTTPException(403, "Conta suspensa. Contacta o suporte.")
     # B-013 — 2FA gate
     if user.get("two_fa_enabled") and user.get("two_fa_secret"):
         code = (payload.totp_code or "").strip()
@@ -5487,15 +5531,25 @@ async def startup():
                 "bio": "",
                 "avatar": "", "banner": "",
                 "verified": True, "private": False, "onboarded": True,
+                "is_admin": True, "banned": False,
                 "followers": [], "following": [], "bookmarks": [],
                 "last_seen": now_iso(), "created_at": now_iso(),
             })
-            logger.info("Admin account bootstrapped from env")
+            logger.info("Admin account bootstrapped from env (is_admin=True)")
         else:
-            if not verify_password(admin_password, existing["password_hash"]):
-                await db.users.update_one(
-                    {"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}},
-                )
+            # Keep admin password in sync AND ensure is_admin flag is present.
+            updates = {}
+            if not verify_password(admin_password, existing.get("password_hash", "")):
+                updates["password_hash"] = hash_password(admin_password)
+            if not existing.get("is_admin"):
+                updates["is_admin"] = True
+            if not existing.get("verified"):
+                updates["verified"] = True
+            if existing.get("banned"):
+                updates["banned"] = False
+            if updates:
+                await db.users.update_one({"email": admin_email}, {"$set": updates})
+                logger.info(f"Admin account synced: {list(updates.keys())}")
 
     # No demo / seed data. Database starts empty.
 
@@ -8041,6 +8095,606 @@ async def update_notif_prefs_full(payload: NotifPrefsFullIn, user=Depends(get_cu
         "muted_types": fresh.get("notif_muted_types", []),
         "preferences": fresh.get("notif_preferences", {}),
     }
+
+
+# ============================================================
+# ADMIN PANEL — /api/admin/*
+# Every endpoint requires require_admin and writes to db.admin_audit.
+# No mocked data anywhere — every action mutates real collections.
+# ============================================================
+
+class AdminBanIn(BaseModel):
+    reason: Optional[str] = ""
+
+class AdminReportResolveIn(BaseModel):
+    action: Optional[str] = "resolved"  # "resolved" | "dismissed" | "removed"
+    note: Optional[str] = ""
+
+
+def _admin_user_card(u: dict) -> dict:
+    """Compact admin-side user representation (more data than public_user)."""
+    return {
+        "id": u.get("id"),
+        "email": u.get("email"),
+        "username": u.get("username"),
+        "name": u.get("name"),
+        "avatar": u.get("avatar", ""),
+        "bio": (u.get("bio") or "")[:160],
+        "verified": bool(u.get("verified")),
+        "is_admin": bool(u.get("is_admin")),
+        "banned": bool(u.get("banned")),
+        "ban_reason": u.get("ban_reason", "") if u.get("banned") else "",
+        "private": bool(u.get("private")),
+        "onboarded": bool(u.get("onboarded")),
+        "followers_count": len(u.get("followers", []) or []),
+        "following_count": len(u.get("following", []) or []),
+        "last_seen": u.get("last_seen"),
+        "online": is_online(u.get("last_seen")),
+        "created_at": u.get("created_at"),
+        "two_fa_enabled": bool(u.get("two_fa_enabled")),
+    }
+
+
+def _admin_post_card(p: dict, author: Optional[dict] = None) -> dict:
+    return {
+        "id": p.get("id"),
+        "content": (p.get("content") or "")[:240],
+        "author_id": p.get("author_id"),
+        "author_username": (author or {}).get("username", ""),
+        "author_name": (author or {}).get("name", ""),
+        "kind": p.get("kind", "text"),
+        "image": bool(p.get("image")),
+        "likes_count": len(p.get("likes", []) or []),
+        "comments_count": int(p.get("comments_count", 0) or 0),
+        "featured": bool(p.get("featured")),
+        "is_draft": bool(p.get("is_draft")),
+        "scheduled_at": p.get("scheduled_at"),
+        "community_slug": p.get("community_slug"),
+        "created_at": p.get("created_at"),
+    }
+
+
+@api2.get("/admin/stats")
+async def admin_stats(admin=Depends(require_admin)):
+    now = datetime.now(timezone.utc)
+    iso_7d = (now - timedelta(days=7)).isoformat()
+    iso_30d = (now - timedelta(days=30)).isoformat()
+    iso_24h = (now - timedelta(hours=24)).isoformat()
+    iso_online = (now - ONLINE_WINDOW).isoformat()
+
+    users_total = await db.users.count_documents({})
+    users_banned = await db.users.count_documents({"banned": True})
+    users_admin = await db.users.count_documents({"is_admin": True})
+    users_verified = await db.users.count_documents({"verified": True})
+    users_online = await db.users.count_documents({"last_seen": {"$gte": iso_online}})
+    signups_7d = await db.users.count_documents({"created_at": {"$gte": iso_7d}})
+    signups_30d = await db.users.count_documents({"created_at": {"$gte": iso_30d}})
+
+    posts_total = await db.posts.count_documents({})
+    posts_7d = await db.posts.count_documents({"created_at": {"$gte": iso_7d}})
+    posts_24h = await db.posts.count_documents({"created_at": {"$gte": iso_24h}})
+    drafts = await db.posts.count_documents({"is_draft": True})
+    featured = await db.posts.count_documents({"featured": True})
+
+    comments_total = await db.comments.count_documents({})
+    communities_total = await db.communities.count_documents({})
+    events_total = await db.events.count_documents({})
+    stories_active = await db.stories.count_documents({"expires_at": {"$gte": now.isoformat()}})
+    messages_total = await db.messages.count_documents({})
+    sessions_active = await db.sessions.count_documents({"revoked": {"$ne": True}})
+
+    reports_open = await db.reports.count_documents({"status": "open"})
+    reports_total = await db.reports.count_documents({})
+
+    # Signups per day for the last 14d (sparkline)
+    series_signups = []
+    for i in range(13, -1, -1):
+        day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        cnt = await db.users.count_documents({
+            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()},
+        })
+        series_signups.append({"date": day_start.date().isoformat(), "value": cnt})
+
+    # Posts per day last 14d
+    series_posts = []
+    for i in range(13, -1, -1):
+        day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        cnt = await db.posts.count_documents({
+            "created_at": {"$gte": day_start.isoformat(), "$lt": day_end.isoformat()},
+        })
+        series_posts.append({"date": day_start.date().isoformat(), "value": cnt})
+
+    return {
+        "users": {
+            "total": users_total, "banned": users_banned, "admins": users_admin,
+            "verified": users_verified, "online": users_online,
+            "signups_7d": signups_7d, "signups_30d": signups_30d,
+        },
+        "content": {
+            "posts_total": posts_total, "posts_7d": posts_7d, "posts_24h": posts_24h,
+            "drafts": drafts, "featured": featured,
+            "comments_total": comments_total,
+            "communities": communities_total, "events": events_total,
+            "stories_active": stories_active, "messages_total": messages_total,
+        },
+        "moderation": {
+            "reports_open": reports_open, "reports_total": reports_total,
+        },
+        "sessions": {
+            "active": sessions_active,
+        },
+        "series": {
+            "signups_14d": series_signups,
+            "posts_14d": series_posts,
+        },
+        "generated_at": now.isoformat(),
+    }
+
+
+@api2.get("/admin/users")
+async def admin_list_users(
+    admin=Depends(require_admin),
+    q: str = "",
+    filter: str = "all",   # all | banned | admins | verified | recent
+    page: int = 1,
+    limit: int = 25,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 25)))
+    query: dict = {}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"username": rgx}, {"email": rgx}, {"name": rgx}, {"id": q.strip()}]
+    if filter == "banned":
+        query["banned"] = True
+    elif filter == "admins":
+        query["is_admin"] = True
+    elif filter == "verified":
+        query["verified"] = True
+    elif filter == "recent":
+        pass  # sort handles it
+    total = await db.users.count_documents(query)
+    cursor = db.users.find(query, {"_id": 0, "password_hash": 0, "two_fa_secret": 0, "two_fa_backup_codes": 0}) \
+        .sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [_admin_user_card(u) for u in rows],
+    }
+
+
+@api2.get("/admin/users/{user_id}")
+async def admin_user_detail(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0, "two_fa_secret": 0, "two_fa_backup_codes": 0})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    posts_count = await db.posts.count_documents({"author_id": user_id})
+    comments_count = await db.comments.count_documents({"author_id": user_id})
+    reports_against = await db.reports.count_documents({"$or": [
+        {"kind": "user", "target_id": user_id},
+        {"target_user_id": user_id},
+    ]})
+    sessions_active = await db.sessions.count_documents({"user_id": user_id, "revoked": {"$ne": True}})
+    card = _admin_user_card(u)
+    card.update({
+        "posts_count": posts_count,
+        "comments_count": comments_count,
+        "reports_against": reports_against,
+        "sessions_active": sessions_active,
+        "city": u.get("city", ""),
+        "region": u.get("region", ""),
+    })
+    return card
+
+
+@api2.post("/admin/users/{user_id}/verify")
+async def admin_toggle_verify(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "verified": 1})
+    if u is None:
+        raise HTTPException(404, "Utilizador não encontrado")
+    new_val = not bool(u.get("verified"))
+    await db.users.update_one({"id": user_id}, {"$set": {"verified": new_val}})
+    await admin_audit(admin, "user.verify", "user", user_id, {"verified": new_val})
+    return {"ok": True, "verified": new_val}
+
+
+@api2.post("/admin/users/{user_id}/admin")
+async def admin_toggle_admin(user_id: str, admin=Depends(require_admin)):
+    if user_id == admin["id"]:
+        raise HTTPException(400, "Não podes alterar o teu próprio estado de administrador")
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1})
+    if u is None:
+        raise HTTPException(404, "Utilizador não encontrado")
+    new_val = not bool(u.get("is_admin"))
+    await db.users.update_one({"id": user_id}, {"$set": {"is_admin": new_val}})
+    await admin_audit(admin, "user.admin_role", "user", user_id, {"is_admin": new_val})
+    return {"ok": True, "is_admin": new_val}
+
+
+@api2.post("/admin/users/{user_id}/ban")
+async def admin_ban_user(user_id: str, payload: AdminBanIn, admin=Depends(require_admin)):
+    if user_id == admin["id"]:
+        raise HTTPException(400, "Não te podes banir a ti próprio")
+    u = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "is_admin": 1})
+    if u is None:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes banir outro administrador. Remove primeiro o papel de admin.")
+    reason = (payload.reason or "")[:300]
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"banned": True, "ban_reason": reason, "banned_at": now_iso(), "banned_by": admin["id"]}},
+    )
+    # Revoke all active sessions
+    await db.sessions.update_many(
+        {"user_id": user_id, "revoked": {"$ne": True}},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "ban"}},
+    )
+    await admin_audit(admin, "user.ban", "user", user_id, {"reason": reason})
+    return {"ok": True, "banned": True}
+
+
+@api2.post("/admin/users/{user_id}/unban")
+async def admin_unban_user(user_id: str, admin=Depends(require_admin)):
+    u = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"banned": False, "ban_reason": "", "unbanned_at": now_iso(), "unbanned_by": admin["id"]}},
+    )
+    await admin_audit(admin, "user.unban", "user", user_id)
+    return {"ok": True, "banned": False}
+
+
+@api2.post("/admin/users/{user_id}/force-logout")
+async def admin_force_logout(user_id: str, admin=Depends(require_admin)):
+    res = await db.sessions.update_many(
+        {"user_id": user_id, "revoked": {"$ne": True}},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "admin_force_logout"}},
+    )
+    await admin_audit(admin, "user.force_logout", "user", user_id, {"revoked": res.modified_count})
+    return {"ok": True, "revoked": res.modified_count}
+
+
+@api2.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin=Depends(require_admin)):
+    if user_id == admin["id"]:
+        raise HTTPException(400, "Não te podes eliminar a ti próprio")
+    u = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not u:
+        raise HTTPException(404, "Utilizador não encontrado")
+    if u.get("is_admin"):
+        raise HTTPException(400, "Não podes eliminar outro administrador. Remove primeiro o papel de admin.")
+    # Cascade similar to /users/me delete
+    await db.posts.delete_many({"author_id": user_id})
+    await db.comments.delete_many({"author_id": user_id})
+    await db.stories.delete_many({"author_id": user_id})
+    await db.highlights.delete_many({"owner_id": user_id})
+    await db.messages.delete_many({"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]})
+    await db.conversations.delete_many({"$or": [{"a_id": user_id}, {"b_id": user_id}]})
+    await db.notifications.delete_many({"$or": [{"user_id": user_id}, {"from_user_id": user_id}]})
+    await db.reports.delete_many({"$or": [{"reporter_id": user_id}, {"target_user_id": user_id}]})
+    await db.sessions.delete_many({"user_id": user_id})
+    await db.users.delete_one({"id": user_id})
+    await admin_audit(admin, "user.delete", "user", user_id, {"username": u.get("username")})
+    return {"ok": True, "deleted": True}
+
+
+# ----------------- POSTS -----------------
+
+@api2.get("/admin/posts")
+async def admin_list_posts(
+    admin=Depends(require_admin),
+    q: str = "",
+    filter: str = "all",   # all | featured | drafts | scheduled
+    page: int = 1,
+    limit: int = 20,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 20)))
+    query: dict = {}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"content": rgx}, {"id": q.strip()}]
+    if filter == "featured":
+        query["featured"] = True
+    elif filter == "drafts":
+        query["is_draft"] = True
+    elif filter == "scheduled":
+        query["scheduled_at"] = {"$ne": None}
+    total = await db.posts.count_documents(query)
+    cursor = db.posts.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    # Resolve authors
+    author_ids = list({p.get("author_id") for p in rows if p.get("author_id")})
+    authors = {}
+    if author_ids:
+        async for u in db.users.find({"id": {"$in": author_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            authors[u["id"]] = u
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [_admin_post_card(p, authors.get(p.get("author_id"))) for p in rows],
+    }
+
+
+@api2.delete("/admin/posts/{post_id}")
+async def admin_delete_post(post_id: str, admin=Depends(require_admin)):
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1, "author_id": 1, "content": 1})
+    if p is None:
+        raise HTTPException(404, "Publicação não encontrada")
+    await db.posts.delete_one({"id": post_id})
+    await db.comments.delete_many({"post_id": post_id})
+    await db.reports.delete_many({"kind": "post", "target_id": post_id})
+    await admin_audit(admin, "post.delete", "post", post_id, {
+        "author_id": p.get("author_id"), "snippet": (p.get("content") or "")[:120],
+    })
+    return {"ok": True, "deleted": True}
+
+
+@api2.post("/admin/posts/{post_id}/feature")
+async def admin_feature_post(post_id: str, admin=Depends(require_admin)):
+    p = await db.posts.find_one({"id": post_id}, {"_id": 0, "id": 1, "featured": 1})
+    if p is None:
+        raise HTTPException(404, "Publicação não encontrada")
+    new_val = not bool(p.get("featured"))
+    await db.posts.update_one({"id": post_id}, {"$set": {"featured": new_val}})
+    await admin_audit(admin, "post.feature", "post", post_id, {"featured": new_val})
+    return {"ok": True, "featured": new_val}
+
+
+# ----------------- REPORTS -----------------
+
+@api2.get("/admin/reports")
+async def admin_list_reports(
+    admin=Depends(require_admin),
+    status: str = "open",   # open | closed | all
+    kind: str = "all",      # all | post | comment | user
+    page: int = 1,
+    limit: int = 20,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 20)))
+    query: dict = {}
+    if status in ("open", "closed"):
+        query["status"] = status
+    if kind in ("post", "comment", "user"):
+        query["kind"] = kind
+    total = await db.reports.count_documents(query)
+    cursor = db.reports.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    # Enrich with reporter info + target preview
+    reporter_ids = list({r.get("reporter_id") for r in rows if r.get("reporter_id")})
+    reporters = {}
+    if reporter_ids:
+        async for u in db.users.find({"id": {"$in": reporter_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            reporters[u["id"]] = u
+    out = []
+    for r in rows:
+        target_preview = {}
+        tk, tid = r.get("kind"), r.get("target_id")
+        if tk == "post" and tid:
+            p = await db.posts.find_one({"id": tid}, {"_id": 0, "id": 1, "content": 1, "author_id": 1})
+            if p:
+                target_preview = {"content": (p.get("content") or "")[:200], "author_id": p.get("author_id")}
+        elif tk == "comment" and tid:
+            c = await db.comments.find_one({"id": tid}, {"_id": 0, "id": 1, "content": 1, "author_id": 1, "post_id": 1})
+            if c:
+                target_preview = {"content": (c.get("content") or "")[:200], "author_id": c.get("author_id"), "post_id": c.get("post_id")}
+        elif tk == "user" and tid:
+            tu = await db.users.find_one({"id": tid}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1})
+            if tu:
+                target_preview = {"username": tu.get("username"), "name": tu.get("name"), "avatar": tu.get("avatar", "")}
+        rep = reporters.get(r.get("reporter_id"), {})
+        out.append({
+            "id": r.get("id"),
+            "kind": r.get("kind"),
+            "target_id": r.get("target_id"),
+            "reason": r.get("reason"),
+            "detail": r.get("detail", ""),
+            "status": r.get("status", "open"),
+            "created_at": r.get("created_at"),
+            "resolved_at": r.get("resolved_at"),
+            "resolved_action": r.get("resolved_action"),
+            "resolved_note": r.get("resolved_note"),
+            "reporter": {
+                "id": rep.get("id"), "username": rep.get("username"),
+                "name": rep.get("name"), "avatar": rep.get("avatar", ""),
+            },
+            "target_preview": target_preview,
+        })
+    return {"total": total, "page": page, "limit": limit, "items": out}
+
+
+@api2.post("/admin/reports/{report_id}/resolve")
+async def admin_resolve_report(report_id: str, payload: AdminReportResolveIn, admin=Depends(require_admin)):
+    r = await db.reports.find_one({"id": report_id}, {"_id": 0})
+    if not r:
+        raise HTTPException(404, "Report não encontrado")
+    action = (payload.action or "resolved").lower()
+    if action not in {"resolved", "dismissed", "removed"}:
+        action = "resolved"
+    update = {
+        "status": "closed",
+        "resolved_at": now_iso(),
+        "resolved_by": admin["id"],
+        "resolved_action": action,
+        "resolved_note": (payload.note or "")[:300],
+    }
+    await db.reports.update_one({"id": report_id}, {"$set": update})
+    # If action=removed, also delete the underlying target
+    deleted_target = False
+    if action == "removed":
+        tk, tid = r.get("kind"), r.get("target_id")
+        if tk == "post" and tid:
+            await db.posts.delete_one({"id": tid})
+            await db.comments.delete_many({"post_id": tid})
+            deleted_target = True
+        elif tk == "comment" and tid:
+            await db.comments.delete_one({"id": tid})
+            deleted_target = True
+    await admin_audit(admin, "report.resolve", "report", report_id, {
+        "action": action, "kind": r.get("kind"), "target_id": r.get("target_id"),
+        "deleted_target": deleted_target,
+    })
+    return {"ok": True, "action": action, "deleted_target": deleted_target}
+
+
+# ----------------- COMMUNITIES -----------------
+
+@api2.get("/admin/communities")
+async def admin_list_communities(
+    admin=Depends(require_admin),
+    q: str = "",
+    page: int = 1,
+    limit: int = 20,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 20)))
+    query: dict = {}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"slug": rgx}, {"name": rgx}, {"description": rgx}]
+    total = await db.communities.count_documents(query)
+    cursor = db.communities.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [{
+            "id": c.get("id"), "slug": c.get("slug"), "name": c.get("name"),
+            "description": (c.get("description") or "")[:200], "category": c.get("category"),
+            "members_count": len(c.get("members", []) or []),
+            "created_at": c.get("created_at"), "owner_id": c.get("owner_id"),
+        } for c in rows],
+    }
+
+
+@api2.delete("/admin/communities/{slug}")
+async def admin_delete_community(slug: str, admin=Depends(require_admin)):
+    c = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comunidade não encontrada")
+    await db.communities.delete_one({"slug": slug})
+    await db.posts.update_many({"community_slug": slug}, {"$unset": {"community_slug": ""}})
+    await admin_audit(admin, "community.delete", "community", slug, {"name": c.get("name")})
+    return {"ok": True, "deleted": True}
+
+
+# ----------------- EVENTS -----------------
+
+@api2.get("/admin/events")
+async def admin_list_events(
+    admin=Depends(require_admin),
+    q: str = "",
+    page: int = 1,
+    limit: int = 20,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 20)))
+    query: dict = {}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"title": rgx}, {"description": rgx}, {"location": rgx}]
+    total = await db.events.count_documents(query)
+    cursor = db.events.find(query, {"_id": 0}).sort("starts_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [{
+            "id": e.get("id"), "title": e.get("title"),
+            "description": (e.get("description") or "")[:200],
+            "starts_at": e.get("starts_at"), "ends_at": e.get("ends_at"),
+            "location": e.get("location", ""),
+            "attendees_count": len(e.get("attendees", []) or []),
+            "host_id": e.get("host_id"), "created_at": e.get("created_at"),
+        } for e in rows],
+    }
+
+
+@api2.delete("/admin/events/{event_id}")
+async def admin_delete_event(event_id: str, admin=Depends(require_admin)):
+    e = await db.events.find_one({"id": event_id}, {"_id": 0})
+    if not e:
+        raise HTTPException(404, "Evento não encontrado")
+    await db.events.delete_one({"id": event_id})
+    await admin_audit(admin, "event.delete", "event", event_id, {"title": e.get("title")})
+    return {"ok": True, "deleted": True}
+
+
+# ----------------- SESSIONS -----------------
+
+@api2.get("/admin/sessions")
+async def admin_list_sessions(
+    admin=Depends(require_admin),
+    user_id: str = "",
+    page: int = 1,
+    limit: int = 30,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(100, int(limit or 30)))
+    query: dict = {"revoked": {"$ne": True}}
+    if user_id:
+        query["user_id"] = user_id
+    total = await db.sessions.count_documents(query)
+    cursor = db.sessions.find(query, {"_id": 0}).sort("last_seen_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    user_ids = list({s.get("user_id") for s in rows if s.get("user_id")})
+    users = {}
+    if user_ids:
+        async for u in db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1}):
+            users[u["id"]] = u
+    return {
+        "total": total, "page": page, "limit": limit,
+        "items": [{
+            "jti": s.get("jti"), "user_id": s.get("user_id"),
+            "user": users.get(s.get("user_id"), {}),
+            "ip": s.get("last_ip") or s.get("ip", ""),
+            "ua": (s.get("last_ua") or s.get("ua", ""))[:240],
+            "source": s.get("source"),
+            "created_at": s.get("created_at"),
+            "last_seen_at": s.get("last_seen_at"),
+        } for s in rows],
+    }
+
+
+@api2.post("/admin/sessions/{jti}/revoke")
+async def admin_revoke_session(jti: str, admin=Depends(require_admin)):
+    s = await db.sessions.find_one({"jti": jti}, {"_id": 0, "jti": 1, "user_id": 1, "revoked": 1})
+    if s is None:
+        raise HTTPException(404, "Sessão não encontrada")
+    if s.get("revoked"):
+        return {"ok": True, "already_revoked": True}
+    await db.sessions.update_one(
+        {"jti": jti},
+        {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "admin"}},
+    )
+    await admin_audit(admin, "session.revoke", "session", jti, {"user_id": s.get("user_id")})
+    return {"ok": True}
+
+
+# ----------------- AUDIT LOG -----------------
+
+@api2.get("/admin/audit")
+async def admin_audit_list(
+    admin=Depends(require_admin),
+    action: str = "",
+    actor_id: str = "",
+    page: int = 1,
+    limit: int = 50,
+):
+    page = max(1, int(page or 1))
+    limit = max(1, min(200, int(limit or 50)))
+    query: dict = {}
+    if action:
+        query["action"] = action
+    if actor_id:
+        query["actor_id"] = actor_id
+    total = await db.admin_audit.count_documents(query)
+    cursor = db.admin_audit.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
+    rows = await cursor.to_list(length=limit)
+    return {"total": total, "page": page, "limit": limit, "items": rows}
 
 
 app.include_router(api2)

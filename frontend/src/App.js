@@ -34,6 +34,7 @@ import Manifesto from "./pages/Manifesto";
 import Visitors from "./pages/Visitors";
 import SeriesPage from "./pages/SeriesPage";
 import StoryArchive from "./pages/StoryArchive";
+import Admin from "./pages/Admin";
 
 function App() {
     // Activa scroll suave global (CSS-only; respeita prefers-reduced-motion).
@@ -103,6 +104,7 @@ function App() {
                             <Route path="/visitors" element={<Visitors />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
                             <Route path="/stories/archive" element={<StoryArchive />} />
+                            <Route path="/admin" element={<Admin />} />
                         </Route>
                     </Routes>
                     <CookieBanner />

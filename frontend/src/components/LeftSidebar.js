@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
     Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
-    FileText, Clock, PenSquare, MoreHorizontal,
+    FileText, Clock, PenSquare, MoreHorizontal, Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -22,6 +22,8 @@ const NAV_ITEMS = [
     { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
     { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
 ];
+
+const ADMIN_NAV = { to: "/admin", label: "Admin", icon: Shield, testid: "nav-admin" };
 
 export function LeftSidebar({ onCompose }) {
     const { user } = useAuth();
@@ -82,7 +84,7 @@ export function LeftSidebar({ onCompose }) {
 
             {/* Nav */}
             <nav className="flex flex-col gap-0.5 min-h-0 overflow-y-auto no-scrollbar pr-1">
-                {NAV_ITEMS.map((item) => {
+                {[...NAV_ITEMS, ...(user?.is_admin ? [ADMIN_NAV] : [])].map((item) => {
                     const Icon = item.icon;
                     const badge = item.badgeKey ? counts[item.badgeKey] : 0;
                     return (
