@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Backend URL from frontend/.env
-BASE_URL = "https://deploy-verify-42.preview.emergentagent.com/api"
+BASE_URL = "https://lusorae-hardened.preview.emergentagent.com/api"
 
 # Test credentials from /app/memory/test_credentials.md
 ADMIN_EMAIL = "admin@lusorae.app"
