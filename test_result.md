@@ -3209,3 +3209,50 @@ agent_communication:
           revoke-others, password-change cutoff), and WS connect under
           valid/invalid/revoked token. Do NOT re-test items already verified
           in passes #1 and #2 unless suspicious.
+
+
+    - agent: "main"
+      message: |
+          Admin Panel · SSS-tier visual hierarchy & header navigation overhaul
+          (single-pass, CSS-led, zero backend / behavior changes).
+
+          Files touched:
+            • /app/frontend/src/components/admin/navConfig.js   (added `tone` per
+              group/item: info, danger, warn, success, system, slate)
+            • /app/frontend/src/components/admin/AdminSidebar.js (use tone for
+              group label color, accent bar, hover/active states, numeric badge
+              with `pulse` animation when reports ≥ 5, profile online dot, role
+              tag, env tag color, focus-visible rings)
+            • /app/frontend/src/components/admin/AdminTopbar.js (reorganised into
+              4 zones: L1 page identity with tinted icon + crumb-tag + title +
+              subtitle, L2 centered ⌘K command palette, L3 live pill + time
+              range, L4 actions [notifs with numeric badge → fullscreen toggle
+              (Maximize2↔Minimize2 + on/off bg) → "Voltar à app" with inline
+              label ≥1280px → logout with danger hover]; new useFullscreen hook;
+              a11y aria-labels, aria-pressed, aria-current; data-testids)
+            • /app/frontend/src/components/AdminLayout.js (passes icon, tone,
+              groupLabel down to topbar)
+            • /app/frontend/src/components/admin.css (~480 lines appended in a
+              clearly-scoped SSS-tier block at EOF — group-tone palette,
+              tone-aware sidebar hover/active, pulse animations, env tag color
+              map, profile row treatment, topbar zones, ID tinted icon, crumb
+              tags, command palette refinements, color-coded live pill, time
+              range select, icon-btn tone variants, numeric notif badge,
+              "Voltar à app" with responsive label, page-header softening,
+              full responsive cascade 1280/1024/768/440).
+
+          Hierarchy applied uniformly across ALL 15 admin tabs (Cockpit, Reports,
+          Security, Antispam, Users, Sessions, Posts, Comments, Stories,
+          Hashtags, Communities, Events, Broadcast, System, Audit, Settings).
+
+          Validation:
+            • lint: clean (0 errors) on all 4 modified JS files.
+            • frontend: webpack compiled, 0 errors (existing warnings only).
+            • visual: auto_frontend_testing_agent confirmed each tone renders
+              correctly (red for danger, amber for warn, teal for info, green
+              for success, violet for system), breadcrumb tags visible, active
+              accent bars tinted by tone, "Voltar à app" label visible at 1920px,
+              no console errors.
+
+          Credentials seeded: admin@lusorae.app (saved to
+          /app/memory/test_credentials.md).
