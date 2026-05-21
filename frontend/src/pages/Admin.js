@@ -72,6 +72,65 @@ const apiError = (e) => {
 };
 
 // -----------------------------------------------------------------
+// Hint / InfoTip / PageHeader — descrições e dicas (UI premium tooltips)
+// -----------------------------------------------------------------
+/**
+ * <Hint text="..." side="top|bottom|left|right">{trigger}</Hint>
+ * Tooltip CSS-only. `text` pode ser string OU { title, body, kbd } para
+ * tooltip rico (título + corpo + atalho).
+ * `focusable={false}` desactiva tabIndex quando o filho é já focável (button, link).
+ */
+function Hint({ text, side = "top", children, className = "", as: As = "span", focusable = true }) {
+    if (text == null || text === "") return children || null;
+    const rich = typeof text === "object";
+    return (
+        <As className={`ops-hint-wrap ${className}`} tabIndex={focusable ? 0 : -1} aria-label={rich ? text.title || text.body : text}>
+            {children}
+            <span className={`ops-hint ops-hint--${side}`} role="tooltip">
+                {rich ? (
+                    <>
+                        {text.title && <span className="ops-hint__title">{text.title}</span>}
+                        {text.body && <span className="ops-hint__body">{text.body}</span>}
+                        {text.kbd && <span className="ops-hint__kbd">{text.kbd}</span>}
+                    </>
+                ) : text}
+            </span>
+        </As>
+    );
+}
+
+/** Pequeno (i) com tooltip — para colocar ao lado de KPIs/labels */
+function InfoTip({ text, side = "top", className = "" }) {
+    if (text == null || text === "") return null;
+    return (
+        <Hint text={text} side={side} className={className}>
+            <Info className="ops-hint-icon" aria-hidden />
+        </Hint>
+    );
+}
+
+/**
+ * Cabeçalho uniforme para cada tab.
+ * <PageHeader title="Sistema" subtitle="Estado da infra..." right={<buttons />} />
+ */
+function PageHeader({ title, subtitle, right, icon: Icon }) {
+    return (
+        <div className="ops-page-header">
+            <div className="min-w-0 flex-1">
+                <h2 className="ops-page-header__title font-display flex items-center gap-2">
+                    {Icon && <Icon size={18} className="text-slate-400 shrink-0" aria-hidden />}
+                    <span className="truncate">{title}</span>
+                </h2>
+                {subtitle && <p className="ops-subtitle">{subtitle}</p>}
+            </div>
+            {right && <div className="flex items-center gap-1.5 flex-wrap shrink-0">{right}</div>}
+        </div>
+    );
+}
+
+
+
+// -----------------------------------------------------------------
 // Tab nav
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -133,7 +192,7 @@ const NAV_KEY_TO_ITEM = ALL_NAV_ITEMS.reduce((acc, it) => { acc[it.key] = it; re
 // -----------------------------------------------------------------
 // Sparkline (inline SVG, no libs)
 // -----------------------------------------------------------------
-function Sparkline({ data, height = 36, color = "#c64a3d" }) {
+function Sparkline({ data, height = 36, color = "#94a3b8" }) {
     if (!Array.isArray(data) || data.length === 0) return null;
     const values = data.map((d) => Number(d.value) || 0);
     const max = Math.max(1, ...values);
@@ -148,11 +207,14 @@ function Sparkline({ data, height = 36, color = "#c64a3d" }) {
     );
 }
 
-function StatCard({ label, value, sub, accent = "var(--coral-500)", series, "data-testid": testId }) {
+function StatCard({ label, value, sub, accent = "var(--ops-slate-400)", series, hint, "data-testid": testId }) {
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-1.5 shadow-sm" data-testid={testId}>
-            <div className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">{label}</div>
-            <div className="font-display text-[28px] leading-none tracking-tight text-slate-900">{fmtNum(value)}</div>
+        <div className="ops-panel p-4 flex flex-col gap-1.5 shadow-sm" data-testid={testId}>
+            <div className="text-[11px] uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1">
+                <span className="truncate">{label}</span>
+                {hint && <InfoTip text={hint} side="top" />}
+            </div>
+            <div className="font-display text-[28px] leading-none tracking-tight text-slate-900 tabular-nums">{fmtNum(value)}</div>
             {sub != null && <div className="text-[12px] text-slate-500">{sub}</div>}
             {series && <Sparkline data={series} color={accent} />}
         </div>
@@ -210,17 +272,22 @@ function OverviewTab({ onNavigate }) {
     return (
         <div className="space-y-4 sm:space-y-5" data-testid="admin-overview">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Visão geral</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Visão geral</h2>
+                    <p className="ops-subtitle">Vista em tempo real do estado da plataforma — KPIs principais, saúde do sistema e atalhos para áreas críticas.</p>
+                </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                    <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 rounded-full p-1" title="Auto-atualização">
-                        {[{v:0,l:"Off"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
-                            <button key={o.v}
-                                onClick={() => setAutoRefresh(o.v)}
-                                data-testid={`admin-overview-autorefresh-${o.v}`}
-                                className={`h-7 px-2 sm:px-2.5 rounded-full text-[11px] sm:text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                            >{o.l}</button>
-                        ))}
-                    </div>
+                    <Hint focusable={false} side="bottom" text={{ title: "Auto-atualização", body: "Recarrega KPIs, system health e atalhos a cada N segundos. 'Off' desliga o polling — manténs visível só o snapshot inicial." }}>
+                        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 rounded-full p-1">
+                            {[{v:0,l:"Off"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
+                                <button key={o.v}
+                                    onClick={() => setAutoRefresh(o.v)}
+                                    data-testid={`admin-overview-autorefresh-${o.v}`}
+                                    className={`h-7 px-2 sm:px-2.5 rounded-full text-[11px] sm:text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                                >{o.l}</button>
+                            ))}
+                        </div>
+                    </Hint>
                     <button
                         onClick={() => downloadCsv("/admin/export/users.csv", "lusorae_users.csv")}
                         data-testid="admin-export-users-csv"
@@ -243,20 +310,20 @@ function OverviewTab({ onNavigate }) {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                <StatCard data-testid="kpi-users-total" label="Utilizadores" value={stats.users.total} sub={`${stats.users.online} online agora`} series={stats.series.signups_14d} accent="#4a7bbf" />
-                <StatCard data-testid="kpi-signups-7d" label="Signups (7d)" value={stats.users.signups_7d} sub={`${stats.users.signups_30d} em 30d`} />
-                <StatCard data-testid="kpi-verified" label="Verificados" value={stats.users.verified} sub={`${stats.users.admins} admin(s)`} accent="#22c55e" />
-                <StatCard data-testid="kpi-banned" label="Banidos" value={stats.users.banned} sub="Acesso bloqueado" accent="#ef4444" />
+                <StatCard data-testid="kpi-users-total" label="Utilizadores" value={stats.users.total} sub={`${stats.users.online} online agora`} series={stats.series.signups_14d} accent="var(--ops-info-500)" hint={{ title: "Utilizadores totais", body: "Contagem total de contas registadas. O contador 'online agora' usa sessões WebSocket activas no último minuto." }} />
+                <StatCard data-testid="kpi-signups-7d" label="Signups (7d)" value={stats.users.signups_7d} sub={`${stats.users.signups_30d} em 30d`} accent="var(--ops-slate-400)" hint="Novos registos de conta nos últimos 7 dias. Útil para detectar picos de aquisição ou tentativas de spam em massa." />
+                <StatCard data-testid="kpi-verified" label="Verificados" value={stats.users.verified} sub={`${stats.users.admins} admin(s)`} accent="var(--ops-success-500)" hint="Contas com verificação manual (badge azul). Inclui administradores." />
+                <StatCard data-testid="kpi-banned" label="Banidos" value={stats.users.banned} sub="Acesso bloqueado" accent="var(--ops-danger-500)" hint={{ title: "Banimentos activos", body: "Contas com acesso total revogado. Não conseguem fazer login, publicar nem comentar. Reversível em Utilizadores ▸ Desbanir." }} />
 
-                <StatCard data-testid="kpi-posts-total" label="Publicações" value={stats.content.posts_total} sub={`+${stats.content.posts_24h} em 24h`} series={stats.series.posts_14d} accent="#df8a7d" />
-                <StatCard data-testid="kpi-posts-7d" label="Posts (7d)" value={stats.content.posts_7d} sub={`${stats.content.drafts} rascunhos · ${stats.content.featured} destaques`} />
-                <StatCard data-testid="kpi-comments" label="Comentários" value={stats.content.comments_total} />
-                <StatCard data-testid="kpi-messages" label="DMs" value={stats.content.messages_total} sub={`${stats.content.stories_active} stories ativas`} />
+                <StatCard data-testid="kpi-posts-total" label="Publicações" value={stats.content.posts_total} sub={`+${stats.content.posts_24h} em 24h`} series={stats.series.posts_14d} accent="var(--ops-slate-400)" hint="Total de publicações públicas. O sub-valor mostra a variação nas últimas 24h." />
+                <StatCard data-testid="kpi-posts-7d" label="Posts (7d)" value={stats.content.posts_7d} sub={`${stats.content.drafts} rascunhos · ${stats.content.featured} destaques`} accent="var(--ops-slate-400)" hint="Posts criados nos últimos 7 dias. Rascunhos são guardados localmente; destaques aparecem no topo do feed." />
+                <StatCard data-testid="kpi-comments" label="Comentários" value={stats.content.comments_total} accent="var(--ops-slate-400)" hint="Total de comentários em todas as publicações." />
+                <StatCard data-testid="kpi-messages" label="DMs" value={stats.content.messages_total} sub={`${stats.content.stories_active} stories ativas`} accent="var(--ops-slate-400)" hint="Mensagens directas trocadas. Stories activas expiram automaticamente após 24h." />
 
-                <StatCard data-testid="kpi-reports-open" label="Reports abertos" value={stats.moderation.reports_open} sub={`${stats.moderation.reports_total} no total`} accent="#f59e0b" />
-                <StatCard data-testid="kpi-communities" label="Comunidades" value={stats.content.communities} />
-                <StatCard data-testid="kpi-events" label="Eventos" value={stats.content.events} />
-                <StatCard data-testid="kpi-sessions" label="Sessões activas" value={stats.sessions.active} />
+                <StatCard data-testid="kpi-reports-open" label="Reports abertos" value={stats.moderation.reports_open} sub={`${stats.moderation.reports_total} no total`} accent="var(--ops-warn-500)" hint={{ title: "Reports por resolver", body: "Reports submetidos por utilizadores e ainda não decididos. Vai ao separador Reports para os processar." }} />
+                <StatCard data-testid="kpi-communities" label="Comunidades" value={stats.content.communities} accent="var(--ops-slate-400)" hint="Comunidades temáticas existentes." />
+                <StatCard data-testid="kpi-events" label="Eventos" value={stats.content.events} accent="var(--ops-slate-400)" hint="Eventos publicados pela comunidade (futuros e passados)." />
+                <StatCard data-testid="kpi-sessions" label="Sessões activas" value={stats.sessions.active} accent="var(--ops-realtime-500)" hint={{ title: "Sessões em uso", body: "Sessões com token válido. Não é o mesmo que utilizadores online — uma pessoa pode ter várias sessões (web, mobile, etc.)." }} />
             </div>
 
             {/* SYSTEM HEALTH */}
@@ -265,26 +332,33 @@ function OverviewTab({ onNavigate }) {
                     <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                         <h3 className="font-display text-[16px] tracking-tight flex items-center gap-1.5">
                             <Activity size={14} className="text-slate-500" /> Saúde do sistema
+                            <InfoTip text={{ title: "Telemetria operacional", body: "Indicadores em tempo real do backend: conexões realtime, hashtags bloqueadas e contagens por coleção. Para detalhes completos vai ao separador Sistema." }} side="right" />
                         </h3>
                         <div className="text-[11px] font-mono text-slate-400">
                             verificado a {fmtDate(health.checked_at)}
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        <div className="px-3 py-2 rounded-xl bg-slate-50 text-[12px]">
-                            <div className="font-mono text-slate-700 text-[11px] uppercase tracking-wider">WS conexões</div>
-                            <div className="text-[18px] font-semibold text-slate-800 mt-0.5">
-                                {health.websocket.sockets} <span className="text-[12px] font-normal text-slate-400">/ {health.websocket.users_connected} users</span>
+                        <div className="ops-tile ops-tile--realtime">
+                            <div className="ops-tile__label inline-flex items-center gap-1.5">
+                                <span className="ops-pulse-dot" aria-hidden /> WS conexões
+                                <InfoTip text={{ title: "Conexões WebSocket activas", body: "Sockets abertos para realtime (feed, notificações, mensagens). 'users' é o número distinto de pessoas; cada uma pode ter vários sockets (várias abas/dispositivos)." }} side="top" />
+                            </div>
+                            <div className="ops-tile__value">
+                                {health.websocket.sockets} <span className="text-[12px] font-normal opacity-60">/ {health.websocket.users_connected} users</span>
                             </div>
                         </div>
-                        <div className="px-3 py-2 rounded-xl bg-red-50/70 text-[12px]">
-                            <div className="font-mono text-red-700 text-[11px] uppercase tracking-wider">Hashtags blacklist</div>
-                            <div className="text-[18px] font-semibold text-red-700 mt-0.5">{health.hashtag_blacklist_size}</div>
+                        <div className="ops-tile ops-tile--warn">
+                            <div className="ops-tile__label inline-flex items-center gap-1.5">
+                                Hashtags blacklist
+                                <InfoTip text="Hashtags bloqueadas que deixaram de aparecer no trending e no explore. Geríveis no separador Hashtags." side="top" />
+                            </div>
+                            <div className="ops-tile__value">{health.hashtag_blacklist_size}</div>
                         </div>
                         {Object.entries(health.collections).slice(0, 14).map(([name, count]) => (
-                            <div key={name} className="px-3 py-2 rounded-xl bg-slate-50 text-[12px]">
-                                <div className="font-mono text-slate-500 text-[11px] uppercase tracking-wider">{name}</div>
-                                <div className="text-[16px] font-semibold text-slate-800 mt-0.5 font-mono">{fmtNum(count)}</div>
+                            <div key={name} className="ops-tile">
+                                <div className="ops-tile__label">{name}</div>
+                                <div className="ops-tile__value font-mono">{fmtNum(count)}</div>
                             </div>
                         ))}
                     </div>
@@ -299,28 +373,41 @@ function OverviewTab({ onNavigate }) {
             {/* QUICK-LINKS — Dashboard shortcuts */}
             {typeof onNavigate === "function" && (
                 <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid="admin-overview-shortcuts">
-                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Atalhos rápidos</div>
+                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2 inline-flex items-center gap-1.5">
+                        Atalhos rápidos
+                        <InfoTip text="Saltos directos para as áreas mais consultadas em operações do dia-a-dia." side="top" />
+                    </div>
                     <div className="flex flex-wrap gap-1.5">
-                        <button onClick={() => onNavigate("audit")} data-testid="admin-overview-go-audit"
-                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
-                            <History size={13} /> Ver atividade
-                        </button>
-                        <button onClick={() => onNavigate("reports")} data-testid="admin-overview-go-reports"
-                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
-                            <AlertTriangle size={13} /> Ver reports
-                        </button>
-                        <button onClick={() => onNavigate("antispam")} data-testid="admin-overview-go-antispam"
-                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
-                            <ShieldAlert size={13} /> Anti-spam
-                        </button>
-                        <button onClick={() => onNavigate("system")} data-testid="admin-overview-go-system"
-                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
-                            <Server size={13} /> Ver sistema
-                        </button>
-                        <button onClick={() => onNavigate("sessions")} data-testid="admin-overview-go-sessions"
-                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
-                            <LogOut size={13} /> Ver sessões
-                        </button>
+                        <Hint focusable={false} side="top" text="Histórico imutável de acções administrativas">
+                            <button onClick={() => onNavigate("audit")} data-testid="admin-overview-go-audit"
+                                className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                                <History size={13} /> Ver atividade
+                            </button>
+                        </Hint>
+                        <Hint focusable={false} side="top" text="Reports abertos submetidos por utilizadores">
+                            <button onClick={() => onNavigate("reports")} data-testid="admin-overview-go-reports"
+                                className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                                <AlertTriangle size={13} /> Ver reports
+                            </button>
+                        </Hint>
+                        <Hint focusable={false} side="top" text="Filtros automáticos, rate limits e padrões suspeitos">
+                            <button onClick={() => onNavigate("antispam")} data-testid="admin-overview-go-antispam"
+                                className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                                <ShieldAlert size={13} /> Anti-spam
+                            </button>
+                        </Hint>
+                        <Hint focusable={false} side="top" text="Estado da infra, telemetria e acções operacionais">
+                            <button onClick={() => onNavigate("system")} data-testid="admin-overview-go-system"
+                                className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                                <Server size={13} /> Ver sistema
+                            </button>
+                        </Hint>
+                        <Hint focusable={false} side="top" text="Sessões activas com possibilidade de revogar">
+                            <button onClick={() => onNavigate("sessions")} data-testid="admin-overview-go-sessions"
+                                className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                                <LogOut size={13} /> Ver sessões
+                            </button>
+                        </Hint>
                     </div>
                 </div>
             )}
@@ -394,12 +481,13 @@ const fmtUptime = (sec) => {
     return `${s}s`;
 };
 
-function SystemPanel({ title, icon: Icon, accent = "text-slate-500", testid, children, onRefresh, loading }) {
+function SystemPanel({ title, icon: Icon, accent = "text-slate-500", testid, children, onRefresh, loading, hint }) {
     return (
         <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid={testid}>
             <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="font-display text-[14px] sm:text-[16px] tracking-tight inline-flex items-center gap-1.5">
                     <Icon size={14} className={accent} /> {title}
+                    {hint && <InfoTip text={hint} side="right" />}
                 </h3>
                 {onRefresh && (
                     <button
@@ -415,10 +503,13 @@ function SystemPanel({ title, icon: Icon, accent = "text-slate-500", testid, chi
     );
 }
 
-function KV({ k, v, mono = false, color = "text-slate-800" }) {
+function KV({ k, v, mono = false, color = "text-slate-800", hint }) {
     return (
         <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-2 py-1.5 border-b border-slate-100 last:border-0">
-            <div className="xs:w-36 shrink-0 text-[10.5px] uppercase tracking-wider text-slate-400 font-mono">{k}</div>
+            <div className="xs:w-36 shrink-0 text-[10.5px] uppercase tracking-wider text-slate-400 font-mono inline-flex items-center gap-1">
+                <span className="truncate">{k}</span>
+                {hint && <InfoTip text={hint} side="top" />}
+            </div>
             <div className={`flex-1 break-all text-[12.5px] ${color} ${mono ? "font-mono" : ""}`}>{v == null || v === "" ? "—" : v}</div>
         </div>
     );
@@ -534,7 +625,10 @@ function SystemTab() {
     return (
         <div className="space-y-4" data-testid="admin-system">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sistema</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sistema</h2>
+                    <p className="ops-subtitle">Estado da infraestrutura: backend, WebSocket, base de dados, latência, carga e logs. Acções operacionais críticas vivem aqui.</p>
+                </div>
                 <button
                     onClick={loadAll}
                     data-testid="admin-system-refresh-all"
@@ -557,30 +651,39 @@ function SystemTab() {
 
             {/* QUICK ACTIONS */}
             <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid="admin-system-actions">
-                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Acções de sistema</div>
+                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2 inline-flex items-center gap-1.5">
+                    Acções de sistema
+                    <InfoTip text="Operações críticas que afectam toda a plataforma. Cada uma pede confirmação e fica registada no audit log." side="top" />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button onClick={restartSockets} disabled={actionBusy === "restart"}
-                        data-testid="admin-system-restart-sockets"
-                        className="h-10 px-3 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
-                        {actionBusy === "restart" ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
-                        Reiniciar sockets
-                    </button>
-                    <button onClick={clearCache} disabled={actionBusy === "clear"}
-                        data-testid="admin-system-clear-cache"
-                        className="h-10 px-3 rounded-2xl bg-slate-100 hover:bg-slate-800/[0.1] text-slate-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
-                        {actionBusy === "clear" ? <Loader2 size={14} className="animate-spin" /> : <Eraser size={14} />}
-                        Limpar cache
-                    </button>
-                    <button onClick={toggleMaintenance} disabled={actionBusy === "maint"}
-                        data-testid="admin-system-maintenance"
-                        className={`h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40 ${
-                            maint?.enabled
-                                ? "bg-slate-100 hover:bg-slate-200 text-slate-800"
-                                : "bg-red-500/10 hover:bg-red-500/20 text-red-700"
-                        }`}>
-                        {actionBusy === "maint" ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
-                        {maint?.enabled ? "Desativar manutenção" : "Ativar manutenção"}
-                    </button>
+                    <Hint side="top" focusable={false} text={{ title: "Reiniciar sockets WebSocket", body: "Fecha todas as conexões realtime. Os clientes reconectam automaticamente em poucos segundos. Útil quando há sockets pendurados ou após deploy." }}>
+                        <button onClick={restartSockets} disabled={actionBusy === "restart"}
+                            data-testid="admin-system-restart-sockets"
+                            className="w-full h-10 px-3 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                            {actionBusy === "restart" ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
+                            Reiniciar sockets
+                        </button>
+                    </Hint>
+                    <Hint side="top" focusable={false} text={{ title: "Limpar caches em memória", body: "Limpa caches in-memory (maintenance flag, presença de viewers, lru_cache). As primeiras consultas seguintes serão mais lentas até reaquecer." }}>
+                        <button onClick={clearCache} disabled={actionBusy === "clear"}
+                            data-testid="admin-system-clear-cache"
+                            className="w-full h-10 px-3 rounded-2xl bg-slate-100 hover:bg-slate-800/[0.1] text-slate-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                            {actionBusy === "clear" ? <Loader2 size={14} className="animate-spin" /> : <Eraser size={14} />}
+                            Limpar cache
+                        </button>
+                    </Hint>
+                    <Hint side="top" focusable={false} text={{ title: maint?.enabled ? "Desactivar manutenção" : "Activar modo manutenção", body: maint?.enabled ? "Volta a permitir escritas a todos os utilizadores." : "Impede utilizadores não-admin de publicar, comentar, gostar, seguir ou enviar mensagens. Acções de leitura continuam disponíveis." }}>
+                        <button onClick={toggleMaintenance} disabled={actionBusy === "maint"}
+                            data-testid="admin-system-maintenance"
+                            className={`w-full h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40 ${
+                                maint?.enabled
+                                    ? "bg-slate-100 hover:bg-slate-200 text-slate-800"
+                                    : "bg-red-500/10 hover:bg-red-500/20 text-red-700"
+                            }`}>
+                            {actionBusy === "maint" ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
+                            {maint?.enabled ? "Desativar manutenção" : "Ativar manutenção"}
+                        </button>
+                    </Hint>
                 </div>
             </div>
 
@@ -593,6 +696,7 @@ function SystemTab() {
                     testid="sys-status"
                     loading={loading.status}
                     onRefresh={() => _load("status", "/admin/system/status", setStatus)}
+                    hint={{ title: "Estado do processo backend", body: "Identificação do servidor: serviço, hostname, PID, versão de Python e plataforma. Útil para confirmar em que máquina/processo estás a operar." }}
                 >
                     {status ? (
                         <dl>
@@ -601,8 +705,8 @@ function SystemTab() {
                             <KV k="PID" v={status.pid} mono />
                             <KV k="Python" v={status.python} mono />
                             <KV k="Platform" v={status.platform} mono />
-                            <KV k="DB name" v={status.env?.db_name} mono />
-                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-slate-700" : "text-red-600"} />
+                            <KV k="DB name" v={status.env?.db_name} mono hint="Nome da base de dados Mongo activa." />
+                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-slate-700" : "text-red-600"} hint={status.env?.has_jwt_secret ? "Chave de assinatura de tokens JWT está configurada." : "JWT secret em falta — autenticação não funcionará. Configura a variável de ambiente JWT_SECRET."} />
                             <KV k="Verificado" v={fmtRelative(status.checked_at)} />
                         </dl>
                     ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
@@ -616,12 +720,13 @@ function SystemTab() {
                     testid="sys-uptime"
                     loading={loading.uptime}
                     onRefresh={() => _load("uptime", "/admin/system/uptime", setUptime)}
+                    hint={{ title: "Uptime", body: "Tempo desde que o processo backend arrancou e há quanto a máquina-host está ligada. Picos seguidos de reboots curtos indicam crashes." }}
                 >
                     {uptime ? (
                         <dl>
-                            <KV k="Processo" v={fmtUptime(uptime.process?.uptime_seconds)} mono />
+                            <KV k="Processo" v={fmtUptime(uptime.process?.uptime_seconds)} mono hint="Tempo desde o último arranque do servidor FastAPI." />
                             <KV k="Arrancou" v={fmtDate(uptime.process?.started_at)} mono />
-                            <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono />
+                            <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono hint="Uptime da máquina onde o backend corre (não da app). Em ambientes containerizados pode coincidir." />
                             <KV k="Verificado" v={fmtRelative(uptime.checked_at)} />
                         </dl>
                     ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
@@ -631,21 +736,25 @@ function SystemTab() {
                 <SystemPanel
                     title="WebSocket"
                     icon={Wifi}
-                    accent="text-slate-500"
+                    accent="text-[color:var(--ops-realtime-600)]"
                     testid="sys-ws"
                     loading={loading.ws}
                     onRefresh={() => _load("ws", "/admin/system/websocket", setWs)}
+                    hint={{ title: "Realtime / WebSocket", body: "Telemetria das conexões persistentes que entregam notificações, presença, novos posts, mensagens e contadores em tempo real." }}
                 >
                     {ws ? (
                         <>
                             <dl>
-                                <KV k="Users conectados" v={fmtNum(ws.users_connected)} mono />
-                                <KV k="Sockets totais" v={fmtNum(ws.sockets)} mono />
-                                <KV k="Post viewers" v={fmtNum(ws.post_viewers_total)} mono />
+                                <KV k="Users conectados" v={fmtNum(ws.users_connected)} mono hint="Pessoas distintas com pelo menos um socket aberto." />
+                                <KV k="Sockets totais" v={fmtNum(ws.sockets)} mono hint="Conexões abertas no total (uma pessoa pode ter várias abas/dispositivos)." />
+                                <KV k="Post viewers" v={fmtNum(ws.post_viewers_total)} mono hint="Utilizadores actualmente a ver detalhes de posts em tempo real (indicador de presença)." />
                             </dl>
                             {Array.isArray(ws.top_users) && ws.top_users.length > 0 && (
                                 <div className="mt-3">
-                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Top users (sockets)</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5 inline-flex items-center gap-1">
+                                        Top users (sockets)
+                                        <InfoTip text="Utilizadores com mais sockets abertos simultaneamente. Valores muito altos (>10) podem indicar bug de reconexão no cliente." side="top" />
+                                    </div>
                                     <ul className="space-y-1">
                                         {ws.top_users.slice(0, 5).map((u) => (
                                             <li key={u.user_id} className="text-[12px] flex items-center justify-between gap-2">
@@ -664,15 +773,20 @@ function SystemTab() {
                 <SystemPanel
                     title="Latência DB"
                     icon={Zap}
-                    accent="text-red-600"
+                    accent="text-[color:var(--ops-info-600)]"
                     testid="sys-latency"
                     loading={loading.latency}
                     onRefresh={() => _load("latency", "/admin/system/latency", setLatency)}
+                    hint={{ title: "Latência MongoDB", body: "Tempo de resposta de pings à base de dados em ms. < 50ms é saudável · 50–200ms degradação · > 200ms anomalia (vermelho)." }}
                 >
                     {latency ? (
                         <dl>
                             <KV k="Min" v={latency.min_ms != null ? `${latency.min_ms} ms` : "—"} mono />
-                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-red-700" : "text-slate-700"} />
+                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={
+                                latency.avg_ms > 200 ? "text-[color:var(--ops-danger-600)]" :
+                                latency.avg_ms > 50  ? "text-[color:var(--ops-warn-600)]" :
+                                "text-slate-700"
+                            } hint="Média das últimas amostras. Amarelo > 50ms, vermelho > 200ms." />
                             <KV k="Máx" v={latency.max_ms != null ? `${latency.max_ms} ms` : "—"} mono />
                             <KV k="Amostras" v={(latency.samples_ms || []).map((s) => `${s}ms`).join(" · ")} mono />
                         </dl>
@@ -687,6 +801,7 @@ function SystemTab() {
                     testid="sys-database"
                     loading={loading.database}
                     onRefresh={() => _load("database", "/admin/system/database", setDatabase)}
+                    hint={{ title: "MongoDB", body: "Métricas de tamanho e contagens da base de dados. 'Data size' é o conteúdo, 'Storage size' inclui overhead de blocos no disco." }}
                 >
                     {database?.db ? (
                         <>
@@ -694,14 +809,17 @@ function SystemTab() {
                                 <KV k="DB" v={database.db.db_name} mono />
                                 <KV k="Coleções" v={fmtNum(database.db.collections)} mono />
                                 <KV k="Documentos" v={fmtNum(database.db.objects)} mono />
-                                <KV k="Data size" v={fmtBytes(database.db.data_size_bytes)} mono />
-                                <KV k="Storage size" v={fmtBytes(database.db.storage_size_bytes)} mono />
-                                <KV k="Index size" v={fmtBytes(database.db.index_size_bytes)} mono />
+                                <KV k="Data size" v={fmtBytes(database.db.data_size_bytes)} mono hint="Tamanho do conteúdo de todos os documentos (BSON). Não inclui índices." />
+                                <KV k="Storage size" v={fmtBytes(database.db.storage_size_bytes)} mono hint="Espaço ocupado em disco pelos dados (com overhead de blocos)." />
+                                <KV k="Index size" v={fmtBytes(database.db.index_size_bytes)} mono hint="Espaço total dos índices. Se for desproporcional ao data size, revê índices desnecessários." />
                                 <KV k="Índices" v={fmtNum(database.db.indexes)} mono />
                             </dl>
                             {Array.isArray(database.collections) && (
                                 <div className="mt-3 max-h-[180px] overflow-y-auto">
-                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Coleções por contagem</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5 inline-flex items-center gap-1">
+                                        Coleções por contagem
+                                        <InfoTip text="Top 8 coleções ordenadas por número de documentos." side="top" />
+                                    </div>
                                     <ul className="space-y-0.5">
                                         {database.collections.slice(0, 8).map((c) => (
                                             <li key={c.name} className="text-[12px] flex items-center justify-between gap-2">
@@ -720,21 +838,30 @@ function SystemTab() {
                 <SystemPanel
                     title="Carga"
                     icon={Gauge}
-                    accent="text-red-600"
+                    accent="text-[color:var(--ops-info-600)]"
                     testid="sys-load"
                     loading={loading.load}
                     onRefresh={() => _load("load", "/admin/system/load", setLoad)}
+                    hint={{ title: "Carga de sistema", body: "Load average UNIX: média de processos em execução/à espera de CPU. Saudável < CPUs · amarelo entre 1× e 1.5× · vermelho > 1.5× CPUs." }}
                 >
                     {load ? (
                         <dl>
                             <KV k="CPUs" v={load.cpu_count} mono />
-                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-slate-700"} />
-                            <KV k="Load 5m" v={load.load_avg?.["5m"]?.toFixed?.(2) ?? "—"} mono />
-                            <KV k="Load 15m" v={load.load_avg?.["15m"]?.toFixed?.(2) ?? "—"} mono />
+                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={
+                                load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) * 1.5 ? "text-[color:var(--ops-danger-600)]" :
+                                load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1)       ? "text-[color:var(--ops-warn-600)]" :
+                                "text-slate-700"
+                            } hint="Carga do último minuto. Sinaliza problemas instantâneos." />
+                            <KV k="Load 5m" v={load.load_avg?.["5m"]?.toFixed?.(2) ?? "—"} mono hint="Carga média dos últimos 5 minutos." />
+                            <KV k="Load 15m" v={load.load_avg?.["15m"]?.toFixed?.(2) ?? "—"} mono hint="Carga média dos últimos 15 minutos — tendência de fundo." />
                             {load.memory && (
                                 <>
                                     <KV k="Memória total" v={fmtKbToBytes(load.memory.total_kb)} mono />
-                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-slate-700"} />
+                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={
+                                        load.memory.used_pct > 95 ? "text-[color:var(--ops-danger-600)]" :
+                                        load.memory.used_pct > 85 ? "text-[color:var(--ops-warn-600)]" :
+                                        "text-slate-700"
+                                    } hint="RAM em uso. Amarelo > 85%, vermelho > 95% — risco de OOM." />
                                     <KV k="Disponível" v={fmtKbToBytes(load.memory.available_kb)} mono />
                                 </>
                             )}
@@ -751,6 +878,7 @@ function SystemTab() {
                 testid="sys-errors"
                 loading={loading.errLog}
                 onRefresh={() => _load("errLog", "/admin/system/errors?lines=120", setErrLog)}
+                hint={{ title: "Log de erros do backend", body: "Últimas 120 linhas de stderr do processo. Stack traces e exceções aparecem aqui — vermelho é normal nesta secção." }}
             >
                 {errLog ? (
                     <>
@@ -766,10 +894,11 @@ function SystemTab() {
             <SystemPanel
                 title="Logs (stdout)"
                 icon={FileCode}
-                accent="text-slate-500"
+                accent="text-[color:var(--ops-system-600)]"
                 testid="sys-logs"
                 loading={loading.outLog}
                 onRefresh={() => _load("outLog", "/admin/system/logs?lines=120", setOutLog)}
+                hint={{ title: "Log standard do backend", body: "Últimas 120 linhas de stdout. Eventos operacionais, pedidos HTTP relevantes e mensagens de info." }}
             >
                 {outLog ? (
                     <>
@@ -781,8 +910,8 @@ function SystemTab() {
                 ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
             </SystemPanel>
 
-            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-3 sm:px-4 py-2.5 text-[11.5px] text-red-700/85 flex items-start gap-2">
-                <AlertCircle size={13} className="mt-0.5 shrink-0" />
+            <div className="ops-callout ops-callout--info">
+                <AlertCircle size={13} />
                 <div>
                     <strong>Ver filas</strong> não foi implementado: este sistema não usa filas externas (Celery/Redis). Tudo o resto é dado em tempo real.
                 </div>
@@ -927,7 +1056,10 @@ function UsersTab({ onOpenDrawer }) {
     return (
         <div className="space-y-4" data-testid="admin-users">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Utilizadores</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Utilizadores</h2>
+                    <p className="ops-subtitle">Pesquisa, verificação, banimentos, privilégios e moderação individual. Todas as ações ficam registadas no audit log.</p>
+                </div>
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-users-refresh"
@@ -1045,10 +1177,10 @@ function UsersTab({ onOpenDrawer }) {
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
                                         <span className="font-mono text-[11.5px] text-slate-400">@{u.username}</span>
-                                        {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-medium">verified</span>}
-                                        {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">admin</span>}
-                                        {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">banido</span>}
-                                        {u.online && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">online</span>}
+                                        {u.verified && <span className="ops-chip ops-chip--info font-medium">verified</span>}
+                                        {u.is_admin && <span className="ops-chip ops-chip--system font-medium">admin</span>}
+                                        {u.banned && <span className="ops-chip ops-chip--danger font-medium">banido</span>}
+                                        {u.online && <span className="ops-chip ops-chip--realtime font-medium">online</span>}
                                     </div>
                                     <div className="text-[11.5px] text-slate-500 truncate">
                                         {u.email} · seguidores {u.followers_count} · entrou {fmtRelative(u.created_at)}
@@ -1229,7 +1361,10 @@ function PostsTab() {
     return (
         <div className="space-y-4" data-testid="admin-posts">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Publicações</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Publicações</h2>
+                    <p className="ops-subtitle">Destaque, redução de alcance, congelamento de respostas e remoção. Cada ação é registada e reversível (exceto remoção).</p>
+                </div>
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-posts-refresh"
@@ -1313,17 +1448,17 @@ function PostsTab() {
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[13.5px]">@{p.author_username || "—"}</span>
                                     <span className="font-mono text-[10.5px] text-slate-400">{p.kind}</span>
-                                    {p.image && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">com imagem</span>}
-                                    {p.featured && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
-                                    {p.is_draft && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">rascunho</span>}
-                                    {p.scheduled_at && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-700">agendado</span>}
-                                    {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">c/{p.community_slug}</span>}
+                                    {p.image && <span className="ops-chip ops-chip--neutral">com imagem</span>}
+                                    {p.featured && <span className="ops-chip ops-chip--info">destacado</span>}
+                                    {p.is_draft && <span className="ops-chip ops-chip--system">rascunho</span>}
+                                    {p.scheduled_at && <span className="ops-chip ops-chip--neutral">agendado</span>}
+                                    {p.community_slug && <span className="ops-chip ops-chip--neutral">c/{p.community_slug}</span>}
                                 </div>
                                 <div className="text-[13px] text-slate-900 mt-1 line-clamp-3 whitespace-pre-wrap break-words">{p.content || "—"}</div>
                                 <div className="text-[11px] text-slate-400 mt-1 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
                                     <span>{p.likes_count} ♥ · {p.comments_count} 💬 · {fmtRelative(p.created_at)} · {p.id.slice(0, 8)}</span>
-                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
-                                    {p.reduce_reach && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 inline-flex items-center gap-0.5"><TrendingDown size={9} /> alcance reduzido</span>}
+                                    {p.replies_frozen && <span className="ops-chip ops-chip--neutral"><Snowflake size={9} /> respostas congeladas</span>}
+                                    {p.reduce_reach && <span className="ops-chip ops-chip--warn"><TrendingDown size={9} /> alcance reduzido</span>}
                                 </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[210px]">
@@ -1627,7 +1762,10 @@ function ReportsTab({ onOpenUser }) {
     return (
         <div className="space-y-4" data-testid="admin-reports">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Reports</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Reports</h2>
+                    <p className="ops-subtitle">Reports submetidos por utilizadores. Aprova, ignora ou aplica sanção (remover, suspender, banir). Os reports abertos surgem em destaque no menu.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-reports-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1663,8 +1801,8 @@ function ReportsTab({ onOpenUser }) {
                         <li key={r.id} data-testid={`admin-report-row-${r.id}`} className="px-4 py-3 flex items-start gap-3">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium uppercase tracking-wide">{r.kind}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${r.status === "open" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"}`}>{r.status}</span>
+                                    <span className="ops-chip ops-chip--neutral uppercase tracking-wide">{r.kind}</span>
+                                    <span className={r.status === "open" ? "ops-chip ops-chip--warn" : "ops-chip ops-chip--neutral"}>{r.status}</span>
                                     {r.reason && <span className="text-[11px] text-slate-600">motivo: {r.reason}</span>}
                                     <span className="text-[11px] text-slate-400 ml-auto">{fmtRelative(r.created_at)}</span>
                                 </div>
@@ -1781,7 +1919,10 @@ function CommunitiesTab() {
     return (
         <div className="space-y-4" data-testid="admin-communities">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comunidades</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comunidades</h2>
+                    <p className="ops-subtitle">Comunidades públicas e privadas. Gestão de visibilidade, regras, moderadores e remoção.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-communities-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1866,7 +2007,10 @@ function EventsTab() {
     return (
         <div className="space-y-4" data-testid="admin-events">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Eventos</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Eventos</h2>
+                    <p className="ops-subtitle">Eventos publicados pela comunidade. Edição, remoção e destaque manual.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-events-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -1948,7 +2092,10 @@ function SessionsTab() {
     return (
         <div className="space-y-4" data-testid="admin-sessions">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sessões ativas</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sessões ativas</h2>
+                    <p className="ops-subtitle">Sessões e dispositivos com acesso. Revoga sessões suspeitas individualmente ou força logout em massa por utilizador.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-sessions-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -2392,7 +2539,10 @@ function AuditTab() {
     return (
         <div className="space-y-4" data-testid="admin-audit">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Audit log</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Audit log</h2>
+                    <p className="ops-subtitle">Histórico imutável de todas as ações administrativas. Filtra por tipo de ação e exporta para CSV para auditoria externa.</p>
+                </div>
                 <div className="flex items-center gap-1.5">
                     <button onClick={downloadCsv}
                         data-testid="admin-audit-export"
@@ -2421,7 +2571,7 @@ function AuditTab() {
                     {data.items.map((a) => (
                         <li key={a.id} className="px-4 py-2.5 text-[12.5px] flex items-center gap-3 font-mono" data-testid={`admin-audit-row-${a.id}`}>
                             <span className="text-slate-400 text-[11px] w-[110px] shrink-0">{fmtRelative(a.created_at)}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] shrink-0">
+                            <span className="ops-chip ops-chip--system shrink-0">
                                 {ACTION_LABELS[a.action] || a.action}
                             </span>
                             <span className="text-slate-700 truncate">
@@ -2479,7 +2629,10 @@ function CommentsTab() {
     return (
         <div className="space-y-4" data-testid="admin-comments">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comentários</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comentários</h2>
+                    <p className="ops-subtitle">Moderação de comentários: revisão por autor, remoção rápida e ações ao utilizador autor (silenciar, banir).</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-comments-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -2584,7 +2737,10 @@ function StoriesTab() {
     return (
         <div className="space-y-4" data-testid="admin-stories">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Stories</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Stories</h2>
+                    <p className="ops-subtitle">Stories activas neste momento. Expiram automaticamente após 24h — moderação rápida com remoção forçada.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-stories-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -2726,15 +2882,18 @@ function HashtagsTab() {
     return (
         <div className="space-y-4" data-testid="admin-hashtags">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Hashtags</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Hashtags</h2>
+                    <p className="ops-subtitle">Hashtags em uso. Bloqueia tags com conteúdo problemático — bloqueadas saem do trending e do explore, mas permanecem visíveis no perfil dos autores.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-hashtags-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
-            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-4 py-3 text-[12.5px] text-red-700/85 flex items-start gap-2">
-                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <div className="ops-callout ops-callout--warn">
+                <AlertCircle size={14} />
                 <div>
                     Hashtags em blacklist são <strong>removidas</strong> do trending e do <strong>explore</strong>.
                     Os posts permanecem visíveis no perfil dos autores, mas deixam de ser amplificados publicamente.
@@ -2885,10 +3044,13 @@ function BroadcastTab() {
 
     return (
         <div className="space-y-4" data-testid="admin-broadcast">
-            <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Broadcast</h2>
+            <div className="min-w-0">
+                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Broadcast</h2>
+                <p className="ops-subtitle">Envia uma notificação a todos os utilizadores ou a um segmento. Ação irreversível — usa com critério.</p>
+            </div>
 
-            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-4 py-3 text-[12.5px] text-red-700/85 flex items-start gap-2">
-                <Megaphone size={14} className="mt-0.5 shrink-0" />
+            <div className="ops-callout ops-callout--warn">
+                <Megaphone size={14} />
                 <div>
                     A broadcast envia uma notificação <strong>real</strong> e persistente para cada destinatário (e push via WS se estiverem online).
                     Usa com critério — uma vez enviada não pode ser revertida.
@@ -3191,15 +3353,15 @@ function UserDrawer({ user, onClose }) {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-display text-[15px] sm:text-[16px] tracking-tight truncate">{u.name || u.username}</span>
-                            {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">verified</span>}
-                            {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">admin</span>}
-                            {u.featured_account && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
-                            {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                            {u.suspended_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">suspenso</span>}
-                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-700">silenciado</span>}
-                            {u.shadow_muted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
-                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">congelado</span>}
-                            {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
+                            {u.verified && <span className="ops-chip ops-chip--info">verified</span>}
+                            {u.is_admin && <span className="ops-chip ops-chip--system">admin</span>}
+                            {u.featured_account && <span className="ops-chip ops-chip--info">destacado</span>}
+                            {u.banned && <span className="ops-chip ops-chip--danger">banido</span>}
+                            {u.suspended_active && <span className="ops-chip ops-chip--danger">suspenso</span>}
+                            {u.muted_active && <span className="ops-chip ops-chip--neutral">silenciado</span>}
+                            {u.shadow_muted && <span className="ops-chip ops-chip--neutral">shadow</span>}
+                            {u.frozen && <span className="ops-chip ops-chip--neutral">congelado</span>}
+                            {u.flagged_suspicious && <span className="ops-chip ops-chip--warn">suspeito</span>}
                         </div>
                         <div className="text-[11.5px] sm:text-[12px] text-slate-500 truncate font-mono">@{u.username} · {u.email}</div>
                     </div>
@@ -3539,8 +3701,9 @@ function UserDrawer({ user, onClose }) {
                                     <ActionButton icon={Shield} label={u.is_admin ? "Remover admin" : "Promover admin"} onClick={doAdminToggle} testid="admin-action-admin-toggle" disabled={actionBusy === "admin"} kind={u.is_admin ? "danger" : "primary"} />
                                 </div>
                             </div>
-                            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-3 py-2.5 text-[11.5px] text-red-700/85">
-                                <strong>Ações registadas:</strong> todas estas ações geram entradas no audit log e ficam visíveis no separador "Atividade" deste utilizador.
+                            <div className="ops-callout ops-callout--info text-[11.5px]">
+                                <Info size={13} />
+                                <div><strong>Ações registadas:</strong> todas estas ações geram entradas no audit log e ficam visíveis no separador "Atividade" deste utilizador.</div>
                             </div>
                         </div>
                     )}
@@ -3649,7 +3812,10 @@ function AntiSpamTab({ onOpenDrawer }) {
     return (
         <div className="space-y-4" data-testid="admin-antispam">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Anti-spam</h2>
+                <div className="min-w-0 flex-1">
+                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Anti-spam</h2>
+                    <p className="ops-subtitle">Filtros automáticos e moderação proactiva: rate limits, deteção de duplicados, padrões suspeitos e listas internas.</p>
+                </div>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-antispam-refresh"
                     className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -3902,15 +4068,16 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                     transition-colors duration-150
                                                     ${collapsed ? "lg:px-0 lg:justify-center px-2.5" : "px-2.5"}
                                                     ${active
-                                                        ? "bg-slate-900 text-white shadow-sm"
+                                                        ? "bg-slate-100 text-[color:var(--ops-info-700)]"
                                                         : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"}
                                                 `}
                                             >
-                                                {/* Active rail */}
-                                                {active && !collapsed && (
-                                                    <span aria-hidden className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-white/70 lg:hidden" />
+                                                {/* Active rail — petróleo, marca localização sem gritar */}
+                                                {active && (
+                                                    <span aria-hidden className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${collapsed ? "lg:hidden" : ""}`}
+                                                        style={{ backgroundColor: "var(--ops-info-500)" }} />
                                                 )}
-                                                <span className={`grid place-items-center w-5 h-5 shrink-0 ${active ? "" : "text-slate-500 group-hover:text-slate-900"}`}>
+                                                <span className={`grid place-items-center w-5 h-5 shrink-0 ${active ? "text-[color:var(--ops-info-600)]" : "text-slate-500 group-hover:text-slate-900"}`}>
                                                     <Icon size={16} />
                                                 </span>
                                                 <span className={`flex-1 text-left truncate transition-[opacity,max-width] duration-200 ${
@@ -3922,7 +4089,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                         className={`
                                                             min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-semibold
                                                             inline-flex items-center justify-center shrink-0
-                                                            ${active ? "bg-white text-slate-900" : "bg-red-500 text-white"}
+                                                            bg-[color:var(--ops-danger-500)] text-white
                                                             ${collapsed ? "lg:absolute lg:top-1 lg:right-1 lg:min-w-[14px] lg:h-[14px] lg:text-[9px]" : ""}
                                                         `}
                                                     >{openReports > 99 ? "99+" : openReports}</span>

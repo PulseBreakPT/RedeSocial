@@ -1,0 +1,782 @@
+/* =============================================================================
+   LUSORAE · ADMIN OPERATIONAL CONTROL CENTER · DESIGN TOKENS + RE-SKIN
+   ----------------------------------------------------------------------------
+   Loaded only inside the admin shell (AdminLayout sets body.admin-mode).
+   Objetivo: painel premium, calmo, operacional. Vermelho fica raro (perigo
+   real). Âmbar para avisos. Verde discreto para sucesso. Petróleo para
+   informação operacional. Slate para estrutura. Cyan e violeta subtis para
+   realtime e sistema interno.
+   Referências visuais: Linear, Stripe, Vercel, Raycast, GitHub.
+   ============================================================================ */
+
+body.admin-mode {
+    /* -----------------------------------------------------------------------
+       SURFACES (mais frias e neutras que o resto da app)
+       ----------------------------------------------------------------------- */
+    --ops-bg:               #f7f8fa;            /* canvas — cooler off-white */
+    --ops-bg-elevated:      #ffffff;            /* cards */
+    --ops-bg-sunken:        #eef0f4;            /* nested tiles */
+    --ops-bg-hover:         rgba(15, 23, 42, 0.045);
+    --ops-bg-active:        rgba(15, 23, 42, 0.085);
+
+    /* Borders — cooler than the social app's warm borders */
+    --ops-border:           rgba(15, 23, 42, 0.08);
+    --ops-border-strong:    rgba(15, 23, 42, 0.14);
+    --ops-border-subtle:    rgba(15, 23, 42, 0.04);
+
+    /* Text */
+    --ops-text:             #0b1220;            /* slate-950 with cool tint */
+    --ops-text-soft:        #1f2937;            /* slate-800 */
+    --ops-text-muted:       #4b5563;            /* slate-600 */
+    --ops-text-faint:       #6b7280;            /* slate-500 */
+    --ops-text-ghost:       #94a3b8;            /* slate-400 */
+
+    /* -----------------------------------------------------------------------
+       SEMANTIC PALETTE — operational, not gaming RGB
+       Each role: 50/100/500/600/700 (bg-soft/bg-tint/main/strong/text)
+       ----------------------------------------------------------------------- */
+
+    /* DANGER — vermelho operacional sóbrio (Linear/Stripe red).
+       Reservado: ban, delete, revoke session, force-logout, maintenance ON,
+       hashtag blacklist active, critical error logs, anomalies, spikes.    */
+    --ops-danger-50:        #fef2f2;
+    --ops-danger-100:       #fee2e2;
+    --ops-danger-200:       #fecaca;
+    --ops-danger-500:       #dc2626;
+    --ops-danger-600:       #b91c1c;
+    --ops-danger-700:       #991b1b;
+    --ops-danger-tint:      rgba(220, 38, 38, 0.08);
+    --ops-danger-tint-hover:rgba(220, 38, 38, 0.14);
+
+    /* WARN — âmbar; avisos, suspeito, revisão pendente, fila moderação */
+    --ops-warn-50:          #fffbeb;
+    --ops-warn-100:         #fef3c7;
+    --ops-warn-200:         #fde68a;
+    --ops-warn-500:         #d97706;
+    --ops-warn-600:         #b45309;
+    --ops-warn-700:         #92400e;
+    --ops-warn-tint:        rgba(217, 119, 6, 0.10);
+    --ops-warn-tint-hover:  rgba(217, 119, 6, 0.18);
+
+    /* SUCCESS — verde discreto; saudável, confirmações, sistemas estáveis */
+    --ops-success-50:       #ecfdf5;
+    --ops-success-100:      #d1fae5;
+    --ops-success-200:      #a7f3d0;
+    --ops-success-500:      #059669;          /* emerald-600 — não vibrante */
+    --ops-success-600:      #047857;
+    --ops-success-700:      #065f46;
+    --ops-success-tint:     rgba(5, 150, 105, 0.10);
+    --ops-success-tint-hover:rgba(5, 150, 105, 0.18);
+
+    /* INFO — azul petróleo (Stripe/Linear neutral blue).
+       Estados ativos seguros, filtros, tabs ativas, info chips, navegação */
+    --ops-info-50:          #ecfeff;
+    --ops-info-100:         #cffafe;
+    --ops-info-200:         #a5f3fc;
+    --ops-info-500:         #0e7490;          /* teal-700 — petróleo refinado */
+    --ops-info-600:         #155e75;
+    --ops-info-700:         #164e63;
+    --ops-info-tint:        rgba(14, 116, 144, 0.08);
+    --ops-info-tint-hover:  rgba(14, 116, 144, 0.16);
+
+    /* REALTIME — cyan subtil; WS, presença, sincronização */
+    --ops-realtime-50:      #f0fdfa;
+    --ops-realtime-100:     #ccfbf1;
+    --ops-realtime-500:     #14b8a6;          /* teal-500 */
+    --ops-realtime-600:     #0d9488;
+    --ops-realtime-700:     #0f766e;
+    --ops-realtime-tint:    rgba(20, 184, 166, 0.10);
+    --ops-realtime-pulse:   rgba(20, 184, 166, 0.45);
+
+    /* SYSTEM — violeta subtil; audit, infra, definições técnicas */
+    --ops-system-50:        #f5f3ff;
+    --ops-system-100:       #ede9fe;
+    --ops-system-500:       #7c3aed;
+    --ops-system-600:       #6d28d9;
+    --ops-system-700:       #5b21b6;
+    --ops-system-tint:      rgba(124, 58, 237, 0.08);
+    --ops-system-tint-hover:rgba(124, 58, 237, 0.16);
+
+    /* SLATE — estrutura, metadata, neutro */
+    --ops-slate-50:         #f8fafc;
+    --ops-slate-100:        #f1f5f9;
+    --ops-slate-200:        #e2e8f0;
+    --ops-slate-300:        #cbd5e1;
+    --ops-slate-400:        #94a3b8;
+    --ops-slate-500:        #64748b;
+    --ops-slate-600:        #475569;
+    --ops-slate-700:        #334155;
+    --ops-slate-800:        #1e293b;
+    --ops-slate-900:        #0f172a;
+
+    /* -----------------------------------------------------------------------
+       BACKGROUND CANVAS — substitui o #fafafa actual por algo mais frio
+       e operacional.
+       ----------------------------------------------------------------------- */
+    background-color: var(--ops-bg) !important;
+    color: var(--ops-text);
+}
+
+/* ============================================================================
+   GLOBAL RE-SKIN dentro do admin
+   Objetivo: remapear classes Tailwind heavy-red comuns para tons semânticos
+   sem ter de editar cada componente. Vermelho fica raro.
+   ============================================================================ */
+body.admin-mode {
+
+    /* CANVAS overrides — o min-h-screen bg-[#fafafa] da AdminLayout */
+}
+
+/* Override do canvas hardcoded da AdminLayout */
+body.admin-mode [data-testid="admin-layout"] {
+    background-color: var(--ops-bg);
+}
+
+/* Top bar: borda mais fria, ligeiro tint */
+body.admin-mode [data-testid="admin-topbar"] {
+    background-color: rgba(255, 255, 255, 0.92);
+    border-bottom-color: var(--ops-border);
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+}
+
+/* Logo shield: do preto puro para slate-900 (menos agressivo) */
+body.admin-mode [data-testid="admin-topbar-logo"] > span:first-child {
+    background-color: var(--ops-slate-900);
+}
+
+/* ============================================================================
+   SEMANTIC UTILITY CLASSES
+   Use estas em vez de classes Tailwind cruas para chips, badges, tiles, etc.
+   ============================================================================ */
+
+/* ============================================================================
+   TOOLTIPS / HINTS — CSS-only, premium feel, side-aware
+   ============================================================================ */
+.ops-hint-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    outline: none;
+}
+
+.ops-hint {
+    position: absolute;
+    z-index: 1000;
+    padding: 8px 11px;
+    background: var(--ops-slate-900);
+    color: #fff;
+    font-size: 11.5px;
+    line-height: 1.45;
+    font-weight: 500;
+    border-radius: 8px;
+    white-space: normal;
+    max-width: 260px;
+    width: max-content;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease, transform 160ms ease;
+    box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    text-align: left;
+    letter-spacing: -0.005em;
+    text-transform: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+}
+
+.ops-hint__title {
+    font-weight: 600;
+    font-size: 11.5px;
+    margin-bottom: 2px;
+    color: #fff;
+}
+
+.ops-hint__body {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.ops-hint__kbd {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.10);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Arrow */
+.ops-hint::before {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--ops-slate-900);
+    transform: rotate(45deg);
+    z-index: -1;
+}
+
+/* Default = bottom (tooltip below trigger) */
+.ops-hint,
+.ops-hint--bottom {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+}
+.ops-hint--bottom::before,
+.ops-hint:not(.ops-hint--top):not(.ops-hint--left):not(.ops-hint--right)::before {
+    top: -3px;
+    left: 50%;
+    margin-left: -4px;
+}
+
+.ops-hint--top {
+    top: auto;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+}
+.ops-hint--top::before {
+    bottom: -3px;
+    top: auto;
+    left: 50%;
+    margin-left: -4px;
+}
+
+.ops-hint--right {
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%) translateX(8px);
+}
+.ops-hint--right::before {
+    left: -3px;
+    top: 50%;
+    margin-top: -4px;
+}
+
+.ops-hint--left {
+    top: 50%;
+    left: auto;
+    right: 100%;
+    transform: translateY(-50%) translateX(-8px);
+}
+.ops-hint--left::before {
+    right: -3px;
+    left: auto;
+    top: 50%;
+    margin-top: -4px;
+}
+
+.ops-hint-wrap:hover .ops-hint,
+.ops-hint-wrap:focus-visible .ops-hint,
+.ops-hint-wrap:focus-within .ops-hint {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ops-hint-wrap:hover .ops-hint--bottom,
+.ops-hint-wrap:focus-visible .ops-hint--bottom,
+.ops-hint-wrap:hover .ops-hint:not(.ops-hint--top):not(.ops-hint--left):not(.ops-hint--right),
+.ops-hint-wrap:focus-visible .ops-hint:not(.ops-hint--top):not(.ops-hint--left):not(.ops-hint--right) {
+    transform: translateX(-50%) translateY(4px);
+}
+.ops-hint-wrap:hover .ops-hint--top,
+.ops-hint-wrap:focus-visible .ops-hint--top {
+    transform: translateX(-50%) translateY(-4px);
+}
+.ops-hint-wrap:hover .ops-hint--right,
+.ops-hint-wrap:focus-visible .ops-hint--right {
+    transform: translateY(-50%) translateX(4px);
+}
+.ops-hint-wrap:hover .ops-hint--left,
+.ops-hint-wrap:focus-visible .ops-hint--left {
+    transform: translateY(-50%) translateX(-4px);
+}
+
+/* Info trigger icon — softer, hover reveals stronger */
+.ops-hint-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    color: var(--ops-text-ghost);
+    transition: color 120ms ease;
+    flex-shrink: 0;
+}
+.ops-hint-wrap:hover .ops-hint-icon,
+.ops-hint-wrap:focus-visible .ops-hint-icon {
+    color: var(--ops-text-muted);
+}
+
+/* Inline subtitle for tab descriptions */
+.ops-subtitle {
+    color: var(--ops-text-faint);
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-top: 2px;
+    max-width: 720px;
+}
+
+/* ============================================================================
+   PAGE HEADER (tab heading + subtitle) — uniform across all admin tabs
+   ============================================================================ */
+.ops-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.ops-page-header__title {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ops-text);
+    line-height: 1.15;
+}
+@media (max-width: 640px) {
+    .ops-page-header__title { font-size: 18px; }
+}
+
+/* ── Callouts (info banners — informational/warning blocks) ─────────────── */
+.ops-callout {
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    border: 1px solid transparent;
+}
+.ops-callout > svg { flex-shrink: 0; margin-top: 2px; }
+.ops-callout--info    { background: var(--ops-info-50);    border-color: var(--ops-info-tint);    color: var(--ops-info-700); }
+.ops-callout--warn    { background: var(--ops-warn-50);    border-color: var(--ops-warn-tint);    color: var(--ops-warn-700); }
+.ops-callout--danger  { background: var(--ops-danger-50);  border-color: var(--ops-danger-tint);  color: var(--ops-danger-700); }
+.ops-callout--success { background: var(--ops-success-50); border-color: var(--ops-success-tint); color: var(--ops-success-700); }
+.ops-callout--system  { background: var(--ops-system-50);  border-color: var(--ops-system-tint);  color: var(--ops-system-700); }
+.ops-callout strong   { font-weight: 600; }
+
+/* ── Surface primitives ─────────────────────────────────────────────────── */
+.ops-panel {
+    background-color: var(--ops-bg-elevated);
+    border: 1px solid var(--ops-border);
+    border-radius: 16px;
+}
+.ops-panel-sunken {
+    background-color: var(--ops-bg-sunken);
+    border: 1px solid var(--ops-border-subtle);
+    border-radius: 12px;
+}
+
+/* ── Chips / badges semânticos (small inline labels) ─────────────────────── */
+.ops-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+}
+.ops-chip--neutral  { background: var(--ops-slate-100);     color: var(--ops-slate-700); }
+.ops-chip--info     { background: var(--ops-info-tint);     color: var(--ops-info-700); }
+.ops-chip--success  { background: var(--ops-success-tint);  color: var(--ops-success-700); }
+.ops-chip--warn     { background: var(--ops-warn-tint);     color: var(--ops-warn-700); }
+.ops-chip--danger   { background: var(--ops-danger-tint);   color: var(--ops-danger-700); }
+.ops-chip--realtime { background: var(--ops-realtime-tint); color: var(--ops-realtime-700); }
+.ops-chip--system   { background: var(--ops-system-tint);   color: var(--ops-system-700); }
+
+/* ── Tile (compact KPI mini-card, used in System Health grid) ────────────── */
+.ops-tile {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--ops-slate-50);
+    border: 1px solid var(--ops-border-subtle);
+}
+.ops-tile__label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--ops-text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.ops-tile__value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ops-text);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+}
+.ops-tile--info    { background: var(--ops-info-50);    border-color: var(--ops-info-tint); }
+.ops-tile--info    .ops-tile__label { color: var(--ops-info-700); }
+.ops-tile--info    .ops-tile__value { color: var(--ops-info-700); }
+
+.ops-tile--warn    { background: var(--ops-warn-50);    border-color: var(--ops-warn-tint); }
+.ops-tile--warn    .ops-tile__label { color: var(--ops-warn-700); }
+.ops-tile--warn    .ops-tile__value { color: var(--ops-warn-700); }
+
+.ops-tile--danger  { background: var(--ops-danger-50);  border-color: var(--ops-danger-tint); }
+.ops-tile--danger  .ops-tile__label { color: var(--ops-danger-700); }
+.ops-tile--danger  .ops-tile__value { color: var(--ops-danger-700); }
+
+.ops-tile--success { background: var(--ops-success-50); border-color: var(--ops-success-tint); }
+.ops-tile--success .ops-tile__label { color: var(--ops-success-700); }
+.ops-tile--success .ops-tile__value { color: var(--ops-success-700); }
+
+.ops-tile--realtime{ background: var(--ops-realtime-50);border-color: var(--ops-realtime-tint); }
+.ops-tile--realtime .ops-tile__label { color: var(--ops-realtime-700); }
+.ops-tile--realtime .ops-tile__value { color: var(--ops-realtime-700); }
+
+.ops-tile--system  { background: var(--ops-system-50);  border-color: var(--ops-system-tint); }
+.ops-tile--system  .ops-tile__label { color: var(--ops-system-700); }
+.ops-tile--system  .ops-tile__value { color: var(--ops-system-700); }
+
+/* ── Buttons (operational variants) ──────────────────────────────────────── */
+.ops-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.ops-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ops-btn--ghost {
+    background: var(--ops-slate-100);
+    color: var(--ops-slate-700);
+}
+.ops-btn--ghost:hover:not(:disabled) {
+    background: var(--ops-slate-200);
+}
+
+.ops-btn--primary {
+    background: var(--ops-slate-900);
+    color: #fff;
+}
+.ops-btn--primary:hover:not(:disabled) {
+    background: var(--ops-slate-800);
+}
+
+.ops-btn--info {
+    background: var(--ops-info-tint);
+    color: var(--ops-info-700);
+}
+.ops-btn--info:hover:not(:disabled) {
+    background: var(--ops-info-tint-hover);
+}
+
+.ops-btn--warn {
+    background: var(--ops-warn-tint);
+    color: var(--ops-warn-700);
+}
+.ops-btn--warn:hover:not(:disabled) {
+    background: var(--ops-warn-tint-hover);
+}
+
+.ops-btn--danger {
+    background: var(--ops-danger-500);
+    color: #fff;
+}
+.ops-btn--danger:hover:not(:disabled) {
+    background: var(--ops-danger-600);
+}
+.ops-btn--danger-soft {
+    background: var(--ops-danger-tint);
+    color: var(--ops-danger-700);
+}
+.ops-btn--danger-soft:hover:not(:disabled) {
+    background: var(--ops-danger-tint-hover);
+}
+
+/* ── Toggle (segmented control / pill group) ─────────────────────────────── */
+.ops-segment {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px;
+    background: var(--ops-slate-100);
+    border-radius: 999px;
+    gap: 2px;
+}
+.ops-segment__item {
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ops-text-muted);
+    transition: all 140ms ease;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+.ops-segment__item:hover { color: var(--ops-text); }
+.ops-segment__item--active {
+    background: var(--ops-bg-elevated);
+    color: var(--ops-text);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px var(--ops-border);
+}
+
+/* ── Pulse dot for realtime/live status ──────────────────────────────────── */
+.ops-pulse-dot {
+    position: relative;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--ops-realtime-500);
+}
+.ops-pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 999px;
+    background: var(--ops-realtime-pulse);
+    animation: ops-pulse 1.8s ease-out infinite;
+}
+@keyframes ops-pulse {
+    0%   { transform: scale(0.7); opacity: 0.8; }
+    100% { transform: scale(2.4); opacity: 0; }
+}
+.ops-pulse-dot--danger  { background: var(--ops-danger-500); }
+.ops-pulse-dot--danger::after { background: rgba(220, 38, 38, 0.45); }
+.ops-pulse-dot--warn    { background: var(--ops-warn-500); }
+.ops-pulse-dot--warn::after { background: rgba(217, 119, 6, 0.45); }
+
+/* ============================================================================
+   RE-SKIN MAPS — remapeamento automático de classes Tailwind dentro do admin
+   para reduzir vermelho onde NÃO é crítico (ver regras na descrição do task)
+   ============================================================================ */
+
+/* ── 1) "bg-slate-900 text-white" usado em pills/CTA primárias → mantém,
+       mas sombra cromática ligeiramente mais fria  ─────────────────────── */
+body.admin-mode .bg-slate-900 { background-color: var(--ops-slate-900); }
+body.admin-mode .text-slate-900 { color: var(--ops-text); }
+
+/* ── 2) Hover/active backgrounds: bg-slate-100 / hover:bg-slate-100 ────── */
+body.admin-mode .bg-slate-50  { background-color: var(--ops-slate-50); }
+body.admin-mode .bg-slate-100 { background-color: var(--ops-slate-100); }
+body.admin-mode .bg-slate-200 { background-color: var(--ops-slate-200); }
+body.admin-mode .border-slate-100 { border-color: var(--ops-border-subtle); }
+body.admin-mode .border-slate-200 { border-color: var(--ops-border); }
+body.admin-mode .border-slate-300 { border-color: var(--ops-border-strong); }
+body.admin-mode .text-slate-300 { color: var(--ops-slate-300); }
+body.admin-mode .text-slate-400 { color: var(--ops-text-ghost); }
+body.admin-mode .text-slate-500 { color: var(--ops-text-faint); }
+body.admin-mode .text-slate-600 { color: var(--ops-text-muted); }
+body.admin-mode .text-slate-700 { color: var(--ops-slate-700); }
+body.admin-mode .text-slate-800 { color: var(--ops-text-soft); }
+
+body.admin-mode .hover\:bg-slate-100:hover { background-color: var(--ops-bg-hover); }
+body.admin-mode .hover\:bg-slate-200:hover { background-color: var(--ops-bg-active); }
+body.admin-mode .hover\:bg-slate-800\/85:hover,
+body.admin-mode .hover\:bg-slate-800\/\[0\.1\]:hover { background-color: var(--ops-bg-active); }
+
+/* ── 3) bg-white panels: aplicamos a borda mais fria já vinda do token ── */
+body.admin-mode .bg-white { background-color: var(--ops-bg-elevated); }
+
+/* ── 4) RED → AMBER (suspeito, blacklist count, featured non-critical) ──
+       Selecionamos apenas variantes "soft" (red-50/100/red-50/70/red-50/50)
+       que tipicamente são WARN, não DANGER. As variantes 500/600/700 e
+       rings ficam intactos = continuam a sinalizar perigo real.            */
+
+body.admin-mode .bg-red-50      { background-color: var(--ops-danger-50); }
+body.admin-mode .bg-red-50\/50  { background-color: var(--ops-danger-tint); }
+body.admin-mode .bg-red-50\/70  { background-color: var(--ops-danger-50); }
+body.admin-mode .hover\:bg-red-50:hover  { background-color: var(--ops-danger-100); }
+body.admin-mode .hover\:bg-red-50\/70:hover { background-color: var(--ops-danger-100); }
+body.admin-mode .border-red-200 { border-color: var(--ops-danger-200); }
+
+/* text-red-700 dentro de .bg-red-50/.bg-red-50/70 = warn text. Mas há casos
+   em que text-red-700 é usado isolado e é mesmo perigo. Solução: deixamos
+   text-red-700 intacto (continua vermelho destrutivo) mas, quando estiver
+   visualmente dentro de um chip âmbar (bg agora âmbar), o âmbar próprio
+   neutraliza a leitura. Para chips/badges puros adicionamos override muito
+   específico via combinador adjacente (não é fiável em CSS, por isso o
+   ajuste extra é feito via classes ops-chip novas).                       */
+
+/* Pure pinks (red-50/[0.04] e red-500/[0.04] / [0.06]): ficam slate-tinted */
+body.admin-mode .bg-red-500\/\[0\.04\] { background-color: var(--ops-slate-50); }
+body.admin-mode .bg-red-500\/\[0\.06\] { background-color: var(--ops-danger-tint); }
+body.admin-mode .bg-red-50\/\[0\.50\]  { background-color: var(--ops-danger-tint); }
+
+/* ── 5) ICONS de notícia / mensagem de aviso (alert banners pequenos) ──
+       O bloco "AVISO" em hashtag/anti-spam (bg-red-50/70 border-red-200
+       text-red-700/85) é semanticamente AVISO, não perigo. Já remapeado
+       em (4). O resultado: torna-se um banner âmbar consistente.          */
+
+/* ── 6) bg-red-500/10 e bg-red-500/15: usados em ações de ban/delete.
+       SÃO destrutivas — MANTEMOS vermelho mas refinamos para o nosso
+       --ops-danger-tint (sóbrio).                                          */
+body.admin-mode .bg-red-500\/10  { background-color: var(--ops-danger-tint); }
+body.admin-mode .bg-red-500\/15  { background-color: var(--ops-danger-tint-hover); }
+body.admin-mode .bg-red-500\/20  { background-color: var(--ops-danger-tint-hover); }
+body.admin-mode .bg-red-500\/30  { background-color: rgba(220, 38, 38, 0.30); }
+body.admin-mode .hover\:bg-red-500\/10:hover  { background-color: var(--ops-danger-tint-hover); }
+body.admin-mode .hover\:bg-red-500\/15:hover  { background-color: var(--ops-danger-tint-hover); }
+body.admin-mode .hover\:bg-red-500\/20:hover  { background-color: var(--ops-danger-tint-hover); }
+body.admin-mode .hover\:bg-red-500\/25:hover  { background-color: rgba(220, 38, 38, 0.22); }
+body.admin-mode .border-red-500\/30 { border-color: rgba(220, 38, 38, 0.30); }
+body.admin-mode .bg-red-500     { background-color: var(--ops-danger-500); }
+body.admin-mode .bg-red-600     { background-color: var(--ops-danger-500); }
+body.admin-mode .bg-red-700     { background-color: var(--ops-danger-600); }
+body.admin-mode .hover\:bg-red-600:hover { background-color: var(--ops-danger-600); }
+body.admin-mode .hover\:bg-red-700:hover { background-color: var(--ops-danger-700); }
+body.admin-mode .hover\:bg-red-100:hover { background-color: var(--ops-danger-100); }
+
+/* ── 7) text-red-* refined to operational red ───────────────────────────── */
+body.admin-mode .text-red-600       { color: var(--ops-danger-500); }
+body.admin-mode .text-red-700       { color: var(--ops-danger-600); }
+body.admin-mode .text-red-700\/85   { color: var(--ops-danger-600); }
+body.admin-mode .text-red-700\/80   { color: var(--ops-danger-700); }
+body.admin-mode .text-red-700\/70   { color: var(--ops-danger-700); }
+body.admin-mode .text-red-800       { color: var(--ops-danger-700); }
+body.admin-mode .text-red-600\/85   { color: var(--ops-danger-500); }
+body.admin-mode .text-red-400       { color: var(--ops-danger-500); }
+
+/* Border colors */
+body.admin-mode .border-red-400     { border-color: var(--ops-danger-200); }
+body.admin-mode .border-red-500     { border-color: var(--ops-danger-500); }
+body.admin-mode .focus\:border-red-500:focus { border-color: var(--ops-danger-500); }
+
+/* ── 8) Emerald, blue, amber, cyan, violet, sky direct refinements ─────── */
+body.admin-mode .bg-emerald-50      { background-color: var(--ops-success-50); }
+body.admin-mode .bg-emerald-100     { background-color: var(--ops-success-100); }
+body.admin-mode .bg-emerald-500\/10 { background-color: var(--ops-success-tint); }
+body.admin-mode .bg-emerald-500\/15 { background-color: var(--ops-success-tint-hover); }
+body.admin-mode .text-emerald-600   { color: var(--ops-success-500); }
+body.admin-mode .text-emerald-700   { color: var(--ops-success-600); }
+
+body.admin-mode .bg-amber-50        { background-color: var(--ops-warn-50); }
+body.admin-mode .bg-amber-100       { background-color: var(--ops-warn-100); }
+body.admin-mode .bg-amber-500\/10   { background-color: var(--ops-warn-tint); }
+body.admin-mode .text-amber-600     { color: var(--ops-warn-500); }
+body.admin-mode .text-amber-700     { color: var(--ops-warn-600); }
+
+body.admin-mode .bg-blue-50         { background-color: var(--ops-info-50); }
+body.admin-mode .bg-blue-100        { background-color: var(--ops-info-100); }
+body.admin-mode .text-blue-600      { color: var(--ops-info-500); }
+body.admin-mode .text-blue-700      { color: var(--ops-info-600); }
+
+body.admin-mode .bg-cyan-50         { background-color: var(--ops-realtime-50); }
+body.admin-mode .text-cyan-600      { color: var(--ops-realtime-500); }
+body.admin-mode .text-cyan-700      { color: var(--ops-realtime-600); }
+
+body.admin-mode .bg-violet-50       { background-color: var(--ops-system-50); }
+body.admin-mode .bg-violet-100      { background-color: var(--ops-system-100); }
+body.admin-mode .text-violet-600    { color: var(--ops-system-500); }
+body.admin-mode .text-violet-700    { color: var(--ops-system-600); }
+
+/* ── 9) Black-on-black icons in headers/labels → cooler slate ────────────── */
+body.admin-mode .text-black { color: var(--ops-text); }
+body.admin-mode .text-black\/45  { color: var(--ops-text-ghost); }
+body.admin-mode .text-black\/55  { color: var(--ops-text-faint); }
+body.admin-mode .text-black\/65  { color: var(--ops-text-muted); }
+body.admin-mode .text-black\/70  { color: var(--ops-text-muted); }
+body.admin-mode .text-black\/85  { color: var(--ops-text-soft); }
+body.admin-mode .border-black\/\[0\.04\] { border-color: var(--ops-border-subtle); }
+body.admin-mode .border-black\/\[0\.06\] { border-color: var(--ops-border-subtle); }
+body.admin-mode .border-black\/\[0\.07\] { border-color: var(--ops-border); }
+body.admin-mode .border-black\/\[0\.08\] { border-color: var(--ops-border); }
+body.admin-mode .hover\:bg-black\/\[0\.04\]:hover { background-color: var(--ops-bg-hover); }
+body.admin-mode .hover\:bg-black\/\[0\.05\]:hover { background-color: var(--ops-bg-hover); }
+body.admin-mode .hover\:bg-black\/\[0\.08\]:hover { background-color: var(--ops-bg-active); }
+body.admin-mode .active\:bg-black\/\[0\.08\]:active { background-color: var(--ops-bg-active); }
+
+/* ── 10) Auto-refresh segmented active pill: slate-900 → info (petróleo)
+       quando autoRefresh > 0 indica "ligado" mas é um estado operacional,
+       não destaque crítico.                                                */
+body.admin-mode [data-testid^="admin-overview-autorefresh-"].bg-slate-900 {
+    background-color: var(--ops-info-500);
+    color: #fff;
+}
+
+/* ── 11) Sparkline default stroke: se cor não definida via prop, fica slate
+       em vez de coral. Sparkline JS passa color por prop, por isso isto é
+       fallback CSS se algum esquecimento.                                  */
+body.admin-mode svg polyline { stroke-linejoin: round; stroke-linecap: round; }
+
+/* ============================================================================
+   FOCUS RING — refined (info instead of coral inside admin)
+   ============================================================================ */
+body.admin-mode :focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* ============================================================================
+   SCROLLBAR — premium operational
+   ============================================================================ */
+body.admin-mode ::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.10);
+}
+body.admin-mode ::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.22);
+}
+
+/* ============================================================================
+   SELECTION
+   ============================================================================ */
+body.admin-mode ::selection {
+    background-color: var(--ops-info-tint-hover);
+    color: var(--ops-text);
+}
+
+/* ============================================================================
+   SMALL HOVER LIFT — cards têm uma elevação muito subtil em hover
+   (Linear-style: nunca translateY agressivo, só sombra)
+   ============================================================================ */
+body.admin-mode .ops-panel,
+body.admin-mode [data-testid$="-health"],
+body.admin-mode [data-testid^="admin-system-"] {
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+/* ============================================================================
+   STATUS DOTS (compact inline indicators) — usar via .ops-status-dot
+   ============================================================================ */
+.ops-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    display: inline-block;
+}
+.ops-status-dot--online    { background: var(--ops-realtime-500); }
+.ops-status-dot--idle      { background: var(--ops-warn-500); }
+.ops-status-dot--offline   { background: var(--ops-slate-300); }
+.ops-status-dot--danger    { background: var(--ops-danger-500); }
+
+/* ============================================================================
+   KBD ELEMENTS (für keyboard shortcuts visible in tooltips/help)
+   ============================================================================ */
+body.admin-mode kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--ops-slate-100);
+    border: 1px solid var(--ops-border);
+    border-bottom-width: 2px;
+    color: var(--ops-text-soft);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    line-height: 1.4;
+}
+
+/* ============================================================================
+   ANIMATIONS — gentle ops feedback
+   ============================================================================ */
+@keyframes ops-fade-in {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.ops-fade-in { animation: ops-fade-in 220ms ease-out both; }

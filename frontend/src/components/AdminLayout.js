@@ -14,6 +14,7 @@ import { Shield, LogOut, Home as HomeIcon, ChevronDown, Loader2 } from "lucide-r
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import "./admin.css";
 
 function AdminProfileMenu({ user }) {
     const [open, setOpen] = useState(false);
