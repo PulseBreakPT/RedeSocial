@@ -1,119 +1,88 @@
 /**
- * AdminLayout — Chrome minimalista e dedicado ao painel administrativo.
+ * AdminLayout v2 — Premium operational shell.
  *
- * Difere do Layout principal em:
- *  • SEM sidebar social, SEM bottom-nav mobile, SEM RightSidebar, SEM CTA "Publicar".
- *  • Top bar enxuto com logo + título "Admin" + menu de perfil reduzido.
- *  • Profile menu mostra apenas: "Voltar à app" + "Logout do painel".
- *  • 100% responsive: o top bar colapsa para mobile e o conteúdo (Admin.js) ocupa
- *    a largura completa.
+ * Replaces the old top-only chrome with a full sidebar+topbar+canvas
+ * grid that hosts every admin page (Cockpit, tabs). Uses URL query
+ * `?tab=...` as the single source of truth for the active section, so
+ * Admin.js (which renders inside <Outlet/>) and the sidebar stay in sync
+ * without prop drilling.
  */
-import React, { useEffect, useRef, useState } from "react";
-import { Outlet, Link, useNavigate, Navigate } from "react-router-dom";
-import { Shield, LogOut, Home as HomeIcon, ChevronDown, Loader2 } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Outlet, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { Avatar } from "./Avatar";
-import { VerifiedBadge } from "./VerifiedBadge";
 import "./admin.css";
+import { AdminSidebar } from "./admin/AdminSidebar";
+import { AdminTopbar } from "./admin/AdminTopbar";
+import { CommandPalette } from "./admin/CommandPalette";
+import { NAV_BY_KEY } from "./admin/navConfig";
+import { useWsState } from "./WebSocketProvider";
+import api from "../lib/api";
 
-function AdminProfileMenu({ user }) {
-    const [open, setOpen] = useState(false);
-    const [loggingOut, setLoggingOut] = useState(false);
-    const wrapRef = useRef(null);
-    const navigate = useNavigate();
-    const { logout } = useAuth();
+// Read shared session state used by Cockpit + tabs from query string
+export function useAdminTab() {
+    const [sp, setSp] = useSearchParams();
+    const tab = sp.get("tab") || "overview";
+    const setTab = useCallback((k) => {
+        const next = new URLSearchParams(sp);
+        next.set("tab", k);
+        setSp(next, { replace: false });
+    }, [sp, setSp]);
+    return [tab, setTab];
+}
 
-    useEffect(() => {
-        if (!open) return undefined;
-        const onPointer = (e) => {
-            if (!wrapRef.current || wrapRef.current.contains(e.target)) return;
-            setOpen(false);
-        };
-        const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-        document.addEventListener("pointerdown", onPointer, true);
-        document.addEventListener("keydown", onKey);
-        return () => {
-            document.removeEventListener("pointerdown", onPointer, true);
-            document.removeEventListener("keydown", onKey);
-        };
-    }, [open]);
-
-    const doLogout = async () => {
-        setLoggingOut(true);
-        try {
-            await logout();
-        } finally {
-            setLoggingOut(false);
-            navigate("/login", { replace: true });
-        }
-    };
-
-    return (
-        <div className="relative" ref={wrapRef}>
-            <button
-                onClick={() => setOpen((v) => !v)}
-                data-testid="admin-profile-btn"
-                aria-haspopup="menu"
-                aria-expanded={open}
-                aria-label="Menu do admin"
-                className="flex items-center gap-2 pl-1 pr-2 sm:pr-3 py-1 rounded-full hover:bg-black/[0.05] active:bg-black/[0.08] transition"
-            >
-                <Avatar user={user} size={30} />
-                <div className="hidden sm:flex flex-col items-start leading-tight min-w-0 max-w-[140px]">
-                    <div className="font-heading font-semibold text-[12.5px] tracking-tight text-black truncate flex items-center gap-0.5">
-                        {user.name || user.username}
-                        {user.verified && <VerifiedBadge size={9} />}
-                    </div>
-                    <div className="font-mono text-[10px] text-black/45 truncate">@{user.username}</div>
-                </div>
-                <ChevronDown size={13} className="text-black/45 shrink-0" />
-            </button>
-
-            {open && (
-                <div
-                    role="menu"
-                    data-testid="admin-profile-menu"
-                    className="absolute right-0 top-[calc(100%+6px)] w-56 rounded-2xl bg-white border border-black/[0.08] shadow-xl overflow-hidden z-50"
-                >
-                    <div className="px-3 py-2.5 border-b border-black/[0.06]">
-                        <div className="font-heading font-semibold text-[13px] tracking-tight truncate flex items-center gap-1">
-                            {user.name || user.username}
-                            {user.verified && <VerifiedBadge size={10} />}
-                        </div>
-                        <div className="font-mono text-[10.5px] text-black/45 truncate">@{user.username}</div>
-                    </div>
-                    <button
-                        onClick={() => { setOpen(false); navigate("/"); }}
-                        data-testid="admin-menu-back-to-app"
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-black/85 hover:bg-black/[0.04] transition"
-                    >
-                        <HomeIcon size={15} className="text-black/55" />
-                        <span>Voltar à app</span>
-                    </button>
-                    <button
-                        onClick={doLogout}
-                        disabled={loggingOut}
-                        data-testid="admin-menu-logout"
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-red-600 hover:bg-red-500/[0.06] transition disabled:opacity-50 border-t border-black/[0.04]"
-                    >
-                        {loggingOut ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
-                        <span>Terminar sessão</span>
-                    </button>
-                </div>
-            )}
-        </div>
-    );
+export function useAdminTimeRange() {
+    const [sp, setSp] = useSearchParams();
+    const r = sp.get("range") || "15m";
+    const setR = useCallback((v) => {
+        const next = new URLSearchParams(sp);
+        if (v && v !== "15m") next.set("range", v); else next.delete("range");
+        setSp(next, { replace: true });
+    }, [sp, setSp]);
+    return [r, setR];
 }
 
 export function AdminLayout() {
-    const { user, checking } = useAuth();
+    const { user, checking, logout } = useAuth();
+    const navigate = useNavigate();
+    const [tab, setTab] = useAdminTab();
+    const [timeRange, setTimeRange] = useAdminTimeRange();
+    const wsState = useWsState();
+    const [cmdOpen, setCmdOpen] = useState(false);
+    const [openReports, setOpenReports] = useState(0);
+    const [loggingOut, setLoggingOut] = useState(false);
 
-    // Bloqueia scroll do body se algum modal global estiver aberto via classe no body;
-    // o painel já gere o seu próprio scroll dentro de <main>.
     useEffect(() => {
         document.body.classList.add("admin-mode");
         return () => document.body.classList.remove("admin-mode");
     }, []);
+
+    // ⌘K / Ctrl-K binding
+    useEffect(() => {
+        const onKey = (e) => {
+            if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                setCmdOpen((v) => !v);
+            }
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, []);
+
+    // Poll open reports count for the sidebar badge (kept simple, 30s)
+    useEffect(() => {
+        if (!user || !user.is_admin) return undefined;
+        let mounted = true;
+        const fetchCount = async () => {
+            try {
+                const { data } = await api.get("/admin/stats");
+                if (mounted) setOpenReports((data && data.moderation && data.moderation.reports_open) || 0);
+            } catch { /* silent */ }
+        };
+        fetchCount();
+        const id = setInterval(fetchCount, 30000);
+        return () => { mounted = false; clearInterval(id); };
+    }, [user]);
 
     if (checking) {
         return (
@@ -122,55 +91,56 @@ export function AdminLayout() {
             </div>
         );
     }
-    // Defensive UI gate — only authenticated admins may even see the layout
-    // chrome. Backend already enforces /api/admin/* with require_admin, but a
-    // missing client-side check would leak the admin nav skeleton to any
-    // logged-in user. Non-admins → redirect home.
     if (!user) return <Navigate to="/login" replace />;
     if (!user.is_admin) return <Navigate to="/" replace />;
 
+    const current = NAV_BY_KEY[tab] || NAV_BY_KEY.overview;
+
+    const doLogout = async () => {
+        setLoggingOut(true);
+        try { await logout(); } finally {
+            setLoggingOut(false);
+            navigate("/login", { replace: true });
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-[#fafafa]" data-testid="admin-layout">
-            <header
-                className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-black/[0.07]"
-                data-testid="admin-topbar"
-            >
-                <div className="max-w-5xl mx-auto px-2.5 sm:px-5 h-14 flex items-center gap-1.5 sm:gap-3">
-                    <Link
-                        to="/admin"
-                        className="flex items-center gap-2 shrink-0 group"
-                        data-testid="admin-topbar-logo"
-                        aria-label="Painel administrativo"
-                    >
-                        <span className="w-8 h-8 rounded-xl bg-black text-white grid place-items-center shrink-0">
-                            <Shield size={15} />
-                        </span>
-                        <div className="flex flex-col leading-none">
-                            <span className="font-display text-[15px] sm:text-[18px] tracking-tight">Admin</span>
-                            <span className="font-mono text-[9.5px] text-black/45 uppercase tracking-wider hidden sm:block">
-                                lusorae · painel
-                            </span>
-                        </div>
-                    </Link>
+        <div className="ops-shell" data-testid="admin-layout-v2">
+            <AdminSidebar
+                tab={tab}
+                onSelect={setTab}
+                user={user}
+                openReports={openReports}
+                onProfileClick={() => navigate("/profile")}
+                appEnv={(typeof window !== "undefined" && window.__APP_ENV__) || "prod"}
+            />
 
-                    <div className="flex-1 min-w-0" />
+            <div className="ops-shell__topbar">
+                <AdminTopbar
+                    title={current.label}
+                    subtitle={current.hint}
+                    wsState={wsState}
+                    onOpenCommand={() => setCmdOpen(true)}
+                    onOpenNotifications={() => setTab("audit")}
+                    notifBadge={openReports}
+                    timeRange={timeRange}
+                    onChangeTimeRange={setTimeRange}
+                    onLogout={doLogout}
+                    loggingOut={loggingOut}
+                />
+            </div>
 
-                    <Link
-                        to="/"
-                        className="hidden sm:inline-flex h-9 px-3 rounded-full text-[12.5px] font-medium text-black/70 hover:bg-black/[0.05] items-center gap-1.5"
-                        data-testid="admin-topbar-back-to-app"
-                        title="Voltar à rede social"
-                    >
-                        <HomeIcon size={14} /> App
-                    </Link>
-
-                    {user && <AdminProfileMenu user={user} />}
+            <main className="ops-shell__canvas" data-testid="admin-main">
+                <div className="ops-canvas">
+                    <Outlet context={{ tab, setTab, timeRange, setTimeRange, openCommand: () => setCmdOpen(true) }} />
                 </div>
-            </header>
-
-            <main className="w-full" data-testid="admin-main">
-                <Outlet />
             </main>
+
+            <CommandPalette
+                open={cmdOpen}
+                onClose={() => setCmdOpen(false)}
+                onNavigate={(k) => setTab(k)}
+            />
         </div>
     );
 }

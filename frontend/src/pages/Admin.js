@@ -17,7 +17,7 @@
  *   - Audit log     (filterable history of admin actions)
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useOutletContext } from "react-router-dom";
 import { toast } from "sonner";
 import {
     Shield, Users as UsersIcon, FileText, AlertTriangle, Layers, CalendarDays,
@@ -37,6 +37,7 @@ import { api } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { confirmDialog } from "../components/ConfirmDialog";
 import SecurityTab from "./admin/SecurityTab";
+import { Cockpit } from "./admin/Cockpit";
 
 // -----------------------------------------------------------------
 // Helpers
@@ -4133,54 +4134,19 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
 // -----------------------------------------------------------------
 // MAIN
 // -----------------------------------------------------------------
+/**
+ * Admin \u2014 page body. Lives INSIDE AdminLayout v2 via <Outlet />.
+ * The sidebar, topbar and command palette are owned by AdminLayout;
+ * this component only renders the active tab content.
+ */
 export default function Admin() {
     const { user, loading } = useAuth();
-    const [tab, setTab] = useState("overview");
+    const ctx = useOutletContext() || {};
+    const tab = ctx.tab || "overview";
+    const setTab = ctx.setTab || (() => {});
+    const timeRange = ctx.timeRange || "15m";
+    const setTimeRange = ctx.setTimeRange || (() => {});
     const [drawerUser, setDrawerUser] = useState(null);
-    const [openReports, setOpenReports] = useState(null);
-    const [collapsed, setCollapsed] = useState(() => {
-        try { return localStorage.getItem("admin.sidebar.collapsed") === "1"; }
-        catch { return false; }
-    });
-    const [mobileOpen, setMobileOpen] = useState(false);
-
-    // Persist collapse state
-    useEffect(() => {
-        try { localStorage.setItem("admin.sidebar.collapsed", collapsed ? "1" : "0"); }
-        catch { /* ignore */ }
-    }, [collapsed]);
-
-    // Lock body scroll while mobile drawer is open
-    useEffect(() => {
-        if (!mobileOpen) return undefined;
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = prev; };
-    }, [mobileOpen]);
-
-    // Close mobile drawer when crossing to desktop
-    useEffect(() => {
-        const onResize = () => {
-            if (window.innerWidth >= 1024) setMobileOpen(false);
-        };
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-    }, []);
-
-    // Poll open reports count for badge
-    useEffect(() => {
-        if (!user || !user.is_admin) return;
-        let mounted = true;
-        const fetchCount = async () => {
-            try {
-                const { data } = await api.get("/admin/stats");
-                if (mounted) setOpenReports(data?.moderation?.reports_open ?? 0);
-            } catch { /* silent */ }
-        };
-        fetchCount();
-        const t = setInterval(fetchCount, 30000);
-        return () => { mounted = false; clearInterval(t); };
-    }, [user]);
 
     if (loading) {
         return <div className="flex items-center justify-center py-20 text-slate-400"><Loader2 className="animate-spin" /></div>;
@@ -4189,72 +4155,26 @@ export default function Admin() {
         return <Navigate to="/" replace />;
     }
 
-    const currentItem = NAV_KEY_TO_ITEM[tab] || NAV_KEY_TO_ITEM.overview;
-    const CurrentIcon = currentItem.icon;
-
     return (
-        <div className="flex w-full min-h-[calc(100vh-3.5rem)]" data-testid="admin-page">
-            <AdminSidebar
-                tab={tab} setTab={setTab}
-                openReports={openReports}
-                collapsed={collapsed} setCollapsed={setCollapsed}
-                mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}
-            />
-
-            <main className="flex-1 min-w-0 flex flex-col" data-testid="admin-main-content">
-                {/* MOBILE sub-header — hamburger + current section */}
-                <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur-xl border-b border-slate-200 h-12 flex items-center gap-2 px-3"
-                    data-testid="admin-mobile-subheader">
-                    <button
-                        onClick={() => setMobileOpen(true)}
-                        aria-label="Abrir navegação"
-                        className="w-9 h-9 -ml-1 grid place-items-center rounded-full hover:bg-slate-100 text-slate-700"
-                        data-testid="admin-mobile-menu"
-                    ><Menu size={18} /></button>
-                    <span className="w-7 h-7 rounded-lg bg-slate-100 grid place-items-center text-slate-600 shrink-0">
-                        <CurrentIcon size={14} />
-                    </span>
-                    <span className="font-display text-[15px] tracking-tight truncate flex-1">{currentItem.label}</span>
-                    {tab === "reports" && openReports != null && openReports > 0 && (
-                        <span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-red-500 text-white text-[10.5px] font-mono font-semibold inline-flex items-center justify-center shrink-0">
-                            {openReports > 99 ? "99+" : openReports}
-                        </span>
-                    )}
-                </div>
-
-                {/* DESKTOP breadcrumb — slim context line (sections já têm h2 próprio) */}
-                <div className="hidden lg:flex items-center gap-1.5 px-6 xl:px-8 pt-5 pb-1 text-[11px] font-mono text-slate-400 uppercase tracking-[0.14em]"
-                    data-testid="admin-desktop-header">
-                    <Shield size={11} />
-                    <span>Painel</span>
-                    <ChevronRight size={11} />
-                    <CurrentIcon size={11} />
-                    <span className="text-slate-600">{currentItem.label}</span>
-                    <span className="ml-auto normal-case tracking-normal">
-                        @{user.username}
-                    </span>
-                </div>
-
-                <div className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 lg:py-4"
-                    data-testid={`admin-tab-content-${tab}`}>
-                    {tab === "overview" && <OverviewTab onNavigate={setTab} />}
-                    {tab === "security" && <SecurityTab />}
-                    {tab === "system" && <SystemTab />}
-                    {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
-                    {tab === "posts" && <PostsTab />}
-                    {tab === "comments" && <CommentsTab />}
-                    {tab === "stories" && <StoriesTab />}
-                    {tab === "hashtags" && <HashtagsTab />}
-                    {tab === "reports" && <ReportsTab onOpenUser={setDrawerUser} />}
-                    {tab === "antispam" && <AntiSpamTab onOpenDrawer={setDrawerUser} />}
-                    {tab === "broadcast" && <BroadcastTab />}
-                    {tab === "communities" && <CommunitiesTab />}
-                    {tab === "events" && <EventsTab />}
-                    {tab === "sessions" && <SessionsTab />}
-                    {tab === "settings" && <SettingsTab />}
-                    {tab === "audit" && <AuditTab />}
-                </div>
-            </main>
+        <div data-testid={`admin-tab-content-${tab}`}>
+            {tab === "overview" && (
+                <Cockpit onNavigate={setTab} timeRange={timeRange} onChangeTimeRange={setTimeRange} />
+            )}
+            {tab === "security" && <SecurityTab />}
+            {tab === "system" && <SystemTab />}
+            {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
+            {tab === "posts" && <PostsTab />}
+            {tab === "comments" && <CommentsTab />}
+            {tab === "stories" && <StoriesTab />}
+            {tab === "hashtags" && <HashtagsTab />}
+            {tab === "reports" && <ReportsTab onOpenUser={setDrawerUser} />}
+            {tab === "antispam" && <AntiSpamTab onOpenDrawer={setDrawerUser} />}
+            {tab === "broadcast" && <BroadcastTab />}
+            {tab === "communities" && <CommunitiesTab />}
+            {tab === "events" && <EventsTab />}
+            {tab === "sessions" && <SessionsTab />}
+            {tab === "settings" && <SettingsTab />}
+            {tab === "audit" && <AuditTab />}
 
             {drawerUser && <UserDrawer user={drawerUser} onClose={() => setDrawerUser(null)} />}
         </div>
