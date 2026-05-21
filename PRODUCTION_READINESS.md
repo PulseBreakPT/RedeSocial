@@ -56,7 +56,20 @@ Items marked 🟡 are policy/manual.
 
 - ✅ Password reset tokens **not** logged in plaintext (masked at INFO,
   full only at DEBUG)
-- ✅ Global exception handler hides stack traces in prod
+- ✅ **Universal log redaction filter** (`backend/log_redaction.py`) installed
+  on the root logger. Strips JWTs, Bearer/Basic auth headers, OpenAI/Anthropic
+  keys (incl. `sk-proj-…`/`sk-ant-…`), Stripe `sk_live_*`/`pk_*`/`whsec_*`,
+  AWS access keys, Google `AIza…`, Twilio SIDs, DB URLs with creds, bcrypt
+  hashes, and JSON `"password"`/`"secret"`/`"token"` key-value pairs from
+  every log record before emission.
+- ✅ Pluggable secret backend abstraction (`backend/secret_loader.py`)
+  centralises every sensitive lookup. Default backend is `env`; switch via
+  `SECRET_BACKEND={doppler|aws|gcp|vault|azure}` to wire a real vault later.
+  All accesses are audit-logged by **key name only**, never the value.
+- ✅ `scripts/secret_scan.py` — standalone scanner for JWTs, sk-*, AWS keys,
+  Google keys, GitHub/Slack tokens, DB URLs with creds, and known-leaked
+  pre-rotation literals. Run before every commit (`--staged` for git-staged
+  files only).
 - 🟡 Logs forwarded to an aggregator with retention + access control
 - 🟡 MongoDB connection over TLS in production
 - 🟡 MongoDB user has least-privilege on the app DB only

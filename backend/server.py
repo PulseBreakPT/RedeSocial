@@ -30,10 +30,25 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
 
 JWT_ALGORITHM = "HS256"
-JWT_SECRET = os.environ["JWT_SECRET"]
-mongo_url = os.environ["MONGO_URL"]
+
+# ─── Secret loading via pluggable backend (env-only by default) ───────────────
+# All sensitive config lookups go through `get_secret` so we have a single
+# choke-point for rotation, audit logging, and a future vault integration.
+# Override via SECRET_BACKEND={doppler|aws|gcp|vault|azure} — see
+# /app/backend/secret_loader.py.
+from secret_loader import get_secret, MissingSecret, active_backend_name
+
+try:
+    JWT_SECRET = get_secret("JWT_SECRET", required=True)
+    mongo_url = get_secret("MONGO_URL", required=True)
+    _db_name = get_secret("DB_NAME", required=True)
+except MissingSecret as _e:
+    import sys as _sys
+    _sys.stderr.write(f"\n🔴 Required secret missing at boot: {_e}\n\n")
+    raise
+
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ["DB_NAME"]]
+db = client[_db_name]
 
 # ─── Deployment hardening config (read from env, with safe dev defaults) ───────
 # APP_ENV: "development" | "staging" | "production". Controls error verbosity,
@@ -131,6 +146,16 @@ _PROCESS_STARTED_AT_ISO = datetime.now(timezone.utc).isoformat()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("vermillion")
+
+# ─── Log redaction (defense-in-depth) ─────────────────────────────────────────
+# Wraps the standard logging stack with a filter that strips JWTs, Bearer
+# tokens, Stripe/OpenAI/AWS keys, DB URIs with credentials, bcrypt hashes and
+# JSON `"password"`/`"secret"` values from EVERY log record before it is
+# emitted. Catches accidental logging of secrets that no other safeguard
+# would. See /app/backend/log_redaction.py.
+from log_redaction import install_log_redaction
+install_log_redaction()
+logger.info(f"🔐 Secret backend active: {active_backend_name()}")
 
 
 # ─── Rate limiting (per-IP, in-memory) ────────────────────────────────────────
