@@ -21,6 +21,8 @@ so it has no hard reference to server.py's globals.
 """
 from __future__ import annotations
 
+import base64
+import json
 import logging
 import time
 from datetime import datetime, timezone
@@ -221,3 +223,227 @@ def require_owner_or_admin(
     owner_id = (doc or {}).get(owner_field)
     if not owner_id or owner_id != user.get("id"):
         raise AuthzError("not owner")
+
+
+def require_owner(
+    user: dict,
+    doc: dict,
+    *,
+    owner_field: str = "author_id",
+) -> None:
+    """Strict ownership gate — NO admin override.
+
+    Use this on user-facing routes where admin moderation is handled by a
+    separate dedicated and audited /admin/* endpoint. Examples:
+      - DELETE /api/posts/{id}     (admin uses /admin/posts/{id} which audits)
+      - DELETE /api/comments/{id}  (admin uses /admin/comments/{id})
+      - DELETE /api/stories/{id}   (admin uses /admin/stories/{id})
+
+    Centralising this check makes the authorization story explicit and
+    forensically obvious — every "owner-only" mutation is grep-able by
+    `require_owner(`.
+    """
+    if not user or not isinstance(user, dict):
+        raise AuthzError("not authenticated")
+    owner_id = (doc or {}).get(owner_field)
+    if not owner_id or owner_id != user.get("id"):
+        raise AuthzError("not owner")
+
+
+# ─── JWT header pre-flight (defense-in-depth) ──────────────────────────────
+# Raw inspection of the JWT header BEFORE handing the token to PyJWT.
+#
+# Why two layers?
+# ---------------
+# PyJWT already rejects `alg=none` and unknown algorithms when an explicit
+# `algorithms=[…]` allowlist is provided. But the industry has seen a
+# steady stream of CVE-class bugs in JWT libraries (alg-confusion, header
+# spoofing via lookahead parsing, key resolution bugs, etc). By doing a
+# tiny, dependency-free, hardcoded header check first we:
+#
+#   1. Refuse `alg=none` and any non-HS256 alg at the bytes level — no
+#      reliance on PyJWT's validation path.
+#   2. Refuse malformed headers (non-JSON, non-dict, no `alg` claim).
+#   3. Refuse the `crit` header (RFC 7515 §4.1.11) which we never produce
+#      and could be abused by an attacker to demand support for arbitrary
+#      extensions the library has no idea about.
+#   4. Keep the surface area we trust to PyJWT as small as possible.
+#
+# This function NEVER verifies the signature. It only inspects the header.
+JWT_HEADER_ALG_ALLOWLIST = frozenset({"HS256"})
+JWT_HEADER_TYP_ALLOWLIST = frozenset({"JWT"})  # `typ` is optional; if present it must match.
+
+
+class InvalidJWTHeader(ValueError):
+    """Raised by `validate_jwt_header_strict` for any header anomaly."""
+
+
+def _b64url_decode_segment(seg: str) -> bytes:
+    """RFC 7515 base64url-decode with proper padding."""
+    pad = "=" * (-len(seg) % 4)
+    return base64.urlsafe_b64decode(seg + pad)
+
+
+def validate_jwt_header_strict(token: str) -> dict:
+    """Parse and validate the JWT header without touching signature/payload.
+
+    Returns the decoded header dict. Raises `InvalidJWTHeader` on:
+      - non-3-segment token shape
+      - non-base64url header
+      - non-JSON or non-dict header
+      - missing `alg` claim
+      - `alg` not in `JWT_HEADER_ALG_ALLOWLIST` (rejects `none`, `HS384/512`,
+        `RS256`, `ES256`, etc.)
+      - `typ` present and not in `JWT_HEADER_TYP_ALLOWLIST`
+      - `crit` header set (we never produce one)
+    """
+    if not isinstance(token, str) or not token:
+        raise InvalidJWTHeader("empty token")
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise InvalidJWTHeader("not a 3-segment JWS")
+    try:
+        raw = _b64url_decode_segment(parts[0])
+    except Exception as e:
+        raise InvalidJWTHeader(f"base64url decode failed: {type(e).__name__}")
+    try:
+        header = json.loads(raw)
+    except Exception as e:
+        raise InvalidJWTHeader(f"header is not valid JSON: {type(e).__name__}")
+    if not isinstance(header, dict):
+        raise InvalidJWTHeader("header is not a JSON object")
+    alg = header.get("alg")
+    if not isinstance(alg, str) or not alg:
+        raise InvalidJWTHeader("missing alg")
+    # Case-sensitive comparison per RFC 7518 — `none`, `None`, `NONE` all rejected.
+    if alg not in JWT_HEADER_ALG_ALLOWLIST:
+        raise InvalidJWTHeader(f"alg '{alg}' not allowed")
+    typ = header.get("typ")
+    if typ is not None and typ not in JWT_HEADER_TYP_ALLOWLIST:
+        raise InvalidJWTHeader(f"typ '{typ}' not allowed")
+    if "crit" in header:
+        # We never emit `crit`; an attacker-supplied one would force
+        # extension-handling we don't implement. Reject hard.
+        raise InvalidJWTHeader("crit header is not supported")
+    return header
+
+
+# ─── In-process revocation TTL cache ───────────────────────────────────────
+# Hot-path optimisation: every authenticated request currently does a small
+# Mongo lookup against db.sessions to verify that the jti embedded in the
+# JWT has not been revoked. That's correct but generates 1 indexed read per
+# request. With this cache we serve the common "still-active" path from
+# in-process memory (TTL ≈ 5 s) and we **invalidate immediately** when a
+# session is explicitly revoked from THIS process — meaning revoke
+# operations are still instantaneous from the user's perspective.
+#
+# Multi-replica note: in a sharded deployment, each replica only knows
+# about jtis it has cached locally. If replica A revokes jti X but replica
+# B has X in its positive cache, B will continue to accept that token for
+# up to TTL seconds. To keep TTL semantics safe in production:
+#
+#   • The default TTL is 5 s — short enough that a stolen-token revocation
+#     window is operationally negligible.
+#   • The WebSocket loop runs a periodic db.sessions check every 30 s
+#     (see `_JTI_CHECK_GAP` in server.py) — so realtime channels detect
+#     cross-replica revocations within ~30 s anyway.
+#   • For stricter SLAs, switch to a Redis-backed cache by replacing
+#     `_REVOCATION_CACHE` (the public API stays identical).
+#
+# This cache is safe with Python's GIL for single-process workloads. For
+# multi-process workers (gunicorn), each worker has its own cache — same
+# semantics, just one cache per worker.
+_REVOCATION_TTL_S = 5
+_REVOCATION_NEGATIVE_TTL_S = 60  # remember "revoked" jtis longer so they can't replay
+
+
+class RevocationCache:
+    """Tiny TTL cache for `jti → revoked-bool`. Thread-safe-enough for asyncio.
+
+    States:
+      - cache hit, revoked=True   → reject without DB read
+      - cache hit, revoked=False  → accept without DB read
+      - cache miss                → caller queries DB and calls `remember()`
+    """
+
+    __slots__ = ("_active", "_revoked")
+
+    def __init__(self) -> None:
+        # jti → expiry_epoch (ts at which the positive cache entry expires)
+        self._active: dict[str, float] = {}
+        # jti → expiry_epoch (longer TTL — revoked tokens shouldn't re-enter the active set)
+        self._revoked: dict[str, float] = {}
+
+    def _gc(self) -> None:
+        """Drop expired entries. Cheap; called on every miss."""
+        now = time.time()
+        # Bounded sweep — cap to ~1k entries per call to stay O(1) amortised.
+        for d in (self._active, self._revoked):
+            if len(d) > 4096:
+                # Defensive: cap memory if a misuser floods us with junk jtis.
+                # Drop oldest 25%. Simple and good enough.
+                items = sorted(d.items(), key=lambda kv: kv[1])
+                for k, _ in items[: max(1, len(items) // 4)]:
+                    d.pop(k, None)
+        # Inline expiry sweep
+        expired_active = [k for k, exp in self._active.items() if exp < now]
+        for k in expired_active:
+            self._active.pop(k, None)
+        expired_revoked = [k for k, exp in self._revoked.items() if exp < now]
+        for k in expired_revoked:
+            self._revoked.pop(k, None)
+
+    def is_revoked_cached(self, jti: str) -> Optional[bool]:
+        """Return cached state, or None on miss.
+
+        A `True` return means: reject this token; the underlying session is revoked.
+        A `False` return means: this jti was active very recently; safe to accept.
+        A `None` return means: cache miss, the caller must query the DB.
+        """
+        if not jti:
+            return None
+        now = time.time()
+        exp = self._revoked.get(jti)
+        if exp is not None and exp >= now:
+            return True
+        exp = self._active.get(jti)
+        if exp is not None and exp >= now:
+            return False
+        return None
+
+    def remember_active(self, jti: str, ttl_s: int = _REVOCATION_TTL_S) -> None:
+        """Mark a jti as known-active for the next `ttl_s` seconds."""
+        if not jti:
+            return
+        self._active[jti] = time.time() + max(1, int(ttl_s))
+        # Best-effort GC every so often.
+        if (len(self._active) + len(self._revoked)) % 64 == 0:
+            self._gc()
+
+    def mark_revoked(self, jti: str, ttl_s: int = _REVOCATION_NEGATIVE_TTL_S) -> None:
+        """Mark a jti as revoked for the next `ttl_s` seconds.
+
+        Call this from every code path that revokes a session (logout,
+        single-session revoke, revoke-others, password change, force-logout
+        from the admin panel). It does NOT replace the db.sessions update;
+        it only ensures THIS process refuses the token immediately, without
+        waiting for a DB read.
+        """
+        if not jti:
+            return
+        # Wipe positive entry — once revoked, never accept until TTL flips.
+        self._active.pop(jti, None)
+        self._revoked[jti] = time.time() + max(1, int(ttl_s))
+
+    def stats(self) -> dict:
+        """Diagnostics endpoint helper."""
+        return {
+            "active_entries": len(self._active),
+            "revoked_entries": len(self._revoked),
+            "positive_ttl_s": _REVOCATION_TTL_S,
+            "negative_ttl_s": _REVOCATION_NEGATIVE_TTL_S,
+        }
+
+
+# Shared singleton — imported by server.py.
+revocation_cache = RevocationCache()

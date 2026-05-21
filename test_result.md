@@ -3081,3 +3081,131 @@ agent_communication:
         validators). Repo is clean of credential literals. No regression
         introduced. Ready for production once the user picks a real secret
         vendor and provides the corresponding credentials.
+
+
+---
+
+## Hardening pass #3 — JWT/Auth deep-audit + active hardening (2026-05-21)
+
+backend:
+  - task: "JWT raw-header pre-flight (defense-in-depth)"
+    implemented: true
+    working: true
+    file: "backend/auth_security.py, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+              Added `validate_jwt_header_strict(token)` — pure-Python, no library
+              trust. Rejects alg=none / non-HS256 / crit / malformed headers BEFORE
+              PyJWT touches the token. Wired into BOTH `_decode_access_token` and
+              `_decode_token_lenient`. Live-tested 6 attack vectors (alg=none,
+              alg=HS512, crit, junk header, typ=JOSE+JSON, tampered payload) —
+              all returned 401 and were logged to db.auth_events with the
+              specific rejection reason. Valid tokens still return 200. No
+              frontend changes.
+  - task: "In-process revocation TTL cache"
+    implemented: true
+    working: true
+    file: "backend/auth_security.py, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+              Added `RevocationCache` (5s positive / 60s negative TTL). Wired into:
+              get_current_user (hot path), all session-revocation paths (logout,
+              revoke-one, revoke-others, password-change), and WebSocket connect +
+              periodic re-check. Live-tested: token works pre-logout (200),
+              logout (200), same token post-logout (401) — instant cache flip.
+              DB-fallback on cache miss preserves correctness across replicas.
+  - task: "WebSocket auth audit-event coverage + tightened periodic recheck"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+              Every WS reject path now emits kind=ws_connect_fail with a specific
+              reason (no_token / wrong_type / decode error / session_revoked /
+              banned_or_missing / suspended / password_rotated). Successful
+              connects emit ws_connect_ok. Periodic revoke recheck tightened from
+              30s → 20s and now consults the revocation cache first (DB only on
+              miss). Emits ws_session_revoked on detection.
+  - task: "Centralized ownership: require_owner helper"
+    implemented: true
+    working: true
+    file: "backend/auth_security.py, backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+              Added `require_owner(user, doc, owner_field=...)` (strict, no admin
+              override — admins moderate via /admin/* audited routes). Migrated
+              representative routes: DELETE /api/posts/{id}, PATCH /api/posts/{id},
+              DELETE /api/comments/{id} (dual-ownership: comment author OR post
+              author), DELETE /api/stories/{id}. Live IDOR-tested: attacker DELETE
+              → 403, attacker PATCH → 403, owner DELETE → 200. ~40 inline checks
+              elsewhere are functionally correct and tracked for follow-up sweep.
+  - task: "Pre-existing critical fix: APP_ENV import-order bug"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: |
+              backend was unable to boot from a fresh process — APP_ENV was used
+              on line 55 (JWT_AUDIENCE f-string default) before being defined on
+              line 81. Moved APP_ENV / IS_PRODUCTION block above the audience
+              binding. Also installed missing `wrapt` dependency (transitive of
+              slowapi). Backend now boots cleanly (/api/health 200).
+
+agent_communication:
+    - agent: "main"
+      message: |
+          Hardening pass #3 complete: end-to-end JWT/auth deep audit + active
+          hardening, all production-safe and low-regression.
+
+          Reports generated:
+            • /app/AUTH_AUDIT_REPORT.md
+            • /app/AUTHORIZATION_HARDENING_PLAN.md
+            • /app/SESSION_SECURITY_REPORT.md
+            • /app/REALTIME_AUTH_SECURITY.md
+
+          Changes:
+            1. Raw JWT header pre-flight (defense-in-depth, two-layer alg/crit
+               rejection). Live-tested 6 attack vectors.
+            2. In-process revocation TTL cache wired into every revoke path
+               (HTTP + WS). Instant logout-revocation verified end-to-end.
+            3. WS audit-event coverage: every reject path now emits ws_connect_fail
+               with reason; ws_session_revoked emitted by periodic recheck.
+               _JTI_CHECK_GAP tightened to 20s.
+            4. require_owner() helper introduced; representative routes migrated;
+               IDOR live-tested 403.
+            5. Critical pre-existing boot bug fixed (APP_ENV order) — backend was
+               unable to start cleanly without env override. Now boots clean.
+            6. Missing wrapt dep added to requirements.txt.
+
+          Please run deep_testing_backend_v2 for: auth login/logout, JWT attack
+          vectors (alg=none, HS512, crit, tampered, wrong-aud), CSRF on
+          state-changing routes, IDOR (DELETE/PATCH posts/comments/stories as
+          non-owner), session revocation (logout invalidates token instantly,
+          revoke-others, password-change cutoff), and WS connect under
+          valid/invalid/revoked token. Do NOT re-test items already verified
+          in passes #1 and #2 unless suspicious.

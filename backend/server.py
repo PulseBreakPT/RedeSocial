@@ -47,6 +47,12 @@ except MissingSecret as _e:
     _sys.stderr.write(f"\n🔴 Required secret missing at boot: {_e}\n\n")
     raise
 
+# ─── Deployment-environment determination (must precede iss/aud binding) ─────
+# APP_ENV: "development" | "staging" | "production". Controls error verbosity,
+# cookie secure flag default, and CORS strictness.
+APP_ENV = os.environ.get("APP_ENV", "development").lower().strip()
+IS_PRODUCTION = APP_ENV in {"production", "prod"}
+
 # ─── JWT identity binding (environment-isolated) ─────────────────────────────
 # `iss` and `aud` bind tokens to *this* deployment. A token minted by the
 # staging deployment cannot authenticate against production even if both share
@@ -66,16 +72,18 @@ from auth_security import (
     clear_failed_login,
     is_login_locked,
     require_owner_or_admin,
+    require_owner,
     AuthzError,
+    validate_jwt_header_strict,
+    InvalidJWTHeader,
+    revocation_cache,
     ensure_indexes as _ensure_auth_indexes,
 )
 _bind_auth_db(db)
 
-# ─── Deployment hardening config (read from env, with safe dev defaults) ───────
-# APP_ENV: "development" | "staging" | "production". Controls error verbosity,
-# cookie secure flag default, and CORS strictness.
-APP_ENV = os.environ.get("APP_ENV", "development").lower().strip()
-IS_PRODUCTION = APP_ENV in {"production", "prod"}
+# ─── Deployment hardening config (cookie + cors derived from APP_ENV above) ───
+# APP_ENV & IS_PRODUCTION are defined above so they're available to JWT
+# audience binding. Other downstream knobs live here.
 
 # COOKIE_SECURE: forces Secure flag on auth cookies. Defaults to True in
 # production, False in dev (so local http:// testing still works).
@@ -572,6 +580,12 @@ def _decode_token_lenient(token: str) -> Optional[dict]:
     """
     if not token:
         return None
+    # Raw header pre-flight (defense-in-depth — see auth_security.validate_jwt_header_strict).
+    # Rejects alg=none, non-HS256, malformed headers BEFORE PyJWT touches anything.
+    try:
+        validate_jwt_header_strict(token)
+    except InvalidJWTHeader:
+        return None
     try:
         return jwt.decode(
             token,
@@ -599,7 +613,21 @@ def _decode_access_token(token: str) -> dict:
     Algorithm pinning to ["HS256"] defeats the classic alg=none and
     alg-confusion (RS->HS) attacks: any token whose header advertises a
     different alg is rejected before signature verification.
+
+    Two-layer header validation:
+      1. `validate_jwt_header_strict` (this codebase) — raw header inspection,
+         no library trust, rejects alg=none, non-HS256, `crit`, malformed JSON.
+      2. PyJWT's own `algorithms=[…]` enforcement — second-line defence in
+         case (1) is bypassed by a future regression.
     """
+    # ── Layer 1: raw header pre-flight ───────────────────────────────────────
+    try:
+        validate_jwt_header_strict(token)
+    except InvalidJWTHeader as e:
+        # Surface as PyJWT-shaped error so the caller's exception handling
+        # works unchanged. Logged as a token_invalid auth event downstream.
+        raise jwt.InvalidTokenError(f"header pre-flight: {e}") from e
+    # ── Layer 2: PyJWT full validation ───────────────────────────────────────
     return jwt.decode(
         token,
         JWT_SECRET,
@@ -1122,12 +1150,33 @@ async def get_current_user(request: Request) -> dict:
                 raise
             except Exception:
                 pass  # best-effort — never block on parse failure
-        # B-029 — session revocation check
+        # B-029 — session revocation check (with TTL cache hot path)
         jti = payload.get("jti")
         if jti:
-            sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
-            if sess and sess.get("revoked"):
+            # 1) Hot path — consult in-process TTL cache (see auth_security.RevocationCache).
+            cached = revocation_cache.is_revoked_cached(jti)
+            if cached is True:
+                # Known-revoked in this process — refuse without DB read.
                 raise HTTPException(status_code=401, detail="Sessão terminada")
+            if cached is None:
+                # Miss — fall through to DB and populate cache below.
+                sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
+                if sess and sess.get("revoked"):
+                    revocation_cache.mark_revoked(jti)
+                    try:
+                        await auth_event(
+                            "token_invalid",
+                            user_id=user.get("id"),
+                            jti=jti,
+                            ip=request.client.host if request.client else "",
+                            ua=request.headers.get("user-agent", "")[:300],
+                            detail={"reason": "session_revoked"},
+                        )
+                    except Exception:
+                        pass
+                    raise HTTPException(status_code=401, detail="Sessão terminada")
+                # Active — remember for ~5 s to skip the next DB read.
+                revocation_cache.remember_active(jti)
             # last-seen heartbeat (best-effort, ~5 min)
             await db.sessions.update_one(
                 {"jti": jti},
@@ -1140,8 +1189,27 @@ async def get_current_user(request: Request) -> dict:
         await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
         return user
     except jwt.ExpiredSignatureError:
+        try:
+            await auth_event(
+                "token_invalid",
+                ip=request.client.host if request.client else "",
+                ua=request.headers.get("user-agent", "")[:300],
+                detail={"reason": "expired"},
+            )
+        except Exception:
+            pass
         raise HTTPException(status_code=401, detail="Sessão expirada")
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        # Includes our raw-header pre-flight rejections (alg=none, non-HS256, …).
+        try:
+            await auth_event(
+                "token_invalid",
+                ip=request.client.host if request.client else "",
+                ua=request.headers.get("user-agent", "")[:300],
+                detail={"reason": str(e)[:120]},
+            )
+        except Exception:
+            pass
         raise HTTPException(status_code=401, detail="Token inválido")
 
 
@@ -2043,6 +2111,9 @@ async def logout(request: Request, response: Response):
                     {"jti": jti},
                     {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "logout"}},
                 )
+                # Refuse further requests bearing this jti from this process
+                # immediately — no need to wait for the 5 s positive-cache to lapse.
+                revocation_cache.mark_revoked(jti)
                 await auth_event(
                     "logout",
                     user_id=user_id,
@@ -2161,6 +2232,9 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
             await ws_manager.close_sockets_by_jti(j)
         except Exception:
             pass
+        # Also mark in the local revocation cache so this process refuses
+        # the sibling tokens without waiting for the next DB roundtrip.
+        revocation_cache.mark_revoked(j)
     await auth_event(
         "password_changed",
         user_id=user["id"], email=user.get("email", ""),
@@ -2223,6 +2297,7 @@ async def revoke_session(session_id: str, request: Request, user=Depends(get_cur
         {"jti": session_id},
         {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "user_revoke"}},
     )
+    revocation_cache.mark_revoked(session_id)
     # H7 — close any WS bound to this jti immediately.
     try:
         await ws_manager.close_sockets_by_jti(session_id)
@@ -2258,6 +2333,7 @@ async def revoke_other_sessions(request: Request, user=Depends(get_current_user)
             await ws_manager.close_sockets_by_jti(j)
         except Exception:
             pass
+        revocation_cache.mark_revoked(j)
     await auth_event(
         "session_revoked_all",
         user_id=user["id"], email=user.get("email", ""), jti=current_jti,
@@ -2959,7 +3035,10 @@ async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
-    if post["author_id"] != user["id"]:
+    # Centralised ownership gate (no admin override — see delete_post above).
+    try:
+        require_owner(user, post, owner_field="author_id")
+    except AuthzError:
         raise HTTPException(403, "Sem permissão")
     is_draft = bool(post.get("is_draft"))
     is_scheduled = bool(post.get("scheduled_at"))
@@ -3472,7 +3551,11 @@ async def delete_post(post_id: str, user=Depends(get_current_user)):
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
-    if post["author_id"] != user["id"]:
+    # Centralised ownership gate (no admin override — admins moderate via
+    # the audited /api2/admin/posts/{id} route which records to admin_audit).
+    try:
+        require_owner(user, post, owner_field="author_id")
+    except AuthzError:
         raise HTTPException(403, "Sem permissão")
     # Grupo A: delete_own_post_enabled (admins bypass)
     if not user.get("is_admin") and not await is_feature_enabled("delete_own_post_enabled"):
@@ -3754,10 +3837,16 @@ async def delete_comment(comment_id: str, user=Depends(get_current_user)):
     c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
     if not c:
         raise HTTPException(404, "Comentário não encontrado")
-    if c["author_id"] != user["id"]:
-        # Allow post author to delete comments on their own post
+    # Dual-ownership: comment author OR post author may delete.
+    # Centralised: try strict-owner on the comment; if it fails, fall back
+    # to strict-owner on the parent post. Either succeeds → authorized.
+    try:
+        require_owner(user, c, owner_field="author_id")
+    except AuthzError:
         post = await db.posts.find_one({"id": c["post_id"]}, {"_id": 0})
-        if not post or post["author_id"] != user["id"]:
+        try:
+            require_owner(user, post or {}, owner_field="author_id")
+        except AuthzError:
             raise HTTPException(403, "Sem permissão")
     # Recursive delete of replies
     descendants = [comment_id]
@@ -4465,7 +4554,9 @@ async def delete_story(story_id: str, user=Depends(get_current_user)):
     s = await db.stories.find_one({"id": story_id}, {"_id": 0})
     if not s:
         raise HTTPException(404, "Story não encontrado")
-    if s["author_id"] != user["id"]:
+    try:
+        require_owner(user, s, owner_field="author_id")
+    except AuthzError:
         raise HTTPException(403, "Sem permissão")
     await db.stories.delete_one({"id": story_id})
     # Remover de highlights
@@ -8150,23 +8241,61 @@ async def websocket_endpoint(ws: WebSocket):
     token = ws.cookies.get("access_token") or ws.query_params.get("token", "")
     if not token:
         await ws.close(code=1008)
+        try:
+            await auth_event("ws_connect_fail", detail={"reason": "no_token"})
+        except Exception:
+            pass
         return
     try:
-        payload = _decode_access_token(token)  # full strict validation
+        payload = _decode_access_token(token)  # full strict validation (incl. raw header pre-flight)
         if payload.get("type") != "access":
             await ws.close(code=1008)
+            try:
+                await auth_event("ws_connect_fail", detail={"reason": "wrong_type"})
+            except Exception:
+                pass
             return
         user_id = payload["sub"]
-    except Exception:
+    except Exception as e:
         await ws.close(code=1008)
+        try:
+            await auth_event("ws_connect_fail", detail={"reason": f"decode: {type(e).__name__}"})
+        except Exception:
+            pass
         return
     # Session validation — revoked sessions cannot open a WS at all.
     jti = payload.get("jti") or ""
     if jti:
-        sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
-        if sess and sess.get("revoked"):
+        # Use the same TTL revocation cache the HTTP path uses, so an
+        # admin-driven force-logout flips both the REST and WS planes at
+        # the same time without an extra DB hit on the hot path.
+        cached = revocation_cache.is_revoked_cached(jti)
+        if cached is True:
             await ws.close(code=1008)
+            try:
+                await auth_event(
+                    "ws_connect_fail",
+                    user_id=user_id, jti=jti,
+                    detail={"reason": "session_revoked_cache"},
+                )
+            except Exception:
+                pass
             return
+        if cached is None:
+            sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
+            if sess and sess.get("revoked"):
+                revocation_cache.mark_revoked(jti)
+                await ws.close(code=1008)
+                try:
+                    await auth_event(
+                        "ws_connect_fail",
+                        user_id=user_id, jti=jti,
+                        detail={"reason": "session_revoked"},
+                    )
+                except Exception:
+                    pass
+                return
+            revocation_cache.remember_active(jti)
     # Re-fetch user — ban/freeze checks must apply.
     udoc = await db.users.find_one(
         {"id": user_id},
@@ -8174,9 +8303,23 @@ async def websocket_endpoint(ws: WebSocket):
     )
     if not udoc or udoc.get("banned"):
         await ws.close(code=1008)
+        try:
+            await auth_event(
+                "ws_connect_fail", user_id=user_id, jti=jti,
+                detail={"reason": "banned_or_missing"},
+            )
+        except Exception:
+            pass
         return
     if _restriction_active(udoc, "suspended_until"):
         await ws.close(code=1008)
+        try:
+            await auth_event(
+                "ws_connect_fail", user_id=user_id, jti=jti,
+                detail={"reason": "suspended"},
+            )
+        except Exception:
+            pass
         return
     # H5 — password-rotation invalidation in WS handshake too.
     pwd_changed = udoc.get("password_changed_at")
@@ -8185,9 +8328,25 @@ async def websocket_endpoint(ws: WebSocket):
         token_iat = int(payload.get("iat") or 0)
         if pwd_changed_dt is not None and token_iat < int(pwd_changed_dt.timestamp()):
             await ws.close(code=1008)
+            try:
+                await auth_event(
+                    "ws_connect_fail", user_id=user_id, jti=jti,
+                    detail={"reason": "password_rotated"},
+                )
+            except Exception:
+                pass
             return
 
     await ws_manager.connect(user_id, ws, jti=jti)
+    try:
+        await auth_event(
+            "ws_connect_ok",
+            user_id=user_id, jti=jti,
+            ua=ws.headers.get("user-agent", "")[:300] if hasattr(ws, "headers") else "",
+            ip=(ws.client.host if getattr(ws, "client", None) else ""),
+        )
+    except Exception:
+        pass
     # mark online
     await db.users.update_one({"id": user_id}, {"$set": {"last_seen": now_iso()}})
     await ws_manager.broadcast({
@@ -8217,7 +8376,15 @@ async def websocket_endpoint(ws: WebSocket):
     _MAX_RAW_MSG = int(os.environ.get("WS_MAX_RAW_MSG", "4096"))  # bytes
     _MAX_EVENTS_PER_MIN = int(os.environ.get("WS_MAX_EVENTS_PER_MIN", "240"))
     # jti revocation re-check cadence
-    _JTI_CHECK_GAP = 30.0
+    # 20 s strikes a defensible balance:
+    #   • Stolen-token-on-open-socket reuse window: bounded at 20 s after
+    #     the legitimate user logs out.
+    #   • DB load: at WS_MAX_SOCKETS_PER_USER=3 and N concurrent users, this
+    #     is ≤ N/20 reads/s — well under what one mongod node can absorb.
+    # Routes through the in-process revocation cache, so when the HTTP
+    # logout path flips `revocation_cache.mark_revoked(jti)`, the next WS
+    # re-check tick (worst case 20 s away) catches it without a DB read.
+    _JTI_CHECK_GAP = 20.0
     _last_jti_check = time.time()
 
     abuse_strikes = 0  # accumulate; >5 → close socket
@@ -8278,10 +8445,36 @@ async def websocket_endpoint(ws: WebSocket):
             if jti and (time.time() - _last_jti_check) > _JTI_CHECK_GAP:
                 _last_jti_check = time.time()
                 try:
+                    # Hot path: revocation cache first.
+                    cached = revocation_cache.is_revoked_cached(jti)
+                    if cached is True:
+                        await ws.send_json({"type": "session_revoked"})
+                        try:
+                            await auth_event(
+                                "ws_session_revoked",
+                                user_id=user_id, jti=jti,
+                                detail={"reason": "cache_revoked"},
+                            )
+                        except Exception:
+                            pass
+                        break
+                    # Cache says active or unknown — verify with DB to catch
+                    # cross-replica revocations.
                     sess2 = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
                     if sess2 and sess2.get("revoked"):
+                        revocation_cache.mark_revoked(jti)
                         await ws.send_json({"type": "session_revoked"})
+                        try:
+                            await auth_event(
+                                "ws_session_revoked",
+                                user_id=user_id, jti=jti,
+                                detail={"reason": "db_revoked"},
+                            )
+                        except Exception:
+                            pass
                         break
+                    # Refresh positive cache so other request hot paths skip DB.
+                    revocation_cache.remember_active(jti)
                 except Exception:
                     pass
 

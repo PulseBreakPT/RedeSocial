@@ -29,3 +29,4 @@ slowapi==0.1.9
 typer>=0.9.0
 tzdata>=2024.2
 uvicorn==0.25.0
+wrapt
