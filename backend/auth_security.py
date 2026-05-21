@@ -78,6 +78,11 @@ async def auth_event(
     SECURITY: this function NEVER receives token material. Callers must
     pass only ids (jti), addresses, and short metadata strings. The log
     redaction filter ALSO scrubs everything written, as a second layer.
+
+    Side-channel: if a downstream sink has been registered via
+    `register_event_sink()` (e.g. the admin WS broadcaster), the row is
+    handed to it AFTER the DB insert. The sink runs best-effort and must
+    not raise.
     """
     if _db is None:
         return
@@ -96,9 +101,38 @@ async def auth_event(
             "ts_epoch": _now_ts(),
         }
         await _db.auth_events.insert_one(row)
+        # Side-channel push to registered sinks (admin WS, metrics, …).
+        # Each sink is awaited individually; failure of one cannot block others.
+        for sink in list(_EVENT_SINKS):
+            try:
+                await sink(row)
+            except Exception as e:
+                logger.warning(f"auth_event sink failed kind={kind}: {type(e).__name__}")
     except Exception as e:
         # Telemetry must never break auth. Log and move on.
         logger.warning(f"auth_event failed kind={kind}: {type(e).__name__}")
+
+
+# ─── Live event side-channel ────────────────────────────────────────────────
+# Downstream consumers (the admin WebSocket broadcaster, a metrics emitter,
+# a SIEM forwarder) can register an async callback that receives the same
+# row that was just inserted into db.auth_events. The DB write is always
+# the source of truth — sinks are best-effort.
+_EVENT_SINKS: list = []
+
+
+def register_event_sink(callback) -> None:
+    """Register an `async def callback(row: dict) -> None` to be invoked for
+    every auth_event after the DB insert. Idempotent."""
+    if callback not in _EVENT_SINKS:
+        _EVENT_SINKS.append(callback)
+
+
+def unregister_event_sink(callback) -> None:
+    try:
+        _EVENT_SINKS.remove(callback)
+    except ValueError:
+        pass
 
 
 # ─── Lockout ────────────────────────────────────────────────────────────────

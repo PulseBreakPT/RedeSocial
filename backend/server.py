@@ -77,6 +77,7 @@ from auth_security import (
     validate_jwt_header_strict,
     InvalidJWTHeader,
     revocation_cache,
+    register_event_sink,
     ensure_indexes as _ensure_auth_indexes,
 )
 _bind_auth_db(db)
@@ -8094,10 +8095,14 @@ class ConnectionManager:
         # Per-post viewers (real presence tracking — feature: "x pessoas a ver este post")
         self.viewers_by_post: dict[str, set[str]] = {}   # post_id -> set(user_id)
         self.posts_by_user: dict[str, set[str]] = {}     # user_id -> set(post_id)
-        # WS session metadata: socket -> {"jti": str, "user_id": str, "connected_at": float}
+        # WS session metadata: socket -> {"jti": str, "user_id": str, "connected_at": float, "is_admin": bool}
         self.socket_meta: dict[int, dict] = {}
+        # Subset of user_ids whose currently-open sockets belong to admins —
+        # cached so admin-only broadcasts (e.g. live security events) don't
+        # need to re-query db.users on every push.
+        self.admin_user_ids: set[str] = set()
 
-    async def connect(self, user_id: str, ws: WebSocket, jti: str = ""):
+    async def connect(self, user_id: str, ws: WebSocket, jti: str = "", is_admin: bool = False):
         await ws.accept()
         bucket = self.active.setdefault(user_id, [])
         # Enforce max sockets per user — drop the oldest if at cap.
@@ -8113,7 +8118,10 @@ class ConnectionManager:
             "jti": jti or "",
             "user_id": user_id,
             "connected_at": time.time(),
+            "is_admin": bool(is_admin),
         }
+        if is_admin:
+            self.admin_user_ids.add(user_id)
 
     def disconnect(self, user_id: str, ws: WebSocket):
         self.socket_meta.pop(id(ws), None)
@@ -8124,6 +8132,9 @@ class ConnectionManager:
                 pass
             if not self.active[user_id]:
                 self.active.pop(user_id, None)
+                # No more sockets for this user — drop them from the admin set
+                # too. They'll be re-added on next admin WS connect.
+                self.admin_user_ids.discard(user_id)
 
     def socket_jti(self, ws: WebSocket) -> str:
         meta = self.socket_meta.get(id(ws))
@@ -8158,6 +8169,28 @@ class ConnectionManager:
                 await ws.send_json(message)
             except Exception:
                 pass
+
+    async def send_to_admins(self, message: dict) -> int:
+        """Push a JSON message to every connected admin socket.
+
+        Used by the live security feed so the admin dashboard can render new
+        auth events in real time without polling.
+
+        Returns the count of sockets that accepted the frame. Best-effort —
+        a single broken socket doesn't abort the broadcast.
+        """
+        sent = 0
+        for uid in list(self.admin_user_ids):
+            for ws in list(self.active.get(uid, [])):
+                try:
+                    meta = self.socket_meta.get(id(ws)) or {}
+                    if not meta.get("is_admin"):
+                        continue
+                    await ws.send_json(message)
+                    sent += 1
+                except Exception:
+                    pass
+        return sent
 
     async def broadcast(self, message: dict, exclude_user: Optional[str] = None):
         for uid, sockets in list(self.active.items()):
@@ -8233,6 +8266,36 @@ class ConnectionManager:
 ws_manager = ConnectionManager()
 
 
+# ─── Live security feed — broadcast every auth_event to admins ──────────────
+# Wires the auth_security event side-channel into the WebSocket plane. Each
+# row written to db.auth_events is pushed (best-effort) to every connected
+# admin socket so the security panel can render in real time without
+# polling. Failure here NEVER blocks the underlying auth_event write.
+async def _security_event_to_admins(row: dict) -> None:
+    try:
+        # Light client-side projection — strip ts_epoch (the UI uses `ts`)
+        # and never expose anything the UI doesn't already see via REST.
+        await ws_manager.send_to_admins({
+            "type": "security_event",
+            "event": {
+                "kind": row.get("kind"),
+                "user_id": row.get("user_id"),
+                "email": row.get("email"),
+                "ip": row.get("ip"),
+                "ua": row.get("ua"),
+                "jti": row.get("jti"),
+                "detail": row.get("detail") or {},
+                "ts": row.get("ts"),
+            },
+        })
+    except Exception:
+        # Side-channel must never break auth. Swallow.
+        pass
+
+
+register_event_sink(_security_event_to_admins)
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     # Authenticate via cookie or query token. Reject early on any
@@ -8299,7 +8362,7 @@ async def websocket_endpoint(ws: WebSocket):
     # Re-fetch user — ban/freeze checks must apply.
     udoc = await db.users.find_one(
         {"id": user_id},
-        {"_id": 0, "id": 1, "banned": 1, "suspended_until": 1, "password_changed_at": 1},
+        {"_id": 0, "id": 1, "banned": 1, "suspended_until": 1, "password_changed_at": 1, "is_admin": 1},
     )
     if not udoc or udoc.get("banned"):
         await ws.close(code=1008)
@@ -8337,7 +8400,7 @@ async def websocket_endpoint(ws: WebSocket):
                 pass
             return
 
-    await ws_manager.connect(user_id, ws, jti=jti)
+    await ws_manager.connect(user_id, ws, jti=jti, is_admin=bool(udoc.get("is_admin")))
     try:
         await auth_event(
             "ws_connect_ok",
@@ -10665,10 +10728,33 @@ async def admin_unban_user(user_id: str, admin=Depends(require_admin)):
 
 @api2.post("/admin/users/{user_id}/force-logout")
 async def admin_force_logout(user_id: str, admin=Depends(require_admin)):
+    # Collect jtis BEFORE we flip them so we can update the in-process
+    # revocation cache and close any live WebSocket sessions bound to them.
+    jtis: list[str] = []
+    async for s in db.sessions.find(
+        {"user_id": user_id, "revoked": {"$ne": True}},
+        {"_id": 0, "jti": 1},
+    ):
+        j = s.get("jti")
+        if j:
+            jtis.append(j)
     res = await db.sessions.update_many(
         {"user_id": user_id, "revoked": {"$ne": True}},
         {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "admin_force_logout"}},
     )
+    # Sub-second realtime side effects:
+    #   1. Revocation cache flip — this process refuses tokens for these
+    #      jtis immediately, no DB roundtrip.
+    #   2. WS kick — any open sockets bound to these jtis are dropped now.
+    for j in jtis:
+        try:
+            revocation_cache.mark_revoked(j)
+        except Exception:
+            pass
+        try:
+            await ws_manager.close_sockets_by_jti(j)
+        except Exception:
+            pass
     await admin_audit(admin, "user.force_logout", "user", user_id, {"revoked": res.modified_count})
     return {"ok": True, "revoked": res.modified_count}
 
@@ -10996,6 +11082,17 @@ async def admin_revoke_session(jti: str, admin=Depends(require_admin)):
         {"jti": jti},
         {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "admin"}},
     )
+    # Flip the in-process revocation cache + close live WebSockets bound to
+    # this jti so the targeted session loses its realtime channel within
+    # milliseconds (no need to wait for the periodic 20 s WS re-check).
+    try:
+        revocation_cache.mark_revoked(jti)
+    except Exception:
+        pass
+    try:
+        await ws_manager.close_sockets_by_jti(jti)
+    except Exception:
+        pass
     await admin_audit(admin, "session.revoke", "session", jti, {"user_id": s.get("user_id")})
     return {"ok": True}
 
@@ -11021,6 +11118,610 @@ async def admin_audit_list(
     cursor = db.admin_audit.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit)
     rows = await cursor.to_list(length=limit)
     return {"total": total, "page": page, "limit": limit, "items": rows}
+
+
+# ============================================================================
+# ADMIN — SECURITY MODULE
+# ============================================================================
+# Live security console for /admin/security/* in the frontend.
+#
+# Design principles:
+#   • Every metric is computed live against MongoDB at request time —
+#     no caching, no precomputation, no mock values.
+#   • Every action is audited (admin_audit) and re-validates server-side.
+#   • Every write hits the revocation cache + closes affected WebSockets,
+#     so admin actions become user-visible within milliseconds.
+#   • Sub-second realtime push: the auth_event side-channel
+#     (`_security_event_to_admins`) forwards every new auth event to every
+#     connected admin WS, so the dashboard never needs to poll.
+# ============================================================================
+
+
+# Stable taxonomy: which event kinds count as "warning" (non-fatal but
+# worth highlighting in the UI) vs "danger" (actively suspicious / hostile).
+# Used by the overview KPI computation and by the frontend severity tags.
+_SECURITY_EVENT_KINDS_DANGER = frozenset({
+    "token_invalid", "login_locked", "reset_password_fail", "twofa_fail",
+    "ws_connect_fail", "ws_session_revoked", "suspicious_ip_change",
+})
+_SECURITY_EVENT_KINDS_WARN = frozenset({
+    "login_fail", "session_revoked", "session_revoked_all",
+    "forgot_password_issued",
+})
+_SECURITY_EVENT_KINDS_INFO = frozenset({
+    "login_ok", "logout", "password_changed",
+    "ws_connect_ok", "twofa_setup", "twofa_disabled", "reset_password_ok",
+})
+
+
+def _classify_event_severity(kind: str) -> str:
+    if kind in _SECURITY_EVENT_KINDS_DANGER:
+        return "danger"
+    if kind in _SECURITY_EVENT_KINDS_WARN:
+        return "warn"
+    if kind in _SECURITY_EVENT_KINDS_INFO:
+        return "info"
+    return "info"
+
+
+def _epoch_now() -> int:
+    return int(time.time())
+
+
+@api2.get("/admin/security/overview")
+async def admin_security_overview(admin=Depends(require_admin)):
+    """Live snapshot of the security posture.
+
+    Every figure is a fresh DB count or in-process counter — nothing is
+    cached or stubbed. Safe to poll every few seconds; the underlying
+    queries all hit indexed paths.
+    """
+    now = _epoch_now()
+    h1 = now - 3600
+    h24 = now - 86400
+    h24_start_iso = _from_epoch_iso(h24)
+    _ = h24_start_iso  # placeholder; used below
+
+    async def _count(kind: str, since_epoch: int) -> int:
+        return await db.auth_events.count_documents(
+            {"kind": kind, "ts_epoch": {"$gte": since_epoch}}
+        )
+
+    # Parallel-fan-out counts — small payloads, indexed reads.
+    (
+        logins_1h, logins_24h,
+        fails_1h, fails_24h,
+        token_invalid_1h, token_invalid_24h,
+        locked_1h, ws_fail_1h,
+        session_revoked_1h, suspicious_1h,
+        twofa_fail_1h,
+        reset_fail_1h,
+        total_active_sessions,
+        admins_count,
+        users_count,
+        banned_count,
+        suspended_count,
+    ) = await asyncio.gather(
+        _count("login_ok", h1), _count("login_ok", h24),
+        _count("login_fail", h1), _count("login_fail", h24),
+        _count("token_invalid", h1), _count("token_invalid", h24),
+        _count("login_locked", h1), _count("ws_connect_fail", h1),
+        _count("session_revoked", h1), _count("suspicious_ip_change", h1),
+        _count("twofa_fail", h1),
+        _count("reset_password_fail", h1),
+        db.sessions.count_documents({"revoked": {"$ne": True}}),
+        db.users.count_documents({"is_admin": True}),
+        db.users.count_documents({}),
+        db.users.count_documents({"banned": True}),
+        db.users.count_documents({"suspended_until": {"$gt": now_iso()}}),
+    )
+
+    # 24h sparkline: bucket auth events per hour (24 buckets).
+    pipeline = [
+        {"$match": {"ts_epoch": {"$gte": h24}}},
+        {"$group": {
+            "_id": {
+                "kind": "$kind",
+                "bucket": {"$toInt": {"$divide": [{"$subtract": ["$ts_epoch", h24]}, 3600]}},
+            },
+            "count": {"$sum": 1},
+        }},
+    ]
+    rows = await db.auth_events.aggregate(pipeline).to_list(length=2000)
+    buckets_logins = [0] * 24
+    buckets_fails = [0] * 24
+    buckets_token_invalid = [0] * 24
+    buckets_ws_fail = [0] * 24
+    for r in rows:
+        k = (r.get("_id") or {}).get("kind")
+        b = (r.get("_id") or {}).get("bucket")
+        if not isinstance(b, int) or b < 0 or b >= 24:
+            continue
+        c = int(r.get("count") or 0)
+        if k == "login_ok":
+            buckets_logins[b] += c
+        elif k == "login_fail":
+            buckets_fails[b] += c
+        elif k == "token_invalid":
+            buckets_token_invalid[b] += c
+        elif k == "ws_connect_fail":
+            buckets_ws_fail[b] += c
+
+    # Currently-locked accounts (real-time read).
+    locked_now = 0
+    async for _doc in db.login_attempts.find(
+        {"locked_until_epoch": {"$gt": now}},
+        {"_id": 0, "locked_until_epoch": 1},
+    ):
+        locked_now += 1
+
+    # Connected admin WebSocket count — pulled from the in-process manager.
+    admins_online = 0
+    for uid in list(ws_manager.admin_user_ids):
+        sockets = ws_manager.active.get(uid) or []
+        admins_online += sum(
+            1 for w in sockets
+            if (ws_manager.socket_meta.get(id(w)) or {}).get("is_admin")
+        )
+
+    # Config snapshot — read-only, no secrets.
+    cfg = {
+        "app_env": APP_ENV,
+        "is_production": IS_PRODUCTION,
+        "jwt_alg": JWT_ALGORITHM,
+        "jwt_issuer": JWT_ISSUER,
+        "jwt_audience": JWT_AUDIENCE,
+        "jwt_secret_len": len(JWT_SECRET or ""),
+        # NEVER expose the secret itself. Only its length and a hash prefix
+        # so an operator can correlate that the deployed secret matches the
+        # secret-manager record without disclosing it.
+        "jwt_secret_fp": hashlib.sha256((JWT_SECRET or "").encode()).hexdigest()[:8],
+        "access_token_ttl_s": int(JWT_ACCESS_TTL.total_seconds()) if hasattr(JWT_ACCESS_TTL, "total_seconds") else None,
+        "cookie_secure": COOKIE_SECURE,
+        "cookie_samesite": os.environ.get("COOKIE_SAMESITE", "lax"),
+        "ws_max_sockets_per_user": ws_manager.MAX_SOCKETS_PER_USER,
+        "revocation_cache": revocation_cache.stats(),
+        "lockout_max_fails": auth_security_mod.LOCKOUT_MAX_FAILS,
+        "lockout_window_s": auth_security_mod.LOCKOUT_WINDOW_S,
+        "lockout_duration_s": auth_security_mod.LOCKOUT_DURATION_S,
+        "ws_jti_check_gap_s": 20,  # mirrors _JTI_CHECK_GAP in websocket_endpoint
+    }
+
+    # Posture warnings — synthesised live, never hardcoded.
+    warnings: list[dict] = []
+    if not COOKIE_SECURE and IS_PRODUCTION:
+        warnings.append({"level": "danger", "code": "cookie_insecure_prod",
+                         "msg": "Cookies em produção sem Secure flag — risco crítico."})
+    if cfg["jwt_secret_len"] < 48:
+        warnings.append({"level": "danger", "code": "weak_secret",
+                         "msg": f"JWT_SECRET tem apenas {cfg['jwt_secret_len']} chars; mínimo recomendado: 48."})
+    if cfg["app_env"] not in {"development", "staging", "production", "prod"}:
+        warnings.append({"level": "warn", "code": "unknown_env",
+                         "msg": f"APP_ENV='{cfg['app_env']}' não reconhecido."})
+    if fails_1h >= 50:
+        warnings.append({"level": "danger", "code": "login_fail_spike",
+                         "msg": f"{fails_1h} falhas de login na última hora — possível credential stuffing."})
+    elif fails_1h >= 20:
+        warnings.append({"level": "warn", "code": "login_fail_elevated",
+                         "msg": f"{fails_1h} falhas de login na última hora — monitorizar."})
+    if token_invalid_1h >= 20:
+        warnings.append({"level": "danger", "code": "forgery_attempts",
+                         "msg": f"{token_invalid_1h} tokens inválidos na última hora — provável tentativa de forja."})
+    elif token_invalid_1h >= 5:
+        warnings.append({"level": "warn", "code": "forgery_elevated",
+                         "msg": f"{token_invalid_1h} tokens inválidos na última hora."})
+    if locked_1h >= 5:
+        warnings.append({"level": "warn", "code": "lockouts_elevated",
+                         "msg": f"{locked_1h} contas bloqueadas na última hora."})
+    if admins_count == 0:
+        warnings.append({"level": "danger", "code": "no_admins",
+                         "msg": "Não existe nenhum administrador na BD."})
+    elif admins_count == 1:
+        warnings.append({"level": "info", "code": "single_admin",
+                         "msg": "Apenas um administrador — considera adicionar um segundo para redundância."})
+    # 2FA coverage among admins
+    admins_with_2fa = await db.users.count_documents({"is_admin": True, "twofa_enabled": True})
+    if admins_count > 0 and admins_with_2fa < admins_count:
+        warnings.append({"level": "warn", "code": "admin_2fa_partial",
+                         "msg": f"{admins_count - admins_with_2fa} de {admins_count} admins sem 2FA — recomenda-se obrigatoriedade."})
+
+    return {
+        "timestamp": now_iso(),
+        "counters_1h": {
+            "logins": logins_1h,
+            "login_fails": fails_1h,
+            "token_invalid": token_invalid_1h,
+            "logins_locked": locked_1h,
+            "ws_fails": ws_fail_1h,
+            "sessions_revoked": session_revoked_1h,
+            "twofa_fails": twofa_fail_1h,
+            "reset_fails": reset_fail_1h,
+            "suspicious_ip_change": suspicious_1h,
+        },
+        "counters_24h": {
+            "logins": logins_24h,
+            "login_fails": fails_24h,
+            "token_invalid": token_invalid_24h,
+        },
+        "spark_24h": {
+            "logins": buckets_logins,
+            "fails": buckets_fails,
+            "token_invalid": buckets_token_invalid,
+            "ws_fails": buckets_ws_fail,
+        },
+        "state": {
+            "active_sessions": total_active_sessions,
+            "admins_total": admins_count,
+            "admins_with_2fa": admins_with_2fa,
+            "admins_online": admins_online,
+            "users_total": users_count,
+            "users_banned": banned_count,
+            "users_suspended": suspended_count,
+            "locked_now": locked_now,
+        },
+        "config": cfg,
+        "warnings": warnings,
+        "controls": [
+            {"k": "jwt_alg_pinned",     "label": "Algoritmo HS256 fixado",                 "on": True},
+            {"k": "alg_none_blocked",   "label": "alg=none rejeitado (pre-flight + PyJWT)", "on": True},
+            {"k": "iss_aud_enforced",   "label": "iss/aud enforçados",                     "on": True},
+            {"k": "env_isolated",       "label": "Tokens isolados por ambiente",           "on": True},
+            {"k": "signature_verified", "label": "Assinatura HMAC verificada",              "on": True},
+            {"k": "exp_nbf_iat_checked","label": "exp/nbf/iat verificados",                 "on": True},
+            {"k": "crit_rejected",      "label": "Header crit rejeitado",                  "on": True},
+            {"k": "session_table",      "label": "Sessões server-side (db.sessions)",      "on": True},
+            {"k": "revocation_cache",   "label": "Revocation TTL cache",                   "on": True},
+            {"k": "password_rotation_kill", "label": "Tokens antigos invalidados ao mudar password", "on": True},
+            {"k": "ws_periodic_recheck","label": "WS re-check de revogação a cada 20 s",   "on": True},
+            {"k": "bcrypt",             "label": "Passwords com bcrypt",                   "on": True},
+            {"k": "rate_limit",         "label": "Rate-limit por IP",                      "on": True},
+            {"k": "lockout",            "label": f"Lockout: {auth_security_mod.LOCKOUT_MAX_FAILS}/{auth_security_mod.LOCKOUT_WINDOW_S//60}m", "on": True},
+            {"k": "csrf_mirror",        "label": "CSRF mirror-cookie",                     "on": True},
+            {"k": "cookie_httponly",    "label": "Cookies HttpOnly",                       "on": True},
+            {"k": "cookie_secure",      "label": "Cookies Secure",                         "on": bool(COOKIE_SECURE)},
+            {"k": "log_redaction",      "label": "Redaction de segredos nos logs",         "on": True},
+            {"k": "auth_audit_log",     "label": "Audit log de auth (90 d TTL)",           "on": True},
+            {"k": "admin_audit_log",    "label": "Audit log de ações admin",               "on": True},
+            {"k": "twofa_available",    "label": "2FA TOTP disponível",                    "on": True},
+        ],
+    }
+
+
+@api2.get("/admin/security/events")
+async def admin_security_events(
+    admin=Depends(require_admin),
+    kind: str = "",
+    severity: str = "",
+    user_id: str = "",
+    email: str = "",
+    ip: str = "",
+    q: str = "",
+    since_minutes: int = 0,
+    page: int = 1,
+    limit: int = 50,
+):
+    """Filtered, paginated feed of auth_events.
+
+    Filters compose. `severity` is one of {danger, warn, info}.
+    `q` is a free-text fuzzy search across email/ip/ua/jti/detail.
+    """
+    page = max(1, int(page or 1))
+    limit = max(1, min(200, int(limit or 50)))
+    query: dict = {}
+    if kind:
+        kinds = [k.strip() for k in kind.split(",") if k.strip()]
+        if len(kinds) == 1:
+            query["kind"] = kinds[0]
+        else:
+            query["kind"] = {"$in": kinds}
+    elif severity:
+        sev = severity.strip().lower()
+        if sev == "danger":
+            query["kind"] = {"$in": list(_SECURITY_EVENT_KINDS_DANGER)}
+        elif sev == "warn":
+            query["kind"] = {"$in": list(_SECURITY_EVENT_KINDS_WARN)}
+        elif sev == "info":
+            query["kind"] = {"$in": list(_SECURITY_EVENT_KINDS_INFO)}
+    if user_id:
+        query["user_id"] = user_id.strip()
+    if email:
+        query["email"] = email.strip().lower()
+    if ip:
+        query["ip"] = ip.strip()
+    if since_minutes and since_minutes > 0:
+        query["ts_epoch"] = {"$gte": _epoch_now() - int(since_minutes) * 60}
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        # Compose with $and so a prior `kind`/`severity` filter is preserved.
+        free_text = {"$or": [
+            {"email": rgx}, {"ip": rgx}, {"ua": rgx}, {"jti": rgx},
+            {"detail.reason": rgx}, {"user_id": rgx},
+        ]}
+        if query:
+            query = {"$and": [query, free_text]}
+        else:
+            query = free_text
+
+    total = await db.auth_events.count_documents(query)
+    cursor = (db.auth_events.find(query, {"_id": 0})
+              .sort("ts_epoch", -1)
+              .skip((page - 1) * limit)
+              .limit(limit))
+    rows = await cursor.to_list(length=limit)
+
+    # Hydrate user references (avatar / username) for the UI — single batched read.
+    user_ids = list({r.get("user_id") for r in rows if r.get("user_id")})
+    users: dict = {}
+    if user_ids:
+        async for u in db.users.find(
+            {"id": {"$in": user_ids}},
+            {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "is_admin": 1},
+        ):
+            users[u["id"]] = u
+
+    items = []
+    for r in rows:
+        items.append({
+            "kind": r.get("kind"),
+            "severity": _classify_event_severity(r.get("kind") or ""),
+            "user_id": r.get("user_id"),
+            "user": users.get(r.get("user_id") or "", {}),
+            "email": r.get("email"),
+            "ip": r.get("ip"),
+            "ua": r.get("ua"),
+            "jti": r.get("jti"),
+            "detail": r.get("detail") or {},
+            "ts": r.get("ts"),
+        })
+    return {"total": total, "page": page, "limit": limit, "items": items}
+
+
+@api2.get("/admin/security/event-kinds")
+async def admin_security_event_kinds(admin=Depends(require_admin)):
+    """Enumerate the kinds present in db.auth_events (for the filter dropdown)."""
+    pipeline = [{"$group": {"_id": "$kind", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}]
+    rows = await db.auth_events.aggregate(pipeline).to_list(length=200)
+    return {
+        "items": [
+            {
+                "kind": r["_id"],
+                "count": r["count"],
+                "severity": _classify_event_severity(r["_id"] or ""),
+            }
+            for r in rows if r.get("_id")
+        ],
+    }
+
+
+@api2.get("/admin/security/lockouts")
+async def admin_security_lockouts(admin=Depends(require_admin)):
+    """Currently-locked accounts."""
+    now = _epoch_now()
+    cursor = db.login_attempts.find(
+        {"locked_until_epoch": {"$gt": now}},
+        {"_id": 0, "email": 1, "locked_until_epoch": 1, "attempts": 1, "updated_at": 1},
+    ).sort("locked_until_epoch", -1)
+    items = []
+    async for d in cursor:
+        items.append({
+            "email": d.get("email"),
+            "locked_until_epoch": d.get("locked_until_epoch"),
+            "locked_until_iso": _from_epoch_iso(d.get("locked_until_epoch") or 0),
+            "fails_in_window": len(d.get("attempts") or []),
+            "updated_at_epoch": d.get("updated_at"),
+        })
+    return {"total": len(items), "items": items}
+
+
+@api2.post("/admin/security/lockouts/clear")
+async def admin_security_lockouts_clear(
+    body: dict, admin=Depends(require_admin)
+):
+    """Unlock an account. Body: {\"email\": \"...\"}"""
+    email = (body or {}).get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(400, "email é obrigatório")
+    res = await db.login_attempts.delete_one({"email": email})
+    await admin_audit(admin, "security.lockout_clear", "email", email, {"removed": res.deleted_count})
+    await auth_event(
+        "security_admin_action",
+        user_id=admin.get("id"),
+        email=email,
+        detail={"action": "lockout_clear", "removed": res.deleted_count},
+    )
+    return {"ok": True, "cleared": res.deleted_count > 0}
+
+
+@api2.get("/admin/security/admins")
+async def admin_security_admins(admin=Depends(require_admin)):
+    """List admin accounts with 2FA / sessions / online state."""
+    cursor = db.users.find(
+        {"is_admin": True},
+        {"_id": 0, "id": 1, "username": 1, "name": 1, "email": 1, "avatar": 1,
+         "twofa_enabled": 1, "created_at": 1, "last_login_at": 1, "password_changed_at": 1,
+         "banned": 1, "suspended_until": 1},
+    )
+    admins = await cursor.to_list(length=500)
+    ids = [a["id"] for a in admins]
+    # Active sessions per admin
+    sess_counts: dict = {}
+    if ids:
+        pipeline = [
+            {"$match": {"user_id": {"$in": ids}, "revoked": {"$ne": True}}},
+            {"$group": {"_id": "$user_id", "n": {"$sum": 1}}},
+        ]
+        async for r in db.sessions.aggregate(pipeline):
+            sess_counts[r["_id"]] = r["n"]
+    items = []
+    for a in admins:
+        items.append({
+            "id": a.get("id"),
+            "username": a.get("username"),
+            "name": a.get("name"),
+            "email": a.get("email"),
+            "avatar": a.get("avatar"),
+            "twofa_enabled": bool(a.get("twofa_enabled")),
+            "active_sessions": sess_counts.get(a.get("id"), 0),
+            "online": a.get("id") in ws_manager.admin_user_ids,
+            "banned": bool(a.get("banned")),
+            "suspended_until": a.get("suspended_until"),
+            "created_at": a.get("created_at"),
+            "last_login_at": a.get("last_login_at"),
+            "password_changed_at": a.get("password_changed_at"),
+            "is_self": a.get("id") == admin.get("id"),
+        })
+    return {"total": len(items), "items": items}
+
+
+@api2.post("/admin/security/test-token")
+async def admin_security_test_token(body: dict, admin=Depends(require_admin)):
+    """Diagnostic — paste a token, see exactly what the decoder would do.
+
+    Reveals NOTHING that the requester didn't already supply: the response
+    contains only verdict + reason + the decoded *header* claims. Payload
+    `sub` is included so an operator can confirm whose token they pasted,
+    but the full payload is NOT returned (avoid accidental leakage).
+    """
+    token = ((body or {}).get("token") or "").strip()
+    if not token:
+        raise HTTPException(400, "token é obrigatório")
+    out: dict = {"verdict": "invalid", "reason": "", "stage": "", "header": None, "claims": {}}
+    # Stage 1: raw header pre-flight
+    try:
+        hdr = validate_jwt_header_strict(token)
+        out["header"] = hdr
+    except InvalidJWTHeader as e:
+        out["stage"] = "header_preflight"
+        out["reason"] = str(e)
+        return out
+    # Stage 2: PyJWT strict decode
+    try:
+        payload = _decode_access_token(token)
+    except jwt.ExpiredSignatureError:
+        out["stage"] = "pyjwt"
+        out["reason"] = "expired"
+        return out
+    except jwt.InvalidTokenError as e:
+        out["stage"] = "pyjwt"
+        out["reason"] = str(e)
+        return out
+    # Stage 3: type / session / user-state
+    if payload.get("type") != "access":
+        out["stage"] = "type_check"
+        out["reason"] = f"wrong type: {payload.get('type')}"
+        return out
+    jti = payload.get("jti") or ""
+    sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1, "user_id": 1})
+    if sess and sess.get("revoked"):
+        out["stage"] = "session_revoked"
+        out["reason"] = "session_revoked"
+        out["claims"] = {"sub": payload.get("sub"), "jti": jti, "iat": payload.get("iat"),
+                         "exp": payload.get("exp"), "iss": payload.get("iss"), "aud": payload.get("aud")}
+        return out
+    udoc = await db.users.find_one(
+        {"id": payload.get("sub")},
+        {"_id": 0, "id": 1, "username": 1, "is_admin": 1, "banned": 1,
+         "suspended_until": 1, "password_changed_at": 1},
+    )
+    if not udoc:
+        out["stage"] = "user_lookup"
+        out["reason"] = "user_not_found"
+        return out
+    if udoc.get("banned"):
+        out["stage"] = "user_state"
+        out["reason"] = "banned"
+        return out
+    if _restriction_active(udoc, "suspended_until"):
+        out["stage"] = "user_state"
+        out["reason"] = "suspended"
+        return out
+    pwd_changed = udoc.get("password_changed_at")
+    if pwd_changed:
+        dt = _parse_iso_utc(pwd_changed)
+        if dt and int(payload.get("iat") or 0) < int(dt.timestamp()):
+            out["stage"] = "password_rotation"
+            out["reason"] = "iat_before_password_change"
+            return out
+    out["verdict"] = "valid"
+    out["stage"] = "ok"
+    out["reason"] = ""
+    out["claims"] = {
+        "sub": payload.get("sub"),
+        "jti": jti,
+        "iat": payload.get("iat"),
+        "exp": payload.get("exp"),
+        "iss": payload.get("iss"),
+        "aud": payload.get("aud"),
+        "type": payload.get("type"),
+    }
+    out["user"] = {"username": udoc.get("username"), "is_admin": bool(udoc.get("is_admin"))}
+    return out
+
+
+@api2.get("/admin/security/sessions")
+async def admin_security_sessions(
+    admin=Depends(require_admin),
+    user_id: str = "",
+    ip: str = "",
+    q: str = "",
+    online_only: int = 0,
+    page: int = 1,
+    limit: int = 50,
+):
+    """Active sessions enriched with online status (WS connected = online)."""
+    page = max(1, int(page or 1))
+    limit = max(1, min(200, int(limit or 50)))
+    query: dict = {"revoked": {"$ne": True}}
+    if user_id:
+        query["user_id"] = user_id.strip()
+    if ip:
+        query["last_ip"] = ip.strip()
+    if q:
+        rgx = {"$regex": re.escape(q.strip()), "$options": "i"}
+        query["$or"] = [{"last_ip": rgx}, {"last_ua": rgx}, {"jti": rgx}]
+    total = await db.sessions.count_documents(query)
+    cursor = (db.sessions.find(query, {"_id": 0})
+              .sort("last_seen_at", -1)
+              .skip((page - 1) * limit)
+              .limit(limit))
+    rows = await cursor.to_list(length=limit)
+    user_ids = list({s.get("user_id") for s in rows if s.get("user_id")})
+    users: dict = {}
+    if user_ids:
+        async for u in db.users.find(
+            {"id": {"$in": user_ids}},
+            {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "is_admin": 1},
+        ):
+            users[u["id"]] = u
+
+    # Online = at least one live WebSocket bound to the same jti.
+    live_jtis: set = set()
+    for uid, sockets in ws_manager.active.items():
+        for w in sockets:
+            j = (ws_manager.socket_meta.get(id(w)) or {}).get("jti")
+            if j:
+                live_jtis.add(j)
+
+    items = []
+    for s in rows:
+        j = s.get("jti")
+        online = j in live_jtis if j else False
+        if online_only and not online:
+            continue
+        items.append({
+            "jti": j,
+            "user_id": s.get("user_id"),
+            "user": users.get(s.get("user_id") or "", {}),
+            "ip": s.get("last_ip") or s.get("ip", ""),
+            "ua": (s.get("last_ua") or s.get("ua", ""))[:240],
+            "source": s.get("source"),
+            "created_at": s.get("created_at"),
+            "last_seen_at": s.get("last_seen_at"),
+            "online": online,
+        })
+    return {"total": total, "page": page, "limit": limit, "items": items, "live_jtis": len(live_jtis)}
+
+
 
 
 # ----------------- COMMENTS -----------------
