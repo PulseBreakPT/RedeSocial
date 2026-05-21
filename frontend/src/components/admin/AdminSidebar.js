@@ -4,12 +4,12 @@ import { Shield, X as XIcon, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /**
- * AdminSidebar — organized left navigation.
+ * AdminSidebar — SSS-tier hierarchical navigation.
  *
- *  • Groups are visually separated and labeled (Cockpit, Confiança & Segurança,
- *    Pessoas, Conteúdo, Plataforma, Sistema).
- *  • Filter input at the top filters by label or hint.
- *  • Active item has a vertical accent bar + filled background.
+ *  • Groups are semantically tonalized (Cockpit=info, Confiança & Segurança=danger,
+ *    Pessoas=warn, Conteúdo=info, Plataforma=success, Sistema=system).
+ *  • Group label, active accent bar and active background fade follow the tone.
+ *  • Reports badge animates when there is moderation pressure.
  *  • Used both as static desktop sidebar and as mobile drawer (when `inDrawer`).
  */
 export function AdminSidebar({
@@ -57,7 +57,9 @@ export function AdminSidebar({
                 <Link to="/admin" className="ops-side__brand" data-testid="admin-sidebar-brand">
                     <span className="ops-side__brand-mark">L</span>
                     <span className="ops-side__brand-name">Lusorae</span>
-                    <span className="ops-side__brand-env">{appEnv.slice(0, 4)}</span>
+                    <span className={`ops-side__brand-env ops-side__brand-env--${(appEnv || "prod").toLowerCase()}`}>
+                        {appEnv.slice(0, 4)}
+                    </span>
                 </Link>
                 {inDrawer && (
                     <button
@@ -88,57 +90,80 @@ export function AdminSidebar({
                 {filteredGroups.length === 0 && (
                     <div className="ops-side__empty">Sem resultados para "{query}".</div>
                 )}
-                {filteredGroups.map((group) => (
-                    <div key={group.label} className="ops-side__group-wrap">
-                        <div className="ops-side__group">{group.label}</div>
-                        {group.items.map((it) => {
-                            const Icon = it.icon;
-                            const active = tab === it.key;
-                            const isReports = it.key === "reports";
-                            const showBadge = isReports && openReports > 0;
-                            return (
-                                <button
-                                    key={it.key}
-                                    onClick={() => handleSelect(it.key)}
-                                    type="button"
-                                    className={`ops-side__item ${active ? "ops-side__item--active" : ""}`}
-                                    data-testid={`admin-nav-${it.key}`}
-                                    title={it.hint || it.label}
-                                    aria-current={active ? "page" : undefined}
-                                >
-                                    <span className="ops-side__item-accent" aria-hidden />
-                                    <Icon className="ops-side__item-ic" size={15} />
-                                    <span className="ops-side__item-label">{it.label}</span>
-                                    {showBadge && (
-                                        <span
-                                            className="ops-side__item-badge ops-side__item-badge--danger"
-                                            data-testid="admin-reports-badge"
-                                        >
-                                            {openReports > 99 ? "99+" : openReports}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                ))}
+                {filteredGroups.map((group) => {
+                    const groupTone = group.tone || "slate";
+                    return (
+                        <div key={group.label} className={`ops-side__group-wrap ops-side__group-wrap--tone-${groupTone}`}>
+                            <div className={`ops-side__group ops-side__group--tone-${groupTone}`}>
+                                <span className="ops-side__group-dot" aria-hidden />
+                                <span className="ops-side__group-label">{group.label}</span>
+                            </div>
+                            {group.items.map((it) => {
+                                const Icon = it.icon;
+                                const active = tab === it.key;
+                                const isReports = it.key === "reports";
+                                const showBadge = isReports && openReports > 0;
+                                const itemTone = it.tone || groupTone;
+                                const critical = isReports && openReports >= 5;
+                                return (
+                                    <button
+                                        key={it.key}
+                                        onClick={() => handleSelect(it.key)}
+                                        type="button"
+                                        className={[
+                                            "ops-side__item",
+                                            `ops-side__item--tone-${itemTone}`,
+                                            active ? "ops-side__item--active" : "",
+                                            critical ? "ops-side__item--crit" : "",
+                                        ].filter(Boolean).join(" ")}
+                                        data-testid={`admin-nav-${it.key}`}
+                                        title={it.hint || it.label}
+                                        aria-current={active ? "page" : undefined}
+                                    >
+                                        <span className="ops-side__item-accent" aria-hidden />
+                                        <Icon className="ops-side__item-ic" size={15} />
+                                        <span className="ops-side__item-label">{it.label}</span>
+                                        {showBadge && (
+                                            <span
+                                                className={`ops-side__item-badge ops-side__item-badge--danger ${critical ? "ops-side__item-badge--pulse" : ""}`}
+                                                data-testid="admin-reports-badge"
+                                            >
+                                                {openReports > 99 ? "99+" : openReports}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
             </nav>
 
             {user && (
                 <div className="ops-side__foot">
                     <button type="button" className="ops-side__profile" onClick={onProfileClick} data-testid="admin-sidebar-profile">
-                        {user.avatar ? (
-                            <img src={user.avatar} alt="" className="ops-side__profile-avatar" />
-                        ) : (
-                            <div className="ops-side__profile-avatar" style={{ display: "grid", placeItems: "center", color: "var(--ops-text-muted)", fontFamily: "var(--ops-font-mono)", fontWeight: 600, fontSize: 12 }}>
-                                {(user.name || user.username || "?").slice(0, 1).toUpperCase()}
-                            </div>
-                        )}
+                        <span className="ops-side__profile-avatar-wrap">
+                            {user.avatar ? (
+                                <img src={user.avatar} alt="" className="ops-side__profile-avatar" />
+                            ) : (
+                                <div className="ops-side__profile-avatar" style={{ display: "grid", placeItems: "center", color: "var(--ops-text-muted)", fontFamily: "var(--ops-font-mono)", fontWeight: 600, fontSize: 12 }}>
+                                    {(user.name || user.username || "?").slice(0, 1).toUpperCase()}
+                                </div>
+                            )}
+                            <span className="ops-side__profile-online" aria-hidden />
+                        </span>
                         <div className="ops-side__profile-info">
                             <div className="ops-side__profile-name">{user.name || user.username || "—"}</div>
-                            <div className="ops-side__profile-role">{user.is_admin ? "Admin" : "Member"} · @{user.username}</div>
+                            <div className="ops-side__profile-role">
+                                {user.is_admin ? (
+                                    <span className="ops-side__profile-role-tag ops-side__profile-role-tag--admin">Admin</span>
+                                ) : (
+                                    <span className="ops-side__profile-role-tag">Member</span>
+                                )}
+                                <span className="ops-side__profile-handle">@{user.username}</span>
+                            </div>
                         </div>
-                        <Shield size={13} style={{ color: "var(--ops-text-faint)", marginLeft: "auto" }} />
+                        <Shield size={13} className="ops-side__profile-shield" />
                     </button>
                 </div>
             )}

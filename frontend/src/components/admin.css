@@ -2241,3 +2241,551 @@ body.admin-mode .ops-side { max-width: 100vw; }
     outline: 2px solid var(--ops-info-500);
     outline-offset: 1px;
 }
+
+
+/* =============================================================================
+   SSS-TIER HIERARCHY · ADMIN HEADER + SIDEBAR REFINEMENTS
+   ----------------------------------------------------------------------------
+   Aplicado a todas as páginas/rotas/tabs do painel admin via AdminLayout.
+   Mapeamento semântico (CSS tokens existentes):
+     · danger   — Confiança & Segurança (zona crítica)
+     · warn     — Pessoas (atenção)
+     · info     — Cockpit & Conteúdo (operacional)
+     · success  — Plataforma (saudável)
+     · system   — Sistema (audit, infra, definições)
+     · slate    — fallback neutro
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   SIDEBAR · group labels — color-coded section dividers
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-side__group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+body.admin-mode .ops-side__group-dot {
+    width: 5px; height: 5px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.55;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+body.admin-mode .ops-side__group-label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+body.admin-mode .ops-side__group--tone-danger   { color: var(--ops-danger-600);  }
+body.admin-mode .ops-side__group--tone-warn     { color: var(--ops-warn-600);    }
+body.admin-mode .ops-side__group--tone-info     { color: var(--ops-info-600);    }
+body.admin-mode .ops-side__group--tone-success  { color: var(--ops-success-600); }
+body.admin-mode .ops-side__group--tone-system   { color: var(--ops-system-600);  }
+body.admin-mode .ops-side__group--tone-slate    { color: var(--ops-text-ghost);  }
+
+/* Divider line between groups picks up tone subtly */
+body.admin-mode .ops-side__group-wrap + .ops-side__group-wrap--tone-danger  { border-top-color: var(--ops-danger-tint); }
+body.admin-mode .ops-side__group-wrap + .ops-side__group-wrap--tone-warn    { border-top-color: var(--ops-warn-tint);   }
+body.admin-mode .ops-side__group-wrap + .ops-side__group-wrap--tone-info    { border-top-color: var(--ops-info-tint);   }
+body.admin-mode .ops-side__group-wrap + .ops-side__group-wrap--tone-success { border-top-color: var(--ops-success-tint);}
+body.admin-mode .ops-side__group-wrap + .ops-side__group-wrap--tone-system  { border-top-color: var(--ops-system-tint); }
+
+/* ---------------------------------------------------------------------------
+   SIDEBAR · item active state — tone-aware (NOT always slate-900)
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-side__item {
+    gap: 11px;
+    padding: 8px 10px 8px 14px;
+    font-size: 13px;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+body.admin-mode .ops-side__item-accent {
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+}
+
+/* INACTIVE — keep hover subtle, tinted by tone */
+body.admin-mode .ops-side__item--tone-danger:hover  { background: var(--ops-danger-tint);  color: var(--ops-danger-700);  }
+body.admin-mode .ops-side__item--tone-danger:hover  .ops-side__item-accent  { background: var(--ops-danger-500); }
+body.admin-mode .ops-side__item--tone-warn:hover    { background: var(--ops-warn-tint);    color: var(--ops-warn-700);    }
+body.admin-mode .ops-side__item--tone-warn:hover    .ops-side__item-accent  { background: var(--ops-warn-500);   }
+body.admin-mode .ops-side__item--tone-info:hover    { background: var(--ops-info-tint);    color: var(--ops-info-700);    }
+body.admin-mode .ops-side__item--tone-info:hover    .ops-side__item-accent  { background: var(--ops-info-500);   }
+body.admin-mode .ops-side__item--tone-success:hover { background: var(--ops-success-tint); color: var(--ops-success-700); }
+body.admin-mode .ops-side__item--tone-success:hover .ops-side__item-accent  { background: var(--ops-success-500);}
+body.admin-mode .ops-side__item--tone-system:hover  { background: var(--ops-system-tint);  color: var(--ops-system-700);  }
+body.admin-mode .ops-side__item--tone-system:hover  .ops-side__item-accent  { background: var(--ops-system-500); }
+
+/* ACTIVE — solid contrast (slate-900) but accent bar carries tone color */
+body.admin-mode .ops-side__item--active {
+    background: var(--ops-slate-900);
+    color: #fff;
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset;
+}
+body.admin-mode .ops-side__item--active:hover {
+    background: var(--ops-slate-800);
+    color: #fff;
+}
+body.admin-mode .ops-side__item--tone-danger.ops-side__item--active  .ops-side__item-accent { background: var(--ops-danger-500);  box-shadow: 0 0 12px var(--ops-danger-tint); }
+body.admin-mode .ops-side__item--tone-warn.ops-side__item--active    .ops-side__item-accent { background: var(--ops-warn-500);    box-shadow: 0 0 12px var(--ops-warn-tint);   }
+body.admin-mode .ops-side__item--tone-info.ops-side__item--active    .ops-side__item-accent { background: var(--ops-info-500);    box-shadow: 0 0 12px var(--ops-info-tint);   }
+body.admin-mode .ops-side__item--tone-success.ops-side__item--active .ops-side__item-accent { background: var(--ops-success-500); box-shadow: 0 0 12px var(--ops-success-tint);}
+body.admin-mode .ops-side__item--tone-system.ops-side__item--active  .ops-side__item-accent { background: var(--ops-system-500);  box-shadow: 0 0 12px var(--ops-system-tint); }
+
+/* Active icon tint follows tone */
+body.admin-mode .ops-side__item--tone-danger.ops-side__item--active  .ops-side__item-ic { color: var(--ops-danger-200);  }
+body.admin-mode .ops-side__item--tone-warn.ops-side__item--active    .ops-side__item-ic { color: var(--ops-warn-200);    }
+body.admin-mode .ops-side__item--tone-info.ops-side__item--active    .ops-side__item-ic { color: var(--ops-info-200);    }
+body.admin-mode .ops-side__item--tone-success.ops-side__item--active .ops-side__item-ic { color: var(--ops-success-200); }
+body.admin-mode .ops-side__item--tone-system.ops-side__item--active  .ops-side__item-ic { color: #ddd6fe;                }
+
+/* FOCUS-VISIBLE — a11y ring */
+body.admin-mode .ops-side__item:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: -1px;
+}
+
+/* Critical badge — pulsing attention when reports pile up */
+body.admin-mode .ops-side__item-badge--pulse {
+    animation: ops-badge-pulse 1.8s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+}
+@keyframes ops-badge-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+    50%      { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+}
+
+/* Active row badge — match tone */
+body.admin-mode .ops-side__item--tone-danger.ops-side__item--active  .ops-side__item-badge { background: var(--ops-danger-500); color: #fff; }
+body.admin-mode .ops-side__item--tone-warn.ops-side__item--active    .ops-side__item-badge { background: var(--ops-warn-500);   color: #fff; }
+body.admin-mode .ops-side__item--tone-info.ops-side__item--active    .ops-side__item-badge { background: var(--ops-info-500);   color: #fff; }
+body.admin-mode .ops-side__item--tone-success.ops-side__item--active .ops-side__item-badge { background: var(--ops-success-500);color: #fff; }
+body.admin-mode .ops-side__item--tone-system.ops-side__item--active  .ops-side__item-badge { background: var(--ops-system-500); color: #fff; }
+
+/* ---------------------------------------------------------------------------
+   SIDEBAR · brand env tag — color-code by environment
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-side__brand-env--prod        { background: var(--ops-success-tint); color: var(--ops-success-700); }
+body.admin-mode .ops-side__brand-env--prod        ::before { content: ""; }
+body.admin-mode .ops-side__brand-env--staging,
+body.admin-mode .ops-side__brand-env--stag        { background: var(--ops-warn-tint);    color: var(--ops-warn-700);    }
+body.admin-mode .ops-side__brand-env--dev,
+body.admin-mode .ops-side__brand-env--develop     { background: var(--ops-info-tint);    color: var(--ops-info-700);    }
+body.admin-mode .ops-side__brand-env--local       { background: var(--ops-system-tint);  color: var(--ops-system-700);  }
+
+/* ---------------------------------------------------------------------------
+   SIDEBAR · profile footer — online dot + role pill
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-side__profile { transition: background 140ms ease; }
+body.admin-mode .ops-side__profile:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: -1px;
+    background: var(--ops-bg-hover);
+}
+body.admin-mode .ops-side__profile-avatar-wrap {
+    position: relative;
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+}
+body.admin-mode .ops-side__profile-online {
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 9px; height: 9px;
+    border-radius: 999px;
+    background: var(--ops-realtime-500);
+    box-shadow: 0 0 0 2px var(--ops-bg-elevated);
+}
+body.admin-mode .ops-side__profile-role {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 1px;
+}
+body.admin-mode .ops-side__profile-role-tag {
+    font-family: var(--ops-font-mono);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--ops-slate-100);
+    color: var(--ops-slate-700);
+    line-height: 1.4;
+}
+body.admin-mode .ops-side__profile-role-tag--admin {
+    background: var(--ops-danger-tint);
+    color: var(--ops-danger-700);
+}
+body.admin-mode .ops-side__profile-handle {
+    font-family: var(--ops-font-mono);
+    font-size: 10px; color: var(--ops-text-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+}
+body.admin-mode .ops-side__profile-shield {
+    color: var(--ops-text-faint);
+    margin-left: auto;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: color 140ms ease, opacity 140ms ease;
+}
+body.admin-mode .ops-side__profile:hover .ops-side__profile-shield {
+    color: var(--ops-info-600);
+    opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   TOPBAR · page identity (L1)
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-top {
+    gap: 14px;
+    padding: 0 18px;
+    border-bottom-color: var(--ops-border);
+    box-shadow: 0 1px 0 0 rgba(15, 23, 42, 0.02);
+}
+
+/* Accent line under topbar — tone-aware (very subtle) */
+body.admin-mode .ops-top--tone-danger   { box-shadow: inset 0 -2px 0 0 rgba(220, 38, 38, 0.10), 0 1px 0 0 rgba(15, 23, 42, 0.02); }
+body.admin-mode .ops-top--tone-warn     { box-shadow: inset 0 -2px 0 0 rgba(217, 119, 6,  0.10), 0 1px 0 0 rgba(15, 23, 42, 0.02); }
+body.admin-mode .ops-top--tone-info     { box-shadow: inset 0 -2px 0 0 rgba(14,  116, 144, 0.10), 0 1px 0 0 rgba(15, 23, 42, 0.02); }
+body.admin-mode .ops-top--tone-success  { box-shadow: inset 0 -2px 0 0 rgba(5,   150, 105, 0.10), 0 1px 0 0 rgba(15, 23, 42, 0.02); }
+body.admin-mode .ops-top--tone-system   { box-shadow: inset 0 -2px 0 0 rgba(124, 58,  237, 0.10), 0 1px 0 0 rgba(15, 23, 42, 0.02); }
+
+body.admin-mode .ops-top__id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex-shrink: 1;
+}
+body.admin-mode .ops-top__id-ic {
+    display: grid; place-items: center;
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    background: var(--ops-slate-100);
+    color: var(--ops-text-muted);
+    flex-shrink: 0;
+    transition: background 140ms ease, color 140ms ease;
+}
+body.admin-mode .ops-top__id-ic--tone-danger  { background: var(--ops-danger-tint);  color: var(--ops-danger-600);  }
+body.admin-mode .ops-top__id-ic--tone-warn    { background: var(--ops-warn-tint);    color: var(--ops-warn-600);    }
+body.admin-mode .ops-top__id-ic--tone-info    { background: var(--ops-info-tint);    color: var(--ops-info-600);    }
+body.admin-mode .ops-top__id-ic--tone-success { background: var(--ops-success-tint); color: var(--ops-success-600); }
+body.admin-mode .ops-top__id-ic--tone-system  { background: var(--ops-system-tint);  color: var(--ops-system-600);  }
+
+body.admin-mode .ops-top__title {
+    display: flex; flex-direction: column;
+    min-width: 0;
+    line-height: 1.1;
+}
+body.admin-mode .ops-top__crumb {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 1px;
+    font-family: var(--ops-font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1;
+}
+body.admin-mode .ops-top__crumb-tag {
+    color: var(--ops-text-faint);
+    transition: color 140ms ease;
+}
+body.admin-mode .ops-top__crumb-tag--tone-danger  { color: var(--ops-danger-600);  }
+body.admin-mode .ops-top__crumb-tag--tone-warn    { color: var(--ops-warn-600);    }
+body.admin-mode .ops-top__crumb-tag--tone-info    { color: var(--ops-info-600);    }
+body.admin-mode .ops-top__crumb-tag--tone-success { color: var(--ops-success-600); }
+body.admin-mode .ops-top__crumb-tag--tone-system  { color: var(--ops-system-600);  }
+body.admin-mode .ops-top__crumb-sep {
+    color: var(--ops-text-ghost);
+}
+@media (max-width: 1024px) {
+    body.admin-mode .ops-top__crumb { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   TOPBAR · command palette button (L2)
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-top__cmd {
+    flex: 1 1 auto;
+    max-width: 520px;
+    margin: 0 8px;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+body.admin-mode .ops-top__cmd:hover {
+    background: var(--ops-bg-elevated);
+    border-color: var(--ops-border-strong);
+    color: var(--ops-text);
+}
+body.admin-mode .ops-top__cmd:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 1px;
+    border-color: var(--ops-info-500);
+}
+body.admin-mode .ops-top__cmd-label {
+    flex: 1 1 auto;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.admin-mode .ops-top__cmd-kbd {
+    margin-left: auto;
+    background: var(--ops-bg-elevated);
+    border: 1px solid var(--ops-border-subtle);
+    color: var(--ops-text-faint);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-family: var(--ops-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   TOPBAR · context + actions (L3 + L4)
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-top__actions {
+    display: flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Live pill — color-coded by state */
+body.admin-mode .ops-top__live {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 28px; padding: 0 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+    font-variant-numeric: tabular-nums;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+body.admin-mode .ops-top__live-dot {
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+body.admin-mode .ops-top__live--live {
+    background: var(--ops-realtime-tint);
+    color: var(--ops-realtime-700);
+    border-color: rgba(20, 184, 166, 0.18);
+}
+body.admin-mode .ops-top__live--live .ops-top__live-dot {
+    background: var(--ops-realtime-500);
+    animation: ops-livedot 1.6s ease-in-out infinite;
+}
+body.admin-mode .ops-top__live--polling {
+    background: var(--ops-warn-tint);
+    color: var(--ops-warn-700);
+    border-color: rgba(217, 119, 6, 0.18);
+}
+body.admin-mode .ops-top__live--polling .ops-top__live-dot {
+    background: var(--ops-warn-500);
+    animation: ops-livedot-warn 1.2s ease-in-out infinite;
+}
+body.admin-mode .ops-top__live--offline {
+    background: var(--ops-slate-100);
+    color: var(--ops-text-faint);
+    border-color: var(--ops-border-subtle);
+}
+body.admin-mode .ops-top__live--offline .ops-top__live-dot {
+    background: var(--ops-slate-400);
+}
+@keyframes ops-livedot {
+    0%, 100% { box-shadow: 0 0 0 0 var(--ops-realtime-pulse); }
+    50%      { box-shadow: 0 0 0 5px rgba(20, 184, 166, 0); }
+}
+@keyframes ops-livedot-warn {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+@media (max-width: 1024px) {
+    body.admin-mode .ops-top__live-text { display: none; }
+    body.admin-mode .ops-top__live { padding: 0 8px; }
+}
+
+/* Time range select — refined */
+body.admin-mode .ops-top__time {
+    height: 30px;
+    padding: 0 8px 0 10px;
+    border-radius: 8px;
+    background: var(--ops-bg-elevated);
+    border: 1px solid var(--ops-border-subtle);
+    font-family: var(--ops-font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ops-text-muted);
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+body.admin-mode .ops-top__time:hover {
+    background: var(--ops-bg-sunken);
+    color: var(--ops-text);
+    border-color: var(--ops-border-strong);
+}
+body.admin-mode .ops-top__time:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 1px;
+    border-color: var(--ops-info-500);
+}
+
+/* Divider between L3 (context) and L4 (actions) */
+body.admin-mode .ops-top__sep {
+    display: inline-block;
+    width: 1px; height: 22px;
+    background: var(--ops-border);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+@media (max-width: 768px) {
+    body.admin-mode .ops-top__sep { display: none; }
+}
+
+/* Icon buttons — refined hierarchy */
+body.admin-mode .ops-top__icon-btn {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--ops-text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+body.admin-mode .ops-top__icon-btn:hover {
+    background: var(--ops-bg-hover);
+    color: var(--ops-text);
+}
+body.admin-mode .ops-top__icon-btn:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 1px;
+}
+body.admin-mode .ops-top__icon-btn:disabled {
+    opacity: 0.5; cursor: not-allowed;
+}
+
+/* Tone-aware icon button variants */
+body.admin-mode .ops-top__icon-btn--info:hover {
+    background: var(--ops-info-tint);
+    color: var(--ops-info-700);
+}
+body.admin-mode .ops-top__icon-btn--danger:hover:not(:disabled) {
+    background: var(--ops-danger-tint);
+    color: var(--ops-danger-600);
+    border-color: rgba(220, 38, 38, 0.20);
+}
+body.admin-mode .ops-top__icon-btn--danger:focus-visible {
+    outline-color: var(--ops-danger-500);
+}
+body.admin-mode .ops-top__icon-btn--success:hover {
+    background: var(--ops-success-tint);
+    color: var(--ops-success-700);
+}
+body.admin-mode .ops-top__icon-btn--active {
+    background: var(--ops-info-tint);
+    color: var(--ops-info-700);
+    border-color: rgba(14, 116, 144, 0.18);
+}
+
+/* Numeric notif badge (replaces old red dot) */
+body.admin-mode .ops-top__notif-count {
+    position: absolute;
+    top: -3px; right: -3px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--ops-danger-500);
+    color: #fff;
+    font-family: var(--ops-font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    border: 1.5px solid var(--ops-bg-elevated);
+    pointer-events: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+}
+
+/* "Voltar à app" — primary contextual button with optional inline label */
+body.admin-mode .ops-top__back {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 32px;
+    padding: 0 12px 0 10px;
+    border-radius: 8px;
+    background: var(--ops-slate-900);
+    color: #fff;
+    border: 1px solid var(--ops-slate-900);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    flex-shrink: 0;
+}
+body.admin-mode .ops-top__back:hover {
+    background: var(--ops-slate-800);
+    border-color: var(--ops-slate-800);
+}
+body.admin-mode .ops-top__back:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 2px;
+}
+body.admin-mode .ops-top__back-label {
+    display: none;
+}
+@media (min-width: 1280px) {
+    body.admin-mode .ops-top__back-label { display: inline; }
+}
+@media (max-width: 1279px) {
+    body.admin-mode .ops-top__back { width: 32px; padding: 0; justify-content: center; }
+}
+
+/* ---------------------------------------------------------------------------
+   TOPBAR · responsive
+   --------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+    body.admin-mode .ops-top { padding: 0 14px; gap: 10px; }
+    body.admin-mode .ops-top__id-ic { width: 28px; height: 28px; }
+    body.admin-mode .ops-top__title-sub { display: none; }
+}
+@media (max-width: 768px) {
+    body.admin-mode .ops-top { padding: 0 10px; gap: 6px; }
+    body.admin-mode .ops-top__cmd { display: none; }
+    body.admin-mode .ops-top__title-h { font-size: 14px; }
+    body.admin-mode .ops-top__id-ic { display: none; }
+    body.admin-mode .ops-top__actions { gap: 3px; }
+    body.admin-mode .ops-top__icon-btn,
+    body.admin-mode .ops-top__back { width: 30px; height: 30px; }
+    body.admin-mode .ops-top__back { padding: 0; }
+    body.admin-mode .ops-top__live { display: none; }
+    body.admin-mode .ops-top__time { padding: 0 6px; font-size: 10.5px; }
+}
+@media (max-width: 440px) {
+    body.admin-mode .ops-top__time { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   PAGE HEADER (Admin.js tabs) — softer hierarchy on h2
+   --------------------------------------------------------------------------- */
+body.admin-mode .ops-page-header {
+    padding: 4px 0 12px;
+    border-bottom: 1px solid var(--ops-border-subtle);
+    margin-bottom: 14px;
+}
+body.admin-mode .ops-page-header__title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ops-text);
+}
+body.admin-mode .ops-page-header .ops-subtitle {
+    color: var(--ops-text-muted);
+    font-size: 12.5px;
+    margin-top: 4px;
+}
+
+/* End of SSS-tier additions ================================================ */

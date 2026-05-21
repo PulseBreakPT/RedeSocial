@@ -15,7 +15,13 @@ import "./admin.css";
 import { AdminSidebar } from "./admin/AdminSidebar";
 import { AdminTopbar } from "./admin/AdminTopbar";
 import { CommandPalette } from "./admin/CommandPalette";
-import { NAV_BY_KEY } from "./admin/navConfig";
+import { NAV_BY_KEY, NAV_GROUPS } from "./admin/navConfig";
+
+// Quick lookup: tab key -> group label (for breadcrumb in topbar).
+const GROUP_LABEL_BY_KEY = NAV_GROUPS.reduce((acc, g) => {
+    g.items.forEach((it) => { acc[it.key] = g.label; });
+    return acc;
+}, {});
 import { useWsState } from "./WebSocketProvider";
 import { api } from "../lib/api";
 
@@ -150,6 +156,9 @@ export function AdminLayout() {
                 <AdminTopbar
                     title={current.label}
                     subtitle={current.hint}
+                    icon={current.icon}
+                    tone={current.tone || "slate"}
+                    groupLabel={GROUP_LABEL_BY_KEY[current.key]}
                     wsState={wsState}
                     onOpenCommand={() => setCmdOpen(true)}
                     onOpenNotifications={() => setTab("audit")}
