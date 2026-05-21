@@ -77,6 +77,16 @@ export function CookieBanner() {
     const [prefs, setPrefs] = useState(DEFAULT_PREFS);
 
     useEffect(() => {
+        // Skip banner entirely inside the admin shell — admins consent via
+        // their own legal/privacy flow and the banner conflicts with the
+        // operational density of the panel.
+        const isAdminRoute = typeof window !== "undefined"
+            && (window.location.pathname || "").startsWith("/admin");
+        if (isAdminRoute) {
+            const existing = readConsent();
+            if (existing) setPrefs({ ...DEFAULT_PREFS, ...existing.prefs });
+            return undefined;
+        }
         const existing = readConsent();
         if (!existing) {
             setOpen(true);

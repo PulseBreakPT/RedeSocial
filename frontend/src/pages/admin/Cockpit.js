@@ -3,7 +3,7 @@ import {
     Users as UsersIcon, FileText, MessageSquare, Mail,
     Flag, ShieldOff,
 } from "lucide-react";
-import api from "../../lib/api";
+import { api } from "../../lib/api";
 import { useAdminLive } from "../../hooks/useAdminLive";
 import { KpiCard } from "../../components/admin/KpiCard";
 import { MiniKpi } from "../../components/admin/MiniKpi";

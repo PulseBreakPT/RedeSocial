@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
-import api from "../lib/api";
+import { api } from "../lib/api";
 
 /**
  * useAdminLive — hybrid live-data hook for the admin cockpit.

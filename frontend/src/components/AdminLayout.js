@@ -17,7 +17,7 @@ import { AdminTopbar } from "./admin/AdminTopbar";
 import { CommandPalette } from "./admin/CommandPalette";
 import { NAV_BY_KEY } from "./admin/navConfig";
 import { useWsState } from "./WebSocketProvider";
-import api from "../lib/api";
+import { api } from "../lib/api";
 
 // Read shared session state used by Cockpit + tabs from query string
 export function useAdminTab() {
