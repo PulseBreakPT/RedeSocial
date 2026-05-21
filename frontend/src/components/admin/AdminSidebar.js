@@ -1,20 +1,95 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NAV_GROUPS } from "./navConfig";
-import { Shield } from "lucide-react";
+import { Shield, X as XIcon, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export function AdminSidebar({ tab, onSelect, user, onProfileClick, openReports = 0, appEnv = "production" }) {
+/**
+ * AdminSidebar — organized left navigation.
+ *
+ *  • Groups are visually separated and labeled (Cockpit, Confiança & Segurança,
+ *    Pessoas, Conteúdo, Plataforma, Sistema).
+ *  • Filter input at the top filters by label or hint.
+ *  • Active item has a vertical accent bar + filled background.
+ *  • Used both as static desktop sidebar and as mobile drawer (when `inDrawer`).
+ */
+export function AdminSidebar({
+    tab,
+    onSelect,
+    user,
+    onProfileClick,
+    openReports = 0,
+    appEnv = "production",
+    inDrawer = false,
+    onClose,
+}) {
+    const [query, setQuery] = useState("");
+    const q = query.trim().toLowerCase();
+
+    // Close drawer on Esc
+    useEffect(() => {
+        if (!inDrawer) return undefined;
+        const onKey = (e) => { if (e.key === "Escape") onClose && onClose(); };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [inDrawer, onClose]);
+
+    const filteredGroups = NAV_GROUPS.map((g) => {
+        if (!q) return g;
+        const items = g.items.filter((it) => {
+            const hay = `${it.label || ""} ${it.hint || ""} ${it.key || ""}`.toLowerCase();
+            return hay.includes(q);
+        });
+        return { ...g, items };
+    }).filter((g) => g.items.length > 0);
+
+    const handleSelect = (key) => {
+        onSelect && onSelect(key);
+        if (inDrawer) onClose && onClose();
+    };
+
     return (
-        <aside className="ops-side ops-shell__side" data-testid="admin-sidebar-v2" aria-label="Navegação admin">
-            <Link to="/admin" className="ops-side__brand" data-testid="admin-sidebar-brand">
-                <span className="ops-side__brand-mark">L</span>
-                <span className="ops-side__brand-name">Lusorae</span>
-                <span className="ops-side__brand-env">{appEnv.slice(0, 4)}</span>
-            </Link>
+        <aside
+            className={`ops-side ops-shell__side ${inDrawer ? "ops-side--drawer" : ""}`}
+            data-testid={inDrawer ? "admin-sidebar-drawer" : "admin-sidebar-v2"}
+            aria-label="Navegação admin"
+        >
+            <div className="ops-side__brand-row">
+                <Link to="/admin" className="ops-side__brand" data-testid="admin-sidebar-brand">
+                    <span className="ops-side__brand-mark">L</span>
+                    <span className="ops-side__brand-name">Lusorae</span>
+                    <span className="ops-side__brand-env">{appEnv.slice(0, 4)}</span>
+                </Link>
+                {inDrawer && (
+                    <button
+                        type="button"
+                        className="ops-side__close"
+                        onClick={onClose}
+                        aria-label="Fechar menu"
+                        data-testid="admin-sidebar-close"
+                    >
+                        <XIcon size={16} />
+                    </button>
+                )}
+            </div>
+
+            <div className="ops-side__search">
+                <Search size={13} className="ops-side__search-ic" aria-hidden />
+                <input
+                    type="text"
+                    className="ops-side__search-input"
+                    placeholder="Filtrar menu…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    data-testid="admin-sidebar-search"
+                />
+            </div>
 
             <nav className="ops-side__nav">
-                {NAV_GROUPS.map((group) => (
-                    <div key={group.label}>
+                {filteredGroups.length === 0 && (
+                    <div className="ops-side__empty">Sem resultados para "{query}".</div>
+                )}
+                {filteredGroups.map((group) => (
+                    <div key={group.label} className="ops-side__group-wrap">
                         <div className="ops-side__group">{group.label}</div>
                         {group.items.map((it) => {
                             const Icon = it.icon;
@@ -24,14 +99,15 @@ export function AdminSidebar({ tab, onSelect, user, onProfileClick, openReports 
                             return (
                                 <button
                                     key={it.key}
-                                    onClick={() => onSelect && onSelect(it.key)}
+                                    onClick={() => handleSelect(it.key)}
                                     type="button"
                                     className={`ops-side__item ${active ? "ops-side__item--active" : ""}`}
                                     data-testid={`admin-nav-${it.key}`}
                                     title={it.hint || it.label}
                                     aria-current={active ? "page" : undefined}
                                 >
-                                    <Icon className="ops-side__item-ic" size={16} />
+                                    <span className="ops-side__item-accent" aria-hidden />
+                                    <Icon className="ops-side__item-ic" size={15} />
                                     <span className="ops-side__item-label">{it.label}</span>
                                     {showBadge && (
                                         <span

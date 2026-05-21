@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Maximize2, Home as HomeIcon, LogOut, Loader2 } from "lucide-react";
+import { Search, Bell, Maximize2, Home as HomeIcon, LogOut, Loader2, Menu as MenuIcon } from "lucide-react";
 
 function useFullscreen() {
     const [isFs, setIsFs] = React.useState(typeof document !== "undefined" && !!document.fullscreenElement);
@@ -23,6 +23,7 @@ export function AdminTopbar({
     wsState = "offline",
     onOpenCommand,
     onOpenNotifications,
+    onOpenMenu,
     notifBadge = 0,
     timeRange = "15m",
     onChangeTimeRange,
@@ -37,6 +38,18 @@ export function AdminTopbar({
     const liveClass = wsState === "live" ? "" : (wsState === "reconnecting" ? "ops-top__live--polling" : "ops-top__live--offline");
     return (
         <header className="ops-top" data-testid="admin-topbar-v2">
+            {onOpenMenu && (
+                <button
+                    type="button"
+                    className="ops-top__menu"
+                    onClick={onOpenMenu}
+                    aria-label="Abrir menu"
+                    data-testid="admin-topbar-menu"
+                >
+                    <MenuIcon size={16} />
+                </button>
+            )}
+
             <div className="ops-top__title">
                 <div className="ops-top__title-h">{title || "Cockpit"}</div>
                 {subtitle && <div className="ops-top__title-sub">{subtitle}</div>}

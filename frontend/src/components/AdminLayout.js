@@ -51,11 +51,39 @@ export function AdminLayout() {
     const [cmdOpen, setCmdOpen] = useState(false);
     const [openReports, setOpenReports] = useState(0);
     const [loggingOut, setLoggingOut] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(() =>
+        typeof window !== "undefined" ? window.matchMedia("(max-width: 1024px)").matches : false
+    );
 
     useEffect(() => {
         document.body.classList.add("admin-mode");
         return () => document.body.classList.remove("admin-mode");
     }, []);
+
+    // Track viewport width so we render either static sidebar (desktop) or drawer-only (mobile).
+    useEffect(() => {
+        if (typeof window === "undefined") return undefined;
+        const mq = window.matchMedia("(max-width: 1024px)");
+        const handler = (e) => {
+            setIsMobile(e.matches);
+            if (!e.matches) setDrawerOpen(false); // closing drawer when leaving mobile
+        };
+        if (mq.addEventListener) mq.addEventListener("change", handler);
+        else mq.addListener(handler);
+        return () => {
+            if (mq.removeEventListener) mq.removeEventListener("change", handler);
+            else mq.removeListener(handler);
+        };
+    }, []);
+
+    // Lock body scroll while drawer is open
+    useEffect(() => {
+        if (!drawerOpen) return undefined;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = prev; };
+    }, [drawerOpen]);
 
     // ⌘K / Ctrl-K binding (capture phase so it wins against any inner handler)
     useEffect(() => {
@@ -106,15 +134,17 @@ export function AdminLayout() {
     };
 
     return (
-        <div className="ops-shell" data-testid="admin-layout-v2">
-            <AdminSidebar
-                tab={tab}
-                onSelect={setTab}
-                user={user}
-                openReports={openReports}
-                onProfileClick={() => navigate("/profile")}
-                appEnv={(typeof window !== "undefined" && window.__APP_ENV__) || "prod"}
-            />
+        <div className={`ops-shell ${isMobile ? "ops-shell--mobile" : ""}`} data-testid="admin-layout-v2">
+            {!isMobile && (
+                <AdminSidebar
+                    tab={tab}
+                    onSelect={setTab}
+                    user={user}
+                    openReports={openReports}
+                    onProfileClick={() => navigate("/profile")}
+                    appEnv={(typeof window !== "undefined" && window.__APP_ENV__) || "prod"}
+                />
+            )}
 
             <div className="ops-shell__topbar">
                 <AdminTopbar
@@ -123,6 +153,7 @@ export function AdminLayout() {
                     wsState={wsState}
                     onOpenCommand={() => setCmdOpen(true)}
                     onOpenNotifications={() => setTab("audit")}
+                    onOpenMenu={isMobile ? () => setDrawerOpen(true) : undefined}
                     notifBadge={openReports}
                     timeRange={timeRange}
                     onChangeTimeRange={setTimeRange}
@@ -136,6 +167,29 @@ export function AdminLayout() {
                     <Outlet context={{ tab, setTab, timeRange, setTimeRange, openCommand: () => setCmdOpen(true) }} />
                 </div>
             </main>
+
+            {/* Mobile drawer */}
+            {isMobile && drawerOpen && (
+                <>
+                    <button
+                        type="button"
+                        className="ops-side__backdrop"
+                        aria-label="Fechar menu"
+                        onClick={() => setDrawerOpen(false)}
+                        data-testid="admin-sidebar-backdrop"
+                    />
+                    <AdminSidebar
+                        tab={tab}
+                        onSelect={setTab}
+                        user={user}
+                        openReports={openReports}
+                        onProfileClick={() => { navigate("/profile"); setDrawerOpen(false); }}
+                        appEnv={(typeof window !== "undefined" && window.__APP_ENV__) || "prod"}
+                        inDrawer
+                        onClose={() => setDrawerOpen(false)}
+                    />
+                </>
+            )}
 
             <CommandPalette
                 open={cmdOpen}
