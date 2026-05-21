@@ -10,7 +10,7 @@ import json
 from typing import Dict, Any
 
 # Configuration
-BASE_URL = "https://lusorae-hardened.preview.emergentagent.com/api"
+BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@lusorae.app"
 ADMIN_PASSWORD = "Admin#Lusorae2025"
 

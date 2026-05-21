@@ -10,7 +10,7 @@ import base64
 from typing import Optional
 
 # Backend URL (use /api prefix for all routes)
-BASE_URL = "https://lusorae-hardened.preview.emergentagent.com/api"
+BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
 
 # Test credentials from /app/memory/test_credentials.md
 ADMIN_EMAIL = "admin@lusorae.app"

@@ -1,7 +1,7 @@
 # H1-H4 Security Hardening Test Summary
 
 **Test Date:** 2026-05-21  
-**Backend:** https://lusorae-hardened.preview.emergentagent.com/api  
+**Backend:** https://prodlock-armor.preview.emergentagent.com/api  
 **Test Credentials:** admin@lusorae.app / Admin#Lusorae2025  
 **Test File:** /app/backend_test_h1h4.py  
 **Test Output:** /app/h1h4_test_output.log  
