@@ -9,7 +9,7 @@ const TONE_COLOR = {
 
 export function MiniKpi({
     label, value, delta = null, deltaSub = null, sparkline = [],
-    tone = "info", inverted = false, onClick, "data-testid": testId,
+    tone = "info", inverted = false, onClick, title, "data-testid": testId,
     formatValue = (v) => (v == null ? "—" : Number(v).toLocaleString("pt-PT")),
 }) {
     const c = TONE_COLOR[tone] || TONE_COLOR.info;
@@ -21,9 +21,15 @@ export function MiniKpi({
         deltaClass = good ? "ops-mini-kpi__delta--up" : "ops-mini-kpi__delta--down";
         DeltaIcon = positive ? ArrowUpRight : ArrowDownRight;
     }
-    const interactive = onClick ? { role: "button", tabIndex: 0, onClick, style: { cursor: "pointer" } } : {};
+    const interactive = onClick ? {
+        role: "button",
+        tabIndex: 0,
+        onClick,
+        onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(e); } },
+        style: { cursor: "pointer" },
+    } : {};
     return (
-        <div className="ops-mini-kpi" data-testid={testId} {...interactive}>
+        <div className="ops-mini-kpi" data-testid={testId} title={title} {...interactive}>
             <div className="ops-mini-kpi__label">{label}</div>
             <div className="ops-mini-kpi__row">
                 <div>

@@ -57,16 +57,17 @@ export function AdminLayout() {
         return () => document.body.classList.remove("admin-mode");
     }, []);
 
-    // ⌘K / Ctrl-K binding
+    // ⌘K / Ctrl-K binding (capture phase so it wins against any inner handler)
     useEffect(() => {
         const onKey = (e) => {
             if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
+                e.stopPropagation();
                 setCmdOpen((v) => !v);
             }
         };
-        document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
+        document.addEventListener("keydown", onKey, true);
+        return () => document.removeEventListener("keydown", onKey, true);
     }, []);
 
     // Poll open reports count for the sidebar badge (kept simple, 30s)

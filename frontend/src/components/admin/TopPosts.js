@@ -12,7 +12,7 @@ function relTime(iso) {
     return `${Math.floor(diff / 86400)}d`;
 }
 
-export function TopPosts({ items = [] }) {
+export function TopPosts({ items = [], onSelect }) {
     if (!items.length) {
         return (
             <div className="ops-empty">
@@ -25,8 +25,15 @@ export function TopPosts({ items = [] }) {
         <div>
             {items.map((p) => {
                 const initial = ((p.author && (p.author.username || p.author.name)) || "?").slice(0, 1).toUpperCase();
+                const clickable = typeof onSelect === "function";
+                const Tag = clickable ? "button" : "div";
+                const interactive = clickable ? {
+                    type: "button",
+                    onClick: () => onSelect(p),
+                    "data-testid": `cockpit-top-post-${p.id}`,
+                } : {};
                 return (
-                    <div key={p.id} className="ops-post-row">
+                    <Tag key={p.id} className={`ops-post-row ${clickable ? "ops-post-row--clickable" : ""}`} {...interactive}>
                         {p.author && p.author.avatar ? (
                             <img src={p.author.avatar} alt="" className="ops-post-row__avatar" />
                         ) : (
@@ -43,7 +50,7 @@ export function TopPosts({ items = [] }) {
                             <span><Heart size={10} /> {Number(p.likes_count || 0).toLocaleString("pt-PT")}</span>
                             <span><MessageCircle size={10} /> {Number(p.comments_count || 0).toLocaleString("pt-PT")}</span>
                         </div>
-                    </div>
+                    </Tag>
                 );
             })}
         </div>

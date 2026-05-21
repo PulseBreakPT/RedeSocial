@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 export function AdminSidebar({ tab, onSelect, user, onProfileClick, openReports = 0, appEnv = "production" }) {
     return (
-        <aside className="ops-side" data-testid="admin-sidebar-v2" aria-label="Navegação admin">
+        <aside className="ops-side ops-shell__side" data-testid="admin-sidebar-v2" aria-label="Navegação admin">
             <Link to="/admin" className="ops-side__brand" data-testid="admin-sidebar-brand">
                 <span className="ops-side__brand-mark">L</span>
                 <span className="ops-side__brand-name">Lusorae</span>

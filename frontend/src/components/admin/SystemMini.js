@@ -16,13 +16,16 @@ function barTone(pct) {
     return "";
 }
 
-export function SystemMini({ data }) {
+export function SystemMini({ data, onSelect }) {
     const cpu = data?.cpu_percent;
     const mem = data?.memory_percent;
     const lat = data?.api_latency_ms;
     const uptime = data?.uptime_seconds;
+    const clickable = typeof onSelect === "function";
+    const Tag = clickable ? "button" : "div";
+    const props = clickable ? { type: "button", onClick: onSelect, "data-testid": "sysmini-open" } : {};
     return (
-        <div className="ops-sysmini">
+        <Tag className={`ops-sysmini ${clickable ? "ops-sysmini--clickable" : ""}`} {...props}>
             <div className="ops-sysmini__cell">
                 <div className="ops-sysmini__label">Uptime</div>
                 <div className="ops-sysmini__value">{formatUptime(uptime)}</div>
@@ -41,7 +44,7 @@ export function SystemMini({ data }) {
                 <div className="ops-sysmini__value">{Number.isFinite(mem) ? `${mem.toFixed(1)}%` : "—"}</div>
                 <div className="ops-sysmini__bar"><div className={`ops-sysmini__bar-fill ${barTone(mem) ? `ops-sysmini__bar-fill--${barTone(mem)}` : ""}`} style={{ width: `${Math.min(100, mem || 0)}%` }} /></div>
             </div>
-        </div>
+        </Tag>
     );
 }
 

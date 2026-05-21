@@ -9,6 +9,7 @@ import re
 import json
 import math
 import uuid
+import hashlib
 import asyncio
 import logging
 import secrets
@@ -66,6 +67,7 @@ db = client[_db_name]
 
 # Auth telemetry / lockout / authz helpers — wire the db handle right away
 # so any import after this point can use auth_event / require_owner_or_admin.
+import auth_security as auth_security_mod
 from auth_security import (
     bind_db as _bind_auth_db,
     auth_event,
@@ -11348,7 +11350,7 @@ async def admin_security_overview(admin=Depends(require_admin)):
         # so an operator can correlate that the deployed secret matches the
         # secret-manager record without disclosing it.
         "jwt_secret_fp": hashlib.sha256((JWT_SECRET or "").encode()).hexdigest()[:8],
-        "access_token_ttl_s": int(JWT_ACCESS_TTL.total_seconds()) if hasattr(JWT_ACCESS_TTL, "total_seconds") else None,
+        "access_token_ttl_s": 7 * 24 * 3600,  # access tokens live 7 days (see encode_access in server.py line ~550)
         "cookie_secure": COOKIE_SECURE,
         "cookie_samesite": os.environ.get("COOKIE_SAMESITE", "lax"),
         "ws_max_sockets_per_user": ws_manager.MAX_SOCKETS_PER_USER,

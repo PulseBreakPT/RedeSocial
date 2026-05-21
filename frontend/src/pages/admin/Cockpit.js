@@ -208,7 +208,16 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                 {/* Left column: chart + services */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     <div className="ops-cockpit-center">
-                        <Widget title="Atividade da plataforma" sub={timeline ? `· ${timeline.num_buckets} buckets · ${Math.round(timeline.bucket_seconds / 60)}min` : ""}>
+                        <Widget
+                            title="Atividade da plataforma"
+                            sub={timeline ? `· ${timeline.num_buckets} buckets · ${Math.round(timeline.bucket_seconds / 60)}min` : ""}
+                            info={{
+                                title: "Atividade agregada no tempo",
+                                body: "Quantos eventos (utilizadores únicos, posts, comentários, mensagens) ocorreram em cada bucket de tempo da janela seleccionada. Útil para detectar picos súbitos vs. tendência calma.",
+                                source: `GET /api/admin/cockpit/timeline?window=${timeRange}`,
+                            }}
+                            data-testid="cockpit-widget-timeline"
+                        >
                             {timelineLoading && !timeline ? (
                                 <Skeleton height={240} />
                             ) : (
@@ -219,8 +228,19 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                                 />
                             )}
                         </Widget>
-                        <Widget title="Estado dos serviços" action={{ label: "Ver detalhes →", onClick: () => onNavigate && onNavigate("system") }}>
-                            {loading && !data ? <Skeleton height={200} /> : <ServiceStatus services={services} />}
+                        <Widget
+                            title="Estado dos serviços"
+                            info={{
+                                title: "Health de subsistemas",
+                                body: "Status em tempo real do FastAPI, MongoDB, WebSocket gateway e armazenamento. Cada linha mostra latência real ou erro. Clica num serviço para abrir detalhes em Sistema.",
+                                source: "GET /api/admin/cockpit/services",
+                            }}
+                            action={{ label: "Ver detalhes →", onClick: () => onNavigate && onNavigate("system") }}
+                            data-testid="cockpit-widget-services"
+                        >
+                            {loading && !data ? <Skeleton height={200} /> : (
+                                <ServiceStatus services={services} onSelect={() => onNavigate && onNavigate("system")} />
+                            )}
                         </Widget>
                     </div>
 
@@ -237,6 +257,8 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                                     sparkline={kpis.attacks_blocked && kpis.attacks_blocked.sparkline}
                                     tone="danger"
                                     inverted
+                                    onClick={() => onNavigate && onNavigate("security")}
+                                    title="Tokens inválidos detectados nas últimas 24h. Vai para Segurança."
                                 />
                                 <MiniKpi
                                     label="Falhas de autenticação"
@@ -245,6 +267,8 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                                     sparkline={kpis.attacks_blocked && kpis.attacks_blocked.sparkline}
                                     tone="warn"
                                     inverted
+                                    onClick={() => onNavigate && onNavigate("security")}
+                                    title="Tentativas de login com credenciais erradas (24h). Vai para Segurança."
                                 />
                                 <MiniKpi
                                     label="Novas sessões (15m)"
@@ -252,6 +276,8 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                                     delta={kpis.users_online && kpis.users_online.delta_pct}
                                     sparkline={kpis.users_online && kpis.users_online.sparkline}
                                     tone="success"
+                                    onClick={() => onNavigate && onNavigate("sessions")}
+                                    title="Soma de utilizadores online por bucket nos últimos 15min. Vai para Sessões."
                                 />
                                 <MiniKpi
                                     label="Reports criados (15m)"
@@ -260,6 +286,8 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                                     sparkline={kpis.reports_open && kpis.reports_open.sparkline}
                                     tone="warn"
                                     inverted
+                                    onClick={() => onNavigate && onNavigate("reports")}
+                                    title="Reports abertos por bucket nos últimos 15min. Vai para Reports."
                                 />
                             </>
                         )}
@@ -267,15 +295,44 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
 
                     {/* Trio: trends | top posts | geo */}
                     <div className="ops-cockpit-trio">
-                        <Widget title="Tendências em alta" action={{ label: "Ver todas →", onClick: () => onNavigate && onNavigate("hashtags") }}>
-                            {loading && !data ? <Skeleton height={160} /> : <TrendsList items={trending} />}
+                        <Widget
+                            title="Tendências em alta"
+                            info={{
+                                title: "Hashtags em ascensão",
+                                body: "Tags com maior velocity (variação de uso) na última hora. Inclui contagem absoluta e setas de variação. Clica numa tag para abrir gestão em Hashtags.",
+                                source: "GET /api/admin/cockpit/trending",
+                            }}
+                            action={{ label: "Ver todas →", onClick: () => onNavigate && onNavigate("hashtags") }}
+                            data-testid="cockpit-widget-trending"
+                        >
+                            {loading && !data ? <Skeleton height={160} /> : <TrendsList items={trending} onSelect={() => onNavigate && onNavigate("hashtags")} />}
                         </Widget>
-                        <Widget title="Top publicações" sub="· últimas 24h" action={{ label: "Ver todas →", onClick: () => onNavigate && onNavigate("posts") }}>
-                            {loading && !data ? <Skeleton height={160} /> : <TopPosts items={topPosts} />}
+                        <Widget
+                            title="Top publicações"
+                            sub="· últimas 24h"
+                            info={{
+                                title: "Posts com mais engagement",
+                                body: "Ordenado por score real (likes + 2×comments + 3×reposts) das últimas 24h. Clica num post para abrir detalhes em Publicações.",
+                                source: "GET /api/admin/cockpit/top_posts",
+                            }}
+                            action={{ label: "Ver todas →", onClick: () => onNavigate && onNavigate("posts") }}
+                            data-testid="cockpit-widget-topposts"
+                        >
+                            {loading && !data ? <Skeleton height={160} /> : <TopPosts items={topPosts} onSelect={() => onNavigate && onNavigate("posts")} />}
                         </Widget>
-                        <Widget title="Distribuição geográfica" sub={geo && geo.total_users ? `· ${Number(geo.total_users).toLocaleString("pt-PT")} users` : ""} action={{ label: "Relatório →", onClick: () => onNavigate && onNavigate("users") }}>
+                        <Widget
+                            title="Distribuição geográfica"
+                            sub={geo && geo.total_users ? `· ${Number(geo.total_users).toLocaleString("pt-PT")} users` : ""}
+                            info={{
+                                title: "Onde estão os teus utilizadores",
+                                body: "Distribuição por região PT declarada no perfil. Inclui % do total e contagem absoluta. Útil para campanhas regionais. Clica numa região para abrir o directório filtrado.",
+                                source: "GET /api/admin/cockpit/geo",
+                            }}
+                            action={{ label: "Relatório →", onClick: () => onNavigate && onNavigate("users") }}
+                            data-testid="cockpit-widget-geo"
+                        >
                             {loading && !data ? <Skeleton height={160} /> : (
-                                <GeoDistribution rows={(geo && geo.rows) || []} hasData={!!(geo && geo.has_data)} totalUsers={geo && geo.total_users} />
+                                <GeoDistribution rows={(geo && geo.rows) || []} hasData={!!(geo && geo.has_data)} totalUsers={geo && geo.total_users} onSelect={() => onNavigate && onNavigate("users")} />
                             )}
                         </Widget>
                     </div>
@@ -283,17 +340,40 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
 
                 {/* Right rail: live ticker + urgent reports */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-                    <Widget title="Atividade ao vivo" sub={wsState === "live" ? "· ws ligado" : "· polling"} bodyClass="ops-widget__body--flush" action={{ label: "Audit log →", onClick: () => onNavigate && onNavigate("audit") }}>
+                    <Widget
+                        title="Atividade ao vivo"
+                        sub={wsState === "live" ? "· ws ligado" : "· polling"}
+                        info={{
+                            title: "Stream de eventos da plataforma",
+                            body: "Reports, ações administrativas, eventos de auth e ws_connect. Quando o WebSocket está ligado os eventos chegam em <1s; caso contrário fazemos polling a cada 8s. Clica num evento para abrir o contexto.",
+                            source: "WS cockpit_event · POLL /api/admin/cockpit/snapshot",
+                        }}
+                        bodyClass="ops-widget__body--flush"
+                        action={{ label: "Audit log →", onClick: () => onNavigate && onNavigate("audit") }}
+                        data-testid="cockpit-widget-activity"
+                    >
                         {loading && !data && activity.length === 0 ? <div style={{ padding: 16 }}><Skeleton height={140} /></div> : (
                             <ActivityTicker items={activity.slice(0, 12)} onClickItem={(it) => {
-                                if (!it || !it.ref) return;
+                                if (!it) return;
                                 if (it.kind === "new_report") onNavigate && onNavigate("reports");
                                 else if (it.kind === "admin_action") onNavigate && onNavigate("audit");
                                 else if (it.kind === "auth_event") onNavigate && onNavigate("security");
+                                else onNavigate && onNavigate("audit");
                             }} />
                         )}
                     </Widget>
-                    <Widget title="Reports urgentes" sub={urgentReports.length ? `· ${urgentReports.length}` : ""} bodyClass="ops-widget__body--flush" action={{ label: "Ver todos →", onClick: () => onNavigate && onNavigate("reports") }}>
+                    <Widget
+                        title="Reports urgentes"
+                        sub={urgentReports.length ? `· ${urgentReports.length}` : ""}
+                        info={{
+                            title: "Reports com prioridade máxima",
+                            body: "Filtrados automaticamente por palavras-chave críticas (assédio, ódio, ameaça, doxx, menor, CSAM). Devem ser resolvidos em <1h. Clica para abrir o report no separador Reports.",
+                            source: "GET /api/admin/reports?status=open&limit=4",
+                        }}
+                        bodyClass="ops-widget__body--flush"
+                        action={{ label: "Ver todos →", onClick: () => onNavigate && onNavigate("reports") }}
+                        data-testid="cockpit-widget-urgent"
+                    >
                         <UrgentReports items={urgentReports} onClickItem={() => onNavigate && onNavigate("reports")} />
                     </Widget>
                 </div>
@@ -301,28 +381,89 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
 
             {/* ── Bottom row: dense status widgets ──────────────────────── */}
             <div className="ops-cockpit-bottom">
-                <Widget title="WebSocket" sub="· in-process">
-                    <WebSocketMini sockets={wsSockets} users={wsUsers} sparkline={kpis.users_online && kpis.users_online.sparkline} live={wsState === "live"} />
+                <Widget
+                    title="WebSocket"
+                    sub="· in-process"
+                    info={{
+                        title: "Gateway realtime",
+                        body: "Sockets abertos para feed, notificações e mensagens. Quando um utilizador usa várias abas/dispositivos cria múltiplos sockets — daí 'sockets' poder ser >'users'.",
+                        source: "derived from /api/admin/cockpit/services",
+                    }}
+                    data-testid="cockpit-widget-ws"
+                >
+                    <WebSocketMini sockets={wsSockets} users={wsUsers} sparkline={kpis.users_online && kpis.users_online.sparkline} live={wsState === "live"} onClick={() => onNavigate && onNavigate("system")} />
                 </Widget>
-                <Widget title="Segurança (24h)" action={{ label: "Detalhes →", onClick: () => onNavigate && onNavigate("security") }}>
-                    {securityMini ? <SecurityMini data={securityMini} /> : <Skeleton height={80} />}
+                <Widget
+                    title="Segurança (24h)"
+                    info={{
+                        title: "Resumo de eventos de segurança",
+                        body: "Logins falhados, tokens JWT inválidos, eventos críticos e auto-lockouts nas últimas 24h. Painel completo em Segurança.",
+                        source: "GET /api/admin/cockpit/security_mini",
+                    }}
+                    action={{ label: "Detalhes →", onClick: () => onNavigate && onNavigate("security") }}
+                    data-testid="cockpit-widget-security"
+                >
+                    {securityMini ? <SecurityMini data={securityMini} onSelect={() => onNavigate && onNavigate("security")} /> : <Skeleton height={80} />}
                 </Widget>
-                <Widget title="Sistema" action={{ label: "Detalhes →", onClick: () => onNavigate && onNavigate("system") }}>
-                    {systemMini ? <SystemMini data={systemMini} /> : <Skeleton height={80} />}
+                <Widget
+                    title="Sistema"
+                    info={{
+                        title: "Saúde do backend",
+                        body: "Uptime do processo, CPU host (load avg), uso de memória e latência média p50 das últimas requisições /api. Detalhes por subsistema em Sistema.",
+                        source: "GET /api/admin/cockpit/system_mini",
+                    }}
+                    action={{ label: "Detalhes →", onClick: () => onNavigate && onNavigate("system") }}
+                    data-testid="cockpit-widget-system"
+                >
+                    {systemMini ? <SystemMini data={systemMini} onSelect={() => onNavigate && onNavigate("system")} /> : <Skeleton height={80} />}
                 </Widget>
-                <Widget title="Filas de moderação" action={{ label: "Filas →", onClick: onJumpQueue }}>
+                <Widget
+                    title="Filas de moderação"
+                    info={{
+                        title: "Carga das filas humanas",
+                        body: "Itens por resolver agrupados por queue (urgent, spam, review). Picos aqui indicam necessidade de mais moderadores ou ajuste de filtros automáticos.",
+                        source: "GET /api/admin/cockpit/queues",
+                    }}
+                    action={{ label: "Filas →", onClick: onJumpQueue }}
+                    data-testid="cockpit-widget-queues"
+                >
                     <ModerationQueues queues={queues} onJump={onJumpQueue} />
                 </Widget>
-                <Widget title="Deploy">
+                <Widget
+                    title="Deploy"
+                    info={{
+                        title: "Versão em produção",
+                        body: "Versão git/build em execução, ambiente (development/staging/production) e timestamp do último arranque. Reinícios pode indicar deploy ou crash recovery.",
+                        source: "GET /api/admin/cockpit/deploy",
+                    }}
+                    data-testid="cockpit-widget-deploy"
+                >
                     {deploy ? <DeployMini data={deploy} /> : <Skeleton height={80} />}
                 </Widget>
-                <Widget title="Audit log" action={{ label: "Histórico →", onClick: () => onNavigate && onNavigate("audit") }}>
+                <Widget
+                    title="Audit log"
+                    info={{
+                        title: "Histórico imutável de acções admin",
+                        body: "Toda acção em /api/admin/* fica registada com actor, target, payload e timestamp. Não pode ser apagado. Útil para responsabilização e revisão a posteriori.",
+                        source: "GET /api/admin/audit",
+                    }}
+                    action={{ label: "Histórico →", onClick: () => onNavigate && onNavigate("audit") }}
+                    data-testid="cockpit-widget-audit-mini"
+                >
                     <div style={{ fontSize: 12, color: "var(--ops-text-faint)" }}>
                         {activity.filter((a) => a.kind === "admin_action").length} ações severas nas últimas observações.
                     </div>
                     <div style={{ marginTop: 8 }}>
                         {activity.filter((a) => a.kind === "admin_action").slice(0, 3).map((a) => (
-                            <div key={a.id} style={{ fontSize: 11.5, color: "var(--ops-text)", padding: "4px 0", borderBottom: "1px solid var(--ops-border-subtle)" }}>{a.title}</div>
+                            <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => onNavigate && onNavigate("audit")}
+                                className="ops-cockpit__audit-row"
+                                data-testid={`cockpit-audit-row-${a.id}`}
+                            >
+                                {a.title}
+                            </button>
                         ))}
                         {activity.filter((a) => a.kind === "admin_action").length === 0 && (
                             <div style={{ fontSize: 11, color: "var(--ops-text-ghost)" }}>Nenhuma ação severa recente.</div>

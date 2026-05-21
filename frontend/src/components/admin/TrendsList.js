@@ -1,7 +1,7 @@
 import React from "react";
 import { Sparkline } from "./Sparkline";
 
-export function TrendsList({ items = [] }) {
+export function TrendsList({ items = [], onSelect }) {
     if (!items.length) {
         return (
             <div className="ops-empty">
@@ -10,6 +10,7 @@ export function TrendsList({ items = [] }) {
             </div>
         );
     }
+    const clickable = typeof onSelect === "function";
     return (
         <div>
             {items.map((t, i) => {
@@ -17,8 +18,10 @@ export function TrendsList({ items = [] }) {
                           : t.velocity < -1 ? "ops-trend-row__velocity--down"
                           : "ops-trend-row__velocity--flat";
                 const sign = t.velocity > 0 ? "+" : "";
+                const Tag = clickable ? "button" : "div";
+                const interactive = clickable ? { type: "button", onClick: () => onSelect(t), "data-testid": `cockpit-trend-${t.tag}` } : {};
                 return (
-                    <div key={t.tag} className="ops-trend-row">
+                    <Tag key={t.tag} className={`ops-trend-row ${clickable ? "ops-trend-row--clickable" : ""}`} {...interactive}>
                         <span className="ops-trend-row__rank">{i + 1}</span>
                         <span className="ops-trend-row__tag">#{t.tag}</span>
                         <span className="ops-trend-row__count">{Number(t.count || 0).toLocaleString("pt-PT")} posts</span>
@@ -26,7 +29,7 @@ export function TrendsList({ items = [] }) {
                             <Sparkline data={t.sparkline || []} width={40} height={14} color={t.velocity >= 0 ? "#0e7490" : "#dc2626"} showArea={false} strokeWidth={1.25} />
                             <span className={`ops-trend-row__velocity ${cls}`}>{sign}{(t.velocity || 0).toFixed(1)}%</span>
                         </span>
-                    </div>
+                    </Tag>
                 );
             })}
         </div>

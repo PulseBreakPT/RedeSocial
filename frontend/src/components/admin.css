@@ -829,21 +829,42 @@ body.admin-mode {
 .ops-shell__topbar { grid-area: topbar; }
 .ops-shell__canvas { grid-area: canvas; min-width: 0; }
 
+/* Prevent horizontal overflow at root */
+body.admin-mode,
+body.admin-mode html { overflow-x: hidden; }
+body.admin-mode .ops-shell,
+body.admin-mode .ops-shell__canvas,
+body.admin-mode .ops-shell__topbar,
+body.admin-mode .ops-canvas,
+body.admin-mode .ops-cockpit,
+body.admin-mode .ops-cockpit-main,
+body.admin-mode .ops-cockpit-bottom,
+body.admin-mode .ops-cockpit-trio,
+body.admin-mode .ops-cockpit-center,
+body.admin-mode .ops-kpi-strip,
+body.admin-mode .ops-mini-kpi-strip { min-width: 0; max-width: 100%; }
+body.admin-mode .ops-widget,
+body.admin-mode .ops-kpi,
+body.admin-mode .ops-mini-kpi { min-width: 0; }
+body.admin-mode .ops-top,
+body.admin-mode .ops-side { max-width: 100vw; }
+
 @media (max-width: 1024px) {
     .ops-shell {
-        grid-template-columns: 1fr;
-        grid-template-rows: var(--ops-topbar-h) 1fr var(--ops-bottom-nav-h);
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: var(--ops-topbar-h) auto 1fr;
         grid-template-areas:
             "topbar"
-            "canvas"
-            "side";
+            "side"
+            "canvas";
     }
     .ops-shell__side {
-        position: fixed; bottom: 0; left: 0; right: 0;
-        height: var(--ops-bottom-nav-h);
-        z-index: 50;
+        position: sticky;
+        top: var(--ops-topbar-h);
+        z-index: 25;
+        height: auto;
     }
-    .ops-shell__canvas { padding-bottom: 4px; }
+    .ops-shell__canvas { padding-bottom: 16px; }
 }
 
 /* ── Sidebar (desktop) ──────────────────────────────────────────────────── */
@@ -993,40 +1014,73 @@ body.admin-mode {
     line-height: 1.4;
 }
 
-/* ── Sidebar (mobile bottom nav) ─────────────────────────────────────────── */
+/* ── Sidebar (mobile TOP horizontal nav — sticky below topbar) ───────────── */
 @media (max-width: 1024px) {
     .ops-side {
         position: static;
-        height: var(--ops-bottom-nav-h);
+        height: auto;
         flex-direction: row;
+        align-items: stretch;
         border-right: none;
-        border-top: 1px solid var(--ops-border);
+        border-bottom: 1px solid var(--ops-border);
         backdrop-filter: saturate(140%) blur(14px);
         -webkit-backdrop-filter: saturate(140%) blur(14px);
-        background: rgba(255,255,255,0.95);
+        background: rgba(255, 255, 255, 0.96);
+        max-width: 100vw;
+        overflow: hidden;
     }
     .ops-side__brand, .ops-side__group, .ops-side__foot { display: none; }
     .ops-side__nav {
-        display: flex; flex-direction: row;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
         flex: 1 1 auto;
-        padding: 6px 4px;
-        gap: 2px;
+        padding: 8px 10px;
+        gap: 4px;
         overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .ops-side__nav::-webkit-scrollbar { display: none; }
+    .ops-side__nav > div {
+        display: contents;
     }
     .ops-side__item {
-        flex-direction: column;
-        gap: 2px;
-        padding: 4px 8px;
-        flex: 1 0 auto;
-        min-width: 60px;
-        font-size: 10px;
-        border-radius: 10px;
+        flex-direction: row;
+        gap: 6px;
+        padding: 7px 11px;
+        flex: 0 0 auto;
+        width: auto;
+        min-width: auto;
+        font-size: 12px;
+        border-radius: 999px;
+        scroll-snap-align: start;
+        white-space: nowrap;
+        background: var(--ops-slate-50);
+        border: 1px solid var(--ops-border-subtle);
     }
-    .ops-side__item-ic { width: 18px; height: 18px; }
-    .ops-side__item-badge { display: none; }
+    .ops-side__item:hover { background: var(--ops-slate-100); }
+    .ops-side__item-ic { width: 14px; height: 14px; }
+    .ops-side__item-badge {
+        display: inline-flex;
+        font-size: 9.5px;
+        padding: 0 5px;
+        min-width: 16px;
+        height: 16px;
+        align-items: center;
+        justify-content: center;
+    }
     .ops-side__item--active {
-        background: var(--ops-bg-active);
-        color: var(--ops-slate-900);
+        background: var(--ops-slate-900);
+        color: #fff;
+        border-color: var(--ops-slate-900);
+    }
+    .ops-side__item--active:hover { background: var(--ops-slate-800); }
+    .ops-side__item--active .ops-side__item-badge {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
     }
 }
 
@@ -1138,6 +1192,14 @@ body.admin-mode {
     .ops-top { padding: 0 12px; gap: 8px; }
     .ops-top__cmd { display: none; }
     .ops-top__title-sub { display: none; }
+    .ops-top__title-h { font-size: 14px; }
+    .ops-top__time { font-size: 10.5px; padding: 0 6px; }
+    .ops-top__live { display: none; }
+    .ops-top__actions { gap: 4px; }
+    .ops-top__icon-btn { width: 28px; height: 28px; }
+}
+@media (max-width: 440px) {
+    .ops-top__time { display: none; }
 }
 
 /* ── Canvas wrapper — sets the page padding once ─────────────────────────── */
@@ -1322,6 +1384,98 @@ body.admin-mode {
     font-size: 11px;
     color: var(--ops-text-faint);
     display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── Widget info badge + popover ─────────────────────────────────────────── */
+.ops-widget__info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+}
+.ops-widget__info-trigger {
+    display: inline-grid;
+    place-items: center;
+    width: 18px; height: 18px;
+    padding: 0; margin: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ops-text-ghost);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.ops-widget__info-trigger:hover {
+    background: var(--ops-bg-hover);
+    color: var(--ops-text-muted);
+}
+.ops-widget__info-trigger--open {
+    background: var(--ops-slate-100);
+    color: var(--ops-text);
+    border-color: var(--ops-border);
+}
+.ops-widget__info-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    min-width: 220px;
+    width: max-content;
+    max-width: min(320px, calc(100vw - 32px));
+    padding: 10px 12px;
+    background: var(--ops-slate-900);
+    color: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
+    font-size: 11.5px;
+    font-weight: 400;
+    line-height: 1.45;
+    box-shadow: 0 12px 36px -10px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    white-space: normal;
+    text-align: left;
+    letter-spacing: -0.005em;
+}
+@media (max-width: 640px) {
+    .ops-widget__info-pop {
+        left: auto;
+        right: 0;
+        max-width: min(280px, calc(100vw - 24px));
+    }
+}
+.ops-widget__info-title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 11.5px;
+}
+.ops-widget__info-body {
+    color: rgba(255, 255, 255, 0.82);
+}
+.ops-widget__info-source {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.10);
+    display: flex; flex-direction: column;
+    gap: 2px;
+}
+.ops-widget__info-source-label {
+    font-family: var(--ops-font-mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.50);
+}
+.ops-widget__info-source code {
+    font-family: var(--ops-font-mono);
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.92);
+    background: rgba(255,255,255,0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+    max-width: 100%;
+    word-break: break-all;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -1932,3 +2086,103 @@ body.admin-mode {
     border: 1px solid var(--ops-border);
 }
 
+
+/* ────────────────────────────────────────────────────────────────────────────
+   COCKPIT — Clickable row affordance (apply to TopPosts / Trends / Service /
+   Geo when they are interactive). Buttons reset to inherit row layout.
+   ──────────────────────────────────────────────────────────────────────────── */
+.ops-post-row--clickable,
+.ops-trend-row--clickable,
+.ops-service-row--clickable,
+.ops-geo-row--clickable {
+    background: transparent;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    transition: background 120ms ease;
+}
+.ops-post-row--clickable:hover,
+.ops-trend-row--clickable:hover,
+.ops-service-row--clickable:hover,
+.ops-geo-row--clickable:hover {
+    background: var(--ops-bg-hover);
+}
+.ops-post-row--clickable:focus-visible,
+.ops-trend-row--clickable:focus-visible,
+.ops-service-row--clickable:focus-visible,
+.ops-geo-row--clickable:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: -2px;
+    background: var(--ops-info-tint);
+}
+.ops-sysmini--clickable,
+.ops-secmini--clickable {
+    transition: background 120ms ease, transform 120ms ease;
+    outline: none;
+}
+.ops-sysmini--clickable:hover,
+.ops-secmini--clickable:hover {
+    background: var(--ops-bg-hover);
+}
+.ops-sysmini--clickable:focus-visible,
+.ops-secmini--clickable:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 2px;
+}
+
+/* Audit row inside Cockpit's "Audit log" mini widget */
+.ops-cockpit__audit-row {
+    display: block;
+    width: 100%;
+    padding: 6px 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--ops-border-subtle);
+    text-align: left;
+    font: inherit;
+    font-size: 11.5px;
+    color: var(--ops-text);
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+.ops-cockpit__audit-row:last-child { border-bottom: none; }
+.ops-cockpit__audit-row:hover { color: var(--ops-info-700); }
+.ops-cockpit__audit-row:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* MiniKpi clickable affordance */
+.ops-mini-kpi {
+    transition: background 120ms ease, border-color 120ms ease;
+}
+.ops-mini-kpi[role="button"]:hover {
+    background: var(--ops-bg-elevated);
+    border-color: var(--ops-border-strong);
+}
+.ops-mini-kpi[role="button"]:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 1px;
+}
+
+/* KpiCard clickable affordance (it likely already had hover; reinforce) */
+.ops-kpi[role="button"],
+.ops-kpi.ops-kpi--clickable {
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+.ops-kpi[role="button"]:hover,
+.ops-kpi.ops-kpi--clickable:hover {
+    border-color: var(--ops-border-strong);
+}
+.ops-kpi[role="button"]:focus-visible {
+    outline: 2px solid var(--ops-info-500);
+    outline-offset: 1px;
+}

@@ -1,15 +1,20 @@
 import React from "react";
 import { LogIn, KeySquare, ShieldOff, Bug } from "lucide-react";
 
-export function SecurityMini({ data }) {
+export function SecurityMini({ data, onSelect }) {
     const rows = [
         { Icon: LogIn,     label: "Logins falhados", value: data?.logins_failed_24h, tone: "danger" },
         { Icon: KeySquare, label: "IPs bloqueados",  value: data?.unique_blocked_ips_24h, tone: "warn" },
         { Icon: ShieldOff, label: "Tokens revogados", value: data?.sessions_revoked_24h, tone: "info" },
         { Icon: Bug,       label: "Ataques bloqueados", value: data?.attacks_blocked_24h, tone: "danger" },
     ];
+    const clickable = typeof onSelect === "function";
+    const Tag = clickable ? "button" : "div";
+    const wrapperProps = clickable
+        ? { type: "button", onClick: onSelect, className: "ops-secmini--clickable", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: 0 } }
+        : { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } };
     return (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <Tag {...wrapperProps}>
             {rows.map((r) => (
                 <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
@@ -26,7 +31,7 @@ export function SecurityMini({ data }) {
                     </div>
                 </div>
             ))}
-        </div>
+        </Tag>
     );
 }
 
