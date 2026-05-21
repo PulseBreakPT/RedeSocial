@@ -9,7 +9,7 @@
  *    a largura completa.
  */
 import React, { useEffect, useRef, useState } from "react";
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, Link, useNavigate, Navigate } from "react-router-dom";
 import { Shield, LogOut, Home as HomeIcon, ChevronDown, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -121,6 +121,12 @@ export function AdminLayout() {
             </div>
         );
     }
+    // Defensive UI gate — only authenticated admins may even see the layout
+    // chrome. Backend already enforces /api/admin/* with require_admin, but a
+    // missing client-side check would leak the admin nav skeleton to any
+    // logged-in user. Non-admins → redirect home.
+    if (!user) return <Navigate to="/login" replace />;
+    if (!user.is_admin) return <Navigate to="/" replace />;
 
     return (
         <div className="min-h-screen bg-[#fafafa]" data-testid="admin-layout">

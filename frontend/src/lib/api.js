@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { readCookie } from "./safe";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -33,6 +34,20 @@ api.interceptors.request.use((config) => {
         if (token && !config.headers?.Authorization) {
             config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
+        }
+        // CSRF mirror-cookie pattern: echo XSRF-TOKEN cookie back in a custom
+        // header on every mutating request. Server-side, the cookie auth path
+        // requires the cookie value == header value, defeating cross-origin
+        // attackers (who cannot read the cookie).
+        const method = (config.method || "get").toLowerCase();
+        if (method !== "get" && method !== "head" && method !== "options") {
+            const csrf = readCookie("XSRF-TOKEN");
+            if (csrf) {
+                config.headers = config.headers || {};
+                if (!config.headers["X-CSRF-Token"]) {
+                    config.headers["X-CSRF-Token"] = csrf;
+                }
+            }
         }
     } catch { /* silent */ }
     return config;

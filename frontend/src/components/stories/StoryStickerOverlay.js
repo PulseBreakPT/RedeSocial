@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Clock, ExternalLink } from "lucide-react";
 import { api, toastApiError } from "../../lib/api";
+import { safeUrl } from "../../lib/safe";
 import "./stories.css";
 
 /** Wrapper que posiciona um sticker no canvas do story (0..1 normalizado). */
@@ -300,8 +301,8 @@ function LinkSticker({ sticker, isAuthor }) {
     return (
         <StickerWrap sticker={sticker} isAuthor={isAuthor}>
             <a
-                href={sticker.data?.url}
-                target="_blank" rel="noopener noreferrer"
+                href={safeUrl(sticker.data?.url)}
+                target="_blank" rel="noopener noreferrer nofollow"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full sv-sticker-glass text-[13px] font-heading font-medium tracking-tight text-black/90 hover:bg-black hover:text-white transition"
             >

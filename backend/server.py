@@ -264,16 +264,75 @@ PT_BADGES_DEFS = [
 
 def normalize_images(payload_images, single_image, max_images: Optional[int] = None) -> List[str]:
     """Coalesce legacy `image` + new `images` array into a clean list.
-    max_images: override the global MAX_IMAGES_PER_POST (used for admin-set runtime limit)."""
+    max_images: override the global MAX_IMAGES_PER_POST (used for admin-set runtime limit).
+    Each entry is validated as a safe data:image URL (magic-bytes check) OR https:// URL."""
     out: List[str] = []
+    src: list = []
     if payload_images:
         for s in payload_images:
             if isinstance(s, str) and s.strip():
-                out.append(s.strip())
-    if single_image and isinstance(single_image, str) and single_image.strip() and single_image not in out:
-        out.append(single_image.strip())
+                src.append(s.strip())
+    if single_image and isinstance(single_image, str) and single_image.strip() and single_image not in src:
+        src.append(single_image.strip())
+    for s in src:
+        if not _is_safe_image_url(s):
+            raise HTTPException(400, "Imagem inválida (formato não suportado).")
+        out.append(s)
     cap = int(max_images) if max_images and max_images > 0 else MAX_IMAGES_PER_POST
     return out[:cap]
+
+
+# Magic-byte signatures for the only image formats we accept in data URLs.
+# Anything else (SVG with <script>, PDF, HTML smuggled as image, etc.) is rejected.
+_IMG_MAGIC = {
+    "jpeg": [b"\xff\xd8\xff"],
+    "png":  [b"\x89PNG\r\n\x1a\n"],
+    "gif":  [b"GIF87a", b"GIF89a"],
+    "webp": [b"RIFF"],  # also needs "WEBP" at offset 8 — checked below
+    "heic": [b"ftypheic", b"ftypheix", b"ftyphevc", b"ftypheim", b"ftypheis", b"ftyphevm", b"ftyphevs", b"ftypmif1"],
+}
+
+
+def _is_safe_image_url(s: str) -> bool:
+    """Accept https:// URLs OR data:image/* base64 payloads with a valid magic
+    header. Rejects SVG (XSS vector) and any text/binary smuggled as an image."""
+    if not isinstance(s, str) or not s:
+        return False
+    sl = s.lower()
+    if sl.startswith("https://") or sl.startswith("http://"):
+        # External URLs: rely on browser content-type sniffing + our CSP.
+        # We still cap length to avoid DB row blowup.
+        return len(s) <= 2048
+    if not sl.startswith("data:image/"):
+        return False
+    # Reject SVG explicitly — even base64'd SVG can carry <script>/onload XSS.
+    if sl.startswith("data:image/svg") or "svg+xml" in sl[:64]:
+        return False
+    try:
+        head, b64 = s.split(",", 1)
+    except ValueError:
+        return False
+    if ";base64" not in head:
+        return False
+    # Decode just enough header bytes to magic-check (32 bytes is plenty).
+    try:
+        sample = base64.b64decode(b64[:80] + "===", validate=False)[:32]
+    except Exception:
+        return False
+    if not sample:
+        return False
+    for fmt, sigs in _IMG_MAGIC.items():
+        for sig in sigs:
+            if fmt == "webp":
+                if sample.startswith(b"RIFF") and len(sample) >= 12 and sample[8:12] == b"WEBP":
+                    return True
+            elif fmt == "heic":
+                # HEIC ftyp box: 4-byte size + "ftyp" + brand at offset 4
+                if len(sample) >= 12 and sample[4:8] == b"ftyp" and sig[4:] in sample[4:16]:
+                    return True
+            elif sample.startswith(sig):
+                return True
+    return False
 
 
 def build_poll(raw: Optional[dict]) -> Optional[dict]:
@@ -452,10 +511,22 @@ def set_auth_cookie(response: Response, token: str) -> None:
         key="access_token", value=token, httponly=True, secure=COOKIE_SECURE,
         samesite=COOKIE_SAMESITE, max_age=60 * 60 * 24 * 7, path="/",
     )
+    # CSRF mirror-cookie — readable by JS, echoed back as X-CSRF-Token header
+    # on mutating requests. The backend enforces match-or-reject on cookie auth.
+    try:
+        import secrets as _secrets
+        csrf = _secrets.token_urlsafe(32)
+        response.set_cookie(
+            key="XSRF-TOKEN", value=csrf, httponly=False, secure=COOKIE_SECURE,
+            samesite=COOKIE_SAMESITE, max_age=60 * 60 * 24 * 7, path="/",
+        )
+    except Exception:
+        pass
 
 
 def clear_auth_cookie(response: Response) -> None:
     response.delete_cookie("access_token", path="/")
+    response.delete_cookie("XSRF-TOKEN", path="/")
 
 
 def now_iso() -> str:
@@ -864,6 +935,243 @@ async def maybe_user(request: Request) -> Optional[dict]:
         return await get_current_user(request)
     except HTTPException:
         return None
+
+
+# ─── Hardening helpers (H1 + H2) ──────────────────────────────────────────────
+# Defensive primitives shared across endpoints. Keep these tiny, fast and side-
+# effect-free where possible. Anything that touches Mongo MUST be best-effort.
+
+import collections
+
+
+def safe_limit(value, default: int = 20, max_: int = 100) -> int:
+    """Clamp a client-supplied list size to a safe window.
+
+    Defends against `limit=1000000` queries that would hammer Mongo / blow up
+    the response. ALWAYS use this when accepting a `limit` query parameter."""
+    try:
+        v = int(value) if value is not None else default
+    except Exception:
+        return default
+    if v < 1:
+        return default
+    if v > max_:
+        return max_
+    return v
+
+
+def safe_skip(value, max_: int = 10000) -> int:
+    """Clamp a client-supplied skip/offset. Very large skips are scan-heavy."""
+    try:
+        v = int(value) if value is not None else 0
+    except Exception:
+        return 0
+    if v < 0:
+        return 0
+    if v > max_:
+        return max_
+    return v
+
+
+class _RollingWindowCounter:
+    """Tiny in-memory sliding-window counter — used for per-user / per-event
+    rate limiting where Mongo round-trips would be wasteful (WS events,
+    reactions/min, mention bursts). NOT durable across process restart.
+    Single-replica MVP only; switch to Redis if you go multi-replica."""
+
+    __slots__ = ("_buckets", "_window")
+
+    def __init__(self, window_seconds: float):
+        self._buckets: dict[str, collections.deque] = {}
+        self._window = float(window_seconds)
+
+    def _prune(self, key: str, now: float):
+        dq = self._buckets.get(key)
+        if not dq:
+            return
+        cutoff = now - self._window
+        while dq and dq[0] < cutoff:
+            dq.popleft()
+        if not dq:
+            self._buckets.pop(key, None)
+
+    def count(self, key: str) -> int:
+        now = time.time()
+        self._prune(key, now)
+        return len(self._buckets.get(key, ()))
+
+    def hit(self, key: str) -> int:
+        """Record one event and return the new count inside the window."""
+        now = time.time()
+        dq = self._buckets.setdefault(key, collections.deque())
+        cutoff = now - self._window
+        while dq and dq[0] < cutoff:
+            dq.popleft()
+        dq.append(now)
+        # Soft guard: prevent a single user from growing the deque without bound
+        if len(dq) > 10000:
+            while len(dq) > 5000:
+                dq.popleft()
+        return len(dq)
+
+    def reset(self, key: str):
+        self._buckets.pop(key, None)
+
+
+class _LastEventTimes:
+    """Per-key last-event timestamp — used for "throttle to 1 every N seconds"
+    style limits (typing indicator, presence flap)."""
+
+    __slots__ = ("_t",)
+
+    def __init__(self):
+        self._t: dict[str, float] = {}
+
+    def allow(self, key: str, min_gap: float) -> bool:
+        now = time.time()
+        last = self._t.get(key, 0.0)
+        if now - last < min_gap:
+            return False
+        self._t[key] = now
+        # Opportunistically trim if the dict grows huge
+        if len(self._t) > 50000:
+            cutoff = now - 600.0
+            self._t = {k: v for k, v in self._t.items() if v > cutoff}
+        return True
+
+    def clear(self, key: str):
+        self._t.pop(key, None)
+
+
+# Shared instances (process-local).
+_reactions_minute = _RollingWindowCounter(60.0)
+_mentions_hour = _RollingWindowCounter(3600.0)
+_follow_actions_hour = _RollingWindowCounter(3600.0)
+_follow_churn_window = _RollingWindowCounter(60.0)  # follow/unfollow flip
+_dm_to_strangers_hour = _RollingWindowCounter(3600.0)
+_ws_events_minute = _RollingWindowCounter(60.0)
+_ws_event_last = _LastEventTimes()
+_action_velocity_minute = _RollingWindowCounter(60.0)  # bot heuristic
+
+
+# Anti-abuse caps (will be overrideable through settings registry once added).
+_MAX_MENTIONS_PER_POST = int(os.environ.get("MAX_MENTIONS_PER_POST", "10"))
+
+
+async def _assert_follows_hourly_quota(user: dict, *, action: str = "follow"):
+    """Cap follow-related actions per hour to defeat mass-follow bots.
+    `action` is "follow" or "unfollow" (we count both)."""
+    if user and user.get("is_admin"):
+        return
+    limit = await get_limit("max_follows_per_hour")
+    if not limit or limit <= 0:
+        return
+    cnt = _follow_actions_hour.count(f"foll:{user['id']}")
+    if cnt >= limit:
+        raise HTTPException(429, "Estás a seguir/deixar de seguir demasiado depressa. Tenta de novo daqui a uns minutos.")
+    _follow_actions_hour.hit(f"foll:{user['id']}")
+
+
+async def _assert_follow_churn(user_id: str, target_id: str):
+    """Reject follow-flip storms (follow→unfollow→follow on same target
+    in <60s). After 2 flips in the window, third is blocked."""
+    key = f"churn:{user_id}:{target_id}"
+    cnt = _follow_churn_window.hit(key)
+    if cnt > 3:
+        raise HTTPException(429, "Demasiadas alterações neste seguidor. Aguarda um minuto.")
+
+
+async def _assert_reactions_minute_quota(user: dict):
+    if user and user.get("is_admin"):
+        return
+    limit = await get_limit("max_reactions_per_minute")
+    if not limit or limit <= 0:
+        return
+    cnt = _reactions_minute.count(f"rxn:{user['id']}")
+    if cnt >= limit:
+        raise HTTPException(429, f"Limite de reações por minuto atingido ({limit}).")
+    _reactions_minute.hit(f"rxn:{user['id']}")
+
+
+async def _assert_mentions_per_post(text: str):
+    """Cap unique mentions per post to defeat mention-spam tactics."""
+    if not text:
+        return
+    n = len(extract_mentions(text))
+    cap = await get_limit("max_mentions_per_post") or _MAX_MENTIONS_PER_POST
+    if n > cap:
+        raise HTTPException(400, f"Demasiadas menções (máx {cap} por publicação).")
+
+
+async def _assert_mentions_per_hour(user: dict, text: str):
+    if user and user.get("is_admin"):
+        return
+    if not text:
+        return
+    limit = await get_limit("max_mentions_per_hour")
+    if not limit or limit <= 0:
+        return
+    n = len(extract_mentions(text))
+    if n <= 0:
+        return
+    used = _mentions_hour.count(f"men:{user['id']}")
+    if used + n > limit:
+        raise HTTPException(429, f"Limite de menções por hora atingido ({limit}).")
+    for _ in range(n):
+        _mentions_hour.hit(f"men:{user['id']}")
+
+
+async def _record_action_velocity(user: dict, action: str):
+    """Cheap bot-heuristic — record every write action. If a single user
+    exceeds 60 writes/min, shadow-flag them. Best-effort, never raises."""
+    if not user or user.get("is_admin"):
+        return
+    try:
+        cnt = _action_velocity_minute.hit(f"vel:{user['id']}")
+        if cnt > 60 and not user.get("shadow_muted"):
+            await db.users.update_one({"id": user["id"]},
+                                       {"$set": {"shadow_muted": True,
+                                                 "shadow_muted_reason": f"velocity_{action}",
+                                                 "shadow_muted_at": now_iso()}})
+            logger.warning(f"🤖 Auto-shadow-muted user {user.get('username')} (velocity {cnt}/min, action={action})")
+    except Exception:
+        pass
+
+
+async def _assert_dm_to_strangers_quota(user: dict, target_user_id: str):
+    """Per-hour cap on DMs sent to users who do NOT follow the sender. Defends
+    against DM-bombs targeting strangers. Admins bypass; mutuals bypass."""
+    if user and user.get("is_admin"):
+        return
+    if not target_user_id or target_user_id == user["id"]:
+        return
+    target = await db.users.find_one({"id": target_user_id}, {"_id": 0, "followers": 1})
+    if not target:
+        return
+    # If target follows the sender, this is a normal mutual DM — skip quota.
+    if user["id"] in (target.get("followers") or []):
+        return
+    limit = await get_limit("max_dms_to_strangers_per_hour")
+    if not limit or limit <= 0:
+        return
+    key = f"dmstr:{user['id']}"
+    cnt = _dm_to_strangers_hour.count(key)
+    if cnt >= limit:
+        raise HTTPException(429, f"Limite de DMs a desconhecidos atingido ({limit}/hora).")
+    _dm_to_strangers_hour.hit(key)
+
+
+async def _assert_report_not_duplicate(user_id: str, kind: str, target_id: str):
+    """Reject the same reporter+target combination twice within 24h."""
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    existing = await db.reports.find_one({
+        "reporter_id": user_id,
+        "kind": kind,
+        "target_id": target_id,
+        "created_at": {"$gte": since},
+    }, {"_id": 0, "id": 1})
+    if existing:
+        raise HTTPException(429, "Já reportaste isto recentemente. Vamos analisar.")
 
 
 async def require_admin(request: Request) -> dict:
@@ -1875,6 +2183,7 @@ async def get_user(username: str, viewer: Optional[dict] = Depends(maybe_user)):
 @api.get("/activity")
 async def activity_feed(limit: int = 30):
     # Recent platform activity: latest posts + follow notifs (aggregated)
+    limit = safe_limit(limit, default=30, max_=100)
     items = await db.notifications.find(
         {"type": {"$in": ["like", "comment", "follow", "repost", "quote"]}}, {"_id": 0},
     ).sort("created_at", -1).limit(limit).to_list(limit)
@@ -2086,15 +2395,20 @@ async def follow_user(username: str, user=Depends(get_current_user)):
     await _assert_writes_open(user)
     await _assert_feature_or_503("follows_enabled", user)
     _assert_not_frozen(user)
+    # H2 — per-hour follow/unfollow throttle (defeats mass-follow bots)
+    await _assert_follows_hourly_quota(user)
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
         raise HTTPException(404, "Utilizador não encontrado")
     if target["id"] == user["id"]:
         raise HTTPException(400, "Não te podes seguir a ti próprio")
+    # H2 — churn protection (follow→unfollow→follow ping-pong)
+    await _assert_follow_churn(user["id"], target["id"])
     is_following = user["id"] in target.get("followers", [])
     if is_following:
         await db.users.update_one({"id": target["id"]}, {"$pull": {"followers": user["id"]}})
         await db.users.update_one({"id": user["id"]}, {"$pull": {"following": target["id"]}})
+        await _record_action_velocity(user, "unfollow")
         return {"following": False}
     # Grupo A: max_follows_per_user
     if not user.get("is_admin"):
@@ -2104,12 +2418,18 @@ async def follow_user(username: str, user=Depends(get_current_user)):
     await db.users.update_one({"id": target["id"]}, {"$addToSet": {"followers": user["id"]}})
     await db.users.update_one({"id": user["id"]}, {"$addToSet": {"following": target["id"]}})
     await create_notification(target["id"], "follow", user["id"], None, f"@{user['username']} começou a seguir-te")
+    await _record_action_velocity(user, "follow")
     return {"following": True}
 
 
 @api.patch("/users/me")
 async def update_me(payload: UpdateProfileIn, user=Depends(get_current_user)):
     update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # H4 — magic-bytes validation on user-supplied avatar/banner data URLs
+    for img_field in ("avatar", "banner"):
+        if img_field in update and isinstance(update[img_field], str) and update[img_field]:
+            if not _is_safe_image_url(update[img_field]):
+                raise HTTPException(400, f"{img_field.capitalize()} inválido (formato não suportado).")
     # Grupo A: limites dinâmicos para bio + display name (admins bypass)
     if not user.get("is_admin"):
         if "bio" in update and isinstance(update["bio"], str):
@@ -2220,6 +2540,9 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     await _assert_writes_open(user)
     await _assert_feature_or_503("posts_enabled", user)
     await _assert_global_hourly_limit(user, "posts")
+    # H2 — mention spam caps (per-post + per-hour)
+    await _assert_mentions_per_post(payload.content or "")
+    await _assert_mentions_per_hour(user, payload.content or "")
     # Dynamic char limit (Pydantic max is the cap; this enforces admin-set ceiling)
     _img_cap = None
     if not user.get("is_admin"):
@@ -2760,6 +3083,8 @@ async def react_post(post_id: str, payload: PostReactIn, user=Depends(get_curren
     # Grupo A: read-only + reactions_enabled gates
     await _assert_writes_open(user)
     await _assert_feature_or_503("reactions_enabled", user)
+    # H2 — per-minute reaction cap (anti emoji-spam)
+    await _assert_reactions_minute_quota(user)
     if payload.emoji not in ALLOWED_REACTIONS:
         raise HTTPException(400, "Reação inválida")
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
@@ -3006,6 +3331,9 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
     await _assert_writes_open(user)
     await _assert_feature_or_503("comments_enabled", user)
     await _assert_global_hourly_limit(user, "comments")
+    # H2 — mention spam caps
+    await _assert_mentions_per_post(payload.content or "")
+    await _assert_mentions_per_hour(user, payload.content or "")
     if not user.get("is_admin"):
         _max_c = await get_limit("max_comment_chars")
         if _max_c and len((payload.content or "")) > _max_c:
@@ -3603,6 +3931,9 @@ async def create_story(payload: StoryIn, user=Depends(get_current_user)):
         raise HTTPException(400, "Vídeo obrigatório para story de vídeo")
     if media_type == "text" and not (payload.text_content or "").strip():
         raise HTTPException(400, "Texto obrigatório para story de texto")
+    # H4 — magic-bytes validation on story image (defeats SVG/HTML smuggling)
+    if media_type == "image" and payload.image and not _is_safe_image_url(payload.image):
+        raise HTTPException(400, "Imagem inválida (formato não suportado).")
     audience = payload.audience if payload.audience in VALID_STORY_AUDIENCES else "everyone"
     font_style = payload.font_style if payload.font_style in VALID_FONT_STYLES else "modern"
     text_style = payload.text_style if payload.text_style in VALID_TEXT_STYLES else "plain"
@@ -3825,6 +4156,7 @@ async def delete_story(story_id: str, user=Depends(get_current_user)):
 # ---------- Reactions ----------
 @api.post("/stories/{story_id}/react")
 async def react_to_story(story_id: str, payload: StoryReactIn, user=Depends(get_current_user)):
+    await _assert_reactions_minute_quota(user)
     s = await db.stories.find_one({"id": story_id}, {"_id": 0})
     if not s:
         raise HTTPException(404, "Story não encontrado")
@@ -4896,6 +5228,7 @@ async def set_typing(other_user_id: str, user=Depends(get_current_user)):
 
 @api.post("/messages/{message_id}/react")
 async def react_message(message_id: str, payload: MessageReactIn, user=Depends(get_current_user)):
+    await _assert_reactions_minute_quota(user)
     msg = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not msg:
         raise HTTPException(404, "Mensagem não encontrada")
@@ -4948,6 +5281,8 @@ async def send_message(payload: MessageIn, user=Depends(get_current_user)):
     other = await db.users.find_one({"id": payload.to_user_id}, {"_id": 0})
     if not other:
         raise HTTPException(404, "Utilizador não encontrado")
+    # H2 — DM-to-strangers per-hour quota (only checked for non-mutuals)
+    await _assert_dm_to_strangers_quota(user, other["id"])
     key = conv_key(user["id"], other["id"])
     msg = {
         "id": str(uuid.uuid4()), "conversation_key": key,
@@ -7336,17 +7671,38 @@ async def suggest_hashtags(q: str = "", user=Depends(get_current_user)):
 from fastapi import WebSocket, WebSocketDisconnect
 
 class ConnectionManager:
+    # Hard cap on concurrent WS sessions per user (defends against socket
+    # exhaustion / parallel scraping clients).
+    MAX_SOCKETS_PER_USER = int(os.environ.get("WS_MAX_SOCKETS_PER_USER", "3"))
+
     def __init__(self):
         self.active: dict[str, list[WebSocket]] = {}  # user_id -> sockets
         # Per-post viewers (real presence tracking — feature: "x pessoas a ver este post")
         self.viewers_by_post: dict[str, set[str]] = {}   # post_id -> set(user_id)
         self.posts_by_user: dict[str, set[str]] = {}     # user_id -> set(post_id)
+        # WS session metadata: socket -> {"jti": str, "user_id": str, "connected_at": float}
+        self.socket_meta: dict[int, dict] = {}
 
-    async def connect(self, user_id: str, ws: WebSocket):
+    async def connect(self, user_id: str, ws: WebSocket, jti: str = ""):
         await ws.accept()
-        self.active.setdefault(user_id, []).append(ws)
+        bucket = self.active.setdefault(user_id, [])
+        # Enforce max sockets per user — drop the oldest if at cap.
+        while len(bucket) >= self.MAX_SOCKETS_PER_USER:
+            old = bucket.pop(0)
+            self.socket_meta.pop(id(old), None)
+            try:
+                await old.close(code=1008)  # policy violation
+            except Exception:
+                pass
+        bucket.append(ws)
+        self.socket_meta[id(ws)] = {
+            "jti": jti or "",
+            "user_id": user_id,
+            "connected_at": time.time(),
+        }
 
     def disconnect(self, user_id: str, ws: WebSocket):
+        self.socket_meta.pop(id(ws), None)
         if user_id in self.active:
             try:
                 self.active[user_id].remove(ws)
@@ -7354,6 +7710,10 @@ class ConnectionManager:
                 pass
             if not self.active[user_id]:
                 self.active.pop(user_id, None)
+
+    def socket_jti(self, ws: WebSocket) -> str:
+        meta = self.socket_meta.get(id(ws))
+        return (meta or {}).get("jti") or ""
 
     async def send_personal(self, user_id: str, message: dict):
         for ws in list(self.active.get(user_id, [])):
@@ -7438,18 +7798,39 @@ ws_manager = ConnectionManager()
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    # Authenticate via cookie or query token
+    # Authenticate via cookie or query token. Reject early on any
+    # malformed / unsigned / type-mismatched token to keep the socket
+    # accept budget low for unauthenticated traffic.
     token = ws.cookies.get("access_token") or ws.query_params.get("token", "")
     if not token:
         await ws.close(code=1008)
         return
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "access":
+            await ws.close(code=1008)
+            return
         user_id = payload["sub"]
     except Exception:
         await ws.close(code=1008)
         return
-    await ws_manager.connect(user_id, ws)
+    # Session validation — revoked sessions cannot open a WS at all.
+    jti = payload.get("jti") or ""
+    if jti:
+        sess = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
+        if sess and sess.get("revoked"):
+            await ws.close(code=1008)
+            return
+    # Re-fetch user — ban/freeze checks must apply.
+    udoc = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "banned": 1, "suspended_until": 1})
+    if not udoc or udoc.get("banned"):
+        await ws.close(code=1008)
+        return
+    if _restriction_active(udoc, "suspended_until"):
+        await ws.close(code=1008)
+        return
+
+    await ws_manager.connect(user_id, ws, jti=jti)
     # mark online
     await db.users.update_one({"id": user_id}, {"$set": {"last_seen": now_iso()}})
     await ws_manager.broadcast({
@@ -7457,44 +7838,143 @@ async def websocket_endpoint(ws: WebSocket):
         "user_id": user_id,
         "status": "online",
     }, exclude_user=user_id)
+
+    # ─── Hardening constants for the message loop ─────────────────────────
+    # Whitelisted event types — anything else is dropped silently.
+    _ALLOWED_EVENTS = {"ping", "typing", "presence_set", "post_view",
+                       "post_unview", "c_typing"}
+    # Per-type minimum gap between consecutive events from the same user.
+    _MIN_GAP = {
+        "ping":         2.0,
+        "typing":       1.5,
+        "presence_set": 5.0,
+        "post_view":    0.7,
+        "post_unview":  0.5,
+        "c_typing":     1.5,
+    }
+    # Allowed values for typing.in
+    _ALLOWED_TYPING_IN = {"dm", "thread", "post", "comments"}
+    _ALLOWED_PRESENCE_STATUS = {"online", "away", "busy", "offline"}
+    # Caps to bound any single field we might broadcast.
+    _MAX_TEXT_FIELD = 64
+    _MAX_RAW_MSG = int(os.environ.get("WS_MAX_RAW_MSG", "4096"))  # bytes
+    _MAX_EVENTS_PER_MIN = int(os.environ.get("WS_MAX_EVENTS_PER_MIN", "240"))
+    # jti revocation re-check cadence
+    _JTI_CHECK_GAP = 30.0
+    _last_jti_check = time.time()
+
+    abuse_strikes = 0  # accumulate; >5 → close socket
+
     try:
         while True:
-            data = await ws.receive_json()
+            # ── Raw receive — capture bytes/text to enforce max-msg-size before
+            # parsing. receive() returns dict with "text" or "bytes".
+            raw = await ws.receive()
+            if raw.get("type") == "websocket.disconnect":
+                break
+            payload_bytes = raw.get("bytes")
+            payload_text = raw.get("text")
+            blob = payload_bytes if payload_bytes is not None else (
+                payload_text.encode("utf-8") if payload_text else b"")
+            if len(blob) > _MAX_RAW_MSG:
+                abuse_strikes += 2
+                if abuse_strikes > 5:
+                    break
+                continue
+            try:
+                data = json.loads(payload_text or blob.decode("utf-8") or "{}")
+            except Exception:
+                abuse_strikes += 1
+                if abuse_strikes > 5:
+                    break
+                continue
+            if not isinstance(data, dict):
+                abuse_strikes += 1
+                if abuse_strikes > 5:
+                    break
+                continue
+
             t = data.get("type")
+            if not isinstance(t, str) or t not in _ALLOWED_EVENTS:
+                # Drop unknown events silently — could be a probing client.
+                abuse_strikes += 1
+                if abuse_strikes > 5:
+                    break
+                continue
+
+            # Per-user per-minute total event budget.
+            total_min = _ws_events_minute.hit(f"ws:{user_id}")
+            if total_min > _MAX_EVENTS_PER_MIN:
+                abuse_strikes += 1
+                if abuse_strikes > 5:
+                    break
+                continue
+
+            # Per-type min-gap throttle.
+            gap = _MIN_GAP.get(t, 0.5)
+            if gap > 0 and not _ws_event_last.allow(f"ws:{user_id}:{t}", gap):
+                # Silently drop the over-fast event — common during flaky networks
+                # and not abusive per se. Don't strike unless it repeats violently.
+                continue
+
+            # Periodic jti revocation check — covers admin-driven force-logout.
+            if jti and (time.time() - _last_jti_check) > _JTI_CHECK_GAP:
+                _last_jti_check = time.time()
+                try:
+                    sess2 = await db.sessions.find_one({"jti": jti}, {"_id": 0, "revoked": 1})
+                    if sess2 and sess2.get("revoked"):
+                        await ws.send_json({"type": "session_revoked"})
+                        break
+                except Exception:
+                    pass
+
+            # ── Event handling (post-validated) ──
             if t == "ping":
                 await ws.send_json({"type": "pong", "ts": now_iso()})
                 await db.users.update_one({"id": user_id}, {"$set": {"last_seen": now_iso()}})
+
             elif t == "typing":
-                # forward to specific user
                 target = data.get("to")
-                if target:
-                    await ws_manager.send_personal(target, {
-                        "type": "typing",
-                        "from": user_id,
-                        "in": data.get("in", "dm"),
-                    })
+                in_ctx = data.get("in", "dm")
+                if not isinstance(target, str) or not (1 <= len(target) <= _MAX_TEXT_FIELD):
+                    continue
+                if in_ctx not in _ALLOWED_TYPING_IN:
+                    in_ctx = "dm"
+                await ws_manager.send_personal(target, {
+                    "type": "typing",
+                    "from": user_id,
+                    "in": in_ctx,
+                })
+
             elif t == "presence_set":
-                # custom presence broadcast
+                status = data.get("status", "online")
+                if status not in _ALLOWED_PRESENCE_STATUS:
+                    status = "online"
+                emoji = data.get("emoji", "")
+                # Strip control chars and cap length (presence emoji is decorative).
+                if not isinstance(emoji, str):
+                    emoji = ""
+                emoji = "".join(ch for ch in emoji if ch.isprintable())[:8]
                 await ws_manager.broadcast({
                     "type": "presence",
                     "user_id": user_id,
-                    "status": data.get("status", "online"),
-                    "emoji": data.get("emoji", ""),
+                    "status": status,
+                    "emoji": emoji,
                 }, exclude_user=user_id)
+
             elif t == "post_view":
-                # User started viewing a post — register & broadcast viewer count
                 post_id = data.get("post_id")
-                if isinstance(post_id, str) and post_id:
+                if isinstance(post_id, str) and 1 <= len(post_id) <= _MAX_TEXT_FIELD:
                     await ws_manager.add_post_viewer(user_id, post_id)
+
             elif t == "post_unview":
-                # User stopped viewing the post (scrolled away / unmounted)
                 post_id = data.get("post_id")
-                if isinstance(post_id, str) and post_id:
+                if isinstance(post_id, str) and 1 <= len(post_id) <= _MAX_TEXT_FIELD:
                     await ws_manager.remove_post_viewer(user_id, post_id)
+
             elif t == "c_typing":
-                # Comment typing — broadcast to other viewers of the post
                 post_id = data.get("post_id")
-                if not (isinstance(post_id, str) and post_id):
+                if not (isinstance(post_id, str) and 1 <= len(post_id) <= _MAX_TEXT_FIELD):
                     continue
                 user_doc = await db.users.find_one(
                     {"id": user_id},
@@ -7513,8 +7993,8 @@ async def websocket_endpoint(ws: WebSocket):
                 )
     except WebSocketDisconnect:
         pass
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"ws loop error user={user_id}: {type(e).__name__}: {e}")
     finally:
         ws_manager.disconnect(user_id, ws)
         # Clean up any post-viewer registrations from this connection
@@ -7592,6 +8072,49 @@ _CSP_DEFAULT = (
 CSP_POLICY = os.environ.get("CSP_POLICY", _CSP_DEFAULT)
 CSP_ENFORCE = os.environ.get("CSP_ENFORCE", "false").lower() in {"1", "true", "yes", "on"}
 HSTS_MAX_AGE = int(os.environ.get("HSTS_MAX_AGE", "31536000"))  # 1 year default
+
+# CSRF (H3) — enforce only on cookie-auth requests. Header-auth (Bearer) is
+# CSRF-immune by construction. Pre-auth endpoints are exempt.
+CSRF_ENFORCE = os.environ.get("CSRF_ENFORCE", "true").lower() in {"1", "true", "yes", "on"}
+CSRF_EXEMPT_PREFIXES = (
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/refresh",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/verify-email",
+    "/api/auth/2fa",  # 2fa setup/verify flows
+    "/api/webhooks/",
+    "/api/csp-report",
+)
+
+
+@app.middleware("http")
+async def _csrf_middleware(request: Request, call_next):
+    if not CSRF_ENFORCE:
+        return await call_next(request)
+    method = request.method.upper()
+    if method in ("GET", "HEAD", "OPTIONS"):
+        return await call_next(request)
+    path = request.url.path or ""
+    if not path.startswith("/api/"):
+        return await call_next(request)
+    if any(path.startswith(p) for p in CSRF_EXEMPT_PREFIXES):
+        return await call_next(request)
+    # Header-auth is CSRF-immune (an attacker page can't read the token).
+    auth_hdr = request.headers.get("authorization") or ""
+    if auth_hdr.lower().startswith("bearer "):
+        return await call_next(request)
+    # If we got here, this is a cookie-authenticated mutating request.
+    cookie_tok = request.cookies.get("XSRF-TOKEN") or ""
+    header_tok = request.headers.get("x-csrf-token") or ""
+    if not cookie_tok or not header_tok or not secrets.compare_digest(cookie_tok, header_tok):
+        from starlette.responses import JSONResponse
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "CSRF token ausente ou inválido."},
+        )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -7785,6 +8308,8 @@ async def report_post(post_id: str, payload: ReportIn, user=Depends(get_current_
     p = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not p:
         raise HTTPException(404, "Publicação não encontrada")
+    # H2 — dedup: same reporter + target in last 24h
+    await _assert_report_not_duplicate(user["id"], "post", post_id)
     await db.reports.insert_one({
         "id": str(uuid.uuid4()), "kind": "post", "target_id": post_id,
         "reporter_id": user["id"], "reason": (payload.reason or "outro")[:40],
@@ -7814,6 +8339,7 @@ async def like_comment(comment_id: str, user=Depends(get_current_user)):
 
 @api2.post("/comments/{comment_id}/react")
 async def react_comment(comment_id: str, payload: CommentReactIn, user=Depends(get_current_user)):
+    await _assert_reactions_minute_quota(user)
     c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
     if not c:
         raise HTTPException(404, "Comentário não encontrado")
@@ -7868,6 +8394,7 @@ async def report_comment(comment_id: str, payload: ReportIn, user=Depends(get_cu
     c = await db.comments.find_one({"id": comment_id}, {"_id": 0})
     if not c:
         raise HTTPException(404, "Comentário não encontrado")
+    await _assert_report_not_duplicate(user["id"], "comment", comment_id)
     await db.reports.insert_one({
         "id": str(uuid.uuid4()),
         "kind": "comment", "target_id": comment_id,
@@ -7988,6 +8515,8 @@ async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
     # Block check — if either side blocked the other, reject
     if user["id"] in (other.get("blocked") or []) or other["id"] in (user.get("blocked") or []):
         raise HTTPException(403, "Bloqueado")
+    # H2 — DM-to-strangers per-hour quota
+    await _assert_dm_to_strangers_quota(user, other["id"])
     key = conv_key(user["id"], other["id"])
     kind = (payload.kind or "text").lower()
     content = (payload.content or "").strip()
@@ -7999,6 +8528,9 @@ async def send_message_v2(payload: MessageInV2, user=Depends(get_current_user)):
     if kind == "image":
         if len(image_data) > 8_000_000:
             raise HTTPException(413, "Imagem demasiado grande (máx ~5MB)")
+        # H4 — magic-bytes validation to reject SVG/HTML smuggled as image
+        if image_data and not _is_safe_image_url(image_data):
+            raise HTTPException(400, "Imagem inválida (formato não suportado).")
     if kind == "vibe" and payload.vibe:
         content = payload.vibe.strip()[:8]
     elif kind == "location" and payload.location:
@@ -8140,6 +8672,9 @@ async def report_user(username: str, payload: ReportIn, user=Depends(get_current
     target = await db.users.find_one({"username": username.lower()}, {"_id": 0})
     if not target:
         raise HTTPException(404, "Utilizador não encontrado")
+    if target["id"] == user["id"]:
+        raise HTTPException(400, "Não te podes reportar a ti próprio")
+    await _assert_report_not_duplicate(user["id"], "user", target["id"])
     await db.reports.insert_one({
         "id": str(uuid.uuid4()), "kind": "user", "target_id": target["id"],
         "reporter_id": user["id"], "reason": (payload.reason or "outro")[:40],
@@ -8893,6 +9428,37 @@ SETTINGS_REGISTRY = [
      "label": "Tamanho da página do feed",
      "description": "Quantas publicações o feed devolve por página por defeito.",
      "applies_to": ["GET /api/posts/feed"]},
+
+    # ---------- ANTI-ABUSO (H2) ----------
+    {"key": "max_follows_per_hour",   "group": "limits", "type": "int", "default": 60,
+     "min": 1,    "max": 1000,
+     "label": "Follows/hora por utilizador",
+     "description": "Ações de follow/unfollow permitidas por hora (anti mass-follow). Admins bypass.",
+     "applies_to": ["POST /api/users/{username}/follow"]},
+
+    {"key": "max_reactions_per_minute", "group": "limits", "type": "int", "default": 30,
+     "min": 1,    "max": 500,
+     "label": "Reações/minuto por utilizador",
+     "description": "Reações (emojis em posts/comentários/stories) permitidas por minuto. Anti-spam de reactions.",
+     "applies_to": ["POST /api/posts/{id}/react", "POST /api/comments/{id}/react", "POST /api/stories/{id}/react", "POST /api/messages/{id}/react"]},
+
+    {"key": "max_mentions_per_post",  "group": "limits", "type": "int", "default": 10,
+     "min": 1,    "max": 50,
+     "label": "Menções máximas por publicação",
+     "description": "Quantas @ diferentes podem aparecer numa publicação/comentário. Anti mention-spam.",
+     "applies_to": ["POST /api/posts", "POST /api/posts/{id}/comments"]},
+
+    {"key": "max_mentions_per_hour",  "group": "limits", "type": "int", "default": 50,
+     "min": 1,    "max": 1000,
+     "label": "Menções totais por hora",
+     "description": "Soma de menções acumuladas numa hora por utilizador. Anti spam dirigido.",
+     "applies_to": ["POST /api/posts", "POST /api/posts/{id}/comments"]},
+
+    {"key": "max_dms_to_strangers_per_hour", "group": "limits", "type": "int", "default": 5,
+     "min": 0,    "max": 500,
+     "label": "DMs/hora a desconhecidos",
+     "description": "Quantos utilizadores que NÃO te seguem podes mensajar por hora. 0 = ilimitado. Anti DM-bomb.",
+     "applies_to": ["POST /api/messages", "POST /api/messages/v2"]},
 
     # ---------- BRANDING & CONTEÚDO (string) ----------
     {"key": "platform_name",          "group": "content", "type": "string", "default": "Lusorae",
