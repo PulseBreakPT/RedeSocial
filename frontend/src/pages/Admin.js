@@ -150,10 +150,10 @@ function Sparkline({ data, height = 36, color = "#c64a3d" }) {
 
 function StatCard({ label, value, sub, accent = "var(--coral-500)", series, "data-testid": testId }) {
     return (
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-4 flex flex-col gap-1.5 shadow-sm" data-testid={testId}>
-            <div className="text-[11px] uppercase tracking-wider text-black/45 font-mono">{label}</div>
-            <div className="font-display text-[28px] leading-none tracking-tight text-black">{fmtNum(value)}</div>
-            {sub != null && <div className="text-[12px] text-black/55">{sub}</div>}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-1.5 shadow-sm" data-testid={testId}>
+            <div className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">{label}</div>
+            <div className="font-display text-[28px] leading-none tracking-tight text-slate-900">{fmtNum(value)}</div>
+            {sub != null && <div className="text-[12px] text-slate-500">{sub}</div>}
             {series && <Sparkline data={series} color={accent} />}
         </div>
     );
@@ -203,7 +203,7 @@ function OverviewTab({ onNavigate }) {
     };
 
     if (loading && !stats) {
-        return <div className="flex items-center justify-center py-16 text-black/45"><Loader2 className="animate-spin" /></div>;
+        return <div className="flex items-center justify-center py-16 text-slate-400"><Loader2 className="animate-spin" /></div>;
     }
     if (!stats) return null;
 
@@ -212,19 +212,19 @@ function OverviewTab({ onNavigate }) {
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Visão geral</h2>
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                    <div className="flex items-center gap-0.5 sm:gap-1 bg-black/[0.04] rounded-full p-1" title="Auto-atualização">
+                    <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 rounded-full p-1" title="Auto-atualização">
                         {[{v:0,l:"Off"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
                             <button key={o.v}
                                 onClick={() => setAutoRefresh(o.v)}
                                 data-testid={`admin-overview-autorefresh-${o.v}`}
-                                className={`h-7 px-2 sm:px-2.5 rounded-full text-[11px] sm:text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                                className={`h-7 px-2 sm:px-2.5 rounded-full text-[11px] sm:text-[11.5px] font-medium ${autoRefresh === o.v ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                             >{o.l}</button>
                         ))}
                     </div>
                     <button
                         onClick={() => downloadCsv("/admin/export/users.csv", "lusorae_users.csv")}
                         data-testid="admin-export-users-csv"
-                        className="h-9 px-2.5 sm:px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
+                        className="h-9 px-2.5 sm:px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
                         title="Exportar utilizadores em CSV"
                         aria-label="Exportar utilizadores em CSV"
                     >
@@ -233,7 +233,7 @@ function OverviewTab({ onNavigate }) {
                     <button
                         onClick={() => setReloadAt(Date.now())}
                         data-testid="admin-overview-refresh"
-                        className="h-9 px-2.5 sm:px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
+                        className="h-9 px-2.5 sm:px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12px] sm:text-[13px]"
                         title="Atualizar agora"
                         aria-label="Atualizar agora"
                     >
@@ -261,20 +261,20 @@ function OverviewTab({ onNavigate }) {
 
             {/* SYSTEM HEALTH */}
             {health && (
-                <div className="bg-white rounded-2xl border border-black/[0.06] p-4" data-testid="admin-system-health">
+                <div className="bg-white rounded-2xl border border-slate-200 p-4" data-testid="admin-system-health">
                     <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                         <h3 className="font-display text-[16px] tracking-tight flex items-center gap-1.5">
-                            <Activity size={14} className="text-black/55" /> Saúde do sistema
+                            <Activity size={14} className="text-slate-500" /> Saúde do sistema
                         </h3>
-                        <div className="text-[11px] font-mono text-black/40">
+                        <div className="text-[11px] font-mono text-slate-400">
                             verificado a {fmtDate(health.checked_at)}
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        <div className="px-3 py-2 rounded-xl bg-black/[0.04] text-[12px]">
-                            <div className="font-mono text-black/70 text-[11px] uppercase tracking-wider">WS conexões</div>
-                            <div className="text-[18px] font-semibold text-black/85 mt-0.5">
-                                {health.websocket.sockets} <span className="text-[12px] font-normal text-black/45">/ {health.websocket.users_connected} users</span>
+                        <div className="px-3 py-2 rounded-xl bg-slate-50 text-[12px]">
+                            <div className="font-mono text-slate-700 text-[11px] uppercase tracking-wider">WS conexões</div>
+                            <div className="text-[18px] font-semibold text-slate-800 mt-0.5">
+                                {health.websocket.sockets} <span className="text-[12px] font-normal text-slate-400">/ {health.websocket.users_connected} users</span>
                             </div>
                         </div>
                         <div className="px-3 py-2 rounded-xl bg-red-50/70 text-[12px]">
@@ -282,43 +282,43 @@ function OverviewTab({ onNavigate }) {
                             <div className="text-[18px] font-semibold text-red-700 mt-0.5">{health.hashtag_blacklist_size}</div>
                         </div>
                         {Object.entries(health.collections).slice(0, 14).map(([name, count]) => (
-                            <div key={name} className="px-3 py-2 rounded-xl bg-black/[0.04] text-[12px]">
-                                <div className="font-mono text-black/55 text-[11px] uppercase tracking-wider">{name}</div>
-                                <div className="text-[16px] font-semibold text-black/85 mt-0.5 font-mono">{fmtNum(count)}</div>
+                            <div key={name} className="px-3 py-2 rounded-xl bg-slate-50 text-[12px]">
+                                <div className="font-mono text-slate-500 text-[11px] uppercase tracking-wider">{name}</div>
+                                <div className="text-[16px] font-semibold text-slate-800 mt-0.5 font-mono">{fmtNum(count)}</div>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            <div className="text-[11px] font-mono text-black/40">
+            <div className="text-[11px] font-mono text-slate-400">
                 Gerado a {fmtDate(stats.generated_at)}
                 {autoRefresh > 0 && <> · auto-refresh a cada {autoRefresh}s</>}
             </div>
 
             {/* QUICK-LINKS — Dashboard shortcuts */}
             {typeof onNavigate === "function" && (
-                <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-overview-shortcuts">
-                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Atalhos rápidos</div>
+                <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid="admin-overview-shortcuts">
+                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Atalhos rápidos</div>
                     <div className="flex flex-wrap gap-1.5">
                         <button onClick={() => onNavigate("audit")} data-testid="admin-overview-go-audit"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
                             <History size={13} /> Ver atividade
                         </button>
                         <button onClick={() => onNavigate("reports")} data-testid="admin-overview-go-reports"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
                             <AlertTriangle size={13} /> Ver reports
                         </button>
                         <button onClick={() => onNavigate("antispam")} data-testid="admin-overview-go-antispam"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
                             <ShieldAlert size={13} /> Anti-spam
                         </button>
                         <button onClick={() => onNavigate("system")} data-testid="admin-overview-go-system"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
                             <Server size={13} /> Ver sistema
                         </button>
                         <button onClick={() => onNavigate("sessions")} data-testid="admin-overview-go-sessions"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px] inline-flex items-center gap-1.5">
                             <LogOut size={13} /> Ver sessões
                         </button>
                     </div>
@@ -335,15 +335,15 @@ function Pager({ page, total, limit, onChange }) {
     const last = Math.max(1, Math.ceil((total || 0) / (limit || 1)));
     if (last <= 1) return null;
     return (
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/[0.06] gap-2">
-            <div className="text-[11px] sm:text-[12px] text-black/55 font-mono min-w-0 truncate">
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-200 gap-2">
+            <div className="text-[11px] sm:text-[12px] text-slate-500 font-mono min-w-0 truncate">
                 <span className="hidden xs:inline sm:inline">Página </span>{page}<span className="hidden sm:inline"> de </span><span className="sm:hidden">/</span>{last} · {total}<span className="hidden sm:inline"> no total</span>
             </div>
             <div className="flex items-center gap-1 shrink-0">
                 <button
                     onClick={() => onChange(Math.max(1, page - 1))}
                     disabled={page <= 1}
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Página anterior"
                 >
                     <ChevronLeft size={16} />
@@ -351,7 +351,7 @@ function Pager({ page, total, limit, onChange }) {
                 <button
                     onClick={() => onChange(Math.min(last, page + 1))}
                     disabled={page >= last}
-                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-9 h-9 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
                     aria-label="Página seguinte"
                 >
                     <ChevronRight size={16} />
@@ -394,9 +394,9 @@ const fmtUptime = (sec) => {
     return `${s}s`;
 };
 
-function SystemPanel({ title, icon: Icon, accent = "text-black/55", testid, children, onRefresh, loading }) {
+function SystemPanel({ title, icon: Icon, accent = "text-slate-500", testid, children, onRefresh, loading }) {
     return (
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid={testid}>
+        <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid={testid}>
             <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="font-display text-[14px] sm:text-[16px] tracking-tight inline-flex items-center gap-1.5">
                     <Icon size={14} className={accent} /> {title}
@@ -405,7 +405,7 @@ function SystemPanel({ title, icon: Icon, accent = "text-black/55", testid, chil
                     <button
                         onClick={onRefresh}
                         aria-label={`Atualizar ${title}`}
-                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55"
+                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-100 text-slate-500"
                         title="Atualizar"
                     ><RefreshCcw size={13} className={loading ? "animate-spin" : ""} /></button>
                 )}
@@ -415,10 +415,10 @@ function SystemPanel({ title, icon: Icon, accent = "text-black/55", testid, chil
     );
 }
 
-function KV({ k, v, mono = false, color = "text-black/85" }) {
+function KV({ k, v, mono = false, color = "text-slate-800" }) {
     return (
-        <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-2 py-1.5 border-b border-black/[0.04] last:border-0">
-            <div className="xs:w-36 shrink-0 text-[10.5px] uppercase tracking-wider text-black/45 font-mono">{k}</div>
+        <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-2 py-1.5 border-b border-slate-100 last:border-0">
+            <div className="xs:w-36 shrink-0 text-[10.5px] uppercase tracking-wider text-slate-400 font-mono">{k}</div>
             <div className={`flex-1 break-all text-[12.5px] ${color} ${mono ? "font-mono" : ""}`}>{v == null || v === "" ? "—" : v}</div>
         </div>
     );
@@ -426,7 +426,7 @@ function KV({ k, v, mono = false, color = "text-black/85" }) {
 
 function LogTail({ lines, empty = "Sem entradas." }) {
     if (!Array.isArray(lines) || lines.length === 0) {
-        return <div className="text-[12px] text-black/45 italic">{empty}</div>;
+        return <div className="text-[12px] text-slate-400 italic">{empty}</div>;
     }
     return (
         <pre className="bg-black/90 text-white/85 rounded-xl p-2 sm:p-3 text-[10.5px] sm:text-[11px] leading-relaxed font-mono overflow-auto max-h-[280px] whitespace-pre-wrap break-all">
@@ -538,7 +538,7 @@ function SystemTab() {
                 <button
                     onClick={loadAll}
                     data-testid="admin-system-refresh-all"
-                    className="h-9 px-3 rounded-full bg-black text-white text-[12.5px] font-medium inline-flex items-center gap-1.5 hover:bg-black/85"
+                    className="h-9 px-3 rounded-full bg-slate-900 text-white text-[12.5px] font-medium inline-flex items-center gap-1.5 hover:bg-slate-800/85"
                 ><RefreshCcw size={13} /> Atualizar tudo</button>
             </div>
 
@@ -556,8 +556,8 @@ function SystemTab() {
             )}
 
             {/* QUICK ACTIONS */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-system-actions">
-                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Acções de sistema</div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid="admin-system-actions">
+                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Acções de sistema</div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button onClick={restartSockets} disabled={actionBusy === "restart"}
                         data-testid="admin-system-restart-sockets"
@@ -567,7 +567,7 @@ function SystemTab() {
                     </button>
                     <button onClick={clearCache} disabled={actionBusy === "clear"}
                         data-testid="admin-system-clear-cache"
-                        className="h-10 px-3 rounded-2xl bg-black/[0.05] hover:bg-black/[0.1] text-black/80 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                        className="h-10 px-3 rounded-2xl bg-slate-100 hover:bg-slate-800/[0.1] text-slate-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
                         {actionBusy === "clear" ? <Loader2 size={14} className="animate-spin" /> : <Eraser size={14} />}
                         Limpar cache
                     </button>
@@ -575,7 +575,7 @@ function SystemTab() {
                         data-testid="admin-system-maintenance"
                         className={`h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40 ${
                             maint?.enabled
-                                ? "bg-black/[0.06] hover:bg-black/10 text-black/85"
+                                ? "bg-slate-100 hover:bg-slate-200 text-slate-800"
                                 : "bg-red-500/10 hover:bg-red-500/20 text-red-700"
                         }`}>
                         {actionBusy === "maint" ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
@@ -589,7 +589,7 @@ function SystemTab() {
                 <SystemPanel
                     title="Estado do backend"
                     icon={Server}
-                    accent="text-black/55"
+                    accent="text-slate-500"
                     testid="sys-status"
                     loading={loading.status}
                     onRefresh={() => _load("status", "/admin/system/status", setStatus)}
@@ -602,10 +602,10 @@ function SystemTab() {
                             <KV k="Python" v={status.python} mono />
                             <KV k="Platform" v={status.platform} mono />
                             <KV k="DB name" v={status.env?.db_name} mono />
-                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-black/70" : "text-red-600"} />
+                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-slate-700" : "text-red-600"} />
                             <KV k="Verificado" v={fmtRelative(status.checked_at)} />
                         </dl>
-                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
                 </SystemPanel>
 
                 {/* UPTIME */}
@@ -624,14 +624,14 @@ function SystemTab() {
                             <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono />
                             <KV k="Verificado" v={fmtRelative(uptime.checked_at)} />
                         </dl>
-                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
                 </SystemPanel>
 
                 {/* WS */}
                 <SystemPanel
                     title="WebSocket"
                     icon={Wifi}
-                    accent="text-black/55"
+                    accent="text-slate-500"
                     testid="sys-ws"
                     loading={loading.ws}
                     onRefresh={() => _load("ws", "/admin/system/websocket", setWs)}
@@ -645,19 +645,19 @@ function SystemTab() {
                             </dl>
                             {Array.isArray(ws.top_users) && ws.top_users.length > 0 && (
                                 <div className="mt-3">
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Top users (sockets)</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Top users (sockets)</div>
                                     <ul className="space-y-1">
                                         {ws.top_users.slice(0, 5).map((u) => (
                                             <li key={u.user_id} className="text-[12px] flex items-center justify-between gap-2">
-                                                <span className="font-mono text-black/70 truncate">@{u.username || u.user_id.slice(0,8)}</span>
-                                                <span className="font-mono text-black/55">{u.sockets}</span>
+                                                <span className="font-mono text-slate-700 truncate">@{u.username || u.user_id.slice(0,8)}</span>
+                                                <span className="font-mono text-slate-500">{u.sockets}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
                         </>
-                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
                 </SystemPanel>
 
                 {/* LATENCY */}
@@ -672,18 +672,18 @@ function SystemTab() {
                     {latency ? (
                         <dl>
                             <KV k="Min" v={latency.min_ms != null ? `${latency.min_ms} ms` : "—"} mono />
-                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-red-700" : "text-black/70"} />
+                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-red-700" : "text-slate-700"} />
                             <KV k="Máx" v={latency.max_ms != null ? `${latency.max_ms} ms` : "—"} mono />
                             <KV k="Amostras" v={(latency.samples_ms || []).map((s) => `${s}ms`).join(" · ")} mono />
                         </dl>
-                    ) : <div className="text-[12px] text-black/45">A medir…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A medir…</div>}
                 </SystemPanel>
 
                 {/* DATABASE */}
                 <SystemPanel
                     title="Base de dados"
                     icon={Database}
-                    accent="text-black/55"
+                    accent="text-slate-500"
                     testid="sys-database"
                     loading={loading.database}
                     onRefresh={() => _load("database", "/admin/system/database", setDatabase)}
@@ -701,19 +701,19 @@ function SystemTab() {
                             </dl>
                             {Array.isArray(database.collections) && (
                                 <div className="mt-3 max-h-[180px] overflow-y-auto">
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Coleções por contagem</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Coleções por contagem</div>
                                     <ul className="space-y-0.5">
                                         {database.collections.slice(0, 8).map((c) => (
                                             <li key={c.name} className="text-[12px] flex items-center justify-between gap-2">
-                                                <span className="font-mono text-black/70 truncate">{c.name}</span>
-                                                <span className="font-mono text-black/55">{fmtNum(c.count)}</span>
+                                                <span className="font-mono text-slate-700 truncate">{c.name}</span>
+                                                <span className="font-mono text-slate-500">{fmtNum(c.count)}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
                         </>
-                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
                 </SystemPanel>
 
                 {/* LOAD */}
@@ -728,18 +728,18 @@ function SystemTab() {
                     {load ? (
                         <dl>
                             <KV k="CPUs" v={load.cpu_count} mono />
-                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-black/70"} />
+                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-slate-700"} />
                             <KV k="Load 5m" v={load.load_avg?.["5m"]?.toFixed?.(2) ?? "—"} mono />
                             <KV k="Load 15m" v={load.load_avg?.["15m"]?.toFixed?.(2) ?? "—"} mono />
                             {load.memory && (
                                 <>
                                     <KV k="Memória total" v={fmtKbToBytes(load.memory.total_kb)} mono />
-                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-black/70"} />
+                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-slate-700"} />
                                     <KV k="Disponível" v={fmtKbToBytes(load.memory.available_kb)} mono />
                                 </>
                             )}
                         </dl>
-                    ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                    ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
                 </SystemPanel>
             </div>
 
@@ -754,31 +754,31 @@ function SystemTab() {
             >
                 {errLog ? (
                     <>
-                        <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">
+                        <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">
                             {errLog.file || "sem ficheiro"} · {errLog.count} linhas
                         </div>
                         <LogTail lines={errLog.lines} empty="Sem erros registados." />
                     </>
-                ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
             </SystemPanel>
 
             {/* LOGS */}
             <SystemPanel
                 title="Logs (stdout)"
                 icon={FileCode}
-                accent="text-black/55"
+                accent="text-slate-500"
                 testid="sys-logs"
                 loading={loading.outLog}
                 onRefresh={() => _load("outLog", "/admin/system/logs?lines=120", setOutLog)}
             >
                 {outLog ? (
                     <>
-                        <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">
+                        <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">
                             {outLog.file || "sem ficheiro"} · {outLog.count} linhas
                         </div>
                         <LogTail lines={outLog.lines} empty="Sem entradas." />
                     </>
-                ) : <div className="text-[12px] text-black/45">A carregar…</div>}
+                ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
             </SystemPanel>
 
             <div className="bg-red-50/70 border border-red-200 rounded-2xl px-3 sm:px-4 py-2.5 text-[11.5px] text-red-700/85 flex items-start gap-2">
@@ -931,7 +931,7 @@ function UsersTab({ onOpenDrawer }) {
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-users-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 >
                     <RefreshCcw size={14} /> Atualizar
                 </button>
@@ -939,20 +939,20 @@ function UsersTab({ onOpenDrawer }) {
 
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar por username, email, nome ou ID"
                         data-testid="admin-users-search"
-                        className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                        className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {USER_FILTERS.map((f) => (
                         <button key={f.key}
                             onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-users-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{f.label}</button>
                     ))}
                 </div>
@@ -960,7 +960,7 @@ function UsersTab({ onOpenDrawer }) {
 
             {/* BULK TOOLBAR */}
             {selected.size > 0 && (
-                <div className="bg-black text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
+                <div className="bg-slate-900 text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
                     data-testid="admin-users-bulk-toolbar">
                     <div className="text-[12.5px] sm:text-[13px] font-medium">
                         {selected.size} selecionado(s)
@@ -983,7 +983,7 @@ function UsersTab({ onOpenDrawer }) {
                         </button>
                         <button onClick={() => runBulk("unban")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-unban"
-                            className="h-8 px-2.5 sm:px-3 rounded-full bg-black hover:bg-black text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-slate-900 hover:bg-slate-800 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
                             Desbanir
                         </button>
                         <button onClick={() => runBulk("force_logout")} disabled={bulkBusy}
@@ -1001,18 +1001,18 @@ function UsersTab({ onOpenDrawer }) {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 {data.items.length > 0 && (
-                    <div className="px-4 py-2 border-b border-black/[0.05] flex items-center gap-2 text-[12px] text-black/55">
+                    <div className="px-4 py-2 border-b border-slate-200 flex items-center gap-2 text-[12px] text-slate-500">
                         <input type="checkbox" checked={allSelected} onChange={selectAll}
                             data-testid="admin-users-select-all"
                             className="w-4 h-4 accent-black cursor-pointer" />
                         <span>Selecionar todos os elegíveis ({selectableCount})</span>
                     </div>
                 )}
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem utilizadores para os filtros atuais.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem utilizadores para os filtros atuais.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((u) => {
@@ -1039,18 +1039,18 @@ function UsersTab({ onOpenDrawer }) {
                                 </button>
                                 <button
                                     onClick={() => onOpenDrawer && onOpenDrawer(u)}
-                                    className="flex-1 min-w-0 basis-[60%] sm:basis-auto text-left hover:bg-black/[0.02] rounded-xl px-2 -mx-2 py-1 -my-1 transition"
+                                    className="flex-1 min-w-0 basis-[60%] sm:basis-auto text-left hover:bg-slate-800/[0.02] rounded-xl px-2 -mx-2 py-1 -my-1 transition"
                                     title="Abrir detalhes"
                                 >
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
-                                        <span className="font-mono text-[11.5px] text-black/45">@{u.username}</span>
+                                        <span className="font-mono text-[11.5px] text-slate-400">@{u.username}</span>
                                         {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-medium">verified</span>}
                                         {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">admin</span>}
                                         {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">banido</span>}
-                                        {u.online && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70 font-medium">online</span>}
+                                        {u.online && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">online</span>}
                                     </div>
-                                    <div className="text-[11.5px] text-black/55 truncate">
+                                    <div className="text-[11.5px] text-slate-500 truncate">
                                         {u.email} · seguidores {u.followers_count} · entrou {fmtRelative(u.created_at)}
                                     </div>
                                     {u.banned && u.ban_reason && (
@@ -1058,29 +1058,29 @@ function UsersTab({ onOpenDrawer }) {
                                     )}
                                 </button>
 
-                                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto sm:ml-0 basis-full sm:basis-auto justify-end sm:justify-start pt-1 sm:pt-0 border-t sm:border-t-0 border-black/[0.04] sm:border-0 mt-1 sm:mt-0">
+                                <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto sm:ml-0 basis-full sm:basis-auto justify-end sm:justify-start pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-0 mt-1 sm:mt-0">
                                     <button
                                         onClick={() => onVerify(u)} disabled={busy}
                                         data-testid={`admin-user-verify-${u.username}`}
                                         title={u.verified ? "Desverificar" : "Verificar"}
-                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40"
+                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40"
                                     >
-                                        <ShieldCheck size={15} className={u.verified ? "text-blue-600" : "text-black/55"} />
+                                        <ShieldCheck size={15} className={u.verified ? "text-blue-600" : "text-slate-500"} />
                                     </button>
                                     <button
                                         onClick={() => onToggleAdmin(u)} disabled={busy || isMe}
                                         data-testid={`admin-user-admin-${u.username}`}
                                         title={isMe ? "Não te podes alterar a ti próprio" : (u.is_admin ? "Remover admin" : "Promover a admin")}
-                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40"
+                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40"
                                     >
-                                        <Shield size={15} className={u.is_admin ? "text-red-600" : "text-black/55"} />
+                                        <Shield size={15} className={u.is_admin ? "text-red-600" : "text-slate-500"} />
                                     </button>
                                     {u.banned ? (
                                         <button
                                             onClick={() => onUnban(u)} disabled={busy}
                                             data-testid={`admin-user-unban-${u.username}`}
                                             title="Desbanir"
-                                            className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40 text-black/70"
+                                            className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40 text-slate-700"
                                         >
                                             <UserCheck size={15} />
                                         </button>
@@ -1098,7 +1098,7 @@ function UsersTab({ onOpenDrawer }) {
                                         onClick={() => onForceLogout(u)} disabled={busy}
                                         data-testid={`admin-user-logout-${u.username}`}
                                         title="Forçar logout (revogar todas as sessões)"
-                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40 text-black/55"
+                                        className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-100 disabled:opacity-40 text-slate-500"
                                     >
                                         <UserX size={15} />
                                     </button>
@@ -1233,7 +1233,7 @@ function PostsTab() {
                 <button
                     onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-posts-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 >
                     <RefreshCcw size={14} /> Atualizar
                 </button>
@@ -1241,26 +1241,26 @@ function PostsTab() {
 
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar por conteúdo ou ID"
                         data-testid="admin-posts-search"
-                        className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                        className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {POST_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-posts-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{f.label}</button>
                     ))}
                 </div>
             </div>
 
             {selected.size > 0 && (
-                <div className="bg-black text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
+                <div className="bg-slate-900 text-white rounded-2xl px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap"
                     data-testid="admin-posts-bulk-toolbar">
                     <div className="text-[12.5px] sm:text-[13px] font-medium">{selected.size} selecionada(s)</div>
                     <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
@@ -1288,18 +1288,18 @@ function PostsTab() {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 {data.items.length > 0 && (
-                    <div className="px-4 py-2 border-b border-black/[0.05] flex items-center gap-2 text-[12px] text-black/55">
+                    <div className="px-4 py-2 border-b border-slate-200 flex items-center gap-2 text-[12px] text-slate-500">
                         <input type="checkbox" checked={allSelected} onChange={selectAll}
                             data-testid="admin-posts-select-all"
                             className="w-4 h-4 accent-black cursor-pointer" />
                         <span>Selecionar tudo nesta página ({data.items.length})</span>
                     </div>
                 )}
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem publicações.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem publicações.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((p) => {
@@ -1312,17 +1312,17 @@ function PostsTab() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[13.5px]">@{p.author_username || "—"}</span>
-                                    <span className="font-mono text-[10.5px] text-black/40">{p.kind}</span>
-                                    {p.image && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">com imagem</span>}
+                                    <span className="font-mono text-[10.5px] text-slate-400">{p.kind}</span>
+                                    {p.image && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">com imagem</span>}
                                     {p.featured && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
                                     {p.is_draft && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">rascunho</span>}
-                                    {p.scheduled_at && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">agendado</span>}
-                                    {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70">c/{p.community_slug}</span>}
+                                    {p.scheduled_at && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-700">agendado</span>}
+                                    {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">c/{p.community_slug}</span>}
                                 </div>
-                                <div className="text-[13px] text-black mt-1 line-clamp-3 whitespace-pre-wrap break-words">{p.content || "—"}</div>
-                                <div className="text-[11px] text-black/45 mt-1 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <div className="text-[13px] text-slate-900 mt-1 line-clamp-3 whitespace-pre-wrap break-words">{p.content || "—"}</div>
+                                <div className="text-[11px] text-slate-400 mt-1 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
                                     <span>{p.likes_count} ♥ · {p.comments_count} 💬 · {fmtRelative(p.created_at)} · {p.id.slice(0, 8)}</span>
-                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
+                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
                                     {p.reduce_reach && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 inline-flex items-center gap-0.5"><TrendingDown size={9} /> alcance reduzido</span>}
                                 </div>
                             </div>
@@ -1330,25 +1330,25 @@ function PostsTab() {
                                 <a href={`/post/${p.id}`} target="_blank" rel="noopener noreferrer"
                                     data-testid={`admin-post-view-${p.id}`}
                                     title="Ver publicação"
-                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-200 text-slate-600"
                                 ><Eye size={14} /></a>
                                 <button
                                     onClick={() => setDrawer({ post: p, view: "replies" })}
                                     data-testid={`admin-post-replies-${p.id}`}
                                     title="Ver respostas"
-                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-200 text-slate-600"
                                 ><MessageCircle size={14} /></button>
                                 <button
                                     onClick={() => setDrawer({ post: p, view: "reports" })}
                                     data-testid={`admin-post-reports-${p.id}`}
                                     title="Ver reports"
-                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.08] text-black/65"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-slate-200 text-slate-600"
                                 ><Flag size={14} /></button>
                                 <button
                                     onClick={() => onFreezeReplies(p)} disabled={busyId === p.id}
                                     data-testid={`admin-post-freeze-replies-${p.id}`}
                                     title={p.replies_frozen ? "Reabrir respostas" : "Congelar respostas"}
-                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.replies_frozen ? "bg-black/[0.06] text-black/70" : "hover:bg-black/[0.04] text-black/55"}`}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.replies_frozen ? "bg-slate-100 text-slate-700" : "hover:bg-slate-50 text-slate-500"}`}
                                 ><Snowflake size={14} /></button>
                                 <button
                                     onClick={() => onReduceReach(p)} disabled={busyId === p.id}
@@ -1438,45 +1438,45 @@ function PostInspector({ post, initialView = "replies", onClose }) {
         <div className="fixed inset-0 z-[80]" data-testid="admin-post-inspector">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
             <aside className="absolute right-0 top-0 bottom-0 w-full sm:max-w-[560px] bg-white shadow-2xl flex flex-col">
-                <header className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-2">
-                    <FileText size={16} className="text-black/55" />
+                <header className="px-4 py-3 border-b border-slate-200 flex items-center gap-2">
+                    <FileText size={16} className="text-slate-500" />
                     <div className="flex-1 min-w-0">
                         <div className="font-display text-[15px] tracking-tight truncate">Publicação @{post.author_username || "—"}</div>
-                        <div className="text-[11px] text-black/45 font-mono truncate">{post.id.slice(0, 12)} · {post.comments_count} respostas</div>
+                        <div className="text-[11px] text-slate-400 font-mono truncate">{post.id.slice(0, 12)} · {post.comments_count} respostas</div>
                     </div>
                     <a href={`/post/${post.id}`} target="_blank" rel="noopener noreferrer"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] inline-flex items-center gap-1.5"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12px] inline-flex items-center gap-1.5"
                     ><Eye size={13} /> Abrir</a>
-                    <button onClick={onClose} aria-label="Fechar" className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05]"><XIcon size={16} /></button>
+                    <button onClick={onClose} aria-label="Fechar" className="w-9 h-9 grid place-items-center rounded-full hover:bg-slate-100"><XIcon size={16} /></button>
                 </header>
-                <nav className="px-3 pt-3 flex items-center gap-1 border-b border-black/[0.04]">
+                <nav className="px-3 pt-3 flex items-center gap-1 border-b border-slate-100">
                     <button onClick={() => setView("replies")} data-testid="admin-post-inspector-tab-replies"
-                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "replies" ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}>
+                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "replies" ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}>
                         Respostas ({post.comments_count})
                     </button>
                     <button onClick={() => setView("reports")} data-testid="admin-post-inspector-tab-reports"
-                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "reports" ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}>
+                        className={`h-8 px-3 rounded-full text-[12px] font-medium mb-2 ${view === "reports" ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}>
                         Reports
                     </button>
                 </nav>
                 <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
                     {view === "replies" && (
-                        replies === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
-                        replies.items.length === 0 ? <div className="text-center text-black/45 py-10 text-[13px]">Sem respostas.</div> :
+                        replies === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        replies.items.length === 0 ? <div className="text-center text-slate-400 py-10 text-[13px]">Sem respostas.</div> :
                         <>
                             <ul className="space-y-2" data-testid="admin-post-inspector-replies">
                                 {replies.items.map((c) => (
-                                    <li key={c.id} className="px-3 py-2 rounded-xl bg-black/[0.03]">
+                                    <li key={c.id} className="px-3 py-2 rounded-xl bg-slate-50">
                                         <div className="flex items-center gap-1.5 text-[11.5px] flex-wrap">
                                             <span className="font-medium">@{c.author_username || "—"}</span>
                                             {c.author_verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                             {c.author_banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                            {c.parent_id && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.04] text-black/70">resposta</span>}
-                                            <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(c.created_at)}</span>
+                                            {c.parent_id && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-50 text-slate-700">resposta</span>}
+                                            <span className="ml-auto text-[10.5px] text-slate-400 font-mono">{fmtRelative(c.created_at)}</span>
                                         </div>
-                                        <div className="text-[13px] text-black/85 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
+                                        <div className="text-[13px] text-slate-800 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
                                         <div className="flex items-center justify-between mt-1.5">
-                                            <span className="text-[10.5px] text-black/45 font-mono">{c.replies_count} respostas</span>
+                                            <span className="text-[10.5px] text-slate-400 font-mono">{c.replies_count} respostas</span>
                                             <button onClick={() => deleteComment(c)} disabled={busyId === c.id}
                                                 data-testid={`admin-post-inspector-delete-${c.id}`}
                                                 className="h-7 px-2.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 text-[11px] font-medium disabled:opacity-40 inline-flex items-center gap-1">
@@ -1491,39 +1491,39 @@ function PostInspector({ post, initialView = "replies", onClose }) {
                     )}
 
                     {view === "reports" && (
-                        reports === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
-                        (reports.post_reports.length === 0 && reports.comment_reports.length === 0) ? <div className="text-center text-black/45 py-10 text-[13px]">Sem reports.</div> :
+                        reports === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        (reports.post_reports.length === 0 && reports.comment_reports.length === 0) ? <div className="text-center text-slate-400 py-10 text-[13px]">Sem reports.</div> :
                         <div className="space-y-3" data-testid="admin-post-inspector-reports">
                             {reports.post_reports.length > 0 && (
                                 <div>
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra a publicação ({reports.post_reports.length})</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Contra a publicação ({reports.post_reports.length})</div>
                                     <ul className="space-y-1.5">{reports.post_reports.map((r) => (
                                         <li key={r.id} className="px-3 py-1.5 rounded-xl bg-red-500/[0.06] text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-700">{r.kind}</span>
-                                                <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
-                                                {r.reason && <span className="text-black/65">{r.reason}</span>}
-                                                <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                                <span className="font-mono text-[10.5px] text-slate-500">{r.status}</span>
+                                                {r.reason && <span className="text-slate-600">{r.reason}</span>}
+                                                <span className="ml-auto text-[10.5px] text-slate-400">{fmtRelative(r.created_at)}</span>
                                             </div>
-                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-black/55">"{r.detail}"</div>}
-                                            {r.reporter && <div className="mt-1 text-[10.5px] text-black/45 font-mono">por @{r.reporter.username}</div>}
+                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-slate-500">"{r.detail}"</div>}
+                                            {r.reporter && <div className="mt-1 text-[10.5px] text-slate-400 font-mono">por @{r.reporter.username}</div>}
                                         </li>
                                     ))}</ul>
                                 </div>
                             )}
                             {reports.comment_reports.length > 0 && (
                                 <div>
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra comentários ({reports.comment_reports.length})</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Contra comentários ({reports.comment_reports.length})</div>
                                     <ul className="space-y-1.5">{reports.comment_reports.map((r) => (
                                         <li key={r.id} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">comentário</span>
-                                                <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
-                                                {r.reason && <span className="text-black/65">{r.reason}</span>}
-                                                <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                                <span className="font-mono text-[10.5px] text-slate-500">{r.status}</span>
+                                                {r.reason && <span className="text-slate-600">{r.reason}</span>}
+                                                <span className="ml-auto text-[10.5px] text-slate-400">{fmtRelative(r.created_at)}</span>
                                             </div>
-                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-black/55">"{r.detail}"</div>}
-                                            {r.reporter && <div className="mt-1 text-[10.5px] text-black/45 font-mono">por @{r.reporter.username} · alvo {r.target_id?.slice(0, 8)}</div>}
+                                            {r.detail && <div className="mt-1 text-[11.5px] italic text-slate-500">"{r.detail}"</div>}
+                                            {r.reporter && <div className="mt-1 text-[10.5px] text-slate-400 font-mono">por @{r.reporter.username} · alvo {r.target_id?.slice(0, 8)}</div>}
                                         </li>
                                     ))}</ul>
                                 </div>
@@ -1630,57 +1630,57 @@ function ReportsTab({ onOpenUser }) {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Reports</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-reports-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["open", "closed", "all"].map((s) => (
                         <button key={s} onClick={() => { setStatus(s); setPage(1); }}
                             data-testid={`admin-reports-status-${s}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${status === s ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${status === s ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{s === "open" ? "Abertos" : s === "closed" ? "Resolvidos" : "Todos"}</button>
                     ))}
                 </div>
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["all", "post", "comment", "user"].map((k) => (
                         <button key={k} onClick={() => { setKind(k); setPage(1); }}
                             data-testid={`admin-reports-kind-${k}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${kind === k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${kind === k ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{k === "all" ? "Tudo" : k === "post" ? "Posts" : k === "comment" ? "Coment." : "Users"}</button>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem reports para os filtros atuais.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem reports para os filtros atuais.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((r) => (
                         <li key={r.id} data-testid={`admin-report-row-${r.id}`} className="px-4 py-3 flex items-start gap-3">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70 font-medium uppercase tracking-wide">{r.kind}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${r.status === "open" ? "bg-red-50 text-red-700" : "bg-black/[0.05] text-black/70"}`}>{r.status}</span>
-                                    {r.reason && <span className="text-[11px] text-black/65">motivo: {r.reason}</span>}
-                                    <span className="text-[11px] text-black/45 ml-auto">{fmtRelative(r.created_at)}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium uppercase tracking-wide">{r.kind}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${r.status === "open" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"}`}>{r.status}</span>
+                                    {r.reason && <span className="text-[11px] text-slate-600">motivo: {r.reason}</span>}
+                                    <span className="text-[11px] text-slate-400 ml-auto">{fmtRelative(r.created_at)}</span>
                                 </div>
-                                <div className="mt-1.5 text-[12.5px] text-black/80">
+                                <div className="mt-1.5 text-[12.5px] text-slate-700">
                                     Reportado por <strong>@{r.reporter?.username || "—"}</strong>
                                 </div>
                                 {r.target_preview && (r.target_preview.content || r.target_preview.username) && (
-                                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-black/[0.03] text-[12.5px] text-black/85 whitespace-pre-wrap break-words">
+                                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-slate-50 text-[12.5px] text-slate-800 whitespace-pre-wrap break-words">
                                         {r.target_preview.username
                                             ? <>Utilizador alvo: <strong>@{r.target_preview.username}</strong> ({r.target_preview.name})</>
                                             : (r.target_preview.content || "—")}
                                     </div>
                                 )}
-                                {r.detail && <div className="mt-1 text-[12px] text-black/55 italic">"{r.detail}"</div>}
+                                {r.detail && <div className="mt-1 text-[12px] text-slate-500 italic">"{r.detail}"</div>}
                                 {r.status === "closed" && (
-                                    <div className="mt-1 text-[11px] text-black/55 font-mono">
+                                    <div className="mt-1 text-[11px] text-slate-500 font-mono">
                                         Resolvido como <strong>{r.resolved_action}</strong> {r.resolved_note ? `· ${r.resolved_note}` : ""} ({fmtRelative(r.resolved_at)})
                                     </div>
                                 )}
@@ -1690,18 +1690,18 @@ function ReportsTab({ onOpenUser }) {
                                     {openContentLink(r) && (
                                         <a href={openContentLink(r)} target="_blank" rel="noopener noreferrer"
                                             data-testid={`admin-report-open-${r.id}`}
-                                            className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium text-center inline-flex items-center justify-center gap-1">
+                                            className="h-8 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12px] font-medium text-center inline-flex items-center justify-center gap-1">
                                             <Eye size={12} /> Abrir
                                         </a>
                                     )}
                                     <button onClick={() => resolve(r, "resolved")} disabled={busyId === r.id}
                                         data-testid={`admin-report-resolve-${r.id}`}
-                                        className="h-8 px-3 rounded-full bg-black/[0.05] text-black/70 hover:bg-black/[0.08] text-[12px] font-medium disabled:opacity-40">
+                                        className="h-8 px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 text-[12px] font-medium disabled:opacity-40">
                                         Aprovar
                                     </button>
                                     <button onClick={() => resolve(r, "dismissed")} disabled={busyId === r.id}
                                         data-testid={`admin-report-dismiss-${r.id}`}
-                                        className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium disabled:opacity-40">
+                                        className="h-8 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12px] font-medium disabled:opacity-40">
                                         Ignorar
                                     </button>
                                     {(r.kind === "post" || r.kind === "comment") && (
@@ -1726,7 +1726,7 @@ function ReportsTab({ onOpenUser }) {
                                             {typeof onOpenUser === "function" && (
                                                 <button onClick={() => onOpenUser({ id: r.target_user_id, username: r.target_username })}
                                                     data-testid={`admin-report-open-user-${r.id}`}
-                                                    className="h-8 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
+                                                    className="h-8 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
                                                     <UserCheck size={11} /> Perfil
                                                 </button>
                                             )}
@@ -1784,21 +1784,21 @@ function CommunitiesTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comunidades</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-communities-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
             <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                     placeholder="Pesquisar por slug, nome ou descrição"
                     data-testid="admin-communities-search"
-                    className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                    className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                 />
             </div>
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem comunidades.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem comunidades.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((c) => (
@@ -1806,11 +1806,11 @@ function CommunitiesTab() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[14px]">c/{c.slug}</span>
-                                    <span className="text-[12px] text-black/55">· {c.name}</span>
-                                    {c.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06]">{c.category}</span>}
+                                    <span className="text-[12px] text-slate-500">· {c.name}</span>
+                                    {c.category && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100">{c.category}</span>}
                                 </div>
-                                <div className="text-[12.5px] text-black/65 line-clamp-2 mt-0.5">{c.description}</div>
-                                <div className="text-[11px] text-black/45 mt-1 font-mono">{c.members_count} membros · {fmtRelative(c.created_at)}</div>
+                                <div className="text-[12.5px] text-slate-600 line-clamp-2 mt-0.5">{c.description}</div>
+                                <div className="text-[11px] text-slate-400 mt-1 font-mono">{c.members_count} membros · {fmtRelative(c.created_at)}</div>
                             </div>
                             <button onClick={() => onDelete(c)} disabled={busyId === c.slug}
                                 data-testid={`admin-community-delete-${c.slug}`}
@@ -1869,29 +1869,29 @@ function EventsTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Eventos</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-events-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
             <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                     placeholder="Pesquisar por título, descrição ou local"
                     data-testid="admin-events-search"
-                    className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                    className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                 />
             </div>
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem eventos.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem eventos.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((e) => (
                         <li key={e.id} className="px-4 py-3 flex items-start gap-3" data-testid={`admin-event-row-${e.id}`}>
                             <div className="flex-1 min-w-0">
                                 <div className="font-medium text-[14px]">{e.title}</div>
-                                <div className="text-[12.5px] text-black/65 line-clamp-2">{e.description}</div>
-                                <div className="text-[11px] text-black/45 mt-1 font-mono">
+                                <div className="text-[12.5px] text-slate-600 line-clamp-2">{e.description}</div>
+                                <div className="text-[11px] text-slate-400 mt-1 font-mono">
                                     {e.location ? `${e.location} · ` : ""}{fmtDate(e.starts_at)} · {e.attendees_count} interessados
                                 </div>
                             </div>
@@ -1951,13 +1951,13 @@ function SessionsTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sessões ativas</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-sessions-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem sessões ativas.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem sessões ativas.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((s) => (
@@ -1965,10 +1965,10 @@ function SessionsTab() {
                             <Avatar user={s.user} size={32} />
                             <div className="flex-1 min-w-0">
                                 <div className="font-medium text-[13.5px]">@{s.user?.username || s.user_id?.slice(0, 8)}</div>
-                                <div className="text-[11.5px] text-black/55 truncate font-mono">
+                                <div className="text-[11.5px] text-slate-500 truncate font-mono">
                                     {s.ip} · {(s.ua || "").slice(0, 80)}
                                 </div>
-                                <div className="text-[11px] text-black/45 font-mono">
+                                <div className="text-[11px] text-slate-400 font-mono">
                                     iniciada {fmtRelative(s.created_at)} · activa {fmtRelative(s.last_seen_at)}{s.source ? ` · ${s.source}` : ""}
                                 </div>
                             </div>
@@ -2026,13 +2026,13 @@ function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, sav
     const isDestructiveOn = spec.key === "read_only_mode"; // ligar = mau (read-only global)
     const goodWhen = isDestructiveOn ? !enabled : enabled;
     return (
-        <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
             <div className="flex items-start gap-3">
                 <button
                     type="button"
                     disabled={saving}
                     onClick={() => onChange(!enabled)}
-                    className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-red-600" : "bg-black/15"} ${saving ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
+                    className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-red-600" : "bg-slate-300"} ${saving ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
                     aria-pressed={enabled}
                     data-testid={`flag-${spec.key}`}
                     title={enabled ? "Desligar" : "Ligar"}
@@ -2041,19 +2041,19 @@ function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, sav
                 </button>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-semibold text-[14px] text-black">{spec.label}</div>
-                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${goodWhen ? "bg-black/[0.03] text-black/70" : "bg-red-50 text-red-700"}`}>
+                        <div className="font-semibold text-[14px] text-slate-900">{spec.label}</div>
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${goodWhen ? "bg-slate-50 text-slate-700" : "bg-red-50 text-red-700"}`}>
                             {enabled ? "Ligado" : "Desligado"}
                         </span>
                         {isOverride && (
-                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/[0.04] text-black/70" title="Valor alterado pelo admin (≠ default)">
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-700" title="Valor alterado pelo admin (≠ default)">
                                 Custom
                             </span>
                         )}
                     </div>
-                    <div className="text-[12px] text-black/55 mt-0.5">{spec.description}</div>
+                    <div className="text-[12px] text-slate-500 mt-0.5">{spec.description}</div>
                     {(spec.applies_to || []).length > 0 && (
-                        <div className="mt-1.5 text-[11px] text-black/40 font-mono">
+                        <div className="mt-1.5 text-[11px] text-slate-400 font-mono">
                             {spec.applies_to.slice(0, 3).join("  •  ")}
                             {(spec.applies_to || []).length > 3 ? "  •  …" : ""}
                         </div>
@@ -2064,7 +2064,7 @@ function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, sav
                         type="button"
                         onClick={onReset}
                         disabled={saving}
-                        className="text-[11px] text-black/60 hover:text-black px-2 py-1 rounded-md hover:bg-black/[0.05] flex items-center gap-1"
+                        className="text-[11px] text-slate-600 hover:text-slate-900 px-2 py-1 rounded-md hover:bg-slate-100 flex items-center gap-1"
                         title={`Repor default (${spec.default ? "Ligado" : "Desligado"})`}
                         data-testid={`flag-reset-${spec.key}`}
                     >
@@ -2088,23 +2088,23 @@ function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving })
         onChange(numVal);
     };
     return (
-        <div className="bg-white border border-black/[0.06] rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
             <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-semibold text-[14px] text-black">{spec.label}</div>
+                        <div className="font-semibold text-[14px] text-slate-900">{spec.label}</div>
                         {isOverride && (
-                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/[0.04] text-black/70" title="Valor alterado pelo admin (≠ default)">
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-700" title="Valor alterado pelo admin (≠ default)">
                                 Custom
                             </span>
                         )}
                     </div>
-                    <div className="text-[12px] text-black/55 mt-0.5">{spec.description}</div>
-                    <div className="text-[11px] text-black/40 mt-1">
+                    <div className="text-[12px] text-slate-500 mt-0.5">{spec.description}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">
                         Mín: <b>{spec.min}</b> · Máx: <b>{spec.max}</b> · Default: <b>{spec.default}</b>
                     </div>
                     {(spec.applies_to || []).length > 0 && (
-                        <div className="mt-1 text-[11px] text-black/40 font-mono">
+                        <div className="mt-1 text-[11px] text-slate-400 font-mono">
                             {spec.applies_to.slice(0, 3).join("  •  ")}
                             {(spec.applies_to || []).length > 3 ? "  •  …" : ""}
                         </div>
@@ -2119,14 +2119,14 @@ function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving })
                         onChange={(e) => setLocal(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
                         disabled={saving}
-                        className={`w-24 px-2.5 py-1.5 rounded-lg border text-[13px] font-mono text-right ${valid ? "border-black/15 focus:border-black/40" : "border-red-400 focus:border-red-500"} bg-white disabled:opacity-60`}
+                        className={`w-24 px-2.5 py-1.5 rounded-lg border text-[13px] font-mono text-right ${valid ? "border-slate-300 focus:border-slate-400" : "border-red-400 focus:border-red-500"} bg-white disabled:opacity-60`}
                         data-testid={`limit-input-${spec.key}`}
                     />
                     <button
                         type="button"
                         onClick={commit}
                         disabled={saving || !dirty || !valid}
-                        className={`text-[12px] px-3 py-1.5 rounded-lg font-medium transition-colors ${dirty && valid ? "bg-black text-white hover:bg-black/85" : "bg-black/[0.06] text-black/30 cursor-not-allowed"}`}
+                        className={`text-[12px] px-3 py-1.5 rounded-lg font-medium transition-colors ${dirty && valid ? "bg-slate-900 text-white hover:bg-slate-800/85" : "bg-slate-100 text-slate-300 cursor-not-allowed"}`}
                         data-testid={`limit-save-${spec.key}`}
                     >
                         Guardar
@@ -2136,7 +2136,7 @@ function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving })
                             type="button"
                             onClick={onReset}
                             disabled={saving}
-                            className="text-[11px] text-black/60 hover:text-black px-2 py-1 rounded-md hover:bg-black/[0.05] flex items-center gap-1"
+                            className="text-[11px] text-slate-600 hover:text-slate-900 px-2 py-1 rounded-md hover:bg-slate-100 flex items-center gap-1"
                             title={`Repor default (${spec.default})`}
                             data-testid={`limit-reset-${spec.key}`}
                         >
@@ -2217,7 +2217,7 @@ function SettingsTab() {
     };
 
     if (loading && !data) {
-        return <div className="flex items-center justify-center py-16 text-black/45"><Loader2 className="animate-spin" /></div>;
+        return <div className="flex items-center justify-center py-16 text-slate-400"><Loader2 className="animate-spin" /></div>;
     }
     if (!data) return null;
 
@@ -2229,27 +2229,27 @@ function SettingsTab() {
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="bg-white border border-black/[0.06] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                     <div className="h-10 w-10 rounded-xl bg-[var(--coral-500)]/10 flex items-center justify-center shrink-0">
                         <Settings2 className="h-5 w-5 text-[var(--coral-500)]" />
                     </div>
                     <div>
-                        <div className="font-display text-[20px] leading-tight text-black">Definições da Plataforma</div>
-                        <div className="text-[12px] text-black/55 mt-0.5">
+                        <div className="font-display text-[20px] leading-tight text-slate-900">Definições da Plataforma</div>
+                        <div className="text-[12px] text-slate-500 mt-0.5">
                             Feature flags + limites globais. Aplicam-se em runtime (cache 5s). Admins fazem bypass de todas as flags para conseguirem testar.
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-[11px] text-black/45 font-mono whitespace-nowrap">
+                    <div className="text-[11px] text-slate-400 font-mono whitespace-nowrap">
                         {totalCustom > 0 ? `${totalCustom} customizada(s)` : "todas em default"}
                     </div>
                     <button
                         type="button"
                         onClick={() => setReloadAt(Date.now())}
                         disabled={saving || loading}
-                        className="h-9 px-3 rounded-lg border border-black/10 text-[12px] text-black/70 hover:bg-black/[0.04] flex items-center gap-1.5"
+                        className="h-9 px-3 rounded-lg border border-slate-200 text-[12px] text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
                         title="Recarregar"
                     >
                         <RefreshCcw className="h-3.5 w-3.5" />
@@ -2271,9 +2271,9 @@ function SettingsTab() {
 
             {/* FEATURE FLAGS */}
             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
                     <ToggleRight className="h-3.5 w-3.5" />
-                    Feature Flags <span className="text-black/30">({flags.length})</span>
+                    Feature Flags <span className="text-slate-300">({flags.length})</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                     {flags.map((spec) => (
@@ -2292,9 +2292,9 @@ function SettingsTab() {
 
             {/* LIMITES */}
             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
                     <Gauge className="h-3.5 w-3.5" />
-                    Limites Globais <span className="text-black/30">({limits.length})</span>
+                    Limites Globais <span className="text-slate-300">({limits.length})</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                     {limits.map((spec) => (
@@ -2313,14 +2313,14 @@ function SettingsTab() {
 
             {/* HISTÓRICO */}
             <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-black/45 font-mono px-1">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
                     <History className="h-3.5 w-3.5" />
-                    Histórico de alterações <span className="text-black/30">(últimas {(data.history || []).length})</span>
+                    Histórico de alterações <span className="text-slate-300">(últimas {(data.history || []).length})</span>
                 </div>
-                <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                     {(data.history || []).length === 0 ? (
-                        <div className="px-4 py-8 text-center text-[13px] text-black/45 flex flex-col items-center gap-2">
-                            <Info className="h-5 w-5 text-black/30" />
+                        <div className="px-4 py-8 text-center text-[13px] text-slate-400 flex flex-col items-center gap-2">
+                            <Info className="h-5 w-5 text-slate-300" />
                             Sem alterações registadas ainda.
                         </div>
                     ) : (
@@ -2330,15 +2330,15 @@ function SettingsTab() {
                                 return (
                                     <li key={i} className="px-4 py-2.5 flex items-center justify-between gap-3 text-[12.5px]">
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-black font-medium truncate">{label}</div>
-                                            <div className="text-[11px] text-black/45 font-mono">
-                                                {formatVal(h.from)} → <b className="text-black/80">{formatVal(h.to)}</b>
+                                            <div className="text-slate-900 font-medium truncate">{label}</div>
+                                            <div className="text-[11px] text-slate-400 font-mono">
+                                                {formatVal(h.from)} → <b className="text-slate-700">{formatVal(h.to)}</b>
                                                 {h.reason === "reset" && <span className="ml-2 text-red-600">(reset)</span>}
                                             </div>
                                         </div>
-                                        <div className="text-[11px] text-black/50 text-right whitespace-nowrap">
+                                        <div className="text-[11px] text-slate-500 text-right whitespace-nowrap">
                                             <div>@{h.actor_username || "?"}</div>
-                                            <div className="text-black/35">{fmtRelative(h.at)}</div>
+                                            <div className="text-slate-400">{fmtRelative(h.at)}</div>
                                         </div>
                                     </li>
                                 );
@@ -2396,39 +2396,39 @@ function AuditTab() {
                 <div className="flex items-center gap-1.5">
                     <button onClick={downloadCsv}
                         data-testid="admin-audit-export"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                     ><Download size={14} /> Export CSV</button>
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="admin-audit-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                     ><RefreshCcw size={14} /> Atualizar</button>
                 </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
                 <select value={action} onChange={(e) => { setAction(e.target.value); setPage(1); }}
                     data-testid="admin-audit-action-select"
-                    className="h-10 px-3 rounded-full bg-black/[0.04] text-[13px] outline-none">
+                    className="h-10 px-3 rounded-full bg-slate-50 text-[13px] outline-none">
                     <option value="">Todas as acções</option>
                     {actions.map((a) => <option key={a} value={a}>{ACTION_LABELS[a]}</option>)}
                 </select>
             </div>
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem registos no audit log.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem registos no audit log.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((a) => (
                         <li key={a.id} className="px-4 py-2.5 text-[12.5px] flex items-center gap-3 font-mono" data-testid={`admin-audit-row-${a.id}`}>
-                            <span className="text-black/40 text-[11px] w-[110px] shrink-0">{fmtRelative(a.created_at)}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-black/[0.06] text-black/75 text-[11px] shrink-0">
+                            <span className="text-slate-400 text-[11px] w-[110px] shrink-0">{fmtRelative(a.created_at)}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] shrink-0">
                                 {ACTION_LABELS[a.action] || a.action}
                             </span>
-                            <span className="text-black/75 truncate">
+                            <span className="text-slate-700 truncate">
                                 @{a.actor_username} → {a.target_kind}:{(a.target_id || "").slice(0, 12)}
                             </span>
                             {a.detail && Object.keys(a.detail).length > 0 && (
-                                <span className="text-black/45 truncate ml-auto">{JSON.stringify(a.detail)}</span>
+                                <span className="text-slate-400 truncate ml-auto">{JSON.stringify(a.detail)}</span>
                             )}
                         </li>
                     ))}
@@ -2482,22 +2482,22 @@ function CommentsTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comentários</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-comments-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
             <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                     placeholder="Pesquisar por conteúdo, ID do comentário ou post"
                     data-testid="admin-comments-search"
-                    className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                    className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                 />
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
-                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem comentários.</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem comentários.</div>}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((c) => (
                         <li key={c.id} data-testid={`admin-comment-row-${c.id}`} className="px-4 py-3 flex items-start gap-3">
@@ -2505,16 +2505,16 @@ function CommentsTab() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[13.5px]">{c.author_name || c.author_username || "—"}</span>
-                                    <span className="font-mono text-[11px] text-black/45">@{c.author_username}</span>
-                                    {c.parent_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">resposta</span>}
-                                    <span className="text-[11px] text-black/45 ml-auto">{fmtRelative(c.created_at)}</span>
+                                    <span className="font-mono text-[11px] text-slate-400">@{c.author_username}</span>
+                                    {c.parent_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-700">resposta</span>}
+                                    <span className="text-[11px] text-slate-400 ml-auto">{fmtRelative(c.created_at)}</span>
                                 </div>
-                                <div className="text-[13px] text-black/85 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
-                                <div className="mt-1 flex items-center gap-3 text-[11px] text-black/45 font-mono">
+                                <div className="text-[13px] text-slate-800 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
+                                <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-400 font-mono">
                                     <span>{c.likes_count} ♥</span>
                                     <span>{c.replies_count} respostas</span>
                                     <a href={`/post/${c.post_id}`} target="_blank" rel="noopener noreferrer"
-                                        className="hover:text-black/75 underline-offset-2 hover:underline">
+                                        className="hover:text-slate-700 underline-offset-2 hover:underline">
                                         post {c.post_id?.slice(0, 8)}
                                     </a>
                                 </div>
@@ -2587,32 +2587,32 @@ function StoriesTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Stories</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-stories-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 min-w-[160px] sm:min-w-[240px]">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar por legenda, ID ou autor"
                         data-testid="admin-stories-search"
-                        className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                        className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {STORY_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-stories-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{f.label}</button>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
-                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem stories.</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem stories.</div>}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((s) => (
                         <li key={s.id} data-testid={`admin-story-row-${s.id}`} className="px-4 py-3 flex items-center gap-3">
@@ -2620,17 +2620,17 @@ function StoriesTab() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[13.5px]">@{s.author_username || "—"}</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/65 inline-flex items-center gap-0.5">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 inline-flex items-center gap-0.5">
                                         {s.media_type === "video" ? <Video size={10} /> : <ImageIcon size={10} />} {s.media_type}
                                     </span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">{s.audience}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{s.audience}</span>
                                     {s.is_active
-                                        ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70">ativa</span>
-                                        : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">expirada</span>
+                                        ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">ativa</span>
+                                        : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">expirada</span>
                                     }
                                 </div>
-                                {s.caption && <div className="text-[13px] text-black/80 mt-0.5 line-clamp-2 break-words">{s.caption}</div>}
-                                <div className="mt-0.5 text-[11px] text-black/45 font-mono">
+                                {s.caption && <div className="text-[13px] text-slate-700 mt-0.5 line-clamp-2 break-words">{s.caption}</div>}
+                                <div className="mt-0.5 text-[11px] text-slate-400 font-mono">
                                     {s.viewers_count} 👁 · {s.reactions_count} reactions · expira {fmtRelative(s.expires_at)} · {s.id.slice(0, 8)}
                                 </div>
                             </div>
@@ -2729,7 +2729,7 @@ function HashtagsTab() {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Hashtags</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-hashtags-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
@@ -2743,29 +2743,29 @@ function HashtagsTab() {
 
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex-1 min-w-[160px] sm:min-w-[200px]">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }}
                         placeholder="Pesquisar hashtag…"
                         data-testid="admin-hashtags-search"
-                        className="w-full h-10 pl-9 pr-4 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                        className="w-full h-10 pl-9 pr-4 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                     />
                 </div>
-                <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
+                <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {HASHTAG_FILTERS.map((f) => (
                         <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
                             data-testid={`admin-hashtags-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{f.label}</button>
                     ))}
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-3 flex items-center gap-2 flex-wrap">
+            <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center gap-2 flex-wrap">
                 <input type="text" value={manualTag} onChange={(e) => setManualTag(e.target.value)}
                     placeholder="Adicionar hashtag à blacklist (#exemplo)"
                     data-testid="admin-hashtags-manual"
                     onKeyDown={(e) => { if (e.key === "Enter") onManualBlacklist(); }}
-                    className="flex-1 min-w-[200px] h-9 px-3 rounded-full bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13px] outline-none"
+                    className="flex-1 min-w-[200px] h-9 px-3 rounded-full bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13px] outline-none"
                 />
                 <button onClick={onManualBlacklist} disabled={!manualTag.trim()}
                     data-testid="admin-hashtags-manual-add"
@@ -2774,17 +2774,17 @@ function HashtagsTab() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
-                {loading && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
-                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem hashtags.</div>}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {loading && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {!loading && data.items.length === 0 && <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem hashtags.</div>}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((h) => (
                         <li key={h.tag} data-testid={`admin-hashtag-row-${h.tag}`} className={`px-4 py-2.5 flex items-center gap-3 ${h.blacklisted ? "bg-red-500/[0.04]" : ""}`}>
-                            <Hash size={14} className={h.blacklisted ? "text-red-600/70" : "text-black/40"} />
+                            <Hash size={14} className={h.blacklisted ? "text-red-600/70" : "text-slate-400"} />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className={`font-medium text-[14px] ${h.blacklisted ? "line-through text-red-700" : "text-black/85"}`}>#{h.tag}</span>
-                                    <span className="font-mono text-[11.5px] text-black/45">{fmtNum(h.count)} posts</span>
+                                    <span className={`font-medium text-[14px] ${h.blacklisted ? "line-through text-red-700" : "text-slate-800"}`}>#{h.tag}</span>
+                                    <span className="font-mono text-[11.5px] text-slate-400">{fmtNum(h.count)} posts</span>
                                     {h.blacklisted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium inline-flex items-center gap-0.5">
                                         <EyeOff size={9} /> blacklist
                                     </span>}
@@ -2793,7 +2793,7 @@ function HashtagsTab() {
                                     <div className="text-[11.5px] text-red-700/80 mt-0.5">Motivo: {h.blacklist_reason}</div>
                                 )}
                                 {h.blacklisted && h.blacklisted_at && (
-                                    <div className="text-[10.5px] text-black/45 mt-0.5 font-mono">desde {fmtDate(h.blacklisted_at)}</div>
+                                    <div className="text-[10.5px] text-slate-400 mt-0.5 font-mono">desde {fmtDate(h.blacklisted_at)}</div>
                                 )}
                             </div>
                             <button
@@ -2802,7 +2802,7 @@ function HashtagsTab() {
                                 data-testid={`admin-hashtag-toggle-${h.tag}`}
                                 className={`h-8 px-3 rounded-full text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5 ${
                                     h.blacklisted
-                                        ? "bg-black/[0.05] text-black/70 hover:bg-black/[0.08]"
+                                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
                                         : "bg-red-500/10 text-red-600 hover:bg-red-500/20"
                                 }`}
                             >
@@ -2895,50 +2895,50 @@ function BroadcastTab() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-4 space-y-3">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
                 <label className="block">
-                    <div className="text-[12px] font-medium text-black/65 mb-1">Mensagem (até 280)</div>
+                    <div className="text-[12px] font-medium text-slate-600 mb-1">Mensagem (até 280)</div>
                     <textarea value={text} onChange={(e) => setText(e.target.value)}
                         rows={3} maxLength={300}
                         placeholder="Ex.: Nova versão do Lusorae já disponível 🎉"
                         data-testid="admin-broadcast-text"
-                        className="w-full px-3 py-2 rounded-xl bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[14px] outline-none resize-none"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[14px] outline-none resize-none"
                     />
-                    <div className={`text-[11px] mt-1 font-mono ${remaining < 0 ? "text-red-600" : "text-black/45"}`}>
+                    <div className={`text-[11px] mt-1 font-mono ${remaining < 0 ? "text-red-600" : "text-slate-400"}`}>
                         {remaining} caracteres restantes
                     </div>
                 </label>
 
                 <label className="block">
-                    <div className="text-[12px] font-medium text-black/65 mb-1">Link (opcional)</div>
+                    <div className="text-[12px] font-medium text-slate-600 mb-1">Link (opcional)</div>
                     <input type="text" value={link} onChange={(e) => setLink(e.target.value)}
                         placeholder="ex: /trending ou https://..."
                         data-testid="admin-broadcast-link"
-                        className="w-full h-10 px-3 rounded-xl bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                        className="w-full h-10 px-3 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                     />
                 </label>
 
                 <div className="grid sm:grid-cols-2 gap-3">
                     <label className="block">
-                        <div className="text-[12px] font-medium text-black/65 mb-1">Audiência</div>
+                        <div className="text-[12px] font-medium text-slate-600 mb-1">Audiência</div>
                         <select value={audience} onChange={(e) => setAudience(e.target.value)}
                             data-testid="admin-broadcast-audience"
-                            className="w-full h-10 px-3 rounded-xl bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none">
+                            className="w-full h-10 px-3 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none">
                             {AUDIENCES.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
                         </select>
                     </label>
                     <label className="block">
-                        <div className="text-[12px] font-medium text-black/65 mb-1">Cidade (filtro extra opcional)</div>
+                        <div className="text-[12px] font-medium text-slate-600 mb-1">Cidade (filtro extra opcional)</div>
                         <input type="text" value={city} onChange={(e) => setCity(e.target.value)}
                             placeholder="Ex.: Lisboa"
                             data-testid="admin-broadcast-city"
-                            className="w-full h-10 px-3 rounded-xl bg-black/[0.04] focus:bg-white focus:ring-2 ring-black/15 text-[13.5px] outline-none"
+                            className="w-full h-10 px-3 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 ring-slate-300 text-[13.5px] outline-none"
                         />
                     </label>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-1 flex-wrap">
-                    <div className="text-[12.5px] text-black/65 inline-flex items-center gap-1.5" data-testid="admin-broadcast-count">
+                    <div className="text-[12.5px] text-slate-600 inline-flex items-center gap-1.5" data-testid="admin-broadcast-count">
                         <UsersIcon size={13} />
                         {busy ? <Loader2 size={13} className="animate-spin" /> : <strong className="font-mono">{count ?? "—"}</strong>}
                         destinatário(s) com este filtro
@@ -2946,7 +2946,7 @@ function BroadcastTab() {
                     <button onClick={onSend}
                         disabled={sending || !text.trim() || count === 0}
                         data-testid="admin-broadcast-send"
-                        className="h-10 px-5 rounded-full bg-black text-white text-[13px] font-medium hover:bg-black/85 disabled:opacity-40 inline-flex items-center gap-1.5">
+                        className="h-10 px-5 rounded-full bg-slate-900 text-white text-[13px] font-medium hover:bg-slate-800/85 disabled:opacity-40 inline-flex items-center gap-1.5">
                         {sending ? <Loader2 size={14} className="animate-spin" /> : <Megaphone size={14} />}
                         Enviar broadcast
                     </button>
@@ -2965,12 +2965,12 @@ function BroadcastTab() {
 // -----------------------------------------------------------------
 function ActionButton({ icon: Icon, label, onClick, kind = "default", testid, disabled, title }) {
     const tone = {
-        default: "bg-black/[0.04] hover:bg-black/[0.08] text-black/80",
+        default: "bg-slate-50 hover:bg-slate-200 text-slate-700",
         danger: "bg-red-500/10 hover:bg-red-500/20 text-red-700",
         warn: "bg-red-50 hover:bg-red-100 text-red-700",
-        good: "bg-black/[0.06] hover:bg-black/10 text-black/85",
-        primary: "bg-black text-white hover:bg-black/85",
-    }[kind] || "bg-black/[0.04] hover:bg-black/[0.08] text-black/80";
+        good: "bg-slate-100 hover:bg-slate-200 text-slate-800",
+        primary: "bg-slate-900 text-white hover:bg-slate-800/85",
+    }[kind] || "bg-slate-50 hover:bg-slate-200 text-slate-700";
     return (
         <button
             onClick={onClick}
@@ -3186,7 +3186,7 @@ function UserDrawer({ user, onClose }) {
         <div className="fixed inset-0 z-[80]" data-testid="admin-user-drawer">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
             <aside className="absolute right-0 top-0 bottom-0 w-full sm:max-w-[560px] bg-white shadow-2xl flex flex-col">
-                <header className="px-3 sm:px-4 py-3 border-b border-black/[0.06] flex items-center gap-2.5 sm:gap-3">
+                <header className="px-3 sm:px-4 py-3 border-b border-slate-200 flex items-center gap-2.5 sm:gap-3">
                     <Avatar user={u} size={40} />
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -3196,31 +3196,31 @@ function UserDrawer({ user, onClose }) {
                             {u.featured_account && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
                             {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
                             {u.suspended_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">suspenso</span>}
-                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">silenciado</span>}
+                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-700">silenciado</span>}
                             {u.shadow_muted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
-                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70">congelado</span>}
+                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">congelado</span>}
                             {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
                         </div>
-                        <div className="text-[11.5px] sm:text-[12px] text-black/55 truncate font-mono">@{u.username} · {u.email}</div>
+                        <div className="text-[11.5px] sm:text-[12px] text-slate-500 truncate font-mono">@{u.username} · {u.email}</div>
                     </div>
                     <button onClick={onClose} data-testid="admin-user-drawer-close"
                         aria-label="Fechar"
-                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.05] shrink-0">
+                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-slate-100 shrink-0">
                         <XIcon size={16} />
                     </button>
                 </header>
 
-                <nav className="px-3 pt-3 flex items-center gap-1 bg-white border-b border-black/[0.04] overflow-x-auto no-scrollbar">
+                <nav className="px-3 pt-3 flex items-center gap-1 bg-white border-b border-slate-100 overflow-x-auto no-scrollbar">
                     {drawerTabs.map((t) => (
                         <button key={t.k} onClick={() => setTab(t.k)}
                             data-testid={`admin-user-drawer-tab-${t.k}`}
-                            className={`h-8 px-3 rounded-full text-[12px] font-medium whitespace-nowrap mb-2 ${tab === t.k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                            className={`h-8 px-3 rounded-full text-[12px] font-medium whitespace-nowrap mb-2 ${tab === t.k ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                         >{t.l}</button>
                     ))}
                 </nav>
 
                 <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
-                    {loading && !detail && <div className="flex items-center justify-center py-10 text-black/45"><Loader2 className="animate-spin" /></div>}
+                    {loading && !detail && <div className="flex items-center justify-center py-10 text-slate-400"><Loader2 className="animate-spin" /></div>}
 
                     {/* PROFILE */}
                     {tab === "profile" && detail && (
@@ -3254,9 +3254,9 @@ function UserDrawer({ user, onClose }) {
                                 ["Reports feitos", u.reports_made_count],
                                 ["Sessões ativas", u.active_sessions],
                             ].map(([k, v]) => (
-                                <div key={k} className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-2 py-1.5 border-b border-black/[0.04]">
-                                    <dt className="sm:w-32 shrink-0 text-[10.5px] sm:text-[11.5px] uppercase tracking-wider text-black/45 font-mono">{k}</dt>
-                                    <dd className="flex-1 break-words text-black/85 text-[12.5px] sm:text-[13px]">{v == null || v === "" ? "—" : String(v)}</dd>
+                                <div key={k} className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-2 py-1.5 border-b border-slate-100">
+                                    <dt className="sm:w-32 shrink-0 text-[10.5px] sm:text-[11.5px] uppercase tracking-wider text-slate-400 font-mono">{k}</dt>
+                                    <dd className="flex-1 break-words text-slate-800 text-[12.5px] sm:text-[13px]">{v == null || v === "" ? "—" : String(v)}</dd>
                                 </div>
                             ))}
                         </dl>
@@ -3264,28 +3264,28 @@ function UserDrawer({ user, onClose }) {
 
                     {/* ACTIVITY */}
                     {tab === "activity" && (
-                        activity === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        activity === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         <div className="space-y-4" data-testid="admin-user-drawer-activity">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Posts 24h/7d</div><div className="font-display text-[18px]">{activity.posts.d1}/{activity.posts.d7}</div></div>
-                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Coment. 24h/7d</div><div className="font-display text-[18px]">{activity.comments.d1}/{activity.comments.d7}</div></div>
-                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Stories ativos</div><div className="font-display text-[18px]">{activity.stories_active}</div></div>
-                                <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Likes dados</div><div className="font-display text-[18px]">{activity.likes_given}</div></div>
+                                <div className="bg-slate-50 rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-slate-400">Posts 24h/7d</div><div className="font-display text-[18px]">{activity.posts.d1}/{activity.posts.d7}</div></div>
+                                <div className="bg-slate-50 rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-slate-400">Coment. 24h/7d</div><div className="font-display text-[18px]">{activity.comments.d1}/{activity.comments.d7}</div></div>
+                                <div className="bg-slate-50 rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-slate-400">Stories ativos</div><div className="font-display text-[18px]">{activity.stories_active}</div></div>
+                                <div className="bg-slate-50 rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-slate-400">Likes dados</div><div className="font-display text-[18px]">{activity.likes_given}</div></div>
                             </div>
                             {presence && (
-                                <div className="bg-black/[0.04] border border-black/10 rounded-2xl px-3 py-2.5 text-[12.5px]">
+                                <div className="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-[12.5px]">
                                     <strong>Presença:</strong> {presence.online ? "online" : "offline"} · {presence.ws_sockets} socket(s) · {presence.active_sessions} sessões ativas · visto {fmtRelative(presence.last_seen)}
                                 </div>
                             )}
                             {history && history.items.length > 0 && (
                                 <div>
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Histórico recente ({history.count})</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Histórico recente ({history.count})</div>
                                     <ul className="space-y-1.5">
                                         {history.items.slice(0, 15).map((e, idx) => (
-                                            <li key={`${e.kind}-${e.id || idx}`} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                            <li key={`${e.kind}-${e.id || idx}`} className="px-3 py-1.5 rounded-xl bg-slate-50 text-[12px]">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.08] font-medium">{e.kind}</span>
-                                                    <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(e.created_at)}</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 font-medium">{e.kind}</span>
+                                                    <span className="ml-auto text-[10.5px] text-slate-400 font-mono">{fmtRelative(e.created_at)}</span>
                                                 </div>
                                                 {e.content && <div className="mt-1 line-clamp-2">{e.content}</div>}
                                             </li>
@@ -3295,14 +3295,14 @@ function UserDrawer({ user, onClose }) {
                             )}
                             {recentActions && recentActions.items.length > 0 && (
                                 <div>
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Ações admin recentes ({recentActions.total})</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Ações admin recentes ({recentActions.total})</div>
                                     <ul className="space-y-1">
                                         {recentActions.items.slice(0, 10).map((a) => (
                                             <li key={a.id} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
                                                 <span className="font-mono text-[10.5px] text-red-700">{a.action}</span>
-                                                <span className="text-black/55 ml-1.5">· {fmtRelative(a.created_at)}</span>
+                                                <span className="text-slate-500 ml-1.5">· {fmtRelative(a.created_at)}</span>
                                                 {a.payload && Object.keys(a.payload).length > 0 && (
-                                                    <div className="text-[10.5px] text-black/55 mt-0.5 font-mono break-all">{JSON.stringify(a.payload)}</div>
+                                                    <div className="text-[10.5px] text-slate-500 mt-0.5 font-mono break-all">{JSON.stringify(a.payload)}</div>
                                                 )}
                                             </li>
                                         ))}
@@ -3311,13 +3311,13 @@ function UserDrawer({ user, onClose }) {
                             )}
                             {loginAlerts && loginAlerts.items.length > 0 && (
                                 <div>
-                                    <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Login alerts ({loginAlerts.total})</div>
+                                    <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Login alerts ({loginAlerts.total})</div>
                                     <ul className="space-y-1">
                                         {loginAlerts.items.slice(0, 10).map((a, i) => (
                                             <li key={a.id || i} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
                                                 <span className="font-mono text-[10.5px] text-red-700">login_alert</span>
-                                                <span className="ml-1.5 text-black/65">{a.title || a.message || ""}</span>
-                                                <span className="ml-auto text-[10.5px] text-black/45 float-right">{fmtRelative(a.created_at)}</span>
+                                                <span className="ml-1.5 text-slate-600">{a.title || a.message || ""}</span>
+                                                <span className="ml-auto text-[10.5px] text-slate-400 float-right">{fmtRelative(a.created_at)}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -3328,47 +3328,47 @@ function UserDrawer({ user, onClose }) {
 
                     {/* CONNECTIONS */}
                     {tab === "connections" && (
-                        followers === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        followers === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         <div className="space-y-4" data-testid="admin-user-drawer-connections">
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Seguidores ({followers?.total || 0})</div>
-                                {(!followers || followers.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Seguidores ({followers?.total || 0})</div>
+                                {(!followers || followers.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                     <ul className="space-y-1">{followers.items.slice(0, 30).map((f) => (
-                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] text-[12px] flex items-center gap-2">
+                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-slate-50 text-[12px] flex items-center gap-2">
                                             <Avatar user={f} size={26} />
                                             <span className="font-medium truncate">{f.name || f.username}</span>
-                                            <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
+                                            <span className="font-mono text-[11px] text-slate-400 truncate">@{f.username}</span>
                                             {f.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                             {f.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">b</span>}
-                                            <span className={`ml-auto w-2 h-2 rounded-full ${f.online ? "bg-red-600" : "bg-black/15"}`} />
+                                            <span className={`ml-auto w-2 h-2 rounded-full ${f.online ? "bg-red-600" : "bg-slate-300"}`} />
                                         </li>
                                     ))}</ul>
                                 }
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Mutuals ({mutuals?.total || 0})</div>
-                                {(!mutuals || mutuals.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Mutuals ({mutuals?.total || 0})</div>
+                                {(!mutuals || mutuals.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                     <ul className="space-y-1">{mutuals.items.slice(0, 30).map((f) => (
-                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.04] text-[12px] flex items-center gap-2">
+                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-slate-50 text-[12px] flex items-center gap-2">
                                             <Avatar user={f} size={26} />
                                             <span className="font-medium truncate">{f.name || f.username}</span>
-                                            <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
+                                            <span className="font-mono text-[11px] text-slate-400 truncate">@{f.username}</span>
                                         </li>
                                     ))}</ul>
                                 }
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Conversas DM ({conversations?.total || 0})</div>
-                                {(!conversations || conversations.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhuma conversa</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Conversas DM ({conversations?.total || 0})</div>
+                                {(!conversations || conversations.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Nenhuma conversa</div> :
                                     <ul className="space-y-1">{conversations.items.slice(0, 20).map((c, i) => (
-                                        <li key={c.key || i} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                        <li key={c.key || i} className="px-3 py-1.5 rounded-xl bg-slate-50 text-[12px]">
                                             <div className="flex items-center gap-1.5">
-                                                <MessageSquare size={11} className="text-black/45" />
+                                                <MessageSquare size={11} className="text-slate-400" />
                                                 <span className="font-medium">@{c.peer_username || c.peer_id?.slice(0,8) || "?"}</span>
                                                 {c.peer_banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(c.last_at)}</span>
+                                                <span className="ml-auto text-[10.5px] text-slate-400 font-mono">{fmtRelative(c.last_at)}</span>
                                             </div>
-                                            {c.last_message_preview && <div className="text-[11.5px] text-black/55 mt-0.5 italic line-clamp-1">"{c.last_message_preview}"</div>}
+                                            {c.last_message_preview && <div className="text-[11.5px] text-slate-500 mt-0.5 italic line-clamp-1">"{c.last_message_preview}"</div>}
                                         </li>
                                     ))}</ul>
                                 }
@@ -3378,18 +3378,18 @@ function UserDrawer({ user, onClose }) {
 
                     {/* POSTS */}
                     {tab === "posts" && (
-                        posts === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
-                        posts.items.length === 0 ? <div className="text-black/45 text-[13px] py-6 text-center">Sem posts.</div> :
+                        posts === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        posts.items.length === 0 ? <div className="text-slate-400 text-[13px] py-6 text-center">Sem posts.</div> :
                         <ul className="space-y-2" data-testid="admin-user-drawer-posts-list">
                             {posts.items.map((p) => (
-                                <li key={p.id} className="px-3 py-2 rounded-xl bg-black/[0.03]">
-                                    <div className="flex items-center gap-1.5 text-[11px] text-black/55 font-mono">
+                                <li key={p.id} className="px-3 py-2 rounded-xl bg-slate-50">
+                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono">
                                         <span>{p.kind}</span>
                                         {p.featured && <Star size={11} className="text-red-600" fill="currentColor" />}
                                         <span className="ml-auto">{fmtRelative(p.created_at)}</span>
                                     </div>
                                     <div className="text-[13px] mt-1 line-clamp-3 break-words">{p.content || "—"}</div>
-                                    <div className="text-[11px] text-black/45 mt-1 font-mono">{p.likes_count} ♥ · {p.comments_count} 💬</div>
+                                    <div className="text-[11px] text-slate-400 mt-1 font-mono">{p.likes_count} ♥ · {p.comments_count} 💬</div>
                                 </li>
                             ))}
                         </ul>
@@ -3397,13 +3397,13 @@ function UserDrawer({ user, onClose }) {
 
                     {/* COMMENTS */}
                     {tab === "comments" && (
-                        comments === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
-                        comments.items.length === 0 ? <div className="text-black/45 text-[13px] py-6 text-center">Sem comentários.</div> :
+                        comments === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        comments.items.length === 0 ? <div className="text-slate-400 text-[13px] py-6 text-center">Sem comentários.</div> :
                         <ul className="space-y-2" data-testid="admin-user-drawer-comments-list">
                             {comments.items.map((c) => (
-                                <li key={c.id} className="px-3 py-2 rounded-xl bg-black/[0.03]">
+                                <li key={c.id} className="px-3 py-2 rounded-xl bg-slate-50">
                                     <div className="text-[13px] break-words">{c.content}</div>
-                                    <div className="text-[11px] text-black/45 mt-0.5 font-mono">
+                                    <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
                                         {c.likes_count} ♥ · {fmtRelative(c.created_at)} · post {c.post_id?.slice(0,8)}
                                     </div>
                                 </li>
@@ -3413,20 +3413,20 @@ function UserDrawer({ user, onClose }) {
 
                     {/* ACCESS — sessions + IPs + devices */}
                     {tab === "access" && (
-                        sessions === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        sessions === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         <div className="space-y-4" data-testid="admin-user-drawer-access">
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Sessões ({sessions?.items?.length || 0})</div>
-                                {(!sessions || sessions.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Sem sessões</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Sessões ({sessions?.items?.length || 0})</div>
+                                {(!sessions || sessions.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Sem sessões</div> :
                                     <ul className="space-y-1.5">{sessions.items.map((s) => (
-                                        <li key={s.jti} className="px-3 py-2 rounded-xl bg-black/[0.03] text-[12px]">
+                                        <li key={s.jti} className="px-3 py-2 rounded-xl bg-slate-50 text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-black/[0.08] text-black/55" : "bg-black/[0.06] text-black/70"}`}>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-slate-200 text-slate-500" : "bg-slate-100 text-slate-700"}`}>
                                                     {s.revoked ? "revogada" : "ativa"}
                                                 </span>
-                                                <span className="font-mono text-[10.5px] text-black/55 truncate">{(s.user_agent || "").slice(0, 60) || "—"}</span>
+                                                <span className="font-mono text-[10.5px] text-slate-500 truncate">{(s.user_agent || "").slice(0, 60) || "—"}</span>
                                             </div>
-                                            <div className="text-[11px] text-black/45 mt-0.5 font-mono">
+                                            <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
                                                 {s.ip || "—"} · visto {fmtRelative(s.last_seen_at)} · jti {s.jti?.slice(0,8)}
                                             </div>
                                         </li>
@@ -3434,28 +3434,28 @@ function UserDrawer({ user, onClose }) {
                                 }
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5 inline-flex items-center gap-1.5"><Globe size={11} /> IPs distintos ({ips?.total || 0})</div>
-                                {(!ips || ips.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5 inline-flex items-center gap-1.5"><Globe size={11} /> IPs distintos ({ips?.total || 0})</div>
+                                {(!ips || ips.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                     <ul className="space-y-1">{ips.items.slice(0, 20).map((i) => (
-                                        <li key={i.ip} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                        <li key={i.ip} className="px-3 py-1.5 rounded-xl bg-slate-50 text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="font-mono">{i.ip}</span>
-                                                <span className="text-[10.5px] text-black/55">· {i.sessions} sessões ({i.active_sessions} ativas)</span>
-                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">visto {fmtRelative(i.last_seen)}</span>
+                                                <span className="text-[10.5px] text-slate-500">· {i.sessions} sessões ({i.active_sessions} ativas)</span>
+                                                <span className="ml-auto text-[10.5px] text-slate-400 font-mono">visto {fmtRelative(i.last_seen)}</span>
                                             </div>
                                         </li>
                                     ))}</ul>
                                 }
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5 inline-flex items-center gap-1.5"><Smartphone size={11} /> Dispositivos ({devices?.total || 0})</div>
-                                {(!devices || devices.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5 inline-flex items-center gap-1.5"><Smartphone size={11} /> Dispositivos ({devices?.total || 0})</div>
+                                {(!devices || devices.items.length === 0) ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                     <ul className="space-y-1">{devices.items.slice(0, 20).map((d, i) => (
-                                        <li key={i} className="px-3 py-1.5 rounded-xl bg-black/[0.03] text-[12px]">
+                                        <li key={i} className="px-3 py-1.5 rounded-xl bg-slate-50 text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <span className="font-medium">{d.browser || "?"} · {d.os || "?"} · {d.device || "desktop"}</span>
-                                                <span className="text-[10.5px] text-black/55">· {d.sessions} sessões</span>
-                                                <span className="ml-auto text-[10.5px] text-black/45 font-mono">visto {fmtRelative(d.last_seen)}</span>
+                                                <span className="text-[10.5px] text-slate-500">· {d.sessions} sessões</span>
+                                                <span className="ml-auto text-[10.5px] text-slate-400 font-mono">visto {fmtRelative(d.last_seen)}</span>
                                             </div>
                                         </li>
                                     ))}</ul>
@@ -3466,19 +3466,19 @@ function UserDrawer({ user, onClose }) {
 
                     {/* REPORTS */}
                     {tab === "reports" && (
-                        reports === null ? <div className="text-black/45"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
+                        reports === null ? <div className="text-slate-400"><Loader2 className="animate-spin inline" size={14} /> A carregar…</div> :
                         (reports.against.length === 0 && reports.by.length === 0) ?
-                            <div className="text-black/45 text-[13px] py-6 text-center">Sem reports.</div> :
+                            <div className="text-slate-400 text-[13px] py-6 text-center">Sem reports.</div> :
                             <div className="space-y-3" data-testid="admin-user-drawer-reports-list">
                                 <div>
-                                    <div className="text-[11px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra este utilizador ({reports.against.length})</div>
-                                    {reports.against.length === 0 ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <div className="text-[11px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Contra este utilizador ({reports.against.length})</div>
+                                    {reports.against.length === 0 ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                         <ul className="space-y-1.5">{reports.against.map((r) => (
                                             <li key={r.id} className="px-3 py-1.5 rounded-xl bg-red-500/[0.06] text-[12px]">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-700">{r.kind}</span>
-                                                    <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
-                                                    <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                                    <span className="font-mono text-[10.5px] text-slate-500">{r.status}</span>
+                                                    <span className="ml-auto text-[10.5px] text-slate-400">{fmtRelative(r.created_at)}</span>
                                                 </div>
                                                 {r.reason && <div className="mt-0.5">motivo: {r.reason}</div>}
                                             </li>
@@ -3486,14 +3486,14 @@ function UserDrawer({ user, onClose }) {
                                     }
                                 </div>
                                 <div>
-                                    <div className="text-[11px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Feitos por este utilizador ({reports.by.length})</div>
-                                    {reports.by.length === 0 ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
+                                    <div className="text-[11px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">Feitos por este utilizador ({reports.by.length})</div>
+                                    {reports.by.length === 0 ? <div className="text-[12px] text-slate-400 italic">Nenhum</div> :
                                         <ul className="space-y-1.5">{reports.by.map((r) => (
-                                            <li key={r.id} className="px-3 py-1.5 rounded-xl bg-black/[0.04] text-[12px]">
+                                            <li key={r.id} className="px-3 py-1.5 rounded-xl bg-slate-50 text-[12px]">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/65">{r.kind}</span>
-                                                    <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
-                                                    <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">{r.kind}</span>
+                                                    <span className="font-mono text-[10.5px] text-slate-500">{r.status}</span>
+                                                    <span className="ml-auto text-[10.5px] text-slate-400">{fmtRelative(r.created_at)}</span>
                                                 </div>
                                                 {r.reason && <div className="mt-0.5">motivo: {r.reason}</div>}
                                             </li>
@@ -3507,7 +3507,7 @@ function UserDrawer({ user, onClose }) {
                     {tab === "actions" && (
                         <div className="space-y-4" data-testid="admin-user-drawer-actions">
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Acesso</div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Acesso</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     <ActionButton icon={u.muted_active ? Eye : VolumeX} label={u.muted_active ? "Desilenciar" : "Silenciar"} onClick={u.muted_active ? doUnmute : doMute} testid="admin-action-mute" disabled={actionBusy === "mute" || actionBusy === "unmute"} kind={u.muted_active ? "good" : "warn"} />
                                     <ActionButton icon={Ghost} label={u.shadow_muted ? "Sair shadow" : "Shadow mute"} onClick={doShadowMute} testid="admin-action-shadow-mute" disabled={actionBusy === "shadow"} kind={u.shadow_muted ? "good" : "warn"} />
@@ -3519,20 +3519,20 @@ function UserDrawer({ user, onClose }) {
                                 </div>
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Limites</div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Limites</div>
                                 <div className="grid grid-cols-1 gap-2">
                                     <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar rate-limit (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / replies / posts"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
                                 </div>
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Flags</div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Flags</div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <ActionButton icon={ShieldAlert} label={u.flagged_suspicious ? "Tirar flag suspeito" : "Marcar suspeito"} onClick={doSuspicious} testid="admin-action-suspicious" disabled={actionBusy === "suspicious"} kind={u.flagged_suspicious ? "good" : "warn"} />
                                     <ActionButton icon={ShieldCheck} label="Marcar seguro" onClick={doSafe} testid="admin-action-mark-safe" disabled={actionBusy === "safe"} kind="good" title="Limpa suspeito + mute + shadow + suspensão" />
                                 </div>
                             </div>
                             <div>
-                                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-2">Privilégios</div>
+                                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Privilégios</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     <ActionButton icon={Check} label={u.verified ? "Desverificar" : "Verificar"} onClick={doVerify} testid="admin-action-verify" disabled={actionBusy === "verify"} kind={u.verified ? "default" : "primary"} />
                                     <ActionButton icon={Award} label={u.featured_account ? "Tirar destaque" : "Destacar conta"} onClick={doFeature} testid="admin-action-feature" disabled={actionBusy === "feature"} kind={u.featured_account ? "default" : "primary"} />
@@ -3652,7 +3652,7 @@ function AntiSpamTab({ onOpenDrawer }) {
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Anti-spam</h2>
                 <button onClick={() => setReloadAt(Date.now())}
                     data-testid="admin-antispam-refresh"
-                    className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[13px]"
+                    className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
@@ -3660,10 +3660,10 @@ function AntiSpamTab({ onOpenDrawer }) {
             {overview && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="admin-antispam-counters">
                     <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-red-50 text-red-700" icon={ShieldAlert} />
-                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-black/[0.06] text-black/70" icon={VolumeX} />
+                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-slate-100 text-slate-700" icon={VolumeX} />
                     <CounterCard label="Shadow" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
                     <CounterCard label="Rate-limited" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} />
-                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-black/[0.06] text-black/70" icon={Snowflake} />
+                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-slate-100 text-slate-700" icon={Snowflake} />
                     <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} />
                     <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-red-50 text-red-700" icon={Flag} />
                     <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-red-50 text-red-700" icon={TrendingDown} />
@@ -3671,13 +3671,13 @@ function AntiSpamTab({ onOpenDrawer }) {
             )}
 
             {/* ACTIVITY FEED */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid="admin-antispam-activity">
+            <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4" data-testid="admin-antispam-activity">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-[13px] font-semibold tracking-tight">Atividade suspeita recente</h3>
-                    <span className="text-[10.5px] text-black/40 font-mono">{loadingActivity ? "a atualizar…" : (activity?.checked_at ? fmtRelative(activity.checked_at) : "")}</span>
+                    <span className="text-[10.5px] text-slate-400 font-mono">{loadingActivity ? "a atualizar…" : (activity?.checked_at ? fmtRelative(activity.checked_at) : "")}</span>
                 </div>
                 {!activity ? (
-                    <div className="text-black/45 text-[12px] py-2"><Loader2 className="animate-spin inline" size={13} /> A carregar…</div>
+                    <div className="text-slate-400 text-[12px] py-2"><Loader2 className="animate-spin inline" size={13} /> A carregar…</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <ActivityBlock title="Burst de publicações (24h)" empty="Sem rajadas.">
@@ -3692,10 +3692,10 @@ function AntiSpamTab({ onOpenDrawer }) {
                         </ActivityBlock>
                         <ActivityBlock title="Reports na última hora" empty="Sem reports recentes.">
                             {(activity.recent_reports || []).slice(0, 8).map((r) => (
-                                <div key={r.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] text-[12px] flex items-center gap-2">
+                                <div key={r.id} className="px-2.5 py-1.5 rounded-xl bg-slate-50 text-[12px] flex items-center gap-2">
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">{r.kind}</span>
-                                    <span className="truncate text-black/70 flex-1">{r.reason || "—"}</span>
-                                    <span className="text-[10.5px] text-black/45 font-mono">{fmtRelative(r.created_at)}</span>
+                                    <span className="truncate text-slate-700 flex-1">{r.reason || "—"}</span>
+                                    <span className="text-[10.5px] text-slate-400 font-mono">{fmtRelative(r.created_at)}</span>
                                 </div>
                             ))}
                         </ActivityBlock>
@@ -3709,21 +3709,21 @@ function AntiSpamTab({ onOpenDrawer }) {
             </div>
 
             {/* USERS BY FILTER */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="px-3 sm:px-4 pt-3 flex items-center gap-2 flex-wrap">
                     <h3 className="text-[13px] font-semibold tracking-tight">Utilizadores</h3>
-                    <div className="flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1 ml-auto overflow-x-auto no-scrollbar max-w-full">
+                    <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 ml-auto overflow-x-auto no-scrollbar max-w-full">
                         {filters.map((f) => (
                             <button key={f.k} onClick={() => { setFilter(f.k); setPage(1); }}
                                 data-testid={`admin-antispam-filter-${f.k}`}
-                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.k ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.k ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
                             >{f.l}</button>
                         ))}
                     </div>
                 </div>
-                {loadingUsers && <div className="px-4 py-3 text-[12px] text-black/45 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
+                {loadingUsers && <div className="px-4 py-3 text-[12px] text-slate-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A carregar…</div>}
                 {!loadingUsers && users.items.length === 0 && (
-                    <div className="px-4 py-10 text-center text-black/45 text-[13px]">Sem utilizadores neste filtro.</div>
+                    <div className="px-4 py-10 text-center text-slate-400 text-[13px]">Sem utilizadores neste filtro.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {users.items.map((u) => (
@@ -3736,15 +3736,15 @@ function AntiSpamTab({ onOpenDrawer }) {
                                         <span className="font-medium text-[13.5px] truncate">@{u.username}</span>
                                         {u.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                         {u.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.04] text-black/70">muted</span>}
+                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-50 text-slate-700">muted</span>}
                                         {u.shadow_muted && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
-                                        {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.06] text-black/70">congelado</span>}
+                                        {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-100 text-slate-700">congelado</span>}
                                         {u.flagged_suspicious && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
                                         {typeof u.report_count_7d === "number" && (
                                             <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/15 text-red-700">{u.report_count_7d} reports</span>
                                         )}
                                     </div>
-                                    <div className="text-[10.5px] text-black/45 font-mono truncate">{u.email} · criado {fmtRelative(u.created_at)}</div>
+                                    <div className="text-[10.5px] text-slate-400 font-mono truncate">{u.email} · criado {fmtRelative(u.created_at)}</div>
                                 </div>
                             </button>
                             <div className="flex items-center gap-1 shrink-0">
@@ -3757,7 +3757,7 @@ function AntiSpamTab({ onOpenDrawer }) {
                                 <button onClick={() => doFreeze(u)} disabled={busyId === u.id}
                                     data-testid={`admin-antispam-freeze-${u.id}`}
                                     title={u.frozen ? "Descongelar conta" : "Congelar conta"}
-                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${u.frozen ? "bg-black/[0.06] text-black/70" : "hover:bg-black/[0.04] text-black/55"}`}>
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${u.frozen ? "bg-slate-100 text-slate-700" : "hover:bg-slate-50 text-slate-500"}`}>
                                     <Snowflake size={13} />
                                 </button>
                             </div>
@@ -3772,10 +3772,10 @@ function AntiSpamTab({ onOpenDrawer }) {
 
 function CounterCard({ label, value, accent, icon: Icon }) {
     return (
-        <div className="bg-white rounded-2xl border border-black/[0.06] p-3 flex items-center gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center gap-2">
             <span className={`w-8 h-8 rounded-xl grid place-items-center ${accent}`}><Icon size={15} /></span>
             <div className="min-w-0">
-                <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono">{label}</div>
+                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono">{label}</div>
                 <div className="text-[18px] font-display tracking-tight tabular-nums">{fmtNum(value || 0)}</div>
             </div>
         </div>
@@ -3786,9 +3786,9 @@ function ActivityBlock({ title, empty, children }) {
     const items = React.Children.toArray(children);
     return (
         <div>
-            <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">{title}</div>
+            <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-1.5">{title}</div>
             {items.length === 0 ? (
-                <div className="text-[12px] text-black/40 italic px-2.5 py-2">{empty}</div>
+                <div className="text-[12px] text-slate-400 italic px-2.5 py-2">{empty}</div>
             ) : (
                 <div className="space-y-1">{items}</div>
             )}
@@ -3799,15 +3799,15 @@ function ActivityBlock({ title, empty, children }) {
 function ActivityRow({ u, count, unit = "", onClick }) {
     return (
         <button onClick={onClick}
-            className="w-full px-2.5 py-1.5 rounded-xl bg-black/[0.03] hover:bg-black/[0.07] flex items-center gap-2 text-left"
+            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center gap-2 text-left"
             data-testid={`admin-antispam-activity-row-${u.id}`}>
             <Avatar user={u} size={24} />
             <div className="min-w-0 flex-1">
                 <div className="text-[12px] font-medium truncate">@{u.username}</div>
-                <div className="text-[10.5px] text-black/45 font-mono truncate">{u.email}</div>
+                <div className="text-[10.5px] text-slate-400 font-mono truncate">{u.email}</div>
             </div>
             {count !== null && count !== undefined && (
-                <span className="text-[10.5px] font-mono font-semibold px-1.5 py-0.5 rounded-full bg-black/[0.06]">{count} {unit}</span>
+                <span className="text-[10.5px] font-mono font-semibold px-1.5 py-0.5 rounded-full bg-slate-100">{count} {unit}</span>
             )}
         </button>
     );
@@ -3849,7 +3849,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                 className={`
                     fixed lg:sticky top-0 lg:top-14 left-0 z-[60] lg:z-10
                     h-screen lg:h-[calc(100vh-3.5rem)]
-                    bg-white border-r border-black/[0.06]
+                    bg-white border-r border-slate-200
                     flex flex-col
                     transition-[transform,width] duration-300 ease-out
                     w-[256px]
@@ -3859,15 +3859,15 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                 `}
             >
                 {/* Mobile-only top brand + close */}
-                <div className="lg:hidden flex items-center gap-2 px-3 h-14 border-b border-black/[0.06]">
-                    <span className="w-8 h-8 rounded-xl bg-black text-white grid place-items-center shrink-0">
+                <div className="lg:hidden flex items-center gap-2 px-3 h-14 border-b border-slate-200">
+                    <span className="w-8 h-8 rounded-xl bg-slate-900 text-white grid place-items-center shrink-0">
                         <Shield size={15} />
                     </span>
                     <span className="font-display text-[15px] tracking-tight flex-1 truncate">Admin</span>
                     <button
                         onClick={() => setMobileOpen(false)}
                         aria-label="Fechar navegação"
-                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/65"
+                        className="w-9 h-9 grid place-items-center rounded-full hover:bg-slate-100 text-slate-600"
                         data-testid="admin-sidebar-mobile-close"
                     ><XIcon size={16} /></button>
                 </div>
@@ -3878,7 +3878,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                         <div key={group.label} className="mb-3 last:mb-1">
                             <div
                                 aria-hidden={collapsed}
-                                className={`px-2.5 mb-1 text-[10px] uppercase tracking-[0.12em] font-mono text-black/40 transition-opacity duration-200 ${
+                                className={`px-2.5 mb-1 text-[10px] uppercase tracking-[0.12em] font-mono text-slate-400 transition-opacity duration-200 ${
                                     collapsed ? "lg:opacity-0 lg:h-0 lg:overflow-hidden lg:mb-0" : "opacity-100"
                                 }`}
                             >{group.label}</div>
@@ -3902,15 +3902,15 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                     transition-colors duration-150
                                                     ${collapsed ? "lg:px-0 lg:justify-center px-2.5" : "px-2.5"}
                                                     ${active
-                                                        ? "bg-red-600 text-white shadow-sm"
-                                                        : "text-black/70 hover:bg-black/[0.05] hover:text-black"}
+                                                        ? "bg-slate-900 text-white shadow-sm"
+                                                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"}
                                                 `}
                                             >
                                                 {/* Active rail */}
                                                 {active && !collapsed && (
                                                     <span aria-hidden className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-white/70 lg:hidden" />
                                                 )}
-                                                <span className={`grid place-items-center w-5 h-5 shrink-0 ${active ? "" : "text-black/55 group-hover:text-black"}`}>
+                                                <span className={`grid place-items-center w-5 h-5 shrink-0 ${active ? "" : "text-slate-500 group-hover:text-slate-900"}`}>
                                                     <Icon size={16} />
                                                 </span>
                                                 <span className={`flex-1 text-left truncate transition-[opacity,max-width] duration-200 ${
@@ -3922,14 +3922,14 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                         className={`
                                                             min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-semibold
                                                             inline-flex items-center justify-center shrink-0
-                                                            ${active ? "bg-white text-red-600" : "bg-red-600 text-white"}
+                                                            ${active ? "bg-white text-slate-900" : "bg-red-500 text-white"}
                                                             ${collapsed ? "lg:absolute lg:top-1 lg:right-1 lg:min-w-[14px] lg:h-[14px] lg:text-[9px]" : ""}
                                                         `}
                                                     >{openReports > 99 ? "99+" : openReports}</span>
                                                 )}
                                                 {/* Tooltip on collapsed (desktop only) */}
                                                 {collapsed && (
-                                                    <span className="hidden lg:group-hover:block absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg bg-black text-white text-[11.5px] whitespace-nowrap pointer-events-none z-50 shadow-lg">
+                                                    <span className="hidden lg:group-hover:block absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg bg-slate-900 text-white text-[11.5px] whitespace-nowrap pointer-events-none z-50 shadow-lg">
                                                         {it.label}
                                                     </span>
                                                 )}
@@ -3943,13 +3943,13 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                 </nav>
 
                 {/* Footer: collapse toggle (desktop only) */}
-                <div className="hidden lg:flex border-t border-black/[0.06] p-2">
+                <div className="hidden lg:flex border-t border-slate-200 p-2">
                     <button
                         onClick={() => setCollapsed(!collapsed)}
                         data-testid="admin-sidebar-collapse"
                         aria-label={collapsed ? "Expandir navegação" : "Colapsar navegação"}
                         title={collapsed ? "Expandir" : "Colapsar"}
-                        className={`w-full h-9 rounded-xl text-black/55 hover:text-black hover:bg-black/[0.05] inline-flex items-center gap-2 text-[12px] transition-colors ${
+                        className={`w-full h-9 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 inline-flex items-center gap-2 text-[12px] transition-colors ${
                             collapsed ? "justify-center" : "px-2.5"
                         }`}
                     >
@@ -4016,7 +4016,7 @@ export default function Admin() {
     }, [user]);
 
     if (loading) {
-        return <div className="flex items-center justify-center py-20 text-black/45"><Loader2 className="animate-spin" /></div>;
+        return <div className="flex items-center justify-center py-20 text-slate-400"><Loader2 className="animate-spin" /></div>;
     }
     if (!user || !user.is_admin) {
         return <Navigate to="/" replace />;
@@ -4036,15 +4036,15 @@ export default function Admin() {
 
             <main className="flex-1 min-w-0 flex flex-col" data-testid="admin-main-content">
                 {/* MOBILE sub-header — hamburger + current section */}
-                <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur-xl border-b border-black/[0.06] h-12 flex items-center gap-2 px-3"
+                <div className="lg:hidden sticky top-14 z-30 bg-white/95 backdrop-blur-xl border-b border-slate-200 h-12 flex items-center gap-2 px-3"
                     data-testid="admin-mobile-subheader">
                     <button
                         onClick={() => setMobileOpen(true)}
                         aria-label="Abrir navegação"
-                        className="w-9 h-9 -ml-1 grid place-items-center rounded-full hover:bg-black/[0.06] text-black/70"
+                        className="w-9 h-9 -ml-1 grid place-items-center rounded-full hover:bg-slate-100 text-slate-700"
                         data-testid="admin-mobile-menu"
                     ><Menu size={18} /></button>
-                    <span className="w-7 h-7 rounded-lg bg-black/[0.05] grid place-items-center text-black/65 shrink-0">
+                    <span className="w-7 h-7 rounded-lg bg-slate-100 grid place-items-center text-slate-600 shrink-0">
                         <CurrentIcon size={14} />
                     </span>
                     <span className="font-display text-[15px] tracking-tight truncate flex-1">{currentItem.label}</span>
@@ -4056,13 +4056,13 @@ export default function Admin() {
                 </div>
 
                 {/* DESKTOP breadcrumb — slim context line (sections já têm h2 próprio) */}
-                <div className="hidden lg:flex items-center gap-1.5 px-6 xl:px-8 pt-5 pb-1 text-[11px] font-mono text-black/40 uppercase tracking-[0.14em]"
+                <div className="hidden lg:flex items-center gap-1.5 px-6 xl:px-8 pt-5 pb-1 text-[11px] font-mono text-slate-400 uppercase tracking-[0.14em]"
                     data-testid="admin-desktop-header">
                     <Shield size={11} />
                     <span>Painel</span>
                     <ChevronRight size={11} />
                     <CurrentIcon size={11} />
-                    <span className="text-black/65">{currentItem.label}</span>
+                    <span className="text-slate-600">{currentItem.label}</span>
                     <span className="ml-auto normal-case tracking-normal">
                         @{user.username}
                     </span>

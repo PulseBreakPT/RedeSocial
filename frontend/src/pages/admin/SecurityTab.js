@@ -79,12 +79,12 @@ const apiError = (e) => {
     toast.error(typeof msg === "string" ? msg : "Erro inesperado");
 };
 const SEV_STYLE = {
-    // Crítico — vermelho intenso
-    danger: { bg: "bg-red-100",          text: "text-red-800",  ring: "ring-red-300",   dot: "bg-red-600",  label: "Crítico" },
-    // Aviso — vermelho suave
-    warn:   { bg: "bg-red-50",           text: "text-red-700",  ring: "ring-red-200",   dot: "bg-red-400",  label: "Aviso" },
-    // Info/OK — neutro
-    info:   { bg: "bg-black/[0.04]",     text: "text-black/70", ring: "ring-black/10",  dot: "bg-black/40", label: "Info" },
+    // Crítico — vermelho (raro, atenção máxima)
+    danger: { bg: "bg-red-50",        text: "text-red-700",     ring: "ring-red-200",     dot: "bg-red-500",      label: "Crítico" },
+    // Aviso — âmbar (atenção mas não urgente)
+    warn:   { bg: "bg-amber-50",      text: "text-amber-800",   ring: "ring-amber-200",   dot: "bg-amber-500",    label: "Aviso" },
+    // Info/OK — sky/slate (informacional calmo)
+    info:   { bg: "bg-sky-50",        text: "text-sky-700",     ring: "ring-sky-200",     dot: "bg-sky-500",      label: "Info" },
 };
 
 // Mapping of internal kind → friendly PT label
@@ -134,9 +134,9 @@ function Sparkline({ data, height = 38, color = "#000000", fill = false }) {
 // ─────────────────────────────────────────────────────────────────
 function LiveDot({ on, label }) {
     return (
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/55">
-            <span className={`relative inline-flex h-2 w-2 rounded-full ${on ? "bg-red-600" : "bg-black/25"}`}>
-                {on && <span className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-60" />}
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-500">
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${on ? "bg-cyan-500" : "bg-slate-300"}`}>
+                {on && <span className="absolute inset-0 rounded-full bg-cyan-500 animate-ping opacity-60" />}
             </span>
             {label}
         </span>
@@ -149,14 +149,14 @@ function LiveDot({ on, label }) {
 function AutoRefreshPill({ value, onChange, testIdPrefix = "sec-autorefresh" }) {
     const opts = [{ v: 0, l: "Off" }, { v: 5, l: "5s" }, { v: 15, l: "15s" }, { v: 30, l: "30s" }, { v: 60, l: "60s" }];
     return (
-        <div className="inline-flex items-center gap-0.5 bg-black/[0.04] rounded-full p-1" title="Auto-atualização">
+        <div className="inline-flex items-center gap-0.5 bg-slate-50 rounded-full p-1" title="Auto-atualização">
             {opts.map((o) => (
                 <button
                     key={o.v}
                     onClick={() => onChange(o.v)}
                     data-testid={`${testIdPrefix}-${o.v}`}
                     className={`h-7 px-2.5 rounded-full text-[11px] font-medium transition ${
-                        value === o.v ? "bg-red-600 text-white" : "text-black/70 hover:bg-black/[0.05]"
+                        value === o.v ? "bg-red-600 text-white" : "text-slate-700 hover:bg-slate-100"
                     }`}
                 >{o.l}</button>
             ))}
@@ -207,7 +207,7 @@ function SecurityOverview() {
     }, [autoRefresh]);
 
     if (loading && !data) {
-        return <div className="flex items-center justify-center py-16 text-black/45"><Loader2 className="animate-spin" /></div>;
+        return <div className="flex items-center justify-center py-16 text-slate-400"><Loader2 className="animate-spin" /></div>;
     }
     if (error && !data) {
         return (
@@ -237,7 +237,7 @@ function SecurityOverview() {
                 <div className="flex items-center gap-2">
                     <LiveDot on={autoRefresh > 0} label={autoRefresh > 0 ? `ao vivo · ${autoRefresh}s` : "pausado"} />
                     {data.timestamp && (
-                        <span className="text-[11px] font-mono text-black/35">
+                        <span className="text-[11px] font-mono text-slate-400">
                             · atualizado {fmtRelative(data.timestamp)}
                         </span>
                     )}
@@ -246,7 +246,7 @@ function SecurityOverview() {
                     <AutoRefreshPill value={autoRefresh} onChange={setAutoRefresh} />
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="sec-overview-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                         title="Atualizar agora"
                     ><RefreshCcw size={14} className={loading ? "animate-spin" : ""} /> Atualizar</button>
                 </div>
@@ -294,7 +294,7 @@ function SecurityOverview() {
                 </div>
             )}
             {warnings.length === 0 && (
-                <div className="bg-black text-white rounded-2xl p-3 text-[13px] inline-flex items-center gap-2">
+                <div className="bg-slate-900 text-white rounded-2xl p-3 text-[13px] inline-flex items-center gap-2">
                     <ShieldCheck size={16} /> Sem avisos de segurança. <span className="opacity-60">Postura nominal.</span>
                 </div>
             )}
@@ -353,9 +353,9 @@ function SecurityOverview() {
             </div>
 
             {/* CONFIG SNAPSHOT */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
                 <h3 className="font-display text-[15px] tracking-tight flex items-center gap-1.5 mb-3">
-                    <Settings2 size={14} className="text-black/55" /> Configuração JWT &amp; runtime
+                    <Settings2 size={14} className="text-slate-500" /> Configuração JWT &amp; runtime
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-[12px]">
                     <ConfigCell label="Ambiente" value={cfg.app_env} tone={cfg.is_production ? "ok" : "info"} />
@@ -382,12 +382,12 @@ function SecurityOverview() {
             </div>
 
             {/* CONTROLS — checklist of all active protections */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h3 className="font-display text-[15px] tracking-tight flex items-center gap-1.5">
-                        <ShieldCheck size={14} className="text-black/55" /> Controlos ativos ({controls.filter(c => c.on).length}/{controls.length})
+                        <ShieldCheck size={14} className="text-slate-500" /> Controlos ativos ({controls.filter(c => c.on).length}/{controls.length})
                     </h3>
-                    <span className="text-[11px] font-mono text-black/40">
+                    <span className="text-[11px] font-mono text-slate-400">
                         verificado a {fmtRelative(data.timestamp)}
                     </span>
                 </div>
@@ -396,10 +396,10 @@ function SecurityOverview() {
                         <div key={ctl.k} data-testid={`sec-control-${ctl.k}`}
                             className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-[12.5px] ${
                                 ctl.on
-                                    ? "bg-black/[0.025] border-black/[0.06] text-black/90"
+                                    ? "bg-slate-50 border-slate-200 text-slate-800"
                                     : "bg-red-50/50 border-red-200/60 text-red-900"
                             }`}>
-                            <span className={`grid place-items-center w-6 h-6 rounded-lg shrink-0 ${ctl.on ? "bg-black/[0.08] text-black/70" : "bg-red-500/20 text-red-700"}`}>
+                            <span className={`grid place-items-center w-6 h-6 rounded-lg shrink-0 ${ctl.on ? "bg-slate-200 text-slate-700" : "bg-red-500/20 text-red-700"}`}>
                                 {ctl.on ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                             </span>
                             <span className="flex-1">{ctl.label}</span>
@@ -413,14 +413,14 @@ function SecurityOverview() {
 
 function KpiCard({ label, value, sub, series, color = "#000000", icon: Icon, danger, testId }) {
     return (
-        <div className={`bg-white rounded-2xl border ${danger ? "border-red-200" : "border-black/[0.06]"} p-4 flex flex-col gap-1.5 shadow-sm relative`} data-testid={testId}>
+        <div className={`bg-white rounded-2xl border ${danger ? "border-red-200" : "border-slate-200"} p-4 flex flex-col gap-1.5 shadow-sm relative`} data-testid={testId}>
             {danger && <span className="absolute top-2 right-2 inline-flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />}
-            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-black/45 font-mono">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-400 font-mono">
                 {Icon && <Icon size={11} />}
                 {label}
             </div>
-            <div className="font-display text-[28px] leading-none tracking-tight text-black">{fmtNum(value)}</div>
-            {sub != null && <div className="text-[11.5px] text-black/55">{sub}</div>}
+            <div className="font-display text-[28px] leading-none tracking-tight text-slate-900">{fmtNum(value)}</div>
+            {sub != null && <div className="text-[11.5px] text-slate-500">{sub}</div>}
             {series && Array.isArray(series) && <Sparkline data={series} color={color} fill />}
         </div>
     );
@@ -429,14 +429,14 @@ function KpiCard({ label, value, sub, series, color = "#000000", icon: Icon, dan
 function MiniStat({ label, value, sub, icon: Icon, accent = "neutral", testId }) {
     const tone = {
         // ok / info / neutral → branco com borda subtil
-        ok:      "bg-white text-black/85 border-black/[0.06]",
-        info:    "bg-white text-black/85 border-black/[0.06]",
-        neutral: "bg-white text-black/85 border-black/[0.06]",
+        ok:      "bg-white text-slate-800 border-slate-200",
+        info:    "bg-white text-slate-800 border-slate-200",
+        neutral: "bg-white text-slate-800 border-slate-200",
         // warn → vermelho suave
         warn:    "bg-red-50 text-red-700 border-red-200",
         // danger → vermelho intenso
         danger:  "bg-red-100 text-red-800 border-red-300",
-    }[accent] || "bg-white text-black/85 border-black/[0.06]";
+    }[accent] || "bg-white text-slate-800 border-slate-200";
     return (
         <div className={`rounded-2xl border p-3 ${tone}`} data-testid={testId}>
             <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono opacity-70">
@@ -450,15 +450,15 @@ function MiniStat({ label, value, sub, icon: Icon, accent = "neutral", testId })
 
 function ConfigCell({ label, value, mono, tone = "neutral" }) {
     const styles = {
-        ok:      "text-black/85",
+        ok:      "text-slate-800",
         warn:    "text-red-600",
         danger:  "text-red-700 font-semibold",
-        info:    "text-black/70",
-        neutral: "text-black/85",
+        info:    "text-slate-700",
+        neutral: "text-slate-800",
     };
     return (
-        <div className="px-3 py-2 rounded-xl bg-black/[0.025]">
-            <div className="text-[10px] uppercase tracking-wider font-mono text-black/40">{label}</div>
+        <div className="px-3 py-2 rounded-xl bg-slate-50">
+            <div className="text-[10px] uppercase tracking-wider font-mono text-slate-400">{label}</div>
             <div className={`mt-0.5 ${mono ? "font-mono text-[12px]" : "text-[13px] font-medium"} ${styles[tone]} break-all`}>
                 {value ?? "—"}
             </div>
@@ -574,7 +574,7 @@ function SecurityEvents() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <LiveDot on={autoRefresh > 0} label={autoRefresh > 0 ? `ao vivo · ${autoRefresh}s` : "pausado"} />
-                    <span className="text-[12px] font-mono text-black/45">
+                    <span className="text-[12px] font-mono text-slate-400">
                         {data.total ?? 0} evento(s){activeFilterCount > 0 && <> · {activeFilterCount} filtro(s)</>}
                     </span>
                 </div>
@@ -582,20 +582,20 @@ function SecurityEvents() {
                     <AutoRefreshPill value={autoRefresh} onChange={setAutoRefresh} testIdPrefix="sec-events-autorefresh" />
                     <button onClick={exportCsv}
                         data-testid="sec-events-export"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                     >CSV</button>
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="sec-events-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                     ><RefreshCcw size={14} className={loading ? "animate-spin" : ""} /> Atualizar</button>
                 </div>
             </div>
 
             {/* FILTER BAR */}
-            <div className="bg-white border border-black/[0.06] rounded-2xl p-3 space-y-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3">
                 {/* Row 1: severity chips + time window + clear */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    <div className="inline-flex items-center gap-1 text-[11.5px] text-black/55">
+                    <div className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
                         <Filter size={12}/> Severidade:
                     </div>
                     {["", "danger", "warn", "info"].map((sv) => (
@@ -605,18 +605,18 @@ function SecurityEvents() {
                             data-testid={`sec-events-sev-${sv || "all"}`}
                             className={`h-7 px-2.5 rounded-full text-[11.5px] font-medium border transition ${
                                 filters.severity === sv
-                                    ? sv === "danger" ? "bg-red-600 text-white border-red-600"
-                                    : sv === "warn"   ? "bg-red-400 text-white border-red-400"
-                                    : sv === "info"   ? "bg-black text-white border-black"
-                                    : "bg-black text-white border-black"
-                                    : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
+                                    ? sv === "danger" ? "bg-red-500 text-white border-red-500"
+                                    : sv === "warn"   ? "bg-amber-500 text-white border-amber-500"
+                                    : sv === "info"   ? "bg-sky-500 text-white border-sky-500"
+                                    : "bg-slate-900 text-white border-slate-900"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                             }`}
                         >
                             {sv ? SEV_STYLE[sv]?.label : "Todas"}
                         </button>
                     ))}
-                    <span className="mx-1 h-5 w-px bg-black/10" />
-                    <div className="inline-flex items-center gap-1 text-[11.5px] text-black/55">
+                    <span className="mx-1 h-5 w-px bg-slate-200" />
+                    <div className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
                         <Clock size={12}/> Janela:
                     </div>
                     {[
@@ -632,8 +632,8 @@ function SecurityEvents() {
                             data-testid={`sec-events-window-${opt.v}`}
                             className={`h-7 px-2.5 rounded-full text-[11.5px] font-medium border transition ${
                                 filters.since_minutes === opt.v
-                                    ? "bg-red-600 text-white border-red-600"
-                                    : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
+                                    ? "bg-slate-900 text-white border-slate-900"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                             }`}
                         >{opt.l}</button>
                     ))}
@@ -648,7 +648,7 @@ function SecurityEvents() {
                 {/* Row 2: kind tags (multi-select) */}
                 {kinds.length > 0 && (
                     <div className="flex items-center gap-1.5 flex-wrap" data-testid="sec-events-kinds">
-                        <div className="inline-flex items-center gap-1 text-[11.5px] text-black/55">
+                        <div className="inline-flex items-center gap-1 text-[11.5px] text-slate-500">
                             <Hash size={12}/> Tipo:
                         </div>
                         {kinds.map((k) => {
@@ -662,7 +662,7 @@ function SecurityEvents() {
                                     className={`h-7 px-2.5 rounded-full text-[11px] font-medium border inline-flex items-center gap-1.5 transition ${
                                         sel
                                             ? `${sty.bg} ${sty.text} ${sty.ring} border-current`
-                                            : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
+                                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                                     }`}
                                     title={`${k.count} ocorrências`}
                                 >
@@ -697,12 +697,12 @@ function SecurityEvents() {
             </div>
 
             {/* TABLE */}
-            <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 {loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-black/45 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
+                    <div className="px-4 py-10 text-slate-400 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
                 )}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-12 text-center text-black/45 text-[13px]">
+                    <div className="px-4 py-12 text-center text-slate-400 text-[13px]">
                         Sem eventos para estes filtros.
                     </div>
                 )}
@@ -717,11 +717,11 @@ function SecurityEvents() {
             {data.total > data.limit && (
                 <div className="flex items-center justify-center gap-2" data-testid="sec-events-pager">
                     <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-                        className="h-8 w-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] disabled:opacity-30 inline-flex items-center justify-center"
+                        className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-200 disabled:opacity-30 inline-flex items-center justify-center"
                     ><ChevronLeft size={14}/></button>
-                    <span className="text-[12px] font-mono text-black/55">{page} / {totalPages}</span>
+                    <span className="text-[12px] font-mono text-slate-500">{page} / {totalPages}</span>
                     <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                        className="h-8 w-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] disabled:opacity-30 inline-flex items-center justify-center"
+                        className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-200 disabled:opacity-30 inline-flex items-center justify-center"
                     ><ChevronRight size={14}/></button>
                 </div>
             )}
@@ -732,18 +732,18 @@ function SecurityEvents() {
 function FilterInput({ placeholder, icon: Icon, value, onChange, testId }) {
     return (
         <div className="relative">
-            {Icon && <Icon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/35" />}
+            {Icon && <Icon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />}
             <input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 data-testid={testId}
-                className="w-full h-9 pl-9 pr-3 rounded-xl bg-black/[0.03] border border-black/[0.06] focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/15 text-[12.5px] placeholder:text-black/30"
+                className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 text-[12.5px] placeholder:text-slate-300"
             />
             {value && (
                 <button
                     onClick={() => onChange("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-black/[0.06] hover:bg-black/[0.12] grid place-items-center"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-800/[0.12] grid place-items-center"
                     aria-label="Limpar"
                 ><XIcon size={11}/></button>
             )}
@@ -771,21 +771,21 @@ function EventRow({ ev }) {
                         <span className={`px-1.5 py-0.5 rounded text-[10.5px] uppercase tracking-wider font-mono font-semibold ${sty.bg} ${sty.text}`}>
                             {ev.severity}
                         </span>
-                        <span className="font-semibold text-black">{KIND_LABEL[ev.kind] || ev.kind}</span>
+                        <span className="font-semibold text-slate-900">{KIND_LABEL[ev.kind] || ev.kind}</span>
                         {ev.user && ev.user.username && (
-                            <span className="inline-flex items-center gap-1 text-black/70">
+                            <span className="inline-flex items-center gap-1 text-slate-700">
                                 <Avatar user={ev.user} size={16} /> @{ev.user.username}
-                                {ev.user.is_admin && <span className="text-[9px] uppercase font-mono bg-black text-white px-1 rounded">admin</span>}
+                                {ev.user.is_admin && <span className="text-[9px] uppercase font-mono bg-slate-900 text-white px-1 rounded">admin</span>}
                             </span>
                         )}
                         {ev.email && !ev.user?.username && (
-                            <span className="text-black/55 font-mono text-[11.5px]">{ev.email}</span>
+                            <span className="text-slate-500 font-mono text-[11.5px]">{ev.email}</span>
                         )}
-                        <span className="text-[11px] text-black/40 ml-auto" title={ev.ts}>{fmtRelative(ev.ts)}</span>
+                        <span className="text-[11px] text-slate-400 ml-auto" title={ev.ts}>{fmtRelative(ev.ts)}</span>
                     </div>
-                    <div className="mt-1 flex items-center gap-2 flex-wrap text-[11.5px] text-black/55 font-mono">
+                    <div className="mt-1 flex items-center gap-2 flex-wrap text-[11.5px] text-slate-500 font-mono">
                         {ev.ip && (
-                            <button onClick={() => copy(ev.ip, "IP")} className="inline-flex items-center gap-1 hover:text-black">
+                            <button onClick={() => copy(ev.ip, "IP")} className="inline-flex items-center gap-1 hover:text-slate-900">
                                 <Globe size={10}/> {ev.ip}
                             </button>
                         )}
@@ -795,7 +795,7 @@ function EventRow({ ev }) {
                             </span>
                         )}
                         {ev.jti && (
-                            <button onClick={() => copy(ev.jti, "JTI")} className="inline-flex items-center gap-1 hover:text-black" title={ev.jti}>
+                            <button onClick={() => copy(ev.jti, "JTI")} className="inline-flex items-center gap-1 hover:text-slate-900" title={ev.jti}>
                                 <Key size={10}/> {ev.jti.slice(0, 8)}…
                             </button>
                         )}
@@ -811,7 +811,7 @@ function EventRow({ ev }) {
                         )}
                     </div>
                     {open && hasDetail && (
-                        <pre className="mt-2 p-2 bg-black/[0.03] rounded-lg text-[11px] overflow-x-auto font-mono text-black/70">
+                        <pre className="mt-2 p-2 bg-slate-50 rounded-lg text-[11px] overflow-x-auto font-mono text-slate-700">
 {JSON.stringify(detail, null, 2)}
                         </pre>
                     )}
@@ -871,7 +871,7 @@ function SecurityLockouts() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <LiveDot on={autoRefresh > 0} label={autoRefresh > 0 ? `ao vivo · ${autoRefresh}s` : "pausado"} />
-                    <span className="text-[12px] font-mono text-black/45">
+                    <span className="text-[12px] font-mono text-slate-400">
                         {data.total ?? 0} conta(s) bloqueada(s)
                     </span>
                 </div>
@@ -879,20 +879,20 @@ function SecurityLockouts() {
                     <AutoRefreshPill value={autoRefresh} onChange={setAutoRefresh} testIdPrefix="sec-lockouts-autorefresh" />
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="sec-lockouts-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                     ><RefreshCcw size={14} className={loading ? "animate-spin" : ""}/> Atualizar</button>
                 </div>
             </div>
 
-            <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 {loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-black/45 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
+                    <div className="px-4 py-10 text-slate-400 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
                 )}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-16 text-center text-black/55 text-[13px] inline-flex flex-col items-center gap-2 w-full">
-                        <ShieldCheck size={32} className="text-black/45" />
+                    <div className="px-4 py-16 text-center text-slate-500 text-[13px] inline-flex flex-col items-center gap-2 w-full">
+                        <ShieldCheck size={32} className="text-slate-400" />
                         <span>Não há contas bloqueadas neste momento.</span>
-                        <span className="text-[11.5px] text-black/40 font-mono">Política: 5 falhas / 15min → lock 15min</span>
+                        <span className="text-[11.5px] text-slate-400 font-mono">Política: 5 falhas / 15min → lock 15min</span>
                     </div>
                 )}
                 {data.items.length > 0 && (
@@ -906,8 +906,8 @@ function SecurityLockouts() {
                                         <Lock size={16}/>
                                     </span>
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-[13.5px] text-black">{row.email}</div>
-                                        <div className="text-[11.5px] text-black/55 font-mono">
+                                        <div className="font-medium text-[13.5px] text-slate-900">{row.email}</div>
+                                        <div className="text-[11.5px] text-slate-500 font-mono">
                                             {row.fails_in_window} falhas na janela
                                             {" · "} expira em <span className="text-red-600 font-semibold">{cd}</span>
                                             {" · "} {fmtDate(new Date(lockUntil).toISOString())}
@@ -915,7 +915,7 @@ function SecurityLockouts() {
                                     </div>
                                     <button onClick={() => unlock(row.email)} disabled={busy === row.email}
                                         data-testid={`sec-lockout-unlock-${row.email}`}
-                                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.08] text-black/70 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
+                                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
                                     >
                                         {busy === row.email ? <Loader2 size={13} className="animate-spin"/> : <Unlock size={13}/>}
                                         Desbloquear
@@ -992,7 +992,7 @@ function SecurityAdmins() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <LiveDot on={autoRefresh > 0} label={autoRefresh > 0 ? `ao vivo · ${autoRefresh}s` : "pausado"} />
-                    <span className="text-[12px] font-mono text-black/45">
+                    <span className="text-[12px] font-mono text-slate-400">
                         {adminCount} admin(s) · {with2fa} com 2FA · {onlineCount} online
                     </span>
                 </div>
@@ -1000,7 +1000,7 @@ function SecurityAdmins() {
                     <AutoRefreshPill value={autoRefresh} onChange={setAutoRefresh} testIdPrefix="sec-admins-autorefresh" />
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="sec-admins-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                     ><RefreshCcw size={14} className={loading ? "animate-spin" : ""}/> Atualizar</button>
                 </div>
             </div>
@@ -1012,9 +1012,9 @@ function SecurityAdmins() {
                 </div>
             )}
 
-            <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 {loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-black/45 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
+                    <div className="px-4 py-10 text-slate-400 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((a) => (
@@ -1028,16 +1028,16 @@ function SecurityAdmins() {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-semibold text-[13.5px]">@{a.username}</span>
-                                    {a.is_self && <span className="text-[10px] uppercase font-mono bg-black text-white px-1.5 rounded">tu</span>}
+                                    {a.is_self && <span className="text-[10px] uppercase font-mono bg-slate-900 text-white px-1.5 rounded">tu</span>}
                                     {a.twofa_enabled
-                                        ? <span className="text-[10px] uppercase font-mono bg-black/[0.05] text-black/70 px-1.5 rounded inline-flex items-center gap-1"><ShieldCheck size={9}/>2FA</span>
+                                        ? <span className="text-[10px] uppercase font-mono bg-slate-100 text-slate-700 px-1.5 rounded inline-flex items-center gap-1"><ShieldCheck size={9}/>2FA</span>
                                         : <span className="text-[10px] uppercase font-mono bg-red-50 text-red-700 px-1.5 rounded inline-flex items-center gap-1"><AlertTriangle size={9}/>sem 2FA</span>}
                                     {a.banned && <span className="text-[10px] uppercase font-mono bg-red-100 text-red-700 px-1.5 rounded">banido</span>}
                                 </div>
-                                <div className="text-[11.5px] text-black/55 truncate font-mono">
+                                <div className="text-[11.5px] text-slate-500 truncate font-mono">
                                     {a.email}
                                 </div>
-                                <div className="text-[11px] text-black/45 font-mono">
+                                <div className="text-[11px] text-slate-400 font-mono">
                                     {a.active_sessions} sessões · último login {fmtRelative(a.last_login_at)} · password {fmtRelative(a.password_changed_at)}
                                 </div>
                             </div>
@@ -1124,7 +1124,7 @@ function SecuritySessions() {
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                     <LiveDot on={autoRefresh > 0} label={autoRefresh > 0 ? `ao vivo · ${autoRefresh}s` : "pausado"} />
-                    <span className="text-[12px] font-mono text-black/45">
+                    <span className="text-[12px] font-mono text-slate-400">
                         {data.total} sessão(ões) · {data.live_jtis ?? 0} WS vivos · {onlineCount} online nesta página
                     </span>
                 </div>
@@ -1132,12 +1132,12 @@ function SecuritySessions() {
                     <AutoRefreshPill value={autoRefresh} onChange={setAutoRefresh} testIdPrefix="sec-sessions-autorefresh" />
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="sec-sessions-refresh"
-                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
+                        className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[12.5px]"
                     ><RefreshCcw size={14} className={loading ? "animate-spin" : ""}/> Atualizar</button>
                 </div>
             </div>
 
-            <div className="bg-white border border-black/[0.06] rounded-2xl p-3 space-y-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3">
                 <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => { setFilters((f) => ({ ...f, online_only: !f.online_only })); setPage(1); }}
@@ -1145,7 +1145,7 @@ function SecuritySessions() {
                         className={`h-8 px-3 rounded-full text-[11.5px] font-medium inline-flex items-center gap-1.5 transition ${
                             filters.online_only
                                 ? "bg-red-600 text-white"
-                                : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"
+                                : "bg-slate-50 text-slate-600 hover:bg-slate-200"
                         }`}
                     >
                         <Wifi size={12}/> Apenas online
@@ -1167,12 +1167,12 @@ function SecuritySessions() {
                 </div>
             </div>
 
-            <div className="bg-white border border-black/[0.06] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 {loading && data.items.length === 0 && (
-                    <div className="px-4 py-10 text-black/45 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
+                    <div className="px-4 py-10 text-slate-400 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
                 )}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-12 text-center text-black/45 text-[13px]">Sem sessões para os filtros atuais.</div>
+                    <div className="px-4 py-12 text-center text-slate-400 text-[13px]">Sem sessões para os filtros atuais.</div>
                 )}
                 <ul className="divide-y divide-black/[0.05]">
                     {data.items.map((s) => (
@@ -1180,23 +1180,23 @@ function SecuritySessions() {
                             <div className="relative shrink-0">
                                 <Avatar user={s.user} size={36} />
                                 {s.online ? (
-                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-600 ring-2 ring-white" title="WebSocket ativo"/>
+                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-cyan-500 ring-2 ring-white" title="WebSocket ativo"/>
                                 ) : (
-                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-black/20 ring-2 ring-white" title="Sem WS"/>
+                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-300 ring-2 ring-white" title="Sem WS"/>
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-semibold text-[13.5px]">@{s.user?.username || s.user_id?.slice(0, 8)}</span>
-                                    {s.user?.is_admin && <span className="text-[10px] uppercase font-mono bg-black text-white px-1 rounded">admin</span>}
-                                    <span className={`text-[10px] uppercase font-mono px-1.5 rounded ${s.online ? "bg-black/[0.05] text-black/70" : "bg-black/[0.06] text-black/55"}`}>
+                                    {s.user?.is_admin && <span className="text-[10px] uppercase font-mono bg-slate-900 text-white px-1 rounded">admin</span>}
+                                    <span className={`text-[10px] uppercase font-mono px-1.5 rounded ${s.online ? "bg-slate-100 text-slate-700" : "bg-slate-100 text-slate-500"}`}>
                                         {s.online ? "online" : "offline"}
                                     </span>
                                 </div>
-                                <div className="text-[11.5px] text-black/55 truncate font-mono">
+                                <div className="text-[11.5px] text-slate-500 truncate font-mono">
                                     {s.ip} · {(s.ua || "").slice(0, 70)}
                                 </div>
-                                <div className="text-[11px] text-black/45 font-mono">
+                                <div className="text-[11px] text-slate-400 font-mono">
                                     iniciada {fmtRelative(s.created_at)} · activa {fmtRelative(s.last_seen_at)} · jti {s.jti?.slice(0, 8)}…
                                 </div>
                             </div>
@@ -1215,11 +1215,11 @@ function SecuritySessions() {
             {data.total > data.limit && (
                 <div className="flex items-center justify-center gap-2" data-testid="sec-sessions-pager">
                     <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-                        className="h-8 w-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] disabled:opacity-30 inline-flex items-center justify-center"
+                        className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-200 disabled:opacity-30 inline-flex items-center justify-center"
                     ><ChevronLeft size={14}/></button>
-                    <span className="text-[12px] font-mono text-black/55">{page} / {totalPages}</span>
+                    <span className="text-[12px] font-mono text-slate-500">{page} / {totalPages}</span>
                     <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                        className="h-8 w-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] disabled:opacity-30 inline-flex items-center justify-center"
+                        className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-200 disabled:opacity-30 inline-flex items-center justify-center"
                     ><ChevronRight size={14}/></button>
                 </div>
             )}
@@ -1270,26 +1270,26 @@ function SecurityTokenDebugger() {
                 </span>
             </div>
 
-            <div className="bg-white border border-black/[0.06] rounded-2xl p-3 space-y-3">
-                <label className="block text-[12px] font-medium text-black/70">JWT</label>
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 space-y-3">
+                <label className="block text-[12px] font-medium text-slate-700">JWT</label>
                 <textarea
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     placeholder="eyJ…"
                     data-testid="sec-token-input"
                     rows={4}
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/[0.06] focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/15 text-[12px] font-mono break-all resize-y"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 text-[12px] font-mono break-all resize-y"
                 />
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-[11.5px] text-black/50 font-mono">{token.length} chars</span>
+                    <span className="text-[11.5px] text-slate-500 font-mono">{token.length} chars</span>
                     <div className="flex items-center gap-1.5">
                         <button onClick={() => { setToken(""); setResult(null); }}
                             data-testid="sec-token-clear"
-                            className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[12.5px]"
+                            className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] text-[12.5px]"
                         >Limpar</button>
                         <button onClick={test} disabled={busy || !token.trim()}
                             data-testid="sec-token-test"
-                            className="h-9 px-4 rounded-full bg-black text-white text-[12.5px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
+                            className="h-9 px-4 rounded-full bg-slate-900 text-white text-[12.5px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
                         >
                             {busy ? <Loader2 size={13} className="animate-spin"/> : <FileCode size={13}/>}
                             Testar
@@ -1299,36 +1299,36 @@ function SecurityTokenDebugger() {
             </div>
 
             {result && (
-                <div className={`rounded-2xl border p-4 ${valid ? "bg-black/[0.03] border-black/10" : "bg-red-50 border-red-200"}`} data-testid="sec-token-result">
+                <div className={`rounded-2xl border p-4 ${valid ? "bg-slate-50 border-slate-200" : "bg-red-50 border-red-200"}`} data-testid="sec-token-result">
                     <div className="flex items-center gap-2">
                         {valid
-                            ? <CheckCircle2 size={20} className="text-black/55"/>
+                            ? <CheckCircle2 size={20} className="text-slate-500"/>
                             : <XCircle size={20} className="text-red-600"/>}
-                        <span className={`font-display text-[18px] ${valid ? "text-black/85" : "text-red-800"}`}>
+                        <span className={`font-display text-[18px] ${valid ? "text-slate-800" : "text-red-800"}`}>
                             {valid ? "Token VÁLIDO" : "Token REJEITADO"}
                         </span>
                     </div>
-                    <div className={`mt-2 text-[12.5px] ${valid ? "text-black/90" : "text-red-900"}`}>
-                        Fase: <code className="font-mono px-1.5 py-0.5 rounded bg-black/[0.06]">{STAGE_LABEL[result.stage] || result.stage}</code>
+                    <div className={`mt-2 text-[12.5px] ${valid ? "text-slate-800" : "text-red-900"}`}>
+                        Fase: <code className="font-mono px-1.5 py-0.5 rounded bg-slate-100">{STAGE_LABEL[result.stage] || result.stage}</code>
                         {result.reason && <> · razão: <code className="font-mono">{result.reason}</code></>}
                     </div>
 
                     {result.header && (
                         <div className="mt-3">
-                            <div className="text-[11px] uppercase tracking-wider font-mono text-black/55 mb-1">Header</div>
-                            <pre className="p-2 rounded-lg bg-black/[0.05] text-[11px] font-mono overflow-x-auto">
+                            <div className="text-[11px] uppercase tracking-wider font-mono text-slate-500 mb-1">Header</div>
+                            <pre className="p-2 rounded-lg bg-slate-100 text-[11px] font-mono overflow-x-auto">
 {JSON.stringify(result.header, null, 2)}
                             </pre>
                         </div>
                     )}
                     {result.claims && Object.keys(result.claims).length > 0 && (
                         <div className="mt-3">
-                            <div className="text-[11px] uppercase tracking-wider font-mono text-black/55 mb-1">Claims (básicos)</div>
+                            <div className="text-[11px] uppercase tracking-wider font-mono text-slate-500 mb-1">Claims (básicos)</div>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-[11.5px]">
                                 {Object.entries(result.claims).map(([k, v]) => (
-                                    <div key={k} className="px-2.5 py-1.5 rounded-lg bg-black/[0.03]">
-                                        <div className="text-[10px] uppercase font-mono text-black/40">{k}</div>
-                                        <div className="font-mono text-black/85 break-all">{String(v)}</div>
+                                    <div key={k} className="px-2.5 py-1.5 rounded-lg bg-slate-50">
+                                        <div className="text-[10px] uppercase font-mono text-slate-400">{k}</div>
+                                        <div className="font-mono text-slate-800 break-all">{String(v)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -1337,7 +1337,7 @@ function SecurityTokenDebugger() {
                     {result.user && (
                         <div className="mt-3 text-[12.5px]">
                             Utilizador: <strong>@{result.user.username}</strong>
-                            {result.user.is_admin && <span className="ml-1.5 text-[10px] uppercase font-mono bg-black text-white px-1 rounded">admin</span>}
+                            {result.user.is_admin && <span className="ml-1.5 text-[10px] uppercase font-mono bg-slate-900 text-white px-1 rounded">admin</span>}
                         </div>
                     )}
                 </div>
@@ -1362,7 +1362,7 @@ export default function SecurityTab() {
         <div className="space-y-4" data-testid="admin-security">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight inline-flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-black/55"/> Segurança &amp; Proteção
+                    <ShieldCheck size={18} className="text-slate-500"/> Segurança &amp; Proteção
                 </h2>
             </div>
 
@@ -1377,8 +1377,8 @@ export default function SecurityTab() {
                             data-testid={`sec-subnav-${t.key}`}
                             className={`h-9 px-3.5 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5 shrink-0 border transition ${
                                 active
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
+                                    ? "bg-slate-900 text-white border-slate-900"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                             }`}
                         >
                             <Icon size={13}/> {t.label}
