@@ -47,8 +47,29 @@ except MissingSecret as _e:
     _sys.stderr.write(f"\n🔴 Required secret missing at boot: {_e}\n\n")
     raise
 
+# ─── JWT identity binding (environment-isolated) ─────────────────────────────
+# `iss` and `aud` bind tokens to *this* deployment. A token minted by the
+# staging deployment cannot authenticate against production even if both share
+# a (broken) trust path. Defeats cross-environment token replay.
+JWT_ISSUER = os.environ.get("JWT_ISSUER", "lusorae-backend").strip()
+JWT_AUDIENCE = os.environ.get("JWT_AUDIENCE", f"lusorae-app:{APP_ENV}").strip()
+
 client = AsyncIOMotorClient(mongo_url)
 db = client[_db_name]
+
+# Auth telemetry / lockout / authz helpers — wire the db handle right away
+# so any import after this point can use auth_event / require_owner_or_admin.
+from auth_security import (
+    bind_db as _bind_auth_db,
+    auth_event,
+    register_failed_login,
+    clear_failed_login,
+    is_login_locked,
+    require_owner_or_admin,
+    AuthzError,
+    ensure_indexes as _ensure_auth_indexes,
+)
+_bind_auth_db(db)
 
 # ─── Deployment hardening config (read from env, with safe dev defaults) ───────
 # APP_ENV: "development" | "staging" | "production". Controls error verbosity,
@@ -494,14 +515,100 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(user_id: str, email: str, jti: Optional[str] = None, ttl_days: Optional[int] = None) -> str:
+    """Mint a hardened access JWT.
+
+    Claims emitted (all required at decode time, see `_decode_access_token`):
+      sub  — user id
+      jti  — session id (revocable in db.sessions)
+      iat  — issued at (used for password_changed_at + replay defenses)
+      nbf  — not-before (= iat, defeats clock-skew replay tricks)
+      exp  — expiry
+      iss  — issuer (env-bound, defeats token reuse across environments)
+      aud  — audience (env-bound, ditto)
+      type — "access" (distinct from "refresh")
+      email — convenience (don't trust for authorization — re-fetch from DB)
+    """
     days = int(ttl_days) if ttl_days and ttl_days > 0 else 7
+    now = datetime.now(timezone.utc)
     payload = {
-        "sub": user_id, "email": email, "type": "access",
-        "exp": datetime.now(timezone.utc) + timedelta(days=days),
+        "sub": user_id,
+        "email": email,
+        "type": "access",
+        "iat": now,
+        "nbf": now,
+        "exp": now + timedelta(days=days),
+        "iss": JWT_ISSUER,
+        "aud": JWT_AUDIENCE,
     }
     if jti:
         payload["jti"] = jti
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+# Required claims on every access token. Missing any → InvalidTokenError.
+_REQUIRED_ACCESS_CLAIMS = ["sub", "exp", "iat", "nbf", "iss", "aud", "type", "jti"]
+_DECODE_OPTIONS = {
+    "verify_signature": True,
+    "verify_exp": True,
+    "verify_iat": True,
+    "verify_nbf": True,
+    "verify_iss": True,
+    "verify_aud": True,
+    "require": _REQUIRED_ACCESS_CLAIMS,
+}
+
+
+def _decode_token_lenient(token: str) -> Optional[dict]:
+    """Decode a JWT for *defensive* paths (logout, session-id extraction).
+
+    Unlike `_decode_access_token`, this:
+      • Still pins algorithm to HS256 (alg=none is rejected)
+      • Still verifies signature (forged tokens are rejected)
+      • Allows expired tokens (so we can revoke a jti even post-expiry)
+      • Does NOT require iss/aud/iat/nbf (so we can still parse legacy tokens
+        minted by an older code path during the rollout window)
+
+    Returns None on any failure — never raises.
+    """
+    if not token:
+        return None
+    try:
+        return jwt.decode(
+            token,
+            JWT_SECRET,
+            algorithms=[JWT_ALGORITHM],
+            options={
+                "verify_signature": True,
+                "verify_exp": False,
+                "verify_iat": False,
+                "verify_nbf": False,
+                "verify_iss": False,
+                "verify_aud": False,
+                "require": ["sub"],
+            },
+        )
+    except Exception:
+        return None
+
+
+def _decode_access_token(token: str) -> dict:
+    """Decode + validate an access token. Raises jwt.InvalidTokenError on any
+    failure (expired, bad signature, missing claim, wrong audience/issuer,
+    wrong algorithm, etc.).
+
+    Algorithm pinning to ["HS256"] defeats the classic alg=none and
+    alg-confusion (RS->HS) attacks: any token whose header advertises a
+    different alg is rejected before signature verification.
+    """
+    return jwt.decode(
+        token,
+        JWT_SECRET,
+        algorithms=[JWT_ALGORITHM],   # strict allow-list, no alg=none
+        audience=JWT_AUDIENCE,
+        issuer=JWT_ISSUER,
+        options=_DECODE_OPTIONS,
+        leeway=10,  # 10s clock skew tolerance for distributed deployments
+    )
 
 
 def _parse_ua(ua: str) -> dict:
@@ -986,7 +1093,7 @@ async def get_current_user(request: Request) -> dict:
     if not token:
         raise HTTPException(status_code=401, detail="Não autenticado")
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = _decode_access_token(token)
         if payload.get("type") != "access":
             raise HTTPException(status_code=401, detail="Token inválido")
         user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0})
@@ -1000,6 +1107,21 @@ async def get_current_user(request: Request) -> dict:
                 status_code=403,
                 detail=f"Conta suspensa temporariamente até {user.get('suspended_until')}",
             )
+        # H5 — password rotation invalidation: any token issued BEFORE the
+        # last password change is invalid, even if its jti row hasn't been
+        # explicitly revoked. Defeats stolen-token-survives-password-change.
+        pwd_changed = user.get("password_changed_at")
+        if pwd_changed:
+            try:
+                token_iat = int(payload.get("iat") or 0)
+                # password_changed_at is ISO 8601 — parse to epoch seconds.
+                pwd_changed_dt = _parse_iso_utc(pwd_changed)
+                if pwd_changed_dt is not None and token_iat < int(pwd_changed_dt.timestamp()):
+                    raise HTTPException(status_code=401, detail="Sessão expirada")
+            except HTTPException:
+                raise
+            except Exception:
+                pass  # best-effort — never block on parse failure
         # B-029 — session revocation check
         jti = payload.get("jti")
         if jti:
@@ -1021,6 +1143,22 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Sessão expirada")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
+
+
+def _parse_iso_utc(value: str) -> Optional[datetime]:
+    """Parse an ISO-8601 timestamp into a UTC-aware datetime. Returns None on
+    failure. Used to compare `password_changed_at` against token iat."""
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        # Python's fromisoformat handles "+00:00" but not "Z" pre-3.11
+        v = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        dt = datetime.fromisoformat(v)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:
+        return None
 
 
 async def maybe_user(request: Request) -> Optional[dict]:
@@ -1816,11 +1954,31 @@ async def register(payload: RegisterIn, request: Request, response: Response):
 @limiter.limit("10/minute")
 async def login(payload: LoginIn, request: Request, response: Response):
     email = payload.email.lower()
+    ip = request.client.host if request and request.client else ""
+    ua = request.headers.get("user-agent", "")[:300] if request else ""
+
+    # H6 — per-account lockout (defeats credential stuffing past IP rate limit)
+    locked_until = await is_login_locked(email)
+    if locked_until is not None:
+        # Don't leak the precise unlock time to the client (info disclosure),
+        # but the audit log has it.
+        await auth_event("login_fail", email=email, ip=ip, ua=ua,
+                         detail={"reason": "account_locked"})
+        raise HTTPException(429, "Demasiadas tentativas. Tenta novamente em alguns minutos.")
+
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user["password_hash"]):
+        state = await register_failed_login(email, ip=ip)
+        await auth_event("login_fail", email=email, ip=ip, ua=ua,
+                         detail={"reason": "bad_credentials", "fail_count": state["fail_count"]})
+        # Constant-ish response time: bcrypt already burned cycles on the
+        # password compare even when user is None (verify_password handles
+        # the missing hash gracefully), so timing leak is bounded.
         raise HTTPException(401, "Credenciais inválidas")
     # Banned users cannot log in
     if user.get("banned"):
+        await auth_event("login_fail", user_id=user["id"], email=email, ip=ip, ua=ua,
+                         detail={"reason": "banned"})
         raise HTTPException(403, "Conta suspensa. Contacta o suporte.")
     # B-013 — 2FA gate
     if user.get("two_fa_enabled") and user.get("two_fa_secret"):
@@ -1828,6 +1986,7 @@ async def login(payload: LoginIn, request: Request, response: Response):
         if not code:
             raise HTTPException(403, "Código 2FA necessário")
         if not await _verify_2fa_code(user, code):
+            await auth_event("twofa_fail", user_id=user["id"], email=email, ip=ip, ua=ua)
             raise HTTPException(401, "Código 2FA inválido")
     # B-014 — login alert before creating new session
     await maybe_emit_login_alert(user, request)
@@ -1836,6 +1995,9 @@ async def login(payload: LoginIn, request: Request, response: Response):
     token = create_access_token(user["id"], email, jti=jti, ttl_days=_ttl)
     set_auth_cookie(response, token)
     await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
+    # H6 — successful login resets failure counter & emits audit event
+    await clear_failed_login(email)
+    await auth_event("login_ok", user_id=user["id"], email=email, ip=ip, ua=ua, jti=jti)
     return {"user": public_user(user), "token": token}
 
 
@@ -1873,13 +2035,28 @@ async def logout(request: Request, response: Response):
             token = auth_header[7:]
     if token:
         try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            payload = _decode_token_lenient(token) or {}
             jti = payload.get("jti")
+            user_id = payload.get("sub")
             if jti:
                 await db.sessions.update_one(
                     {"jti": jti},
                     {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "logout"}},
                 )
+                await auth_event(
+                    "logout",
+                    user_id=user_id,
+                    jti=jti,
+                    ip=request.client.host if request and request.client else "",
+                    ua=request.headers.get("user-agent", "")[:300] if request else "",
+                )
+                # H7 — force-disconnect any WebSocket bound to this jti so
+                # realtime presence/typing channels drop the moment the
+                # token is revoked, not 30 s later.
+                try:
+                    await ws_manager.close_sockets_by_jti(jti)
+                except Exception:
+                    pass
         except Exception:
             pass
     clear_auth_cookie(response)
@@ -1965,11 +2142,33 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
     # B-029 — Optionally revoke OTHER sessions after a password change.
     # Keep current session alive; revoke siblings.
     current_jti = _extract_jti_from_request(request)
+    revoked_jtis = []
     if current_jti:
+        # Capture the jtis we're about to revoke so we can also kick their WS.
+        async for s in db.sessions.find(
+            {"user_id": user["id"], "revoked": False, "jti": {"$ne": current_jti}},
+            {"_id": 0, "jti": 1},
+        ):
+            if s.get("jti"):
+                revoked_jtis.append(s["jti"])
         await db.sessions.update_many(
             {"user_id": user["id"], "revoked": False, "jti": {"$ne": current_jti}},
             {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "password_change"}},
         )
+    # H7 — kick WebSockets bound to revoked siblings immediately.
+    for j in revoked_jtis:
+        try:
+            await ws_manager.close_sockets_by_jti(j)
+        except Exception:
+            pass
+    await auth_event(
+        "password_changed",
+        user_id=user["id"], email=user.get("email", ""),
+        ip=request.client.host if request and request.client else "",
+        ua=request.headers.get("user-agent", "")[:300] if request else "",
+        jti=current_jti,
+        detail={"siblings_revoked": len(revoked_jtis)},
+    )
     return {"ok": True, "password_changed_at": now_iso()}
 
 
@@ -1981,11 +2180,8 @@ def _extract_jti_from_request(request: Request) -> Optional[str]:
             token = auth_header[7:]
     if not token:
         return None
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload.get("jti")
-    except Exception:
-        return None
+    payload = _decode_token_lenient(token)
+    return payload.get("jti") if payload else None
 
 
 # ============================================================
@@ -2027,6 +2223,17 @@ async def revoke_session(session_id: str, request: Request, user=Depends(get_cur
         {"jti": session_id},
         {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "user_revoke"}},
     )
+    # H7 — close any WS bound to this jti immediately.
+    try:
+        await ws_manager.close_sockets_by_jti(session_id)
+    except Exception:
+        pass
+    await auth_event(
+        "session_revoked",
+        user_id=user["id"], email=user.get("email", ""), jti=session_id,
+        ip=request.client.host if request and request.client else "",
+        ua=request.headers.get("user-agent", "")[:300] if request else "",
+    )
     return {"ok": True}
 
 
@@ -2036,9 +2243,27 @@ async def revoke_other_sessions(request: Request, user=Depends(get_current_user)
     q = {"user_id": user["id"], "revoked": {"$ne": True}}
     if current_jti:
         q["jti"] = {"$ne": current_jti}
+    # Capture the jtis before flipping them so we can also kick their WS.
+    jtis = []
+    async for s in db.sessions.find(q, {"_id": 0, "jti": 1}):
+        if s.get("jti"):
+            jtis.append(s["jti"])
     res = await db.sessions.update_many(
         q,
         {"$set": {"revoked": True, "revoked_at": now_iso(), "revoked_reason": "user_revoke_all"}},
+    )
+    # H7 — kick all matching WebSockets.
+    for j in jtis:
+        try:
+            await ws_manager.close_sockets_by_jti(j)
+        except Exception:
+            pass
+    await auth_event(
+        "session_revoked_all",
+        user_id=user["id"], email=user.get("email", ""), jti=current_jti,
+        ip=request.client.host if request and request.client else "",
+        ua=request.headers.get("user-agent", "")[:300] if request else "",
+        detail={"count": res.modified_count},
     )
     return {"ok": True, "revoked": res.modified_count}
 
@@ -7813,6 +8038,29 @@ class ConnectionManager:
         meta = self.socket_meta.get(id(ws))
         return (meta or {}).get("jti") or ""
 
+    async def close_sockets_by_jti(self, jti: str, code: int = 1008) -> int:
+        """Force-close every WebSocket whose handshake bound this jti.
+
+        Called from the logout / session-revoke paths so realtime channels
+        terminate immediately when the corresponding session dies — no need
+        to wait for the periodic 30 s revocation re-check inside the WS loop.
+        Returns the number of sockets closed.
+        """
+        if not jti:
+            return 0
+        closed = 0
+        for uid, sockets in list(self.active.items()):
+            for ws in list(sockets):
+                if self.socket_jti(ws) != jti:
+                    continue
+                try:
+                    await ws.close(code=code)
+                except Exception:
+                    pass
+                self.disconnect(uid, ws)
+                closed += 1
+        return closed
+
     async def send_personal(self, user_id: str, message: dict):
         for ws in list(self.active.get(user_id, [])):
             try:
@@ -7904,7 +8152,7 @@ async def websocket_endpoint(ws: WebSocket):
         await ws.close(code=1008)
         return
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = _decode_access_token(token)  # full strict validation
         if payload.get("type") != "access":
             await ws.close(code=1008)
             return
@@ -7920,13 +8168,24 @@ async def websocket_endpoint(ws: WebSocket):
             await ws.close(code=1008)
             return
     # Re-fetch user — ban/freeze checks must apply.
-    udoc = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "banned": 1, "suspended_until": 1})
+    udoc = await db.users.find_one(
+        {"id": user_id},
+        {"_id": 0, "id": 1, "banned": 1, "suspended_until": 1, "password_changed_at": 1},
+    )
     if not udoc or udoc.get("banned"):
         await ws.close(code=1008)
         return
     if _restriction_active(udoc, "suspended_until"):
         await ws.close(code=1008)
         return
+    # H5 — password-rotation invalidation in WS handshake too.
+    pwd_changed = udoc.get("password_changed_at")
+    if pwd_changed:
+        pwd_changed_dt = _parse_iso_utc(pwd_changed)
+        token_iat = int(payload.get("iat") or 0)
+        if pwd_changed_dt is not None and token_iat < int(pwd_changed_dt.timestamp()):
+            await ws.close(code=1008)
+            return
 
     await ws_manager.connect(user_id, ws, jti=jti)
     # mark online
