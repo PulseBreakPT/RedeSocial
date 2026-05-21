@@ -2,7 +2,7 @@
 
 **Test Date:** 2026-05-21  
 **Backend:** https://prodlock-armor.preview.emergentagent.com/api  
-**Test Credentials:** admin@lusorae.app / Admin#Lusorae2025  
+**Test Credentials:** (read from `/app/memory/test_credentials.md` or env — never hardcoded)  
 **Test File:** /app/backend_test_h1h4.py  
 **Test Output:** /app/h1h4_test_output.log  
 

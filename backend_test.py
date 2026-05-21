@@ -4,15 +4,26 @@ Pre-deploy Hardening Pass — Backend Testing
 Tests F1, F2, F3, F4 security hardening phases
 """
 
+import os
+import sys
 import requests
 import time
 import json
 from typing import Dict, Any
 
-# Configuration
-BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
-ADMIN_EMAIL = "admin@lusorae.app"
-ADMIN_PASSWORD = "Admin#Lusorae2025"
+# Configuration — credentials come from env (never hardcoded).
+# Required: ADMIN_EMAIL, ADMIN_PASSWORD. Optional: BASE_URL.
+BASE_URL = os.environ.get(
+    "BASE_URL", "https://prodlock-armor.preview.emergentagent.com/api"
+)
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    print(
+        "❌ ADMIN_EMAIL and ADMIN_PASSWORD env vars are required. "
+        "Read them from /app/backend/.env or /app/memory/test_credentials.md."
+    )
+    sys.exit(2)
 
 # Test results tracking
 test_results = {

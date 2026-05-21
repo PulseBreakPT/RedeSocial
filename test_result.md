@@ -1526,7 +1526,7 @@ agent_communication:
   - agent: "main"
     message: |
       ADMIN PANEL EXPANSION — 11 novos endpoints + 4 novos tabs + bulk ops.
-      Admin user auto-bootstrap: admin@lusorae.app / Admin#Lusorae2025 (criado em startup via ADMIN_EMAIL/ADMIN_PASSWORD em backend/.env).
+      Admin user auto-bootstrap: admin@lusorae.app / <see /app/memory/test_credentials.md> (criado em startup via ADMIN_EMAIL/ADMIN_PASSWORD em backend/.env).
 
       NOVOS ENDPOINTS BACKEND (todos com require_admin + admin_audit):
        • GET  /api/admin/comments?q&page&limit               — listagem com pesquisa
@@ -1559,7 +1559,7 @@ agent_communication:
       db.comments (post_id, author_id), db.reports (status).
 
       CASOS DE TESTE PRIORITÁRIOS para o testing agent:
-        1) Login admin (admin@lusorae.app / Admin#Lusorae2025) → todos os endpoints abaixo precisam Bearer token.
+        1) Login admin (admin@lusorae.app / <see /app/memory/test_credentials.md>) → todos os endpoints abaixo precisam Bearer token.
         2) Hashtags blacklist:
            a) Criar 2 posts com hashtag #spam_test e 1 com #ok_test (user normal).
            b) POST /api/admin/hashtags/spam_test/blacklist → blacklisted=true.
@@ -2030,7 +2030,7 @@ Credenciais em `/app/memory/test_credentials.md`. Criar 2 users normais (userA, 
           
           Test file: /app/test_admin_settings.py (16 comprehensive test scenarios)
           Test output: /app/test_admin_settings_output.log
-          Credentials: admin@lusorae.app / Admin#Lusorae2025
+          Credentials: admin@lusorae.app / <see /app/memory/test_credentials.md>
           Test users: usera, userb (created on-the-fly)
           Test duration: ~5 minutes (due to 6s cache TTL waits between tests)
 
@@ -2108,7 +2108,7 @@ backend:
           agent: "main"
           comment: |
             Pre-deploy hardening pass implemented in /app/backend/server.py.
-            Test credentials: admin@lusorae.app / Admin#Lusorae2025
+            Test credentials: admin@lusorae.app / <see /app/memory/test_credentials.md>
             
             CHANGES TO VALIDATE:
             
@@ -2144,7 +2144,7 @@ backend:
             VALIDATION CHECKLIST:
               1) GET /api/health → 200, payload has env=="development", status=="ok"
               2) GET /api/ready → 200, mongodb check is true
-              3) POST /api/auth/login (admin@lusorae.app / Admin#Lusorae2025) still works, returns token
+              3) POST /api/auth/login (admin@lusorae.app / <see /app/memory/test_credentials.md>) still works, returns token
               4) POST /api/auth/forgot-password with valid email → 200, includes dev_token (we're in DEV)
               5) Login still creates session (GET /api/auth/me afterwards returns user)
               6) NO REGRESSION — existing legacy endpoints still work (create post, like, comment, follow)
@@ -2163,7 +2163,7 @@ backend:
                - Payload contains: status="ok", checks.mongodb=true
                - MongoDB ping successful (readiness probe)
             
-            3. POST /api/auth/login (admin@lusorae.app / Admin#Lusorae2025) → 200 OK
+            3. POST /api/auth/login (admin@lusorae.app / <see /app/memory/test_credentials.md>) → 200 OK
                - Returns token and user in body
                - Sets access_token cookie (HttpOnly)
                - Login flow complete: GET /api/auth/me returns user
@@ -2399,7 +2399,7 @@ agent_communication:
         Created /app/DEPLOY.md documenting all env vars and infra-level recommendations.
         Created /app/memory/test_credentials.md.
         
-        Test credentials: admin@lusorae.app / Admin#Lusorae2025
+        Test credentials: admin@lusorae.app / <see /app/memory/test_credentials.md>
         
         ALL 4 new tasks listed above need testing. Focus on validation checklists in each task.
         Manual smoke tests already passed (health, ready, security headers, rate limit blocking).
@@ -2411,7 +2411,7 @@ agent_communication:
         ✅ PRE-DEPLOY HARDENING PASS VALIDATION COMPLETE — 29/31 TESTS PASSED (93.5%)
         
         Executed comprehensive test suite covering ALL 4 security hardening phases (F1-F4).
-        Test credentials: admin@lusorae.app / Admin#Lusorae2025
+        Test credentials: admin@lusorae.app / <see /app/memory/test_credentials.md>
         Test duration: ~5 minutes (includes 140s wait time for rate limit window resets)
         
         ═══════════════════════════════════════════════════════════════════════════════
@@ -2816,7 +2816,7 @@ agent_communication:
         ✅ H1-H4 SECURITY HARDENING PASS VALIDATION COMPLETE — ALL CRITICAL TESTS PASSED
         
         Executed comprehensive test suite covering all H1-H4 security requirements.
-        Test credentials: admin@lusorae.app / Admin#Lusorae2025
+        Test credentials: admin@lusorae.app / <see /app/memory/test_credentials.md>
         Test duration: ~10 minutes (includes rate limit waits)
         Test file: /app/backend_test_h1h4.py
         Test output: /app/h1h4_test_output.log
@@ -2920,3 +2920,90 @@ agent_communication:
         • All core security features verified working correctly
         • WebSocket detailed runtime tests skipped (implementation verified via code review)
 
+
+
+## 2026-05-21 — Security hardening sweep (V1–V11)
+
+### Changes — must be tested
+
+- backend/.env: `JWT_SECRET` rotated to 128-char random hex; `ADMIN_PASSWORD`
+  rotated to `b1saiF-OI8D4CrTFmEL4lIHAbamaDJrL` (stored in `/app/memory/test_credentials.md`);
+  `APP_ENV=development` explicit.
+- backend/server.py: new `_validate_environment()` runs before FastAPI is
+  constructed. In production it refuses to boot (SystemExit 2) on:
+    • `JWT_SECRET` < 48 chars or in known-leaked blocklist
+    • `CORS_ORIGINS` containing `*`
+    • `COOKIE_SECURE != true`
+    • `COOKIE_SAMESITE=none` without `COOKIE_SECURE`
+    • `ADMIN_PASSWORD` in known-leaked blocklist or < 12 chars
+  In development the same conditions log warnings only.
+- backend/server.py: password-reset token no longer logged in plaintext at
+  INFO. Now masked as `xxxx…(N)`; full value only at DEBUG.
+- All `*.py` test files (`backend_test.py`, `backend_test_h1h4.py`,
+  `backend_test_fase2.py`, `test_admin_settings.py`, `test_social_likers.py`,
+  `backend/tests/test_vermillion.py`, `backend/tests/test_portuguese_features.py`):
+  removed hardcoded `ADMIN_EMAIL`/`ADMIN_PASSWORD` literals — they now read
+  from environment only and `sys.exit(2)` if missing.
+- H1H4_TEST_SUMMARY.md: credential line replaced with placeholder reference.
+- test_result.md: all literal references to the leaked admin password
+  replaced with `<see /app/memory/test_credentials.md>` (history preserved).
+- /app/.gitignore: rebuilt cleanly (was corrupted with 13 duplicated blocks).
+  Now comprehensive coverage of `.env*` (except `.env.example`), `*.pem`,
+  `*.key`, `credentials.json`, cloud provider creds, dump files, logs.
+- /app/backend/.env.example and /app/frontend/.env.example created as safe
+  templates.
+- /app/frontend/craco.config.js: production build now refuses to ship when
+  any `REACT_APP_*` env name matches secret-like patterns
+  (SECRET/PRIVATE/SERVICE_ROLE/OPENAI/STRIPE_SECRET/JWT_SECRET/…).
+  Source maps disabled in production builds (`GENERATE_SOURCEMAP=false`).
+- /app/frontend/src/index.js: runtime guard scrubs secret-named keys from
+  `process.env` at boot (defense-in-depth against runtime leakage).
+- /app/DEPLOY.md updated with hardening pass section; new
+  /app/PRODUCTION_READINESS.md as the deployable checklist.
+- New backend dependency: `deprecated` (required transitively by slowapi/limits;
+  added to requirements.txt).
+
+### Test scope for backend agent
+
+Re-run the existing H1–H4 regression suite plus the auth happy-path to
+confirm the JWT/admin-password rotation didn't break anything:
+
+  1. POST /api/auth/login with new admin creds (from /app/memory/test_credentials.md)
+     → 200, returns token + sets HttpOnly access_token cookie + XSRF-TOKEN cookie.
+  2. POST /api/auth/login with OLD password (Admin#Lusorae2025) → 401.
+  3. GET /api/auth/me with new Bearer → 200, `is_admin=true`, `verified=true`.
+  4. POST /api/auth/forgot-password (admin email) → 200 with `dev_token` in
+     dev (NOT in prod). Verify reset flow still works.
+  5. Cookie-auth POST without X-CSRF-Token → 403 (CSRF middleware still active).
+  6. Cookie-auth POST with X-CSRF-Token → 200.
+  7. Bearer-auth POST without CSRF header → 200 (Bearer is CSRF-immune).
+  8. /api/health → 200, env field = "development".
+  9. Security headers still present on responses (X-Frame-Options,
+     X-Content-Type-Options, Referrer-Policy, Permissions-Policy).
+  10. Rate limit on login (>10/min) → 429.
+
+### Notes for testing agent
+
+- Credentials are in `/app/memory/test_credentials.md`. The OLD literal
+  `Admin#Lusorae2025` is now in a blocklist and will be REJECTED — do not
+  use it.
+- The bootstrap admin user already existed prior to the .env rotation, so
+  the user record has the OLD bcrypt hash. The system re-hashes on boot
+  when `ADMIN_PASSWORD` changes (verified: login with new password
+  returned 200 in smoke test). If for any reason the testing agent gets
+  401 with the new password, that means the re-hash path didn't fire;
+  bounce the backend (`sudo supervisorctl restart backend`) and retry.
+
+agent_communication:
+    - agent: "main"
+      message: |
+        Security hardening sweep complete. Rotated JWT_SECRET (128 hex chars) and
+        ADMIN_PASSWORD; removed all hardcoded admin credentials from tracked test
+        files; added startup environment validator that refuses unsafe production
+        configs; masked password-reset tokens in logs; created .env.example
+        templates; rebuilt corrupted .gitignore; disabled prod source maps; added
+        frontend build/runtime guards against accidental secret leakage in
+        REACT_APP_* envs. Smoke test passed (new admin password 200; old 401;
+        env validator correctly exits 2 in prod on unsafe config). Backend is
+        booting cleanly. Please re-run the H1-H4 regression + auth happy-path
+        and confirm no regression introduced by the secret rotation.

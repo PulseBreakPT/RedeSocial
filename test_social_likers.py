@@ -4,16 +4,26 @@ Test Suite for GET /api/posts/{post_id}/social-likers endpoint
 Tests all 6 scenarios as specified in the review request
 """
 
+import os
+import sys
 import requests
 import json
 from typing import Optional, Dict, Any
 
-# Backend URL
-BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
+# Backend URL — overridable via env
+BASE_URL = os.environ.get(
+    "BASE_URL", "https://prodlock-armor.preview.emergentagent.com/api"
+)
 
-# Test credentials
-ADMIN_EMAIL = "admin@vermillion.app"
-ADMIN_PASSWORD = "admin123"
+# Test credentials must come from environment.
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    print(
+        "❌ ADMIN_EMAIL and ADMIN_PASSWORD env vars are required. "
+        "See /app/memory/test_credentials.md."
+    )
+    sys.exit(2)
 
 # Test results tracking
 test_results = []

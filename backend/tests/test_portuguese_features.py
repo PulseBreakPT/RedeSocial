@@ -19,6 +19,10 @@ if not BASE_URL:
 BASE_URL = BASE_URL.rstrip("/")
 API = f"{BASE_URL}/api"
 
+# Admin credentials must come from env (no hardcoding).
+_ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+
 
 # ---------- Bug fix: anonymous boot ----------
 class TestAuthMeAnonymousBoot:
@@ -34,10 +38,13 @@ class TestAuthMeAnonymousBoot:
         assert body["user"] is None, f"expected user=None, got {body['user']}"
 
     def test_authenticated_me_returns_user_object(self):
+        import pytest
+        if not _ADMIN_EMAIL or not _ADMIN_PASSWORD:
+            pytest.skip("ADMIN_EMAIL/ADMIN_PASSWORD not set in env")
         s = requests.Session()
         r = s.post(
             f"{API}/auth/login",
-            json={"email": "admin@vermillion.app", "password": "admin123"},
+            json={"email": _ADMIN_EMAIL, "password": _ADMIN_PASSWORD},
         )
         assert r.status_code == 200
         r2 = s.get(f"{API}/auth/me")
@@ -45,7 +52,7 @@ class TestAuthMeAnonymousBoot:
         body = r2.json()
         assert body.get("user") is not None
         assert body["user"]["username"] == "admin"
-        assert body["user"]["email"] == "admin@vermillion.app"
+        assert body["user"]["email"] == _ADMIN_EMAIL
 
 
 # ---------- Trending with PT range ----------

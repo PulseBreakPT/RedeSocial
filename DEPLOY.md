@@ -111,4 +111,53 @@ done
 - Endurecer CSP (remover `'unsafe-inline'` do style-src, mover para nonces)
 - Adicionar dependency scanning ao CI (e.g. `pip-audit`, `npm audit`)
 - Sentry / OpenTelemetry para tracing distribuído
-- Recuperar e limpar valores de log do `dev_token` antes de promover a PROD
+
+---
+
+## 6. Hardening Pass — 2026-05-21
+
+Esta secção documenta a passagem de hardening completa feita em 2026-05-21.
+Detalhe completo em `/app/PRODUCTION_READINESS.md`.
+
+### O que foi rodado
+
+- `JWT_SECRET` **rodado** para 128 chars hex aleatórios. Todas as sessões
+  anteriores foram invalidadas.
+- `ADMIN_PASSWORD` **rodado**. A password anterior (`Admin#Lusorae2025`) foi
+  removida de todos os ficheiros versionados (testes, summaries) e está agora
+  na *blocklist* do validador de arranque — qualquer deploy que tente
+  reutilizá-la em produção é recusado.
+
+### Validador de arranque (`server.py:_validate_environment`)
+
+Antes de o FastAPI inicializar, o servidor valida:
+
+| Regra | Severidade em DEV | Severidade em PROD |
+|---|---|---|
+| `JWT_SECRET` ≥ 48 chars | fatal | fatal |
+| `JWT_SECRET` ∉ blocklist (`secret`, `changeme`, valor pré-rotação) | fatal | fatal |
+| `CORS_ORIGINS` sem `*` | warn | **fatal** |
+| `COOKIE_SECURE` = true | warn | **fatal** |
+| `COOKIE_SAMESITE=none` ⇒ `COOKIE_SECURE=true` | fatal | fatal |
+| `ADMIN_PASSWORD` ∉ blocklist (incluindo valor pré-rotação) | fatal | fatal |
+| `ADMIN_PASSWORD` ≥ 12 chars | warn | **fatal** |
+
+Em DEV os `warn` apenas registam no log. Em PROD qualquer `fatal` faz
+`SystemExit(2)` antes do servidor aceitar tráfego.
+
+### Frontend hardening
+
+- `craco.config.js` recusa builds de produção quando deteta `REACT_APP_*`
+  com nome a soar a segredo (`SECRET`, `PRIVATE`, `SERVICE_ROLE`, `OPENAI`,
+  `STRIPE_SECRET`, `JWT_SECRET`, …).
+- `GENERATE_SOURCEMAP=false` por defeito em build de produção (sem source
+  maps publicados → menos superfície para DevTools).
+- Runtime guard em `src/index.js` apaga qualquer env com nome sensível do
+  objecto `process.env` no browser (defesa em profundidade).
+
+### Logs
+
+- Tokens de password-reset deixaram de ser logados em INFO. Agora só o
+  prefixo + comprimento (`b3kF…(24)`). O valor inteiro vai para DEBUG (que
+  está off em produção).
+

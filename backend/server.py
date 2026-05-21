@@ -54,6 +54,74 @@ COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "lax").lower().strip()
 if COOKIE_SAMESITE not in {"lax", "strict", "none"}:
     COOKIE_SAMESITE = "lax"
 
+# ─── Startup security validator (deploy-time hardening) ───────────────────────
+# Refuses to boot when production-critical settings are unsafe. Catches:
+#   • known-leaked / weak JWT secrets
+#   • wildcard CORS in prod
+#   • cookies served without Secure flag in prod
+#   • SameSite=none without Secure (browsers will silently drop the cookie)
+#   • leaked bootstrap admin password literal
+#   • too-short JWT secret (<48 chars of entropy)
+# In dev these become warnings instead of fatal errors.
+_KNOWN_BAD_JWT_SECRETS = {
+    "secret", "changeme", "change-me", "dev", "test", "jwtsecret",
+    # The pre-rotation placeholder that lived in the dev .env. If any deploy
+    # still ships this value, fail loud.
+    "b9f2a7c1e4d6f8a3b5c7d9e1f2a4b6c8d0e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0",
+}
+_KNOWN_BAD_ADMIN_PASSWORDS = {
+    "admin", "admin123", "password", "12345678",
+    # Pre-rotation placeholder that leaked in tracked test files. Block it
+    # from ever being used again.
+    "Admin#Lusorae2025",
+}
+
+
+def _validate_environment() -> None:
+    problems = []  # (severity, message) where severity ∈ {"fatal", "warn"}
+
+    if len(JWT_SECRET) < 48:
+        problems.append(("fatal", f"JWT_SECRET is too short ({len(JWT_SECRET)} chars). Use ≥48 random chars."))
+    if JWT_SECRET.lower() in _KNOWN_BAD_JWT_SECRETS:
+        problems.append(("fatal", "JWT_SECRET matches a known-leaked / weak value. Rotate it."))
+
+    raw_cors = os.environ.get("CORS_ORIGINS", "*")
+    if "*" in [o.strip() for o in raw_cors.split(",")]:
+        problems.append(("fatal" if IS_PRODUCTION else "warn",
+                         "CORS_ORIGINS contains '*'. Set explicit origins for production."))
+
+    if IS_PRODUCTION and not COOKIE_SECURE:
+        problems.append(("fatal", "COOKIE_SECURE must be true in production."))
+    if COOKIE_SAMESITE == "none" and not COOKIE_SECURE:
+        problems.append(("fatal", "COOKIE_SAMESITE=none requires COOKIE_SECURE=true."))
+
+    admin_pw = os.environ.get("ADMIN_PASSWORD", "").strip()
+    if admin_pw and admin_pw in _KNOWN_BAD_ADMIN_PASSWORDS:
+        problems.append(("fatal", "ADMIN_PASSWORD matches a known-leaked value. Rotate it."))
+    if admin_pw and len(admin_pw) < 12:
+        problems.append(("fatal" if IS_PRODUCTION else "warn",
+                         f"ADMIN_PASSWORD is too short ({len(admin_pw)} chars). Use ≥12."))
+
+    fatal = [m for s, m in problems if s == "fatal"]
+    warn = [m for s, m in problems if s == "warn"]
+    for m in warn:
+        logging.getLogger("vermillion").warning(f"⚠️  Env hardening: {m}")
+    if fatal:
+        for m in fatal:
+            logging.getLogger("vermillion").error(f"🔴 Env hardening: {m}")
+        if IS_PRODUCTION:
+            # Refuse to boot. Loud and clear — log to stderr too.
+            import sys
+            sys.stderr.write(
+                "\n🔴 Refusing to start in production with unsafe configuration:\n"
+                + "\n".join(f"  • {m}" for m in fatal)
+                + "\n  → See /app/DEPLOY.md and /app/backend/.env.example\n\n"
+            )
+            raise SystemExit(2)
+
+
+_validate_environment()
+
 app = FastAPI(title="Lusorae Social")
 api = APIRouter(prefix="/api")
 
@@ -1818,7 +1886,12 @@ async def forgot_password(payload: ForgotPasswordIn, request: Request, response:
             "token": token, "user_id": user["id"], "expires_at": expires, "used": False,
             "delivered_to": email, "via_recovery": used_recovery,
         })
-        logger.info(f"🔐 Password reset token for {email} (via_recovery={used_recovery}): {token}")
+        # Security: never log the full token at INFO level — it would land in
+        # production log aggregators and reset anyone's password. Mask to
+        # prefix+length; full value only at DEBUG (off in prod).
+        _masked = (token[:4] + "…" + f"({len(token)})") if token else ""
+        logger.info(f"🔐 Password reset issued for {email} (via_recovery={used_recovery}) token={_masked}")
+        logger.debug(f"🔐 Full reset token for {email}: {token}")
         # Security: NEVER expose the reset token in the API response — it would
         # allow anyone to reset anyone's password just by hitting forgot-password.
         # The token is delivered out-of-band (email in prod, logs in dev).

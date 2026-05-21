@@ -22,6 +22,10 @@ if not BASE_URL:
 
 API = f"{BASE_URL}/api"
 
+# Admin credentials must come from env (no hardcoding).
+_ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+
 # Tiny 1x1 PNG base64
 PNG_1x1 = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -35,7 +39,7 @@ PNG_1x1 = "data:image/png;base64," + base64.b64encode(
 @pytest.fixture(scope="module")
 def admin_session():
     s = requests.Session()
-    r = s.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "admin123"})
+    r = s.post(f"{API}/auth/login", json={"email": _ADMIN_EMAIL, "password": _ADMIN_PASSWORD})
     assert r.status_code == 200, f"admin login failed: {r.status_code} {r.text}"
     return s
 
@@ -74,10 +78,10 @@ def user_b():
 class TestAuth:
     def test_admin_login_sets_cookie_and_returns_user(self):
         s = requests.Session()
-        r = s.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "admin123"})
+        r = s.post(f"{API}/auth/login", json={"email": _ADMIN_EMAIL, "password": _ADMIN_PASSWORD})
         assert r.status_code == 200
         body = r.json()
-        assert body["user"]["email"] == "admin@vermillion.app"
+        assert body["user"]["email"] == _ADMIN_EMAIL
         assert body["user"]["verified"] is True
         assert body["user"]["username"] == "admin"
         assert "access_token" in s.cookies
@@ -96,7 +100,7 @@ class TestAuth:
         assert body["user"]["username"] == "admin"
 
     def test_invalid_login(self):
-        r = requests.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "wrong"})
+        r = requests.post(f"{API}/auth/login", json={"email": _ADMIN_EMAIL or "admin@example.com", "password": "definitely_wrong_password_xyz"})
         assert r.status_code == 401
 
     def test_register_user_b_is_not_verified(self, user_b):
@@ -104,7 +108,7 @@ class TestAuth:
 
     def test_logout_clears_cookie(self):
         s = requests.Session()
-        s.post(f"{API}/auth/login", json={"email": "admin@vermillion.app", "password": "admin123"})
+        s.post(f"{API}/auth/login", json={"email": _ADMIN_EMAIL, "password": _ADMIN_PASSWORD})
         s.post(f"{API}/auth/logout")
         r = s.get(f"{API}/auth/me")
         # After logout, /auth/me now returns 200 {user: null}

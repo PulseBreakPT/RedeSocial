@@ -3,17 +3,27 @@
 Backend test for Fase 2 - Portuguese social mechanics.
 Tests all Fase 2 endpoints as specified in the review request.
 """
+import os
+import sys
 import requests
 import time
 import uuid
 from datetime import datetime, timezone, timedelta
 
-# Base URL from frontend/.env
-BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
+# Base URL — overridable via env
+BASE_URL = os.environ.get(
+    "BASE_URL", "https://prodlock-armor.preview.emergentagent.com/api"
+)
 
-# Test credentials
-ADMIN_EMAIL = "admin@vermillion.app"
-ADMIN_PASSWORD = "admin123"
+# Test credentials must come from environment.
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    print(
+        "❌ ADMIN_EMAIL and ADMIN_PASSWORD env vars are required. "
+        "See /app/memory/test_credentials.md."
+    )
+    sys.exit(2)
 
 # Test results
 results = []

@@ -3,6 +3,8 @@
 H1-H4 Security Hardening Test Suite for Lusorae Backend
 Tests CSRF middleware, image validation, anti-abuse caps, and WebSocket security.
 """
+import os
+import sys
 import requests
 import time
 import json
@@ -10,11 +12,21 @@ import base64
 from typing import Optional
 
 # Backend URL (use /api prefix for all routes)
-BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
+BASE_URL = os.environ.get(
+    "BASE_URL", "https://prodlock-armor.preview.emergentagent.com/api"
+)
 
-# Test credentials from /app/memory/test_credentials.md
-ADMIN_EMAIL = "admin@lusorae.app"
-ADMIN_PASSWORD = "Admin#Lusorae2025"
+# Test credentials must come from environment (read from /app/backend/.env or
+# /app/memory/test_credentials.md). Hardcoding leaks them to anyone with repo
+# access.
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    print(
+        "❌ ADMIN_EMAIL and ADMIN_PASSWORD env vars are required to run this "
+        "test suite. See /app/memory/test_credentials.md."
+    )
+    sys.exit(2)
 
 # Test results tracking
 test_results = []

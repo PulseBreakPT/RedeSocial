@@ -3,17 +3,27 @@
 Comprehensive test suite for Admin Panel Grupo A: Feature Flags + Limites Globais
 Tests all 16 scenarios from the review request sequentially.
 """
+import os
+import sys
 import requests
 import time
 import json
 from datetime import datetime
 
-# Backend URL from frontend/.env
-BASE_URL = "https://prodlock-armor.preview.emergentagent.com/api"
+# Backend URL — overridable via env
+BASE_URL = os.environ.get(
+    "BASE_URL", "https://prodlock-armor.preview.emergentagent.com/api"
+)
 
-# Test credentials from /app/memory/test_credentials.md
-ADMIN_EMAIL = "admin@lusorae.app"
-ADMIN_PASSWORD = "Admin#Lusorae2025"
+# Test credentials must come from environment (see /app/memory/test_credentials.md).
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    print(
+        "❌ ADMIN_EMAIL and ADMIN_PASSWORD env vars are required. "
+        "See /app/memory/test_credentials.md."
+    )
+    sys.exit(2)
 
 # Global state
 admin_token = None
