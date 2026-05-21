@@ -36,6 +36,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { confirmDialog } from "../components/ConfirmDialog";
+import SecurityTab from "./admin/SecurityTab";
 
 // -----------------------------------------------------------------
 // Helpers
@@ -81,6 +82,7 @@ const NAV_GROUPS = [
         label: "Operações",
         items: [
             { key: "overview",   label: "Visão geral", icon: Activity },
+            { key: "security",   label: "Segurança",   icon: ShieldCheck },
             { key: "antispam",   label: "Anti-spam",   icon: ShieldAlert },
             { key: "reports",    label: "Reports",     icon: AlertTriangle, badge: "reports" },
         ],
@@ -4064,6 +4066,7 @@ export default function Admin() {
                 <div className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-4 lg:py-4"
                     data-testid={`admin-tab-content-${tab}`}>
                     {tab === "overview" && <OverviewTab onNavigate={setTab} />}
+                    {tab === "security" && <SecurityTab />}
                     {tab === "system" && <SystemTab />}
                     {tab === "users" && <UsersTab onOpenDrawer={setDrawerUser} />}
                     {tab === "posts" && <PostsTab />}
