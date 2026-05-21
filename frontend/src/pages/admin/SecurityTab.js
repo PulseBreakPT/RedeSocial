@@ -79,9 +79,12 @@ const apiError = (e) => {
     toast.error(typeof msg === "string" ? msg : "Erro inesperado");
 };
 const SEV_STYLE = {
-    danger: { bg: "bg-red-50",    text: "text-red-700",     ring: "ring-red-200",     dot: "bg-red-500",     label: "Crítico" },
-    warn:   { bg: "bg-amber-50",  text: "text-amber-800",   ring: "ring-amber-200",   dot: "bg-amber-500",   label: "Aviso" },
-    info:   { bg: "bg-emerald-50",text: "text-emerald-700", ring: "ring-emerald-200", dot: "bg-emerald-500", label: "Info" },
+    // Crítico — vermelho intenso
+    danger: { bg: "bg-red-100",          text: "text-red-800",  ring: "ring-red-300",   dot: "bg-red-600",  label: "Crítico" },
+    // Aviso — vermelho suave
+    warn:   { bg: "bg-red-50",           text: "text-red-700",  ring: "ring-red-200",   dot: "bg-red-400",  label: "Aviso" },
+    // Info/OK — neutro
+    info:   { bg: "bg-black/[0.04]",     text: "text-black/70", ring: "ring-black/10",  dot: "bg-black/40", label: "Info" },
 };
 
 // Mapping of internal kind → friendly PT label
@@ -110,7 +113,7 @@ const KIND_LABEL = {
 // ─────────────────────────────────────────────────────────────────
 // SVG Sparkline
 // ─────────────────────────────────────────────────────────────────
-function Sparkline({ data, height = 38, color = "#c64a3d", fill = false }) {
+function Sparkline({ data, height = 38, color = "#000000", fill = false }) {
     if (!Array.isArray(data) || data.length === 0) return null;
     const values = data.map((d) => Number(d) || 0);
     const max = Math.max(1, ...values);
@@ -132,8 +135,8 @@ function Sparkline({ data, height = 38, color = "#c64a3d", fill = false }) {
 function LiveDot({ on, label }) {
     return (
         <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/55">
-            <span className={`relative inline-flex h-2 w-2 rounded-full ${on ? "bg-emerald-500" : "bg-black/25"}`}>
-                {on && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />}
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${on ? "bg-red-600" : "bg-black/25"}`}>
+                {on && <span className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-60" />}
             </span>
             {label}
         </span>
@@ -153,7 +156,7 @@ function AutoRefreshPill({ value, onChange, testIdPrefix = "sec-autorefresh" }) 
                     onClick={() => onChange(o.v)}
                     data-testid={`${testIdPrefix}-${o.v}`}
                     className={`h-7 px-2.5 rounded-full text-[11px] font-medium transition ${
-                        value === o.v ? "bg-black text-white" : "text-black/70 hover:bg-black/[0.05]"
+                        value === o.v ? "bg-red-600 text-white" : "text-black/70 hover:bg-black/[0.05]"
                     }`}
                 >{o.l}</button>
             ))}
@@ -291,8 +294,8 @@ function SecurityOverview() {
                 </div>
             )}
             {warnings.length === 0 && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-emerald-700 text-[13px] inline-flex items-center gap-2 ring-1 ring-emerald-200">
-                    <ShieldCheck size={16} /> Sem avisos de segurança. Postura nominal.
+                <div className="bg-black text-white rounded-2xl p-3 text-[13px] inline-flex items-center gap-2">
+                    <ShieldCheck size={16} /> Sem avisos de segurança. <span className="opacity-60">Postura nominal.</span>
                 </div>
             )}
 
@@ -301,14 +304,14 @@ function SecurityOverview() {
                 <KpiCard
                     label="Logins OK (1h)" value={c1h.logins ?? 0}
                     sub={`${fmtNum(c24h.logins ?? 0)} em 24h`}
-                    series={spark.logins} color="#10b981"
+                    series={spark.logins} color="#000000"
                     icon={CheckCircle2}
                     testId="sec-kpi-logins"
                 />
                 <KpiCard
                     label="Logins falhados (1h)" value={c1h.login_fails ?? 0}
                     sub={`${fmtNum(c24h.login_fails ?? 0)} em 24h`}
-                    series={spark.fails} color="#f59e0b"
+                    series={spark.fails} color="#dc2626"
                     icon={XCircle}
                     testId="sec-kpi-fails"
                     danger={(c1h.login_fails ?? 0) >= 20}
@@ -316,7 +319,7 @@ function SecurityOverview() {
                 <KpiCard
                     label="Tokens inválidos (1h)" value={c1h.token_invalid ?? 0}
                     sub={`${fmtNum(c24h.token_invalid ?? 0)} em 24h`}
-                    series={spark.token_invalid} color="#ef4444"
+                    series={spark.token_invalid} color="#dc2626"
                     icon={Bug}
                     testId="sec-kpi-token-invalid"
                     danger={(c1h.token_invalid ?? 0) >= 5}
@@ -324,15 +327,15 @@ function SecurityOverview() {
                 <KpiCard
                     label="WS rejeitados (1h)" value={c1h.ws_fails ?? 0}
                     sub="ligações WebSocket"
-                    series={spark.ws_fails} color="#8b5cf6"
+                    series={spark.ws_fails} color="#dc2626"
                     icon={WifiOff}
                     testId="sec-kpi-ws-fails"
                     danger={(c1h.ws_fails ?? 0) >= 10}
                 />
                 <KpiCard label="Bloqueios atuais"  value={state.locked_now ?? 0}        sub={`${c1h.logins_locked ?? 0} última hora`} icon={Lock} color="#dc2626" testId="sec-kpi-locked-now" />
-                <KpiCard label="Sessões revogadas (1h)" value={c1h.sessions_revoked ?? 0} sub="logouts forçados"                       icon={LogOut} color="#0ea5e9" testId="sec-kpi-revoked" />
-                <KpiCard label="Sessões activas"   value={state.active_sessions ?? 0}  sub="tokens válidos vivos"                    icon={Activity} color="#22c55e" testId="sec-kpi-active-sess" />
-                <KpiCard label="2FA falhou (1h)"   value={c1h.twofa_fails ?? 0}        sub={`Reset fails: ${c1h.reset_fails ?? 0}`}   icon={ShieldAlert} color="#f97316" testId="sec-kpi-twofa-fails" />
+                <KpiCard label="Sessões revogadas (1h)" value={c1h.sessions_revoked ?? 0} sub="logouts forçados"                       icon={LogOut} color="#000000" testId="sec-kpi-revoked" />
+                <KpiCard label="Sessões activas"   value={state.active_sessions ?? 0}  sub="tokens válidos vivos"                    icon={Activity} color="#000000" testId="sec-kpi-active-sess" />
+                <KpiCard label="2FA falhou (1h)"   value={c1h.twofa_fails ?? 0}        sub={`Reset fails: ${c1h.reset_fails ?? 0}`}   icon={ShieldAlert} color="#dc2626" testId="sec-kpi-twofa-fails" />
             </div>
 
             {/* USERS STATE STRIP */}
@@ -382,7 +385,7 @@ function SecurityOverview() {
             <div className="bg-white rounded-2xl border border-black/[0.06] p-4">
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h3 className="font-display text-[15px] tracking-tight flex items-center gap-1.5">
-                        <ShieldCheck size={14} className="text-emerald-600" /> Controlos ativos ({controls.filter(c => c.on).length}/{controls.length})
+                        <ShieldCheck size={14} className="text-black/55" /> Controlos ativos ({controls.filter(c => c.on).length}/{controls.length})
                     </h3>
                     <span className="text-[11px] font-mono text-black/40">
                         verificado a {fmtRelative(data.timestamp)}
@@ -393,10 +396,10 @@ function SecurityOverview() {
                         <div key={ctl.k} data-testid={`sec-control-${ctl.k}`}
                             className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-[12.5px] ${
                                 ctl.on
-                                    ? "bg-emerald-50/50 border-emerald-200/60 text-emerald-900"
+                                    ? "bg-black/[0.025] border-black/[0.06] text-black/90"
                                     : "bg-red-50/50 border-red-200/60 text-red-900"
                             }`}>
-                            <span className={`grid place-items-center w-6 h-6 rounded-lg shrink-0 ${ctl.on ? "bg-emerald-500/20 text-emerald-700" : "bg-red-500/20 text-red-700"}`}>
+                            <span className={`grid place-items-center w-6 h-6 rounded-lg shrink-0 ${ctl.on ? "bg-black/[0.08] text-black/70" : "bg-red-500/20 text-red-700"}`}>
                                 {ctl.on ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                             </span>
                             <span className="flex-1">{ctl.label}</span>
@@ -408,7 +411,7 @@ function SecurityOverview() {
     );
 }
 
-function KpiCard({ label, value, sub, series, color = "#c64a3d", icon: Icon, danger, testId }) {
+function KpiCard({ label, value, sub, series, color = "#000000", icon: Icon, danger, testId }) {
     return (
         <div className={`bg-white rounded-2xl border ${danger ? "border-red-200" : "border-black/[0.06]"} p-4 flex flex-col gap-1.5 shadow-sm relative`} data-testid={testId}>
             {danger && <span className="absolute top-2 right-2 inline-flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />}
@@ -425,12 +428,15 @@ function KpiCard({ label, value, sub, series, color = "#c64a3d", icon: Icon, dan
 
 function MiniStat({ label, value, sub, icon: Icon, accent = "neutral", testId }) {
     const tone = {
-        ok:   "bg-emerald-50 text-emerald-800 border-emerald-200",
-        warn: "bg-amber-50 text-amber-900 border-amber-200",
-        danger: "bg-red-50 text-red-800 border-red-200",
-        info: "bg-sky-50 text-sky-800 border-sky-200",
-        neutral: "bg-black/[0.03] text-black/80 border-black/[0.06]",
-    }[accent] || "bg-black/[0.03] text-black/80 border-black/[0.06]";
+        // ok / info / neutral → branco com borda subtil
+        ok:      "bg-white text-black/85 border-black/[0.06]",
+        info:    "bg-white text-black/85 border-black/[0.06]",
+        neutral: "bg-white text-black/85 border-black/[0.06]",
+        // warn → vermelho suave
+        warn:    "bg-red-50 text-red-700 border-red-200",
+        // danger → vermelho intenso
+        danger:  "bg-red-100 text-red-800 border-red-300",
+    }[accent] || "bg-white text-black/85 border-black/[0.06]";
     return (
         <div className={`rounded-2xl border p-3 ${tone}`} data-testid={testId}>
             <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono opacity-70">
@@ -444,10 +450,10 @@ function MiniStat({ label, value, sub, icon: Icon, accent = "neutral", testId })
 
 function ConfigCell({ label, value, mono, tone = "neutral" }) {
     const styles = {
-        ok: "text-emerald-700",
-        warn: "text-amber-700",
-        danger: "text-red-700",
-        info: "text-sky-700",
+        ok:      "text-black/85",
+        warn:    "text-red-600",
+        danger:  "text-red-700 font-semibold",
+        info:    "text-black/70",
         neutral: "text-black/85",
     };
     return (
@@ -599,9 +605,9 @@ function SecurityEvents() {
                             data-testid={`sec-events-sev-${sv || "all"}`}
                             className={`h-7 px-2.5 rounded-full text-[11.5px] font-medium border transition ${
                                 filters.severity === sv
-                                    ? sv === "danger" ? "bg-red-500 text-white border-red-500"
-                                    : sv === "warn"   ? "bg-amber-500 text-white border-amber-500"
-                                    : sv === "info"   ? "bg-emerald-500 text-white border-emerald-500"
+                                    ? sv === "danger" ? "bg-red-600 text-white border-red-600"
+                                    : sv === "warn"   ? "bg-red-400 text-white border-red-400"
+                                    : sv === "info"   ? "bg-black text-white border-black"
                                     : "bg-black text-white border-black"
                                     : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
                             }`}
@@ -626,7 +632,7 @@ function SecurityEvents() {
                             data-testid={`sec-events-window-${opt.v}`}
                             className={`h-7 px-2.5 rounded-full text-[11.5px] font-medium border transition ${
                                 filters.since_minutes === opt.v
-                                    ? "bg-black text-white border-black"
+                                    ? "bg-red-600 text-white border-red-600"
                                     : "bg-white text-black/65 border-black/10 hover:bg-black/[0.04]"
                             }`}
                         >{opt.l}</button>
@@ -883,8 +889,8 @@ function SecurityLockouts() {
                     <div className="px-4 py-10 text-black/45 inline-flex items-center gap-2 w-full justify-center"><Loader2 size={14} className="animate-spin"/> A carregar…</div>
                 )}
                 {!loading && data.items.length === 0 && (
-                    <div className="px-4 py-16 text-center text-emerald-700/80 text-[13px] inline-flex flex-col items-center gap-2 w-full">
-                        <ShieldCheck size={32} className="text-emerald-600/70" />
+                    <div className="px-4 py-16 text-center text-black/55 text-[13px] inline-flex flex-col items-center gap-2 w-full">
+                        <ShieldCheck size={32} className="text-black/45" />
                         <span>Não há contas bloqueadas neste momento.</span>
                         <span className="text-[11.5px] text-black/40 font-mono">Política: 5 falhas / 15min → lock 15min</span>
                     </div>
@@ -909,7 +915,7 @@ function SecurityLockouts() {
                                     </div>
                                     <button onClick={() => unlock(row.email)} disabled={busy === row.email}
                                         data-testid={`sec-lockout-unlock-${row.email}`}
-                                        className="h-9 px-3 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
+                                        className="h-9 px-3 rounded-full bg-black/[0.05] hover:bg-black/[0.08] text-black/70 text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
                                     >
                                         {busy === row.email ? <Loader2 size={13} className="animate-spin"/> : <Unlock size={13}/>}
                                         Desbloquear
@@ -1000,7 +1006,7 @@ function SecurityAdmins() {
             </div>
 
             {adminCount > 0 && with2fa < adminCount && (
-                <div className="bg-amber-50 border border-amber-200 ring-1 ring-amber-200 rounded-2xl p-3 text-amber-900 text-[12.5px] flex items-start gap-2">
+                <div className="bg-red-50 border border-red-200 ring-1 ring-red-200 rounded-2xl p-3 text-red-700 text-[12.5px] flex items-start gap-2">
                     <AlertTriangle size={16} className="shrink-0 mt-0.5"/>
                     <span><strong>{adminCount - with2fa}</strong> admin(s) sem 2FA. Recomenda-se obrigatoriedade de 2FA para todas as contas administrativas.</span>
                 </div>
@@ -1016,7 +1022,7 @@ function SecurityAdmins() {
                             <div className="relative shrink-0">
                                 <Avatar user={a} size={40} />
                                 {a.online && (
-                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-600 ring-2 ring-white" />
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1024,8 +1030,8 @@ function SecurityAdmins() {
                                     <span className="font-semibold text-[13.5px]">@{a.username}</span>
                                     {a.is_self && <span className="text-[10px] uppercase font-mono bg-black text-white px-1.5 rounded">tu</span>}
                                     {a.twofa_enabled
-                                        ? <span className="text-[10px] uppercase font-mono bg-emerald-100 text-emerald-700 px-1.5 rounded inline-flex items-center gap-1"><ShieldCheck size={9}/>2FA</span>
-                                        : <span className="text-[10px] uppercase font-mono bg-amber-100 text-amber-800 px-1.5 rounded inline-flex items-center gap-1"><AlertTriangle size={9}/>sem 2FA</span>}
+                                        ? <span className="text-[10px] uppercase font-mono bg-black/[0.05] text-black/70 px-1.5 rounded inline-flex items-center gap-1"><ShieldCheck size={9}/>2FA</span>
+                                        : <span className="text-[10px] uppercase font-mono bg-red-50 text-red-700 px-1.5 rounded inline-flex items-center gap-1"><AlertTriangle size={9}/>sem 2FA</span>}
                                     {a.banned && <span className="text-[10px] uppercase font-mono bg-red-100 text-red-700 px-1.5 rounded">banido</span>}
                                 </div>
                                 <div className="text-[11.5px] text-black/55 truncate font-mono">
@@ -1039,7 +1045,7 @@ function SecurityAdmins() {
                                 {!a.is_self && a.twofa_enabled && (
                                     <button onClick={() => reset2fa(a)} disabled={busy === `r2:${a.id}`}
                                         data-testid={`sec-admin-reset2fa-${a.username}`}
-                                        className="h-8 px-2.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 text-[11.5px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
+                                        className="h-8 px-2.5 rounded-full bg-red-50 hover:bg-red-50 text-red-700 text-[11.5px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
                                         title="Reset 2FA (emergência)"
                                     >
                                         {busy === `r2:${a.id}` ? <Loader2 size={12} className="animate-spin"/> : <KeyRound size={12}/>}
@@ -1138,7 +1144,7 @@ function SecuritySessions() {
                         data-testid="sec-sessions-online-only"
                         className={`h-8 px-3 rounded-full text-[11.5px] font-medium inline-flex items-center gap-1.5 transition ${
                             filters.online_only
-                                ? "bg-emerald-500 text-white"
+                                ? "bg-red-600 text-white"
                                 : "bg-black/[0.04] text-black/65 hover:bg-black/[0.08]"
                         }`}
                     >
@@ -1174,7 +1180,7 @@ function SecuritySessions() {
                             <div className="relative shrink-0">
                                 <Avatar user={s.user} size={36} />
                                 {s.online ? (
-                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" title="WebSocket ativo"/>
+                                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-600 ring-2 ring-white" title="WebSocket ativo"/>
                                 ) : (
                                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-black/20 ring-2 ring-white" title="Sem WS"/>
                                 )}
@@ -1183,7 +1189,7 @@ function SecuritySessions() {
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-semibold text-[13.5px]">@{s.user?.username || s.user_id?.slice(0, 8)}</span>
                                     {s.user?.is_admin && <span className="text-[10px] uppercase font-mono bg-black text-white px-1 rounded">admin</span>}
-                                    <span className={`text-[10px] uppercase font-mono px-1.5 rounded ${s.online ? "bg-emerald-100 text-emerald-700" : "bg-black/[0.06] text-black/55"}`}>
+                                    <span className={`text-[10px] uppercase font-mono px-1.5 rounded ${s.online ? "bg-black/[0.05] text-black/70" : "bg-black/[0.06] text-black/55"}`}>
                                         {s.online ? "online" : "offline"}
                                     </span>
                                 </div>
@@ -1256,7 +1262,7 @@ function SecurityTokenDebugger() {
 
     return (
         <div className="space-y-3" data-testid="sec-token">
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-amber-900 text-[12.5px] flex items-start gap-2">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-3 text-red-700 text-[12.5px] flex items-start gap-2">
                 <AlertTriangle size={16} className="shrink-0 mt-0.5"/>
                 <span>
                     Esta ferramenta é apenas para diagnóstico. Cola um JWT para ver exatamente em que fase
@@ -1293,16 +1299,16 @@ function SecurityTokenDebugger() {
             </div>
 
             {result && (
-                <div className={`rounded-2xl border p-4 ${valid ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`} data-testid="sec-token-result">
+                <div className={`rounded-2xl border p-4 ${valid ? "bg-black/[0.03] border-black/10" : "bg-red-50 border-red-200"}`} data-testid="sec-token-result">
                     <div className="flex items-center gap-2">
                         {valid
-                            ? <CheckCircle2 size={20} className="text-emerald-600"/>
+                            ? <CheckCircle2 size={20} className="text-black/55"/>
                             : <XCircle size={20} className="text-red-600"/>}
-                        <span className={`font-display text-[18px] ${valid ? "text-emerald-800" : "text-red-800"}`}>
+                        <span className={`font-display text-[18px] ${valid ? "text-black/85" : "text-red-800"}`}>
                             {valid ? "Token VÁLIDO" : "Token REJEITADO"}
                         </span>
                     </div>
-                    <div className={`mt-2 text-[12.5px] ${valid ? "text-emerald-900" : "text-red-900"}`}>
+                    <div className={`mt-2 text-[12.5px] ${valid ? "text-black/90" : "text-red-900"}`}>
                         Fase: <code className="font-mono px-1.5 py-0.5 rounded bg-black/[0.06]">{STAGE_LABEL[result.stage] || result.stage}</code>
                         {result.reason && <> · razão: <code className="font-mono">{result.reason}</code></>}
                     </div>
@@ -1356,7 +1362,7 @@ export default function SecurityTab() {
         <div className="space-y-4" data-testid="admin-security">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight inline-flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-emerald-600"/> Segurança &amp; Proteção
+                    <ShieldCheck size={18} className="text-black/55"/> Segurança &amp; Proteção
                 </h2>
             </div>
 

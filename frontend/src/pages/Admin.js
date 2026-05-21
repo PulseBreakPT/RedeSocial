@@ -79,12 +79,17 @@ const apiError = (e) => {
 // -----------------------------------------------------------------
 const NAV_GROUPS = [
     {
-        label: "Operações",
+        label: "Cockpit",
         items: [
             { key: "overview",   label: "Visão geral", icon: Activity },
+        ],
+    },
+    {
+        label: "Confiança & Segurança",
+        items: [
             { key: "security",   label: "Segurança",   icon: ShieldCheck },
-            { key: "antispam",   label: "Anti-spam",   icon: ShieldAlert },
             { key: "reports",    label: "Reports",     icon: AlertTriangle, badge: "reports" },
+            { key: "antispam",   label: "Anti-spam",   icon: ShieldAlert },
         ],
     },
     {
@@ -106,9 +111,9 @@ const NAV_GROUPS = [
     {
         label: "Plataforma",
         items: [
-            { key: "broadcast",   label: "Broadcast",   icon: Megaphone },
             { key: "communities", label: "Comunidades", icon: Layers },
             { key: "events",      label: "Eventos",     icon: CalendarDays },
+            { key: "broadcast",   label: "Broadcast",   icon: Megaphone },
         ],
     },
     {
@@ -259,22 +264,22 @@ function OverviewTab({ onNavigate }) {
                 <div className="bg-white rounded-2xl border border-black/[0.06] p-4" data-testid="admin-system-health">
                     <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                         <h3 className="font-display text-[16px] tracking-tight flex items-center gap-1.5">
-                            <Activity size={14} className="text-emerald-600" /> Saúde do sistema
+                            <Activity size={14} className="text-black/55" /> Saúde do sistema
                         </h3>
                         <div className="text-[11px] font-mono text-black/40">
                             verificado a {fmtDate(health.checked_at)}
                         </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        <div className="px-3 py-2 rounded-xl bg-emerald-500/[0.08] text-[12px]">
-                            <div className="font-mono text-emerald-700 text-[11px] uppercase tracking-wider">WS conexões</div>
-                            <div className="text-[18px] font-semibold text-emerald-800 mt-0.5">
-                                {health.websocket.sockets} <span className="text-[12px] font-normal text-emerald-700/70">/ {health.websocket.users_connected} users</span>
+                        <div className="px-3 py-2 rounded-xl bg-black/[0.04] text-[12px]">
+                            <div className="font-mono text-black/70 text-[11px] uppercase tracking-wider">WS conexões</div>
+                            <div className="text-[18px] font-semibold text-black/85 mt-0.5">
+                                {health.websocket.sockets} <span className="text-[12px] font-normal text-black/45">/ {health.websocket.users_connected} users</span>
                             </div>
                         </div>
-                        <div className="px-3 py-2 rounded-xl bg-amber-500/[0.08] text-[12px]">
-                            <div className="font-mono text-amber-700 text-[11px] uppercase tracking-wider">Hashtags blacklist</div>
-                            <div className="text-[18px] font-semibold text-amber-800 mt-0.5">{health.hashtag_blacklist_size}</div>
+                        <div className="px-3 py-2 rounded-xl bg-red-50/70 text-[12px]">
+                            <div className="font-mono text-red-700 text-[11px] uppercase tracking-wider">Hashtags blacklist</div>
+                            <div className="text-[18px] font-semibold text-red-700 mt-0.5">{health.hashtag_blacklist_size}</div>
                         </div>
                         {Object.entries(health.collections).slice(0, 14).map(([name, count]) => (
                             <div key={name} className="px-3 py-2 rounded-xl bg-black/[0.04] text-[12px]">
@@ -389,7 +394,7 @@ const fmtUptime = (sec) => {
     return `${s}s`;
 };
 
-function SystemPanel({ title, icon: Icon, accent = "text-emerald-600", testid, children, onRefresh, loading }) {
+function SystemPanel({ title, icon: Icon, accent = "text-black/55", testid, children, onRefresh, loading }) {
     return (
         <div className="bg-white rounded-2xl border border-black/[0.06] p-3 sm:p-4" data-testid={testid}>
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -424,7 +429,7 @@ function LogTail({ lines, empty = "Sem entradas." }) {
         return <div className="text-[12px] text-black/45 italic">{empty}</div>;
     }
     return (
-        <pre className="bg-black/90 text-emerald-300 rounded-xl p-2 sm:p-3 text-[10.5px] sm:text-[11px] leading-relaxed font-mono overflow-auto max-h-[280px] whitespace-pre-wrap break-all">
+        <pre className="bg-black/90 text-white/85 rounded-xl p-2 sm:p-3 text-[10.5px] sm:text-[11px] leading-relaxed font-mono overflow-auto max-h-[280px] whitespace-pre-wrap break-all">
             {lines.join("\n")}
         </pre>
     );
@@ -556,7 +561,7 @@ function SystemTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button onClick={restartSockets} disabled={actionBusy === "restart"}
                         data-testid="admin-system-restart-sockets"
-                        className="h-10 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
+                        className="h-10 px-3 rounded-2xl bg-red-50 hover:bg-red-100 text-red-700 text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40">
                         {actionBusy === "restart" ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
                         Reiniciar sockets
                     </button>
@@ -570,7 +575,7 @@ function SystemTab() {
                         data-testid="admin-system-maintenance"
                         className={`h-10 px-3 rounded-2xl text-[12.5px] font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-40 ${
                             maint?.enabled
-                                ? "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800"
+                                ? "bg-black/[0.06] hover:bg-black/10 text-black/85"
                                 : "bg-red-500/10 hover:bg-red-500/20 text-red-700"
                         }`}>
                         {actionBusy === "maint" ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
@@ -584,7 +589,7 @@ function SystemTab() {
                 <SystemPanel
                     title="Estado do backend"
                     icon={Server}
-                    accent="text-emerald-600"
+                    accent="text-black/55"
                     testid="sys-status"
                     loading={loading.status}
                     onRefresh={() => _load("status", "/admin/system/status", setStatus)}
@@ -597,7 +602,7 @@ function SystemTab() {
                             <KV k="Python" v={status.python} mono />
                             <KV k="Platform" v={status.platform} mono />
                             <KV k="DB name" v={status.env?.db_name} mono />
-                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-emerald-700" : "text-red-600"} />
+                            <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-black/70" : "text-red-600"} />
                             <KV k="Verificado" v={fmtRelative(status.checked_at)} />
                         </dl>
                     ) : <div className="text-[12px] text-black/45">A carregar…</div>}
@@ -626,7 +631,7 @@ function SystemTab() {
                 <SystemPanel
                     title="WebSocket"
                     icon={Wifi}
-                    accent="text-emerald-600"
+                    accent="text-black/55"
                     testid="sys-ws"
                     loading={loading.ws}
                     onRefresh={() => _load("ws", "/admin/system/websocket", setWs)}
@@ -659,7 +664,7 @@ function SystemTab() {
                 <SystemPanel
                     title="Latência DB"
                     icon={Zap}
-                    accent="text-amber-600"
+                    accent="text-red-600"
                     testid="sys-latency"
                     loading={loading.latency}
                     onRefresh={() => _load("latency", "/admin/system/latency", setLatency)}
@@ -667,7 +672,7 @@ function SystemTab() {
                     {latency ? (
                         <dl>
                             <KV k="Min" v={latency.min_ms != null ? `${latency.min_ms} ms` : "—"} mono />
-                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-amber-700" : "text-emerald-700"} />
+                            <KV k="Média" v={latency.avg_ms != null ? `${latency.avg_ms} ms` : "—"} mono color={latency.avg_ms > 50 ? "text-red-700" : "text-black/70"} />
                             <KV k="Máx" v={latency.max_ms != null ? `${latency.max_ms} ms` : "—"} mono />
                             <KV k="Amostras" v={(latency.samples_ms || []).map((s) => `${s}ms`).join(" · ")} mono />
                         </dl>
@@ -678,7 +683,7 @@ function SystemTab() {
                 <SystemPanel
                     title="Base de dados"
                     icon={Database}
-                    accent="text-purple-600"
+                    accent="text-black/55"
                     testid="sys-database"
                     loading={loading.database}
                     onRefresh={() => _load("database", "/admin/system/database", setDatabase)}
@@ -715,7 +720,7 @@ function SystemTab() {
                 <SystemPanel
                     title="Carga"
                     icon={Gauge}
-                    accent="text-rose-600"
+                    accent="text-red-600"
                     testid="sys-load"
                     loading={loading.load}
                     onRefresh={() => _load("load", "/admin/system/load", setLoad)}
@@ -723,13 +728,13 @@ function SystemTab() {
                     {load ? (
                         <dl>
                             <KV k="CPUs" v={load.cpu_count} mono />
-                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-emerald-700"} />
+                            <KV k="Load 1m" v={load.load_avg?.["1m"]?.toFixed?.(2) ?? "—"} mono color={load.load_avg && load.load_avg["1m"] > (load.cpu_count || 1) ? "text-red-600" : "text-black/70"} />
                             <KV k="Load 5m" v={load.load_avg?.["5m"]?.toFixed?.(2) ?? "—"} mono />
                             <KV k="Load 15m" v={load.load_avg?.["15m"]?.toFixed?.(2) ?? "—"} mono />
                             {load.memory && (
                                 <>
                                     <KV k="Memória total" v={fmtKbToBytes(load.memory.total_kb)} mono />
-                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-emerald-700"} />
+                                    <KV k="Memória usada" v={`${fmtKbToBytes(load.memory.used_kb)} (${load.memory.used_pct}%)`} mono color={load.memory.used_pct > 85 ? "text-red-600" : "text-black/70"} />
                                     <KV k="Disponível" v={fmtKbToBytes(load.memory.available_kb)} mono />
                                 </>
                             )}
@@ -761,7 +766,7 @@ function SystemTab() {
             <SystemPanel
                 title="Logs (stdout)"
                 icon={FileCode}
-                accent="text-emerald-600"
+                accent="text-black/55"
                 testid="sys-logs"
                 loading={loading.outLog}
                 onRefresh={() => _load("outLog", "/admin/system/logs?lines=120", setOutLog)}
@@ -776,7 +781,7 @@ function SystemTab() {
                 ) : <div className="text-[12px] text-black/45">A carregar…</div>}
             </SystemPanel>
 
-            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-3 sm:px-4 py-2.5 text-[11.5px] text-amber-900/85 flex items-start gap-2">
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-3 sm:px-4 py-2.5 text-[11.5px] text-red-700/85 flex items-start gap-2">
                 <AlertCircle size={13} className="mt-0.5 shrink-0" />
                 <div>
                     <strong>Ver filas</strong> não foi implementado: este sistema não usa filas externas (Celery/Redis). Tudo o resto é dado em tempo real.
@@ -973,12 +978,12 @@ function UsersTab({ onOpenDrawer }) {
                         </button>
                         <button onClick={() => runBulk("ban")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-ban"
-                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-600 hover:bg-red-600 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Ban size={13} /> Banir
                         </button>
                         <button onClick={() => runBulk("unban")} disabled={bulkBusy}
                             data-testid="admin-users-bulk-unban"
-                            className="h-8 px-2.5 sm:px-3 rounded-full bg-emerald-500/85 hover:bg-emerald-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-black hover:bg-black text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40">
                             Desbanir
                         </button>
                         <button onClick={() => runBulk("force_logout")} disabled={bulkBusy}
@@ -1016,7 +1021,7 @@ function UsersTab({ onOpenDrawer }) {
                         const canSelect = !isMe && !u.is_admin;
                         const isSel = selected.has(u.id);
                         return (
-                            <li key={u.id} data-testid={`admin-user-row-${u.username}`} className={`px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-2.5 sm:gap-3 ${isSel ? "bg-amber-500/[0.06]" : ""}`}>
+                            <li key={u.id} data-testid={`admin-user-row-${u.username}`} className={`px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-2.5 sm:gap-3 ${isSel ? "bg-red-50/50" : ""}`}>
                                 <input type="checkbox"
                                     checked={isSel}
                                     disabled={!canSelect}
@@ -1041,9 +1046,9 @@ function UsersTab({ onOpenDrawer }) {
                                         <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
                                         <span className="font-mono text-[11.5px] text-black/45">@{u.username}</span>
                                         {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-medium">verified</span>}
-                                        {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 font-medium">admin</span>}
+                                        {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 font-medium">admin</span>}
                                         {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">banido</span>}
-                                        {u.online && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 font-medium">online</span>}
+                                        {u.online && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70 font-medium">online</span>}
                                     </div>
                                     <div className="text-[11.5px] text-black/55 truncate">
                                         {u.email} · seguidores {u.followers_count} · entrou {fmtRelative(u.created_at)}
@@ -1068,14 +1073,14 @@ function UsersTab({ onOpenDrawer }) {
                                         title={isMe ? "Não te podes alterar a ti próprio" : (u.is_admin ? "Remover admin" : "Promover a admin")}
                                         className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40"
                                     >
-                                        <Shield size={15} className={u.is_admin ? "text-amber-600" : "text-black/55"} />
+                                        <Shield size={15} className={u.is_admin ? "text-red-600" : "text-black/55"} />
                                     </button>
                                     {u.banned ? (
                                         <button
                                             onClick={() => onUnban(u)} disabled={busy}
                                             data-testid={`admin-user-unban-${u.username}`}
                                             title="Desbanir"
-                                            className="w-8 h-8 grid place-items-center rounded-full hover:bg-emerald-500/10 disabled:opacity-40 text-emerald-700"
+                                            className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] disabled:opacity-40 text-black/70"
                                         >
                                             <UserCheck size={15} />
                                         </button>
@@ -1261,7 +1266,7 @@ function PostsTab() {
                     <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                         <button onClick={() => runBulk("feature")} disabled={bulkBusy}
                             data-testid="admin-posts-bulk-feature"
-                            className="h-8 px-2.5 sm:px-3 rounded-full bg-amber-500/85 hover:bg-amber-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-500 hover:bg-red-600 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Star size={13} /> Destacar
                         </button>
                         <button onClick={() => runBulk("unfeature")} disabled={bulkBusy}
@@ -1271,7 +1276,7 @@ function PostsTab() {
                         </button>
                         <button onClick={() => runBulk("delete")} disabled={bulkBusy}
                             data-testid="admin-posts-bulk-delete"
-                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-500/85 hover:bg-red-500 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
+                            className="h-8 px-2.5 sm:px-3 rounded-full bg-red-600 hover:bg-red-600 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
                             <Trash2 size={13} /> Eliminar
                         </button>
                         <button onClick={() => setSelected(new Set())}
@@ -1300,7 +1305,7 @@ function PostsTab() {
                     {data.items.map((p) => {
                         const isSel = selected.has(p.id);
                         return (
-                        <li key={p.id} data-testid={`admin-post-row-${p.id}`} className={`px-4 py-3 flex items-start gap-3 ${isSel ? "bg-amber-500/[0.06]" : ""}`}>
+                        <li key={p.id} data-testid={`admin-post-row-${p.id}`} className={`px-4 py-3 flex items-start gap-3 ${isSel ? "bg-red-50/50" : ""}`}>
                             <input type="checkbox" checked={isSel} onChange={() => toggleSelect(p.id)}
                                 data-testid={`admin-post-select-${p.id}`}
                                 className="w-4 h-4 accent-black cursor-pointer mt-1" />
@@ -1309,16 +1314,16 @@ function PostsTab() {
                                     <span className="font-medium text-[13.5px]">@{p.author_username || "—"}</span>
                                     <span className="font-mono text-[10.5px] text-black/40">{p.kind}</span>
                                     {p.image && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">com imagem</span>}
-                                    {p.featured && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">destacado</span>}
+                                    {p.featured && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
                                     {p.is_draft && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">rascunho</span>}
-                                    {p.scheduled_at && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700">agendado</span>}
-                                    {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">c/{p.community_slug}</span>}
+                                    {p.scheduled_at && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">agendado</span>}
+                                    {p.community_slug && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70">c/{p.community_slug}</span>}
                                 </div>
                                 <div className="text-[13px] text-black mt-1 line-clamp-3 whitespace-pre-wrap break-words">{p.content || "—"}</div>
                                 <div className="text-[11px] text-black/45 mt-1 font-mono flex flex-wrap items-center gap-x-2 gap-y-1">
                                     <span>{p.likes_count} ♥ · {p.comments_count} 💬 · {fmtRelative(p.created_at)} · {p.id.slice(0, 8)}</span>
-                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
-                                    {p.reduce_reach && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700 inline-flex items-center gap-0.5"><TrendingDown size={9} /> alcance reduzido</span>}
+                                    {p.replies_frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70 inline-flex items-center gap-0.5"><Snowflake size={9} /> respostas congeladas</span>}
+                                    {p.reduce_reach && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 inline-flex items-center gap-0.5"><TrendingDown size={9} /> alcance reduzido</span>}
                                 </div>
                             </div>
                             <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end max-w-[210px]">
@@ -1343,19 +1348,19 @@ function PostsTab() {
                                     onClick={() => onFreezeReplies(p)} disabled={busyId === p.id}
                                     data-testid={`admin-post-freeze-replies-${p.id}`}
                                     title={p.replies_frozen ? "Reabrir respostas" : "Congelar respostas"}
-                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.replies_frozen ? "bg-purple-500/15 text-purple-700" : "hover:bg-purple-500/10 text-purple-600"}`}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.replies_frozen ? "bg-black/[0.06] text-black/70" : "hover:bg-black/[0.04] text-black/55"}`}
                                 ><Snowflake size={14} /></button>
                                 <button
                                     onClick={() => onReduceReach(p)} disabled={busyId === p.id}
                                     data-testid={`admin-post-reduce-reach-${p.id}`}
                                     title={p.reduce_reach ? "Restaurar alcance" : "Reduzir alcance"}
-                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.reduce_reach ? "bg-orange-500/15 text-orange-700" : "hover:bg-orange-500/10 text-orange-600"}`}
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${p.reduce_reach ? "bg-red-50 text-red-700" : "hover:bg-red-50/70 text-red-600"}`}
                                 ><TrendingDown size={14} /></button>
                                 <button
                                     onClick={() => onFeature(p)} disabled={busyId === p.id}
                                     data-testid={`admin-post-feature-${p.id}`}
                                     title={p.featured ? "Remover destaque" : "Destacar"}
-                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-amber-500/10 disabled:opacity-40 text-amber-600"
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-red-50 disabled:opacity-40 text-red-600"
                                 >
                                     <Star size={14} fill={p.featured ? "currentColor" : "none"} />
                                 </button>
@@ -1466,7 +1471,7 @@ function PostInspector({ post, initialView = "replies", onClose }) {
                                             <span className="font-medium">@{c.author_username || "—"}</span>
                                             {c.author_verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                             {c.author_banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                            {c.parent_id && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-purple-500/10 text-purple-700">resposta</span>}
+                                            {c.parent_id && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.04] text-black/70">resposta</span>}
                                             <span className="ml-auto text-[10.5px] text-black/45 font-mono">{fmtRelative(c.created_at)}</span>
                                         </div>
                                         <div className="text-[13px] text-black/85 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
@@ -1510,9 +1515,9 @@ function PostInspector({ post, initialView = "replies", onClose }) {
                                 <div>
                                     <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Contra comentários ({reports.comment_reports.length})</div>
                                     <ul className="space-y-1.5">{reports.comment_reports.map((r) => (
-                                        <li key={r.id} className="px-3 py-1.5 rounded-xl bg-orange-500/[0.06] text-[12px]">
+                                        <li key={r.id} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-700">comentário</span>
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">comentário</span>
                                                 <span className="font-mono text-[10.5px] text-black/55">{r.status}</span>
                                                 {r.reason && <span className="text-black/65">{r.reason}</span>}
                                                 <span className="ml-auto text-[10.5px] text-black/45">{fmtRelative(r.created_at)}</span>
@@ -1659,7 +1664,7 @@ function ReportsTab({ onOpenUser }) {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70 font-medium uppercase tracking-wide">{r.kind}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${r.status === "open" ? "bg-amber-500/15 text-amber-700" : "bg-emerald-500/10 text-emerald-700"}`}>{r.status}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${r.status === "open" ? "bg-red-50 text-red-700" : "bg-black/[0.05] text-black/70"}`}>{r.status}</span>
                                     {r.reason && <span className="text-[11px] text-black/65">motivo: {r.reason}</span>}
                                     <span className="text-[11px] text-black/45 ml-auto">{fmtRelative(r.created_at)}</span>
                                 </div>
@@ -1691,7 +1696,7 @@ function ReportsTab({ onOpenUser }) {
                                     )}
                                     <button onClick={() => resolve(r, "resolved")} disabled={busyId === r.id}
                                         data-testid={`admin-report-resolve-${r.id}`}
-                                        className="h-8 px-3 rounded-full bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 text-[12px] font-medium disabled:opacity-40">
+                                        className="h-8 px-3 rounded-full bg-black/[0.05] text-black/70 hover:bg-black/[0.08] text-[12px] font-medium disabled:opacity-40">
                                         Aprovar
                                     </button>
                                     <button onClick={() => resolve(r, "dismissed")} disabled={busyId === r.id}
@@ -1710,7 +1715,7 @@ function ReportsTab({ onOpenUser }) {
                                         <>
                                             <button onClick={() => suspendTarget(r)} disabled={busyId === r.id}
                                                 data-testid={`admin-report-suspend-user-${r.id}`}
-                                                className="h-8 px-3 rounded-full bg-amber-500/15 text-amber-800 hover:bg-amber-500/25 text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
+                                                className="h-8 px-3 rounded-full bg-red-50 text-red-700 hover:bg-red-100 text-[12px] font-medium disabled:opacity-40 inline-flex items-center justify-center gap-1">
                                                 <Pause size={11} /> Suspender
                                             </button>
                                             <button onClick={() => banTarget(r)} disabled={busyId === r.id}
@@ -2027,7 +2032,7 @@ function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, sav
                     type="button"
                     disabled={saving}
                     onClick={() => onChange(!enabled)}
-                    className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-emerald-500" : "bg-black/15"} ${saving ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
+                    className={`mt-0.5 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-red-600" : "bg-black/15"} ${saving ? "opacity-60 cursor-wait" : "cursor-pointer"}`}
                     aria-pressed={enabled}
                     data-testid={`flag-${spec.key}`}
                     title={enabled ? "Desligar" : "Ligar"}
@@ -2037,11 +2042,11 @@ function FeatureFlagRow({ spec, currentValue, isOverride, onChange, onReset, sav
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                         <div className="font-semibold text-[14px] text-black">{spec.label}</div>
-                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${goodWhen ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${goodWhen ? "bg-black/[0.03] text-black/70" : "bg-red-50 text-red-700"}`}>
                             {enabled ? "Ligado" : "Desligado"}
                         </span>
                         {isOverride && (
-                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700" title="Valor alterado pelo admin (≠ default)">
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/[0.04] text-black/70" title="Valor alterado pelo admin (≠ default)">
                                 Custom
                             </span>
                         )}
@@ -2089,7 +2094,7 @@ function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving })
                     <div className="flex items-center gap-2 flex-wrap">
                         <div className="font-semibold text-[14px] text-black">{spec.label}</div>
                         {isOverride && (
-                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700" title="Valor alterado pelo admin (≠ default)">
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/[0.04] text-black/70" title="Valor alterado pelo admin (≠ default)">
                                 Custom
                             </span>
                         )}
@@ -2328,7 +2333,7 @@ function SettingsTab() {
                                             <div className="text-black font-medium truncate">{label}</div>
                                             <div className="text-[11px] text-black/45 font-mono">
                                                 {formatVal(h.from)} → <b className="text-black/80">{formatVal(h.to)}</b>
-                                                {h.reason === "reset" && <span className="ml-2 text-amber-600">(reset)</span>}
+                                                {h.reason === "reset" && <span className="ml-2 text-red-600">(reset)</span>}
                                             </div>
                                         </div>
                                         <div className="text-[11px] text-black/50 text-right whitespace-nowrap">
@@ -2501,7 +2506,7 @@ function CommentsTab() {
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="font-medium text-[13.5px]">{c.author_name || c.author_username || "—"}</span>
                                     <span className="font-mono text-[11px] text-black/45">@{c.author_username}</span>
-                                    {c.parent_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700">resposta</span>}
+                                    {c.parent_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">resposta</span>}
                                     <span className="text-[11px] text-black/45 ml-auto">{fmtRelative(c.created_at)}</span>
                                 </div>
                                 <div className="text-[13px] text-black/85 mt-1 whitespace-pre-wrap break-words">{c.content}</div>
@@ -2620,7 +2625,7 @@ function StoriesTab() {
                                     </span>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">{s.audience}</span>
                                     {s.is_active
-                                        ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700">ativa</span>
+                                        ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/70">ativa</span>
                                         : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/55">expirada</span>
                                     }
                                 </div>
@@ -2728,7 +2733,7 @@ function HashtagsTab() {
                 ><RefreshCcw size={14} /> Atualizar</button>
             </div>
 
-            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-4 py-3 text-[12.5px] text-amber-900/85 flex items-start gap-2">
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-4 py-3 text-[12.5px] text-red-700/85 flex items-start gap-2">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" />
                 <div>
                     Hashtags em blacklist são <strong>removidas</strong> do trending e do <strong>explore</strong>.
@@ -2797,7 +2802,7 @@ function HashtagsTab() {
                                 data-testid={`admin-hashtag-toggle-${h.tag}`}
                                 className={`h-8 px-3 rounded-full text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1.5 ${
                                     h.blacklisted
-                                        ? "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20"
+                                        ? "bg-black/[0.05] text-black/70 hover:bg-black/[0.08]"
                                         : "bg-red-500/10 text-red-600 hover:bg-red-500/20"
                                 }`}
                             >
@@ -2882,7 +2887,7 @@ function BroadcastTab() {
         <div className="space-y-4" data-testid="admin-broadcast">
             <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Broadcast</h2>
 
-            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-4 py-3 text-[12.5px] text-amber-900/85 flex items-start gap-2">
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-4 py-3 text-[12.5px] text-red-700/85 flex items-start gap-2">
                 <Megaphone size={14} className="mt-0.5 shrink-0" />
                 <div>
                     A broadcast envia uma notificação <strong>real</strong> e persistente para cada destinatário (e push via WS se estiverem online).
@@ -2962,8 +2967,8 @@ function ActionButton({ icon: Icon, label, onClick, kind = "default", testid, di
     const tone = {
         default: "bg-black/[0.04] hover:bg-black/[0.08] text-black/80",
         danger: "bg-red-500/10 hover:bg-red-500/20 text-red-700",
-        warn: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-800",
-        good: "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800",
+        warn: "bg-red-50 hover:bg-red-100 text-red-700",
+        good: "bg-black/[0.06] hover:bg-black/10 text-black/85",
         primary: "bg-black text-white hover:bg-black/85",
     }[kind] || "bg-black/[0.04] hover:bg-black/[0.08] text-black/80";
     return (
@@ -3187,14 +3192,14 @@ function UserDrawer({ user, onClose }) {
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-display text-[15px] sm:text-[16px] tracking-tight truncate">{u.name || u.username}</span>
                             {u.verified && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">verified</span>}
-                            {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">admin</span>}
-                            {u.featured_account && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700">destacado</span>}
+                            {u.is_admin && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">admin</span>}
+                            {u.featured_account && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">destacado</span>}
                             {u.banned && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
                             {u.suspended_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600">suspenso</span>}
-                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-700">silenciado</span>}
+                            {u.muted_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.04] text-black/70">silenciado</span>}
                             {u.shadow_muted && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
-                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700">congelado</span>}
-                            {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-700">suspeito</span>}
+                            {u.frozen && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.06] text-black/70">congelado</span>}
+                            {u.flagged_suspicious && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
                         </div>
                         <div className="text-[11.5px] sm:text-[12px] text-black/55 truncate font-mono">@{u.username} · {u.email}</div>
                     </div>
@@ -3268,7 +3273,7 @@ function UserDrawer({ user, onClose }) {
                                 <div className="bg-black/[0.04] rounded-2xl p-3"><div className="text-[10px] uppercase font-mono text-black/45">Likes dados</div><div className="font-display text-[18px]">{activity.likes_given}</div></div>
                             </div>
                             {presence && (
-                                <div className="bg-emerald-500/[0.06] border border-emerald-500/15 rounded-2xl px-3 py-2.5 text-[12.5px]">
+                                <div className="bg-black/[0.04] border border-black/10 rounded-2xl px-3 py-2.5 text-[12.5px]">
                                     <strong>Presença:</strong> {presence.online ? "online" : "offline"} · {presence.ws_sockets} socket(s) · {presence.active_sessions} sessões ativas · visto {fmtRelative(presence.last_seen)}
                                 </div>
                             )}
@@ -3293,8 +3298,8 @@ function UserDrawer({ user, onClose }) {
                                     <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Ações admin recentes ({recentActions.total})</div>
                                     <ul className="space-y-1">
                                         {recentActions.items.slice(0, 10).map((a) => (
-                                            <li key={a.id} className="px-3 py-1.5 rounded-xl bg-amber-500/[0.06] text-[12px]">
-                                                <span className="font-mono text-[10.5px] text-amber-700">{a.action}</span>
+                                            <li key={a.id} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
+                                                <span className="font-mono text-[10.5px] text-red-700">{a.action}</span>
                                                 <span className="text-black/55 ml-1.5">· {fmtRelative(a.created_at)}</span>
                                                 {a.payload && Object.keys(a.payload).length > 0 && (
                                                     <div className="text-[10.5px] text-black/55 mt-0.5 font-mono break-all">{JSON.stringify(a.payload)}</div>
@@ -3309,8 +3314,8 @@ function UserDrawer({ user, onClose }) {
                                     <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Login alerts ({loginAlerts.total})</div>
                                     <ul className="space-y-1">
                                         {loginAlerts.items.slice(0, 10).map((a, i) => (
-                                            <li key={a.id || i} className="px-3 py-1.5 rounded-xl bg-orange-500/[0.06] text-[12px]">
-                                                <span className="font-mono text-[10.5px] text-orange-700">login_alert</span>
+                                            <li key={a.id || i} className="px-3 py-1.5 rounded-xl bg-red-50/50 text-[12px]">
+                                                <span className="font-mono text-[10.5px] text-red-700">login_alert</span>
                                                 <span className="ml-1.5 text-black/65">{a.title || a.message || ""}</span>
                                                 <span className="ml-auto text-[10.5px] text-black/45 float-right">{fmtRelative(a.created_at)}</span>
                                             </li>
@@ -3335,7 +3340,7 @@ function UserDrawer({ user, onClose }) {
                                             <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
                                             {f.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                             {f.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">b</span>}
-                                            <span className={`ml-auto w-2 h-2 rounded-full ${f.online ? "bg-emerald-500" : "bg-black/15"}`} />
+                                            <span className={`ml-auto w-2 h-2 rounded-full ${f.online ? "bg-red-600" : "bg-black/15"}`} />
                                         </li>
                                     ))}</ul>
                                 }
@@ -3344,7 +3349,7 @@ function UserDrawer({ user, onClose }) {
                                 <div className="text-[10.5px] uppercase tracking-wider text-black/45 font-mono mb-1.5">Mutuals ({mutuals?.total || 0})</div>
                                 {(!mutuals || mutuals.items.length === 0) ? <div className="text-[12px] text-black/45 italic">Nenhum</div> :
                                     <ul className="space-y-1">{mutuals.items.slice(0, 30).map((f) => (
-                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.06] text-[12px] flex items-center gap-2">
+                                        <li key={f.id} className="px-2.5 py-1.5 rounded-xl bg-black/[0.04] text-[12px] flex items-center gap-2">
                                             <Avatar user={f} size={26} />
                                             <span className="font-medium truncate">{f.name || f.username}</span>
                                             <span className="font-mono text-[11px] text-black/45 truncate">@{f.username}</span>
@@ -3380,7 +3385,7 @@ function UserDrawer({ user, onClose }) {
                                 <li key={p.id} className="px-3 py-2 rounded-xl bg-black/[0.03]">
                                     <div className="flex items-center gap-1.5 text-[11px] text-black/55 font-mono">
                                         <span>{p.kind}</span>
-                                        {p.featured && <Star size={11} className="text-amber-600" fill="currentColor" />}
+                                        {p.featured && <Star size={11} className="text-red-600" fill="currentColor" />}
                                         <span className="ml-auto">{fmtRelative(p.created_at)}</span>
                                     </div>
                                     <div className="text-[13px] mt-1 line-clamp-3 break-words">{p.content || "—"}</div>
@@ -3416,7 +3421,7 @@ function UserDrawer({ user, onClose }) {
                                     <ul className="space-y-1.5">{sessions.items.map((s) => (
                                         <li key={s.jti} className="px-3 py-2 rounded-xl bg-black/[0.03] text-[12px]">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-black/[0.08] text-black/55" : "bg-emerald-500/15 text-emerald-700"}`}>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${s.revoked ? "bg-black/[0.08] text-black/55" : "bg-black/[0.06] text-black/70"}`}>
                                                     {s.revoked ? "revogada" : "ativa"}
                                                 </span>
                                                 <span className="font-mono text-[10.5px] text-black/55 truncate">{(s.user_agent || "").slice(0, 60) || "—"}</span>
@@ -3534,7 +3539,7 @@ function UserDrawer({ user, onClose }) {
                                     <ActionButton icon={Shield} label={u.is_admin ? "Remover admin" : "Promover admin"} onClick={doAdminToggle} testid="admin-action-admin-toggle" disabled={actionBusy === "admin"} kind={u.is_admin ? "danger" : "primary"} />
                                 </div>
                             </div>
-                            <div className="bg-amber-500/[0.08] border border-amber-500/20 rounded-2xl px-3 py-2.5 text-[11.5px] text-amber-900/85">
+                            <div className="bg-red-50/70 border border-red-200 rounded-2xl px-3 py-2.5 text-[11.5px] text-red-700/85">
                                 <strong>Ações registadas:</strong> todas estas ações geram entradas no audit log e ficam visíveis no separador "Atividade" deste utilizador.
                             </div>
                         </div>
@@ -3654,14 +3659,14 @@ function AntiSpamTab({ onOpenDrawer }) {
             {/* COUNTERS */}
             {overview && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="admin-antispam-counters">
-                    <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-orange-500/15 text-orange-700" icon={ShieldAlert} />
-                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-purple-500/15 text-purple-700" icon={VolumeX} />
+                    <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-red-50 text-red-700" icon={ShieldAlert} />
+                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-black/[0.06] text-black/70" icon={VolumeX} />
                     <CounterCard label="Shadow" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
-                    <CounterCard label="Rate-limited" value={overview.users.rate_limited} accent="bg-yellow-500/15 text-yellow-700" icon={Gauge} />
-                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-cyan-500/15 text-cyan-700" icon={Snowflake} />
+                    <CounterCard label="Rate-limited" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} />
+                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-black/[0.06] text-black/70" icon={Snowflake} />
                     <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} />
-                    <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-amber-500/15 text-amber-700" icon={Flag} />
-                    <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-orange-500/15 text-orange-700" icon={TrendingDown} />
+                    <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-red-50 text-red-700" icon={Flag} />
+                    <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-red-50 text-red-700" icon={TrendingDown} />
                 </div>
             )}
 
@@ -3731,10 +3736,10 @@ function AntiSpamTab({ onOpenDrawer }) {
                                         <span className="font-medium text-[13.5px] truncate">@{u.username}</span>
                                         {u.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                         {u.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-purple-500/10 text-purple-700">muted</span>}
+                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.04] text-black/70">muted</span>}
                                         {u.shadow_muted && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
-                                        {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700">congelado</span>}
-                                        {u.flagged_suspicious && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-orange-500/10 text-orange-700">suspeito</span>}
+                                        {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-black/[0.06] text-black/70">congelado</span>}
+                                        {u.flagged_suspicious && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
                                         {typeof u.report_count_7d === "number" && (
                                             <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/15 text-red-700">{u.report_count_7d} reports</span>
                                         )}
@@ -3746,13 +3751,13 @@ function AntiSpamTab({ onOpenDrawer }) {
                                 <button onClick={() => doRateLimit(u)} disabled={busyId === u.id}
                                     data-testid={`admin-antispam-rate-${u.id}`}
                                     title="Limitar ações"
-                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-yellow-500/15 disabled:opacity-40 text-yellow-700">
+                                    className="w-8 h-8 grid place-items-center rounded-full hover:bg-red-50 disabled:opacity-40 text-red-700">
                                     <Gauge size={13} />
                                 </button>
                                 <button onClick={() => doFreeze(u)} disabled={busyId === u.id}
                                     data-testid={`admin-antispam-freeze-${u.id}`}
                                     title={u.frozen ? "Descongelar conta" : "Congelar conta"}
-                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${u.frozen ? "bg-cyan-500/15 text-cyan-700" : "hover:bg-cyan-500/10 text-cyan-600"}`}>
+                                    className={`w-8 h-8 grid place-items-center rounded-full disabled:opacity-40 ${u.frozen ? "bg-black/[0.06] text-black/70" : "hover:bg-black/[0.04] text-black/55"}`}>
                                     <Snowflake size={13} />
                                 </button>
                             </div>
@@ -3897,7 +3902,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                     transition-colors duration-150
                                                     ${collapsed ? "lg:px-0 lg:justify-center px-2.5" : "px-2.5"}
                                                     ${active
-                                                        ? "bg-black text-white shadow-sm"
+                                                        ? "bg-red-600 text-white shadow-sm"
                                                         : "text-black/70 hover:bg-black/[0.05] hover:text-black"}
                                                 `}
                                             >
@@ -3917,7 +3922,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                                                         className={`
                                                             min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-semibold
                                                             inline-flex items-center justify-center shrink-0
-                                                            ${active ? "bg-white text-black" : "bg-red-500 text-white"}
+                                                            ${active ? "bg-white text-red-600" : "bg-red-600 text-white"}
                                                             ${collapsed ? "lg:absolute lg:top-1 lg:right-1 lg:min-w-[14px] lg:h-[14px] lg:text-[9px]" : ""}
                                                         `}
                                                     >{openReports > 99 ? "99+" : openReports}</span>
