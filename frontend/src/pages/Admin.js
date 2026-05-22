@@ -274,7 +274,6 @@ function OverviewTab({ onNavigate }) {
         <div className="space-y-4 sm:space-y-5" data-testid="admin-overview">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Visão geral</h2>
                     <p className="ops-subtitle">Vista em tempo real do estado da plataforma — KPIs principais, saúde do sistema e atalhos para áreas críticas.</p>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
@@ -627,7 +626,6 @@ function SystemTab() {
         <div className="space-y-4" data-testid="admin-system">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sistema</h2>
                     <p className="ops-subtitle">Estado da infraestrutura: backend, WebSocket, base de dados, latência, carga e logs. Acções operacionais críticas vivem aqui.</p>
                 </div>
                 <button
@@ -1058,7 +1056,6 @@ function UsersTab({ onOpenDrawer }) {
         <div className="space-y-4" data-testid="admin-users">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Utilizadores</h2>
                     <p className="ops-subtitle">Pesquisa, verificação, banimentos, privilégios e moderação individual. Todas as ações ficam registadas no audit log.</p>
                 </div>
                 <button
@@ -1363,7 +1360,6 @@ function PostsTab() {
         <div className="space-y-4" data-testid="admin-posts">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Publicações</h2>
                     <p className="ops-subtitle">Destaque, redução de alcance, congelamento de respostas e remoção. Cada ação é registada e reversível (exceto remoção).</p>
                 </div>
                 <button
@@ -1764,7 +1760,6 @@ function ReportsTab({ onOpenUser }) {
         <div className="space-y-4" data-testid="admin-reports">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Reports</h2>
                     <p className="ops-subtitle">Reports submetidos por utilizadores. Aprova, ignora ou aplica sanção (remover, suspender, banir). Os reports abertos surgem em destaque no menu.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -1921,7 +1916,6 @@ function CommunitiesTab() {
         <div className="space-y-4" data-testid="admin-communities">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comunidades</h2>
                     <p className="ops-subtitle">Comunidades públicas e privadas. Gestão de visibilidade, regras, moderadores e remoção.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -2009,7 +2003,6 @@ function EventsTab() {
         <div className="space-y-4" data-testid="admin-events">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Eventos</h2>
                     <p className="ops-subtitle">Eventos publicados pela comunidade. Edição, remoção e destaque manual.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -2094,7 +2087,6 @@ function SessionsTab() {
         <div className="space-y-4" data-testid="admin-sessions">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Sessões ativas</h2>
                     <p className="ops-subtitle">Sessões e dispositivos com acesso. Revoga sessões suspeitas individualmente ou força logout em massa por utilizador.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -2874,8 +2866,7 @@ function SettingsTab() {
                         <Settings2 className="h-5 w-5 text-[var(--coral-500)]" />
                     </div>
                     <div>
-                        <div className="font-display text-[20px] leading-tight text-slate-900">Definições da Plataforma</div>
-                        <div className="text-[12px] text-slate-500 mt-0.5">
+                        <div className="text-[12px] text-slate-500">
                             {totalAll} definições organizadas em categorias. Aplicam-se em runtime (cache 5s). Admins fazem bypass.
                         </div>
                     </div>
@@ -3147,7 +3138,6 @@ function AuditTab() {
         <div className="space-y-4" data-testid="admin-audit">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Audit log</h2>
                     <p className="ops-subtitle">Histórico imutável de todas as ações administrativas. Filtra por tipo de ação e exporta para CSV para auditoria externa.</p>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -3237,7 +3227,6 @@ function CommentsTab() {
         <div className="space-y-4" data-testid="admin-comments">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Comentários</h2>
                     <p className="ops-subtitle">Moderação de comentários: revisão por autor, remoção rápida e ações ao utilizador autor (silenciar, banir).</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -3345,7 +3334,6 @@ function StoriesTab() {
         <div className="space-y-4" data-testid="admin-stories">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Stories</h2>
                     <p className="ops-subtitle">Stories activas neste momento. Expiram automaticamente após 24h — moderação rápida com remoção forçada.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -3490,7 +3478,6 @@ function HashtagsTab() {
         <div className="space-y-4" data-testid="admin-hashtags">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Hashtags</h2>
                     <p className="ops-subtitle">Hashtags em uso. Bloqueia tags com conteúdo problemático — bloqueadas saem do trending e do explore, mas permanecem visíveis no perfil dos autores.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}
@@ -3652,7 +3639,6 @@ function BroadcastTab() {
     return (
         <div className="space-y-4" data-testid="admin-broadcast">
             <div className="min-w-0">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Broadcast</h2>
                 <p className="ops-subtitle">Envia uma notificação a todos os utilizadores ou a um segmento. Ação irreversível — usa com critério.</p>
             </div>
 
@@ -4420,7 +4406,6 @@ function AntiSpamTab({ onOpenDrawer }) {
         <div className="space-y-4" data-testid="admin-antispam">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="min-w-0 flex-1">
-                    <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight">Anti-spam</h2>
                     <p className="ops-subtitle">Filtros automáticos e moderação proactiva: rate limits, deteção de duplicados, padrões suspeitos e listas internas.</p>
                 </div>
                 <button onClick={() => setReloadAt(Date.now())}

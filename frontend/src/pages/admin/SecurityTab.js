@@ -1360,12 +1360,6 @@ export default function SecurityTab() {
 
     return (
         <div className="space-y-4" data-testid="admin-security">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h2 className="font-display text-[18px] sm:text-[22px] tracking-tight inline-flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-slate-500"/> Segurança &amp; Proteção
-                </h2>
-            </div>
-
             {/* SUB-NAV CHIPS */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1" data-testid="sec-subnav">
                 {SUB_TABS.map((t) => {
