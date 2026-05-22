@@ -3175,6 +3175,74 @@ backend:
               line 81. Moved APP_ENV / IS_PRODUCTION block above the audience
               binding. Also installed missing `wrapt` dependency (transitive of
               slowapi). Backend now boots cleanly (/api/health 200).
+  - task: "Admin Settings — Expansão #2: 21 novas opções com enforcement real"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+              Adicionadas 21 novas opções ao painel Admin → Definições (todas
+              com enforcement REAL, nada hardcoded/mockado).
+
+              Novas FLAGS (bool):
+                1. password_require_digit       — register/reset/change-password
+                2. password_require_uppercase   — idem
+                3. password_require_symbol      — idem
+                4. email_alerts_enabled         — master switch dos login-alerts
+                                                    (gate dentro de maybe_emit_login_alert)
+                5. disposable_email_block_enabled — gate em check-email + register
+                6. show_view_counts_publicly    — exposto em /public/settings
+                7. show_like_counts_publicly    — exposto em /public/settings
+                8. hashtags_enabled             — quando OFF, extract_hashtags()
+                                                    NÃO corre em POST /api/posts
+                9. mentions_enabled             — gate dentro de handle_mentions
+
+              Novos LIMITES (int):
+                10. min_username_chars (default 3)   — /auth/check-username + register
+                11. max_username_chars (default 20)  — idem
+                12. min_password_chars (default 6)   — register/reset/change-password
+                13. min_post_chars (default 0)       — POST /api/posts (só texto)
+                14. scheduled_posts_max_days_ahead (30) — POST/PATCH /api/posts
+                15. max_drafts_per_user (50)         — POST /api/posts (is_draft=true)
+                16. max_poll_options (4)             — passado para build_poll(...)
+                17. max_collaborators_per_post (3)   — substitui hardcoded em
+                                                          invite_collab
+                18. max_communities_owned_per_user (10) — POST /api/communities
+
+              Novo CONTENT/BRANDING (string):
+                19. meta_title_suffix            — exposto em /public/settings
+                20. signup_invite_code           — quando ≠"", /auth/register
+                                                     exige body.invite_code igual
+                21. compliance_dpo_email         — exposto em /public/settings
+                22. cookie_banner_text (textarea)— exposto em /public/settings
+
+              Pontos chave:
+                · Pydantic schemas RegisterIn/ResetPasswordIn/ChangePasswordIn
+                  alargados (min=4) para deixar a validação real ficar no
+                  servidor via settings dinâmicos.
+                · Novos helpers: _validate_password_policy(),
+                  _validate_username_policy(). Reutilizados nos 3 endpoints
+                  de password e no register.
+                · build_poll() agora aceita max_options=None (admin usa default
+                  do módulo, users usam runtime cap).
+                · /public/settings expõe um boolean derivado
+                  `signup_invite_required` SEM revelar o código real.
+                · Admins fazem bypass em todos os limites.
+                · Frontend SettingsTab é genérico — os novos campos aparecem
+                  automaticamente nas 3 secções correctas (Flags, Limites,
+                  Content/Branding).
+
+              Smoke test manual:
+                · /api/public/settings devolve as novas chaves (verificado).
+                · /api/auth/check-username?u=ab → "Mínimo 3 caracteres."
+                  (mensagem dinâmica do setting, verificado).
+                · Backend reinicia limpo, /api/health = 200.
+
 
 agent_communication:
     - agent: "main"

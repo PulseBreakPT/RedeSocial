@@ -462,11 +462,12 @@ def _is_safe_image_url(s: str) -> bool:
     return False
 
 
-def build_poll(raw: Optional[dict]) -> Optional[dict]:
+def build_poll(raw: Optional[dict], max_options: Optional[int] = None) -> Optional[dict]:
     if not raw:
         return None
     options_in = raw.get("options") or []
     options: List[dict] = []
+    cap = int(max_options) if (max_options and int(max_options) > 0) else MAX_POLL_OPTIONS
     for text in options_in:
         if not isinstance(text, str):
             continue
@@ -474,7 +475,7 @@ def build_poll(raw: Optional[dict]) -> Optional[dict]:
         if not text:
             continue
         options.append({"id": str(uuid.uuid4())[:8], "text": text[:60]})
-        if len(options) >= MAX_POLL_OPTIONS:
+        if len(options) >= cap:
             break
     if len(options) < 2:
         raise HTTPException(400, "Enquete precisa de pelo menos 2 opções")
@@ -525,6 +526,44 @@ def verify_password(plain: str, hashed: str) -> bool:
         return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
     except Exception:
         return False
+
+
+async def _validate_password_policy(password: str) -> None:
+    """Validate password against admin-controlled policy in runtime settings.
+    Raises HTTPException(400) with a Portuguese-friendly message on failure.
+    Settings consulted:
+      min_password_chars (int)
+      password_require_digit (bool)
+      password_require_uppercase (bool)
+      password_require_symbol (bool)
+    """
+    pwd = password or ""
+    min_chars = int(await get_limit("min_password_chars") or 0)
+    if min_chars and len(pwd) < min_chars:
+        raise HTTPException(400, f"Palavra-passe demasiado curta (mínimo {min_chars} caracteres).")
+    if await is_feature_enabled("password_require_digit"):
+        if not any(c.isdigit() for c in pwd):
+            raise HTTPException(400, "Palavra-passe tem de conter pelo menos um dígito (0-9).")
+    if await is_feature_enabled("password_require_uppercase"):
+        if not any(c.isupper() for c in pwd):
+            raise HTTPException(400, "Palavra-passe tem de conter pelo menos uma letra maiúscula.")
+    if await is_feature_enabled("password_require_symbol"):
+        # Anything that's not alphanumeric counts as a symbol
+        if not any((not c.isalnum()) and (not c.isspace()) for c in pwd):
+            raise HTTPException(400, "Palavra-passe tem de conter pelo menos um símbolo (ex: !@#$%).")
+
+
+async def _validate_username_policy(username: str) -> None:
+    """Validate username length against runtime settings (admins of the platform
+    can adjust min/max via /admin/settings). Format/reserved checks are kept
+    inline in the callers (they're behavioural, not policy)."""
+    raw = (username or "").strip()
+    min_u = int(await get_limit("min_username_chars") or 1)
+    max_u = int(await get_limit("max_username_chars") or 64)
+    if len(raw) < min_u:
+        raise HTTPException(400, f"Username demasiado curto (mínimo {min_u} caracteres).")
+    if len(raw) > max_u:
+        raise HTTPException(400, f"Username demasiado longo (máximo {max_u} caracteres).")
 
 
 def create_access_token(user_id: str, email: str, jti: Optional[str] = None, ttl_days: Optional[int] = None) -> str:
@@ -700,6 +739,12 @@ async def create_session(user_id: str, request: Request, source: str = "login") 
 
 async def maybe_emit_login_alert(user: dict, request: Request) -> None:
     """B-014 — If this is a 'new' device/IP for the user, drop a notification."""
+    # Master kill switch (admin-controlled): when off, no login-alerts notifications.
+    try:
+        if not await is_feature_enabled("email_alerts_enabled"):
+            return
+    except Exception:
+        pass
     if not user.get("login_alerts_enabled", True):
         return
     ip = request.client.host if request and request.client else ""
@@ -1714,6 +1759,12 @@ async def create_notification(user_id: str, ntype: str, from_user_id: str,
 
 
 async def handle_mentions(text: str, author: dict, post_id: str) -> None:
+    # Admin master switch: when off, mentions don't notify anyone.
+    try:
+        if not await is_feature_enabled("mentions_enabled"):
+            return
+    except Exception:
+        pass
     for username in extract_mentions(text):
         target = await db.users.find_one({"username": username}, {"_id": 0})
         if target and target["id"] != author["id"]:
@@ -1728,9 +1779,13 @@ async def handle_mentions(text: str, author: dict, post_id: str) -> None:
 # ============================================================
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6)
-    username: str = Field(min_length=3, max_length=20)
+    # Wider Pydantic bounds so server-side admin-controlled limits can be enforced
+    # dynamically. Real min/max are validated at runtime via settings.
+    password: str = Field(min_length=4, max_length=200)
+    username: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=1, max_length=50)
+    # Optional invite code (enforced only if admin set signup_invite_code != "")
+    invite_code: Optional[str] = None
     # PT identity (onboarding 60s) — all optional, may be set later in /onboarding step
     city: Optional[str] = None
     freguesia: Optional[str] = None
@@ -1755,7 +1810,7 @@ class ForgotPasswordIn(BaseModel):
 
 class ResetPasswordIn(BaseModel):
     token: str
-    password: str = Field(min_length=6)
+    password: str = Field(min_length=4, max_length=200)
 
 
 class UpdateProfileIn(BaseModel):
@@ -1806,7 +1861,7 @@ class TwoFADisableIn(BaseModel):
 
 class ChangePasswordIn(BaseModel):
     current_password: str
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: str = Field(min_length=4, max_length=200)
 
 
 class DeleteAccountIn(BaseModel):
@@ -1942,10 +1997,13 @@ async def check_username(request: Request, response: Response, u: str = ""):
     raw = (u or "").strip()
     if not raw:
         return {"available": False, "reason": "empty", "message": "Escolhe um username."}
-    if len(raw) < 3:
-        return {"available": False, "reason": "too_short", "message": "Mínimo 3 caracteres."}
-    if len(raw) > 20:
-        return {"available": False, "reason": "too_long", "message": "Máximo 20 caracteres."}
+    # Dynamic min/max length from runtime settings (admin-controllable).
+    _min = int(await get_limit("min_username_chars") or 3)
+    _max = int(await get_limit("max_username_chars") or 20)
+    if len(raw) < _min:
+        return {"available": False, "reason": "too_short", "message": f"Mínimo {_min} caracteres."}
+    if len(raw) > _max:
+        return {"available": False, "reason": "too_long", "message": f"Máximo {_max} caracteres."}
     if not re.fullmatch(r"[a-zA-Z0-9_]+", raw):
         return {"available": False, "reason": "invalid_chars", "message": "Só letras, números e _."}
     RESERVED = {
@@ -1991,7 +2049,8 @@ async def check_email(request: Request, response: Response, e: str = ""):
     except IndexError:
         return {"available": False, "reason": "invalid", "message": "Formato de email inválido."}
     if domain in _DISPOSABLE_DOMAINS:
-        return {"available": False, "reason": "disposable", "message": "Emails descartáveis não são aceites."}
+        if await is_feature_enabled("disposable_email_block_enabled"):
+            return {"available": False, "reason": "disposable", "message": "Emails descartáveis não são aceites."}
     existing = await db.users.find_one({"email": raw}, {"_id": 0, "id": 1})
     if existing:
         return {"available": False, "reason": "taken", "message": "Já existe uma conta com este email."}
@@ -2004,8 +2063,25 @@ async def register(payload: RegisterIn, request: Request, response: Response):
     # Grupo A: signup_open feature flag (admins não passam aqui por isto ser registo).
     if not await is_feature_enabled("signup_open"):
         raise HTTPException(503, SETTINGS_BY_KEY["signup_open"].get("off_message") or "Registos fechados")
+    # Optional invite-code gate (only enforced when admin set a non-empty code).
+    _invite_required = (await get_setting("signup_invite_code") or "").strip()
+    if _invite_required:
+        _provided = (payload.invite_code or "").strip()
+        if _provided != _invite_required:
+            raise HTTPException(403, "Código de convite inválido ou em falta.")
+    # Dynamic username + password policy (admin-controlled).
+    await _validate_username_policy(payload.username)
+    await _validate_password_policy(payload.password)
     email = payload.email.lower()
     username = payload.username.lower().strip()
+    # Reject disposable email domains when policy is on.
+    if await is_feature_enabled("disposable_email_block_enabled"):
+        try:
+            _domain = email.split("@", 1)[1]
+        except IndexError:
+            _domain = ""
+        if _domain in _DISPOSABLE_DOMAINS:
+            raise HTTPException(400, "Emails descartáveis não são aceites.")
     if await db.users.find_one({"email": email}):
         raise HTTPException(400, "Email já registado")
     if await db.users.find_one({"username": username}):
@@ -2216,6 +2292,8 @@ async def reset_password(payload: ResetPasswordIn, request: Request, response: R
         raise HTTPException(400, "Token inválido")
     if datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
         raise HTTPException(400, "Token expirado")
+    # Admin-controlled password policy
+    await _validate_password_policy(payload.password)
     await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": hash_password(payload.password), "password_changed_at": now_iso()}})
     await db.password_resets.update_one({"token": payload.token}, {"$set": {"used": True}})
     return {"ok": True}
@@ -2231,6 +2309,8 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
         raise HTTPException(400, "Palavra-passe atual incorreta")
     if payload.current_password == payload.new_password:
         raise HTTPException(400, "A nova palavra-passe tem de ser diferente da atual")
+    # Admin-controlled password policy (min length + composition rules)
+    await _validate_password_policy(payload.new_password)
     await db.users.update_one(
         {"id": user["id"]},
         {"$set": {
@@ -3034,9 +3114,23 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         if len((payload.content or "").strip()) < 5:
             raise HTTPException(400, "Acrescenta pelo menos uma frase ao repostar (5+ caracteres). É a regra da casa: republicar exige contexto.")
     images = normalize_images(payload.images, payload.image, max_images=_img_cap)
-    poll = build_poll(payload.poll) if payload.poll else None
+    # Dynamic poll-options cap (admins still use module default)
+    _poll_cap = None
+    if not user.get("is_admin"):
+        try:
+            _poll_cap = await get_limit("max_poll_options")
+        except Exception:
+            _poll_cap = None
+    poll = build_poll(payload.poll, max_options=_poll_cap) if payload.poll else None
     if not payload.content.strip() and not images and not poll and not payload.quote_of:
         raise HTTPException(400, "Publicação vazia")
+    # Minimum content length (only when content is the primary medium)
+    if not user.get("is_admin"):
+        _min_chars = await get_limit("min_post_chars")
+        if _min_chars and _min_chars > 0:
+            _has_other = bool(images) or bool(poll) or bool(payload.quote_of)
+            if not _has_other and len((payload.content or "").strip()) < _min_chars:
+                raise HTTPException(400, f"Publicação demasiado curta (mínimo {_min_chars} caracteres).")
     audience = payload.reply_audience if payload.reply_audience in VALID_AUDIENCES else "everyone"
     audience_ring = payload.audience_ring if payload.audience_ring in {"publico", "amigos", "tasca"} else "publico"
 
@@ -3051,7 +3145,34 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
                 scheduled_at = dt.astimezone(timezone.utc).isoformat()
         except Exception:
             pass
+    # Cap on how far in the future a post can be scheduled (admin-configurable).
+    if scheduled_at and not user.get("is_admin"):
+        _max_days = await get_limit("scheduled_posts_max_days_ahead")
+        if _max_days and _max_days > 0:
+            _horizon = datetime.now(timezone.utc) + timedelta(days=_max_days)
+            try:
+                _dt = datetime.fromisoformat(scheduled_at)
+                if _dt > _horizon:
+                    raise HTTPException(400, f"Não podes agendar posts a mais de {_max_days} dia(s).")
+            except HTTPException:
+                raise
+            except Exception:
+                pass
+    # Per-user draft quota (only enforced when creating an actual draft).
+    if bool(payload.is_draft) and not user.get("is_admin"):
+        _max_drafts = await get_limit("max_drafts_per_user")
+        if _max_drafts and _max_drafts > 0:
+            _existing_drafts = await db.posts.count_documents({
+                "author_id": user["id"], "is_draft": True,
+            })
+            if _existing_drafts >= _max_drafts:
+                raise HTTPException(429, f"Limite de rascunhos atingido ({_max_drafts}). Apaga ou publica alguns antes de criar novos.")
 
+    # Hashtag extraction is gated by admin flag (admins always extract for their own posts).
+    if user.get("is_admin"):
+        _hashtags = extract_hashtags(payload.content)
+    else:
+        _hashtags = extract_hashtags(payload.content) if await is_feature_enabled("hashtags_enabled") else []
     post = {
         "id": str(uuid.uuid4()), "author_id": user["id"],
         "content": payload.content,
@@ -3059,7 +3180,7 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         "images": images,
         "likes": [], "bookmarks": [], "reposts": [],
         "reactions": {},
-        "hashtags": extract_hashtags(payload.content),
+        "hashtags": _hashtags,
         "community_id": community_id,
         "quote_of": payload.quote_of,
         "poll": poll,
@@ -3140,6 +3261,13 @@ async def edit_post(post_id: str, payload: PostEditIn, user=Depends(get_current_
             raise HTTPException(400, "Data inválida")
         if datetime.fromisoformat(new_iso) <= datetime.now(timezone.utc):
             raise HTTPException(400, "Tem de ser uma data futura")
+        # Admin-controlled horizon (max days in the future)
+        if not user.get("is_admin"):
+            _max_days = await get_limit("scheduled_posts_max_days_ahead")
+            if _max_days and _max_days > 0:
+                _horizon = datetime.now(timezone.utc) + timedelta(days=_max_days)
+                if datetime.fromisoformat(new_iso) > _horizon:
+                    raise HTTPException(400, f"Não podes agendar posts a mais de {_max_days} dia(s).")
         update_set["scheduled_at"] = new_iso
     if not update_set:
         raise HTTPException(400, "Nada para atualizar")
@@ -5365,6 +5493,13 @@ async def create_community(payload: CommunityIn, user=Depends(get_current_user))
     # Grupo A: read-only + communities_create_enabled
     await _assert_writes_open(user)
     await _assert_feature_or_503("communities_create_enabled", user)
+    # Per-user ownership cap (admins bypass)
+    if not user.get("is_admin"):
+        _max_owned = await get_limit("max_communities_owned_per_user")
+        if _max_owned and _max_owned > 0:
+            _owned = await db.communities.count_documents({"owner_id": user["id"]})
+            if _owned >= _max_owned:
+                raise HTTPException(429, f"Limite de comunidades atingido ({_max_owned}). Apaga uma antes de criar outra.")
     slug = slugify(payload.name)
     if await db.communities.find_one({"slug": slug}):
         slug = f"{slug}-{str(uuid.uuid4())[:4]}"
@@ -7633,8 +7768,15 @@ async def invite_collab(post_id: str, payload: CollabInviteIn, user=Depends(get_
     accepted = list(post.get("collaborators", []))
     if payload.user_id in accepted or payload.user_id in invites:
         return {"ok": True, "already": True}
-    if len(accepted) + len(invites) >= 3:
-        raise HTTPException(400, "Máximo de 3 colaboradores")
+    # Admin-controlled cap on collaborators per post (default 3).
+    try:
+        _max_collab = int(await get_limit("max_collaborators_per_post") or 3)
+    except Exception:
+        _max_collab = 3
+    if _max_collab < 1:
+        _max_collab = 1
+    if len(accepted) + len(invites) >= _max_collab:
+        raise HTTPException(400, f"Máximo de {_max_collab} colaboradores")
     invites.append(payload.user_id)
     await db.posts.update_one({"id": post_id}, {"$set": {"collab_invites": invites}})
     await create_notification(
@@ -10400,6 +10542,153 @@ SETTINGS_REGISTRY = [
      "label": "URL LinkedIn",
      "description": "Link para o perfil/página no LinkedIn. Vazio = ícone escondido.",
      "applies_to": ["GET /api/public/settings"]},
+
+    # =========================================================================
+    # EXPANSÃO 2 — política de palavra-passe, username, drafts, agendamento,
+    # colaborações, comunidades, sondagens, branding extra. TODOS com enforcement
+    # real nos endpoints respetivos (sem mocks).
+    # =========================================================================
+
+    # ---------- PASSWORD POLICY (bool) ----------
+    {"key": "password_require_digit", "group": "flags", "type": "bool", "default": False,
+     "label": "Palavra-passe exige dígito",
+     "description": "Quando LIGADO, novas palavras-passe têm de conter pelo menos um dígito (0-9). Aplica-se em registo, reposição e alteração.",
+     "applies_to": ["POST /api/auth/register", "POST /api/auth/reset-password", "POST /api/auth/change-password"],
+     "off_message": ""},
+
+    {"key": "password_require_uppercase", "group": "flags", "type": "bool", "default": False,
+     "label": "Palavra-passe exige maiúscula",
+     "description": "Quando LIGADO, novas palavras-passe têm de conter pelo menos uma letra maiúscula. Aplica-se em registo, reposição e alteração.",
+     "applies_to": ["POST /api/auth/register", "POST /api/auth/reset-password", "POST /api/auth/change-password"],
+     "off_message": ""},
+
+    {"key": "password_require_symbol", "group": "flags", "type": "bool", "default": False,
+     "label": "Palavra-passe exige símbolo",
+     "description": "Quando LIGADO, novas palavras-passe têm de conter pelo menos um símbolo (ex: !@#$%). Aplica-se em registo, reposição e alteração.",
+     "applies_to": ["POST /api/auth/register", "POST /api/auth/reset-password", "POST /api/auth/change-password"],
+     "off_message": ""},
+
+    # ---------- COMMS / ALERTS (bool) ----------
+    {"key": "email_alerts_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Alertas de login (master)",
+     "description": "Master switch para notificações automáticas de novo início de sessão (novo dispositivo/IP). DESLIGAR também desativa a notificação in-app de login_alert.",
+     "applies_to": ["POST /api/auth/login"],
+     "off_message": ""},
+
+    {"key": "disposable_email_block_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Bloquear emails descartáveis",
+     "description": "Quando LIGADO, /auth/check-email e /auth/register rejeitam emails de domínios descartáveis conhecidos (mailinator, yopmail, ...).",
+     "applies_to": ["GET /api/auth/check-email", "POST /api/auth/register"],
+     "off_message": ""},
+
+    # ---------- DISPLAY FLAGS (bool, FE consome via /public/settings) ----------
+    {"key": "show_view_counts_publicly", "group": "flags", "type": "bool", "default": True,
+     "label": "Mostrar contadores de views publicamente",
+     "description": "Quando DESLIGADO, o frontend esconde o contador de visualizações nos posts. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"],
+     "off_message": ""},
+
+    {"key": "show_like_counts_publicly", "group": "flags", "type": "bool", "default": True,
+     "label": "Mostrar contadores de likes publicamente",
+     "description": "Quando DESLIGADO, o frontend esconde o contador numérico de likes (mantém o coração). Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"],
+     "off_message": ""},
+
+    # ---------- HASHTAGS / MENTIONS (bool) ----------
+    {"key": "hashtags_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Hashtags",
+     "description": "Quando DESLIGADO, novos posts NÃO terão hashtags extraídas (ficam só como texto). Posts antigos mantêm hashtags. /trending continua a funcionar com o que já existe.",
+     "applies_to": ["POST /api/posts"],
+     "off_message": ""},
+
+    {"key": "mentions_enabled", "group": "flags", "type": "bool", "default": True,
+     "label": "Notificações de menções (@)",
+     "description": "Quando DESLIGADO, mencionar alguém num post deixa de criar a notificação 'mencionou-te'. O @ continua a aparecer como texto.",
+     "applies_to": ["POST /api/posts"],
+     "off_message": ""},
+
+    # ---------- USERNAME LIMITS (int) ----------
+    {"key": "min_username_chars", "group": "limits", "type": "int", "default": 3,
+     "min": 1, "max": 30,
+     "label": "Caracteres mínimos no username",
+     "description": "Aplicado em /auth/check-username e /auth/register. Substitui o limite hardcoded antigo (3).",
+     "applies_to": ["GET /api/auth/check-username", "POST /api/auth/register"]},
+
+    {"key": "max_username_chars", "group": "limits", "type": "int", "default": 20,
+     "min": 5, "max": 64,
+     "label": "Caracteres máximos no username",
+     "description": "Aplicado em /auth/check-username e /auth/register. Substitui o limite hardcoded antigo (20).",
+     "applies_to": ["GET /api/auth/check-username", "POST /api/auth/register"]},
+
+    # ---------- PASSWORD LIMITS (int) ----------
+    {"key": "min_password_chars", "group": "limits", "type": "int", "default": 6,
+     "min": 4, "max": 128,
+     "label": "Caracteres mínimos na palavra-passe",
+     "description": "Aplicado em registo, reposição e alteração de palavra-passe. Acima do mínimo (4) imposto a nível de schema.",
+     "applies_to": ["POST /api/auth/register", "POST /api/auth/reset-password", "POST /api/auth/change-password"]},
+
+    # ---------- POST LIMITS (int) ----------
+    {"key": "min_post_chars", "group": "limits", "type": "int", "default": 0,
+     "min": 0, "max": 200,
+     "label": "Caracteres mínimos por post (só texto)",
+     "description": "Quando >0, posts só com texto têm de ter pelo menos este número de caracteres. Posts com imagens, sondagem ou quote estão isentos. Admins bypass.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "scheduled_posts_max_days_ahead", "group": "limits", "type": "int", "default": 30,
+     "min": 1, "max": 365,
+     "label": "Antecedência máxima de agendamento (dias)",
+     "description": "Posts agendados não podem estar mais de N dias no futuro. Aplica-se tanto na criação como na reedição. Admins bypass.",
+     "applies_to": ["POST /api/posts", "PATCH /api/posts/{id}"]},
+
+    {"key": "max_drafts_per_user", "group": "limits", "type": "int", "default": 50,
+     "min": 1, "max": 1000,
+     "label": "Rascunhos máximos por utilizador",
+     "description": "Quantos posts em rascunho um utilizador pode acumular. Quando atingido, devolve 429. Admins bypass.",
+     "applies_to": ["POST /api/posts (is_draft=true)"]},
+
+    {"key": "max_poll_options", "group": "limits", "type": "int", "default": 4,
+     "min": 2, "max": 10,
+     "label": "Opções máximas por sondagem",
+     "description": "Quantas opções uma sondagem num post pode ter. Opções extra são truncadas server-side. Admins usam o cap interno do módulo.",
+     "applies_to": ["POST /api/posts (campo poll)"]},
+
+    {"key": "max_collaborators_per_post", "group": "limits", "type": "int", "default": 3,
+     "min": 1, "max": 20,
+     "label": "Colaboradores máximos por post",
+     "description": "Quantos co-autores um post pode ter (convites pendentes + aceites). Substitui o cap hardcoded antigo (3).",
+     "applies_to": ["POST /api/posts/{id}/collab/invite"]},
+
+    # ---------- COMMUNITY LIMITS (int) ----------
+    {"key": "max_communities_owned_per_user", "group": "limits", "type": "int", "default": 10,
+     "min": 1, "max": 100,
+     "label": "Comunidades máximas por utilizador (criadas)",
+     "description": "Quantas comunidades um utilizador pode criar/ser dono em simultâneo. Apagar uma liberta espaço. Admins bypass.",
+     "applies_to": ["POST /api/communities"]},
+
+    # ---------- BRANDING/LEGAL EXTRA (string) ----------
+    {"key": "meta_title_suffix", "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 80,
+     "label": "Sufixo de <title>",
+     "description": "Texto colocado no fim do <title> em cada página (ex: ' · Lusorae'). Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "signup_invite_code", "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 64,
+     "label": "Código de convite para registo",
+     "description": "Quando preenchido, /auth/register só aceita registos que enviem este código no campo `invite_code` do payload. Vazio = registo aberto.",
+     "applies_to": ["POST /api/auth/register"]},
+
+    {"key": "compliance_dpo_email", "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 120,
+     "label": "Email do Encarregado de Proteção de Dados (DPO)",
+     "description": "Email a contactar para questões de RGPD. Exposto via /api/public/settings para o footer/página legal.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "cookie_banner_text", "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 500, "format": "textarea",
+     "label": "Texto do banner de cookies",
+     "description": "Texto mostrado no banner de consentimento de cookies. Vazio = sem banner. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
 ]
 
 DEFAULT_SETTINGS = {item["key"]: item["default"] for item in SETTINGS_REGISTRY}
@@ -10812,6 +11101,19 @@ PUBLIC_SETTINGS_KEYS = {
     "discord_url", "github_url", "linkedin_url",
     # limit hints (new — exposed read-only so frontend can pre-validate)
     "notification_retention_days",
+    # ---------- NEW (expansão 2) ----------
+    # Public display flags FE consumes to hide counters
+    "show_view_counts_publicly", "show_like_counts_publicly",
+    # Password / username policy hints for FE pre-validation
+    "min_username_chars", "max_username_chars",
+    "min_password_chars",
+    "password_require_digit", "password_require_uppercase", "password_require_symbol",
+    # Compliance / legal extras
+    "meta_title_suffix",
+    "compliance_dpo_email",
+    "cookie_banner_text",
+    # Whether a signup invite is required (the *code itself* stays admin-only)
+    # — we don't leak signup_invite_code, only a boolean hint:
 }
 
 
@@ -10821,6 +11123,9 @@ async def public_settings():
     Cached server-side (5s) — safe for high-traffic polling from frontend."""
     s = await get_settings()
     out = {k: s.get(k) for k in PUBLIC_SETTINGS_KEYS if k in s}
+    # Boolean hint for the registration form: tell FE whether an invite code
+    # is required, WITHOUT leaking the actual code value (that's admin-only).
+    out["signup_invite_required"] = bool((s.get("signup_invite_code") or "").strip())
     return out
 
 
