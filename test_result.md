@@ -3244,6 +3244,80 @@ backend:
                 · Backend reinicia limpo, /api/health = 200.
 
 
+
+frontend:
+  - task: "Admin Settings — Reorganização por categorias + procura + sidebar"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Admin.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+              Painel Admin → Definições reorganizado por categorias dentro dos
+              3 grupos existentes (flags/limits/content). Backend NÃO mudou.
+
+              Nova taxonomia (frontend-only, derivada de key+group):
+
+              FLAGS (9 categorias):
+                · Contas & Registo (signup_open, account_deletion_enabled,
+                  new_users_auto_verify, read_only_mode,
+                  disposable_email_block_enabled)
+                · Segurança · Password (password_require_digit/uppercase/symbol)
+                · Conteúdo & Posts (posts_enabled, edit_post_enabled,
+                  delete_own_post_enabled, polls_enabled, hashtags_enabled,
+                  mentions_enabled, link_previews_enabled, uploads_enabled)
+                · Interacções (likes/reposts/bookmarks/follows/reactions/
+                  comments/stories_enabled)
+                · Mensagens & Email (dm_enabled, email_alerts_enabled)
+                · Descoberta (search_enabled, trending_enabled)
+                · Comunidades & Eventos (communities_create_enabled,
+                  events_create_enabled)
+                · Moderação (reports_enabled)
+                · Privacidade Pública (show_view_counts_publicly,
+                  show_like_counts_publicly)
+
+              LIMITS (10 categorias):
+                · Posts, Comentários, Mensagens (DM), Perfil & Conta,
+                  Auth & Sessões, Social, Stories & Reports, Feed,
+                  Notificações, Comunidades
+
+              CONTENT (11 categorias):
+                · Identidade da Plataforma, Aparência, Comunicação Pública,
+                  Legal & RGPD, Empresa (footer/legal), Localização, SEO,
+                  Rodapé, Redes Sociais, Versionamento, Registo (Invite)
+
+              UX extras:
+                · Caixa de procura no topo (filtra por label, key, descrição;
+                  com remoção de diacríticos para PT)
+                · Toggle "Só customizadas" (mostra apenas overrides)
+                · Sidebar sticky à esquerda com lista de categorias,
+                  contagens e badge amber para customizadas; clicável para
+                  scrollIntoView
+                · Cabeçalhos de categoria colapsáveis (chevron); botões
+                  "Expandir tudo" / "Recolher tudo" no toolbar de procura
+                · Empty-state quando filtros não dão match
+                · Layout grid 220px-sidebar + main em ≥lg, single-column em mobile
+
+              Implementação:
+                · `SETTINGS_CATEGORY_MAP` (objeto key→categoria por grupo)
+                · `SETTINGS_CATEGORY_ORDER` (ordem de render por grupo)
+                · `categorizeSetting(spec)` e `groupSettingsByCategory()` puros
+                · `normalize()` para procura case+diacritic insensitive
+                · Tudo no mesmo ficheiro `/app/frontend/src/pages/Admin.js`,
+                  zero alterações ao backend ou ao contrato API.
+
+              Validação:
+                · lint JS: 0 errors (warnings só os pré-existentes
+                  react-hooks/exhaustive-deps).
+                · webpack compiled OK.
+                · Não foi possível tirar screenshot via mcp_screenshot_tool
+                  (login form com cookie banner overlay a interceptar) — mas
+                  curl /api/auth/login confirma backend OK.
+
 agent_communication:
     - agent: "main"
       message: |

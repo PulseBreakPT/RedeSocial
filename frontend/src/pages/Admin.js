@@ -2454,11 +2454,234 @@ function StringSettingRow({ spec, currentValue, isOverride, onChange, onReset, s
     );
 }
 
+// =============================================================================
+// Settings categorisation (frontend-only, derived from key + group). Keeps the
+// backend contract untouched while giving the admin UI a far richer breakdown
+// than the 3 top-level buckets. Order in CATEGORY_ORDER drives render order.
+// =============================================================================
+const SETTINGS_CATEGORY_MAP = {
+    flags: {
+        // ---- FLAGS: explicit per-key category ----
+        signup_open: "Contas & Registo",
+        account_deletion_enabled: "Contas & Registo",
+        new_users_auto_verify: "Contas & Registo",
+        read_only_mode: "Contas & Registo",
+        disposable_email_block_enabled: "Contas & Registo",
+
+        posts_enabled: "Conteúdo & Posts",
+        edit_post_enabled: "Conteúdo & Posts",
+        delete_own_post_enabled: "Conteúdo & Posts",
+        polls_enabled: "Conteúdo & Posts",
+        hashtags_enabled: "Conteúdo & Posts",
+        mentions_enabled: "Conteúdo & Posts",
+        link_previews_enabled: "Conteúdo & Posts",
+        uploads_enabled: "Conteúdo & Posts",
+
+        likes_enabled: "Interacções",
+        reposts_enabled: "Interacções",
+        bookmarks_enabled: "Interacções",
+        follows_enabled: "Interacções",
+        reactions_enabled: "Interacções",
+        comments_enabled: "Interacções",
+        stories_enabled: "Interacções",
+
+        dm_enabled: "Mensagens & Email",
+        email_alerts_enabled: "Mensagens & Email",
+
+        search_enabled: "Descoberta",
+        trending_enabled: "Descoberta",
+
+        communities_create_enabled: "Comunidades & Eventos",
+        events_create_enabled: "Comunidades & Eventos",
+        reports_enabled: "Moderação",
+
+        password_require_digit: "Segurança · Password",
+        password_require_uppercase: "Segurança · Password",
+        password_require_symbol: "Segurança · Password",
+
+        show_view_counts_publicly: "Privacidade Pública",
+        show_like_counts_publicly: "Privacidade Pública",
+    },
+    limits: {
+        max_posts_per_hour: "Posts",
+        max_post_chars: "Posts",
+        max_images_per_post: "Posts",
+        max_hashtags_per_post: "Posts",
+        max_urls_per_post: "Posts",
+        max_mentions_per_post: "Posts",
+        min_post_chars: "Posts",
+        max_poll_options: "Posts",
+        max_collaborators_per_post: "Posts",
+        scheduled_posts_max_days_ahead: "Posts",
+        max_drafts_per_user: "Posts",
+
+        max_comments_per_hour: "Comentários",
+        max_comment_chars: "Comentários",
+
+        max_dms_per_hour: "Mensagens (DM)",
+        max_dms_to_strangers_per_hour: "Mensagens (DM)",
+        max_dm_chars: "Mensagens (DM)",
+
+        max_bio_chars: "Perfil & Conta",
+        max_display_name_chars: "Perfil & Conta",
+        min_username_chars: "Perfil & Conta",
+        max_username_chars: "Perfil & Conta",
+        min_password_chars: "Perfil & Conta",
+
+        session_ttl_days: "Auth & Sessões",
+        min_account_age_minutes_to_post: "Auth & Sessões",
+
+        max_follows_per_user: "Social",
+        max_follows_per_hour: "Social",
+        max_reactions_per_minute: "Social",
+        max_mentions_per_hour: "Social",
+
+        max_stories_per_day: "Stories & Reports",
+        max_reports_per_day: "Stories & Reports",
+
+        feed_page_size: "Feed",
+        notification_retention_days: "Notificações",
+        max_communities_owned_per_user: "Comunidades",
+    },
+    content: {
+        platform_name: "Identidade da Plataforma",
+        platform_tagline: "Identidade da Plataforma",
+        logo_url: "Identidade da Plataforma",
+        favicon_url: "Identidade da Plataforma",
+        og_image_url: "Identidade da Plataforma",
+        meta_title_suffix: "Identidade da Plataforma",
+
+        primary_color: "Aparência",
+        accent_color: "Aparência",
+        default_theme: "Aparência",
+
+        support_email: "Comunicação Pública",
+        welcome_message: "Comunicação Pública",
+        announcement_banner_text: "Comunicação Pública",
+        announcement_banner_level: "Comunicação Pública",
+        maintenance_message: "Comunicação Pública",
+
+        terms_url: "Legal & RGPD",
+        privacy_url: "Legal & RGPD",
+        tos_version: "Legal & RGPD",
+        compliance_dpo_email: "Legal & RGPD",
+        cookie_banner_text: "Legal & RGPD",
+
+        legal_company_name: "Empresa (footer/legal)",
+        legal_company_address: "Empresa (footer/legal)",
+        legal_company_vat: "Empresa (footer/legal)",
+        legal_company_country: "Empresa (footer/legal)",
+
+        default_locale: "Localização",
+        default_timezone: "Localização",
+
+        seo_default_description: "SEO",
+        footer_text: "Rodapé",
+
+        twitter_url: "Redes Sociais",
+        instagram_url: "Redes Sociais",
+        youtube_url: "Redes Sociais",
+        discord_url: "Redes Sociais",
+        github_url: "Redes Sociais",
+        linkedin_url: "Redes Sociais",
+
+        min_app_version: "Versionamento",
+        signup_invite_code: "Registo (Invite)",
+    },
+};
+
+// Display order for categories (per group). Keys not listed render last,
+// alphabetically.
+const SETTINGS_CATEGORY_ORDER = {
+    flags: [
+        "Contas & Registo",
+        "Segurança · Password",
+        "Conteúdo & Posts",
+        "Interacções",
+        "Mensagens & Email",
+        "Descoberta",
+        "Comunidades & Eventos",
+        "Moderação",
+        "Privacidade Pública",
+    ],
+    limits: [
+        "Posts",
+        "Comentários",
+        "Mensagens (DM)",
+        "Perfil & Conta",
+        "Auth & Sessões",
+        "Social",
+        "Stories & Reports",
+        "Feed",
+        "Notificações",
+        "Comunidades",
+    ],
+    content: [
+        "Identidade da Plataforma",
+        "Aparência",
+        "Comunicação Pública",
+        "Legal & RGPD",
+        "Empresa (footer/legal)",
+        "Localização",
+        "SEO",
+        "Rodapé",
+        "Redes Sociais",
+        "Versionamento",
+        "Registo (Invite)",
+    ],
+};
+
+function categorizeSetting(spec) {
+    if (!spec) return "Outros";
+    const map = SETTINGS_CATEGORY_MAP[spec.group] || {};
+    return map[spec.key] || "Outros";
+}
+
+// Group an array of specs into ordered [ [category, items[]], ... ]
+function groupSettingsByCategory(specs, group) {
+    const byCat = new Map();
+    for (const s of specs) {
+        const cat = categorizeSetting(s);
+        if (!byCat.has(cat)) byCat.set(cat, []);
+        byCat.get(cat).push(s);
+    }
+    const order = SETTINGS_CATEGORY_ORDER[group] || [];
+    const seen = new Set();
+    const out = [];
+    for (const cat of order) {
+        if (byCat.has(cat)) {
+            out.push([cat, byCat.get(cat)]);
+            seen.add(cat);
+        }
+    }
+    // Leftovers (alphabetical)
+    const leftovers = [...byCat.keys()].filter((c) => !seen.has(c)).sort();
+    for (const cat of leftovers) out.push([cat, byCat.get(cat)]);
+    return out;
+}
+
+function normalize(s) {
+    return (s || "").toString().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function settingMatchesQuery(spec, q) {
+    if (!q) return true;
+    const nq = normalize(q);
+    return (
+        normalize(spec.key).includes(nq) ||
+        normalize(spec.label).includes(nq) ||
+        normalize(spec.description).includes(nq)
+    );
+}
+
 function SettingsTab() {
     const [data, setData] = useState(null);  // {registry, values, defaults, overrides, history}
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [reloadAt, setReloadAt] = useState(Date.now());
+    const [query, setQuery] = useState("");
+    const [onlyCustom, setOnlyCustom] = useState(false);
+    const [collapsedCats, setCollapsedCats] = useState(() => new Set());
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -2525,11 +2748,122 @@ function SettingsTab() {
     }
     if (!data) return null;
 
-    const flags = (data.registry || []).filter((s) => s.group === "flags");
-    const limits = (data.registry || []).filter((s) => s.group === "limits");
-    const contents = (data.registry || []).filter((s) => s.group === "content");
+    const flagsAll = (data.registry || []).filter((s) => s.group === "flags");
+    const limitsAll = (data.registry || []).filter((s) => s.group === "limits");
+    const contentsAll = (data.registry || []).filter((s) => s.group === "content");
     const overrideKeys = Object.keys(data.overrides || {});
     const totalCustom = overrideKeys.length;
+
+    // Apply search + onlyCustom filter
+    const overrideSet = new Set(overrideKeys);
+    const applyFilters = (arr) => arr.filter((s) => {
+        if (!settingMatchesQuery(s, query)) return false;
+        if (onlyCustom && !overrideSet.has(s.key)) return false;
+        return true;
+    });
+    const flagsFiltered = applyFilters(flagsAll);
+    const limitsFiltered = applyFilters(limitsAll);
+    const contentsFiltered = applyFilters(contentsAll);
+
+    const flagsByCat = groupSettingsByCategory(flagsFiltered, "flags");
+    const limitsByCat = groupSettingsByCategory(limitsFiltered, "limits");
+    const contentsByCat = groupSettingsByCategory(contentsFiltered, "content");
+
+    const totalVisible = flagsFiltered.length + limitsFiltered.length + contentsFiltered.length;
+    const totalAll = flagsAll.length + limitsAll.length + contentsAll.length;
+
+    // Helpers for the sticky sidebar nav (anchor links to each category)
+    const slugify = (s) => "set-" + (s || "").toLowerCase()
+        .normalize("NFD").replace(/\p{Diacritic}/gu, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const sectionAnchor = (group, cat) => `${slugify(group)}--${slugify(cat)}`;
+    const scrollToAnchor = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const toggleCollapsed = (id) => {
+        setCollapsedCats((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const renderGroup = (label, icon, group, byCat, total, totalVisibleGroup, footerHint) => {
+        if (totalVisibleGroup === 0) return null;
+        return (
+            <div className="space-y-3" data-testid={`settings-group-${group}`}>
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
+                    {icon}
+                    <span>{label}</span>
+                    <span className="text-slate-300">({totalVisibleGroup}{totalVisibleGroup !== total ? ` / ${total}` : ""})</span>
+                    {footerHint && (
+                        <span className="text-slate-300 normal-case tracking-normal">— {footerHint}</span>
+                    )}
+                </div>
+                {byCat.map(([cat, items]) => {
+                    const anchor = sectionAnchor(group, cat);
+                    const collapsed = collapsedCats.has(anchor);
+                    return (
+                        <section
+                            key={anchor}
+                            id={anchor}
+                            className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden scroll-mt-24"
+                            data-testid={`settings-category-${anchor}`}
+                        >
+                            <header
+                                className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between gap-3 bg-gradient-to-r from-slate-50/80 to-white cursor-pointer select-none hover:bg-slate-50"
+                                onClick={() => toggleCollapsed(anchor)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCollapsed(anchor); } }}
+                                aria-expanded={!collapsed}
+                            >
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition-transform ${collapsed ? "" : "rotate-90"}`} />
+                                    <div className="text-[13px] font-semibold text-slate-900 truncate">{cat}</div>
+                                    <div className="text-[10.5px] font-mono text-slate-400">{items.length}</div>
+                                </div>
+                                {items.some((s) => overrideSet.has(s.key)) && (
+                                    <div className="text-[10.5px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-1.5 py-0.5 whitespace-nowrap">
+                                        {items.filter((s) => overrideSet.has(s.key)).length} customizada(s)
+                                    </div>
+                                )}
+                            </header>
+                            {!collapsed && (
+                                <div className="p-2.5">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+                                        {items.map((spec) => {
+                                            const commonProps = {
+                                                key: spec.key,
+                                                spec,
+                                                currentValue: data.values?.[spec.key],
+                                                isOverride: spec.key in (data.overrides || {}),
+                                                onChange: (v) => patchOne(spec.key, v),
+                                                onReset: () => resetOne(spec.key),
+                                                saving,
+                                            };
+                                            if (group === "flags") return <FeatureFlagRow {...commonProps} />;
+                                            if (group === "limits") return <LimitRow {...commonProps} />;
+                                            return <StringSettingRow {...commonProps} />;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    // Build sidebar entries
+    const sidebarSections = [
+        { group: "flags", label: "Feature Flags", icon: <ToggleRight className="h-3.5 w-3.5" />, byCat: flagsByCat, count: flagsFiltered.length },
+        { group: "limits", label: "Limites", icon: <Gauge className="h-3.5 w-3.5" />, byCat: limitsByCat, count: limitsFiltered.length },
+        { group: "content", label: "Conteúdo & Branding", icon: <FileText className="h-3.5 w-3.5" />, byCat: contentsByCat, count: contentsFiltered.length },
+    ].filter((sec) => sec.count > 0);
 
     return (
         <div className="space-y-5">
@@ -2542,7 +2876,7 @@ function SettingsTab() {
                     <div>
                         <div className="font-display text-[20px] leading-tight text-slate-900">Definições da Plataforma</div>
                         <div className="text-[12px] text-slate-500 mt-0.5">
-                            Feature flags + limites globais. Aplicam-se em runtime (cache 5s). Admins fazem bypass de todas as flags para conseguirem testar.
+                            {totalAll} definições organizadas em categorias. Aplicam-se em runtime (cache 5s). Admins fazem bypass.
                         </div>
                     </div>
                 </div>
@@ -2574,67 +2908,157 @@ function SettingsTab() {
                 </div>
             </div>
 
-            {/* FEATURE FLAGS */}
-            <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
+            {/* Search + filter bar */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="relative flex-1 min-w-0">
+                    <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Procurar definições (nome, chave, descrição)…"
+                        className="w-full h-9 pl-9 pr-9 rounded-lg border border-slate-200 bg-white text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--coral-500)]/30 focus:border-[var(--coral-500)]/40"
+                        data-testid="settings-search"
+                    />
+                    {query && (
+                        <button
+                            type="button"
+                            onClick={() => setQuery("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md hover:bg-slate-100 flex items-center justify-center text-slate-400"
+                            title="Limpar"
+                        >
+                            <XIcon className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+                <label className="flex items-center gap-2 text-[12px] text-slate-700 cursor-pointer whitespace-nowrap select-none">
+                    <input
+                        type="checkbox"
+                        checked={onlyCustom}
+                        onChange={(e) => setOnlyCustom(e.target.checked)}
+                        className="h-4 w-4 accent-[var(--coral-500)]"
+                        data-testid="settings-only-custom"
+                    />
+                    Só customizadas
+                    {totalCustom > 0 && (
+                        <span className="text-[10.5px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-1.5 py-0.5">
+                            {totalCustom}
+                        </span>
+                    )}
+                </label>
+                <button
+                    type="button"
+                    onClick={() => setCollapsedCats(new Set())}
+                    className="h-9 px-3 rounded-lg border border-slate-200 text-[12px] text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 whitespace-nowrap"
+                    title="Expandir todas as categorias"
+                >
                     <ToggleRight className="h-3.5 w-3.5" />
-                    Feature Flags <span className="text-slate-300">({flags.length})</span>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-                    {flags.map((spec) => (
-                        <FeatureFlagRow
-                            key={spec.key}
-                            spec={spec}
-                            currentValue={data.values?.[spec.key]}
-                            isOverride={spec.key in (data.overrides || {})}
-                            onChange={(v) => patchOne(spec.key, v)}
-                            onReset={() => resetOne(spec.key)}
-                            saving={saving}
-                        />
-                    ))}
-                </div>
+                    Expandir
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        const allIds = new Set();
+                        [["flags", flagsByCat], ["limits", limitsByCat], ["content", contentsByCat]].forEach(([g, byCat]) => {
+                            byCat.forEach(([cat]) => allIds.add(sectionAnchor(g, cat)));
+                        });
+                        setCollapsedCats(allIds);
+                    }}
+                    className="h-9 px-3 rounded-lg border border-slate-200 text-[12px] text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 whitespace-nowrap"
+                    title="Recolher todas"
+                >
+                    <ToggleLeft className="h-3.5 w-3.5" />
+                    Recolher
+                </button>
             </div>
 
-            {/* LIMITES */}
-            <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
-                    <Gauge className="h-3.5 w-3.5" />
-                    Limites Globais <span className="text-slate-300">({limits.length})</span>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
-                    {limits.map((spec) => (
-                        <LimitRow
-                            key={spec.key}
-                            spec={spec}
-                            currentValue={data.values?.[spec.key]}
-                            isOverride={spec.key in (data.overrides || {})}
-                            onChange={(v) => patchOne(spec.key, v)}
-                            onReset={() => resetOne(spec.key)}
-                            saving={saving}
-                        />
-                    ))}
-                </div>
-            </div>
+            {/* Layout: sidebar + content */}
+            <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
+                {/* Sticky sidebar nav */}
+                <aside className="hidden lg:block">
+                    <div className="sticky top-4 space-y-3">
+                        {sidebarSections.length === 0 && (
+                            <div className="text-[12px] text-slate-400 px-3 py-2">Nada a mostrar.</div>
+                        )}
+                        {sidebarSections.map((sec) => (
+                            <div key={sec.group} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                                <div className="px-3 py-2 border-b border-slate-100 flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500 font-mono">
+                                    {sec.icon}
+                                    <span>{sec.label}</span>
+                                    <span className="ml-auto text-slate-300">{sec.count}</span>
+                                </div>
+                                <ul className="py-1">
+                                    {sec.byCat.map(([cat, items]) => {
+                                        const anchor = sectionAnchor(sec.group, cat);
+                                        const customCount = items.filter((s) => overrideSet.has(s.key)).length;
+                                        return (
+                                            <li key={anchor}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => scrollToAnchor(anchor)}
+                                                    className="w-full text-left px-3 py-1.5 text-[12.5px] text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                                    data-testid={`settings-nav-${anchor}`}
+                                                >
+                                                    <span className="truncate flex-1">{cat}</span>
+                                                    <span className="text-[10.5px] font-mono text-slate-400">{items.length}</span>
+                                                    {customCount > 0 && (
+                                                        <span className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-sm px-1">
+                                                            {customCount}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </aside>
 
-            {/* CONTEÚDO & BRANDING */}
-            <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
-                    <FileText className="h-3.5 w-3.5" />
-                    Conteúdo, Branding & Legal <span className="text-slate-300">({contents.length})</span>
-                    <span className="text-slate-300 normal-case tracking-normal">— aplicado em runtime, exposto em <code>/api/public/settings</code></span>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5" data-testid="settings-content-grid">
-                    {contents.map((spec) => (
-                        <StringSettingRow
-                            key={spec.key}
-                            spec={spec}
-                            currentValue={data.values?.[spec.key]}
-                            isOverride={spec.key in (data.overrides || {})}
-                            onChange={(v) => patchOne(spec.key, v)}
-                            onReset={() => resetOne(spec.key)}
-                            saving={saving}
-                        />
-                    ))}
+                {/* Main content */}
+                <div className="space-y-6 min-w-0">
+                    {totalVisible === 0 && (
+                        <div className="bg-white border border-slate-200 rounded-2xl p-10 shadow-sm text-center text-[13px] text-slate-500 flex flex-col items-center gap-2">
+                            <Info className="h-5 w-5 text-slate-300" />
+                            <div>Nenhuma definição corresponde aos filtros.</div>
+                            <button
+                                type="button"
+                                onClick={() => { setQuery(""); setOnlyCustom(false); }}
+                                className="mt-1 text-[12px] text-[var(--coral-500)] hover:underline"
+                            >
+                                Limpar filtros
+                            </button>
+                        </div>
+                    )}
+
+                    {renderGroup(
+                        "Feature Flags",
+                        <ToggleRight className="h-3.5 w-3.5" />,
+                        "flags",
+                        flagsByCat,
+                        flagsAll.length,
+                        flagsFiltered.length,
+                        null,
+                    )}
+                    {renderGroup(
+                        "Limites Globais",
+                        <Gauge className="h-3.5 w-3.5" />,
+                        "limits",
+                        limitsByCat,
+                        limitsAll.length,
+                        limitsFiltered.length,
+                        null,
+                    )}
+                    {renderGroup(
+                        "Conteúdo, Branding & Legal",
+                        <FileText className="h-3.5 w-3.5" />,
+                        "content",
+                        contentsByCat,
+                        contentsAll.length,
+                        contentsFiltered.length,
+                        <>aplicado em runtime, exposto em <code>/api/public/settings</code></>,
+                    )}
                 </div>
             </div>
 
