@@ -181,7 +181,7 @@ const NAV_GROUPS = [
         items: [
             { key: "settings",   label: "Definições", icon: Settings2 },
             { key: "system",     label: "Sistema",   icon: Server },
-            { key: "audit",      label: "Audit log", icon: History },
+            { key: "audit",      label: "Auditoria", icon: History },
         ],
     },
 ];
@@ -279,7 +279,7 @@ function OverviewTab({ onNavigate }) {
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                     <Hint focusable={false} side="bottom" text={{ title: "Auto-atualização", body: "Recarrega KPIs, system health e atalhos a cada N segundos. 'Off' desliga o polling — manténs visível só o snapshot inicial." }}>
                         <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 rounded-full p-1">
-                            {[{v:0,l:"Off"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
+                            {[{v:0,l:"Pausa"},{v:15,l:"15s"},{v:30,l:"30s"},{v:60,l:"60s"}].map((o) => (
                                 <button key={o.v}
                                     onClick={() => setAutoRefresh(o.v)}
                                     data-testid={`admin-overview-autorefresh-${o.v}`}
@@ -703,7 +703,7 @@ function SystemTab() {
                             <KV k="Hostname" v={status.hostname} mono />
                             <KV k="PID" v={status.pid} mono />
                             <KV k="Python" v={status.python} mono />
-                            <KV k="Platform" v={status.platform} mono />
+                            <KV k="Plataforma" v={status.platform} mono />
                             <KV k="DB name" v={status.env?.db_name} mono hint="Nome da base de dados Mongo activa." />
                             <KV k="JWT secret" v={status.env?.has_jwt_secret ? "configurado" : "EM FALTA"} color={status.env?.has_jwt_secret ? "text-slate-700" : "text-red-600"} hint={status.env?.has_jwt_secret ? "Chave de assinatura de tokens JWT está configurada." : "JWT secret em falta — autenticação não funcionará. Configura a variável de ambiente JWT_SECRET."} />
                             <KV k="Verificado" v={fmtRelative(status.checked_at)} />
@@ -808,9 +808,9 @@ function SystemTab() {
                                 <KV k="DB" v={database.db.db_name} mono />
                                 <KV k="Coleções" v={fmtNum(database.db.collections)} mono />
                                 <KV k="Documentos" v={fmtNum(database.db.objects)} mono />
-                                <KV k="Data size" v={fmtBytes(database.db.data_size_bytes)} mono hint="Tamanho do conteúdo de todos os documentos (BSON). Não inclui índices." />
-                                <KV k="Storage size" v={fmtBytes(database.db.storage_size_bytes)} mono hint="Espaço ocupado em disco pelos dados (com overhead de blocos)." />
-                                <KV k="Index size" v={fmtBytes(database.db.index_size_bytes)} mono hint="Espaço total dos índices. Se for desproporcional ao data size, revê índices desnecessários." />
+                                <KV k="Dados" v={fmtBytes(database.db.data_size_bytes)} mono hint="Tamanho do conteúdo de todos os documentos (BSON). Não inclui índices." />
+                                <KV k="Armazenamento" v={fmtBytes(database.db.storage_size_bytes)} mono hint="Espaço ocupado em disco pelos dados (com overhead de blocos)." />
+                                <KV k="Índices" v={fmtBytes(database.db.index_size_bytes)} mono hint="Espaço total dos índices. Se for desproporcional ao tamanho dos dados, revê índices desnecessários." />
                                 <KV k="Índices" v={fmtNum(database.db.indexes)} mono />
                             </dl>
                             {Array.isArray(database.collections) && (
@@ -1120,7 +1120,7 @@ function UsersTab({ onOpenDrawer }) {
                             data-testid="admin-users-bulk-logout"
                             title="Forçar logout"
                             className="h-8 px-2.5 sm:px-3 rounded-full bg-white/15 hover:bg-white/25 text-[11.5px] sm:text-[12px] font-medium disabled:opacity-40 inline-flex items-center gap-1 sm:gap-1.5">
-                            <UserX size={13} /> <span className="hidden sm:inline">Force logout</span>
+                            <UserX size={13} /> <span className="hidden sm:inline">Forçar saída</span>
                         </button>
                         <button onClick={() => setSelected(new Set())}
                             aria-label="Limpar seleção"
@@ -2133,25 +2133,25 @@ function SessionsTab() {
 // -----------------------------------------------------------------
 const ACTION_LABELS = {
     "user.verify": "Verificação",
-    "user.admin_role": "Admin role",
-    "user.ban": "Ban",
-    "user.unban": "Unban",
-    "user.force_logout": "Force logout",
+    "user.admin_role": "Papel de admin",
+    "user.ban": "Banimento",
+    "user.unban": "Desbanimento",
+    "user.force_logout": "Forçar saída",
     "user.delete": "Eliminar utilizador",
-    "user.bulk": "Bulk utilizadores",
+    "user.bulk": "Ação em massa (utilizadores)",
     "post.delete": "Eliminar post",
-    "post.feature": "Destaque post",
-    "post.bulk": "Bulk posts",
+    "post.feature": "Destacar post",
+    "post.bulk": "Ação em massa (posts)",
     "comment.delete": "Eliminar comentário",
     "story.delete": "Eliminar story",
-    "hashtag.blacklist": "Hashtag blacklist",
-    "broadcast.send": "Broadcast",
+    "hashtag.blacklist": "Lista negra de hashtags",
+    "broadcast.send": "Difusão",
     "report.resolve": "Resolver report",
     "community.delete": "Eliminar comunidade",
     "event.delete": "Eliminar evento",
     "session.revoke": "Revogar sessão",
-    "export.users": "Export utilizadores",
-    "export.audit": "Export audit log",
+    "export.users": "Exportar utilizadores",
+    "export.audit": "Exportar auditoria",
     "settings.update": "Definição alterada",
     "settings.reset": "Definição reposta",
 };
@@ -3982,13 +3982,13 @@ function UserDrawer({ user, onClose }) {
                         <dl className="space-y-2 text-[13px]" data-testid="admin-user-drawer-profile">
                             {[
                                 ["ID", u.id],
-                                ["Username", `@${u.username}`],
+                                ["Utilizador", `@${u.username}`],
                                 ["Nome", u.name || "—"],
                                 ["Email", u.email],
                                 ["Cidade", u.city || "—"],
                                 ["Bio", u.bio || "—"],
                                 ["Criado", fmtDate(u.created_at)],
-                                ["Last seen", fmtDate(u.last_seen)],
+                                ["Última atividade", fmtDate(u.last_seen)],
                                 ["Seguidores", `${u.followers_count} · segue ${u.following_count}`],
                                 ["Privado", u.private ? "sim" : "não"],
                                 ["Verificado", u.verified ? "sim" : "não"],
@@ -3998,10 +3998,10 @@ function UserDrawer({ user, onClose }) {
                                 ["Banido", u.banned ? `sim — ${u.ban_reason || "(sem motivo)"}` : "não"],
                                 ["Suspenso", u.suspended_active ? `até ${fmtDate(u.suspended_until)} — ${u.suspend_reason || "(sem motivo)"}` : "não"],
                                 ["Silenciado", u.muted_active ? `até ${fmtDate(u.muted_until)} — ${u.mute_reason || "(sem motivo)"}` : "não"],
-                                ["Shadow mute", u.shadow_muted ? `sim — ${u.shadow_mute_reason || "(sem motivo)"}` : "não"],
+                                ["Silêncio oculto", u.shadow_muted ? `sim — ${u.shadow_mute_reason || "(sem motivo)"}` : "não"],
                                 ["Congelado", u.frozen ? `sim — ${u.frozen_reason || "(sem motivo)"}` : "não"],
                                 ["Suspeito", u.flagged_suspicious ? `sim — ${u.suspicious_reason || "(sem motivo)"}` : "não"],
-                                ["Rate limit", (u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `posts ${u.rate_limit.max_posts ?? "∞"} / coments ${u.rate_limit.max_comments ?? "∞"} por ${u.rate_limit.window_hours}h` : "sem limite"],
+                                ["Limite de taxa", (u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `posts ${u.rate_limit.max_posts ?? "∞"} / coments ${u.rate_limit.max_comments ?? "∞"} por ${u.rate_limit.window_hours}h` : "sem limite"],
                                 ["Posts", u.posts_count],
                                 ["Comentários", u.comments_count],
                                 ["Stories", u.stories_count],
@@ -4265,7 +4265,7 @@ function UserDrawer({ user, onClose }) {
                                 <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Acesso</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     <ActionButton icon={u.muted_active ? Eye : VolumeX} label={u.muted_active ? "Desilenciar" : "Silenciar"} onClick={u.muted_active ? doUnmute : doMute} testid="admin-action-mute" disabled={actionBusy === "mute" || actionBusy === "unmute"} kind={u.muted_active ? "good" : "warn"} />
-                                    <ActionButton icon={Ghost} label={u.shadow_muted ? "Sair shadow" : "Shadow mute"} onClick={doShadowMute} testid="admin-action-shadow-mute" disabled={actionBusy === "shadow"} kind={u.shadow_muted ? "good" : "warn"} />
+                                    <ActionButton icon={Ghost} label={u.shadow_muted ? "Tirar silêncio oculto" : "Silêncio oculto"} onClick={doShadowMute} testid="admin-action-shadow-mute" disabled={actionBusy === "shadow"} kind={u.shadow_muted ? "good" : "warn"} />
                                     <ActionButton icon={Pause} label={u.suspended_active ? "Tirar suspensão" : "Suspender"} onClick={u.suspended_active ? doUnsuspend : doSuspend} testid="admin-action-suspend" disabled={actionBusy === "suspend" || actionBusy === "unsuspend"} kind={u.suspended_active ? "good" : "danger"} />
                                     <ActionButton icon={Ban} label={u.banned ? "Desbanir" : "Banir"} onClick={doBan} testid="admin-action-ban" disabled={actionBusy === "ban" || actionBusy === "unban"} kind={u.banned ? "good" : "danger"} />
                                     <ActionButton icon={Snowflake} label={u.frozen ? "Descongelar conta" : "Congelar conta"} onClick={doFreeze} testid="admin-action-freeze" disabled={actionBusy === "freeze"} kind={u.frozen ? "good" : "warn"} title="Bloqueia todas as interações (read-only) e revoga sessões" />
@@ -4276,7 +4276,7 @@ function UserDrawer({ user, onClose }) {
                             <div>
                                 <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Limites</div>
                                 <div className="grid grid-cols-1 gap-2">
-                                    <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar rate-limit (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / replies / posts"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
+                                    <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar limite (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / replies / posts"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
                                 </div>
                             </div>
                             <div>
@@ -4296,7 +4296,7 @@ function UserDrawer({ user, onClose }) {
                             </div>
                             <div className="ops-callout ops-callout--info text-[11.5px]">
                                 <Info size={13} />
-                                <div><strong>Ações registadas:</strong> todas estas ações geram entradas no audit log e ficam visíveis no separador "Atividade" deste utilizador.</div>
+                                <div><strong>Ações registadas:</strong> todas estas ações geram entradas no registo de auditoria e ficam visíveis no separador "Atividade" deste utilizador.</div>
                             </div>
                         </div>
                     )}
@@ -4396,10 +4396,10 @@ function AntiSpamTab({ onOpenDrawer }) {
         { k: "all", l: "Tudo" },
         { k: "flagged", l: "Suspeitos" },
         { k: "muted", l: "Silenciados" },
-        { k: "shadow", l: "Shadow" },
-        { k: "rate_limited", l: "Rate-limited" },
+        { k: "shadow", l: "Silêncio oculto" },
+        { k: "rate_limited", l: "Com limite" },
         { k: "frozen", l: "Congelados" },
-        { k: "mass_reported", l: "Mass-reported (7d)" },
+        { k: "mass_reported", l: "Reports em massa (7d)" },
     ];
 
     return (
@@ -4419,8 +4419,8 @@ function AntiSpamTab({ onOpenDrawer }) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="admin-antispam-counters">
                     <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-red-50 text-red-700" icon={ShieldAlert} />
                     <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-slate-100 text-slate-700" icon={VolumeX} />
-                    <CounterCard label="Shadow" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
-                    <CounterCard label="Rate-limited" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} />
+                    <CounterCard label="Silêncio oculto" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
+                    <CounterCard label="Com limite" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} />
                     <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-slate-100 text-slate-700" icon={Snowflake} />
                     <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} />
                     <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-red-50 text-red-700" icon={Flag} />

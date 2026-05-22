@@ -147,7 +147,7 @@ function LiveDot({ on, label }) {
 // Reusable: auto-refresh pill group
 // ─────────────────────────────────────────────────────────────────
 function AutoRefreshPill({ value, onChange, testIdPrefix = "sec-autorefresh" }) {
-    const opts = [{ v: 0, l: "Off" }, { v: 5, l: "5s" }, { v: 15, l: "15s" }, { v: 30, l: "30s" }, { v: 60, l: "60s" }];
+    const opts = [{ v: 0, l: "Pausa" }, { v: 5, l: "5s" }, { v: 15, l: "15s" }, { v: 30, l: "30s" }, { v: 60, l: "60s" }];
     return (
         <div className="inline-flex items-center gap-0.5 bg-slate-50 rounded-full p-1" title="Auto-atualização">
             {opts.map((o) => (

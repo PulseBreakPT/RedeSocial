@@ -3,7 +3,7 @@ import React from "react";
 const STATUS_LABEL = {
     operational: "Operacional",
     degraded:    "Degradado",
-    down:        "Down",
+    down:        "Inativo",
 };
 
 export function ServiceStatus({ services = [], onSelect }) {

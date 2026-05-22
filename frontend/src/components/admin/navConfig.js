@@ -79,6 +79,20 @@ export const NAV_GROUPS = [
 export const NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 export const NAV_BY_KEY = NAV_ITEMS.reduce((acc, it) => { acc[it.key] = it; return acc; }, {});
 
+/**
+ * Tabs whose data has a meaningful time dimension. Only on these tabs does
+ * the global time-range selector in the topbar actually change anything
+ * visible — on the others we hide it to avoid the M-9 "no-op control"
+ * confusion documented in the audit.
+ */
+export const TIME_RANGE_TABS = new Set([
+    "overview",
+    "system",
+    "security",
+    "reports",
+    "antispam",
+]);
+
 /** Helpers — derive tone for a given tab key (falls back to slate). */
 export function toneForKey(key) {
     const item = NAV_BY_KEY[key];

@@ -18,7 +18,7 @@ export function AdminSidebar({
     user,
     onProfileClick,
     openReports = 0,
-    appEnv = "production",
+    appEnv = null,
     inDrawer = false,
     onClose,
 }) {
@@ -57,9 +57,14 @@ export function AdminSidebar({
                 <Link to="/admin" className="ops-side__brand" data-testid="admin-sidebar-brand">
                     <span className="ops-side__brand-mark">L</span>
                     <span className="ops-side__brand-name">Lusorae</span>
-                    <span className={`ops-side__brand-env ops-side__brand-env--${(appEnv || "prod").toLowerCase()}`}>
-                        {appEnv.slice(0, 4)}
-                    </span>
+                    {appEnv ? (
+                        <span
+                            className={`ops-side__brand-env ops-side__brand-env--${String(appEnv || "").toLowerCase()}`}
+                            data-testid={`admin-sidebar-env-${String(appEnv).toLowerCase()}`}
+                        >
+                            {String(appEnv).slice(0, 4)}
+                        </span>
+                    ) : null}
                 </Link>
                 {inDrawer && (
                     <button
@@ -158,7 +163,7 @@ export function AdminSidebar({
                                 {user.is_admin ? (
                                     <span className="ops-side__profile-role-tag ops-side__profile-role-tag--admin">Admin</span>
                                 ) : (
-                                    <span className="ops-side__profile-role-tag">Member</span>
+                                    <span className="ops-side__profile-role-tag">Membro</span>
                                 )}
                                 <span className="ops-side__profile-handle">@{user.username}</span>
                             </div>

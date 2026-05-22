@@ -24,7 +24,7 @@ function matchScore(item, q) {
     return 1;
 }
 
-export function CommandPalette({ open, onClose, onNavigate }) {
+export function CommandPalette({ open, onClose, onNavigate, onDeepLink }) {
     const [q, setQ] = useState("");
     const [activeIdx, setActiveIdx] = useState(0);
     const inputRef = useRef(null);

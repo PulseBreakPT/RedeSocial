@@ -10,12 +10,15 @@ import { api } from "../lib/api";
  *   activity items to the ticker in real time.
  * - When the WS is offline / degraded, automatically polls every
  *   `pollMs` (default 8s) so the dashboard never goes stale.
+ * - Accepts a `window` option (15m/1h/24h/7d) which is forwarded to the
+ *   snapshot endpoint so the KPI strip honours the global time-range
+ *   selector instead of being hardcoded to 15min (C-1 fix).
  *
  * Returns:
  *   { data, error, loading, refresh, wsState, lastEventAt, activity }
  *   activity is the always-up-to-date list (snapshot ∪ live events), capped.
  */
-export function useAdminLive({ pollMs = 8000, activityCap = 40 } = {}) {
+export function useAdminLive({ pollMs = 8000, activityCap = 40, window = "15m" } = {}) {
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -31,7 +34,7 @@ export function useAdminLive({ pollMs = 8000, activityCap = 40 } = {}) {
         inFlightRef.current = true;
         if (!background) setLoading(true);
         try {
-            const { data: snap } = await api.get("/admin/cockpit/snapshot");
+            const { data: snap } = await api.get(`/admin/cockpit/snapshot?window=${encodeURIComponent(window)}`);
             if (!mountedRef.current) return;
             setData(snap);
             setError(null);
@@ -43,11 +46,14 @@ export function useAdminLive({ pollMs = 8000, activityCap = 40 } = {}) {
             inFlightRef.current = false;
             if (mountedRef.current) setLoading(false);
         }
-    }, []);
+    }, [window]);
 
     // Initial fetch
     useEffect(() => {
         mountedRef.current = true;
+        // Reset in-flight gate so a window change re-fetches immediately
+        // instead of being suppressed by an inflight request for the old window.
+        inFlightRef.current = false;
         fetchSnapshot(false);
         return () => { mountedRef.current = false; };
     }, [fetchSnapshot]);

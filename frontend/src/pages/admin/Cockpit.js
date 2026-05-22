@@ -26,7 +26,7 @@ function Skeleton({ height = 80 }) {
 }
 
 export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
-    const { data, error, loading, refresh, wsState, activity } = useAdminLive({ pollMs: 8000 });
+    const { data, error, loading, refresh, wsState, activity } = useAdminLive({ pollMs: 8000, window: timeRange });
     const [timeline, setTimeline] = useState(null);
     const [timelineLoading, setTimelineLoading] = useState(false);
     const [urgentReports, setUrgentReports] = useState([]);
@@ -322,7 +322,7 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                         </Widget>
                         <Widget
                             title="Distribuição geográfica"
-                            sub={geo && geo.total_users ? `· ${Number(geo.total_users).toLocaleString("pt-PT")} users` : ""}
+                            sub={geo && geo.total_users ? `· ${Number(geo.total_users).toLocaleString("pt-PT")} utilizadores` : ""}
                             info={{
                                 title: "Onde estão os teus utilizadores",
                                 body: "Distribuição por região PT declarada no perfil. Inclui % do total e contagem absoluta. Útil para campanhas regionais. Clica numa região para abrir o directório filtrado.",
@@ -342,14 +342,14 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
                     <Widget
                         title="Atividade ao vivo"
-                        sub={wsState === "live" ? "· ws ligado" : "· polling"}
+                        sub={wsState === "live" ? "· ws ligado" : "· a sondar"}
                         info={{
                             title: "Stream de eventos da plataforma",
                             body: "Reports, ações administrativas, eventos de auth e ws_connect. Quando o WebSocket está ligado os eventos chegam em <1s; caso contrário fazemos polling a cada 8s. Clica num evento para abrir o contexto.",
                             source: "WS cockpit_event · POLL /api/admin/cockpit/snapshot",
                         }}
                         bodyClass="ops-widget__body--flush"
-                        action={{ label: "Audit log →", onClick: () => onNavigate && onNavigate("audit") }}
+                        action={{ label: "Auditoria →", onClick: () => onNavigate && onNavigate("audit") }}
                         data-testid="cockpit-widget-activity"
                     >
                         {loading && !data && activity.length === 0 ? <div style={{ padding: 16 }}><Skeleton height={140} /></div> : (
@@ -391,7 +391,7 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                     }}
                     data-testid="cockpit-widget-ws"
                 >
-                    <WebSocketMini sockets={wsSockets} users={wsUsers} sparkline={kpis.users_online && kpis.users_online.sparkline} live={wsState === "live"} onClick={() => onNavigate && onNavigate("system")} />
+                    <WebSocketMini sockets={wsSockets} users={wsUsers} live={wsState === "live"} onClick={() => onNavigate && onNavigate("system")} />
                 </Widget>
                 <Widget
                     title="Segurança (24h)"
@@ -441,10 +441,10 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                     {deploy ? <DeployMini data={deploy} /> : <Skeleton height={80} />}
                 </Widget>
                 <Widget
-                    title="Audit log"
+                    title="Auditoria"
                     info={{
-                        title: "Histórico imutável de acções admin",
-                        body: "Toda acção em /api/admin/* fica registada com actor, target, payload e timestamp. Não pode ser apagado. Útil para responsabilização e revisão a posteriori.",
+                        title: "Histórico imutável de ações admin",
+                        body: "Toda ação em /api/admin/* fica registada com actor, alvo, payload e timestamp. Não pode ser apagado. Útil para responsabilização e revisão a posteriori.",
                         source: "GET /api/admin/audit",
                     }}
                     action={{ label: "Histórico →", onClick: () => onNavigate && onNavigate("audit") }}
@@ -476,3 +476,4 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
 }
 
 export default Cockpit;
+efault Cockpit;

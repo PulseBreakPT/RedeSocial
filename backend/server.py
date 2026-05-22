@@ -177,6 +177,31 @@ api = APIRouter(prefix="/api")
 _PROCESS_STARTED_AT = time.time()
 _PROCESS_STARTED_AT_ISO = datetime.now(timezone.utc).isoformat()
 
+# ─── Git commit resolution (M-6) ───────────────────────────────────────────
+# Try env vars first; if missing (dev/staging), fall back to `git rev-parse HEAD`
+# at boot. Cached in module scope so we run the subprocess at most once.
+_GIT_COMMIT_CACHED: Optional[str] = None
+
+def _resolve_git_commit() -> str:
+    """Return the git commit SHA for this build. Cached after first call."""
+    global _GIT_COMMIT_CACHED
+    if _GIT_COMMIT_CACHED is not None:
+        return _GIT_COMMIT_CACHED
+    val = (os.environ.get("GIT_COMMIT") or os.environ.get("RENDER_GIT_COMMIT") or "").strip()
+    if not val:
+        try:
+            import subprocess
+            r = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=1, cwd="/app",
+            )
+            if r.returncode == 0:
+                val = (r.stdout or "").strip()
+        except Exception:
+            val = ""
+    _GIT_COMMIT_CACHED = val
+    return val
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("vermillion")
 
@@ -14178,65 +14203,69 @@ async def _cockpit_bucket_count(coll, time_field: str, since_iso: str,
 
 # ─── /admin/cockpit/realtime ────────────────────────────────────────────────
 @api2.get("/admin/cockpit/realtime")
-async def admin_cockpit_realtime(admin=Depends(require_admin)):
+async def admin_cockpit_realtime(
+    window: str = "15m",
+    admin=Depends(require_admin),
+):
     """The 6 top KPIs of the Cockpit page, refreshed live.
 
-    Each KPI: { value, prev, delta_pct, sparkline: [15 ints] }.
-    Window: last 15 minutes (1-minute buckets). Previous window: the
-    15 minutes immediately before that.
+    Each KPI: { value, prev, delta_pct, sparkline: [N ints] }.
+    Window is parameterized via `?window=` (15m | 1h | 24h | 7d). The
+    current period and the immediately preceding period (same length) are
+    computed for honest deltas. Bucket size adapts to keep ~num_buckets
+    points in the sparkline.
     """
+    bucket_s, num_buckets = _cockpit_bucket_plan(window)
     now = datetime.now(timezone.utc)
+    span = timedelta(seconds=bucket_s * num_buckets)
     online_cut = (now - ONLINE_WINDOW).isoformat()
-    w15_start = now - timedelta(minutes=15)
-    w30_start = now - timedelta(minutes=30)
-    w15_iso = w15_start.isoformat()
-    w30_iso = w30_start.isoformat()
+    w_start = now - span
+    prev_start = now - (span * 2)
+    w_iso = w_start.isoformat()
+    prev_iso = prev_start.isoformat()
 
-    # Buckets for current window (last 15 min)
+    # Buckets for current window
     spark_posts, spark_comments, spark_messages = await asyncio.gather(
-        _cockpit_bucket_count(db.posts, "created_at", w15_iso, 60, 15,
+        _cockpit_bucket_count(db.posts, "created_at", w_iso, bucket_s, num_buckets,
                               extra_match={"is_draft": {"$ne": True}}),
-        _cockpit_bucket_count(db.comments, "created_at", w15_iso, 60, 15),
-        _cockpit_bucket_count(db.messages, "created_at", w15_iso, 60, 15),
+        _cockpit_bucket_count(db.comments, "created_at", w_iso, bucket_s, num_buckets),
+        _cockpit_bucket_count(db.messages, "created_at", w_iso, bucket_s, num_buckets),
     )
 
-    # Online users sparkline — for the *current* count we can only
-    # snapshot now; for the 15-bucket trend we use new sessions per minute
-    # (best proxy that's actually real and indexed).
+    # Online users sparkline — proxy: new sessions per bucket (real, indexed)
     spark_sessions = await _cockpit_bucket_count(
-        db.sessions, "created_at", w15_iso, 60, 15,
+        db.sessions, "created_at", w_iso, bucket_s, num_buckets,
     )
 
-    # Reports sparkline — last 15 min new reports
+    # Reports sparkline — new reports per bucket in window
     spark_reports = await _cockpit_bucket_count(
-        db.reports, "created_at", w15_iso, 60, 15,
+        db.reports, "created_at", w_iso, bucket_s, num_buckets,
     )
 
-    # Attacks sparkline — auth_events of attack kinds in last 15 min.
-    # auth_events stores ts_epoch (int seconds since epoch).
+    # Attacks sparkline — auth_events of attack kinds in window (epoch-indexed)
     attack_kinds = ("token_invalid", "login_fail", "login_locked",
                     "ws_connect_fail", "suspicious_ip_change", "twofa_fail")
-    spark_attacks = [0] * 15
-    epoch_w15 = int(w15_start.timestamp())
+    spark_attacks = [0] * num_buckets
+    epoch_w = int(w_start.timestamp())
     async for ev in db.auth_events.find(
-        {"ts_epoch": {"$gte": epoch_w15}, "kind": {"$in": list(attack_kinds)}},
+        {"ts_epoch": {"$gte": epoch_w}, "kind": {"$in": list(attack_kinds)}},
         {"_id": 0, "ts_epoch": 1},
     ):
-        idx = int((int(ev["ts_epoch"]) - epoch_w15) // 60)
-        if 0 <= idx < 15:
+        idx = int((int(ev["ts_epoch"]) - epoch_w) // bucket_s)
+        if 0 <= idx < num_buckets:
             spark_attacks[idx] += 1
 
-    # Previous window totals (15 min before that)
-    epoch_w30 = int(w30_start.timestamp())
+    # Previous window totals (same length as current)
+    epoch_prev = int(prev_start.timestamp())
     prev_posts, prev_comments, prev_messages, prev_reports = await asyncio.gather(
-        db.posts.count_documents({"created_at": {"$gte": w30_iso, "$lt": w15_iso},
+        db.posts.count_documents({"created_at": {"$gte": prev_iso, "$lt": w_iso},
                                   "is_draft": {"$ne": True}}),
-        db.comments.count_documents({"created_at": {"$gte": w30_iso, "$lt": w15_iso}}),
-        db.messages.count_documents({"created_at": {"$gte": w30_iso, "$lt": w15_iso}}),
-        db.reports.count_documents({"created_at": {"$gte": w30_iso, "$lt": w15_iso}}),
+        db.comments.count_documents({"created_at": {"$gte": prev_iso, "$lt": w_iso}}),
+        db.messages.count_documents({"created_at": {"$gte": prev_iso, "$lt": w_iso}}),
+        db.reports.count_documents({"created_at": {"$gte": prev_iso, "$lt": w_iso}}),
     )
     prev_attacks = await db.auth_events.count_documents(
-        {"ts_epoch": {"$gte": epoch_w30, "$lt": epoch_w15},
+        {"ts_epoch": {"$gte": epoch_prev, "$lt": epoch_w},
          "kind": {"$in": list(attack_kinds)}}
     )
 
@@ -14244,14 +14273,12 @@ async def admin_cockpit_realtime(admin=Depends(require_admin)):
     users_online = await db.users.count_documents({"last_seen": {"$gte": online_cut}})
     reports_open = await db.reports.count_documents({"status": "open"})
 
-    # Online previous baseline — count of users seen 15-30 min ago AND not
-    # in the most-recent-2-min window. Gives a real, comparable previous
-    # online figure.
+    # Online previous baseline — users last_seen in the equivalent prior
+    # ONLINE_WINDOW slice (offset by the current window length).
+    online_prev_window_end = w_start.isoformat()
+    online_prev_window_start = (w_start - ONLINE_WINDOW).isoformat()
     online_prev = await db.users.count_documents({
-        "last_seen": {
-            "$gte": (now - timedelta(minutes=17)).isoformat(),
-            "$lt": (now - timedelta(minutes=15)).isoformat(),
-        },
+        "last_seen": {"$gte": online_prev_window_start, "$lt": online_prev_window_end},
     })
 
     def _delta(curr: int, prev: int) -> float:
@@ -14265,9 +14292,14 @@ async def admin_cockpit_realtime(admin=Depends(require_admin)):
     cur_reports = sum(spark_reports)
     cur_attacks = sum(spark_attacks)
 
+    window_minutes_total = int((bucket_s * num_buckets) / 60)
+
     return {
         "generated_at": now.isoformat(),
-        "window_minutes": 15,
+        "window": window,
+        "window_minutes": window_minutes_total,
+        "bucket_seconds": bucket_s,
+        "num_buckets": num_buckets,
         "kpis": {
             "users_online": {
                 "value": users_online,
@@ -14860,39 +14892,208 @@ async def admin_cockpit_security_mini(admin=Depends(require_admin)):
 # ─── /admin/cockpit/deploy ──────────────────────────────────────────────────
 @api2.get("/admin/cockpit/deploy")
 async def admin_cockpit_deploy(admin=Depends(require_admin)):
-    """Deploy fingerprint — real env values, no fakes."""
+    """Deploy fingerprint — real env values + real stability signal.
+
+    `stable` is computed from the actual subsystem health (services
+    overall = operational). When this endpoint is called standalone it
+    invokes the services check; when called via /snapshot the snapshot
+    layer re-injects the cached value to avoid the double round-trip.
+    """
+    # Real stability — derived from service overall state.
+    try:
+        svc = await admin_cockpit_services(admin=admin)
+        overall = (svc or {}).get("overall") or "unknown"
+    except Exception:
+        overall = "unknown"
+    stable = (overall == "operational")
+    git_commit = _resolve_git_commit()
     return {
-        "version": os.environ.get("APP_VERSION") or "",
-        "commit": os.environ.get("GIT_COMMIT") or os.environ.get("RENDER_GIT_COMMIT") or "",
+        "version": (os.environ.get("APP_VERSION") or "").strip() or (git_commit[:7] if git_commit else ""),
+        "commit": git_commit,
         "deployed_at": _PROCESS_STARTED_AT_ISO,
         "uptime_seconds": max(0, int(time.time() - _PROCESS_STARTED_AT)),
         "app_env": APP_ENV,
         "is_production": IS_PRODUCTION,
-        "stable": True,  # if we got here, the process is up
+        "stable": stable,
+        "services_overall": overall,
+        "generated_at": now_iso(),
+    }
+
+
+# ─── /admin/notifications — operational inbox (C-5) ─────────────────────────
+@api2.get("/admin/notifications")
+async def admin_notifications(
+    limit: int = 30,
+    since_hours: int = 24,
+    admin=Depends(require_admin),
+):
+    """Aggregated operational inbox for the admin bell icon.
+
+    Bundles the actually-actionable signals an admin should see:
+      - urgent open reports (queue=urgent)
+      - severe admin actions (ban/delete/suspend/freeze) in last N hours
+      - critical auth events (login_locked, suspicious_ip_change, token_invalid)
+      - degraded/down services (from /cockpit/services)
+    Each item ships a `deep_link` query string the frontend can apply to
+    jump straight to context.
+    """
+    limit = max(1, min(100, int(limit or 30)))
+    since_hours = max(1, min(168, int(since_hours or 24)))
+    now_dt = datetime.now(timezone.utc)
+    since_iso = (now_dt - timedelta(hours=since_hours)).isoformat()
+    since_epoch = int((now_dt - timedelta(hours=since_hours)).timestamp())
+    items: list[dict] = []
+    counts = {"urgent_report": 0, "admin_action": 0, "auth_event": 0, "service_alert": 0}
+
+    # 1) Urgent reports (open) — newest first
+    async for r in db.reports.find(
+        {"status": "open"},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(limit):
+        queue = _classify_report_queue(r.get("reason"))
+        if queue != "urgent":
+            continue
+        target_username = None
+        if r.get("kind") == "user":
+            tu = await db.users.find_one({"id": r.get("target_id")}, {"_id": 0, "username": 1})
+            if tu:
+                target_username = tu.get("username")
+        elif r.get("kind") in ("post", "comment"):
+            coll = db.posts if r["kind"] == "post" else db.comments
+            doc = await coll.find_one({"id": r.get("target_id")}, {"_id": 0, "author_id": 1})
+            if doc:
+                au = await db.users.find_one({"id": doc.get("author_id")}, {"_id": 0, "username": 1})
+                if au:
+                    target_username = au.get("username")
+        items.append({
+            "id": f"notif:urgent_report:{r.get('id')}",
+            "ts": r.get("created_at"),
+            "kind": "urgent_report",
+            "severity": "danger",
+            "title": "Report urgente",
+            "subtitle": f"{r.get('reason') or 'sem motivo'} · {r.get('kind') or ''}{(' · @' + target_username) if target_username else ''}",
+            "ref": {"report_id": r.get("id"), "target_id": r.get("target_id"), "target_username": target_username},
+            "deep_link": f"?tab=reports&queue=urgent&id={r.get('id')}",
+        })
+        counts["urgent_report"] += 1
+
+    # 2) Severe admin actions in window
+    severe_actions = {"ban_user", "delete_user", "delete_post", "delete_comment",
+                       "suspend_user", "shadow_mute", "freeze_user",
+                       "force_logout_user", "revoke_session"}
+    async for a in db.admin_audit.find(
+        {"created_at": {"$gte": since_iso}, "action": {"$in": list(severe_actions)}},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(limit):
+        items.append({
+            "id": f"notif:admin_action:{a.get('id')}",
+            "ts": a.get("created_at"),
+            "kind": "admin_action",
+            "severity": "warn",
+            "title": f"Ação admin: {a.get('action') or '?'}",
+            "subtitle": f"por @{a.get('actor_username') or '?'} · alvo {a.get('target_kind') or '?'}",
+            "ref": {"audit_id": a.get("id"), "action": a.get("action")},
+            "deep_link": f"?tab=audit&focus={a.get('id') or ''}",
+        })
+        counts["admin_action"] += 1
+
+    # 3) Critical auth events
+    critical_kinds = ["login_locked", "suspicious_ip_change", "twofa_fail"]
+    async for e in db.auth_events.find(
+        {"ts_epoch": {"$gte": since_epoch}, "kind": {"$in": critical_kinds}},
+        {"_id": 0},
+    ).sort("ts_epoch", -1).limit(limit):
+        kind = e.get("kind")
+        title_map = {
+            "login_locked": "Conta bloqueada (lockout)",
+            "suspicious_ip_change": "Mudança de IP suspeita",
+            "twofa_fail": "Falha 2FA",
+        }
+        items.append({
+            "id": f"notif:auth:{e.get('id') or e.get('ts_epoch')}:{kind}",
+            "ts": e.get("ts"),
+            "kind": "auth_event",
+            "severity": "warn",
+            "title": title_map.get(kind, kind),
+            "subtitle": f"IP {e.get('ip') or '?'} · {(e.get('email') or '@' + (e.get('user_id') or '?')[:8])}",
+            "ref": {"user_id": e.get("user_id"), "email": e.get("email"), "ip": e.get("ip"), "kind": kind},
+            "deep_link": "?tab=security",
+        })
+        counts["auth_event"] += 1
+
+    # 4) Service alerts (current snapshot — non-historic)
+    try:
+        svc = await admin_cockpit_services(admin=admin)
+        for s in (svc.get("services") or []):
+            if s.get("status") in ("degraded", "down"):
+                items.append({
+                    "id": f"notif:service:{s.get('key')}",
+                    "ts": now_dt.isoformat(),
+                    "kind": "service_alert",
+                    "severity": "danger" if s.get("status") == "down" else "warn",
+                    "title": f"Serviço {s.get('label')} {s.get('status')}",
+                    "subtitle": s.get("detail") or "—",
+                    "ref": {"service_key": s.get("key"), "status": s.get("status")},
+                    "deep_link": "?tab=system",
+                })
+                counts["service_alert"] += 1
+    except Exception:
+        pass
+
+    # Sort by ts desc, cap to limit
+    def _ts_key(x):
+        return x.get("ts") or ""
+    items.sort(key=_ts_key, reverse=True)
+    items = items[:limit]
+
+    return {
+        "items": items,
+        "counts": counts,
+        "total": len(items),
+        "since_hours": since_hours,
         "generated_at": now_iso(),
     }
 
 
 # ─── /admin/cockpit/snapshot — bundled fetch on first paint ─────────────────
 @api2.get("/admin/cockpit/snapshot")
-async def admin_cockpit_snapshot(admin=Depends(require_admin)):
+async def admin_cockpit_snapshot(
+    window: str = "15m",
+    admin=Depends(require_admin),
+):
     """One-shot bundle for the Cockpit initial paint.
 
     Calls each cockpit sub-endpoint internally so the frontend only needs
     one HTTP request on mount. Subsequent refreshes use the smaller,
     cacheable per-section endpoints + the WebSocket cockpit_event stream.
+
+    `window` propagates to /realtime so KPIs reflect the chosen range.
     """
-    realtime, queues, geo, services, system_mini, security_mini, deploy, top_posts, trending = await asyncio.gather(
-        admin_cockpit_realtime(admin=admin),
+    realtime, queues, geo, services, system_mini, security_mini, top_posts, trending = await asyncio.gather(
+        admin_cockpit_realtime(window=window, admin=admin),
         admin_cockpit_queues(admin=admin),
         admin_cockpit_geo(admin=admin),
         admin_cockpit_services(admin=admin),
         admin_cockpit_system_mini(admin=admin),
         admin_cockpit_security_mini(admin=admin),
-        admin_cockpit_deploy(admin=admin),
         admin_cockpit_top_posts(admin=admin),
         admin_cockpit_trending(admin=admin),
     )
+    # Compose deploy locally so we can reuse the already-fetched services
+    # `overall` and avoid running the health-check pipeline twice.
+    overall = (services or {}).get("overall") or "unknown"
+    git_commit = _resolve_git_commit()
+    deploy = {
+        "version": (os.environ.get("APP_VERSION") or "").strip() or (git_commit[:7] if git_commit else ""),
+        "commit": git_commit,
+        "deployed_at": _PROCESS_STARTED_AT_ISO,
+        "uptime_seconds": max(0, int(time.time() - _PROCESS_STARTED_AT)),
+        "app_env": APP_ENV,
+        "is_production": IS_PRODUCTION,
+        "stable": (overall == "operational"),
+        "services_overall": overall,
+        "generated_at": now_iso(),
+    }
     activity = await admin_cockpit_activity(admin=admin)
     return {
         "realtime": realtime,

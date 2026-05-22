@@ -65,12 +65,12 @@ export function AdminTopbar({
     const { isFs, toggle: toggleFs } = useFullscreen();
     const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "");
 
-    let liveText = "Polling";
+    let liveText = "A sondar";
     let liveModifier = "ops-top__live--offline";
     if (wsState === "live") { liveText = "Ao vivo"; liveModifier = "ops-top__live--live"; }
     else if (wsState === "reconnecting") { liveText = "A ligar…"; liveModifier = "ops-top__live--polling"; }
-    else if (wsState === "polling") { liveText = "Polling"; liveModifier = "ops-top__live--polling"; }
-    else if (wsState === "offline") { liveText = "Offline"; liveModifier = "ops-top__live--offline"; }
+    else if (wsState === "polling") { liveText = "A sondar"; liveModifier = "ops-top__live--polling"; }
+    else if (wsState === "offline") { liveText = "Sem ligação"; liveModifier = "ops-top__live--offline"; }
 
     const safeBadge = Math.max(0, Number(notifBadge) || 0);
     const badgeLabel = safeBadge > 99 ? "99+" : String(safeBadge);
