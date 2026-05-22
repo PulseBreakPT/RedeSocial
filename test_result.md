@@ -3398,3 +3398,125 @@ agent_communication:
 
           Credentials seeded: admin@lusorae.app (saved to
           /app/memory/test_credentials.md).
+
+
+## 🔵 Fase 1 — Social Pulse Engine (NEW, READY FOR BACKEND TESTING)
+
+backend:
+  - task: "Pulse Engine — background snapshot loop + 5 REST endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/pulse_engine.py, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            FASE 1 of the "rede social viva" plan implemented. Foundation
+            module for everything that follows (atmosphere, density,
+            topology, micro-contexts, city-alive feeling).
+
+            What was built:
+            • NEW FILE /app/backend/pulse_engine.py — self-contained, 0
+              external deps beyond stdlib + motor. Computes one snapshot
+              every 60s from real Mongo data (posts/comments/messages/users.last_seen).
+              NO mocks, NO randoms, NO LLMs. Pure aggregation + math.
+
+            • Snapshot fields:
+              - totals = {posts_60s, comments_60s, messages_60s, active_users_60s, online_now}
+              - baseline = 7-day median for same hour-of-day (±15 min window)
+              - regions / cities — grouped by user.region/user.city, opt-out filtered
+              - topics  — trending hashtags with delta_pct vs baseline
+              - moods   — 9 curated PT mood categories with score+delta
+              - dominant_mood — only set when one mood clears +50% over baseline
+                and has the largest absolute score
+              - pulse_delta_pct — composite (posts+comments+active) vs baseline
+
+            • Honesty floor: a region/topic/mood is only `meaningful: true` when
+              current ≥ 3 AND current ≥ baseline_median * 1.20. Frontend should
+              hide ambient widgets unless `meaningful = true`. This kills the
+              "23 pessoas a falar de Benfica" lie when reality is 2.
+
+            • Mood lexicon: 9 PT categories (festa, jogo, saudade, chuva, sol,
+              café, trabalho, amor, casa) with curated, accent-insensitive
+              whole-word matching. Single post can only add +1 per category.
+
+            • TTL on snapshots: 7 days via Mongo expireAfterSeconds.
+
+            • Loop is resilient: a crash inside one tick is logged but the
+              loop survives. Single asyncio task, idempotent start.
+
+            • Privacy (D1 confirmed by user):
+              - New field `pulse_opt_out: bool` on users (default False)
+              - Exposed via UpdateProfileIn (PATCH /api/users/me)
+              - Mirrored in `public_user()` so the client knows their state
+              - When True: user's posts/comments are EXCLUDED from
+                region/city aggregates but still counted in global totals
+
+            • 5 REST endpoints (all authenticated, no admin requirement —
+              regular users see the pulse since it's a *social* signal):
+                GET /api/pulse/now       — full snapshot (cached in-memory by loop)
+                GET /api/pulse/regions   — regions[] + cities[] + meaningful_*
+                GET /api/pulse/topics    — trending hashtags
+                GET /api/pulse/mood      — mood scores + dominant_mood
+                GET /api/pulse/timeline?minutes=60 — last N minutes (max 720)
+
+            • WS broadcast: every tick emits `{type: "pulse_tick", taken_at,
+              totals, pulse_delta_pct, dominant_mood, meaningful_topics[≤5],
+              meaningful_regions[≤5]}` to all connected sockets.
+
+            • Cold-boot safety: if the loop hasn't ticked yet, the REST
+              endpoints compute a snapshot synchronously so the UI never
+              sees null.
+
+            What to test:
+              1. After login, GET /api/pulse/now returns a snapshot with all
+                 the documented fields (totals, baseline, regions, cities,
+                 topics, moods, dominant_mood, pulse_delta_pct).
+              2. All four sub-endpoints (/regions, /topics, /mood, /timeline)
+                 return consistent shapes; arrays/objects, no nulls except where
+                 documented (dominant_mood may be null).
+              3. /pulse/timeline?minutes=5 returns ≤5 points (or 0 on a fresh
+                 DB — that's also valid).
+              4. PATCH /api/users/me with body {"pulse_opt_out": true} updates
+                 the flag; subsequent GET /api/users/me reflects it.
+              5. Unauthenticated requests to /api/pulse/* return 401.
+              6. After creating a post containing "#benfica" and the word
+                 "golo!", a /pulse/now call returns:
+                   - totals.posts_60s >= 1
+                   - moods.jogo.score >= 1
+                   - topics contains {tag:"benfica", count_60s>=1}
+                 (Note: the background loop may not have ticked yet — the
+                  endpoint computes on demand so this still works.)
+              7. Backend logs show "pulse_engine: loop starting" once on boot
+                 and NO repeated exceptions.
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Pulse Engine — background snapshot loop + 5 REST endpoints"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: |
+        Fase 1 (Pulse Engine) is ready for backend-only testing. Please
+        validate the 5 endpoints + the opt-out toggle as described in
+        the task's `comment` block. Do NOT test the frontend yet — Fase 2
+        (Ambient Pulse Widgets UI) hasn't started.
+
+        Admin creds in /app/memory/test_credentials.md.
+
+        Heads-up for the testing agent: on a fresh DB the pulse arrays may
+        be empty — that's valid and not a bug. The test should CREATE a
+        few posts (with hashtags + mood-laden words) and verify the
+        numbers reflect that activity within the same minute window.

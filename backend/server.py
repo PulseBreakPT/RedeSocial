@@ -31,6 +31,11 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, EmailStr, Field
 
+# Fase 1 — Social Pulse Engine (realtime activity aggregator).
+# Imported lazily-free here at module load; `start_pulse_loop` only runs
+# once `app.on_event("startup")` fires, by which time `ws_manager` exists.
+import pulse_engine
+
 JWT_ALGORITHM = "HS256"
 
 # ─── Secret loading via pluggable backend (env-only by default) ───────────────
@@ -1169,6 +1174,10 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "two_fa_enabled": bool(user.get("two_fa_enabled")),
         "recovery_email": user.get("recovery_email", ""),
         "login_alerts_enabled": bool(user.get("login_alerts_enabled", True)),
+        # Fase 1 / Pulse Engine — privacy lever. When True, this user's
+        # posts and comments are EXCLUDED from per-region / per-city
+        # heatmaps. Global totals still include them.
+        "pulse_opt_out": bool(user.get("pulse_opt_out", False)),
         # Soft engagement signals (server-side now — see /api2/feed/signals)
         "muted_authors": user.get("muted_authors", []),
         "muted_topics": user.get("muted_topics", []),
@@ -1873,6 +1882,11 @@ class UpdateProfileIn(BaseModel):
     recovery_email: Optional[str] = None
     # B-014 — Per-user toggle for login-alert notifications
     login_alerts_enabled: Optional[bool] = None
+    # Fase 1 / Pulse Engine — opt-out of contributing to region/city
+    # heatmaps. Default False (user contributes). When True, the user's
+    # posts and comments still happen normally but no longer count in
+    # /api/pulse/regions or /api/pulse/cities aggregates.
+    pulse_opt_out: Optional[bool] = None
 
 
 class TwoFASetupConfirmIn(BaseModel):
@@ -6816,9 +6830,27 @@ async def startup():
 
     # No demo / seed data. Database starts empty.
 
+    # ── Fase 1 — Social Pulse Engine ────────────────────────────────
+    # Create the snapshots collection's indexes (TTL + sort) and start
+    # the background loop that emits one snapshot every 60 s. The loop
+    # is a single asyncio task; if it crashes, individual ticks are
+    # caught & logged but the loop survives.
+    try:
+        await pulse_engine.init_pulse_indexes(db)
+        pulse_engine.start_pulse_loop(db, ws_manager)
+        logger.info("pulse_engine: background loop scheduled")
+    except Exception as exc:
+        logger.warning(f"pulse_engine: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
+    # Cancel the pulse loop first so it stops touching Mongo before we
+    # close the client.
+    try:
+        await pulse_engine.stop_pulse_loop()
+    except Exception:
+        pass
     client.close()
 
 
@@ -8492,6 +8524,111 @@ class ConnectionManager:
 
 
 ws_manager = ConnectionManager()
+
+
+# ════════════════════════════════════════════════════════════════════
+# Fase 1 — Social Pulse REST endpoints
+# ════════════════════════════════════════════════════════════════════
+# All four endpoints are read-only views over the most recent pulse
+# snapshot. They share the same data source (db.social_pulse_snapshots)
+# so they're always internally consistent — /now and /regions never
+# contradict each other.
+#
+# Access policy: authenticated users only. The pulse is a *social*
+# signal, so we don't expose it to crawlers. Admin opt-out is the
+# user-side privacy lever (UpdateProfileIn.pulse_opt_out).
+
+@api.get("/pulse/now")
+async def pulse_now(user=Depends(get_current_user)):
+    """Most recent full snapshot. If the loop hasn't ticked yet (cold
+    boot), compute one synchronously so the UI never sees null."""
+    # Prefer the in-memory cache populated by the background loop —
+    # zero Mongo cost on the hot path.
+    cache, _ts = pulse_engine.get_last_snapshot_cache()
+    if cache:
+        return cache
+    snap = await pulse_engine.fetch_latest_snapshot(db)
+    if snap:
+        return snap
+    # First-boot fallback: compute one on demand (without persisting,
+    # the loop will catch up on its next tick).
+    return await pulse_engine.compute_pulse_snapshot(db)
+
+
+@api.get("/pulse/regions")
+async def pulse_regions(user=Depends(get_current_user)):
+    """Per-region activity for the current snapshot. Returns a small
+    object so the UI can pick its own rendering strategy.
+
+    Shape:
+      {
+        taken_at: iso,
+        regions: [ {key,label,score,delta_pct,meaningful, posts_60s, comments_60s, active_users_60s}, ... ],
+        cities:  [ same fields ],
+        meaningful_regions: [...]   # convenience filter for ambient widgets
+      }
+    """
+    snap = pulse_engine.get_last_snapshot_cache()[0] or await pulse_engine.fetch_latest_snapshot(db)
+    if not snap:
+        snap = await pulse_engine.compute_pulse_snapshot(db)
+    return {
+        "taken_at": snap.get("taken_at"),
+        "regions":  snap.get("regions", []),
+        "cities":   snap.get("cities", []),
+        "meaningful_regions": [r for r in snap.get("regions", []) if r.get("meaningful")],
+        "meaningful_cities":  [c for c in snap.get("cities", [])  if c.get("meaningful")],
+    }
+
+
+@api.get("/pulse/topics")
+async def pulse_topics(user=Depends(get_current_user)):
+    """Trending hashtags for the current minute, with growth vs the
+    7-day baseline at the same hour. Honest: a topic is only flagged
+    `meaningful: true` when it both clears MIN_ABSOLUTE_COUNT and
+    grew at least MIN_RELATIVE_DELTA over baseline."""
+    snap = pulse_engine.get_last_snapshot_cache()[0] or await pulse_engine.fetch_latest_snapshot(db)
+    if not snap:
+        snap = await pulse_engine.compute_pulse_snapshot(db)
+    topics = snap.get("topics", [])
+    return {
+        "taken_at": snap.get("taken_at"),
+        "topics":   topics,
+        "meaningful_topics": [t for t in topics if t.get("meaningful")],
+    }
+
+
+@api.get("/pulse/mood")
+async def pulse_mood(user=Depends(get_current_user)):
+    """Per-mood scores computed from a curated PT lexicon. `dominant_mood`
+    is only set when one mood clears the higher DOMINANT_MOOD_DELTA
+    threshold AND has the largest score among meaningful moods."""
+    snap = pulse_engine.get_last_snapshot_cache()[0] or await pulse_engine.fetch_latest_snapshot(db)
+    if not snap:
+        snap = await pulse_engine.compute_pulse_snapshot(db)
+    return {
+        "taken_at":      snap.get("taken_at"),
+        "moods":         snap.get("moods", {}),
+        "dominant_mood": snap.get("dominant_mood"),
+    }
+
+
+@api.get("/pulse/timeline")
+async def pulse_timeline(minutes: int = 60, user=Depends(get_current_user)):
+    """Snapshots from the last N minutes (max 720 = 12 h). Used by the
+    "pulse chart" widget — minimal payload, no raw counters."""
+    minutes = max(5, min(int(minutes or 60), 720))
+    rows = await pulse_engine.fetch_recent_snapshots(db, minutes=minutes)
+    # Trim to chart-friendly fields only to keep payload small.
+    trimmed = [
+        {
+            "taken_at": r.get("taken_at"),
+            "totals":   r.get("totals", {}),
+            "pulse_delta_pct": r.get("pulse_delta_pct"),
+            "dominant_mood":   r.get("dominant_mood"),
+        }
+        for r in rows
+    ]
+    return {"minutes": minutes, "points": trimmed}
 
 
 # ─── Live security feed — broadcast every auth_event to admins ──────────────
