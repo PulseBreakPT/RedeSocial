@@ -452,10 +452,10 @@ function Pager({ page, total, limit, onChange }) {
 // USERS
 // -----------------------------------------------------------------
 const USER_FILTERS = [
-    { key: "all", label: "Todos" },
-    { key: "verified", label: "Verificados" },
-    { key: "admins", label: "Admins" },
-    { key: "banned", label: "Banidos" },
+    { key: "all", label: "Todos", hint: "Todas as contas registadas, sem filtro de estado." },
+    { key: "verified", label: "Verificados", hint: "Contas com badge de verificação manual atribuída por um admin." },
+    { key: "admins", label: "Admins", hint: "Contas com privilégios de administração — fazem bypass aos limites e definições." },
+    { key: "banned", label: "Banidos", hint: "Contas com acesso revogado. Não fazem login nem publicam. Reversível em Desbanir." },
 ];
 
 // -----------------------------------------------------------------
@@ -1079,11 +1079,13 @@ function UsersTab({ onOpenDrawer }) {
                 </div>
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {USER_FILTERS.map((f) => (
-                        <button key={f.key}
-                            onClick={() => { setFilter(f.key); setPage(1); }}
-                            data-testid={`admin-users-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{f.label}</button>
+                        <Hint key={f.key} focusable={false} side="bottom" text={f.hint}>
+                            <button
+                                onClick={() => { setFilter(f.key); setPage(1); }}
+                                data-testid={`admin-users-filter-${f.key}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{f.label}</button>
+                        </Hint>
                     ))}
                 </div>
             </div>
@@ -1255,10 +1257,10 @@ function UsersTab({ onOpenDrawer }) {
 // POSTS
 // -----------------------------------------------------------------
 const POST_FILTERS = [
-    { key: "all", label: "Todos" },
-    { key: "featured", label: "Destacados" },
-    { key: "drafts", label: "Rascunhos" },
-    { key: "scheduled", label: "Agendados" },
+    { key: "all", label: "Todos", hint: "Todas as publicações públicas, sem filtro." },
+    { key: "featured", label: "Destacados", hint: "Posts marcados como destaque — aparecem no topo do feed." },
+    { key: "drafts", label: "Rascunhos", hint: "Posts ainda não publicados, guardados pelo autor." },
+    { key: "scheduled", label: "Agendados", hint: "Posts com publicação programada para uma data futura." },
 ];
 
 function PostsTab() {
@@ -1383,10 +1385,12 @@ function PostsTab() {
                 </div>
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {POST_FILTERS.map((f) => (
-                        <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
-                            data-testid={`admin-posts-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{f.label}</button>
+                        <Hint key={f.key} focusable={false} side="bottom" text={f.hint}>
+                            <button onClick={() => { setFilter(f.key); setPage(1); }}
+                                data-testid={`admin-posts-filter-${f.key}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{f.label}</button>
+                        </Hint>
                     ))}
                 </div>
             </div>
@@ -1671,6 +1675,18 @@ function PostInspector({ post, initialView = "replies", onClose }) {
 // -----------------------------------------------------------------
 // REPORTS
 // -----------------------------------------------------------------
+const REPORT_STATUS_HINTS = {
+    open: "Reports ainda por decidir — exigem ação. É o estado por defeito.",
+    closed: "Reports já resolvidos: mostram a decisão tomada e quem a aplicou.",
+    all: "Todos os reports, independentemente do estado.",
+};
+const REPORT_KIND_HINTS = {
+    all: "Reports de qualquer tipo de alvo.",
+    post: "Denúncias sobre publicações.",
+    comment: "Denúncias sobre comentários.",
+    user: "Denúncias sobre contas de utilizador (assédio, spam, perfil falso).",
+};
+
 function ReportsTab({ onOpenUser }) {
     const [status, setStatus] = useState("open");
     const [kind, setKind] = useState("all");
@@ -1771,18 +1787,22 @@ function ReportsTab({ onOpenUser }) {
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["open", "closed", "all"].map((s) => (
-                        <button key={s} onClick={() => { setStatus(s); setPage(1); }}
-                            data-testid={`admin-reports-status-${s}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${status === s ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{s === "open" ? "Abertos" : s === "closed" ? "Resolvidos" : "Todos"}</button>
+                        <Hint key={s} focusable={false} side="bottom" text={REPORT_STATUS_HINTS[s]}>
+                            <button onClick={() => { setStatus(s); setPage(1); }}
+                                data-testid={`admin-reports-status-${s}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${status === s ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{s === "open" ? "Abertos" : s === "closed" ? "Resolvidos" : "Todos"}</button>
+                        </Hint>
                     ))}
                 </div>
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {["all", "post", "comment", "user"].map((k) => (
-                        <button key={k} onClick={() => { setKind(k); setPage(1); }}
-                            data-testid={`admin-reports-kind-${k}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${kind === k ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{k === "all" ? "Tudo" : k === "post" ? "Posts" : k === "comment" ? "Coment." : "Users"}</button>
+                        <Hint key={k} focusable={false} side="bottom" text={REPORT_KIND_HINTS[k]}>
+                            <button onClick={() => { setKind(k); setPage(1); }}
+                                data-testid={`admin-reports-kind-${k}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${kind === k ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{k === "all" ? "Tudo" : k === "post" ? "Posts" : k === "comment" ? "Coment." : "Users"}</button>
+                        </Hint>
                     ))}
                 </div>
             </div>
@@ -2866,8 +2886,9 @@ function SettingsTab() {
                         <Settings2 className="h-5 w-5 text-[var(--coral-500)]" />
                     </div>
                     <div>
-                        <div className="text-[12px] text-slate-500">
+                        <div className="text-[12px] text-slate-500 flex items-center gap-1.5">
                             {totalAll} definições organizadas em categorias. Aplicam-se em runtime (cache 5s). Admins fazem bypass.
+                            <InfoTip side="bottom" text={{ title: "Como funcionam as definições", body: "Cada alteração entra em vigor para os utilizadores até 5s depois, sem reiniciar o servidor. Os admins não são afectados por flags nem limites. Cada chave guarda o seu default — usa 'Repor' para voltar atrás. As alterações ficam no audit log." }} />
                         </div>
                     </div>
                 </div>
@@ -3290,9 +3311,9 @@ function CommentsTab() {
 // STORIES
 // -----------------------------------------------------------------
 const STORY_FILTERS = [
-    { key: "active", label: "Ativas" },
-    { key: "expired", label: "Expiradas" },
-    { key: "all", label: "Todas" },
+    { key: "active", label: "Ativas", hint: "Stories visíveis agora — ainda dentro da janela de 24h." },
+    { key: "expired", label: "Expiradas", hint: "Stories que já passaram das 24h e deixaram de ser visíveis aos utilizadores." },
+    { key: "all", label: "Todas", hint: "Todas as stories, activas e expiradas." },
 ];
 
 function StoriesTab() {
@@ -3353,10 +3374,12 @@ function StoriesTab() {
                 </div>
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {STORY_FILTERS.map((f) => (
-                        <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
-                            data-testid={`admin-stories-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{f.label}</button>
+                        <Hint key={f.key} focusable={false} side="bottom" text={f.hint}>
+                            <button onClick={() => { setFilter(f.key); setPage(1); }}
+                                data-testid={`admin-stories-filter-${f.key}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{f.label}</button>
+                        </Hint>
                     ))}
                 </div>
             </div>
@@ -3407,9 +3430,9 @@ function StoriesTab() {
 // HASHTAGS (with blacklist)
 // -----------------------------------------------------------------
 const HASHTAG_FILTERS = [
-    { key: "all", label: "Todas" },
-    { key: "active", label: "Ativas" },
-    { key: "blacklisted", label: "Blacklist" },
+    { key: "all", label: "Todas", hint: "Todas as hashtags em uso, sem filtro." },
+    { key: "active", label: "Ativas", hint: "Hashtags em circulação normal — aparecem no trending e no explore." },
+    { key: "blacklisted", label: "Blacklist", hint: "Hashtags bloqueadas: saem do trending e do explore, mas continuam visíveis no perfil dos autores." },
 ];
 
 function HashtagsTab() {
@@ -3505,10 +3528,12 @@ function HashtagsTab() {
                 </div>
                 <div className="flex items-center gap-0.5 bg-slate-50 rounded-full p-1 overflow-x-auto no-scrollbar max-w-full">
                     {HASHTAG_FILTERS.map((f) => (
-                        <button key={f.key} onClick={() => { setFilter(f.key); setPage(1); }}
-                            data-testid={`admin-hashtags-filter-${f.key}`}
-                            className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
-                        >{f.label}</button>
+                        <Hint key={f.key} focusable={false} side="bottom" text={f.hint}>
+                            <button onClick={() => { setFilter(f.key); setPage(1); }}
+                                data-testid={`admin-hashtags-filter-${f.key}`}
+                                className={`h-8 px-2.5 sm:px-3 rounded-full text-[11.5px] sm:text-[12px] font-medium whitespace-nowrap ${filter === f.key ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >{f.label}</button>
+                        </Hint>
                     ))}
                 </div>
             </div>
@@ -4417,14 +4442,15 @@ function AntiSpamTab({ onOpenDrawer }) {
             {/* COUNTERS */}
             {overview && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="admin-antispam-counters">
-                    <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-red-50 text-red-700" icon={ShieldAlert} />
-                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-slate-100 text-slate-700" icon={VolumeX} />
-                    <CounterCard label="Silêncio oculto" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} />
-                    <CounterCard label="Com limite" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} />
-                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-slate-100 text-slate-700" icon={Snowflake} />
-                    <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} />
-                    <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-red-50 text-red-700" icon={Flag} />
-                    <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-red-50 text-red-700" icon={TrendingDown} />
+                    <CounterCard label="Suspeitos" value={overview.users.flagged_suspicious} accent="bg-red-50 text-red-700" icon={ShieldAlert} hint={{ title: "Contas marcadas como suspeitas", body: "Sinalizadas automaticamente por padrões anómalos (registo em massa, ritmo de publicação, conteúdo repetido). Requerem revisão manual." }} />
+                    <CounterCard label="Silenciados" value={overview.users.muted_active} accent="bg-slate-100 text-slate-700" icon={VolumeX} hint={{ title: "Silêncio visível", body: "O utilizador sabe que está silenciado e não consegue publicar ou comentar durante o período definido." }} />
+                    <CounterCard label="Silêncio oculto" value={overview.users.shadow_muted} accent="bg-gray-700/15 text-gray-700" icon={Ghost} hint={{ title: "Shadow-mute", body: "O conteúdo do utilizador deixa de ser visível para os outros, mas ele continua a ver as suas próprias publicações como normais — não sabe que está silenciado." }} />
+                    <CounterCard label="Com limite" value={overview.users.rate_limited} accent="bg-red-50 text-red-700" icon={Gauge} hint={{ title: "Rate-limited agora", body: "Contas a bater nos limites de ações (posts, comentários, likes) por minuto/hora. Limite temporário que liberta sozinho." }} />
+                    <CounterCard label="Congelados" value={overview.users.frozen} accent="bg-slate-100 text-slate-700" icon={Snowflake} hint={{ title: "Contas congeladas", body: "Acesso pausado: o login funciona mas todas as ações de escrita estão bloqueadas. Menos severo que um banimento e totalmente reversível." }} />
+                    <CounterCard label="Banidos" value={overview.users.banned} accent="bg-red-500/15 text-red-700" icon={Ban} hint={{ title: "Banimentos activos", body: "Acesso totalmente revogado — não fazem login. Reversível em Utilizadores ▸ Desbanir." }} />
+                    <CounterCard label="Reports abertos" value={overview.content.reports_open} accent="bg-red-50 text-red-700" icon={Flag} hint={{ title: "Reports por resolver", body: "Denúncias submetidas por utilizadores ainda sem decisão. Processa-as no separador Reports." }} />
+                    <CounterCard label="Posts reduzidos" value={overview.content.posts_reduced} accent="bg-red-50 text-red-700" icon={TrendingDown} hint={{ title: "Alcance reduzido", body: "Publicações com distribuição limitada: continuam visíveis no perfil do autor mas não são amplificadas no feed nem no explore." }} />
+
                 </div>
             )}
 
@@ -4528,12 +4554,15 @@ function AntiSpamTab({ onOpenDrawer }) {
     );
 }
 
-function CounterCard({ label, value, accent, icon: Icon }) {
+function CounterCard({ label, value, accent, icon: Icon, hint }) {
     return (
         <div className="bg-white rounded-2xl border border-slate-200 p-3 flex items-center gap-2">
             <span className={`w-8 h-8 rounded-xl grid place-items-center ${accent}`}><Icon size={15} /></span>
             <div className="min-w-0">
-                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono">{label}</div>
+                <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1">
+                    {label}
+                    {hint && <InfoTip text={hint} side="top" />}
+                </div>
                 <div className="text-[18px] font-display tracking-tight tabular-nums">{fmtNum(value || 0)}</div>
             </div>
         </div>
