@@ -11,6 +11,8 @@ import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
+import { PulseBar } from "../components/pulse/PulseBar";
+import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { haptic } from "../lib/haptics";
 
 // Frases curadas pt-PT mostradas no pull-to-refresh.
@@ -263,7 +265,10 @@ export default function Feed() {
 
             {/* Inline composer removed — publishing happens via the "+" button (mobile bottom nav / desktop "Publicar"). */}
 
-            <div className="px-4 lg:px-5 pt-3">
+            <div className="px-4 lg:px-5 pt-3 space-y-3">
+                {/* Pulse Engine — sinais ambientais, só aparecem quando há sinal real */}
+                <PulseBar />
+                <TopicBurstChips />
                 <SmartTodayBanner />
             </div>
 

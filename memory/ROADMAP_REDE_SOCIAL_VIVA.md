@@ -30,6 +30,39 @@
 ### Fix sintaxe — Cockpit.js ✅
 - Linha 479 duplicada (`efault Cockpit;`) removida. Frontend compila.
 
+### Fase 2 — Ambient Pulse Widgets (UI) ✅ (parcial — ver nota PulseGlobe)
+- **Hook novo:** `frontend/src/hooks/usePulse.js` — store partilhado
+  (singleton: 1 snapshot, 1 timer de polling, N subscribers, como
+  `useFeedPulse`). Faz **uma** chamada a `/api/pulse/now` (o snapshot já
+  traz tudo) e refaz no WS `pulse_tick`. Polling de segurança 60s
+  (offline) / 5min (live). Falha silenciosa. Deriva
+  `meaningful_topics/regions/cities`.
+- **Componente novo:** `frontend/src/components/pulse/PulseBar.js` —
+  barra ambiental no topo do feed. Mensagens rotativas (8s) só com sinal
+  real: pulso global >20%, cidade/região meaningful, tópico a crescer,
+  mood dominante. Sem sinal → `null`. Read-only (sem cliques). Reusa
+  `live-dot` (coral, on-brand).
+- **Componente novo:** `frontend/src/components/pulse/TopicBurstChips.js`
+  — chips de hashtags meaningful (max 5), clicáveis → `/tag/{tag}`.
+  Sem nenhuma → `null`.
+- **Integração:** `frontend/src/pages/Feed.js` — `<PulseBar />` +
+  `<TopicBurstChips />` acima do `SmartTodayBanner` (feed é single-column,
+  não há sidebar).
+- **Opt-out:** toggle "Contribuir para o pulso social" em
+  `settings/PrivacyTab.js`. Liga a `PATCH /api/users/me` com
+  `pulse_opt_out: !value` via `Settings.js` (`priv_pulse`). Default =
+  contribui (pulse_opt_out=False).
+- **NOTA — 2.3 PulseGlobe adiado:** o feed é single-column (sem sidebar),
+  por isso um globo lateral não tem onde encaixar limpo. O sinal de
+  intensidade ("BPM social") pode mais tarde ser dobrado dentro do
+  PulseBar ou reaparecer quando/se houver layout com sidebar. Decisão
+  consciente para não poluir a coluna única.
+- **Por validar:** `node_modules` não está instalado neste ambiente, por
+  isso não foi possível correr o frontend nem o testing agent. Sintaxe
+  JSX validada via esbuild (transform-only). Falta teste visual/E2E:
+  confirmar que os widgets aparecem só com sinal e devolvem `null` com DB
+  vazio sem partir o layout.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER
@@ -62,7 +95,12 @@ Não bloqueia nada. Pode-se saltar e deixar como está.
 
 ---
 
-### 🔵 Fase 2 — Ambient Pulse Widgets (UI)
+### 🔵 Fase 2 — Ambient Pulse Widgets (UI)  ✅ ENTREGUE (ver topo)
+
+> A maior parte desta fase já está feita — ver "JÁ ENTREGUE ▸ Fase 2".
+> O que resta é **2.3 PulseGlobe** (adiado: feed single-column) e o
+> **teste visual/E2E** quando houver `node_modules`. Spec original
+> mantida abaixo para referência.
 
 **Objetivo:** Transformar os 5 endpoints da Fase 1 em widgets *ambientais*
 que aparecem **só quando há sinal real** (regra `meaningful: true`).
@@ -390,8 +428,8 @@ SameSite, IP, UA, JTI, etc.) — só traduzir a palavra qualificadora.
 
 ```
 1. (opcional) Pequeno fix cache invalidation no Pulse Engine
-2. Fase 2 — Ambient Pulse Widgets (UI) [PRÓXIMO PASSO LÓGICO]
-3. Fase 3 — Presence Layer
+2. Fase 2 — Ambient Pulse Widgets (UI) ✅ FEITO (falta 2.3 PulseGlobe + teste E2E)
+3. Fase 3 — Presence Layer [PRÓXIMO PASSO LÓGICO]
 4. Fase 4 — Context Engine
 5. Tradução Admin (pausada) — pode ser intercalada em qualquer altura
 6. Fase 5 — Mesas
