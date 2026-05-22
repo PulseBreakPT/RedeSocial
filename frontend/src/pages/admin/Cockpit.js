@@ -476,4 +476,3 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
 }
 
 export default Cockpit;
-efault Cockpit;
