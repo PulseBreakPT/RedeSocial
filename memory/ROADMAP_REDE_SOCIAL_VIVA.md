@@ -63,6 +63,39 @@
   confirmar que os widgets aparecem só com sinal e devolvem `null` com DB
   vazio sem partir o layout.
 
+### Fix — Smart cache invalidation no Pulse Engine ✅
+- `pulse_engine.get_last_snapshot_cache_with_age()` (idade via monotonic).
+- `/api/pulse/now`: cache fresca (<30s) → devolve; cache velha →
+  recalcula on-demand (Mongo está igualmente velho); cold boot → Mongo
+  depois compute.
+
+### Fase 3 — Presence Layer ✅ (já existia no código)
+- Auditado: já estava implementado, não foi preciso `presence_engine.py`.
+  - Backend: `ws_manager.viewers_by_post`, `add/remove_post_viewer`,
+    broadcast `post_viewers`, eventos WS `post_view`/`post_unview`,
+    `c_typing`, endpoint `/posts/{id}/viewers`, presença de DMs, heartbeat
+    `last_seen`.
+  - Frontend: `usePostPresence`, `PostViewersBadge`,
+    `ConversationPresence`, `useCommentTyping`, `CommentTypingIndicator`
+    — renderizados em `PostDetail`.
+  - **Decisão:** NÃO adicionar "N a ler" a cada card do feed — enviar
+    `post_view` ao scrollar seria semanticamente errado (scrollar ≠ ver).
+    Presença fica no contexto focado (PostDetail).
+
+### Fase 4 — Context Engine ✅
+- **Módulo novo:** `backend/context_engine.py` —
+  `get_feed_context_weights(now, dominant_mood, calendar_theme,
+  calendar_label)`. Math puro + lookup (slot de hora, dia da semana,
+  evento PT, mood dominante). Devolve `tempo`, `freshness_mult`,
+  `mood_boost_for/boost`, `label`. Sem IA.
+- **Scoring:** `compute_ranking_score(..., context=ctx)` — ajusta o peso
+  de frescura por `freshness_mult` e dá boost suave a posts cujo mood
+  combina com o contexto. Contexto calculado 1x/pedido em `/feed/v2` via
+  `_build_feed_context()` (mood vem da cache do Pulse, evento do calendário).
+- **Endpoint:** `GET /api/feed/context` → `{tempo, slot, label}`.
+- **Frontend:** `components/pulse/FeedContextLine.js` mostra o label
+  subtil no cabeçalho do feed (refresh 10 min). `null` se vazio.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER

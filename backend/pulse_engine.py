@@ -676,6 +676,17 @@ def get_last_snapshot_cache() -> Tuple[Optional[dict], float]:
     return _last_snapshot_cache, _last_snapshot_ts
 
 
+def get_last_snapshot_cache_with_age() -> Tuple[Optional[dict], float]:
+    """Returns (snapshot, age_seconds). `age_seconds` is how long ago the
+    cache was written (monotonic clock, immune to wall-clock jumps). When
+    the cache is empty the age is a large sentinel so callers treat it as
+    stale. Lets `/pulse/now` recompute on demand right after a user just
+    published, instead of serving a snapshot the loop hasn't refreshed."""
+    if _last_snapshot_cache is None or _last_snapshot_ts <= 0:
+        return None, float("inf")
+    return _last_snapshot_cache, max(0.0, time.monotonic() - _last_snapshot_ts)
+
+
 async def _tick_once(db, ws_manager) -> None:
     """One full loop iteration: compute, persist, broadcast, cache."""
     global _last_snapshot_cache, _last_snapshot_ts

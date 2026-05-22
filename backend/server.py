@@ -35,6 +35,9 @@ from pydantic import BaseModel, EmailStr, Field
 # Imported lazily-free here at module load; `start_pulse_loop` only runs
 # once `app.on_event("startup")` fires, by which time `ws_manager` exists.
 import pulse_engine
+# Fase 4 — Context Engine. Pesos contextuais (hora/dia/calendário/mood)
+# para o feed. Pure math + lookup, sem estado, importável directamente.
+import context_engine
 
 JWT_ALGORITHM = "HS256"
 
@@ -8022,7 +8025,8 @@ async def compute_affinity(viewer_id: str, target_id: str) -> float:
 
 
 async def compute_ranking_score(post: dict, viewer: Optional[dict],
-                                viewer_affinity: dict, seen_authors: dict) -> float:
+                                viewer_affinity: dict, seen_authors: dict,
+                                context: Optional[dict] = None) -> float:
     """Multi-objective score for For You ranking.
     Components:
       freshness: exp decay 14h half-life
@@ -8032,6 +8036,10 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
       mood/city: bonus if matches viewer profile
       hidden_gem: bonus for high engagement rate, low-follower authors
       trending: short-window velocity boost
+      context:  (Fase 4) optional dict from context_engine — adjusts the
+                freshness weight by `freshness_mult` (rede acesa favorece o
+                "agora") and adds a soft `mood_boost` to posts whose mood
+                matches the contextual mood (hora/dia/calendário/pulse).
     """
     now = datetime.now(timezone.utc)
     try:
@@ -8081,11 +8089,22 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
     interest_w = tuner.get("interest", 30) / 100
     place_w = tuner.get("place", 30) / 100
 
+    # Fase 4 — Context Engine. `freshness_mult` ajusta quanto o "agora"
+    # pesa (rede acesa → favorece recente); `context_mood` dá um boost
+    # suave aos posts cujo mood combina com o contexto (hora/dia/calendário/
+    # pulse), por cima do mood_match pessoal e do tod_bonus existentes.
+    freshness_mult = 1.0
+    context_mood = 0.0
+    if context:
+        freshness_mult = context.get("freshness_mult", 1.0) or 1.0
+        if context.get("mood_boost_for") and mood == context.get("mood_boost_for"):
+            context_mood = context.get("mood_boost", 0.0) or 0.0
+
     base = (
-        freshness * 1.4
+        freshness * 1.4 * freshness_mult
         + engagement * 0.6
         + affinity * friends_w * 2.0
-        + (mood_match + tod_bonus) * interest_w * 2.0
+        + (mood_match + tod_bonus + context_mood) * interest_w * 2.0
         + city_match * place_w * 2.0
     )
     # B-007 — Author boost (24h window). If the author paid the "boost cost"
@@ -8099,6 +8118,47 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
         except Exception:
             pass
     return base * diversity_penalty
+
+
+def _build_feed_context() -> dict:
+    """Fase 4 — Reúne os sinais contextuais e devolve os pesos do
+    context_engine. Barato: o mood dominante vem da cache do Pulse Engine
+    (sem Mongo) e o evento do calendário é um lookup em memória. Nunca
+    lança — em erro devolve contexto neutro."""
+    try:
+        now = datetime.now(timezone.utc)
+        dominant = None
+        try:
+            snap = pulse_engine.get_last_snapshot_cache()[0]
+            if snap:
+                dominant = snap.get("dominant_mood")
+        except Exception:
+            dominant = None
+        ev = _pt_today_event(now)
+        cal_theme = ev.get("theme") if (ev and ev.get("is_today")) else None
+        cal_label = ev.get("label") if (ev and ev.get("is_today")) else None
+        return context_engine.get_feed_context_weights(
+            now,
+            dominant_mood=dominant,
+            calendar_theme=cal_theme,
+            calendar_label=cal_label,
+        )
+    except Exception:
+        return context_engine.get_feed_context_weights()
+
+
+@api.get("/feed/context")
+async def feed_context(user=Depends(get_current_user)):
+    """Fase 4 — Sinal contextual subtil para o cabeçalho do feed
+    ("Domingo à noite · ritmo calmo"). Determinístico, derivado do
+    relógio + calendário + mood dominante. Sem sinal forte → label curto
+    mas sempre verdadeiro (nunca inventa)."""
+    ctx = _build_feed_context()
+    return {
+        "tempo": ctx.get("tempo"),
+        "slot": ctx.get("slot"),
+        "label": ctx.get("label"),
+    }
 
 
 @api.get("/feed/v2")
@@ -8128,11 +8188,14 @@ async def feed_v2(mood: str = "", user=Depends(get_current_user)):
     aff = {}
     for aid in distinct_authors:
         aff[aid] = await compute_affinity(user["id"], aid)
+    # Fase 4 — Contexto do feed (uma vez por pedido). Mood dominante vem da
+    # cache do Pulse Engine (zero custo); evento do calendário PT de hoje.
+    feed_ctx = _build_feed_context()
     # Score with running author-count for diversity
     seen = {}
     scored = []
     for p in candidates:
-        s = await compute_ranking_score(p, user, aff, seen)
+        s = await compute_ranking_score(p, user, aff, seen, context=feed_ctx)
         scored.append((s, p))
         seen[p.get("author_id")] = seen.get(p.get("author_id"), 0) + 1
     scored.sort(key=lambda x: x[0], reverse=True)
@@ -8543,15 +8606,22 @@ async def pulse_now(user=Depends(get_current_user)):
     """Most recent full snapshot. If the loop hasn't ticked yet (cold
     boot), compute one synchronously so the UI never sees null."""
     # Prefer the in-memory cache populated by the background loop —
-    # zero Mongo cost on the hot path.
-    cache, _ts = pulse_engine.get_last_snapshot_cache()
-    if cache:
+    # zero Mongo cost on the hot path. But if the cache is older than 30s
+    # (e.g. the user just published and the loop hasn't re-ticked yet),
+    # recompute on demand so the ambient UI reflects fresh signal. Costs
+    # ~25ms extra only in that narrow window.
+    cache, age = pulse_engine.get_last_snapshot_cache_with_age()
+    if cache and age < 30:
         return cache
+    if cache:
+        # Cache exists but is stale: the persisted Mongo snapshot is just
+        # as old (loop writes + caches together), so recompute on demand
+        # for genuine freshness. The loop catches up on its next tick.
+        return await pulse_engine.compute_pulse_snapshot(db)
+    # Cold boot (loop hasn't ticked yet): try Mongo, then compute.
     snap = await pulse_engine.fetch_latest_snapshot(db)
     if snap:
         return snap
-    # First-boot fallback: compute one on demand (without persisting,
-    # the loop will catch up on its next tick).
     return await pulse_engine.compute_pulse_snapshot(db)
 
 
