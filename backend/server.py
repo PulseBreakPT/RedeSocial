@@ -286,6 +286,7 @@ async def readiness_check():
 
 HASHTAG_RE = re.compile(r"#([\wáéíóúâêîôûãõçÁÉÍÓÚÂÊÎÔÛÃÕÇ-]+)", re.UNICODE)
 MENTION_RE = re.compile(r"@([a-zA-Z0-9_]+)")
+URL_RE = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
 ONLINE_WINDOW = timedelta(minutes=2)
 
 # Fase 1: rich posts ----------------------------------------------------------
@@ -2986,6 +2987,35 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
         if _has_imgs and not await is_feature_enabled("uploads_enabled"):
             raise HTTPException(503, SETTINGS_BY_KEY["uploads_enabled"].get("off_message"))
         _img_cap = await get_limit("max_images_per_post")
+        # Anti hashtag/url spam (admins bypass)
+        _content_for_count = payload.content or ""
+        _max_hashtags = await get_limit("max_hashtags_per_post")
+        if _max_hashtags:
+            _hashtag_count = len(extract_hashtags(_content_for_count))
+            if _hashtag_count > _max_hashtags:
+                raise HTTPException(400, f"Demasiadas hashtags ({_hashtag_count}). Máximo permitido: {_max_hashtags}.")
+        _max_urls = await get_limit("max_urls_per_post")
+        if _max_urls:
+            _url_count = len(URL_RE.findall(_content_for_count)) if URL_RE else 0
+            if _url_count > _max_urls:
+                raise HTTPException(400, f"Demasiados links ({_url_count}). Máximo permitido: {_max_urls}.")
+        # Anti-bot: minimum account age before posting
+        _min_age_min = await get_limit("min_account_age_minutes_to_post")
+        if _min_age_min and _min_age_min > 0:
+            try:
+                _created_at_raw = user.get("created_at")
+                if _created_at_raw:
+                    _created_at = datetime.fromisoformat(str(_created_at_raw).replace("Z", "+00:00"))
+                    if _created_at.tzinfo is None:
+                        _created_at = _created_at.replace(tzinfo=timezone.utc)
+                    _age_min = (datetime.now(timezone.utc) - _created_at).total_seconds() / 60.0
+                    if _age_min < _min_age_min:
+                        _wait = int(_min_age_min - _age_min) + 1
+                        raise HTTPException(429, f"Conta demasiado recente. Tenta de novo daqui a {_wait} minuto(s).")
+            except HTTPException:
+                raise
+            except Exception:
+                pass
     # Admin restrictions: mute + rate-limit (real, not mocked)
     await _aassert_can_post(user)
     community_id = None
@@ -10193,6 +10223,183 @@ SETTINGS_REGISTRY = [
      "label": "Mensagem de manutenção (custom)",
      "description": "Mensagem mostrada quando o modo manutenção (em Sistema) está ativo. Vazio = mensagem default.",
      "applies_to": ["Maintenance gate"]},
+
+    # =========================================================================
+    # EXPANSÃO — settings reais com enforcement / consumo público
+    # =========================================================================
+
+    # ---------- FLAGS extra (com enforcement) ----------
+    {"key": "link_previews_enabled",  "group": "flags", "type": "bool", "default": True,
+     "label": "Previews de links (unfurl)",
+     "description": "Quando LIGADO, o frontend mostra preview rico (título, imagem) para URLs em posts e DMs. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"],
+     "off_message": ""},
+
+    # ---------- LIMITES extra (com enforcement real em create_post) ----------
+    {"key": "max_hashtags_per_post",  "group": "limits", "type": "int", "default": 30,
+     "min": 1, "max": 100,
+     "label": "Hashtags máximas por post",
+     "description": "Quantas #hashtags diferentes podem aparecer num post. Anti hashtag-spam. Admins fazem bypass.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "max_urls_per_post",      "group": "limits", "type": "int", "default": 10,
+     "min": 1, "max": 50,
+     "label": "URLs máximos por post",
+     "description": "Quantos links HTTP(S) diferentes podem aparecer num post. Anti link-spam. Admins fazem bypass.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "min_account_age_minutes_to_post", "group": "limits", "type": "int", "default": 0,
+     "min": 0, "max": 10080,
+     "label": "Idade mínima da conta para postar (min)",
+     "description": "Tempo (em minutos) que uma conta tem de existir antes de poder publicar. 0 = desligado. Anti-bot.",
+     "applies_to": ["POST /api/posts"]},
+
+    {"key": "notification_retention_days", "group": "limits", "type": "int", "default": 90,
+     "min": 7, "max": 365,
+     "label": "Retenção de notificações (dias)",
+     "description": "Notificações mais antigas do que este valor podem ser removidas pelo job de limpeza. Exposto via /api/public/settings.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- BRANDING — visual (string) ----------
+    {"key": "logo_url",               "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 500, "format": "url",
+     "label": "URL do logótipo",
+     "description": "URL absoluto do logótipo (SVG/PNG). Aplicado pelo frontend no header. Vazio = usa o mark interno.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "favicon_url",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 500, "format": "url",
+     "label": "URL do favicon",
+     "description": "URL absoluto do favicon (.ico/.png/.svg). Aplicado no <link rel=icon>. Vazio = favicon default.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "og_image_url",           "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 500, "format": "url",
+     "label": "Imagem OpenGraph (og:image)",
+     "description": "Imagem default usada em previews em redes sociais quando o site é partilhado.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "primary_color",          "group": "content", "type": "string", "default": "#ef4444",
+     "min_len": 4, "max_len": 16, "format": "color",
+     "label": "Cor primária (hex)",
+     "description": "Cor primária da marca (formato #RRGGBB). Aplicada como CSS var --brand-primary. Vazio = vermelho coral default.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "accent_color",           "group": "content", "type": "string", "default": "#0e7490",
+     "min_len": 4, "max_len": 16, "format": "color",
+     "label": "Cor de accent (hex)",
+     "description": "Cor secundária para destaques. Aplicada como CSS var --brand-accent.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- SEO (string) ----------
+    {"key": "seo_default_description","group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 200, "format": "textarea",
+     "label": "Descrição SEO default",
+     "description": "Texto usado em <meta name=description> e og:description quando a página não tem descrição própria.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- LEGAL (string) ----------
+    {"key": "legal_company_name",     "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 120,
+     "label": "Nome legal da entidade",
+     "description": "Nome da empresa ou pessoa responsável pela plataforma. Aparece no footer e nas páginas legais.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "legal_company_vat",      "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 60,
+     "label": "NIF / VAT",
+     "description": "Número de contribuinte / VAT da entidade.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "legal_company_address",  "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 280, "format": "textarea",
+     "label": "Morada legal",
+     "description": "Morada da entidade responsável (para footer e documentos legais).",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "legal_company_country",  "group": "content", "type": "string", "default": "Portugal",
+     "min_len": 0, "max_len": 60,
+     "label": "País legal",
+     "description": "País da entidade responsável.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- I18N / TIME / THEME (string com choices) ----------
+    {"key": "default_locale",         "group": "content", "type": "string", "default": "pt-PT",
+     "min_len": 2, "max_len": 12,
+     "choices": ["pt-PT", "pt-BR", "en-US", "en-GB", "es-ES", "fr-FR", "de-DE", "it-IT"],
+     "label": "Locale por defeito",
+     "description": "Idioma e formato regional por defeito do site (utilizadores podem sobrepor no próprio perfil).",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "default_timezone",       "group": "content", "type": "string", "default": "Europe/Lisbon",
+     "min_len": 1, "max_len": 60,
+     "label": "Fuso horário por defeito",
+     "description": "Fuso horário usado em datas server-side e como default para novos utilizadores. Ex: 'Europe/Lisbon', 'America/Sao_Paulo'.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "default_theme",          "group": "content", "type": "string", "default": "auto",
+     "min_len": 1, "max_len": 16,
+     "choices": ["auto", "light", "dark"],
+     "label": "Tema por defeito",
+     "description": "Tema visual default para utilizadores que ainda não escolheram. 'auto' segue a preferência do sistema.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- VERSIONING (string) ----------
+    {"key": "tos_version",            "group": "content", "type": "string", "default": "1.0",
+     "min_len": 1, "max_len": 30,
+     "label": "Versão dos Termos de Serviço",
+     "description": "Quando incrementada, o frontend pode pedir aos utilizadores que voltem a aceitar os termos.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "min_app_version",        "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 30,
+     "label": "Versão mínima do cliente",
+     "description": "Versão mínima do frontend/app que é suportada. Vazio = sem restrição. Clientes abaixo desta versão podem ser avisados para atualizar.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- FOOTER (string) ----------
+    {"key": "footer_text",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 280, "format": "textarea",
+     "label": "Texto do footer",
+     "description": "Texto livre mostrado no footer (acima dos links legais). Suporta múltiplas linhas.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    # ---------- SOCIAL LINKS (string url, todos opcionais) ----------
+    {"key": "twitter_url",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL Twitter / X",
+     "description": "Link para a conta oficial. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "instagram_url",          "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL Instagram",
+     "description": "Link para a conta oficial. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "youtube_url",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL YouTube",
+     "description": "Link para o canal oficial. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "discord_url",            "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL Discord",
+     "description": "Link de convite para o servidor Discord. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "github_url",             "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL GitHub",
+     "description": "Link para a organização/repositório no GitHub. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
+
+    {"key": "linkedin_url",           "group": "content", "type": "string", "default": "",
+     "min_len": 0, "max_len": 300, "format": "url",
+     "label": "URL LinkedIn",
+     "description": "Link para o perfil/página no LinkedIn. Vazio = ícone escondido.",
+     "applies_to": ["GET /api/public/settings"]},
 ]
 
 DEFAULT_SETTINGS = {item["key"]: item["default"] for item in SETTINGS_REGISTRY}
@@ -10581,14 +10788,34 @@ async def admin_reset_settings(payload: AdminSettingsResetIn, admin=Depends(requ
 # Subset of settings exposed PUBLICLY (no auth required) so the frontend
 # can read branding + announcement banner + public flags before login.
 PUBLIC_SETTINGS_KEYS = {
+    # branding + content (already existed)
     "platform_name", "platform_tagline", "support_email",
     "announcement_banner_text", "announcement_banner_level",
     "welcome_message", "terms_url", "privacy_url", "maintenance_message",
-    "signup_open", "read_only_mode",
+    # flags
+    "signup_open", "read_only_mode", "link_previews_enabled",
+    # branding visuals (new)
+    "logo_url", "favicon_url", "og_image_url", "primary_color", "accent_color",
+    # SEO (new)
+    "seo_default_description",
+    # legal (new)
+    "legal_company_name", "legal_company_vat",
+    "legal_company_address", "legal_company_country",
+    # i18n / theme (new)
+    "default_locale", "default_timezone", "default_theme",
+    # versioning (new)
+    "tos_version", "min_app_version",
+    # footer (new)
+    "footer_text",
+    # social (new)
+    "twitter_url", "instagram_url", "youtube_url",
+    "discord_url", "github_url", "linkedin_url",
+    # limit hints (new — exposed read-only so frontend can pre-validate)
+    "notification_retention_days",
 }
 
 
-@api.get("/public/settings")
+@api2.get("/public/settings")
 async def public_settings():
     """Public, no-auth endpoint for branding/announcement banner + a few public flags.
     Cached server-side (5s) — safe for high-traffic polling from frontend."""

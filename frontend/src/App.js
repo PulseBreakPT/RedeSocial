@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { Toaster } from "sonner";
 import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
+import { PublicSettingsProvider } from "./context/PublicSettingsContext";
+import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
 import { AdminLayout } from "./components/AdminLayout";
@@ -53,10 +55,12 @@ function App() {
     }, []);
     return (
         <div className="App">
-            <AuthProvider>
-                <BrowserRouter>
-                    <ScrollToTopOnNavigate />
-                    <Toaster
+            <PublicSettingsProvider>
+                <AuthProvider>
+                    <BrowserRouter>
+                        <ScrollToTopOnNavigate />
+                        <AnnouncementBanner />
+                        <Toaster
                         theme="light"
                         position="bottom-right"
                         toastOptions={{
@@ -120,7 +124,8 @@ function App() {
                     <CookieBanner />
                     <ConfirmDialogHost />
                 </BrowserRouter>
-            </AuthProvider>
+                </AuthProvider>
+            </PublicSettingsProvider>
         </div>
     );
 }

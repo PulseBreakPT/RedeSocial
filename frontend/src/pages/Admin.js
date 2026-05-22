@@ -2298,6 +2298,162 @@ function LimitRow({ spec, currentValue, isOverride, onChange, onReset, saving })
     );
 }
 
+function StringSettingRow({ spec, currentValue, isOverride, onChange, onReset, saving }) {
+    const [local, setLocal] = useState(currentValue ?? spec.default ?? "");
+    useEffect(() => { setLocal(currentValue ?? spec.default ?? ""); }, [currentValue, spec.default]);
+    const dirty = (currentValue ?? "") !== (local ?? "");
+    const maxLen = spec.max_len ?? null;
+    const minLen = spec.min_len ?? 0;
+    const len = (local || "").length;
+    const tooShort = minLen > 0 && len < minLen;
+    const tooLong = maxLen != null && len > maxLen;
+    const valid = !tooShort && !tooLong;
+    const isUrl = spec.format === "url";
+    const isColor = spec.format === "color";
+    const isTextarea = spec.format === "textarea";
+    const hasChoices = Array.isArray(spec.choices) && spec.choices.length > 0;
+
+    const urlOk = !isUrl || !local || /^https?:\/\//i.test(local);
+    const colorOk = !isColor || !local || /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(local);
+    const formatOk = urlOk && colorOk;
+
+    const commit = () => {
+        if (!dirty || !valid || !formatOk) return;
+        onChange(local);
+    };
+
+    return (
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+            <div className="flex items-start gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="font-semibold text-[14px] text-slate-900">{spec.label}</div>
+                        {isOverride && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-700" title="Valor alterado pelo admin (≠ default)">
+                                Custom
+                            </span>
+                        )}
+                        {hasChoices && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 font-mono">
+                                {spec.choices.length} opções
+                            </span>
+                        )}
+                        {isUrl && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 font-mono">URL</span>
+                        )}
+                        {isColor && (
+                            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 font-mono">cor</span>
+                        )}
+                    </div>
+                    <div className="text-[12px] text-slate-500 mt-0.5">{spec.description}</div>
+                    {(spec.applies_to || []).length > 0 && (
+                        <div className="mt-1 text-[11px] text-slate-400 font-mono truncate">
+                            {spec.applies_to.slice(0, 2).join("  •  ")}
+                        </div>
+                    )}
+                </div>
+                {isOverride && (
+                    <button
+                        type="button"
+                        onClick={onReset}
+                        disabled={saving}
+                        className="text-[11px] text-slate-600 hover:text-slate-900 px-2 py-1 rounded-md hover:bg-slate-100 flex items-center gap-1 shrink-0"
+                        title={`Repor default ("${spec.default}")`}
+                        data-testid={`content-reset-${spec.key}`}
+                    >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Repor
+                    </button>
+                )}
+            </div>
+            <div className="flex items-stretch gap-2">
+                {hasChoices ? (
+                    <select
+                        value={local}
+                        onChange={(e) => setLocal(e.target.value)}
+                        disabled={saving}
+                        className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-[13px] bg-white focus:border-slate-400 outline-none disabled:opacity-60"
+                        data-testid={`content-input-${spec.key}`}
+                    >
+                        {spec.choices.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                ) : isTextarea ? (
+                    <textarea
+                        value={local}
+                        onChange={(e) => setLocal(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) commit(); }}
+                        disabled={saving}
+                        maxLength={maxLen || undefined}
+                        rows={3}
+                        placeholder={spec.default || ""}
+                        className={`flex-1 px-3 py-2 rounded-lg border text-[13px] bg-white outline-none disabled:opacity-60 ${valid && formatOk ? "border-slate-300 focus:border-slate-400" : "border-red-400 focus:border-red-500"}`}
+                        data-testid={`content-input-${spec.key}`}
+                    />
+                ) : isColor ? (
+                    <>
+                        <input
+                            type="color"
+                            value={colorOk && local ? local : "#000000"}
+                            onChange={(e) => setLocal(e.target.value)}
+                            disabled={saving}
+                            className="h-10 w-12 rounded-lg border border-slate-300 cursor-pointer disabled:opacity-60"
+                            aria-label={`${spec.label} (picker)`}
+                            data-testid={`content-color-${spec.key}`}
+                        />
+                        <input
+                            type="text"
+                            value={local}
+                            onChange={(e) => setLocal(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
+                            disabled={saving}
+                            maxLength={maxLen || undefined}
+                            placeholder={spec.default || "#RRGGBB"}
+                            className={`flex-1 px-3 py-2 rounded-lg border text-[13px] font-mono bg-white outline-none disabled:opacity-60 ${valid && formatOk ? "border-slate-300 focus:border-slate-400" : "border-red-400 focus:border-red-500"}`}
+                            data-testid={`content-input-${spec.key}`}
+                        />
+                    </>
+                ) : (
+                    <input
+                        type={isUrl ? "url" : "text"}
+                        value={local}
+                        onChange={(e) => setLocal(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
+                        disabled={saving}
+                        maxLength={maxLen || undefined}
+                        placeholder={spec.default || (isUrl ? "https://…" : "")}
+                        className={`flex-1 px-3 py-2 rounded-lg border text-[13px] bg-white outline-none disabled:opacity-60 ${valid && formatOk ? "border-slate-300 focus:border-slate-400" : "border-red-400 focus:border-red-500"}`}
+                        data-testid={`content-input-${spec.key}`}
+                    />
+                )}
+                <button
+                    type="button"
+                    onClick={commit}
+                    disabled={saving || !dirty || !valid || !formatOk}
+                    className={`text-[12px] px-3 rounded-lg font-medium transition-colors shrink-0 ${dirty && valid && formatOk ? "bg-slate-900 text-white hover:bg-slate-800/85" : "bg-slate-100 text-slate-300 cursor-not-allowed"}`}
+                    data-testid={`content-save-${spec.key}`}
+                >
+                    Guardar
+                </button>
+            </div>
+            <div className="flex items-center justify-between text-[10.5px] font-mono">
+                <span className={tooLong ? "text-red-600" : tooShort ? "text-amber-600" : "text-slate-400"}>
+                    {len}{maxLen ? `/${maxLen}` : ""} caracteres
+                    {minLen > 0 && ` · min ${minLen}`}
+                </span>
+                {!formatOk && (
+                    <span className="text-red-600">
+                        {!urlOk && "URL inválido (precisa começar por http:// ou https://)"}
+                        {!colorOk && "Cor inválida (formato esperado #RRGGBB)"}
+                    </span>
+                )}
+                {!isOverride && (
+                    <span className="text-slate-300 truncate ml-2">default: {spec.default || "(vazio)"}</span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function SettingsTab() {
     const [data, setData] = useState(null);  // {registry, values, defaults, overrides, history}
     const [loading, setLoading] = useState(true);
@@ -2371,6 +2527,7 @@ function SettingsTab() {
 
     const flags = (data.registry || []).filter((s) => s.group === "flags");
     const limits = (data.registry || []).filter((s) => s.group === "limits");
+    const contents = (data.registry || []).filter((s) => s.group === "content");
     const overrideKeys = Object.keys(data.overrides || {});
     const totalCustom = overrideKeys.length;
 
@@ -2459,6 +2616,28 @@ function SettingsTab() {
                 </div>
             </div>
 
+            {/* CONTEÚDO & BRANDING */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
+                    <FileText className="h-3.5 w-3.5" />
+                    Conteúdo, Branding & Legal <span className="text-slate-300">({contents.length})</span>
+                    <span className="text-slate-300 normal-case tracking-normal">— aplicado em runtime, exposto em <code>/api/public/settings</code></span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5" data-testid="settings-content-grid">
+                    {contents.map((spec) => (
+                        <StringSettingRow
+                            key={spec.key}
+                            spec={spec}
+                            currentValue={data.values?.[spec.key]}
+                            isOverride={spec.key in (data.overrides || {})}
+                            onChange={(v) => patchOne(spec.key, v)}
+                            onReset={() => resetOne(spec.key)}
+                            saving={saving}
+                        />
+                    ))}
+                </div>
+            </div>
+
             {/* HISTÓRICO */}
             <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-400 font-mono px-1">
@@ -2503,7 +2682,10 @@ function formatVal(v) {
     if (v === true) return "Ligado";
     if (v === false) return "Desligado";
     if (v == null) return "—";
-    return String(v);
+    const s = String(v);
+    if (s === "") return "(vazio)";
+    if (s.length > 60) return `${s.slice(0, 57)}…`;
+    return s;
 }
 
 function AuditTab() {
