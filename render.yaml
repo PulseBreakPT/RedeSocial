@@ -1,0 +1,50 @@
+# Backend (FastAPI) no Render — host persistente com WebSocket + loops em
+# background (pulse, reputação, comunidades). NÃO usar serverless/Vercel para
+# o backend: o /ws e os loops do startup precisam de um processo sempre-ligado.
+#
+# IMPORTANTE: numInstances = 1. Os loops de background (community_pulse,
+# reputation, health, graph) têm de correr numa ÚNICA instância — escalar para
+# 2+ duplicaria os loops e o processamento. Para escalar horizontalmente seria
+# preciso mover os loops para um worker dedicado.
+#
+# O plano free do Render adormece após inatividade (mata os loops) — usar pelo
+# menos "starter" para manter o backend sempre vivo.
+services:
+  - type: web
+    name: lusorae-backend
+    runtime: python
+    rootDir: backend
+    plan: starter
+    numInstances: 1
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Cross-site (frontend no Vercel ↔ backend no Render): o cookie de auth
+      # só viaja com SameSite=None + Secure. (O frontend também tem fallback por
+      # Bearer token, por isso funciona mesmo que o cookie seja bloqueado.)
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: COOKIE_SECURE
+        value: "true"
+      # Segredos / config — definir no painel do Render (sync:false).
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      # Domínio(s) do Vercel, separados por vírgula (ex.: https://lusorae.vercel.app)
+      - key: CORS_ORIGINS
+        sync: false
+      # Conta admin inicial (seed no primeiro arranque).
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
