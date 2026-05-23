@@ -111,6 +111,22 @@
   trigger de eventos; o tipo "evento" não está exposto (só rapida/noturna/
   tema). Pode ser adicionado depois.
 
+### Fase 6 — Reputação Humana Invisível ✅
+- **Módulo novo:** `backend/reputation_engine.py` — `health_score` 0–100
+  recalculado em loop diário (`recompute_all`, mesmo padrão de loop do
+  pulse). Sinais reais (30d): reciprocidade (respostas em fios),
+  diversidade (fios distintos), presença, − reports (user+conteúdo),
+  − toxicidade (léxico PT curado, match por fronteira de palavra),
+  − volume obsessivo. Math determinística, sem IA.
+- **Aplicação:** `health_multiplier(score)` (subtil: <30 → 0.75, >75 →
+  1.08) multiplicado no `compute_ranking_score`. Autores carregados numa
+  query em `/feed/v2` (`author_health`).
+- **Invisível:** guardado em `users.health_score`, nunca em `public_user`.
+  Sem leaderboards/badges/níveis.
+  - ⚠️ Nota: a invisibilidade assenta em `public_user()` ser o caminho
+    padrão de saída de utilizador. Recomenda-se auditar endpoints que
+    devolvam docs de utilizador em bruto (projeção sem `health_score`).
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER

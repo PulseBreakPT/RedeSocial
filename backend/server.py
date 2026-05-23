@@ -41,6 +41,9 @@ import context_engine
 # Fase 5 — Mesas (conversas efémeras). Helpers + índices TTL; endpoints
 # vivem aqui no server.py (precisam de db/auth/ws), como o Pulse Engine.
 import mesas as mesas_engine
+# Fase 6 — Reputação invisível. health_score recalculado em background;
+# influencia o scoring do feed mas NUNCA é exposto via API.
+import reputation_engine
 
 JWT_ALGORITHM = "HS256"
 
@@ -6854,6 +6857,14 @@ async def startup():
     except Exception as exc:
         logger.warning(f"mesas: startup wiring failed: {exc}")
 
+    # ── Fase 6 — Reputação invisível (health_score diário) ──────────
+    try:
+        await db.users.create_index("health_score")
+        reputation_engine.start_reputation_loop(db)
+        logger.info("reputation: background loop scheduled")
+    except Exception as exc:
+        logger.warning(f"reputation: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -6861,6 +6872,10 @@ async def shutdown():
     # close the client.
     try:
         await pulse_engine.stop_pulse_loop()
+    except Exception:
+        pass
+    try:
+        await reputation_engine.stop_reputation_loop()
     except Exception:
         pass
     client.close()
@@ -8035,7 +8050,8 @@ async def compute_affinity(viewer_id: str, target_id: str) -> float:
 
 async def compute_ranking_score(post: dict, viewer: Optional[dict],
                                 viewer_affinity: dict, seen_authors: dict,
-                                context: Optional[dict] = None) -> float:
+                                context: Optional[dict] = None,
+                                author_health: Optional[dict] = None) -> float:
     """Multi-objective score for For You ranking.
     Components:
       freshness: exp decay 14h half-life
@@ -8126,6 +8142,11 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
                 base *= 1.6
         except Exception:
             pass
+    # Fase 6 — Reputação invisível. Multiplicador subtil pelo health_score
+    # do autor (contas tóxicas/reportadas perdem alcance; saudáveis ganham
+    # um empurrão leve). Invisível ao utilizador.
+    if author_health is not None:
+        base *= reputation_engine.health_multiplier(author_health.get(post.get("author_id")))
     return base * diversity_penalty
 
 
@@ -8200,11 +8221,20 @@ async def feed_v2(mood: str = "", user=Depends(get_current_user)):
     # Fase 4 — Contexto do feed (uma vez por pedido). Mood dominante vem da
     # cache do Pulse Engine (zero custo); evento do calendário PT de hoje.
     feed_ctx = _build_feed_context()
+    # Fase 6 — health_score dos autores numa só query (invisível ao user).
+    author_health = {}
+    try:
+        hrows = await db.users.find(
+            {"id": {"$in": distinct_authors}}, {"_id": 0, "id": 1, "health_score": 1}
+        ).to_list(len(distinct_authors) or 1)
+        author_health = {r["id"]: r.get("health_score") for r in hrows if r.get("id")}
+    except Exception:
+        author_health = {}
     # Score with running author-count for diversity
     seen = {}
     scored = []
     for p in candidates:
-        s = await compute_ranking_score(p, user, aff, seen, context=feed_ctx)
+        s = await compute_ranking_score(p, user, aff, seen, context=feed_ctx, author_health=author_health)
         scored.append((s, p))
         seen[p.get("author_id")] = seen.get(p.get("author_id"), 0) + 1
     scored.sort(key=lambda x: x[0], reverse=True)
