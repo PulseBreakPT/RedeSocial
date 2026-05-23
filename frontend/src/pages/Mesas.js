@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Coffee, Plus, Clock, Users, Send, ArrowLeft, X as XIcon } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
@@ -28,6 +29,20 @@ export default function Mesas() {
     const [loading, setLoading] = useState(true);
     const [creating, setCreating] = useState(false);
     const [active, setActive] = useState(null); // mesa id
+    const [params, setParams] = useSearchParams();
+
+    // Deep-link: /mesas?open=<id> abre a mesa diretamente (ex.: vindo de uma
+    // comunidade). Consome o param para não reabrir ao voltar atrás.
+    useEffect(() => {
+        const o = params.get("open");
+        if (o) {
+            setActive(o);
+            const next = new URLSearchParams(params);
+            next.delete("open");
+            setParams(next, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const loadList = useCallback(async () => {
         setLoading(true);

@@ -7467,6 +7467,20 @@ async def community_your_people(slug: str, user=Depends(get_current_user)):
     return {"people": await _enrich_member_list(ties)}
 
 
+@api.get("/communities/{slug}/mesas")
+async def community_mesas(slug: str, user=Depends(get_current_user)):
+    """Mesas vivas deste bairro (nascem de tópicos internos em burst)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    rows = await db.mesas.find(
+        {"community_id": comm["id"]}, {"_id": 0}
+    ).sort("last_activity_at", -1).to_list(40)
+    now = datetime.now(timezone.utc)
+    alive = [m for m in rows if mesas_engine.is_alive(m, now)]
+    return [mesas_engine.public_mesa(m, me_id=user["id"], now=now) for m in alive]
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Comunidades — MODERAÇÃO COMPLETA (papéis, ban/mute, reports, log)
 # ─────────────────────────────────────────────────────────────────────

@@ -209,6 +209,32 @@ atmosfera própria. Decisões: vertical slice primeiro · moderação completa
   ações por membro no tab Pessoas (silenciar/expulsar/promover); botão
   **reportar** + **remover** por post nas Conversas; remoção realtime.
 
+### Lógica Extrema (mecânicas novas) — ENTREGUE ✅
+Plano: `memory`/plano aprovado. 5 ondas, todas com dados reais (sem IA, sem
+gamificação individual; coletivo/privado estilo reputation_engine).
+- **Onda A — Ritmo & Memória + Presença de escrita**: `community_rhythm.py`
+  (perfil horário, sparkline 24h, horas fortes, `dias_vivos` coletivo) +
+  `GET /ritmo`; `RitmoPanel` (Sobre) + sparkline no LiveStrip. Composer emite
+  `community_typing` → "X a escrever" ao vivo.
+- **Onda B — Happenings**: `happenings.py` deteta episódios reais do pulso
+  (temperatura/delta), persiste (`community_happenings`, TTL 30d), difunde
+  `community_happening`. Hype REconvertido em "amplificar" (amplifiers[]).
+  Banner ao vivo + "Momentos recentes" no Agora.
+- **Onda C — Saúde + Núcleo**: `community_health.py` (score coletivo, mistura
+  na descoberta, painel privado de mods) + `community_graph.py` (núcleo,
+  densidade, "as tuas pessoas aqui"; cache `community_graph_cache`). Loops
+  próprios.
+- **Onda D — Notificações + Pertença**: `community_subscriptions` (opt-in),
+  tipos `community_post`/`community_happening` (fan-out só a subscritores),
+  sino real no header; `GET /pertenca` (segues aqui + da tua cidade) + WS
+  `community_welcome` ao entrar.
+- **Onda E — Mesas de bairro**: `mesas.py` ganha `community_id` + auto-criação
+  de mesa `tema` quando um tópico interno rebenta (dedupe); `GET
+  /communities/{slug}/mesas`; cartão "Mesas do bairro" no Agora + deep-link
+  `/mesas?open=`.
+- Validação: só sintaxe (py_compile/esbuild) + testes de lógica pura. **Sem
+  runtime** (sem Mongo/deps neste ambiente).
+
 ### A FAZER (próximas iterações)
 - **Desktop multi-column**: right-rail lateral com widgets vivos (pulso,
   presentes, trends, ticker) — adiado do slice por precisar de teste visual.

@@ -53,8 +53,10 @@ def compute_expiry(kind: str, now: Optional[datetime] = None) -> Tuple[datetime,
 
 
 def new_mesa_doc(*, title: str, topic: str, kind: str, created_by: str,
+                 community_id: Optional[str] = None,
                  now: Optional[datetime] = None) -> dict:
-    """Constrói o documento de uma mesa nova (com companheiro TTL)."""
+    """Constrói o documento de uma mesa nova (com companheiro TTL).
+    `community_id` opcional ata a mesa a uma comunidade (mesas de bairro)."""
     import uuid
     now = now or datetime.now(timezone.utc)
     if kind not in MESA_KINDS:
@@ -65,11 +67,12 @@ def new_mesa_doc(*, title: str, topic: str, kind: str, created_by: str,
         "title": (title or "").strip()[:MAX_TITLE],
         "topic": (topic or "").strip()[:MAX_TOPIC],
         "kind": kind,
+        "community_id": community_id,
         "created_by": created_by,
         "created_at": _iso(now),
         "expires_at": _iso(expires_at),
         "expires_reason": reason,
-        "participants": [created_by],
+        "participants": [created_by] if created_by and created_by != "system" else [],
         "message_count": 0,
         "last_activity_at": _iso(now),
         # Companheiro Date para o índice TTL do Mongo (mesmo padrão do pulse).
@@ -102,6 +105,7 @@ def public_mesa(mesa: dict, me_id: Optional[str] = None,
         "title": mesa.get("title", ""),
         "topic": mesa.get("topic", ""),
         "kind": mesa.get("kind", "rapida"),
+        "community_id": mesa.get("community_id"),
         "created_by": mesa.get("created_by"),
         "created_at": mesa.get("created_at"),
         "expires_at": mesa.get("expires_at"),
@@ -123,8 +127,57 @@ async def init_mesas_indexes(db) -> None:
         await db.mesas.create_index("expire_at", expireAfterSeconds=0, name="mesas_ttl")
         await db.mesas.create_index([("last_activity_at", -1)], name="mesas_activity")
         await db.mesas.create_index("id", unique=True, name="mesas_id")
+        await db.mesas.create_index([("community_id", 1), ("last_activity_at", -1)], name="mesas_community")
         await db.mesa_messages.create_index("expire_at", expireAfterSeconds=0, name="mesa_msgs_ttl")
         await db.mesa_messages.create_index([("mesa_id", 1), ("created_at", 1)], name="mesa_msgs_lookup")
         logger.info("mesas: indexes ready")
     except Exception as exc:
         logger.warning(f"mesas: index creation skipped: {exc}")
+
+
+async def auto_topic_mesa(db, community: dict, snap: dict, ws_manager,
+                          now: Optional[datetime] = None) -> Optional[dict]:
+    """Abre uma mesa 'tema' de bairro quando um tópico INTERNO rebenta — só a
+    partir de meaningful_trends reais e com dedupe (uma mesa viva por tópico).
+    Sem participantes → expira sozinha pelo TTL. Devolve o doc se criou."""
+    import logging
+    logger = logging.getLogger("mesas")
+    try:
+        trends = snap.get("meaningful_trends") or []
+        if not trends:
+            return None
+        top = trends[0]
+        topic = (top.get("tag") or "").strip().lower()
+        if not topic:
+            return None
+        cid = community["id"]
+        now = now or datetime.now(timezone.utc)
+        # Dedupe: já existe mesa 'tema' viva para este tópico nesta comunidade?
+        existing = await db.mesas.find_one({
+            "community_id": cid, "topic": topic, "kind": "tema",
+            "expire_at": {"$gt": now},
+        }, {"_id": 0, "id": 1})
+        if existing:
+            return None
+        doc = new_mesa_doc(
+            title=f"#{topic}", topic=topic, kind="tema",
+            created_by="system", community_id=cid, now=now,
+        )
+        await db.mesas.insert_one(dict(doc))
+        # Anuncia no ticker da comunidade (sem inventar participantes).
+        if ws_manager is not None:
+            try:
+                await ws_manager.broadcast_to_community(cid, {
+                    "type": "community_activity",
+                    "community_id": cid,
+                    "event": "mesa",
+                    "mesa_id": doc["id"],
+                    "at": doc["created_at"],
+                    "preview": f"Abriu-se uma mesa sobre #{topic}",
+                })
+            except Exception:
+                pass
+        return doc
+    except Exception as exc:
+        logger.warning(f"mesas: auto_topic_mesa failed: {exc}")
+        return None
