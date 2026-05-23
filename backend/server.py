@@ -8740,6 +8740,58 @@ async def pulse_timeline(minutes: int = 60, user=Depends(get_current_user)):
     return {"minutes": minutes, "points": trimmed}
 
 
+@api.get("/pulse/topology")
+async def pulse_topology(user=Depends(get_current_user)):
+    """Fase 7 — Mapa social vivo. Intensidade por região + cidades, derivada
+    do snapshot do Pulse Engine. Intensidade é o score normalizado (0..1)
+    para a maior região/cidade do momento. Privacidade: granularidade
+    máxima cidade (nunca freguesia/coordenadas), igual ao resto do Pulse."""
+    snap = pulse_engine.get_last_snapshot_cache()[0] or await pulse_engine.fetch_latest_snapshot(db)
+    if not snap:
+        snap = await pulse_engine.compute_pulse_snapshot(db)
+    regions = snap.get("regions", []) or []
+    cities = snap.get("cities", []) or []
+    max_r = max([r.get("score", 0) for r in regions], default=0) or 1
+    max_c = max([c.get("score", 0) for c in cities], default=0) or 1
+
+    def _intensity(score, mx):
+        try:
+            return round(min(1.0, max(0.0, (score or 0) / mx)), 3)
+        except Exception:
+            return 0.0
+
+    regions_out = [
+        {
+            "key": r.get("key"),
+            "label": r.get("label"),
+            "score": r.get("score", 0),
+            "intensity": _intensity(r.get("score", 0), max_r),
+            "delta_pct": r.get("delta_pct"),
+            "meaningful": bool(r.get("meaningful")),
+            "active_users_60s": r.get("active_users_60s", 0),
+        }
+        for r in regions
+    ]
+    cities_out = [
+        {
+            "key": c.get("key"),
+            "label": c.get("label"),
+            "score": c.get("score", 0),
+            "intensity": _intensity(c.get("score", 0), max_c),
+            "delta_pct": c.get("delta_pct"),
+            "meaningful": bool(c.get("meaningful")),
+        }
+        for c in cities if (c.get("score", 0) or 0) > 0
+    ]
+    cities_out.sort(key=lambda x: -x["score"])
+    return {
+        "taken_at": snap.get("taken_at"),
+        "regions": regions_out,
+        "cities": cities_out[:40],
+        "meaningful_cities": [c for c in cities_out if c["meaningful"]],
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Fase 5 — MESAS (conversas efémeras)
 # ─────────────────────────────────────────────────────────────────────

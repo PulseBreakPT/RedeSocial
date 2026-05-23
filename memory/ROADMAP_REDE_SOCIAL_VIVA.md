@@ -127,6 +127,18 @@
     padrão de saída de utilizador. Recomenda-se auditar endpoints que
     devolvam docs de utilizador em bruto (projeção sem `health_score`).
 
+### Fase 7 — Activity Topology / Mapa Social Vivo ✅
+- **Endpoint:** `GET /api/pulse/topology` — intensidade normalizada (0..1)
+  por região + cidades, do snapshot do Pulse. Granularidade máxima cidade
+  (sem freguesia/coordenadas), igual ao resto do Pulse.
+- **Frontend:** página `pages/Topologia.js` — mapa esquemático (continente
+  em coluna Norte→Algarve + ilhas), tiles com opacidade por intensidade e
+  `live-dot` nas regiões `meaningful`; lista de cidades a crescer.
+  Atualiza no WS `pulse_tick`. Rota `/topologia`, nav (Map).
+- **Nota:** mapa esquemático (não SVG geográfico ao pixel) — escolha
+  consciente para evitar dependência nova não testável e manter
+  acessibilidade. Um SVG geográfico pode substituí-lo depois.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER

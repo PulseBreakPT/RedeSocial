@@ -25,6 +25,7 @@ import Settings from "./pages/Settings";
 import TagPage from "./pages/TagPage";
 import Communities from "./pages/Communities";
 import Mesas from "./pages/Mesas";
+import Topologia from "./pages/Topologia";
 import Community from "./pages/Community";
 import Trending from "./pages/Trending";
 import Drafts from "./pages/Drafts";
@@ -103,6 +104,7 @@ function App() {
                             <Route path="/scheduled" element={<Scheduled />} />
                             <Route path="/communities" element={<Communities />} />
                             <Route path="/mesas" element={<Mesas />} />
+                            <Route path="/topologia" element={<Topologia />} />
                             <Route path="/c/:slug" element={<Community />} />
                             <Route path="/u/:username" element={<Profile />} />
                             <Route path="/post/:postId" element={<PostDetail />} />
