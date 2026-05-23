@@ -50,6 +50,8 @@ import community_pulse
 import community_mod
 # Comunidades — ritmo & memória social (perfil horário, dias vivos).
 import community_rhythm
+# Comunidades — micro-eventos sociais (happenings) detetados pelo pulso.
+import happenings
 
 JWT_ALGORITHM = "HS256"
 
@@ -6930,6 +6932,8 @@ async def startup():
         await db.comments.create_index("community_id")
         await community_pulse.init_community_pulse_indexes(db)
         await community_mod.init_community_mod_indexes(db)
+        await happenings.init_happening_indexes(db)
+        community_pulse.set_happening_on_started(_notify_happening_subscribers)
         community_pulse.start_community_pulse_loop(db, ws_manager)
         logger.info("community_pulse: background loop scheduled")
     except Exception as exc:
@@ -8264,51 +8268,62 @@ async def delete_starter_pack(pack_id: str, user=Depends(get_current_user)):
 
 # ---------- 10) Hype Train ----------
 @api.post("/communities/{slug}/hype")
-async def join_hype_train(slug: str, user=Depends(get_current_user)):
-    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+async def amplify_happening(slug: str, user=Depends(get_current_user)):
+    """Hype = AMPLIFICAR um happening ativo (humanos a reforçar o momento que o
+    sistema detetou). Não cria momentos: só amplifica os reais. Sem happening
+    ativo → nada a amplificar."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "slug": 1})
     if not comm:
         raise HTTPException(404, "Comunidade não encontrada")
-    now = datetime.now(timezone.utc)
-    active = await db.hype_trains.find_one(
-        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
-        {"_id": 0},
+    active = await db.community_happenings.find_one(
+        {"community_id": comm["id"], "ended_at": None}, {"_id": 0}
     )
     if not active:
-        active = {
-            "id": str(uuid.uuid4()),
-            "community_slug": slug,
-            "started_by": user["id"],
-            "participants": [user["id"]],
-            "expires_at": (now + timedelta(minutes=HYPE_DURATION_MIN)).isoformat(),
-            "started_at": now.isoformat(),
-            "target": HYPE_TARGET,
-        }
-        await db.hype_trains.insert_one(active)
-        active.pop("_id", None)
-    else:
-        if user["id"] not in active["participants"]:
-            active["participants"].append(user["id"])
-            await db.hype_trains.update_one(
-                {"id": active["id"]},
-                {"$addToSet": {"participants": user["id"]}},
-            )
-    active["count"] = len(active["participants"])
-    active["percent"] = min(100, int(100 * active["count"] / max(1, active["target"])))
-    return active
+        return {"active": False}
+    if user["id"] not in (active.get("amplifiers") or []):
+        await db.community_happenings.update_one(
+            {"id": active["id"]}, {"$addToSet": {"amplifiers": user["id"]}}
+        )
+        active.setdefault("amplifiers", []).append(user["id"])
+        try:
+            await ws_manager.broadcast_to_community(comm["id"], {
+                "type": "community_happening", "phase": "amplified",
+                "community_id": comm["id"], "slug": comm.get("slug"),
+                "happening": happenings.public_happening(active),
+            })
+        except Exception:
+            pass
+    return {"active": True, **happenings.public_happening(active)}
 
 
 @api.get("/communities/{slug}/hype/active")
-async def get_active_hype(slug: str):
-    now = datetime.now(timezone.utc)
-    active = await db.hype_trains.find_one(
-        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
-        {"_id": 0},
+async def get_active_happening(slug: str):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    active = await db.community_happenings.find_one(
+        {"community_id": comm["id"], "ended_at": None}, {"_id": 0}
     )
-    if not active:
-        return None
-    active["count"] = len(active["participants"])
-    active["percent"] = min(100, int(100 * active["count"] / max(1, active.get("target", HYPE_TARGET))))
-    return active
+    return happenings.public_happening(active) if active else None
+
+
+@api.get("/communities/{slug}/happenings")
+async def list_happenings(slug: str, user=Depends(get_current_user)):
+    """Memória social: os momentos que esta comunidade já viveu (ativos +
+    passados, mais recentes primeiro)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    rows = await db.community_happenings.find(
+        {"community_id": comm["id"]}, {"_id": 0}
+    ).sort("started_at", -1).to_list(30)
+    return [happenings.public_happening(h) for h in rows]
+
+
+async def _notify_happening_subscribers(community: dict, happening: dict) -> None:
+    """Gancho de fan-out de notificações quando um happening abre.
+    Implementado na Onda D (subscrições por comunidade). No-op por agora."""
+    return None
 
 
 # ---------- 11) Collab Posts ----------

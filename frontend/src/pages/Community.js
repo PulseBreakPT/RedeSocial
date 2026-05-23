@@ -56,6 +56,34 @@ function Sparkline({ points = [], width = 96, height = 20 }) {
     );
 }
 
+const HAPPENING_PHRASE = {
+    a_ferver: "A comunidade está a ferver",
+    em_brasa: "A comunidade está em brasa",
+    delta: "Movimento fora do normal agora",
+};
+
+function HappeningBanner({ happening, onAmplify }) {
+    if (!happening || !happening.active) return null;
+    const phrase = HAPPENING_PHRASE[happening.kind] || "Algo está a acontecer";
+    return (
+        <div className="px-4 lg:px-6 py-2.5 flex items-center gap-3 text-[13px] text-white"
+            style={{ background: "linear-gradient(90deg, var(--coral-500), #e0457a)" }}
+            data-testid="community-happening">
+            <span className="live-dot" style={{ background: "white" }} />
+            <Flame size={15} />
+            <span className="font-medium">{phrase}</span>
+            {happening.top_trend?.label && <span className="opacity-90">· {happening.top_trend.label}</span>}
+            {happening.amplifiers_count > 0 && (
+                <span className="opacity-80 font-mono text-[11px]">{happening.amplifiers_count} a amplificar</span>
+            )}
+            <button onClick={onAmplify} data-testid="community-amplify-btn"
+                className="ml-auto text-[11.5px] font-heading font-medium bg-white/20 hover:bg-white/30 rounded-full px-3.5 py-1.5 transition active:scale-95 inline-flex items-center gap-1">
+                <Flame size={12} /> Amplificar
+            </button>
+        </div>
+    );
+}
+
 // Faixa de estado vivo — sempre visível (a "activity layer" forte).
 function LiveStrip({ pulse, presentNow, typers = [], rhythm }) {
     if (!pulse) return null;
@@ -109,8 +137,9 @@ export default function Community() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const { pulse, presentNow, typers, notifyTyping } = useCommunityPulse(slug, community?.id);
+    const { pulse, presentNow, typers, notifyTyping, happening, amplify } = useCommunityPulse(slug, community?.id);
     const { rhythm } = useCommunityRhythm(slug, !!community);
+    const [pastHappenings, setPastHappenings] = useState([]);
     const canMod = !!community?.can_moderate;
     const isOwner = !!community?.is_owner;
 
@@ -150,6 +179,9 @@ export default function Community() {
     const loadModlog = useCallback(async () => {
         try { const { data } = await api.get(`/communities/${slug}/modlog`); setModlog(data || []); } catch { /* */ }
     }, [slug]);
+    const loadHappenings = useCallback(async () => {
+        try { const { data } = await api.get(`/communities/${slug}/happenings`); setPastHappenings(data || []); } catch { /* */ }
+    }, [slug]);
 
     // Carrega contagem de reports abertos assim que se sabe que é mod.
     useEffect(() => { if (canMod) loadReports(); }, [canMod, loadReports]);
@@ -159,6 +191,7 @@ export default function Community() {
         if (tab === "pessoas" && members.length === 0) loadMembers();
         if (tab === "alta" && !stats) loadStats();
         if ((tab === "agora" || tab === "alta" || tab === "pessoas") && !nowData) loadNow();
+        if (tab === "agora") loadHappenings();
         if (tab === "mod") { loadReports(); loadModlog(); }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
@@ -283,6 +316,9 @@ export default function Community() {
                 </div>
             </div>
 
+            {/* Momento ao vivo (happening) — quando o bairro ferve */}
+            <HappeningBanner happening={happening} onAmplify={amplify} />
+
             {/* Activity layer — estado vivo sempre visível */}
             <LiveStrip pulse={pulse} presentNow={presentNow} typers={typers} rhythm={rhythm} />
 
@@ -340,7 +376,7 @@ export default function Community() {
             )}
 
             {tab === "agora" && (
-                <AgoraTab nowData={nowData} ticker={ticker} pulse={pulse} presentNow={presentNow} />
+                <AgoraTab nowData={nowData} ticker={ticker} pulse={pulse} presentNow={presentNow} pastHappenings={pastHappenings} />
             )}
 
             {tab === "alta" && (
@@ -417,7 +453,7 @@ function PresenceAvatars({ users = [], count = 0 }) {
     );
 }
 
-function AgoraTab({ nowData, ticker, pulse, presentNow }) {
+function AgoraTab({ nowData, ticker, pulse, presentNow, pastHappenings = [] }) {
     const fmtAgo = (iso) => {
         try {
             const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -426,7 +462,12 @@ function AgoraTab({ nowData, ticker, pulse, presentNow }) {
             return `há ${Math.floor(s / 3600)}h`;
         } catch { return ""; }
     };
+    const fmtMoment = (iso) => {
+        try { return new Date(iso).toLocaleString("pt-PT", { weekday: "short", hour: "2-digit", minute: "2-digit" }); }
+        catch { return ""; }
+    };
     const authors = nowData?.authors || {};
+    const past = pastHappenings.filter((h) => !h.active);
     return (
         <div className="p-4 lg:p-5 space-y-5">
             <div className="card-lux p-4">
@@ -450,6 +491,23 @@ function AgoraTab({ nowData, ticker, pulse, presentNow }) {
                                     <div className="text-[13.5px] text-black/80 line-clamp-2">{g.preview || "(sem texto)"}</div>
                                     <div className="text-[11px] font-mono text-[var(--coral-500)] mt-0.5">{g.recent_comments_30m} respostas há pouco</div>
                                 </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {past.length > 0 && (
+                <div className="card-lux p-4">
+                    <p className="type-overline mb-2 flex items-center gap-1.5"><Flame size={12} /> Momentos recentes</p>
+                    <ul className="space-y-2">
+                        {past.map((h) => (
+                            <li key={h.id} className="text-[12.5px] text-black/65 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--coral-500)]" />
+                                <span className="font-medium">{HAPPENING_PHRASE[h.kind] || "Movimento"}</span>
+                                {h.top_trend?.label && <span className="text-black/45">· {h.top_trend.label}</span>}
+                                {h.amplifiers_count > 0 && <span className="text-black/40 font-mono text-[10px]">· {h.amplifiers_count}🔥</span>}
+                                <span className="text-black/30 ml-auto font-mono text-[10px]">{fmtMoment(h.started_at)}</span>
                             </li>
                         ))}
                     </ul>

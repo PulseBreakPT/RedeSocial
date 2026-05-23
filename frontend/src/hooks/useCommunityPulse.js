@@ -22,6 +22,7 @@ export function useCommunityPulse(slug, communityId) {
     const [pulse, setPulse] = useState(null);
     const [presentNow, setPresentNow] = useState(0);
     const [typers, setTypers] = useState([]);   // [{user, at}]
+    const [happening, setHappening] = useState(null);  // momento ativo (ou null)
     const [loading, setLoading] = useState(true);
     const wsState = useWsState();
     const joinedRef = useRef(false);
@@ -39,6 +40,22 @@ export function useCommunityPulse(slug, communityId) {
     }, [slug]);
 
     useEffect(() => { refresh(); }, [refresh]);
+
+    // Momento (happening) ativo inicial.
+    useEffect(() => {
+        if (!slug) return;
+        api.get(`/communities/${slug}/hype/active`)
+            .then(({ data }) => setHappening(data || null))
+            .catch(() => { /* ambiental */ });
+    }, [slug]);
+
+    const amplify = useCallback(async () => {
+        if (!slug) return;
+        try {
+            const { data } = await api.post(`/communities/${slug}/hype`);
+            if (data && data.active) setHappening(data);
+        } catch { /* ignore */ }
+    }, [slug]);
 
     // Entrar/sair da sala WS da comunidade.
     useEffect(() => {
@@ -71,6 +88,9 @@ export function useCommunityPulse(slug, communityId) {
         } else if (msg.type === "community_typing" && msg.user) {
             const at = Date.now();
             setTypers((prev) => [...prev.filter((p) => p.user.id !== msg.user.id), { user: msg.user, at }]);
+        } else if (msg.type === "community_happening") {
+            if (msg.phase === "ended") setHappening(null);
+            else if (msg.happening) setHappening(msg.happening);
         }
     }, [communityId]);
     useWsMessages(onWs);
@@ -99,7 +119,7 @@ export function useCommunityPulse(slug, communityId) {
         } catch { /* ignore */ }
     }, [communityId]);
 
-    return { pulse, presentNow, typers, notifyTyping, loading, refresh, wsState };
+    return { pulse, presentNow, typers, notifyTyping, happening, amplify, loading, refresh, wsState };
 }
 
 export default useCommunityPulse;
