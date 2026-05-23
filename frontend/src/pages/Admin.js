@@ -295,7 +295,7 @@ function OverviewTab({ onNavigate }) {
                         title="Exportar utilizadores em CSV"
                         aria-label="Exportar utilizadores em CSV"
                     >
-                        <Download size={14} /> <span className="hidden xs:inline">Users CSV</span>
+                        <Download size={14} /> <span className="hidden xs:inline">Utilizadores CSV</span>
                     </button>
                     <button
                         onClick={() => setReloadAt(Date.now())}
@@ -311,7 +311,7 @@ function OverviewTab({ onNavigate }) {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 <StatCard data-testid="kpi-users-total" label="Utilizadores" value={stats.users.total} sub={`${stats.users.online} online agora`} series={stats.series.signups_14d} accent="var(--ops-info-500)" hint={{ title: "Utilizadores totais", body: "Contagem total de contas registadas. O contador 'online agora' usa sessões WebSocket activas no último minuto." }} />
-                <StatCard data-testid="kpi-signups-7d" label="Signups (7d)" value={stats.users.signups_7d} sub={`${stats.users.signups_30d} em 30d`} accent="var(--ops-slate-400)" hint="Novos registos de conta nos últimos 7 dias. Útil para detectar picos de aquisição ou tentativas de spam em massa." />
+                <StatCard data-testid="kpi-signups-7d" label="Registos (7d)" value={stats.users.signups_7d} sub={`${stats.users.signups_30d} em 30d`} accent="var(--ops-slate-400)" hint="Novos registos de conta nos últimos 7 dias. Útil para detectar picos de aquisição ou tentativas de spam em massa." />
                 <StatCard data-testid="kpi-verified" label="Verificados" value={stats.users.verified} sub={`${stats.users.admins} admin(s)`} accent="var(--ops-success-500)" hint="Contas com verificação manual (badge azul). Inclui administradores." />
                 <StatCard data-testid="kpi-banned" label="Banidos" value={stats.users.banned} sub="Acesso bloqueado" accent="var(--ops-danger-500)" hint={{ title: "Banimentos activos", body: "Contas com acesso total revogado. Não conseguem fazer login, publicar nem comentar. Reversível em Utilizadores ▸ Desbanir." }} />
 
@@ -713,19 +713,19 @@ function SystemTab() {
 
                 {/* UPTIME */}
                 <SystemPanel
-                    title="Uptime"
+                    title="Tempo ativo"
                     icon={Clock}
                     accent="text-blue-600"
                     testid="sys-uptime"
                     loading={loading.uptime}
                     onRefresh={() => _load("uptime", "/admin/system/uptime", setUptime)}
-                    hint={{ title: "Uptime", body: "Tempo desde que o processo backend arrancou e há quanto a máquina-host está ligada. Picos seguidos de reboots curtos indicam crashes." }}
+                    hint={{ title: "Tempo ativo", body: "Tempo desde que o processo backend arrancou e há quanto a máquina-host está ligada. Picos seguidos de reboots curtos indicam crashes." }}
                 >
                     {uptime ? (
                         <dl>
                             <KV k="Processo" v={fmtUptime(uptime.process?.uptime_seconds)} mono hint="Tempo desde o último arranque do servidor FastAPI." />
                             <KV k="Arrancou" v={fmtDate(uptime.process?.started_at)} mono />
-                            <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono hint="Uptime da máquina onde o backend corre (não da app). Em ambientes containerizados pode coincidir." />
+                            <KV k="Host" v={uptime.host?.uptime_seconds != null ? fmtUptime(uptime.host.uptime_seconds) : "indisponível"} mono hint="Tempo ativo da máquina onde o backend corre (não da app). Em ambientes containerizados pode coincidir." />
                             <KV k="Verificado" v={fmtRelative(uptime.checked_at)} />
                         </dl>
                     ) : <div className="text-[12px] text-slate-400">A carregar…</div>}
@@ -1177,7 +1177,7 @@ function UsersTab({ onOpenDrawer }) {
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
                                         <span className="font-mono text-[11.5px] text-slate-400">@{u.username}</span>
-                                        {u.verified && <span className="ops-chip ops-chip--info font-medium">verified</span>}
+                                        {u.verified && <span className="ops-chip ops-chip--info font-medium">verificado</span>}
                                         {u.is_admin && <span className="ops-chip ops-chip--system font-medium">admin</span>}
                                         {u.banned && <span className="ops-chip ops-chip--danger font-medium">banido</span>}
                                         {u.online && <span className="ops-chip ops-chip--realtime font-medium">online</span>}
@@ -3165,7 +3165,7 @@ function AuditTab() {
                     <button onClick={downloadCsv}
                         data-testid="admin-audit-export"
                         className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
-                    ><Download size={14} /> Export CSV</button>
+                    ><Download size={14} /> Exportar CSV</button>
                     <button onClick={() => setReloadAt(Date.now())}
                         data-testid="admin-audit-refresh"
                         className="h-9 px-3 rounded-full bg-slate-100 hover:bg-slate-800/[0.1] inline-flex items-center gap-1.5 text-[13px]"
@@ -3971,7 +3971,7 @@ function UserDrawer({ user, onClose }) {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-display text-[15px] sm:text-[16px] tracking-tight truncate">{u.name || u.username}</span>
-                            {u.verified && <span className="ops-chip ops-chip--info">verified</span>}
+                            {u.verified && <span className="ops-chip ops-chip--info">verificado</span>}
                             {u.is_admin && <span className="ops-chip ops-chip--system">admin</span>}
                             {u.featured_account && <span className="ops-chip ops-chip--info">destacado</span>}
                             {u.banned && <span className="ops-chip ops-chip--danger">banido</span>}
@@ -4301,7 +4301,7 @@ function UserDrawer({ user, onClose }) {
                             <div>
                                 <div className="text-[10.5px] uppercase tracking-wider text-slate-400 font-mono mb-2">Limites</div>
                                 <div className="grid grid-cols-1 gap-2">
-                                    <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar limite (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / replies / posts"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
+                                    <ActionButton icon={Gauge} label={(u.rate_limit && (u.rate_limit.max_posts != null || u.rate_limit.max_comments != null)) ? `Editar limite (P:${u.rate_limit.max_posts ?? "∞"} / C:${u.rate_limit.max_comments ?? "∞"} / ${u.rate_limit.window_hours}h)` : "Limitar ações / respostas / publicações"} onClick={doRateLimit} testid="admin-action-rate-limit" disabled={actionBusy === "ratelimit"} kind="warn" />
                                 </div>
                             </div>
                             <div>
@@ -4520,8 +4520,8 @@ function AntiSpamTab({ onOpenDrawer }) {
                                         <span className="font-medium text-[13.5px] truncate">@{u.username}</span>
                                         {u.verified && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-blue-500/10 text-blue-600">v</span>}
                                         {u.banned && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-500/10 text-red-600">banido</span>}
-                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-50 text-slate-700">muted</span>}
-                                        {u.shadow_muted && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-gray-700/10 text-gray-700">shadow</span>}
+                                        {u.muted_active && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-50 text-slate-700">silenciado</span>}
+                                        {u.shadow_muted && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-gray-700/10 text-gray-700">oculto</span>}
                                         {u.frozen && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-slate-100 text-slate-700">congelado</span>}
                                         {u.flagged_suspicious && <span className="text-[9.5px] px-1 py-0.5 rounded-full bg-red-50/70 text-red-700">suspeito</span>}
                                         {typeof u.report_count_7d === "number" && (
@@ -4743,7 +4743,7 @@ function AdminSidebar({ tab, setTab, openReports, collapsed, setCollapsed, mobil
                     >
                         {collapsed
                             ? <PanelLeftOpen size={15} />
-                            : <><PanelLeftClose size={15} /><span>Colapsar</span></>}
+                            : <><PanelLeftClose size={15} /><span>Recolher</span></>}
                     </button>
                 </div>
             </aside>
