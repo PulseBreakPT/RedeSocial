@@ -132,6 +132,9 @@ export default function Community() {
     const [reports, setReports] = useState([]);
     const [modlog, setModlog] = useState([]);
     const [openReports, setOpenReports] = useState(0);
+    const [saude, setSaude] = useState(null);
+    const [nucleo, setNucleo] = useState(null);
+    const [yourPeople, setYourPeople] = useState([]);
     const [tab, setTab] = useState("conversas");
     const [q, setQ] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
@@ -182,6 +185,19 @@ export default function Community() {
     const loadHappenings = useCallback(async () => {
         try { const { data } = await api.get(`/communities/${slug}/happenings`); setPastHappenings(data || []); } catch { /* */ }
     }, [slug]);
+    const loadSaude = useCallback(async () => {
+        try { const { data } = await api.get(`/communities/${slug}/saude`); setSaude(data); } catch { /* */ }
+    }, [slug]);
+    const loadNucleo = useCallback(async () => {
+        try {
+            const [n, p] = await Promise.all([
+                api.get(`/communities/${slug}/nucleo`),
+                api.get(`/communities/${slug}/as-tuas-pessoas`),
+            ]);
+            setNucleo(n.data);
+            setYourPeople(p.data?.people || []);
+        } catch { /* */ }
+    }, [slug]);
 
     // Carrega contagem de reports abertos assim que se sabe que é mod.
     useEffect(() => { if (canMod) loadReports(); }, [canMod, loadReports]);
@@ -189,10 +205,11 @@ export default function Community() {
     useEffect(() => { setLoading(true); loadCore(); }, [loadCore]);
     useEffect(() => {
         if (tab === "pessoas" && members.length === 0) loadMembers();
+        if (tab === "pessoas" && !nucleo) loadNucleo();
         if (tab === "alta" && !stats) loadStats();
         if ((tab === "agora" || tab === "alta" || tab === "pessoas") && !nowData) loadNow();
         if (tab === "agora") loadHappenings();
-        if (tab === "mod") { loadReports(); loadModlog(); }
+        if (tab === "mod") { loadReports(); loadModlog(); loadSaude(); }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
 
@@ -386,11 +403,12 @@ export default function Community() {
             {tab === "pessoas" && (
                 <PessoasTab members={members} nowData={nowData} presentNow={presentNow}
                     canMod={canMod} isOwner={isOwner} ownerId={community.owner_id}
-                    onBan={banMember} onMute={muteMember} onPromote={promoteMod} />
+                    onBan={banMember} onMute={muteMember} onPromote={promoteMod}
+                    nucleo={nucleo} yourPeople={yourPeople} />
             )}
 
             {tab === "mod" && canMod && (
-                <ModeracaoTab reports={reports} modlog={modlog} onResolve={resolveReport} />
+                <ModeracaoTab reports={reports} modlog={modlog} onResolve={resolveReport} saude={saude} />
             )}
 
             {tab === "media" && (
@@ -676,13 +694,51 @@ function RitmoPanel({ rhythm }) {
     );
 }
 
-function PessoasTab({ members, nowData, presentNow, canMod, isOwner, ownerId, onBan, onMute, onPromote }) {
+function PeopleFaces({ people = [] }) {
+    return (
+        <div className="flex flex-wrap gap-3">
+            {people.map((u) => (
+                <Link key={u.id} to={`/u/${u.username}`} className="flex flex-col items-center gap-1 w-16 text-center group">
+                    <Avatar user={u} size={44} />
+                    <span className="text-[11px] text-black/65 truncate w-full group-hover:text-black">{u.name || u.username}</span>
+                </Link>
+            ))}
+        </div>
+    );
+}
+
+function PessoasTab({ members, nowData, presentNow, canMod, isOwner, ownerId, onBan, onMute, onPromote, nucleo, yourPeople = [] }) {
     return (
         <div className="pb-6">
             {nowData?.present?.length > 0 && (
                 <div className="p-4 lg:p-5 hairline-b">
                     <p className="type-overline mb-2.5">Aqui agora</p>
                     <PresenceAvatars users={nowData.present} count={nowData.present_count || presentNow} />
+                </div>
+            )}
+
+            {yourPeople.length > 0 && (
+                <div className="p-4 lg:p-5 hairline-b">
+                    <p className="type-overline mb-2.5">As tuas pessoas aqui</p>
+                    <PeopleFaces people={yourPeople} />
+                </div>
+            )}
+
+            {nucleo && (
+                <div className="p-4 lg:p-5 hairline-b">
+                    <div className="flex items-center justify-between mb-2.5">
+                        <p className="type-overline">Núcleo do bairro</p>
+                        {!nucleo.forming && (
+                            <span className="text-[11px] font-mono text-black/45" title="Quão interligada está a comunidade">
+                                densidade {Math.round((nucleo.density || 0) * 100)}%
+                            </span>
+                        )}
+                    </div>
+                    {nucleo.forming ? (
+                        <p className="text-[13px] text-black/45">Ainda a formar-se — poucas interações para já.</p>
+                    ) : (
+                        <PeopleFaces people={nucleo.nucleo || []} />
+                    )}
                 </div>
             )}
             {members.length === 0 ? (
@@ -724,10 +780,42 @@ const MOD_ACTION_LABEL = {
     remove_mod: "removeu de mod", resolve_report: "resolveu report", dismiss_report: "dispensou report",
 };
 
-function ModeracaoTab({ reports, modlog, onResolve }) {
+function SaudePanel({ saude }) {
+    if (!saude) return null;
+    const b = saude.breakdown || {};
+    const score = saude.score;
+    const tone = score >= 70 ? "text-emerald-600" : score < 40 ? "text-rose-600" : "text-black/70";
+    const rows = [
+        ["Reciprocidade", b.reciprocity != null ? `${Math.round((b.reciprocity || 0) * 100)}%` : "—"],
+        ["Vozes distintas", b.distinct_authors ?? "—"],
+        ["Regulares (7d)", b.regulars_7d ?? "—"],
+        ["Toxicidade", b.toxic_hits ?? 0],
+        ["Reports", b.reports ?? 0],
+    ];
+    return (
+        <div className="card-lux p-4">
+            <div className="flex items-center justify-between mb-3">
+                <p className="type-overline">Saúde do bairro</p>
+                <span className={`font-display text-[26px] leading-none ${tone}`}>{score}</span>
+            </div>
+            <p className="text-[11px] text-black/40 mb-3">Sinal privado — influencia a descoberta, nunca é mostrado aos membros.</p>
+            <div className="grid grid-cols-2 gap-2">
+                {rows.map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between text-[12.5px] bg-black/[0.03] rounded-lg px-2.5 py-1.5">
+                        <span className="text-black/55">{k}</span>
+                        <span className="font-mono">{v}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ModeracaoTab({ reports, modlog, onResolve, saude }) {
     const fmt = (iso) => { try { return new Date(iso).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
     return (
         <div className="p-4 lg:p-5 space-y-5">
+            <SaudePanel saude={saude} />
             <div className="card-lux p-4">
                 <p className="type-overline mb-3 flex items-center gap-1.5"><Flag size={12} /> Reports abertos {reports.length > 0 && <span className="text-[var(--coral-500)]">· {reports.length}</span>}</p>
                 {reports.length === 0 ? (

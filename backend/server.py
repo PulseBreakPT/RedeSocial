@@ -52,6 +52,9 @@ import community_mod
 import community_rhythm
 # Comunidades — micro-eventos sociais (happenings) detetados pelo pulso.
 import happenings
+# Comunidades — saúde do bairro (score coletivo) + núcleo/densidade social.
+import community_health
+import community_graph
 
 JWT_ALGORITHM = "HS256"
 
@@ -6161,10 +6164,26 @@ async def trending_communities(range: str = "7d", viewer: Optional[dict] = Depen
         s = counts.setdefault(cid, {"posts": 0, "likes": 0})
         s["posts"] += 1
         s["likes"] += len(p.get("likes", []))
-    ranked = sorted(counts.items(), key=lambda kv: kv[1]["posts"] * 2 + kv[1]["likes"], reverse=True)[:10]
+    # Blend saúde do bairro: vivas+saudáveis sobem, tóxicas/frias descem
+    # (subtil, nunca exposto). Score base = posts*2 + likes.
+    cids = list(counts.keys())
+    comm_docs = {}
+    if cids:
+        rows = await db.communities.find(
+            {"id": {"$in": cids}}, {"_id": 0}
+        ).to_list(len(cids))
+        comm_docs = {c["id"]: c for c in rows}
+
+    def _rank_key(item):
+        cid, s = item
+        base = s["posts"] * 2 + s["likes"]
+        health = (comm_docs.get(cid) or {}).get("health_score")
+        return base * community_health.health_multiplier_community(health)
+
+    ranked = sorted(counts.items(), key=_rank_key, reverse=True)[:10]
     out = []
     for cid, s in ranked:
-        c = await db.communities.find_one({"id": cid}, {"_id": 0})
+        c = comm_docs.get(cid)
         if not c:
             continue
         base = _community_public(c, viewer)
@@ -6939,6 +6958,16 @@ async def startup():
     except Exception as exc:
         logger.warning(f"community_pulse: startup wiring failed: {exc}")
 
+    # ── Comunidades — saúde do bairro + núcleo social (loops próprios) ──
+    try:
+        await community_health.init_community_health_indexes(db)
+        await community_graph.init_community_graph_indexes(db)
+        community_health.start_community_health_loop(db)
+        community_graph.start_community_graph_loop(db)
+        logger.info("community_health/graph: background loops scheduled")
+    except Exception as exc:
+        logger.warning(f"community_health/graph: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -6954,6 +6983,14 @@ async def shutdown():
         pass
     try:
         await community_pulse.stop_community_pulse_loop()
+    except Exception:
+        pass
+    try:
+        await community_health.stop_community_health_loop()
+    except Exception:
+        pass
+    try:
+        await community_graph.stop_community_graph_loop()
     except Exception:
         pass
     client.close()
@@ -7334,6 +7371,71 @@ async def community_ritmo(slug: str, user=Depends(get_current_user)):
         {"_id": 0, "taken_at": 1, "score": 1, "state": 1, "trends": 1},
     ).to_list(20000)
     return community_rhythm.build_rhythm(snapshots)
+
+
+@api.get("/communities/{slug}/saude")
+async def community_saude(slug: str, user=Depends(get_current_user)):
+    """Saúde do bairro — só moderadores. Score + breakdown + tendência. Nunca
+    público (regra de ouro: influencia descoberta, não é badge)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    if not community_mod.can_moderate(comm, user):
+        raise HTTPException(403, "Sem permissões nesta comunidade")
+    if "health_score" not in comm:
+        res = await community_health.compute_community_health(db, comm)
+        score, breakdown = res["score"], res["breakdown"]
+    else:
+        score, breakdown = comm.get("health_score"), comm.get("health_breakdown", {})
+    trend = await db.community_health_snapshots.find(
+        {"community_id": comm["id"]}, {"_id": 0, "score": 1, "taken_at": 1},
+    ).sort("taken_at", -1).to_list(30)
+    trend.reverse()
+    return {"score": score, "breakdown": breakdown, "trend": trend}
+
+
+async def _enrich_member_list(entries: list) -> list:
+    """entries: [{user_id, score}] → injeta public_user."""
+    ids = [e["user_id"] for e in entries if e.get("user_id")]
+    if not ids:
+        return []
+    rows = await db.users.find(
+        {"id": {"$in": ids}}, {"_id": 0, "password_hash": 0}
+    ).to_list(len(ids))
+    umap = {u["id"]: public_user(u) for u in rows}
+    out = []
+    for e in entries:
+        u = umap.get(e["user_id"])
+        if u:
+            out.append({**u, "tie_score": e.get("score")})
+    return out
+
+
+@api.get("/communities/{slug}/nucleo")
+async def community_nucleo(slug: str, user=Depends(get_current_user)):
+    """Núcleo social + densidade da comunidade (a partir da cache do grafo)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    doc = await community_graph.get_nucleo(db, comm)
+    nucleo = await _enrich_member_list(doc.get("nucleo", []))
+    return {
+        "nucleo": nucleo,
+        "density": doc.get("density", 0.0),
+        "participants": doc.get("participants_n", 0),
+        "edges": doc.get("edges_n", 0),
+        "forming": doc.get("forming", True),
+    }
+
+
+@api.get("/communities/{slug}/as-tuas-pessoas")
+async def community_your_people(slug: str, user=Depends(get_current_user)):
+    """As tuas pessoas aqui — laços mais fortes do viewer nesta comunidade."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    ties = await community_graph.your_people(db, user["id"], comm)
+    return {"people": await _enrich_member_list(ties)}
 
 
 # ─────────────────────────────────────────────────────────────────────
