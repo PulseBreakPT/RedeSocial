@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     Users, BarChart3, Crown, TrendingUp, Share2, Search, MoreHorizontal,
-    Flame, Activity,
+    Flame, Activity, Shield, Flag, VolumeX, UserX, Trash2, Check,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
@@ -14,7 +14,7 @@ import { useWsMessages } from "../components/WebSocketProvider";
 import { useCommunityPulse } from "../hooks/useCommunityPulse";
 import { toast } from "sonner";
 
-const TABS = [
+const BASE_TABS = [
     { key: "conversas", label: "Conversas" },
     { key: "alta", label: "Em alta" },
     { key: "pessoas", label: "Pessoas" },
@@ -76,12 +76,22 @@ export default function Community() {
     const [stats, setStats] = useState(null);
     const [nowData, setNowData] = useState(null);
     const [ticker, setTicker] = useState([]);
+    const [reports, setReports] = useState([]);
+    const [modlog, setModlog] = useState([]);
+    const [openReports, setOpenReports] = useState(0);
     const [tab, setTab] = useState("conversas");
     const [q, setQ] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const { pulse, presentNow } = useCommunityPulse(slug, community?.id);
+    const canMod = !!community?.can_moderate;
+    const isOwner = !!community?.is_owner;
+
+    const tabs = useMemo(
+        () => (canMod ? [...BASE_TABS, { key: "mod", label: "Moderação" }] : BASE_TABS),
+        [canMod],
+    );
 
     const loadCore = useCallback(async () => {
         try {
@@ -104,25 +114,46 @@ export default function Community() {
             setTicker(data.ticker || []);
         } catch { /* */ }
     }, [slug]);
+    const loadReports = useCallback(async () => {
+        try {
+            const { data } = await api.get(`/communities/${slug}/reports?status=open`);
+            setReports(data || []);
+            setOpenReports((data || []).length);
+        } catch { /* */ }
+    }, [slug]);
+    const loadModlog = useCallback(async () => {
+        try { const { data } = await api.get(`/communities/${slug}/modlog`); setModlog(data || []); } catch { /* */ }
+    }, [slug]);
+
+    // Carrega contagem de reports abertos assim que se sabe que é mod.
+    useEffect(() => { if (canMod) loadReports(); }, [canMod, loadReports]);
 
     useEffect(() => { setLoading(true); loadCore(); }, [loadCore]);
     useEffect(() => {
         if (tab === "pessoas" && members.length === 0) loadMembers();
         if (tab === "alta" && !stats) loadStats();
         if ((tab === "agora" || tab === "alta" || tab === "pessoas") && !nowData) loadNow();
+        if (tab === "mod") { loadReports(); loadModlog(); }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
 
-    // Activity ticker ao vivo: prepende eventos da comunidade.
+    // Eventos ao vivo da comunidade: ticker, moderação e novos reports.
     const onWs = useCallback((msg) => {
-        if (!msg || msg.type !== "community_activity" || !community || msg.community_id !== community.id) return;
-        setTicker((prev) => {
-            const item = {
+        if (!msg || !community || msg.community_id !== community.id) return;
+        if (msg.type === "community_activity") {
+            setTicker((prev) => [{
                 event: msg.event, post_id: msg.post_id, at: msg.at,
                 author_id: msg.actor?.id, preview: msg.preview, _actor: msg.actor,
-            };
-            return [item, ...prev].slice(0, 30);
-        });
+            }, ...prev].slice(0, 30));
+        } else if (msg.type === "community_mod") {
+            // Fluxo de moderação realtime: remove o post do feed na hora.
+            if (msg.action === "remove_post" && msg.removed_post_id) {
+                setPosts((prev) => prev.filter((p) => p.id !== msg.removed_post_id));
+            }
+        } else if (msg.type === "community_report_new") {
+            setOpenReports((n) => n + 1);
+            setReports((prev) => (msg.report ? [msg.report, ...prev] : prev));
+        }
     }, [community]);
     useWsMessages(onWs);
 
@@ -131,6 +162,50 @@ export default function Community() {
         try { await navigator.clipboard.writeText(`${window.location.origin}/c/${slug}`); toast.success("Link copiado"); }
         catch { toast.error("Não consegui copiar"); }
         setMenuOpen(false);
+    };
+
+    // ── Ações de moderação (reais; o WS reflete-as ao vivo a todos) ──
+    const removePost = async (postId) => {
+        try {
+            await api.post(`/communities/${slug}/moderate/post`, { post_id: postId });
+            setPosts((prev) => prev.filter((p) => p.id !== postId));
+            toast.success("Post removido da comunidade");
+        } catch (e) { toastApiError(e); }
+    };
+    const banMember = async (uid, action = "ban") => {
+        try {
+            await api.post(`/communities/${slug}/members/${uid}/ban`, { action });
+            toast.success(action === "ban" ? "Membro expulso" : "Readmitido");
+            loadMembers();
+        } catch (e) { toastApiError(e); }
+    };
+    const muteMember = async (uid, minutes = 60) => {
+        try {
+            await api.post(`/communities/${slug}/members/${uid}/mute`, { action: "mute", minutes });
+            toast.success("Membro silenciado");
+        } catch (e) { toastApiError(e); }
+    };
+    const promoteMod = async (uid, action = "add") => {
+        try {
+            const { data } = await api.post(`/communities/${slug}/mods`, { user_id: uid, action });
+            setCommunity(data);
+            toast.success(action === "add" ? "Promovido a moderador" : "Removido de moderador");
+        } catch (e) { toastApiError(e); }
+    };
+    const resolveReport = async (reportId, action) => {
+        try {
+            await api.post(`/communities/${slug}/reports/${reportId}/resolve`, { action });
+            setReports((prev) => prev.filter((r) => r.id !== reportId));
+            setOpenReports((n) => Math.max(0, n - 1));
+            loadModlog();
+            toast.success("Report resolvido");
+        } catch (e) { toastApiError(e); }
+    };
+    const reportPost = async (postId, reason) => {
+        try {
+            await api.post(`/communities/${slug}/report`, { kind: "post", target_id: postId, reason });
+            toast.success("Reportado. Obrigado.");
+        } catch (e) { toastApiError(e); }
     };
 
     const filteredPosts = useMemo(() => {
@@ -185,10 +260,16 @@ export default function Community() {
             {/* Activity layer — estado vivo sempre visível */}
             <LiveStrip pulse={pulse} presentNow={presentNow} />
 
-            <div className="grid grid-cols-6 hairline-b sticky top-[var(--mobile-topbar-h)] lg:top-[57px] z-20 glass">
-                {TABS.map((t) => (
+            <div className="hairline-b sticky top-[var(--mobile-topbar-h)] lg:top-[57px] z-20 glass grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+                {tabs.map((t) => (
                     <button key={t.key} onClick={() => setTab(t.key)} data-testid={`community-tab-${t.key}`} className={`py-3 font-heading text-[11.5px] tracking-tight transition relative ${tab === t.key ? "text-black font-medium" : "text-black/45 hover:text-black/70"}`}>
-                        {t.label}
+                        <span className="inline-flex items-center gap-1">
+                            {t.key === "mod" && <Shield size={11} />}
+                            {t.label}
+                            {t.key === "mod" && openReports > 0 && (
+                                <span className="ml-0.5 text-[9px] font-mono bg-[var(--coral-500)] text-white rounded-full px-1.5 py-0.5 leading-none">{openReports}</span>
+                            )}
+                        </span>
                         {tab === t.key && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-black rounded-full" />)}
                     </button>
                 ))}
@@ -220,10 +301,13 @@ export default function Community() {
                         </div>
                     ) : (
                         filteredPosts.map((p) => (
-                            <PostCard key={p.id} post={p}
-                                onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
-                                onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
-                            />
+                            <div key={p.id}>
+                                <PostCard post={p}
+                                    onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                                    onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
+                                />
+                                <CommunityPostActions post={p} canMod={canMod} onRemove={removePost} onReport={reportPost} />
+                            </div>
                         ))
                     )}
                 </>
@@ -238,7 +322,13 @@ export default function Community() {
             )}
 
             {tab === "pessoas" && (
-                <PessoasTab members={members} nowData={nowData} presentNow={presentNow} />
+                <PessoasTab members={members} nowData={nowData} presentNow={presentNow}
+                    canMod={canMod} isOwner={isOwner} ownerId={community.owner_id}
+                    onBan={banMember} onMute={muteMember} onPromote={promoteMod} />
+            )}
+
+            {tab === "mod" && canMod && (
+                <ModeracaoTab reports={reports} modlog={modlog} onResolve={resolveReport} />
             )}
 
             {tab === "media" && (
@@ -430,7 +520,35 @@ function EmAltaTab({ pulse, nowData, stats }) {
     );
 }
 
-function PessoasTab({ members, nowData, presentNow }) {
+const REPORT_REASONS = ["Spam", "Ofensivo", "Fora de tópico", "Assédio", "Outro"];
+
+function CommunityPostActions({ post, canMod, onRemove, onReport }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="px-4 lg:px-5 -mt-1 pb-2 flex items-center gap-3 hairline-b">
+            <div className="relative">
+                <button onClick={() => setOpen((v) => !v)} className="text-[11px] font-mono text-black/40 hover:text-black/70 inline-flex items-center gap-1">
+                    <Flag size={11} /> reportar
+                </button>
+                {open && (
+                    <div className="absolute left-0 bottom-7 z-30 w-40 card-lux p-1 anim-fade-up">
+                        {REPORT_REASONS.map((r) => (
+                            <button key={r} onClick={() => { setOpen(false); onReport(post.id, r); }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-[12.5px] hover:bg-black/[0.04]">{r}</button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            {canMod && (
+                <button onClick={() => onRemove(post.id)} className="text-[11px] font-mono text-rose-600/70 hover:text-rose-600 inline-flex items-center gap-1">
+                    <Trash2 size={11} /> remover
+                </button>
+            )}
+        </div>
+    );
+}
+
+function PessoasTab({ members, nowData, presentNow, canMod, isOwner, ownerId, onBan, onMute, onPromote }) {
     return (
         <div className="pb-6">
             {nowData?.present?.length > 0 && (
@@ -442,20 +560,91 @@ function PessoasTab({ members, nowData, presentNow }) {
             {members.length === 0 ? (
                 <div className="p-14 text-center"><p className="type-overline mb-2">a carregar</p></div>
             ) : (
-                members.map((u, i) => (
-                    <Link key={u.id} to={`/u/${u.username}`} className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b hover:bg-black/[0.015] transition">
-                        <span className="w-7 text-right text-[16px] font-display text-black/25">{i + 1}</span>
-                        <Avatar user={u} size={42} />
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
-                                {u.is_owner && (<span className="inline-flex items-center gap-0.5 text-amber-500 text-[10px] font-mono uppercase"><Crown size={11} /> dono</span>)}
-                            </div>
-                            <div className="text-[12px] text-black/55">@{u.username} · <span className="font-mono text-[10px] bg-black/[0.05] px-1.5 py-0.5 rounded">{u.posts_in_community}p · {u.likes_in_community}♥</span></div>
+                members.map((u, i) => {
+                    const targetIsOwner = u.id === ownerId;
+                    return (
+                        <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b hover:bg-black/[0.015] transition">
+                            <span className="w-7 text-right text-[16px] font-display text-black/25">{i + 1}</span>
+                            <Avatar user={u} size={42} />
+                            <Link to={`/u/${u.username}`} className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-[14px] truncate">{u.name || u.username}</span>
+                                    {u.is_owner && (<span className="inline-flex items-center gap-0.5 text-amber-500 text-[10px] font-mono uppercase"><Crown size={11} /> dono</span>)}
+                                </div>
+                                <div className="text-[12px] text-black/55">@{u.username} · <span className="font-mono text-[10px] bg-black/[0.05] px-1.5 py-0.5 rounded">{u.posts_in_community}p · {u.likes_in_community}♥</span></div>
+                            </Link>
+                            {canMod && !targetIsOwner && (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button onClick={() => onMute(u.id, 60)} title="Silenciar 1h" className="w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] text-black/55"><VolumeX size={14} /></button>
+                                    <button onClick={() => onBan(u.id, "ban")} title="Expulsar" className="w-8 h-8 grid place-items-center rounded-full hover:bg-rose-50 text-rose-600/70"><UserX size={14} /></button>
+                                    {isOwner && (
+                                        <button onClick={() => onPromote(u.id, "add")} title="Promover a moderador" className="w-8 h-8 grid place-items-center rounded-full hover:bg-amber-50 text-amber-600/80"><Shield size={14} /></button>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    </Link>
-                ))
+                    );
+                })
             )}
+        </div>
+    );
+}
+
+const MOD_ACTION_LABEL = {
+    remove_post: "removeu um post", ban_user: "expulsou", unban_user: "readmitiu",
+    mute_user: "silenciou", unmute_user: "retirou silêncio", add_mod: "promoveu a mod",
+    remove_mod: "removeu de mod", resolve_report: "resolveu report", dismiss_report: "dispensou report",
+};
+
+function ModeracaoTab({ reports, modlog, onResolve }) {
+    const fmt = (iso) => { try { return new Date(iso).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+    return (
+        <div className="p-4 lg:p-5 space-y-5">
+            <div className="card-lux p-4">
+                <p className="type-overline mb-3 flex items-center gap-1.5"><Flag size={12} /> Reports abertos {reports.length > 0 && <span className="text-[var(--coral-500)]">· {reports.length}</span>}</p>
+                {reports.length === 0 ? (
+                    <p className="text-[13px] text-black/45">Nada por resolver. Bairro tranquilo.</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {reports.map((r) => (
+                            <li key={r.id} className="hairline-b pb-3 last:border-0 last:pb-0">
+                                <div className="flex items-center gap-2 text-[12px] mb-1.5">
+                                    <span className="font-mono uppercase text-[10px] bg-black/[0.06] px-1.5 py-0.5 rounded">{r.kind}</span>
+                                    <span className="font-medium text-black/80">{r.reason}</span>
+                                    <span className="text-black/35 ml-auto">{fmt(r.created_at)}</span>
+                                </div>
+                                {r.detail && <p className="text-[12.5px] text-black/55 mb-2">"{r.detail}"</p>}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    {(r.kind === "post" || r.kind === "comment") && (
+                                        <button onClick={() => onResolve(r.id, "remove_post")} className="text-[11.5px] px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100 inline-flex items-center gap-1"><Trash2 size={11} /> Remover</button>
+                                    )}
+                                    <button onClick={() => onResolve(r.id, "mute_user")} className="text-[11.5px] px-2.5 py-1 rounded-full bg-black/[0.05] hover:bg-black/10 inline-flex items-center gap-1"><VolumeX size={11} /> Silenciar autor</button>
+                                    <button onClick={() => onResolve(r.id, "ban_user")} className="text-[11.5px] px-2.5 py-1 rounded-full bg-black/[0.05] hover:bg-black/10 inline-flex items-center gap-1"><UserX size={11} /> Expulsar autor</button>
+                                    <button onClick={() => onResolve(r.id, "dismiss")} className="text-[11.5px] px-2.5 py-1 rounded-full hover:bg-black/[0.05] text-black/55 inline-flex items-center gap-1"><Check size={11} /> Dispensar</button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            <div className="card-lux p-4">
+                <p className="type-overline mb-3">Registo de moderação</p>
+                {modlog.length === 0 ? (
+                    <p className="text-[13px] text-black/45">Sem ações registadas.</p>
+                ) : (
+                    <ul className="space-y-2">
+                        {modlog.map((l) => (
+                            <li key={l.id} className="text-[12.5px] text-black/65 flex items-center gap-2">
+                                <span className="w-1 h-1 rounded-full bg-black/30" />
+                                <span className="font-medium">{MOD_ACTION_LABEL[l.action] || l.action}</span>
+                                {l.detail && <span className="text-black/45">· {l.detail}</span>}
+                                <span className="text-black/30 ml-auto font-mono text-[10px]">{fmt(l.created_at)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
         </div>
     );
 }

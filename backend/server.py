@@ -46,6 +46,8 @@ import mesas as mesas_engine
 import reputation_engine
 # Comunidades vivas — motor de pulso por comunidade (presence-first).
 import community_pulse
+# Comunidades — camada de moderação (papéis, ban/mute, reports, log).
+import community_mod
 
 JWT_ALGORITHM = "HS256"
 
@@ -3151,8 +3153,11 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     community_id = None
     if payload.community_id:
         c = await db.communities.find_one({"id": payload.community_id}, {"_id": 0})
-        if not c or user["id"] not in c.get("members", []):
-            raise HTTPException(403, "Tens de entrar na comunidade primeiro")
+        if not c:
+            raise HTTPException(404, "Comunidade não encontrada")
+        allowed, reason = community_mod.can_write(c, user)
+        if not allowed:
+            raise HTTPException(403, reason)
         community_id = c["id"]
     if payload.quote_of:
         if not user.get("is_admin") and not await is_feature_enabled("reposts_enabled"):
@@ -4004,6 +4009,14 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
+    # Comunidade: banidos/silenciados não comentam em posts da comunidade.
+    if post.get("community_id"):
+        _comm = await db.communities.find_one({"id": post["community_id"]}, {"_id": 0})
+        if _comm:
+            if community_mod.is_banned(_comm, user["id"]) and not user.get("is_admin"):
+                raise HTTPException(403, "Foste expulso desta comunidade")
+            if community_mod.is_muted(_comm, user["id"]) and not user.get("is_admin"):
+                raise HTTPException(403, "Estás silenciado nesta comunidade")
     # Admin-imposed: comments frozen on this post (replies_frozen=true)
     _assert_post_replies_open(post)
     # Reply audience enforcement
@@ -5627,6 +5640,8 @@ async def join_community(slug: str, user=Depends(get_current_user)):
     if user["id"] in c.get("members", []):
         await db.communities.update_one({"id": c["id"]}, {"$pull": {"members": user["id"]}})
         return {"joined": False}
+    if community_mod.is_banned(c, user["id"]):
+        raise HTTPException(403, "Foste expulso desta comunidade")
     await db.communities.update_one({"id": c["id"]}, {"$addToSet": {"members": user["id"]}})
     return {"joined": True}
 
@@ -5641,13 +5656,21 @@ async def community_posts(slug: str, viewer: Optional[dict] = Depends(maybe_user
 
 
 def _community_public(c: dict, viewer: Optional[dict]) -> dict:
+    vid = viewer["id"] if viewer else None
     return {
         "id": c["id"], "name": c["name"], "slug": c["slug"],
         "description": c.get("description", ""), "banner": c.get("banner", ""),
         "category": c.get("category", "outras"),
         "owner_id": c["owner_id"], "members_count": len(c.get("members", [])),
-        "joined": bool(viewer and viewer["id"] in c.get("members", [])),
-        "is_owner": bool(viewer and viewer["id"] == c["owner_id"]),
+        "moderators_count": len(c.get("moderators", []) or []),
+        "joined": bool(vid and vid in c.get("members", [])),
+        "is_owner": bool(vid and vid == c["owner_id"]),
+        # Moderação — papel do viewer e o que pode fazer.
+        "role": community_mod.role_of(c, viewer),
+        "can_moderate": community_mod.can_moderate(c, viewer),
+        "is_banned": bool(vid and community_mod.is_banned(c, vid)),
+        "is_muted": bool(vid and community_mod.is_muted(c, vid)),
+        "muted_until": community_mod.muted_until(c, vid) if vid else None,
         "created_at": c["created_at"],
     }
 
@@ -6904,6 +6927,7 @@ async def startup():
     try:
         await db.comments.create_index("community_id")
         await community_pulse.init_community_pulse_indexes(db)
+        await community_mod.init_community_mod_indexes(db)
         community_pulse.start_community_pulse_loop(db, ws_manager)
         logger.info("community_pulse: background loop scheduled")
     except Exception as exc:
@@ -7289,6 +7313,278 @@ async def community_now(slug: str, user=Depends(get_current_user)):
         "ticker": ticker,
         "authors": authors,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Comunidades — MODERAÇÃO COMPLETA (papéis, ban/mute, reports, log)
+# ─────────────────────────────────────────────────────────────────────
+class CommunityModRoleIn(BaseModel):
+    user_id: str
+    action: str = "add"   # add | remove
+
+
+class CommunityModPostIn(BaseModel):
+    post_id: str
+    reason: Optional[str] = ""
+
+
+class CommunityBanIn(BaseModel):
+    action: str = "ban"   # ban | unban
+
+
+class CommunityMuteIn(BaseModel):
+    action: str = "mute"  # mute | unmute
+    minutes: Optional[int] = 60
+
+
+class CommunityReportIn(BaseModel):
+    kind: str             # post | comment | user
+    target_id: str
+    reason: str = Field(min_length=1, max_length=60)
+    detail: Optional[str] = ""
+
+
+class CommunityResolveIn(BaseModel):
+    action: str = "dismiss"  # dismiss | remove_post | ban_user | mute_user
+    note: Optional[str] = ""
+
+
+async def _comm_or_404(slug: str) -> dict:
+    c = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comunidade não encontrada")
+    return c
+
+
+async def _comm_for_mod(slug: str, user: dict) -> dict:
+    c = await _comm_or_404(slug)
+    if not community_mod.can_moderate(c, user):
+        raise HTTPException(403, "Sem permissões de moderação nesta comunidade")
+    return c
+
+
+async def _mod_log_and_broadcast(community: dict, actor: dict, action: str, *,
+                                 target_id: Optional[str] = None,
+                                 target_kind: Optional[str] = None,
+                                 detail: str = "", extra: Optional[dict] = None) -> dict:
+    doc = community_mod.modlog_doc(
+        community["id"], actor["id"], action,
+        target_id=target_id, target_kind=target_kind, detail=detail,
+    )
+    try:
+        await db.community_mod_log.insert_one(dict(doc))
+    except Exception:
+        pass
+    msg = {
+        "type": "community_mod",
+        "community_id": community["id"],
+        "action": action,
+        "target_id": target_id,
+        "target_kind": target_kind,
+        "actor": {"id": actor["id"], "username": actor.get("username"), "name": actor.get("name")},
+        "at": doc["created_at"],
+    }
+    if extra:
+        msg.update(extra)
+    try:
+        await ws_manager.broadcast_to_community(community["id"], msg)
+    except Exception:
+        pass
+    return doc
+
+
+@api.post("/communities/{slug}/mods")
+async def community_set_mod(slug: str, payload: CommunityModRoleIn, user=Depends(get_current_user)):
+    """Owner adiciona/remove um moderador. O alvo tem de ser membro."""
+    c = await _comm_or_404(slug)
+    if not community_mod.is_owner(c, user):
+        raise HTTPException(403, "Apenas o dono pode gerir moderadores")
+    target_id = payload.user_id
+    if target_id == c["owner_id"]:
+        raise HTTPException(400, "O dono já tem todos os poderes")
+    if payload.action == "add":
+        if target_id not in (c.get("members") or []):
+            raise HTTPException(400, "Só membros podem ser moderadores")
+        await db.communities.update_one({"id": c["id"]}, {"$addToSet": {"moderators": target_id}})
+        await _mod_log_and_broadcast(c, user, "add_mod", target_id=target_id, target_kind="user")
+    else:
+        await db.communities.update_one({"id": c["id"]}, {"$pull": {"moderators": target_id}})
+        await _mod_log_and_broadcast(c, user, "remove_mod", target_id=target_id, target_kind="user")
+    fresh = await db.communities.find_one({"id": c["id"]}, {"_id": 0})
+    return _community_public(fresh, user)
+
+
+@api.post("/communities/{slug}/moderate/post")
+async def community_remove_post(slug: str, payload: CommunityModPostIn, user=Depends(get_current_user)):
+    """Remove um post DA COMUNIDADE (desliga-o; permanece no perfil do autor)."""
+    c = await _comm_for_mod(slug, user)
+    post = await db.posts.find_one({"id": payload.post_id}, {"_id": 0})
+    if not post or post.get("community_id") != c["id"]:
+        raise HTTPException(404, "Post não encontrado nesta comunidade")
+    await db.posts.update_one({"id": payload.post_id}, {"$set": {"community_id": None}})
+    await _mod_log_and_broadcast(
+        c, user, "remove_post", target_id=payload.post_id, target_kind="post",
+        detail=(payload.reason or "")[:200],
+        extra={"removed_post_id": payload.post_id},
+    )
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/members/{user_id}/ban")
+async def community_ban_member(slug: str, user_id: str, payload: CommunityBanIn, user=Depends(get_current_user)):
+    """Expulsa (ou readmite) um membro. Mods não podem expulsar o dono nem
+    outros mods (só o dono pode mexer em mods)."""
+    c = await _comm_for_mod(slug, user)
+    target_role = community_mod.role_of(c, {"id": user_id})
+    if payload.action == "ban":
+        if user_id == c["owner_id"]:
+            raise HTTPException(400, "Não podes expulsar o dono")
+        if target_role == community_mod.ROLE_MOD and not community_mod.is_owner(c, user):
+            raise HTTPException(403, "Só o dono pode expulsar moderadores")
+        await db.communities.update_one(
+            {"id": c["id"]},
+            {"$addToSet": {"banned": user_id}, "$pull": {"members": user_id, "moderators": user_id}},
+        )
+        await _mod_log_and_broadcast(c, user, "ban_user", target_id=user_id, target_kind="user")
+    else:
+        await db.communities.update_one({"id": c["id"]}, {"$pull": {"banned": user_id}})
+        await _mod_log_and_broadcast(c, user, "unban_user", target_id=user_id, target_kind="user")
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/members/{user_id}/mute")
+async def community_mute_member(slug: str, user_id: str, payload: CommunityMuteIn, user=Depends(get_current_user)):
+    """Silencia (ou retira o silêncio a) um membro por N minutos."""
+    c = await _comm_for_mod(slug, user)
+    if user_id == c["owner_id"]:
+        raise HTTPException(400, "Não podes silenciar o dono")
+    if payload.action == "mute":
+        minutes = max(1, min(int(payload.minutes or 60), 7 * 24 * 60))
+        until = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+        await db.communities.update_one({"id": c["id"]}, {"$set": {f"muted.{user_id}": until}})
+        await _mod_log_and_broadcast(
+            c, user, "mute_user", target_id=user_id, target_kind="user",
+            detail=f"{minutes}min", extra={"muted_until": until},
+        )
+        return {"ok": True, "muted_until": until}
+    await db.communities.update_one({"id": c["id"]}, {"$unset": {f"muted.{user_id}": ""}})
+    await _mod_log_and_broadcast(c, user, "unmute_user", target_id=user_id, target_kind="user")
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/report")
+async def community_report(slug: str, payload: CommunityReportIn, user=Depends(get_current_user)):
+    """Qualquer membro reporta um post/comentário/utilizador da comunidade.
+    Notifica os moderadores em tempo real."""
+    c = await _comm_or_404(slug)
+    if payload.kind not in community_mod.REPORT_KINDS:
+        raise HTTPException(400, "Tipo de report inválido")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "community_id": c["id"],
+        "kind": payload.kind,
+        "target_id": payload.target_id,
+        "reporter_id": user["id"],
+        "reason": payload.reason[:60],
+        "detail": (payload.detail or "")[:400],
+        "status": "open",
+        "created_at": now_iso(),
+    }
+    await db.community_reports.insert_one(dict(doc))
+    # Notifica owner + mods (real, sem expor a toda a sala).
+    mod_ids = [c["owner_id"], *(c.get("moderators") or [])]
+    for mid in set(mod_ids):
+        try:
+            await ws_manager.send_personal(mid, {
+                "type": "community_report_new",
+                "community_id": c["id"],
+                "report": community_mod.public_report(doc),
+            })
+        except Exception:
+            pass
+    return {"ok": True}
+
+
+@api.get("/communities/{slug}/reports")
+async def community_list_reports(slug: str, status: str = "open", user=Depends(get_current_user)):
+    """Fila de reports da comunidade (só moderadores)."""
+    c = await _comm_for_mod(slug, user)
+    q = {"community_id": c["id"]}
+    if status in ("open", "resolved"):
+        q["status"] = status
+    rows = await db.community_reports.find(q, {"_id": 0}).sort("created_at", -1).to_list(200)
+    # Resolve autores dos alvos para contexto.
+    out = []
+    for r in rows:
+        out.append(community_mod.public_report(r))
+    return out
+
+
+async def _resolve_report_target_user(report: dict) -> Optional[str]:
+    """Devolve o user_id alvo de um report (autor do post/comentário, ou o
+    próprio user reportado)."""
+    if report["kind"] == "user":
+        return report["target_id"]
+    if report["kind"] == "post":
+        p = await db.posts.find_one({"id": report["target_id"]}, {"_id": 0, "author_id": 1})
+        return p.get("author_id") if p else None
+    if report["kind"] == "comment":
+        cm = await db.comments.find_one({"id": report["target_id"]}, {"_id": 0, "author_id": 1})
+        return cm.get("author_id") if cm else None
+    return None
+
+
+@api.post("/communities/{slug}/reports/{report_id}/resolve")
+async def community_resolve_report(slug: str, report_id: str, payload: CommunityResolveIn, user=Depends(get_current_user)):
+    """Resolve um report aplicando uma ação real (dispensar / remover post /
+    expulsar / silenciar o autor). Tudo registado no log."""
+    c = await _comm_for_mod(slug, user)
+    report = await db.community_reports.find_one({"id": report_id, "community_id": c["id"]}, {"_id": 0})
+    if not report:
+        raise HTTPException(404, "Report não encontrado")
+    action = payload.action
+
+    if action == "remove_post":
+        if report["kind"] == "post":
+            await db.posts.update_one({"id": report["target_id"]}, {"$set": {"community_id": None}})
+            await _mod_log_and_broadcast(c, user, "remove_post", target_id=report["target_id"],
+                                         target_kind="post", extra={"removed_post_id": report["target_id"]})
+        elif report["kind"] == "comment":
+            await db.comments.delete_one({"id": report["target_id"]})
+            await _mod_log_and_broadcast(c, user, "remove_post", target_id=report["target_id"], target_kind="comment")
+    elif action in ("ban_user", "mute_user"):
+        target_uid = await _resolve_report_target_user(report)
+        if target_uid and target_uid != c["owner_id"]:
+            if action == "ban_user":
+                await db.communities.update_one(
+                    {"id": c["id"]},
+                    {"$addToSet": {"banned": target_uid}, "$pull": {"members": target_uid, "moderators": target_uid}},
+                )
+                await _mod_log_and_broadcast(c, user, "ban_user", target_id=target_uid, target_kind="user")
+            else:
+                until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+                await db.communities.update_one({"id": c["id"]}, {"$set": {f"muted.{target_uid}": until}})
+                await _mod_log_and_broadcast(c, user, "mute_user", target_id=target_uid, target_kind="user",
+                                             detail="24h", extra={"muted_until": until})
+    # else: dismiss → só marca resolvido.
+
+    await db.community_reports.update_one(
+        {"id": report_id},
+        {"$set": {"status": "resolved", "resolved_by": user["id"],
+                  "resolved_action": action, "resolved_at": now_iso(),
+                  "resolved_note": (payload.note or "")[:200]}},
+    )
+    return {"ok": True}
+
+
+@api.get("/communities/{slug}/modlog")
+async def community_modlog(slug: str, user=Depends(get_current_user)):
+    """Log de moderação da comunidade (só moderadores)."""
+    c = await _comm_for_mod(slug, user)
+    rows = await db.community_mod_log.find(
+        {"community_id": c["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return rows
 
 
 @api.get("/diaspora/heatmap")

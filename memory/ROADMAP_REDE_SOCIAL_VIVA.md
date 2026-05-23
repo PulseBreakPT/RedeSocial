@@ -190,10 +190,26 @@ atmosfera própria. Decisões: vertical slice primeiro · moderação completa
   **Agora** com presença ao vivo + conversas a crescer + activity ticker
   (semente via /now, ao vivo via WS `community_activity`).
 
+### Moderação completa — ENTREGUE ✅
+- **`backend/community_mod.py`**: papéis (owner/mod/member, admin global =
+  owner-level), permissões, ban/mute (com `can_write` enforcement),
+  `public_report`, `modlog_doc`, índices. Comunidade ganha `moderators[]`,
+  `banned[]`, `muted{uid:until}`.
+- **Enforcement real**: banidos/silenciados não publicam nem comentam
+  (create_post/create_comment) e banidos não entram (join).
+- **Endpoints**: `mods` (owner promove/despromove), `moderate/post`
+  (remover da comunidade), `members/{id}/ban`, `members/{id}/mute`,
+  `report`, `reports` (fila, só mods), `reports/{id}/resolve` (dispensar/
+  remover/expulsar/silenciar), `modlog`. `_community_public` expõe
+  role/can_moderate/is_banned/is_muted.
+- **WS ao vivo**: `community_mod` (remove post do feed na hora a todos),
+  `community_report_new` (notifica owner+mods via send_personal).
+- **Frontend** (`Community.js`): tab **Moderação** (só mods, com badge de
+  reports abertos) — fila de reports com ações + registo de moderação;
+  ações por membro no tab Pessoas (silenciar/expulsar/promover); botão
+  **reportar** + **remover** por post nas Conversas; remoção realtime.
+
 ### A FAZER (próximas iterações)
-- **Moderação completa** (decisão do user): roles/permissões por comunidade,
-  remover post, silenciar/banir membro, fila de reports da comunidade, log
-  de moderação dedicado — com eventos WS ao vivo.
 - **Desktop multi-column**: right-rail lateral com widgets vivos (pulso,
   presentes, trends, ticker) — adiado do slice por precisar de teste visual.
 - **Polir**: micro-eventos sociais, "comunidade calma/intensa" copy
