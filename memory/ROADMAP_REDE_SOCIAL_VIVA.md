@@ -139,6 +139,30 @@
   consciente para evitar dependência nova não testável e manter
   acessibilidade. Um SVG geográfico pode substituí-lo depois.
 
+### Fase 8 — Anti-Doomscrolling Inteligente ✅
+- **Hook novo:** `frontend/src/hooks/useScrollHealth.js` — mede tempo na
+  página, distância de scroll e tempo desde a última interação. Em consumo
+  passivo prolongado (≥12 min, ≥8 min sem interagir, ≥6000px) mostra UM
+  toast suave (sonner) com cooldown de 45 min (localStorage). De dia sugere
+  uma Mesa (ação → /mesas); à noite adapta para "recolher". Montado no Feed.
+- **Nota:** o escurecimento gradual do feed à noite foi deixado de fora
+  (nice-to-have, arriscado sem teste visual); o tom noturno está no copy.
+
+### Fase 9 — Identidade Portuguesa Viva ✅
+- **9.1 Calendário alargado:** +8 eventos recorrentes autênticos em
+  `PT_CALENDAR_EVENTS` (Reis, Fátima, solstícios/equinócios, véspera de
+  S. João, Assunção, S. Martinho/Magusto). Móveis (Carnaval/Páscoa) ficam
+  de fora por exigirem cálculo da Páscoa.
+- **9.2 Copy mood-aware:** coberto pela Fase 4 (`FeedContextLine` +
+  `context_engine.label`): "Domingo à noite · ritmo calmo" vs "Sexta ao
+  fim do dia · a rede está acesa". O tema do evento do dia também entra no
+  contexto e dá boost no feed.
+- **9.3 Tom:** literário, breve, sem bandeirinhas/sardinhas — respeitado
+  no copy dos widgets e nudges.
+- **Refinamento opcional:** banner de evento "confirmado pelo pulse" (só
+  mostrar a festa se o pulse confirmar pico) — o banner de calendário já
+  existe; a confirmação cruzada com o pulse fica como polish futuro.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER

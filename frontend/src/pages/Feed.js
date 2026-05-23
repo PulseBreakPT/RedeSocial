@@ -7,6 +7,7 @@ import { PostSkeletonList } from "../components/Skeleton";
 import { LiveActivityBeacon } from "../components/LiveActivityBeacon";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useScrollHealth } from "../hooks/useScrollHealth";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -38,6 +39,8 @@ export default function Feed() {
     const [newCount, setNewCount] = useState(0);
     const knownIdsRef = useRef(new Set());
     useLiveTime(30000);
+    // Fase 8 — anti-doomscroll: nudge suave em consumo passivo prolongado.
+    useScrollHealth();
 
     const greeting = useMemo(() => {
         const h = new Date().getHours();

@@ -6906,6 +6906,16 @@ PT_CALENDAR_EVENTS = [
     {"date": "06-01", "key": "exames",         "label": "Época de exames",         "emoji": "📚", "theme": "tasca"},
     {"date": "06-30", "key": "irs",            "label": "Último dia IRS",          "emoji": "💸", "theme": "tasca"},
     {"date": "09-15", "key": "regresso_aulas", "label": "Regresso às aulas",       "emoji": "✏️", "theme": "saudade"},
+    # Fase 9 — calendário cultural alargado (recorrentes MM-DD; festas
+    # móveis como Carnaval/Páscoa ficam de fora por exigirem cálculo).
+    {"date": "01-06", "key": "dia_reis",       "label": "Dia de Reis",             "emoji": "👑", "theme": "cultura"},
+    {"date": "05-13", "key": "fatima",         "label": "Nossa Senhora de Fátima", "emoji": "🕯️", "theme": "saudade"},
+    {"date": "06-21", "key": "verao",          "label": "Início do verão",         "emoji": "☀️", "theme": "praia"},
+    {"date": "06-23", "key": "vespera_sjoao",  "label": "Véspera de S. João",      "emoji": "🔥", "theme": "festa"},
+    {"date": "08-15", "key": "assuncao",       "label": "Assunção de N. Senhora",  "emoji": "⛪", "theme": "cultura"},
+    {"date": "09-22", "key": "outono",         "label": "Início do outono",        "emoji": "🍂", "theme": "saudade"},
+    {"date": "11-11", "key": "sao_martinho",   "label": "S. Martinho · Magusto",   "emoji": "🌰", "theme": "tasca"},
+    {"date": "12-21", "key": "inverno",        "label": "Início do inverno",       "emoji": "❄️", "theme": "saudade"},
 ]
 
 
