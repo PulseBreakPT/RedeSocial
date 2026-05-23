@@ -44,6 +44,8 @@ import mesas as mesas_engine
 # Fase 6 — Reputação invisível. health_score recalculado em background;
 # influencia o scoring do feed mas NUNCA é exposto via API.
 import reputation_engine
+# Comunidades vivas — motor de pulso por comunidade (presence-first).
+import community_pulse
 
 JWT_ALGORITHM = "HS256"
 
@@ -3258,6 +3260,21 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
             if q and q["author_id"] != user["id"]:
                 await create_notification(q["author_id"], "quote", user["id"], post["id"],
                                            f"@{user['username']} citou a tua publicação")
+        # Activity ticker da comunidade (só posts publicados numa comunidade).
+        if community_id:
+            try:
+                await ws_manager.broadcast_to_community(community_id, {
+                    "type": "community_activity",
+                    "community_id": community_id,
+                    "event": "post",
+                    "post_id": post["id"],
+                    "at": post["created_at"],
+                    "actor": {"id": user["id"], "username": user.get("username"),
+                              "name": user.get("name"), "avatar": user.get("avatar", "")},
+                    "preview": (payload.content or "")[:120],
+                })
+            except Exception:
+                pass
     return await enrich_post(post, user)
 
 
@@ -4015,6 +4032,8 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
         "content": payload.content, "created_at": now_iso(),
         "parent_id": parent["id"] if parent else None,
         "replies_count": 0,
+        # Denormaliza a comunidade do post → permite pulso/trends por comunidade.
+        "community_id": post.get("community_id"),
     }
     await db.comments.insert_one(comment)
     await daily_checkin(user["id"])
@@ -4065,6 +4084,22 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
             },
             exclude_user=user["id"],
         )
+    except Exception:
+        pass
+    # Activity ticker da comunidade (só se o post pertencer a uma).
+    try:
+        cid = post.get("community_id")
+        if cid:
+            await ws_manager.broadcast_to_community(cid, {
+                "type": "community_activity",
+                "community_id": cid,
+                "event": "comment",
+                "post_id": post_id,
+                "at": comment["created_at"],
+                "actor": {"id": user["id"], "username": user.get("username"),
+                          "name": user.get("name"), "avatar": user.get("avatar", "")},
+                "preview": preview_snippet,
+            })
     except Exception:
         pass
     return enriched_comment
@@ -6865,6 +6900,15 @@ async def startup():
     except Exception as exc:
         logger.warning(f"reputation: startup wiring failed: {exc}")
 
+    # ── Comunidades vivas — pulso por comunidade ────────────────────
+    try:
+        await db.comments.create_index("community_id")
+        await community_pulse.init_community_pulse_indexes(db)
+        community_pulse.start_community_pulse_loop(db, ws_manager)
+        logger.info("community_pulse: background loop scheduled")
+    except Exception as exc:
+        logger.warning(f"community_pulse: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -6876,6 +6920,10 @@ async def shutdown():
         pass
     try:
         await reputation_engine.stop_reputation_loop()
+    except Exception:
+        pass
+    try:
+        await community_pulse.stop_community_pulse_loop()
     except Exception:
         pass
     client.close()
@@ -7133,6 +7181,113 @@ async def community_active_members(slug: str, viewer: Optional[dict] = Depends(m
         "active": enriched,
         "total_members": len(comm.get("members", [])),
         "active_count": len(active_ids),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Comunidades vivas — pulso + "Agora" (presence-first, dados reais)
+# ─────────────────────────────────────────────────────────────────────
+@api.get("/communities/{slug}/pulse")
+async def community_pulse_endpoint(slug: str, user=Depends(get_current_user)):
+    """Estado vivo de uma comunidade: temperatura, energia, estado, mood,
+    trends internas + nº de pessoas presentes na sala AGORA (WS)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    snap = await community_pulse.get_pulse(db, comm)
+    present_now = ws_manager.community_presence_count(comm["id"])
+    out = dict(snap)
+    out["present_now"] = present_now
+    return out
+
+
+@api.get("/communities/{slug}/now")
+async def community_now(slug: str, user=Depends(get_current_user)):
+    """Tab 'Agora': quem está aqui, conversas a crescer e ticker recente.
+    Tudo real — presença das salas WS + janelas de atividade."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cid = comm["id"]
+    now = datetime.now(timezone.utc)
+    recent_cutoff = (now - timedelta(minutes=30)).isoformat()
+
+    snap = await community_pulse.get_pulse(db, comm)
+    present_ids = list(ws_manager.viewers_by_community.get(cid, set()))
+
+    # Quem está aqui agora (presença na sala WS).
+    present_users = []
+    if present_ids:
+        rows = await db.users.find(
+            {"id": {"$in": present_ids[:50]}}, {"_id": 0, "password_hash": 0}
+        ).to_list(50)
+        present_users = [public_user(u) for u in rows]
+
+    # Conversas a crescer: posts da comunidade com mais comentários nos
+    # últimos 30 min.
+    recent_comments = await db.comments.find(
+        {"community_id": cid, "created_at": {"$gte": recent_cutoff}},
+        {"_id": 0, "post_id": 1, "created_at": 1, "author_id": 1, "content": 1},
+    ).to_list(2000)
+    by_post: dict = {}
+    for c in recent_comments:
+        pid = c.get("post_id")
+        if pid:
+            by_post[pid] = by_post.get(pid, 0) + 1
+    growing = []
+    if by_post:
+        top_pids = sorted(by_post.items(), key=lambda kv: -kv[1])[:6]
+        pid_list = [pid for pid, _ in top_pids]
+        posts = await db.posts.find(
+            {"id": {"$in": pid_list}}, {"_id": 0}
+        ).to_list(len(pid_list))
+        pmap = {p["id"]: p for p in posts}
+        for pid, n in top_pids:
+            p = pmap.get(pid)
+            if not p:
+                continue
+            growing.append({
+                "post_id": pid,
+                "recent_comments_30m": n,
+                "preview": (p.get("content") or "")[:120],
+                "author_id": p.get("author_id"),
+                "created_at": p.get("created_at"),
+            })
+
+    # Ticker recente: posts + comentários dos últimos 30 min, mais novos
+    # primeiro (semente do activity ticker antes de chegarem eventos WS).
+    recent_posts = await db.posts.find(
+        {"community_id": cid, "created_at": {"$gte": recent_cutoff}, "is_draft": {"$ne": True}},
+        {"_id": 0, "id": 1, "author_id": 1, "content": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(20)
+    ticker = []
+    for p in recent_posts:
+        ticker.append({"event": "post", "post_id": p["id"], "at": p["created_at"],
+                       "author_id": p.get("author_id"), "preview": (p.get("content") or "")[:120]})
+    for c in recent_comments:
+        ticker.append({"event": "comment", "post_id": c.get("post_id"), "at": c.get("created_at"),
+                       "author_id": c.get("author_id"), "preview": (c.get("content") or "")[:120]})
+    ticker.sort(key=lambda x: x.get("at") or "", reverse=True)
+    ticker = ticker[:20]
+
+    # Resolve autores do ticker/growing num lookup só (nomes/avatares).
+    author_ids = {t.get("author_id") for t in ticker if t.get("author_id")}
+    author_ids |= {g.get("author_id") for g in growing if g.get("author_id")}
+    authors = {}
+    if author_ids:
+        rows = await db.users.find(
+            {"id": {"$in": list(author_ids)}},
+            {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1},
+        ).to_list(len(author_ids))
+        authors = {u["id"]: public_user(u) for u in rows}
+
+    return {
+        "pulse": {**snap, "present_now": len(present_ids)},
+        "present": present_users,
+        "present_count": len(present_ids),
+        "growing": growing,
+        "ticker": ticker,
+        "authors": authors,
     }
 
 
@@ -8467,6 +8622,9 @@ class ConnectionManager:
         # Per-post viewers (real presence tracking — feature: "x pessoas a ver este post")
         self.viewers_by_post: dict[str, set[str]] = {}   # post_id -> set(user_id)
         self.posts_by_user: dict[str, set[str]] = {}     # user_id -> set(post_id)
+        # Per-community room presence ("x pessoas aqui agora" nas Comunidades vivas).
+        self.viewers_by_community: dict[str, set[str]] = {}  # community_id -> set(user_id)
+        self.communities_by_user: dict[str, set[str]] = {}   # user_id -> set(community_id)
         # WS session metadata: socket -> {"jti": str, "user_id": str, "connected_at": float, "is_admin": bool}
         self.socket_meta: dict[int, dict] = {}
         # Subset of user_ids whose currently-open sockets belong to admins —
@@ -8612,6 +8770,49 @@ class ConnectionManager:
     # --- Comment typing per post ---
     async def broadcast_to_post_viewers(self, post_id: str, message: dict, exclude_user: Optional[str] = None):
         for uid in list(self.viewers_by_post.get(post_id, set())):
+            if uid == exclude_user:
+                continue
+            await self.send_personal(uid, message)
+
+    # --- Community rooms (presença "aqui agora" + activity ticker) ---
+    def community_presence_count(self, community_id: str) -> int:
+        return len(self.viewers_by_community.get(community_id, set()))
+
+    async def add_community_viewer(self, user_id: str, community_id: str) -> int:
+        s = self.viewers_by_community.setdefault(community_id, set())
+        s.add(user_id)
+        self.communities_by_user.setdefault(user_id, set()).add(community_id)
+        count = len(s)
+        await self._broadcast_community_presence(community_id, count)
+        return count
+
+    async def remove_community_viewer(self, user_id: str, community_id: str) -> int:
+        s = self.viewers_by_community.get(community_id)
+        if s and user_id in s:
+            s.discard(user_id)
+            if not s:
+                self.viewers_by_community.pop(community_id, None)
+        cs = self.communities_by_user.get(user_id)
+        if cs:
+            cs.discard(community_id)
+            if not cs:
+                self.communities_by_user.pop(user_id, None)
+        count = len(self.viewers_by_community.get(community_id, set()))
+        await self._broadcast_community_presence(community_id, count)
+        return count
+
+    async def cleanup_user_communities(self, user_id: str):
+        for cid in list(self.communities_by_user.get(user_id, set())):
+            await self.remove_community_viewer(user_id, cid)
+
+    async def _broadcast_community_presence(self, community_id: str, count: int):
+        msg = {"type": "community_presence", "community_id": community_id, "count": count}
+        for uid in list(self.viewers_by_community.get(community_id, set())):
+            await self.send_personal(uid, msg)
+
+    async def broadcast_to_community(self, community_id: str, message: dict, exclude_user: Optional[str] = None):
+        """Difunde só aos utilizadores presentes na sala desta comunidade."""
+        for uid in list(self.viewers_by_community.get(community_id, set())):
             if uid == exclude_user:
                 continue
             await self.send_personal(uid, message)
@@ -9066,7 +9267,8 @@ async def websocket_endpoint(ws: WebSocket):
     # ─── Hardening constants for the message loop ─────────────────────────
     # Whitelisted event types — anything else is dropped silently.
     _ALLOWED_EVENTS = {"ping", "typing", "presence_set", "post_view",
-                       "post_unview", "c_typing"}
+                       "post_unview", "c_typing",
+                       "community_view", "community_unview", "community_typing"}
     # Per-type minimum gap between consecutive events from the same user.
     _MIN_GAP = {
         "ping":         2.0,
@@ -9075,6 +9277,9 @@ async def websocket_endpoint(ws: WebSocket):
         "post_view":    0.7,
         "post_unview":  0.5,
         "c_typing":     1.5,
+        "community_view":   0.7,
+        "community_unview": 0.5,
+        "community_typing": 1.5,
     }
     # Allowed values for typing.in
     _ALLOWED_TYPING_IN = {"dm", "thread", "post", "comments"}
@@ -9249,6 +9454,36 @@ async def websocket_endpoint(ws: WebSocket):
                     },
                     exclude_user=user_id,
                 )
+
+            elif t == "community_view":
+                cid = data.get("community_id")
+                if isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD:
+                    await ws_manager.add_community_viewer(user_id, cid)
+
+            elif t == "community_unview":
+                cid = data.get("community_id")
+                if isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD:
+                    await ws_manager.remove_community_viewer(user_id, cid)
+
+            elif t == "community_typing":
+                cid = data.get("community_id")
+                if not (isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD):
+                    continue
+                user_doc = await db.users.find_one(
+                    {"id": user_id},
+                    {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1},
+                )
+                if not user_doc:
+                    continue
+                await ws_manager.broadcast_to_community(
+                    cid,
+                    {
+                        "type": "community_typing",
+                        "community_id": cid,
+                        "user": public_user(user_doc),
+                    },
+                    exclude_user=user_id,
+                )
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -9258,6 +9493,11 @@ async def websocket_endpoint(ws: WebSocket):
         # Clean up any post-viewer registrations from this connection
         try:
             await ws_manager.cleanup_user_posts(user_id)
+        except Exception:
+            pass
+        # Clean up community-room presence from this connection
+        try:
+            await ws_manager.cleanup_user_communities(user_id)
         except Exception:
             pass
         await ws_manager.broadcast({
