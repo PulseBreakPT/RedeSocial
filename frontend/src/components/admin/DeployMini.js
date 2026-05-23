@@ -53,7 +53,7 @@ export function DeployMini({ data }) {
     const rows = [
         { k: "Versão",     v: data?.version || shortCommit(data?.commit) || "—" },
         { k: "Ambiente",   v: (data?.app_env || "—").toUpperCase() },
-        { k: "Deployado",  v: shortTime(data?.deployed_at) },
+        { k: "Implementado",  v: shortTime(data?.deployed_at) },
     ];
     return (
         <div>
@@ -64,7 +64,7 @@ export function DeployMini({ data }) {
                 </div>
             ))}
             <div className="ops-deploy-row" title={statusTitle}>
-                <span className="ops-deploy-row__k">Status</span>
+                <span className="ops-deploy-row__k">Estado</span>
                 <span
                     style={{ display: "inline-flex", alignItems: "center", gap: 4, color: statusColor, fontSize: 11.5, fontWeight: 600 }}
                     data-testid={`deploy-status-${overall}`}

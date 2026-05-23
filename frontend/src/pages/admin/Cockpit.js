@@ -232,7 +232,7 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                             title="Estado dos serviços"
                             info={{
                                 title: "Health de subsistemas",
-                                body: "Status em tempo real do FastAPI, MongoDB, WebSocket gateway e armazenamento. Cada linha mostra latência real ou erro. Clica num serviço para abrir detalhes em Sistema.",
+                                body: "Estado em tempo real do FastAPI, MongoDB, WebSocket gateway e armazenamento. Cada linha mostra latência real ou erro. Clica num serviço para abrir detalhes em Sistema.",
                                 source: "GET /api/admin/cockpit/services",
                             }}
                             action={{ label: "Ver detalhes →", onClick: () => onNavigate && onNavigate("system") }}
@@ -387,7 +387,7 @@ export function Cockpit({ onNavigate, timeRange = "15m", onChangeTimeRange }) {
                     info={{
                         title: "Gateway realtime",
                         body: "Sockets abertos para feed, notificações e mensagens. Quando um utilizador usa várias abas/dispositivos cria múltiplos sockets — daí 'sockets' poder ser >'users'.",
-                        source: "derived from /api/admin/cockpit/services",
+                        source: "derivado de /api/admin/cockpit/services",
                     }}
                     data-testid="cockpit-widget-ws"
                 >

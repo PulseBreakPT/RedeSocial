@@ -490,10 +490,15 @@ Bibliotecas:
 
 ---
 
-## 🟠 PENDENTE — TAREFA ADMINISTRATIVA (pausada)
+## 🟢 TAREFA ADMINISTRATIVA — Tradução do painel Admin ✅
 
-### Tradução do painel Admin (inglês → português)
-**Estado:** Pausada pelo user no início desta sessão.
+**Estado:** Concluída. Strings EN→pt-PT traduzidas em `SecurityTab.js`
+(maioria), `Cockpit.js`, `CommandPalette.js`, `DeployMini.js`,
+`navConfig.js`. O resto do painel já estava em PT. Siglas técnicas
+(JWT, TTL, WS, API, IP, JTI, CSV, SameSite, ID…) preservadas — só os
+qualificadores foram traduzidos. `data-testid`/classes/chaves intactos.
+
+<details><summary>Lista original (referência)</summary>
 
 Strings já identificadas em inglês (auditadas nos files):
 - `Token Debugger` → "Diagnóstico de Token"
@@ -521,6 +526,8 @@ Ficheiros a varrer sistematicamente:
 **Critério:** traduzir tudo visível ao admin que esteja claramente em
 inglês. Manter siglas técnicas (JWT, TTL, WS, API, HTTP, HTTPS, CORS,
 SameSite, IP, UA, JTI, etc.) — só traduzir a palavra qualificadora.
+
+</details>
 
 ---
 
