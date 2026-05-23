@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     User, Settings, Archive, LogOut, Bookmark, FileText, Clock,
-    Shield, ChevronRight,
+    Shield, ChevronRight, Users as UsersIcon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -157,6 +157,12 @@ export function ProfileSidebarMenu({
                 { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "drawer-bookmarks" },
                 { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "drawer-drafts" },
                 { to: "/scheduled", label: "Agendados", icon: Clock, testid: "drawer-scheduled" },
+            ],
+        },
+        {
+            title: "Descobrir",
+            items: [
+                { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "drawer-communities" },
             ],
         },
         {
