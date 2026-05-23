@@ -9,7 +9,7 @@ import base64
 from datetime import datetime, timezone, timedelta
 
 # Base URL from frontend/.env
-BASE_URL = "https://site-preview-248.preview.emergentagent.com"
+BASE_URL = "https://site-show.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 API2_BASE = f"{BASE_URL}/api2"
 
