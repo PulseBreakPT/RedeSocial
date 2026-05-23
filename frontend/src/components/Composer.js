@@ -94,7 +94,7 @@ function relativeSavedLabel(ts) {
     return `há ${Math.floor(diff / 3600)}h`;
 }
 
-export function Composer({ onPosted, asModal = false, onClose, communityId = null, initialPost = null }) {
+export function Composer({ onPosted, asModal = false, onClose, communityId = null, initialPost = null, onType = null }) {
     const { user } = useAuth();
     const draftKey = communityId ? `draft:c:${communityId}` : "draft:global";
     const [content, setContent, clearDraft] = useLocalDraft(draftKey, initialPost?.content || "");
@@ -512,7 +512,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         ref={textareaRef}
                         data-testid="composer-textarea"
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={(e) => { setContent(e.target.value); if (onType && e.target.value) onType(); }}
                         onPaste={handlePaste}
                         placeholder={communityId ? "Partilha algo com a comunidade..." : "O que está a acontecer?"}
                         rows={asModal ? 4 : 2}

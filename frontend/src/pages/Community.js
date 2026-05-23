@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     Users, BarChart3, Crown, TrendingUp, Share2, Search, MoreHorizontal,
-    Flame, Activity, Shield, Flag, VolumeX, UserX, Trash2, Check,
+    Flame, Activity, Shield, Flag, VolumeX, UserX, Trash2, Check, Clock, Pencil,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
@@ -12,6 +12,7 @@ import { Avatar } from "../components/Avatar";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { useWsMessages } from "../components/WebSocketProvider";
 import { useCommunityPulse } from "../hooks/useCommunityPulse";
+import { useCommunityRhythm } from "../hooks/useCommunityRhythm";
 import { toast } from "sonner";
 
 const BASE_TABS = [
@@ -43,10 +44,23 @@ function EnergyMeter({ value = 0 }) {
     );
 }
 
+function Sparkline({ points = [], width = 96, height = 20 }) {
+    if (!points.length) return null;
+    const max = Math.max(...points.map((p) => p.value), 1);
+    const step = width / Math.max(1, points.length - 1);
+    const d = points.map((p, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(height - (p.value / max) * (height - 2) - 1).toFixed(1)}`).join(" ");
+    return (
+        <svg width={width} height={height} className="overflow-visible" aria-hidden>
+            <path d={d} fill="none" stroke="var(--coral-500)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
+        </svg>
+    );
+}
+
 // Faixa de estado vivo — sempre visível (a "activity layer" forte).
-function LiveStrip({ pulse, presentNow }) {
+function LiveStrip({ pulse, presentNow, typers = [], rhythm }) {
     if (!pulse) return null;
     const topTrend = (pulse.meaningful_trends && pulse.meaningful_trends[0]) || (pulse.trends && pulse.trends[0]);
+    const typerName = typers[0] ? (typers[0].user.name || typers[0].user.username) : null;
     return (
         <div className="px-4 lg:px-6 py-2.5 hairline-b flex items-center gap-3 flex-wrap text-[12.5px]" data-testid="community-livestrip">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${TEMP_STYLE[pulse.temperature] || TEMP_STYLE.fria}`}>
@@ -55,7 +69,13 @@ function LiveStrip({ pulse, presentNow }) {
             <span className="inline-flex items-center gap-1.5 text-black/70 font-medium">
                 <span className="live-dot" /> {presentNow} {presentNow === 1 ? "pessoa aqui agora" : "pessoas aqui agora"}
             </span>
-            <span className="text-black/50">{pulse.state_label}</span>
+            {typerName ? (
+                <span className="inline-flex items-center gap-1 text-[var(--coral-500)] anim-fade-up">
+                    <Pencil size={11} /> {typers.length > 1 ? `${typers.length} a escrever…` : `${typerName} a escrever…`}
+                </span>
+            ) : (
+                <span className="text-black/50">{pulse.state_label}</span>
+            )}
             {pulse.dominant_mood_label && <span className="text-black/45">· {pulse.dominant_mood_label}</span>}
             {topTrend && (
                 <Link to={`/tag/${encodeURIComponent(topTrend.tag)}`} className="text-[var(--eu-500)] font-medium hover:underline">
@@ -63,6 +83,11 @@ function LiveStrip({ pulse, presentNow }) {
                 </Link>
             )}
             <EnergyMeter value={pulse.energy} />
+            {rhythm?.sparkline_24h?.length > 0 && (
+                <span className="ml-auto hidden sm:inline-flex items-center" title="Respiração das últimas 24h">
+                    <Sparkline points={rhythm.sparkline_24h} />
+                </span>
+            )}
         </div>
     );
 }
@@ -84,7 +109,8 @@ export default function Community() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const { pulse, presentNow } = useCommunityPulse(slug, community?.id);
+    const { pulse, presentNow, typers, notifyTyping } = useCommunityPulse(slug, community?.id);
+    const { rhythm } = useCommunityRhythm(slug, !!community);
     const canMod = !!community?.can_moderate;
     const isOwner = !!community?.is_owner;
 
@@ -258,7 +284,7 @@ export default function Community() {
             </div>
 
             {/* Activity layer — estado vivo sempre visível */}
-            <LiveStrip pulse={pulse} presentNow={presentNow} />
+            <LiveStrip pulse={pulse} presentNow={presentNow} typers={typers} rhythm={rhythm} />
 
             <div className="hairline-b sticky top-[var(--mobile-topbar-h)] lg:top-[57px] z-20 glass grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
                 {tabs.map((t) => (
@@ -278,7 +304,7 @@ export default function Community() {
             {tab === "conversas" && (
                 <>
                     {community.joined ? (
-                        <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} communityId={community.id} />
+                        <Composer onPosted={(p) => setPosts((prev) => [p, ...prev])} communityId={community.id} onType={notifyTyping} />
                     ) : (
                         <div className="p-6 text-center hairline-b">
                             <p className="type-overline mb-1">Restrito a membros</p>
@@ -356,6 +382,7 @@ export default function Community() {
                         <p className="type-overline mb-1">Sobre</p>
                         <p className="text-[15px] text-black/80 leading-relaxed">{community.description || "Sem descrição."}</p>
                     </div>
+                    <RitmoPanel rhythm={rhythm} />
                     <div className="card-lux p-4 space-y-2">
                         <p className="type-overline">Regras da comunidade</p>
                         <ul className="list-decimal list-inside space-y-1 text-[14px] text-black/75">
@@ -543,6 +570,49 @@ function CommunityPostActions({ post, canMod, onRemove, onReport }) {
                 <button onClick={() => onRemove(post.id)} className="text-[11px] font-mono text-rose-600/70 hover:text-rose-600 inline-flex items-center gap-1">
                     <Trash2 size={11} /> remover
                 </button>
+            )}
+        </div>
+    );
+}
+
+function RitmoPanel({ rhythm }) {
+    if (!rhythm) return null;
+    const hasData = rhythm.samples > 0;
+    const fmtHour = (h) => `${String(h).padStart(2, "0")}h`;
+    const profile = rhythm.hourly || [];
+    const maxMed = Math.max(...profile.map((p) => p.median_score), 1);
+    return (
+        <div className="card-lux p-4 space-y-3">
+            <div className="flex items-center justify-between">
+                <p className="type-overline flex items-center gap-1.5"><Clock size={12} /> Ritmo do bairro</p>
+                {rhythm.dias_vivos > 0 && (
+                    <span className="text-[11px] font-mono text-[var(--coral-500)]">vivo há {rhythm.dias_vivos} {rhythm.dias_vivos === 1 ? "dia" : "dias"}</span>
+                )}
+            </div>
+            {!hasData ? (
+                <p className="text-[13px] text-black/45">Ainda sem ritmo — volta quando isto ganhar vida.</p>
+            ) : (
+                <>
+                    {rhythm.this_hour_hint?.fills && (
+                        <p className="text-[13px] text-black/70">A esta hora isto costuma encher.</p>
+                    )}
+                    {rhythm.strong_hours?.length > 0 && (
+                        <p className="text-[12.5px] text-black/55">
+                            Horas fortes: {rhythm.strong_hours.map(fmtHour).join(" · ")}
+                        </p>
+                    )}
+                    <div className="flex items-end gap-[3px] h-16 pt-1">
+                        {profile.map((p) => (
+                            <div key={p.hour} className="flex-1 group relative" title={`${fmtHour(p.hour)} · ${p.median_score}`}>
+                                <div className={`w-full rounded-sm transition-all ${p.strong ? "bg-[var(--coral-500)]" : "bg-black/15"}`}
+                                    style={{ height: `${Math.max(2, (p.median_score / maxMed) * 100)}%` }} />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between text-[9px] font-mono text-black/35">
+                        <span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span>
+                    </div>
+                </>
             )}
         </div>
     );

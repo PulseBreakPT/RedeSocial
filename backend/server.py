@@ -48,6 +48,8 @@ import reputation_engine
 import community_pulse
 # Comunidades — camada de moderação (papéis, ban/mute, reports, log).
 import community_mod
+# Comunidades — ritmo & memória social (perfil horário, dias vivos).
+import community_rhythm
 
 JWT_ALGORITHM = "HS256"
 
@@ -7313,6 +7315,21 @@ async def community_now(slug: str, user=Depends(get_current_user)):
         "ticker": ticker,
         "authors": authors,
     }
+
+
+@api.get("/communities/{slug}/ritmo")
+async def community_ritmo(slug: str, user=Depends(get_current_user)):
+    """Ritmo & memória: perfil horário, sparkline 24h, horas fortes e dias
+    vivos — tudo derivado dos snapshots reais do pulso."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    snapshots = await db.community_pulse_snapshots.find(
+        {"community_id": comm["id"], "taken_at": {"$gte": cutoff}},
+        {"_id": 0, "taken_at": 1, "score": 1, "state": 1, "trends": 1},
+    ).to_list(20000)
+    return community_rhythm.build_rhythm(snapshots)
 
 
 # ─────────────────────────────────────────────────────────────────────
