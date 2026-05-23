@@ -38,6 +38,9 @@ import pulse_engine
 # Fase 4 — Context Engine. Pesos contextuais (hora/dia/calendário/mood)
 # para o feed. Pure math + lookup, sem estado, importável directamente.
 import context_engine
+# Fase 5 — Mesas (conversas efémeras). Helpers + índices TTL; endpoints
+# vivem aqui no server.py (precisam de db/auth/ws), como o Pulse Engine.
+import mesas as mesas_engine
 
 JWT_ALGORITHM = "HS256"
 
@@ -6845,6 +6848,12 @@ async def startup():
     except Exception as exc:
         logger.warning(f"pulse_engine: startup wiring failed: {exc}")
 
+    # ── Fase 5 — Mesas (conversas efémeras) ─────────────────────────
+    try:
+        await mesas_engine.init_mesas_indexes(db)
+    except Exception as exc:
+        logger.warning(f"mesas: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -8699,6 +8708,115 @@ async def pulse_timeline(minutes: int = 60, user=Depends(get_current_user)):
         for r in rows
     ]
     return {"minutes": minutes, "points": trimmed}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Fase 5 — MESAS (conversas efémeras)
+# ─────────────────────────────────────────────────────────────────────
+class MesaCreateIn(BaseModel):
+    title: str = Field(min_length=1, max_length=mesas_engine.MAX_TITLE)
+    topic: Optional[str] = ""
+    kind: Optional[str] = "rapida"
+
+
+class MesaMessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=mesas_engine.MAX_MESSAGE)
+
+
+@api.post("/mesas")
+async def create_mesa(payload: MesaCreateIn, user=Depends(get_current_user)):
+    """Cria uma mesa. Qualquer utilizador pode criar uma 'rapida'/'noturna'/
+    'tema'. Expira sozinha pelo TTL do Mongo."""
+    doc = mesas_engine.new_mesa_doc(
+        title=payload.title,
+        topic=payload.topic or "",
+        kind=(payload.kind or "rapida"),
+        created_by=user["id"],
+    )
+    await db.mesas.insert_one(dict(doc))
+    return mesas_engine.public_mesa(doc, me_id=user["id"])
+
+
+@api.get("/mesas")
+async def list_mesas(user=Depends(get_current_user)):
+    """Mesas vivas, ordenadas por atividade recente."""
+    rows = await db.mesas.find({}, {"_id": 0}).sort("last_activity_at", -1).to_list(80)
+    now = datetime.now(timezone.utc)
+    alive = [m for m in rows if mesas_engine.is_alive(m, now)]
+    return [mesas_engine.public_mesa(m, me_id=user["id"], now=now) for m in alive]
+
+
+@api.get("/mesas/{mesa_id}")
+async def get_mesa(mesa_id: str, user=Depends(get_current_user)):
+    """Detalhe de uma mesa + últimas mensagens."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    msgs = await db.mesa_messages.find(
+        {"mesa_id": mesa_id}, {"_id": 0, "expire_at": 0}
+    ).sort("created_at", 1).to_list(mesas_engine.MESSAGES_PAGE)
+    return {
+        "mesa": mesas_engine.public_mesa(mesa, me_id=user["id"]),
+        "messages": msgs,
+    }
+
+
+@api.post("/mesas/{mesa_id}/join")
+async def join_mesa(mesa_id: str, user=Depends(get_current_user)):
+    """Entra numa mesa (idempotente, entrada sem fricção)."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    await db.mesas.update_one({"id": mesa_id}, {"$addToSet": {"participants": user["id"]}})
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    return mesas_engine.public_mesa(mesa, me_id=user["id"])
+
+
+@api.post("/mesas/{mesa_id}/message")
+async def post_mesa_message(mesa_id: str, payload: MesaMessageIn, user=Depends(get_current_user)):
+    """Envia mensagem para a mesa. Junta-se automaticamente se ainda não
+    fizer parte (entrada-rápida). Difunde aos participantes via WS."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    content = (payload.content or "").strip()
+    if not content:
+        raise HTTPException(400, "Mensagem vazia")
+    now = datetime.now(timezone.utc)
+    msg = {
+        "id": str(uuid.uuid4()),
+        "mesa_id": mesa_id,
+        "author_id": user["id"],
+        "author": {
+            "id": user["id"],
+            "username": user.get("username"),
+            "name": user.get("name"),
+            "avatar": user.get("avatar", ""),
+        },
+        "content": content[:mesas_engine.MAX_MESSAGE],
+        "created_at": now_iso(),
+        # Mensagens expiram junto com a mesa (mesmo companheiro Date TTL).
+        "expire_at": mesa.get("expire_at") or now,
+    }
+    await db.mesa_messages.insert_one(dict(msg))
+    await db.mesas.update_one(
+        {"id": mesa_id},
+        {
+            "$addToSet": {"participants": user["id"]},
+            "$inc": {"message_count": 1},
+            "$set": {"last_activity_at": now_iso()},
+        },
+    )
+    # Difunde só aos participantes (não a toda a gente).
+    fresh = await db.mesas.find_one({"id": mesa_id}, {"_id": 0, "participants": 1})
+    out = {k: v for k, v in msg.items() if k != "expire_at"}
+    payload_ws = {"type": "mesa_message", "mesa_id": mesa_id, "message": out}
+    for uid in (fresh.get("participants", []) if fresh else []):
+        try:
+            await ws_manager.send_personal(uid, payload_ws)
+        except Exception:
+            pass
+    return out
 
 
 # ─── Live security feed — broadcast every auth_event to admins ──────────────

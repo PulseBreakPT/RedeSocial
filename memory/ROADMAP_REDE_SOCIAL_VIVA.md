@@ -96,6 +96,21 @@
 - **Frontend:** `components/pulse/FeedContextLine.js` mostra o label
   subtil no cabeçalho do feed (refresh 10 min). `null` se vazio.
 
+### Fase 5 — Mesas (conversas efémeras) ✅
+- **Módulo novo:** `backend/mesas.py` — helpers puros + `init_mesas_indexes`
+  (TTL Mongo em `expire_at`). Tipos: rapida(2h)/noturna(até 6h UTC)/
+  tema(24h). `mesa_messages` com TTL próprio = expiry da mesa.
+- **Endpoints (server.py):** `POST /api/mesas`, `GET /api/mesas` (vivas,
+  ordenadas por atividade), `GET /api/mesas/{id}` (+ mensagens),
+  `POST /api/mesas/{id}/join`, `POST /api/mesas/{id}/message` (auto-join +
+  difusão WS `mesa_message` só aos participantes via `send_personal`).
+- **Frontend:** página `pages/Mesas.js` (lista + criar + sala em tempo
+  real com composer e countdown), rota `/mesas`, nav "Mesas" (Coffee) na
+  LeftSidebar. WS via `useWsMessages` filtrando por `mesa_id`, dedupe por id.
+- **Auto-criação por evento (mesa de evento):** adiada — depende de
+  trigger de eventos; o tipo "evento" não está exposto (só rapida/noturna/
+  tema). Pode ser adicionado depois.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER
