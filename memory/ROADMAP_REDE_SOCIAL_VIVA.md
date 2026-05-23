@@ -165,6 +165,45 @@
 
 ---
 
+## 🟢 EM CURSO — Comunidades vivas (SSS tier, presence-first)
+
+Objetivo: comunidades como "bairros vivos" — presence-first, realtime,
+atmosfera própria. Decisões: vertical slice primeiro · moderação completa
+(a fazer) · persistir snapshots (memória social / ritmo horário).
+
+### Vertical slice — ENTREGUE ✅
+- **`backend/community_pulse.py`**: motor de pulso por comunidade (espelha
+  pulse_engine, filtrado por `community_id`). Janela 60s, baseline própria
+  à mesma hora (snapshots persistidos, TTL 30d → ritmo/memória),
+  temperatura/estado/energia, mood coletivo, trends internas. Loop só de
+  comunidades ativas, difunde `community_pulse` à sala WS.
+- **WS rooms** no `ws_manager`: `viewers_by_community`, eventos
+  `community_view/unview/typing`, `community_presence`, `broadcast_to_community`,
+  cleanup no disconnect. `community_activity` (ticker) emitido na criação
+  real de posts/comentários. Comentários passam a ter `community_id`.
+- **Endpoints**: `GET /communities/{slug}/pulse` e `/now` (Agora: presentes,
+  conversas a crescer, ticker recente). Tudo dados reais.
+- **Frontend**: `useCommunityPulse(slug, communityId)` (pulso + sala WS) e
+  `Community.js` reconstruída presence-first — header com estado vivo,
+  `LiveStrip` sempre visível (temperatura/energia/"X aqui agora"/mood/trend),
+  6 tabs (Conversas · Em alta · Pessoas · Media · Agora · Sobre), tab
+  **Agora** com presença ao vivo + conversas a crescer + activity ticker
+  (semente via /now, ao vivo via WS `community_activity`).
+
+### A FAZER (próximas iterações)
+- **Moderação completa** (decisão do user): roles/permissões por comunidade,
+  remover post, silenciar/banir membro, fila de reports da comunidade, log
+  de moderação dedicado — com eventos WS ao vivo.
+- **Desktop multi-column**: right-rail lateral com widgets vivos (pulso,
+  presentes, trends, ticker) — adiado do slice por precisar de teste visual.
+- **Polir**: micro-eventos sociais, "comunidade calma/intensa" copy
+  contextual, typing indicator no composer da comunidade (evento
+  `community_typing` já existe no backend), densidade mobile.
+- **Validação runtime**: nada testado em runtime (sem deps/Mongo neste
+  ambiente) — só sintaxe (py_compile/esbuild). Falta testar ponta-a-ponta.
+
+---
+
 ## 🟡 PENDENTE — POR FAZER
 
 ### ⚠️ Pré-requisito menor (5 min, opcional)
