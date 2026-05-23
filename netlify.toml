@@ -1,0 +1,18 @@
+# Netlify — só o FRONTEND (CRA via craco). O backend FastAPI vai para o Render
+# (ver render.yaml): precisa do WebSocket /ws + loops em background, que as
+# Netlify Functions (serverless) não suportam.
+#
+# Monorepo: base = frontend → o build corre dentro de frontend/ e o publish
+# (build/) é relativo a essa base. O CRA gera em build/ (não dist/).
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "build"
+
+# SPA / React Router: qualquer rota (/admin, /u/tiago, /messages, /c/slug…)
+# devolve o index.html com 200 para o router do lado do cliente tratar.
+# (Há também um frontend/public/_redirects como rede de segurança.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

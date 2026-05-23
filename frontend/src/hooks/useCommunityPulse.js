@@ -15,12 +15,18 @@ import { useWsMessages, useWsState } from "../components/WebSocketProvider";
  *
  * Devolve { pulse, presentNow, loading, refresh, wsState }.
  */
+const TYPING_TTL_MS = 6000;
+const TYPING_THROTTLE_MS = 3000;
+
 export function useCommunityPulse(slug, communityId) {
     const [pulse, setPulse] = useState(null);
     const [presentNow, setPresentNow] = useState(0);
+    const [typers, setTypers] = useState([]);   // [{user, at}]
+    const [happening, setHappening] = useState(null);  // momento ativo (ou null)
     const [loading, setLoading] = useState(true);
     const wsState = useWsState();
     const joinedRef = useRef(false);
+    const lastTypingRef = useRef(0);
 
     const refresh = useCallback(async () => {
         if (!slug) return;
@@ -34,6 +40,22 @@ export function useCommunityPulse(slug, communityId) {
     }, [slug]);
 
     useEffect(() => { refresh(); }, [refresh]);
+
+    // Momento (happening) ativo inicial.
+    useEffect(() => {
+        if (!slug) return;
+        api.get(`/communities/${slug}/hype/active`)
+            .then(({ data }) => setHappening(data || null))
+            .catch(() => { /* ambiental */ });
+    }, [slug]);
+
+    const amplify = useCallback(async () => {
+        if (!slug) return;
+        try {
+            const { data } = await api.post(`/communities/${slug}/hype`);
+            if (data && data.active) setHappening(data);
+        } catch { /* ignore */ }
+    }, [slug]);
 
     // Entrar/sair da sala WS da comunidade.
     useEffect(() => {
@@ -56,18 +78,48 @@ export function useCommunityPulse(slug, communityId) {
         };
     }, [communityId]);
 
-    // Atualizações ao vivo: pulso (60s) e presença.
+    // Atualizações ao vivo: pulso (60s), presença e quem está a escrever.
     const onWs = useCallback((msg) => {
-        if (!msg) return;
-        if (msg.type === "community_pulse" && communityId && msg.community_id === communityId) {
+        if (!msg || !communityId || msg.community_id !== communityId) return;
+        if (msg.type === "community_pulse") {
             if (msg.pulse) setPulse((prev) => ({ ...(prev || {}), ...msg.pulse }));
-        } else if (msg.type === "community_presence" && communityId && msg.community_id === communityId) {
+        } else if (msg.type === "community_presence") {
             setPresentNow(msg.count || 0);
+        } else if (msg.type === "community_typing" && msg.user) {
+            const at = Date.now();
+            setTypers((prev) => [...prev.filter((p) => p.user.id !== msg.user.id), { user: msg.user, at }]);
+        } else if (msg.type === "community_happening") {
+            if (msg.phase === "ended") setHappening(null);
+            else if (msg.happening) setHappening(msg.happening);
         }
     }, [communityId]);
     useWsMessages(onWs);
 
-    return { pulse, presentNow, loading, refresh, wsState };
+    // Expira typers antigos.
+    useEffect(() => {
+        const tick = setInterval(() => {
+            const now = Date.now();
+            setTypers((prev) => {
+                const next = prev.filter((p) => now - p.at < TYPING_TTL_MS);
+                return next.length === prev.length ? prev : next;
+            });
+        }, 1000);
+        return () => clearInterval(tick);
+    }, []);
+
+    // Emite "estou a escrever" (throttled).
+    const notifyTyping = useCallback(() => {
+        if (!communityId) return;
+        const now = Date.now();
+        if (now - lastTypingRef.current < TYPING_THROTTLE_MS) return;
+        lastTypingRef.current = now;
+        try {
+            const sock = window.__VMLN_WS__;
+            if (sock && sock.readyState === 1) sock.send(JSON.stringify({ type: "community_typing", community_id: communityId }));
+        } catch { /* ignore */ }
+    }, [communityId]);
+
+    return { pulse, presentNow, typers, notifyTyping, happening, amplify, loading, refresh, wsState };
 }
 
 export default useCommunityPulse;

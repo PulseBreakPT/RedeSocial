@@ -190,10 +190,52 @@ atmosfera própria. Decisões: vertical slice primeiro · moderação completa
   **Agora** com presença ao vivo + conversas a crescer + activity ticker
   (semente via /now, ao vivo via WS `community_activity`).
 
+### Moderação completa — ENTREGUE ✅
+- **`backend/community_mod.py`**: papéis (owner/mod/member, admin global =
+  owner-level), permissões, ban/mute (com `can_write` enforcement),
+  `public_report`, `modlog_doc`, índices. Comunidade ganha `moderators[]`,
+  `banned[]`, `muted{uid:until}`.
+- **Enforcement real**: banidos/silenciados não publicam nem comentam
+  (create_post/create_comment) e banidos não entram (join).
+- **Endpoints**: `mods` (owner promove/despromove), `moderate/post`
+  (remover da comunidade), `members/{id}/ban`, `members/{id}/mute`,
+  `report`, `reports` (fila, só mods), `reports/{id}/resolve` (dispensar/
+  remover/expulsar/silenciar), `modlog`. `_community_public` expõe
+  role/can_moderate/is_banned/is_muted.
+- **WS ao vivo**: `community_mod` (remove post do feed na hora a todos),
+  `community_report_new` (notifica owner+mods via send_personal).
+- **Frontend** (`Community.js`): tab **Moderação** (só mods, com badge de
+  reports abertos) — fila de reports com ações + registo de moderação;
+  ações por membro no tab Pessoas (silenciar/expulsar/promover); botão
+  **reportar** + **remover** por post nas Conversas; remoção realtime.
+
+### Lógica Extrema (mecânicas novas) — ENTREGUE ✅
+Plano: `memory`/plano aprovado. 5 ondas, todas com dados reais (sem IA, sem
+gamificação individual; coletivo/privado estilo reputation_engine).
+- **Onda A — Ritmo & Memória + Presença de escrita**: `community_rhythm.py`
+  (perfil horário, sparkline 24h, horas fortes, `dias_vivos` coletivo) +
+  `GET /ritmo`; `RitmoPanel` (Sobre) + sparkline no LiveStrip. Composer emite
+  `community_typing` → "X a escrever" ao vivo.
+- **Onda B — Happenings**: `happenings.py` deteta episódios reais do pulso
+  (temperatura/delta), persiste (`community_happenings`, TTL 30d), difunde
+  `community_happening`. Hype REconvertido em "amplificar" (amplifiers[]).
+  Banner ao vivo + "Momentos recentes" no Agora.
+- **Onda C — Saúde + Núcleo**: `community_health.py` (score coletivo, mistura
+  na descoberta, painel privado de mods) + `community_graph.py` (núcleo,
+  densidade, "as tuas pessoas aqui"; cache `community_graph_cache`). Loops
+  próprios.
+- **Onda D — Notificações + Pertença**: `community_subscriptions` (opt-in),
+  tipos `community_post`/`community_happening` (fan-out só a subscritores),
+  sino real no header; `GET /pertenca` (segues aqui + da tua cidade) + WS
+  `community_welcome` ao entrar.
+- **Onda E — Mesas de bairro**: `mesas.py` ganha `community_id` + auto-criação
+  de mesa `tema` quando um tópico interno rebenta (dedupe); `GET
+  /communities/{slug}/mesas`; cartão "Mesas do bairro" no Agora + deep-link
+  `/mesas?open=`.
+- Validação: só sintaxe (py_compile/esbuild) + testes de lógica pura. **Sem
+  runtime** (sem Mongo/deps neste ambiente).
+
 ### A FAZER (próximas iterações)
-- **Moderação completa** (decisão do user): roles/permissões por comunidade,
-  remover post, silenciar/banir membro, fila de reports da comunidade, log
-  de moderação dedicado — com eventos WS ao vivo.
 - **Desktop multi-column**: right-rail lateral com widgets vivos (pulso,
   presentes, trends, ticker) — adiado do slice por precisar de teste visual.
 - **Polir**: micro-eventos sociais, "comunidade calma/intensa" copy

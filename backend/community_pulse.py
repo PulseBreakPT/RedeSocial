@@ -262,6 +262,15 @@ async def compute_community_pulse(db, community: dict) -> dict:
 
 _cache: Dict[str, Tuple[dict, float]] = {}   # cid -> (snapshot, monotonic_ts)
 
+# Gancho opcional chamado quando um happening abre — o server.py liga aqui o
+# fan-out de notificações (Onda D) sem o motor depender das notificações.
+_HAPPENING_ON_STARTED = None
+
+
+def set_happening_on_started(cb) -> None:
+    global _HAPPENING_ON_STARTED
+    _HAPPENING_ON_STARTED = cb
+
 
 async def _persist(db, snap: dict) -> None:
     doc = dict(snap)
@@ -318,6 +327,14 @@ async def _tick_once(db, ws_manager) -> None:
             cids = list({*cids, *[c for c, s in present.items() if s]})
     except Exception:
         pass
+    # Inclui comunidades com um happening ABERTO, para o conseguir fechar
+    # mesmo que já tenham acalmado e saído do conjunto "ativo".
+    try:
+        import happenings
+        open_h = await happenings.open_happening_community_ids(db)
+        cids = list({*cids, *open_h})
+    except Exception:
+        open_h = []
     if not cids:
         return
     comms = await db.communities.find(
@@ -335,6 +352,19 @@ async def _tick_once(db, ws_manager) -> None:
                     "slug": comm.get("slug"),
                     "pulse": snap,
                 })
+            # Deteção de micro-eventos (abre/estende/fecha happening real).
+            try:
+                import happenings
+                await happenings.detect_and_update(db, comm, snap, ws_manager,
+                                                   on_started=_HAPPENING_ON_STARTED)
+            except Exception as exc:
+                logger.warning(f"community_pulse: happening detect failed for {comm.get('id')}: {exc}")
+            # Mesa de bairro automática quando um tópico interno rebenta.
+            try:
+                import mesas
+                await mesas.auto_topic_mesa(db, comm, snap, ws_manager)
+            except Exception as exc:
+                logger.warning(f"community_pulse: auto-mesa failed for {comm.get('id')}: {exc}")
         except Exception as exc:
             logger.warning(f"community_pulse: tick failed for {comm.get('id')}: {exc}")
 

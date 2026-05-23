@@ -46,6 +46,15 @@ import mesas as mesas_engine
 import reputation_engine
 # Comunidades vivas — motor de pulso por comunidade (presence-first).
 import community_pulse
+# Comunidades — camada de moderação (papéis, ban/mute, reports, log).
+import community_mod
+# Comunidades — ritmo & memória social (perfil horário, dias vivos).
+import community_rhythm
+# Comunidades — micro-eventos sociais (happenings) detetados pelo pulso.
+import happenings
+# Comunidades — saúde do bairro (score coletivo) + núcleo/densidade social.
+import community_health
+import community_graph
 
 JWT_ALGORITHM = "HS256"
 
@@ -3151,8 +3160,11 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     community_id = None
     if payload.community_id:
         c = await db.communities.find_one({"id": payload.community_id}, {"_id": 0})
-        if not c or user["id"] not in c.get("members", []):
-            raise HTTPException(403, "Tens de entrar na comunidade primeiro")
+        if not c:
+            raise HTTPException(404, "Comunidade não encontrada")
+        allowed, reason = community_mod.can_write(c, user)
+        if not allowed:
+            raise HTTPException(403, reason)
         community_id = c["id"]
     if payload.quote_of:
         if not user.get("is_admin") and not await is_feature_enabled("reposts_enabled"):
@@ -3273,6 +3285,10 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
                               "name": user.get("name"), "avatar": user.get("avatar", "")},
                     "preview": (payload.content or "")[:120],
                 })
+            except Exception:
+                pass
+            try:
+                await _fanout_community_post(community_id, post, user)
             except Exception:
                 pass
     return await enrich_post(post, user)
@@ -4004,6 +4020,14 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
     post = await db.posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Publicação não encontrada")
+    # Comunidade: banidos/silenciados não comentam em posts da comunidade.
+    if post.get("community_id"):
+        _comm = await db.communities.find_one({"id": post["community_id"]}, {"_id": 0})
+        if _comm:
+            if community_mod.is_banned(_comm, user["id"]) and not user.get("is_admin"):
+                raise HTTPException(403, "Foste expulso desta comunidade")
+            if community_mod.is_muted(_comm, user["id"]) and not user.get("is_admin"):
+                raise HTTPException(403, "Estás silenciado nesta comunidade")
     # Admin-imposed: comments frozen on this post (replies_frozen=true)
     _assert_post_replies_open(post)
     # Reply audience enforcement
@@ -5627,7 +5651,30 @@ async def join_community(slug: str, user=Depends(get_current_user)):
     if user["id"] in c.get("members", []):
         await db.communities.update_one({"id": c["id"]}, {"$pull": {"members": user["id"]}})
         return {"joined": False}
+    if community_mod.is_banned(c, user["id"]):
+        raise HTTPException(403, "Foste expulso desta comunidade")
     await db.communities.update_one({"id": c["id"]}, {"$addToSet": {"members": user["id"]}})
+    # Boas-vindas: momento de pertença (interseções reais; vazio é honesto).
+    try:
+        members = set(c.get("members", []) or []) | {user["id"]}
+        following_here = [uid for uid in (user.get("following", []) or []) if uid in members]
+        city = (user.get("city") or "").strip()
+        city_n = 0
+        if city:
+            city_n = await db.users.count_documents(
+                {"id": {"$in": list(members - {user["id"]})}, "city": city}
+            )
+        await ws_manager.send_personal(user["id"], {
+            "type": "community_welcome",
+            "community_id": c["id"],
+            "slug": c.get("slug"),
+            "name": c.get("name"),
+            "following_here": len(following_here),
+            "city_mates_here": city_n,
+            "present_now": ws_manager.community_presence_count(c["id"]),
+        })
+    except Exception:
+        pass
     return {"joined": True}
 
 
@@ -5641,13 +5688,21 @@ async def community_posts(slug: str, viewer: Optional[dict] = Depends(maybe_user
 
 
 def _community_public(c: dict, viewer: Optional[dict]) -> dict:
+    vid = viewer["id"] if viewer else None
     return {
         "id": c["id"], "name": c["name"], "slug": c["slug"],
         "description": c.get("description", ""), "banner": c.get("banner", ""),
         "category": c.get("category", "outras"),
         "owner_id": c["owner_id"], "members_count": len(c.get("members", [])),
-        "joined": bool(viewer and viewer["id"] in c.get("members", [])),
-        "is_owner": bool(viewer and viewer["id"] == c["owner_id"]),
+        "moderators_count": len(c.get("moderators", []) or []),
+        "joined": bool(vid and vid in c.get("members", [])),
+        "is_owner": bool(vid and vid == c["owner_id"]),
+        # Moderação — papel do viewer e o que pode fazer.
+        "role": community_mod.role_of(c, viewer),
+        "can_moderate": community_mod.can_moderate(c, viewer),
+        "is_banned": bool(vid and community_mod.is_banned(c, vid)),
+        "is_muted": bool(vid and community_mod.is_muted(c, vid)),
+        "muted_until": community_mod.muted_until(c, vid) if vid else None,
         "created_at": c["created_at"],
     }
 
@@ -6134,10 +6189,26 @@ async def trending_communities(range: str = "7d", viewer: Optional[dict] = Depen
         s = counts.setdefault(cid, {"posts": 0, "likes": 0})
         s["posts"] += 1
         s["likes"] += len(p.get("likes", []))
-    ranked = sorted(counts.items(), key=lambda kv: kv[1]["posts"] * 2 + kv[1]["likes"], reverse=True)[:10]
+    # Blend saúde do bairro: vivas+saudáveis sobem, tóxicas/frias descem
+    # (subtil, nunca exposto). Score base = posts*2 + likes.
+    cids = list(counts.keys())
+    comm_docs = {}
+    if cids:
+        rows = await db.communities.find(
+            {"id": {"$in": cids}}, {"_id": 0}
+        ).to_list(len(cids))
+        comm_docs = {c["id"]: c for c in rows}
+
+    def _rank_key(item):
+        cid, s = item
+        base = s["posts"] * 2 + s["likes"]
+        health = (comm_docs.get(cid) or {}).get("health_score")
+        return base * community_health.health_multiplier_community(health)
+
+    ranked = sorted(counts.items(), key=_rank_key, reverse=True)[:10]
     out = []
     for cid, s in ranked:
-        c = await db.communities.find_one({"id": cid}, {"_id": 0})
+        c = comm_docs.get(cid)
         if not c:
             continue
         base = _community_public(c, viewer)
@@ -6904,10 +6975,27 @@ async def startup():
     try:
         await db.comments.create_index("community_id")
         await community_pulse.init_community_pulse_indexes(db)
+        await community_mod.init_community_mod_indexes(db)
+        await happenings.init_happening_indexes(db)
+        await db.community_subscriptions.create_index(
+            [("community_id", 1), ("user_id", 1)], unique=True, name="csub_unique"
+        )
+        await db.community_subscriptions.create_index("user_id", name="csub_user")
+        community_pulse.set_happening_on_started(_notify_happening_subscribers)
         community_pulse.start_community_pulse_loop(db, ws_manager)
         logger.info("community_pulse: background loop scheduled")
     except Exception as exc:
         logger.warning(f"community_pulse: startup wiring failed: {exc}")
+
+    # ── Comunidades — saúde do bairro + núcleo social (loops próprios) ──
+    try:
+        await community_health.init_community_health_indexes(db)
+        await community_graph.init_community_graph_indexes(db)
+        community_health.start_community_health_loop(db)
+        community_graph.start_community_graph_loop(db)
+        logger.info("community_health/graph: background loops scheduled")
+    except Exception as exc:
+        logger.warning(f"community_health/graph: startup wiring failed: {exc}")
 
 
 @app.on_event("shutdown")
@@ -6924,6 +7012,14 @@ async def shutdown():
         pass
     try:
         await community_pulse.stop_community_pulse_loop()
+    except Exception:
+        pass
+    try:
+        await community_health.stop_community_health_loop()
+    except Exception:
+        pass
+    try:
+        await community_graph.stop_community_graph_loop()
     except Exception:
         pass
     client.close()
@@ -7289,6 +7385,372 @@ async def community_now(slug: str, user=Depends(get_current_user)):
         "ticker": ticker,
         "authors": authors,
     }
+
+
+@api.get("/communities/{slug}/ritmo")
+async def community_ritmo(slug: str, user=Depends(get_current_user)):
+    """Ritmo & memória: perfil horário, sparkline 24h, horas fortes e dias
+    vivos — tudo derivado dos snapshots reais do pulso."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    snapshots = await db.community_pulse_snapshots.find(
+        {"community_id": comm["id"], "taken_at": {"$gte": cutoff}},
+        {"_id": 0, "taken_at": 1, "score": 1, "state": 1, "trends": 1},
+    ).to_list(20000)
+    return community_rhythm.build_rhythm(snapshots)
+
+
+@api.get("/communities/{slug}/saude")
+async def community_saude(slug: str, user=Depends(get_current_user)):
+    """Saúde do bairro — só moderadores. Score + breakdown + tendência. Nunca
+    público (regra de ouro: influencia descoberta, não é badge)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    if not community_mod.can_moderate(comm, user):
+        raise HTTPException(403, "Sem permissões nesta comunidade")
+    if "health_score" not in comm:
+        res = await community_health.compute_community_health(db, comm)
+        score, breakdown = res["score"], res["breakdown"]
+    else:
+        score, breakdown = comm.get("health_score"), comm.get("health_breakdown", {})
+    trend = await db.community_health_snapshots.find(
+        {"community_id": comm["id"]}, {"_id": 0, "score": 1, "taken_at": 1},
+    ).sort("taken_at", -1).to_list(30)
+    trend.reverse()
+    return {"score": score, "breakdown": breakdown, "trend": trend}
+
+
+async def _enrich_member_list(entries: list) -> list:
+    """entries: [{user_id, score}] → injeta public_user."""
+    ids = [e["user_id"] for e in entries if e.get("user_id")]
+    if not ids:
+        return []
+    rows = await db.users.find(
+        {"id": {"$in": ids}}, {"_id": 0, "password_hash": 0}
+    ).to_list(len(ids))
+    umap = {u["id"]: public_user(u) for u in rows}
+    out = []
+    for e in entries:
+        u = umap.get(e["user_id"])
+        if u:
+            out.append({**u, "tie_score": e.get("score")})
+    return out
+
+
+@api.get("/communities/{slug}/nucleo")
+async def community_nucleo(slug: str, user=Depends(get_current_user)):
+    """Núcleo social + densidade da comunidade (a partir da cache do grafo)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    doc = await community_graph.get_nucleo(db, comm)
+    nucleo = await _enrich_member_list(doc.get("nucleo", []))
+    return {
+        "nucleo": nucleo,
+        "density": doc.get("density", 0.0),
+        "participants": doc.get("participants_n", 0),
+        "edges": doc.get("edges_n", 0),
+        "forming": doc.get("forming", True),
+    }
+
+
+@api.get("/communities/{slug}/as-tuas-pessoas")
+async def community_your_people(slug: str, user=Depends(get_current_user)):
+    """As tuas pessoas aqui — laços mais fortes do viewer nesta comunidade."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    ties = await community_graph.your_people(db, user["id"], comm)
+    return {"people": await _enrich_member_list(ties)}
+
+
+@api.get("/communities/{slug}/mesas")
+async def community_mesas(slug: str, user=Depends(get_current_user)):
+    """Mesas vivas deste bairro (nascem de tópicos internos em burst)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    rows = await db.mesas.find(
+        {"community_id": comm["id"]}, {"_id": 0}
+    ).sort("last_activity_at", -1).to_list(40)
+    now = datetime.now(timezone.utc)
+    alive = [m for m in rows if mesas_engine.is_alive(m, now)]
+    return [mesas_engine.public_mesa(m, me_id=user["id"], now=now) for m in alive]
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Comunidades — MODERAÇÃO COMPLETA (papéis, ban/mute, reports, log)
+# ─────────────────────────────────────────────────────────────────────
+class CommunityModRoleIn(BaseModel):
+    user_id: str
+    action: str = "add"   # add | remove
+
+
+class CommunityModPostIn(BaseModel):
+    post_id: str
+    reason: Optional[str] = ""
+
+
+class CommunityBanIn(BaseModel):
+    action: str = "ban"   # ban | unban
+
+
+class CommunityMuteIn(BaseModel):
+    action: str = "mute"  # mute | unmute
+    minutes: Optional[int] = 60
+
+
+class CommunityReportIn(BaseModel):
+    kind: str             # post | comment | user
+    target_id: str
+    reason: str = Field(min_length=1, max_length=60)
+    detail: Optional[str] = ""
+
+
+class CommunityResolveIn(BaseModel):
+    action: str = "dismiss"  # dismiss | remove_post | ban_user | mute_user
+    note: Optional[str] = ""
+
+
+async def _comm_or_404(slug: str) -> dict:
+    c = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "Comunidade não encontrada")
+    return c
+
+
+async def _comm_for_mod(slug: str, user: dict) -> dict:
+    c = await _comm_or_404(slug)
+    if not community_mod.can_moderate(c, user):
+        raise HTTPException(403, "Sem permissões de moderação nesta comunidade")
+    return c
+
+
+async def _mod_log_and_broadcast(community: dict, actor: dict, action: str, *,
+                                 target_id: Optional[str] = None,
+                                 target_kind: Optional[str] = None,
+                                 detail: str = "", extra: Optional[dict] = None) -> dict:
+    doc = community_mod.modlog_doc(
+        community["id"], actor["id"], action,
+        target_id=target_id, target_kind=target_kind, detail=detail,
+    )
+    try:
+        await db.community_mod_log.insert_one(dict(doc))
+    except Exception:
+        pass
+    msg = {
+        "type": "community_mod",
+        "community_id": community["id"],
+        "action": action,
+        "target_id": target_id,
+        "target_kind": target_kind,
+        "actor": {"id": actor["id"], "username": actor.get("username"), "name": actor.get("name")},
+        "at": doc["created_at"],
+    }
+    if extra:
+        msg.update(extra)
+    try:
+        await ws_manager.broadcast_to_community(community["id"], msg)
+    except Exception:
+        pass
+    return doc
+
+
+@api.post("/communities/{slug}/mods")
+async def community_set_mod(slug: str, payload: CommunityModRoleIn, user=Depends(get_current_user)):
+    """Owner adiciona/remove um moderador. O alvo tem de ser membro."""
+    c = await _comm_or_404(slug)
+    if not community_mod.is_owner(c, user):
+        raise HTTPException(403, "Apenas o dono pode gerir moderadores")
+    target_id = payload.user_id
+    if target_id == c["owner_id"]:
+        raise HTTPException(400, "O dono já tem todos os poderes")
+    if payload.action == "add":
+        if target_id not in (c.get("members") or []):
+            raise HTTPException(400, "Só membros podem ser moderadores")
+        await db.communities.update_one({"id": c["id"]}, {"$addToSet": {"moderators": target_id}})
+        await _mod_log_and_broadcast(c, user, "add_mod", target_id=target_id, target_kind="user")
+    else:
+        await db.communities.update_one({"id": c["id"]}, {"$pull": {"moderators": target_id}})
+        await _mod_log_and_broadcast(c, user, "remove_mod", target_id=target_id, target_kind="user")
+    fresh = await db.communities.find_one({"id": c["id"]}, {"_id": 0})
+    return _community_public(fresh, user)
+
+
+@api.post("/communities/{slug}/moderate/post")
+async def community_remove_post(slug: str, payload: CommunityModPostIn, user=Depends(get_current_user)):
+    """Remove um post DA COMUNIDADE (desliga-o; permanece no perfil do autor)."""
+    c = await _comm_for_mod(slug, user)
+    post = await db.posts.find_one({"id": payload.post_id}, {"_id": 0})
+    if not post or post.get("community_id") != c["id"]:
+        raise HTTPException(404, "Post não encontrado nesta comunidade")
+    await db.posts.update_one({"id": payload.post_id}, {"$set": {"community_id": None}})
+    await _mod_log_and_broadcast(
+        c, user, "remove_post", target_id=payload.post_id, target_kind="post",
+        detail=(payload.reason or "")[:200],
+        extra={"removed_post_id": payload.post_id},
+    )
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/members/{user_id}/ban")
+async def community_ban_member(slug: str, user_id: str, payload: CommunityBanIn, user=Depends(get_current_user)):
+    """Expulsa (ou readmite) um membro. Mods não podem expulsar o dono nem
+    outros mods (só o dono pode mexer em mods)."""
+    c = await _comm_for_mod(slug, user)
+    target_role = community_mod.role_of(c, {"id": user_id})
+    if payload.action == "ban":
+        if user_id == c["owner_id"]:
+            raise HTTPException(400, "Não podes expulsar o dono")
+        if target_role == community_mod.ROLE_MOD and not community_mod.is_owner(c, user):
+            raise HTTPException(403, "Só o dono pode expulsar moderadores")
+        await db.communities.update_one(
+            {"id": c["id"]},
+            {"$addToSet": {"banned": user_id}, "$pull": {"members": user_id, "moderators": user_id}},
+        )
+        await _mod_log_and_broadcast(c, user, "ban_user", target_id=user_id, target_kind="user")
+    else:
+        await db.communities.update_one({"id": c["id"]}, {"$pull": {"banned": user_id}})
+        await _mod_log_and_broadcast(c, user, "unban_user", target_id=user_id, target_kind="user")
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/members/{user_id}/mute")
+async def community_mute_member(slug: str, user_id: str, payload: CommunityMuteIn, user=Depends(get_current_user)):
+    """Silencia (ou retira o silêncio a) um membro por N minutos."""
+    c = await _comm_for_mod(slug, user)
+    if user_id == c["owner_id"]:
+        raise HTTPException(400, "Não podes silenciar o dono")
+    if payload.action == "mute":
+        minutes = max(1, min(int(payload.minutes or 60), 7 * 24 * 60))
+        until = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+        await db.communities.update_one({"id": c["id"]}, {"$set": {f"muted.{user_id}": until}})
+        await _mod_log_and_broadcast(
+            c, user, "mute_user", target_id=user_id, target_kind="user",
+            detail=f"{minutes}min", extra={"muted_until": until},
+        )
+        return {"ok": True, "muted_until": until}
+    await db.communities.update_one({"id": c["id"]}, {"$unset": {f"muted.{user_id}": ""}})
+    await _mod_log_and_broadcast(c, user, "unmute_user", target_id=user_id, target_kind="user")
+    return {"ok": True}
+
+
+@api.post("/communities/{slug}/report")
+async def community_report(slug: str, payload: CommunityReportIn, user=Depends(get_current_user)):
+    """Qualquer membro reporta um post/comentário/utilizador da comunidade.
+    Notifica os moderadores em tempo real."""
+    c = await _comm_or_404(slug)
+    if payload.kind not in community_mod.REPORT_KINDS:
+        raise HTTPException(400, "Tipo de report inválido")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "community_id": c["id"],
+        "kind": payload.kind,
+        "target_id": payload.target_id,
+        "reporter_id": user["id"],
+        "reason": payload.reason[:60],
+        "detail": (payload.detail or "")[:400],
+        "status": "open",
+        "created_at": now_iso(),
+    }
+    await db.community_reports.insert_one(dict(doc))
+    # Notifica owner + mods (real, sem expor a toda a sala).
+    mod_ids = [c["owner_id"], *(c.get("moderators") or [])]
+    for mid in set(mod_ids):
+        try:
+            await ws_manager.send_personal(mid, {
+                "type": "community_report_new",
+                "community_id": c["id"],
+                "report": community_mod.public_report(doc),
+            })
+        except Exception:
+            pass
+    return {"ok": True}
+
+
+@api.get("/communities/{slug}/reports")
+async def community_list_reports(slug: str, status: str = "open", user=Depends(get_current_user)):
+    """Fila de reports da comunidade (só moderadores)."""
+    c = await _comm_for_mod(slug, user)
+    q = {"community_id": c["id"]}
+    if status in ("open", "resolved"):
+        q["status"] = status
+    rows = await db.community_reports.find(q, {"_id": 0}).sort("created_at", -1).to_list(200)
+    # Resolve autores dos alvos para contexto.
+    out = []
+    for r in rows:
+        out.append(community_mod.public_report(r))
+    return out
+
+
+async def _resolve_report_target_user(report: dict) -> Optional[str]:
+    """Devolve o user_id alvo de um report (autor do post/comentário, ou o
+    próprio user reportado)."""
+    if report["kind"] == "user":
+        return report["target_id"]
+    if report["kind"] == "post":
+        p = await db.posts.find_one({"id": report["target_id"]}, {"_id": 0, "author_id": 1})
+        return p.get("author_id") if p else None
+    if report["kind"] == "comment":
+        cm = await db.comments.find_one({"id": report["target_id"]}, {"_id": 0, "author_id": 1})
+        return cm.get("author_id") if cm else None
+    return None
+
+
+@api.post("/communities/{slug}/reports/{report_id}/resolve")
+async def community_resolve_report(slug: str, report_id: str, payload: CommunityResolveIn, user=Depends(get_current_user)):
+    """Resolve um report aplicando uma ação real (dispensar / remover post /
+    expulsar / silenciar o autor). Tudo registado no log."""
+    c = await _comm_for_mod(slug, user)
+    report = await db.community_reports.find_one({"id": report_id, "community_id": c["id"]}, {"_id": 0})
+    if not report:
+        raise HTTPException(404, "Report não encontrado")
+    action = payload.action
+
+    if action == "remove_post":
+        if report["kind"] == "post":
+            await db.posts.update_one({"id": report["target_id"]}, {"$set": {"community_id": None}})
+            await _mod_log_and_broadcast(c, user, "remove_post", target_id=report["target_id"],
+                                         target_kind="post", extra={"removed_post_id": report["target_id"]})
+        elif report["kind"] == "comment":
+            await db.comments.delete_one({"id": report["target_id"]})
+            await _mod_log_and_broadcast(c, user, "remove_post", target_id=report["target_id"], target_kind="comment")
+    elif action in ("ban_user", "mute_user"):
+        target_uid = await _resolve_report_target_user(report)
+        if target_uid and target_uid != c["owner_id"]:
+            if action == "ban_user":
+                await db.communities.update_one(
+                    {"id": c["id"]},
+                    {"$addToSet": {"banned": target_uid}, "$pull": {"members": target_uid, "moderators": target_uid}},
+                )
+                await _mod_log_and_broadcast(c, user, "ban_user", target_id=target_uid, target_kind="user")
+            else:
+                until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+                await db.communities.update_one({"id": c["id"]}, {"$set": {f"muted.{target_uid}": until}})
+                await _mod_log_and_broadcast(c, user, "mute_user", target_id=target_uid, target_kind="user",
+                                             detail="24h", extra={"muted_until": until})
+    # else: dismiss → só marca resolvido.
+
+    await db.community_reports.update_one(
+        {"id": report_id},
+        {"$set": {"status": "resolved", "resolved_by": user["id"],
+                  "resolved_action": action, "resolved_at": now_iso(),
+                  "resolved_note": (payload.note or "")[:200]}},
+    )
+    return {"ok": True}
+
+
+@api.get("/communities/{slug}/modlog")
+async def community_modlog(slug: str, user=Depends(get_current_user)):
+    """Log de moderação da comunidade (só moderadores)."""
+    c = await _comm_for_mod(slug, user)
+    rows = await db.community_mod_log.find(
+        {"community_id": c["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    return rows
 
 
 @api.get("/diaspora/heatmap")
@@ -7951,51 +8413,164 @@ async def delete_starter_pack(pack_id: str, user=Depends(get_current_user)):
 
 # ---------- 10) Hype Train ----------
 @api.post("/communities/{slug}/hype")
-async def join_hype_train(slug: str, user=Depends(get_current_user)):
-    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+async def amplify_happening(slug: str, user=Depends(get_current_user)):
+    """Hype = AMPLIFICAR um happening ativo (humanos a reforçar o momento que o
+    sistema detetou). Não cria momentos: só amplifica os reais. Sem happening
+    ativo → nada a amplificar."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "slug": 1})
     if not comm:
         raise HTTPException(404, "Comunidade não encontrada")
-    now = datetime.now(timezone.utc)
-    active = await db.hype_trains.find_one(
-        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
-        {"_id": 0},
+    active = await db.community_happenings.find_one(
+        {"community_id": comm["id"], "ended_at": None}, {"_id": 0}
     )
     if not active:
-        active = {
-            "id": str(uuid.uuid4()),
-            "community_slug": slug,
-            "started_by": user["id"],
-            "participants": [user["id"]],
-            "expires_at": (now + timedelta(minutes=HYPE_DURATION_MIN)).isoformat(),
-            "started_at": now.isoformat(),
-            "target": HYPE_TARGET,
-        }
-        await db.hype_trains.insert_one(active)
-        active.pop("_id", None)
-    else:
-        if user["id"] not in active["participants"]:
-            active["participants"].append(user["id"])
-            await db.hype_trains.update_one(
-                {"id": active["id"]},
-                {"$addToSet": {"participants": user["id"]}},
-            )
-    active["count"] = len(active["participants"])
-    active["percent"] = min(100, int(100 * active["count"] / max(1, active["target"])))
-    return active
+        return {"active": False}
+    if user["id"] not in (active.get("amplifiers") or []):
+        await db.community_happenings.update_one(
+            {"id": active["id"]}, {"$addToSet": {"amplifiers": user["id"]}}
+        )
+        active.setdefault("amplifiers", []).append(user["id"])
+        try:
+            await ws_manager.broadcast_to_community(comm["id"], {
+                "type": "community_happening", "phase": "amplified",
+                "community_id": comm["id"], "slug": comm.get("slug"),
+                "happening": happenings.public_happening(active),
+            })
+        except Exception:
+            pass
+    return {"active": True, **happenings.public_happening(active)}
 
 
 @api.get("/communities/{slug}/hype/active")
-async def get_active_hype(slug: str):
-    now = datetime.now(timezone.utc)
-    active = await db.hype_trains.find_one(
-        {"community_slug": slug, "expires_at": {"$gt": now.isoformat()}},
-        {"_id": 0},
+async def get_active_happening(slug: str):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    active = await db.community_happenings.find_one(
+        {"community_id": comm["id"], "ended_at": None}, {"_id": 0}
     )
-    if not active:
-        return None
-    active["count"] = len(active["participants"])
-    active["percent"] = min(100, int(100 * active["count"] / max(1, active.get("target", HYPE_TARGET))))
-    return active
+    return happenings.public_happening(active) if active else None
+
+
+@api.get("/communities/{slug}/happenings")
+async def list_happenings(slug: str, user=Depends(get_current_user)):
+    """Memória social: os momentos que esta comunidade já viveu (ativos +
+    passados, mais recentes primeiro)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    rows = await db.community_happenings.find(
+        {"community_id": comm["id"]}, {"_id": 0}
+    ).sort("started_at", -1).to_list(30)
+    return [happenings.public_happening(h) for h in rows]
+
+
+async def _notify_happening_subscribers(community: dict, happening: dict) -> None:
+    """Fan-out quando um happening abre — só a quem subscreveu 'happenings'."""
+    cid = community["id"]
+    comm = await db.communities.find_one({"id": cid}, {"_id": 0, "name": 1, "slug": 1}) or community
+    subs = await db.community_subscriptions.find(
+        {"community_id": cid, "opts.happenings": True}, {"_id": 0, "user_id": 1}
+    ).to_list(2000)
+    if not subs:
+        return
+    name = comm.get("name") or "A comunidade"
+    text = f"{name} está a ferver agora"
+    extra = {"community_id": cid, "slug": comm.get("slug"), "happening_id": happening.get("id")}
+    for s in subs:
+        await create_notification(s["user_id"], "community_happening", "", None, text, extra=extra)
+
+
+async def _fanout_community_post(community_id: str, post: dict, author: dict) -> None:
+    """Fan-out de novo post — só a quem subscreveu 'posts' (exclui o autor)."""
+    comm = await db.communities.find_one({"id": community_id}, {"_id": 0, "name": 1, "slug": 1})
+    if not comm:
+        return
+    subs = await db.community_subscriptions.find(
+        {"community_id": community_id, "opts.posts": True}, {"_id": 0, "user_id": 1}
+    ).to_list(2000)
+    if not subs:
+        return
+    text = f"Novo post em {comm.get('name') or 'comunidade'}"
+    extra = {"community_id": community_id, "slug": comm.get("slug")}
+    for s in subs:
+        if s["user_id"] != author["id"]:
+            await create_notification(s["user_id"], "community_post", author["id"], post["id"], text, extra=extra)
+
+
+class CommunitySubscribeIn(BaseModel):
+    posts: bool = True
+    happenings: bool = True
+
+
+@api.get("/communities/{slug}/subscription")
+async def community_get_subscription(slug: str, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    sub = await db.community_subscriptions.find_one(
+        {"community_id": comm["id"], "user_id": user["id"]}, {"_id": 0}
+    )
+    return {
+        "subscribed": bool(sub),
+        "opts": (sub or {}).get("opts", {"posts": True, "happenings": True}),
+    }
+
+
+@api.post("/communities/{slug}/subscribe")
+async def community_subscribe(slug: str, payload: CommunitySubscribeIn, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    opts = {"posts": bool(payload.posts), "happenings": bool(payload.happenings)}
+    await db.community_subscriptions.update_one(
+        {"community_id": comm["id"], "user_id": user["id"]},
+        {"$set": {"opts": opts, "updated_at": now_iso()},
+         "$setOnInsert": {"id": str(uuid.uuid4()), "community_id": comm["id"],
+                          "user_id": user["id"], "created_at": now_iso()}},
+        upsert=True,
+    )
+    return {"subscribed": True, "opts": opts}
+
+
+@api.delete("/communities/{slug}/subscribe")
+async def community_unsubscribe(slug: str, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    await db.community_subscriptions.delete_one({"community_id": comm["id"], "user_id": user["id"]})
+    return {"subscribed": False}
+
+
+@api.get("/communities/{slug}/pertenca")
+async def community_pertenca(slug: str, user=Depends(get_current_user)):
+    """Pertença: pessoas que segues aqui + pessoas da tua cidade aqui (interseções
+    reais; vazio é vazio honesto, nunca preenchido com estranhos)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    members = set(comm.get("members", []) or [])
+    following = [uid for uid in (user.get("following", []) or []) if uid in members][:12]
+    following_here = []
+    if following:
+        rows = await db.users.find({"id": {"$in": following}}, {"_id": 0, "password_hash": 0}).to_list(12)
+        following_here = [public_user(u) for u in rows]
+
+    city = (user.get("city") or "").strip()
+    city_mates = []
+    if city:
+        exclude = set(following) | {user["id"]}
+        cand = await db.users.find(
+            {"id": {"$in": list(members - exclude)}, "city": city},
+            {"_id": 0, "password_hash": 0},
+        ).limit(12).to_list(12)
+        city_mates = [public_user(u) for u in cand]
+
+    return {
+        "following_here": following_here,
+        "city_mates_here": city_mates,
+        "present_now": ws_manager.community_presence_count(comm["id"]),
+    }
 
 
 # ---------- 11) Collab Posts ----------
