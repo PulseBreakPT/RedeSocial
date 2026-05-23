@@ -3287,6 +3287,10 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
                 })
             except Exception:
                 pass
+            try:
+                await _fanout_community_post(community_id, post, user)
+            except Exception:
+                pass
     return await enrich_post(post, user)
 
 
@@ -5650,6 +5654,27 @@ async def join_community(slug: str, user=Depends(get_current_user)):
     if community_mod.is_banned(c, user["id"]):
         raise HTTPException(403, "Foste expulso desta comunidade")
     await db.communities.update_one({"id": c["id"]}, {"$addToSet": {"members": user["id"]}})
+    # Boas-vindas: momento de pertença (interseções reais; vazio é honesto).
+    try:
+        members = set(c.get("members", []) or []) | {user["id"]}
+        following_here = [uid for uid in (user.get("following", []) or []) if uid in members]
+        city = (user.get("city") or "").strip()
+        city_n = 0
+        if city:
+            city_n = await db.users.count_documents(
+                {"id": {"$in": list(members - {user["id"]})}, "city": city}
+            )
+        await ws_manager.send_personal(user["id"], {
+            "type": "community_welcome",
+            "community_id": c["id"],
+            "slug": c.get("slug"),
+            "name": c.get("name"),
+            "following_here": len(following_here),
+            "city_mates_here": city_n,
+            "present_now": ws_manager.community_presence_count(c["id"]),
+        })
+    except Exception:
+        pass
     return {"joined": True}
 
 
@@ -6952,6 +6977,10 @@ async def startup():
         await community_pulse.init_community_pulse_indexes(db)
         await community_mod.init_community_mod_indexes(db)
         await happenings.init_happening_indexes(db)
+        await db.community_subscriptions.create_index(
+            [("community_id", 1), ("user_id", 1)], unique=True, name="csub_unique"
+        )
+        await db.community_subscriptions.create_index("user_id", name="csub_user")
         community_pulse.set_happening_on_started(_notify_happening_subscribers)
         community_pulse.start_community_pulse_loop(db, ws_manager)
         logger.info("community_pulse: background loop scheduled")
@@ -8423,9 +8452,111 @@ async def list_happenings(slug: str, user=Depends(get_current_user)):
 
 
 async def _notify_happening_subscribers(community: dict, happening: dict) -> None:
-    """Gancho de fan-out de notificações quando um happening abre.
-    Implementado na Onda D (subscrições por comunidade). No-op por agora."""
-    return None
+    """Fan-out quando um happening abre — só a quem subscreveu 'happenings'."""
+    cid = community["id"]
+    comm = await db.communities.find_one({"id": cid}, {"_id": 0, "name": 1, "slug": 1}) or community
+    subs = await db.community_subscriptions.find(
+        {"community_id": cid, "opts.happenings": True}, {"_id": 0, "user_id": 1}
+    ).to_list(2000)
+    if not subs:
+        return
+    name = comm.get("name") or "A comunidade"
+    text = f"{name} está a ferver agora"
+    extra = {"community_id": cid, "slug": comm.get("slug"), "happening_id": happening.get("id")}
+    for s in subs:
+        await create_notification(s["user_id"], "community_happening", "", None, text, extra=extra)
+
+
+async def _fanout_community_post(community_id: str, post: dict, author: dict) -> None:
+    """Fan-out de novo post — só a quem subscreveu 'posts' (exclui o autor)."""
+    comm = await db.communities.find_one({"id": community_id}, {"_id": 0, "name": 1, "slug": 1})
+    if not comm:
+        return
+    subs = await db.community_subscriptions.find(
+        {"community_id": community_id, "opts.posts": True}, {"_id": 0, "user_id": 1}
+    ).to_list(2000)
+    if not subs:
+        return
+    text = f"Novo post em {comm.get('name') or 'comunidade'}"
+    extra = {"community_id": community_id, "slug": comm.get("slug")}
+    for s in subs:
+        if s["user_id"] != author["id"]:
+            await create_notification(s["user_id"], "community_post", author["id"], post["id"], text, extra=extra)
+
+
+class CommunitySubscribeIn(BaseModel):
+    posts: bool = True
+    happenings: bool = True
+
+
+@api.get("/communities/{slug}/subscription")
+async def community_get_subscription(slug: str, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    sub = await db.community_subscriptions.find_one(
+        {"community_id": comm["id"], "user_id": user["id"]}, {"_id": 0}
+    )
+    return {
+        "subscribed": bool(sub),
+        "opts": (sub or {}).get("opts", {"posts": True, "happenings": True}),
+    }
+
+
+@api.post("/communities/{slug}/subscribe")
+async def community_subscribe(slug: str, payload: CommunitySubscribeIn, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    opts = {"posts": bool(payload.posts), "happenings": bool(payload.happenings)}
+    await db.community_subscriptions.update_one(
+        {"community_id": comm["id"], "user_id": user["id"]},
+        {"$set": {"opts": opts, "updated_at": now_iso()},
+         "$setOnInsert": {"id": str(uuid.uuid4()), "community_id": comm["id"],
+                          "user_id": user["id"], "created_at": now_iso()}},
+        upsert=True,
+    )
+    return {"subscribed": True, "opts": opts}
+
+
+@api.delete("/communities/{slug}/subscribe")
+async def community_unsubscribe(slug: str, user=Depends(get_current_user)):
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    await db.community_subscriptions.delete_one({"community_id": comm["id"], "user_id": user["id"]})
+    return {"subscribed": False}
+
+
+@api.get("/communities/{slug}/pertenca")
+async def community_pertenca(slug: str, user=Depends(get_current_user)):
+    """Pertença: pessoas que segues aqui + pessoas da tua cidade aqui (interseções
+    reais; vazio é vazio honesto, nunca preenchido com estranhos)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0, "id": 1, "members": 1})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    members = set(comm.get("members", []) or [])
+    following = [uid for uid in (user.get("following", []) or []) if uid in members][:12]
+    following_here = []
+    if following:
+        rows = await db.users.find({"id": {"$in": following}}, {"_id": 0, "password_hash": 0}).to_list(12)
+        following_here = [public_user(u) for u in rows]
+
+    city = (user.get("city") or "").strip()
+    city_mates = []
+    if city:
+        exclude = set(following) | {user["id"]}
+        cand = await db.users.find(
+            {"id": {"$in": list(members - exclude)}, "city": city},
+            {"_id": 0, "password_hash": 0},
+        ).limit(12).to_list(12)
+        city_mates = [public_user(u) for u in cand]
+
+    return {
+        "following_here": following_here,
+        "city_mates_here": city_mates,
+        "present_now": ws_manager.community_presence_count(comm["id"]),
+    }
 
 
 # ---------- 11) Collab Posts ----------

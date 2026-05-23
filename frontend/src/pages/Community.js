@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     Users, BarChart3, Crown, TrendingUp, Share2, Search, MoreHorizontal,
     Flame, Activity, Shield, Flag, VolumeX, UserX, Trash2, Check, Clock, Pencil,
+    Bell, BellOff, MapPin, UserCheck,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
@@ -135,6 +136,8 @@ export default function Community() {
     const [saude, setSaude] = useState(null);
     const [nucleo, setNucleo] = useState(null);
     const [yourPeople, setYourPeople] = useState([]);
+    const [subscribed, setSubscribed] = useState(false);
+    const [pertenca, setPertenca] = useState(null);
     const [tab, setTab] = useState("conversas");
     const [q, setQ] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
@@ -198,14 +201,26 @@ export default function Community() {
             setYourPeople(p.data?.people || []);
         } catch { /* */ }
     }, [slug]);
+    const loadPertenca = useCallback(async () => {
+        try { const { data } = await api.get(`/communities/${slug}/pertenca`); setPertenca(data); } catch { /* */ }
+    }, [slug]);
 
     // Carrega contagem de reports abertos assim que se sabe que é mod.
     useEffect(() => { if (canMod) loadReports(); }, [canMod, loadReports]);
+
+    // Estado de subscrição (sino) assim que a comunidade carrega.
+    useEffect(() => {
+        if (!community) return;
+        api.get(`/communities/${slug}/subscription`)
+            .then(({ data }) => setSubscribed(!!data.subscribed))
+            .catch(() => { /* */ });
+    }, [community, slug]);
 
     useEffect(() => { setLoading(true); loadCore(); }, [loadCore]);
     useEffect(() => {
         if (tab === "pessoas" && members.length === 0) loadMembers();
         if (tab === "pessoas" && !nucleo) loadNucleo();
+        if (tab === "pessoas" && !pertenca) loadPertenca();
         if (tab === "alta" && !stats) loadStats();
         if ((tab === "agora" || tab === "alta" || tab === "pessoas") && !nowData) loadNow();
         if (tab === "agora") loadHappenings();
@@ -229,6 +244,13 @@ export default function Community() {
         } else if (msg.type === "community_report_new") {
             setOpenReports((n) => n + 1);
             setReports((prev) => (msg.report ? [msg.report, ...prev] : prev));
+        } else if (msg.type === "community_welcome") {
+            const bits = [];
+            if (msg.following_here > 0) bits.push(`${msg.following_here} que segues`);
+            if (msg.city_mates_here > 0) bits.push(`${msg.city_mates_here} da tua cidade`);
+            toast.success(`Bem-vindo a ${msg.name || "esta comunidade"}`, {
+                description: bits.length ? `${bits.join(" · ")} já por aqui.` : "Faz-te em casa.",
+            });
         }
     }, [community]);
     useWsMessages(onWs);
@@ -283,6 +305,19 @@ export default function Community() {
             toast.success("Reportado. Obrigado.");
         } catch (e) { toastApiError(e); }
     };
+    const toggleSubscribe = async () => {
+        try {
+            if (subscribed) {
+                await api.delete(`/communities/${slug}/subscribe`);
+                setSubscribed(false);
+                toast.success("Deixaste de seguir esta comunidade");
+            } else {
+                await api.post(`/communities/${slug}/subscribe`, { posts: true, happenings: true });
+                setSubscribed(true);
+                toast.success("Vais receber novidades deste bairro");
+            }
+        } catch (e) { toastApiError(e); }
+    };
 
     const filteredPosts = useMemo(() => {
         const needle = q.trim().toLowerCase();
@@ -316,6 +351,10 @@ export default function Community() {
                         {community.description && <p className="mt-3 text-[14.5px] text-black/75 leading-relaxed max-w-2xl">{community.description}</p>}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={toggleSubscribe} title={subscribed ? "A seguir" : "Seguir comunidade"} data-testid="community-subscribe-btn"
+                            className={`w-9 h-9 grid place-items-center rounded-full border transition ${subscribed ? "border-[var(--coral-500)]/40 text-[var(--coral-500)] bg-[var(--coral-50)]" : "border-black/[0.10] hover:bg-black/[0.04]"}`}>
+                            {subscribed ? <Bell size={15} /> : <BellOff size={15} />}
+                        </button>
                         <div className="relative">
                             <button onClick={() => setMenuOpen((v) => !v)} title="Menu" data-testid="community-menu-btn" className="w-9 h-9 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition">
                                 <MoreHorizontal size={15} />
@@ -404,7 +443,7 @@ export default function Community() {
                 <PessoasTab members={members} nowData={nowData} presentNow={presentNow}
                     canMod={canMod} isOwner={isOwner} ownerId={community.owner_id}
                     onBan={banMember} onMute={muteMember} onPromote={promoteMod}
-                    nucleo={nucleo} yourPeople={yourPeople} />
+                    nucleo={nucleo} yourPeople={yourPeople} pertenca={pertenca} />
             )}
 
             {tab === "mod" && canMod && (
@@ -707,13 +746,27 @@ function PeopleFaces({ people = [] }) {
     );
 }
 
-function PessoasTab({ members, nowData, presentNow, canMod, isOwner, ownerId, onBan, onMute, onPromote, nucleo, yourPeople = [] }) {
+function PessoasTab({ members, nowData, presentNow, canMod, isOwner, ownerId, onBan, onMute, onPromote, nucleo, yourPeople = [], pertenca }) {
     return (
         <div className="pb-6">
             {nowData?.present?.length > 0 && (
                 <div className="p-4 lg:p-5 hairline-b">
                     <p className="type-overline mb-2.5">Aqui agora</p>
                     <PresenceAvatars users={nowData.present} count={nowData.present_count || presentNow} />
+                </div>
+            )}
+
+            {pertenca?.following_here?.length > 0 && (
+                <div className="p-4 lg:p-5 hairline-b">
+                    <p className="type-overline mb-2.5 flex items-center gap-1.5"><UserCheck size={12} /> Pessoas que segues aqui</p>
+                    <PeopleFaces people={pertenca.following_here} />
+                </div>
+            )}
+
+            {pertenca?.city_mates_here?.length > 0 && (
+                <div className="p-4 lg:p-5 hairline-b">
+                    <p className="type-overline mb-2.5 flex items-center gap-1.5"><MapPin size={12} /> Da tua cidade aqui</p>
+                    <PeopleFaces people={pertenca.city_mates_here} />
                 </div>
             )}
 
