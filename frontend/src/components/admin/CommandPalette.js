@@ -5,7 +5,7 @@ import { NAV_ITEMS } from "./navConfig";
 const SHORTCUTS = [
     { key: "open_reports", label: "Ir para Reports",     hint: "navegação", nav: "reports" },
     { key: "open_users",   label: "Procurar utilizador", hint: "navegação", nav: "users" },
-    { key: "open_audit",   label: "Ver Audit log",       hint: "navegação", nav: "audit" },
+    { key: "open_audit",   label: "Ver Registo de auditoria", hint: "navegação", nav: "audit" },
     { key: "open_security",label: "Abrir Segurança",     hint: "navegação", nav: "security" },
 ];
 

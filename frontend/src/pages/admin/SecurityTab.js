@@ -173,7 +173,7 @@ const SUB_TABS = [
     { key: "lockouts",  label: "Bloqueios",     icon: Lock },
     { key: "admins",    label: "Admins",        icon: KeyRound },
     { key: "sessions",  label: "Sessões+",      icon: Wifi },
-    { key: "token",     label: "Token Debugger", icon: FileCode },
+    { key: "token",     label: "Diagnóstico de Token", icon: FileCode },
 ];
 
 // ═════════════════════════════════════════════════════════════════
@@ -359,23 +359,23 @@ function SecurityOverview() {
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 text-[12px]">
                     <ConfigCell label="Ambiente" value={cfg.app_env} tone={cfg.is_production ? "ok" : "info"} />
-                    <ConfigCell label="JWT alg" value={cfg.jwt_alg} tone={cfg.jwt_alg === "HS256" ? "ok" : "warn"} />
-                    <ConfigCell label="JWT issuer" value={cfg.jwt_issuer} mono />
-                    <ConfigCell label="JWT audience" value={cfg.jwt_audience} mono />
-                    <ConfigCell label="JWT secret len" value={`${cfg.jwt_secret_len} chars`} tone={cfg.jwt_secret_len >= 48 ? "ok" : "danger"} />
-                    <ConfigCell label="JWT secret fp" value={cfg.jwt_secret_fp} mono />
-                    <ConfigCell label="Access TTL" value={`${Math.round((cfg.access_token_ttl_s || 0) / 3600)}h`} />
+                    <ConfigCell label="Algoritmo JWT" value={cfg.jwt_alg} tone={cfg.jwt_alg === "HS256" ? "ok" : "warn"} />
+                    <ConfigCell label="Emissor JWT" value={cfg.jwt_issuer} mono />
+                    <ConfigCell label="Audiência JWT" value={cfg.jwt_audience} mono />
+                    <ConfigCell label="Tamanho do segredo JWT" value={`${cfg.jwt_secret_len} chars`} tone={cfg.jwt_secret_len >= 48 ? "ok" : "danger"} />
+                    <ConfigCell label="Impressão do segredo JWT" value={cfg.jwt_secret_fp} mono />
+                    <ConfigCell label="Duração do token" value={`${Math.round((cfg.access_token_ttl_s || 0) / 3600)}h`} />
                     <ConfigCell label="Cookie Secure" value={String(cfg.cookie_secure)} tone={cfg.cookie_secure ? "ok" : (cfg.is_production ? "danger" : "warn")} />
                     <ConfigCell label="Cookie SameSite" value={cfg.cookie_samesite} />
-                    <ConfigCell label="WS sockets/user" value={cfg.ws_max_sockets_per_user} />
-                    <ConfigCell label="WS jti re-check" value={`${cfg.ws_jti_check_gap_s}s`} />
-                    <ConfigCell label="Lockout policy" value={`${cfg.lockout_max_fails} fails / ${Math.round((cfg.lockout_window_s || 0) / 60)}m`} />
+                    <ConfigCell label="WS sockets/utilizador" value={cfg.ws_max_sockets_per_user} />
+                    <ConfigCell label="Revalidação WS jti" value={`${cfg.ws_jti_check_gap_s}s`} />
+                    <ConfigCell label="Política de bloqueio" value={`${cfg.lockout_max_fails} falhas / ${Math.round((cfg.lockout_window_s || 0) / 60)}m`} />
                     {cfg.revocation_cache && (
                         <>
-                            <ConfigCell label="Cache active" value={cfg.revocation_cache.active_entries} />
-                            <ConfigCell label="Cache revoked" value={cfg.revocation_cache.revoked_entries} />
-                            <ConfigCell label="Cache positive TTL" value={`${cfg.revocation_cache.positive_ttl_s}s`} />
-                            <ConfigCell label="Cache negative TTL" value={`${cfg.revocation_cache.negative_ttl_s}s`} />
+                            <ConfigCell label="Cache ativa" value={cfg.revocation_cache.active_entries} />
+                            <ConfigCell label="Cache revogada" value={cfg.revocation_cache.revoked_entries} />
+                            <ConfigCell label="TTL positivo" value={`${cfg.revocation_cache.positive_ttl_s}s`} />
+                            <ConfigCell label="TTL negativo" value={`${cfg.revocation_cache.negative_ttl_s}s`} />
                         </>
                     )}
                 </div>
@@ -689,7 +689,7 @@ function SecurityEvents() {
                         value={filters.email} onChange={(v) => { setFilters((f) => ({ ...f, email: v })); setPage(1); }}
                         testId="sec-events-filter-email"
                     />
-                    <FilterInput placeholder="User ID" icon={Search}
+                    <FilterInput placeholder="ID do utilizador" icon={Search}
                         value={filters.user_id} onChange={(v) => { setFilters((f) => ({ ...f, user_id: v })); setPage(1); }}
                         testId="sec-events-filter-user"
                     />
@@ -958,7 +958,7 @@ function SecurityAdmins() {
     const forceLogout = (a) => confirmDialog({
         title: `Forçar logout de @${a.username}?`,
         body: `Todas as sessões ativas (${a.active_sessions}) serão revogadas imediatamente. O utilizador terá de re-autenticar.`,
-        confirmLabel: "Force logout",
+        confirmLabel: "Forçar logout",
         danger: true,
     }).then((ok) => {
         if (!ok) return;
@@ -1160,7 +1160,7 @@ function SecuritySessions() {
                         value={filters.ip} onChange={(v) => { setFilters((f) => ({ ...f, ip: v })); setPage(1); }}
                         testId="sec-sessions-filter-ip"
                     />
-                    <FilterInput placeholder="User ID" icon={Search}
+                    <FilterInput placeholder="ID do utilizador" icon={Search}
                         value={filters.user_id} onChange={(v) => { setFilters((f) => ({ ...f, user_id: v })); setPage(1); }}
                         testId="sec-sessions-filter-user"
                     />
@@ -1231,7 +1231,7 @@ function SecuritySessions() {
 // TOKEN DEBUGGER SUB-TAB
 // ═════════════════════════════════════════════════════════════════
 const STAGE_LABEL = {
-    header_preflight: "1. Pre-flight do header (alg, typ, crit)",
+    header_preflight: "1. Pré-validação do cabeçalho (alg, typ, crit)",
     pyjwt:            "2. PyJWT (assinatura, iss, aud, exp, nbf, iat)",
     type_check:       "3. Verificação de tipo (access)",
     session_revoked:  "4. Sessão revogada",
@@ -1315,7 +1315,7 @@ function SecurityTokenDebugger() {
 
                     {result.header && (
                         <div className="mt-3">
-                            <div className="text-[11px] uppercase tracking-wider font-mono text-slate-500 mb-1">Header</div>
+                            <div className="text-[11px] uppercase tracking-wider font-mono text-slate-500 mb-1">Cabeçalho</div>
                             <pre className="p-2 rounded-lg bg-slate-100 text-[11px] font-mono overflow-x-auto">
 {JSON.stringify(result.header, null, 2)}
                             </pre>

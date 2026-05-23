@@ -35,6 +35,17 @@ from pydantic import BaseModel, EmailStr, Field
 # Imported lazily-free here at module load; `start_pulse_loop` only runs
 # once `app.on_event("startup")` fires, by which time `ws_manager` exists.
 import pulse_engine
+# Fase 4 — Context Engine. Pesos contextuais (hora/dia/calendário/mood)
+# para o feed. Pure math + lookup, sem estado, importável directamente.
+import context_engine
+# Fase 5 — Mesas (conversas efémeras). Helpers + índices TTL; endpoints
+# vivem aqui no server.py (precisam de db/auth/ws), como o Pulse Engine.
+import mesas as mesas_engine
+# Fase 6 — Reputação invisível. health_score recalculado em background;
+# influencia o scoring do feed mas NUNCA é exposto via API.
+import reputation_engine
+# Comunidades vivas — motor de pulso por comunidade (presence-first).
+import community_pulse
 
 JWT_ALGORITHM = "HS256"
 
@@ -3249,6 +3260,21 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
             if q and q["author_id"] != user["id"]:
                 await create_notification(q["author_id"], "quote", user["id"], post["id"],
                                            f"@{user['username']} citou a tua publicação")
+        # Activity ticker da comunidade (só posts publicados numa comunidade).
+        if community_id:
+            try:
+                await ws_manager.broadcast_to_community(community_id, {
+                    "type": "community_activity",
+                    "community_id": community_id,
+                    "event": "post",
+                    "post_id": post["id"],
+                    "at": post["created_at"],
+                    "actor": {"id": user["id"], "username": user.get("username"),
+                              "name": user.get("name"), "avatar": user.get("avatar", "")},
+                    "preview": (payload.content or "")[:120],
+                })
+            except Exception:
+                pass
     return await enrich_post(post, user)
 
 
@@ -4006,6 +4032,8 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
         "content": payload.content, "created_at": now_iso(),
         "parent_id": parent["id"] if parent else None,
         "replies_count": 0,
+        # Denormaliza a comunidade do post → permite pulso/trends por comunidade.
+        "community_id": post.get("community_id"),
     }
     await db.comments.insert_one(comment)
     await daily_checkin(user["id"])
@@ -4056,6 +4084,22 @@ async def create_comment(post_id: str, payload: CommentIn, user=Depends(get_curr
             },
             exclude_user=user["id"],
         )
+    except Exception:
+        pass
+    # Activity ticker da comunidade (só se o post pertencer a uma).
+    try:
+        cid = post.get("community_id")
+        if cid:
+            await ws_manager.broadcast_to_community(cid, {
+                "type": "community_activity",
+                "community_id": cid,
+                "event": "comment",
+                "post_id": post_id,
+                "at": comment["created_at"],
+                "actor": {"id": user["id"], "username": user.get("username"),
+                          "name": user.get("name"), "avatar": user.get("avatar", "")},
+                "preview": preview_snippet,
+            })
     except Exception:
         pass
     return enriched_comment
@@ -6842,6 +6886,29 @@ async def startup():
     except Exception as exc:
         logger.warning(f"pulse_engine: startup wiring failed: {exc}")
 
+    # ── Fase 5 — Mesas (conversas efémeras) ─────────────────────────
+    try:
+        await mesas_engine.init_mesas_indexes(db)
+    except Exception as exc:
+        logger.warning(f"mesas: startup wiring failed: {exc}")
+
+    # ── Fase 6 — Reputação invisível (health_score diário) ──────────
+    try:
+        await db.users.create_index("health_score")
+        reputation_engine.start_reputation_loop(db)
+        logger.info("reputation: background loop scheduled")
+    except Exception as exc:
+        logger.warning(f"reputation: startup wiring failed: {exc}")
+
+    # ── Comunidades vivas — pulso por comunidade ────────────────────
+    try:
+        await db.comments.create_index("community_id")
+        await community_pulse.init_community_pulse_indexes(db)
+        community_pulse.start_community_pulse_loop(db, ws_manager)
+        logger.info("community_pulse: background loop scheduled")
+    except Exception as exc:
+        logger.warning(f"community_pulse: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -6849,6 +6916,14 @@ async def shutdown():
     # close the client.
     try:
         await pulse_engine.stop_pulse_loop()
+    except Exception:
+        pass
+    try:
+        await reputation_engine.stop_reputation_loop()
+    except Exception:
+        pass
+    try:
+        await community_pulse.stop_community_pulse_loop()
     except Exception:
         pass
     client.close()
@@ -6879,6 +6954,16 @@ PT_CALENDAR_EVENTS = [
     {"date": "06-01", "key": "exames",         "label": "Época de exames",         "emoji": "📚", "theme": "tasca"},
     {"date": "06-30", "key": "irs",            "label": "Último dia IRS",          "emoji": "💸", "theme": "tasca"},
     {"date": "09-15", "key": "regresso_aulas", "label": "Regresso às aulas",       "emoji": "✏️", "theme": "saudade"},
+    # Fase 9 — calendário cultural alargado (recorrentes MM-DD; festas
+    # móveis como Carnaval/Páscoa ficam de fora por exigirem cálculo).
+    {"date": "01-06", "key": "dia_reis",       "label": "Dia de Reis",             "emoji": "👑", "theme": "cultura"},
+    {"date": "05-13", "key": "fatima",         "label": "Nossa Senhora de Fátima", "emoji": "🕯️", "theme": "saudade"},
+    {"date": "06-21", "key": "verao",          "label": "Início do verão",         "emoji": "☀️", "theme": "praia"},
+    {"date": "06-23", "key": "vespera_sjoao",  "label": "Véspera de S. João",      "emoji": "🔥", "theme": "festa"},
+    {"date": "08-15", "key": "assuncao",       "label": "Assunção de N. Senhora",  "emoji": "⛪", "theme": "cultura"},
+    {"date": "09-22", "key": "outono",         "label": "Início do outono",        "emoji": "🍂", "theme": "saudade"},
+    {"date": "11-11", "key": "sao_martinho",   "label": "S. Martinho · Magusto",   "emoji": "🌰", "theme": "tasca"},
+    {"date": "12-21", "key": "inverno",        "label": "Início do inverno",       "emoji": "❄️", "theme": "saudade"},
 ]
 
 
@@ -7096,6 +7181,113 @@ async def community_active_members(slug: str, viewer: Optional[dict] = Depends(m
         "active": enriched,
         "total_members": len(comm.get("members", [])),
         "active_count": len(active_ids),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Comunidades vivas — pulso + "Agora" (presence-first, dados reais)
+# ─────────────────────────────────────────────────────────────────────
+@api.get("/communities/{slug}/pulse")
+async def community_pulse_endpoint(slug: str, user=Depends(get_current_user)):
+    """Estado vivo de uma comunidade: temperatura, energia, estado, mood,
+    trends internas + nº de pessoas presentes na sala AGORA (WS)."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    snap = await community_pulse.get_pulse(db, comm)
+    present_now = ws_manager.community_presence_count(comm["id"])
+    out = dict(snap)
+    out["present_now"] = present_now
+    return out
+
+
+@api.get("/communities/{slug}/now")
+async def community_now(slug: str, user=Depends(get_current_user)):
+    """Tab 'Agora': quem está aqui, conversas a crescer e ticker recente.
+    Tudo real — presença das salas WS + janelas de atividade."""
+    comm = await db.communities.find_one({"slug": slug}, {"_id": 0})
+    if not comm:
+        raise HTTPException(404, "Comunidade não encontrada")
+    cid = comm["id"]
+    now = datetime.now(timezone.utc)
+    recent_cutoff = (now - timedelta(minutes=30)).isoformat()
+
+    snap = await community_pulse.get_pulse(db, comm)
+    present_ids = list(ws_manager.viewers_by_community.get(cid, set()))
+
+    # Quem está aqui agora (presença na sala WS).
+    present_users = []
+    if present_ids:
+        rows = await db.users.find(
+            {"id": {"$in": present_ids[:50]}}, {"_id": 0, "password_hash": 0}
+        ).to_list(50)
+        present_users = [public_user(u) for u in rows]
+
+    # Conversas a crescer: posts da comunidade com mais comentários nos
+    # últimos 30 min.
+    recent_comments = await db.comments.find(
+        {"community_id": cid, "created_at": {"$gte": recent_cutoff}},
+        {"_id": 0, "post_id": 1, "created_at": 1, "author_id": 1, "content": 1},
+    ).to_list(2000)
+    by_post: dict = {}
+    for c in recent_comments:
+        pid = c.get("post_id")
+        if pid:
+            by_post[pid] = by_post.get(pid, 0) + 1
+    growing = []
+    if by_post:
+        top_pids = sorted(by_post.items(), key=lambda kv: -kv[1])[:6]
+        pid_list = [pid for pid, _ in top_pids]
+        posts = await db.posts.find(
+            {"id": {"$in": pid_list}}, {"_id": 0}
+        ).to_list(len(pid_list))
+        pmap = {p["id"]: p for p in posts}
+        for pid, n in top_pids:
+            p = pmap.get(pid)
+            if not p:
+                continue
+            growing.append({
+                "post_id": pid,
+                "recent_comments_30m": n,
+                "preview": (p.get("content") or "")[:120],
+                "author_id": p.get("author_id"),
+                "created_at": p.get("created_at"),
+            })
+
+    # Ticker recente: posts + comentários dos últimos 30 min, mais novos
+    # primeiro (semente do activity ticker antes de chegarem eventos WS).
+    recent_posts = await db.posts.find(
+        {"community_id": cid, "created_at": {"$gte": recent_cutoff}, "is_draft": {"$ne": True}},
+        {"_id": 0, "id": 1, "author_id": 1, "content": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(20)
+    ticker = []
+    for p in recent_posts:
+        ticker.append({"event": "post", "post_id": p["id"], "at": p["created_at"],
+                       "author_id": p.get("author_id"), "preview": (p.get("content") or "")[:120]})
+    for c in recent_comments:
+        ticker.append({"event": "comment", "post_id": c.get("post_id"), "at": c.get("created_at"),
+                       "author_id": c.get("author_id"), "preview": (c.get("content") or "")[:120]})
+    ticker.sort(key=lambda x: x.get("at") or "", reverse=True)
+    ticker = ticker[:20]
+
+    # Resolve autores do ticker/growing num lookup só (nomes/avatares).
+    author_ids = {t.get("author_id") for t in ticker if t.get("author_id")}
+    author_ids |= {g.get("author_id") for g in growing if g.get("author_id")}
+    authors = {}
+    if author_ids:
+        rows = await db.users.find(
+            {"id": {"$in": list(author_ids)}},
+            {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1},
+        ).to_list(len(author_ids))
+        authors = {u["id"]: public_user(u) for u in rows}
+
+    return {
+        "pulse": {**snap, "present_now": len(present_ids)},
+        "present": present_users,
+        "present_count": len(present_ids),
+        "growing": growing,
+        "ticker": ticker,
+        "authors": authors,
     }
 
 
@@ -8022,7 +8214,9 @@ async def compute_affinity(viewer_id: str, target_id: str) -> float:
 
 
 async def compute_ranking_score(post: dict, viewer: Optional[dict],
-                                viewer_affinity: dict, seen_authors: dict) -> float:
+                                viewer_affinity: dict, seen_authors: dict,
+                                context: Optional[dict] = None,
+                                author_health: Optional[dict] = None) -> float:
     """Multi-objective score for For You ranking.
     Components:
       freshness: exp decay 14h half-life
@@ -8032,6 +8226,10 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
       mood/city: bonus if matches viewer profile
       hidden_gem: bonus for high engagement rate, low-follower authors
       trending: short-window velocity boost
+      context:  (Fase 4) optional dict from context_engine — adjusts the
+                freshness weight by `freshness_mult` (rede acesa favorece o
+                "agora") and adds a soft `mood_boost` to posts whose mood
+                matches the contextual mood (hora/dia/calendário/pulse).
     """
     now = datetime.now(timezone.utc)
     try:
@@ -8081,11 +8279,22 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
     interest_w = tuner.get("interest", 30) / 100
     place_w = tuner.get("place", 30) / 100
 
+    # Fase 4 — Context Engine. `freshness_mult` ajusta quanto o "agora"
+    # pesa (rede acesa → favorece recente); `context_mood` dá um boost
+    # suave aos posts cujo mood combina com o contexto (hora/dia/calendário/
+    # pulse), por cima do mood_match pessoal e do tod_bonus existentes.
+    freshness_mult = 1.0
+    context_mood = 0.0
+    if context:
+        freshness_mult = context.get("freshness_mult", 1.0) or 1.0
+        if context.get("mood_boost_for") and mood == context.get("mood_boost_for"):
+            context_mood = context.get("mood_boost", 0.0) or 0.0
+
     base = (
-        freshness * 1.4
+        freshness * 1.4 * freshness_mult
         + engagement * 0.6
         + affinity * friends_w * 2.0
-        + (mood_match + tod_bonus) * interest_w * 2.0
+        + (mood_match + tod_bonus + context_mood) * interest_w * 2.0
         + city_match * place_w * 2.0
     )
     # B-007 — Author boost (24h window). If the author paid the "boost cost"
@@ -8098,7 +8307,53 @@ async def compute_ranking_score(post: dict, viewer: Optional[dict],
                 base *= 1.6
         except Exception:
             pass
+    # Fase 6 — Reputação invisível. Multiplicador subtil pelo health_score
+    # do autor (contas tóxicas/reportadas perdem alcance; saudáveis ganham
+    # um empurrão leve). Invisível ao utilizador.
+    if author_health is not None:
+        base *= reputation_engine.health_multiplier(author_health.get(post.get("author_id")))
     return base * diversity_penalty
+
+
+def _build_feed_context() -> dict:
+    """Fase 4 — Reúne os sinais contextuais e devolve os pesos do
+    context_engine. Barato: o mood dominante vem da cache do Pulse Engine
+    (sem Mongo) e o evento do calendário é um lookup em memória. Nunca
+    lança — em erro devolve contexto neutro."""
+    try:
+        now = datetime.now(timezone.utc)
+        dominant = None
+        try:
+            snap = pulse_engine.get_last_snapshot_cache()[0]
+            if snap:
+                dominant = snap.get("dominant_mood")
+        except Exception:
+            dominant = None
+        ev = _pt_today_event(now)
+        cal_theme = ev.get("theme") if (ev and ev.get("is_today")) else None
+        cal_label = ev.get("label") if (ev and ev.get("is_today")) else None
+        return context_engine.get_feed_context_weights(
+            now,
+            dominant_mood=dominant,
+            calendar_theme=cal_theme,
+            calendar_label=cal_label,
+        )
+    except Exception:
+        return context_engine.get_feed_context_weights()
+
+
+@api.get("/feed/context")
+async def feed_context(user=Depends(get_current_user)):
+    """Fase 4 — Sinal contextual subtil para o cabeçalho do feed
+    ("Domingo à noite · ritmo calmo"). Determinístico, derivado do
+    relógio + calendário + mood dominante. Sem sinal forte → label curto
+    mas sempre verdadeiro (nunca inventa)."""
+    ctx = _build_feed_context()
+    return {
+        "tempo": ctx.get("tempo"),
+        "slot": ctx.get("slot"),
+        "label": ctx.get("label"),
+    }
 
 
 @api.get("/feed/v2")
@@ -8128,11 +8383,23 @@ async def feed_v2(mood: str = "", user=Depends(get_current_user)):
     aff = {}
     for aid in distinct_authors:
         aff[aid] = await compute_affinity(user["id"], aid)
+    # Fase 4 — Contexto do feed (uma vez por pedido). Mood dominante vem da
+    # cache do Pulse Engine (zero custo); evento do calendário PT de hoje.
+    feed_ctx = _build_feed_context()
+    # Fase 6 — health_score dos autores numa só query (invisível ao user).
+    author_health = {}
+    try:
+        hrows = await db.users.find(
+            {"id": {"$in": distinct_authors}}, {"_id": 0, "id": 1, "health_score": 1}
+        ).to_list(len(distinct_authors) or 1)
+        author_health = {r["id"]: r.get("health_score") for r in hrows if r.get("id")}
+    except Exception:
+        author_health = {}
     # Score with running author-count for diversity
     seen = {}
     scored = []
     for p in candidates:
-        s = await compute_ranking_score(p, user, aff, seen)
+        s = await compute_ranking_score(p, user, aff, seen, context=feed_ctx, author_health=author_health)
         scored.append((s, p))
         seen[p.get("author_id")] = seen.get(p.get("author_id"), 0) + 1
     scored.sort(key=lambda x: x[0], reverse=True)
@@ -8355,6 +8622,9 @@ class ConnectionManager:
         # Per-post viewers (real presence tracking — feature: "x pessoas a ver este post")
         self.viewers_by_post: dict[str, set[str]] = {}   # post_id -> set(user_id)
         self.posts_by_user: dict[str, set[str]] = {}     # user_id -> set(post_id)
+        # Per-community room presence ("x pessoas aqui agora" nas Comunidades vivas).
+        self.viewers_by_community: dict[str, set[str]] = {}  # community_id -> set(user_id)
+        self.communities_by_user: dict[str, set[str]] = {}   # user_id -> set(community_id)
         # WS session metadata: socket -> {"jti": str, "user_id": str, "connected_at": float, "is_admin": bool}
         self.socket_meta: dict[int, dict] = {}
         # Subset of user_ids whose currently-open sockets belong to admins —
@@ -8504,6 +8774,49 @@ class ConnectionManager:
                 continue
             await self.send_personal(uid, message)
 
+    # --- Community rooms (presença "aqui agora" + activity ticker) ---
+    def community_presence_count(self, community_id: str) -> int:
+        return len(self.viewers_by_community.get(community_id, set()))
+
+    async def add_community_viewer(self, user_id: str, community_id: str) -> int:
+        s = self.viewers_by_community.setdefault(community_id, set())
+        s.add(user_id)
+        self.communities_by_user.setdefault(user_id, set()).add(community_id)
+        count = len(s)
+        await self._broadcast_community_presence(community_id, count)
+        return count
+
+    async def remove_community_viewer(self, user_id: str, community_id: str) -> int:
+        s = self.viewers_by_community.get(community_id)
+        if s and user_id in s:
+            s.discard(user_id)
+            if not s:
+                self.viewers_by_community.pop(community_id, None)
+        cs = self.communities_by_user.get(user_id)
+        if cs:
+            cs.discard(community_id)
+            if not cs:
+                self.communities_by_user.pop(user_id, None)
+        count = len(self.viewers_by_community.get(community_id, set()))
+        await self._broadcast_community_presence(community_id, count)
+        return count
+
+    async def cleanup_user_communities(self, user_id: str):
+        for cid in list(self.communities_by_user.get(user_id, set())):
+            await self.remove_community_viewer(user_id, cid)
+
+    async def _broadcast_community_presence(self, community_id: str, count: int):
+        msg = {"type": "community_presence", "community_id": community_id, "count": count}
+        for uid in list(self.viewers_by_community.get(community_id, set())):
+            await self.send_personal(uid, msg)
+
+    async def broadcast_to_community(self, community_id: str, message: dict, exclude_user: Optional[str] = None):
+        """Difunde só aos utilizadores presentes na sala desta comunidade."""
+        for uid in list(self.viewers_by_community.get(community_id, set())):
+            if uid == exclude_user:
+                continue
+            await self.send_personal(uid, message)
+
 
     async def disconnect_all(self) -> int:
         """Admin action: forcefully closes every active WebSocket.
@@ -8543,15 +8856,22 @@ async def pulse_now(user=Depends(get_current_user)):
     """Most recent full snapshot. If the loop hasn't ticked yet (cold
     boot), compute one synchronously so the UI never sees null."""
     # Prefer the in-memory cache populated by the background loop —
-    # zero Mongo cost on the hot path.
-    cache, _ts = pulse_engine.get_last_snapshot_cache()
-    if cache:
+    # zero Mongo cost on the hot path. But if the cache is older than 30s
+    # (e.g. the user just published and the loop hasn't re-ticked yet),
+    # recompute on demand so the ambient UI reflects fresh signal. Costs
+    # ~25ms extra only in that narrow window.
+    cache, age = pulse_engine.get_last_snapshot_cache_with_age()
+    if cache and age < 30:
         return cache
+    if cache:
+        # Cache exists but is stale: the persisted Mongo snapshot is just
+        # as old (loop writes + caches together), so recompute on demand
+        # for genuine freshness. The loop catches up on its next tick.
+        return await pulse_engine.compute_pulse_snapshot(db)
+    # Cold boot (loop hasn't ticked yet): try Mongo, then compute.
     snap = await pulse_engine.fetch_latest_snapshot(db)
     if snap:
         return snap
-    # First-boot fallback: compute one on demand (without persisting,
-    # the loop will catch up on its next tick).
     return await pulse_engine.compute_pulse_snapshot(db)
 
 
@@ -8629,6 +8949,167 @@ async def pulse_timeline(minutes: int = 60, user=Depends(get_current_user)):
         for r in rows
     ]
     return {"minutes": minutes, "points": trimmed}
+
+
+@api.get("/pulse/topology")
+async def pulse_topology(user=Depends(get_current_user)):
+    """Fase 7 — Mapa social vivo. Intensidade por região + cidades, derivada
+    do snapshot do Pulse Engine. Intensidade é o score normalizado (0..1)
+    para a maior região/cidade do momento. Privacidade: granularidade
+    máxima cidade (nunca freguesia/coordenadas), igual ao resto do Pulse."""
+    snap = pulse_engine.get_last_snapshot_cache()[0] or await pulse_engine.fetch_latest_snapshot(db)
+    if not snap:
+        snap = await pulse_engine.compute_pulse_snapshot(db)
+    regions = snap.get("regions", []) or []
+    cities = snap.get("cities", []) or []
+    max_r = max([r.get("score", 0) for r in regions], default=0) or 1
+    max_c = max([c.get("score", 0) for c in cities], default=0) or 1
+
+    def _intensity(score, mx):
+        try:
+            return round(min(1.0, max(0.0, (score or 0) / mx)), 3)
+        except Exception:
+            return 0.0
+
+    regions_out = [
+        {
+            "key": r.get("key"),
+            "label": r.get("label"),
+            "score": r.get("score", 0),
+            "intensity": _intensity(r.get("score", 0), max_r),
+            "delta_pct": r.get("delta_pct"),
+            "meaningful": bool(r.get("meaningful")),
+            "active_users_60s": r.get("active_users_60s", 0),
+        }
+        for r in regions
+    ]
+    cities_out = [
+        {
+            "key": c.get("key"),
+            "label": c.get("label"),
+            "score": c.get("score", 0),
+            "intensity": _intensity(c.get("score", 0), max_c),
+            "delta_pct": c.get("delta_pct"),
+            "meaningful": bool(c.get("meaningful")),
+        }
+        for c in cities if (c.get("score", 0) or 0) > 0
+    ]
+    cities_out.sort(key=lambda x: -x["score"])
+    return {
+        "taken_at": snap.get("taken_at"),
+        "regions": regions_out,
+        "cities": cities_out[:40],
+        "meaningful_cities": [c for c in cities_out if c["meaningful"]],
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Fase 5 — MESAS (conversas efémeras)
+# ─────────────────────────────────────────────────────────────────────
+class MesaCreateIn(BaseModel):
+    title: str = Field(min_length=1, max_length=mesas_engine.MAX_TITLE)
+    topic: Optional[str] = ""
+    kind: Optional[str] = "rapida"
+
+
+class MesaMessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=mesas_engine.MAX_MESSAGE)
+
+
+@api.post("/mesas")
+async def create_mesa(payload: MesaCreateIn, user=Depends(get_current_user)):
+    """Cria uma mesa. Qualquer utilizador pode criar uma 'rapida'/'noturna'/
+    'tema'. Expira sozinha pelo TTL do Mongo."""
+    doc = mesas_engine.new_mesa_doc(
+        title=payload.title,
+        topic=payload.topic or "",
+        kind=(payload.kind or "rapida"),
+        created_by=user["id"],
+    )
+    await db.mesas.insert_one(dict(doc))
+    return mesas_engine.public_mesa(doc, me_id=user["id"])
+
+
+@api.get("/mesas")
+async def list_mesas(user=Depends(get_current_user)):
+    """Mesas vivas, ordenadas por atividade recente."""
+    rows = await db.mesas.find({}, {"_id": 0}).sort("last_activity_at", -1).to_list(80)
+    now = datetime.now(timezone.utc)
+    alive = [m for m in rows if mesas_engine.is_alive(m, now)]
+    return [mesas_engine.public_mesa(m, me_id=user["id"], now=now) for m in alive]
+
+
+@api.get("/mesas/{mesa_id}")
+async def get_mesa(mesa_id: str, user=Depends(get_current_user)):
+    """Detalhe de uma mesa + últimas mensagens."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    msgs = await db.mesa_messages.find(
+        {"mesa_id": mesa_id}, {"_id": 0, "expire_at": 0}
+    ).sort("created_at", 1).to_list(mesas_engine.MESSAGES_PAGE)
+    return {
+        "mesa": mesas_engine.public_mesa(mesa, me_id=user["id"]),
+        "messages": msgs,
+    }
+
+
+@api.post("/mesas/{mesa_id}/join")
+async def join_mesa(mesa_id: str, user=Depends(get_current_user)):
+    """Entra numa mesa (idempotente, entrada sem fricção)."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    await db.mesas.update_one({"id": mesa_id}, {"$addToSet": {"participants": user["id"]}})
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    return mesas_engine.public_mesa(mesa, me_id=user["id"])
+
+
+@api.post("/mesas/{mesa_id}/message")
+async def post_mesa_message(mesa_id: str, payload: MesaMessageIn, user=Depends(get_current_user)):
+    """Envia mensagem para a mesa. Junta-se automaticamente se ainda não
+    fizer parte (entrada-rápida). Difunde aos participantes via WS."""
+    mesa = await db.mesas.find_one({"id": mesa_id}, {"_id": 0})
+    if not mesa or not mesas_engine.is_alive(mesa):
+        raise HTTPException(404, "Mesa não encontrada ou já fechada")
+    content = (payload.content or "").strip()
+    if not content:
+        raise HTTPException(400, "Mensagem vazia")
+    now = datetime.now(timezone.utc)
+    msg = {
+        "id": str(uuid.uuid4()),
+        "mesa_id": mesa_id,
+        "author_id": user["id"],
+        "author": {
+            "id": user["id"],
+            "username": user.get("username"),
+            "name": user.get("name"),
+            "avatar": user.get("avatar", ""),
+        },
+        "content": content[:mesas_engine.MAX_MESSAGE],
+        "created_at": now_iso(),
+        # Mensagens expiram junto com a mesa (mesmo companheiro Date TTL).
+        "expire_at": mesa.get("expire_at") or now,
+    }
+    await db.mesa_messages.insert_one(dict(msg))
+    await db.mesas.update_one(
+        {"id": mesa_id},
+        {
+            "$addToSet": {"participants": user["id"]},
+            "$inc": {"message_count": 1},
+            "$set": {"last_activity_at": now_iso()},
+        },
+    )
+    # Difunde só aos participantes (não a toda a gente).
+    fresh = await db.mesas.find_one({"id": mesa_id}, {"_id": 0, "participants": 1})
+    out = {k: v for k, v in msg.items() if k != "expire_at"}
+    payload_ws = {"type": "mesa_message", "mesa_id": mesa_id, "message": out}
+    for uid in (fresh.get("participants", []) if fresh else []):
+        try:
+            await ws_manager.send_personal(uid, payload_ws)
+        except Exception:
+            pass
+    return out
 
 
 # ─── Live security feed — broadcast every auth_event to admins ──────────────
@@ -8786,7 +9267,8 @@ async def websocket_endpoint(ws: WebSocket):
     # ─── Hardening constants for the message loop ─────────────────────────
     # Whitelisted event types — anything else is dropped silently.
     _ALLOWED_EVENTS = {"ping", "typing", "presence_set", "post_view",
-                       "post_unview", "c_typing"}
+                       "post_unview", "c_typing",
+                       "community_view", "community_unview", "community_typing"}
     # Per-type minimum gap between consecutive events from the same user.
     _MIN_GAP = {
         "ping":         2.0,
@@ -8795,6 +9277,9 @@ async def websocket_endpoint(ws: WebSocket):
         "post_view":    0.7,
         "post_unview":  0.5,
         "c_typing":     1.5,
+        "community_view":   0.7,
+        "community_unview": 0.5,
+        "community_typing": 1.5,
     }
     # Allowed values for typing.in
     _ALLOWED_TYPING_IN = {"dm", "thread", "post", "comments"}
@@ -8969,6 +9454,36 @@ async def websocket_endpoint(ws: WebSocket):
                     },
                     exclude_user=user_id,
                 )
+
+            elif t == "community_view":
+                cid = data.get("community_id")
+                if isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD:
+                    await ws_manager.add_community_viewer(user_id, cid)
+
+            elif t == "community_unview":
+                cid = data.get("community_id")
+                if isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD:
+                    await ws_manager.remove_community_viewer(user_id, cid)
+
+            elif t == "community_typing":
+                cid = data.get("community_id")
+                if not (isinstance(cid, str) and 1 <= len(cid) <= _MAX_TEXT_FIELD):
+                    continue
+                user_doc = await db.users.find_one(
+                    {"id": user_id},
+                    {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1, "verified": 1},
+                )
+                if not user_doc:
+                    continue
+                await ws_manager.broadcast_to_community(
+                    cid,
+                    {
+                        "type": "community_typing",
+                        "community_id": cid,
+                        "user": public_user(user_doc),
+                    },
+                    exclude_user=user_id,
+                )
     except WebSocketDisconnect:
         pass
     except Exception as e:
@@ -8978,6 +9493,11 @@ async def websocket_endpoint(ws: WebSocket):
         # Clean up any post-viewer registrations from this connection
         try:
             await ws_manager.cleanup_user_posts(user_id)
+        except Exception:
+            pass
+        # Clean up community-room presence from this connection
+        try:
+            await ws_manager.cleanup_user_communities(user_id)
         except Exception:
             pass
         await ws_manager.broadcast({

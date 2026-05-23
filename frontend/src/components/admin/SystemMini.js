@@ -27,7 +27,7 @@ export function SystemMini({ data, onSelect }) {
     return (
         <Tag className={`ops-sysmini ${clickable ? "ops-sysmini--clickable" : ""}`} {...props}>
             <div className="ops-sysmini__cell">
-                <div className="ops-sysmini__label">Uptime</div>
+                <div className="ops-sysmini__label">Tempo ativo</div>
                 <div className="ops-sysmini__value">{formatUptime(uptime)}</div>
             </div>
             <div className="ops-sysmini__cell">

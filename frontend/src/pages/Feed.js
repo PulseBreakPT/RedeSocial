@@ -7,10 +7,14 @@ import { PostSkeletonList } from "../components/Skeleton";
 import { LiveActivityBeacon } from "../components/LiveActivityBeacon";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useScrollHealth } from "../hooks/useScrollHealth";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
+import { PulseBar } from "../components/pulse/PulseBar";
+import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
+import { FeedContextLine } from "../components/pulse/FeedContextLine";
 import { haptic } from "../lib/haptics";
 
 // Frases curadas pt-PT mostradas no pull-to-refresh.
@@ -35,6 +39,8 @@ export default function Feed() {
     const [newCount, setNewCount] = useState(0);
     const knownIdsRef = useRef(new Set());
     useLiveTime(30000);
+    // Fase 8 — anti-doomscroll: nudge suave em consumo passivo prolongado.
+    useScrollHealth();
 
     const greeting = useMemo(() => {
         const h = new Date().getHours();
@@ -178,6 +184,7 @@ export default function Feed() {
                         <p className="text-[13px] text-black/55 mt-1 font-medium tracking-tight">
                             O que se passa em Portugal agora.
                         </p>
+                        <FeedContextLine className="mt-0.5 block" />
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                         <button
@@ -263,7 +270,10 @@ export default function Feed() {
 
             {/* Inline composer removed — publishing happens via the "+" button (mobile bottom nav / desktop "Publicar"). */}
 
-            <div className="px-4 lg:px-5 pt-3">
+            <div className="px-4 lg:px-5 pt-3 space-y-3">
+                {/* Pulse Engine — sinais ambientais, só aparecem quando há sinal real */}
+                <PulseBar />
+                <TopicBurstChips />
                 <SmartTodayBanner />
             </div>
 

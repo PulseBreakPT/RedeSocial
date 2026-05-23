@@ -70,7 +70,7 @@ export const NAV_GROUPS = [
         tone: "system",
         items: [
             { key: "system",   label: "Sistema",   icon: Server,    tone: "system", hint: "Infra, WS, MongoDB" },
-            { key: "audit",    label: "Audit log", icon: History,   tone: "system", hint: "Histórico de ações admin" },
+            { key: "audit",    label: "Registo de auditoria", icon: History,   tone: "system", hint: "Histórico de ações admin" },
             { key: "settings", label: "Definições", icon: Settings2, tone: "system", hint: "Configurações da plataforma" },
         ],
     },

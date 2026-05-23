@@ -25,11 +25,11 @@ export function WebSocketMini({ sockets = 0, users = 0, live = false, onClick })
                     {Number(sockets || 0).toLocaleString("pt-PT")}
                 </div>
                 <div style={{ fontSize: 11, color: "var(--ops-text-faint)", marginBottom: 2 }}>
-                    sockets · {Number(users || 0).toLocaleString("pt-PT")} users
+                    sockets · {Number(users || 0).toLocaleString("pt-PT")} utilizadores
                 </div>
             </div>
             <div style={{ fontSize: 10.5, color: "var(--ops-text-faint)", marginBottom: 6 }} title="Rácio sockets / utilizadores únicos. >1 indica múltiplas abas/dispositivos por user.">
-                {ratio !== "—" ? `${ratio} sockets/user` : "—"}
+                {ratio !== "—" ? `${ratio} sockets/utilizador` : "—"}
             </div>
             <div style={{ marginTop: 2, fontSize: 11, color: "var(--ops-text-faint)", display: "flex", alignItems: "center", gap: 6 }}>
                 <span className="ops-pulse-dot" style={{ background: live ? "var(--ops-realtime-500)" : "var(--ops-slate-300)" }} />

@@ -30,6 +30,178 @@
 ### Fix sintaxe — Cockpit.js ✅
 - Linha 479 duplicada (`efault Cockpit;`) removida. Frontend compila.
 
+### Fase 2 — Ambient Pulse Widgets (UI) ✅ (parcial — ver nota PulseGlobe)
+- **Hook novo:** `frontend/src/hooks/usePulse.js` — store partilhado
+  (singleton: 1 snapshot, 1 timer de polling, N subscribers, como
+  `useFeedPulse`). Faz **uma** chamada a `/api/pulse/now` (o snapshot já
+  traz tudo) e refaz no WS `pulse_tick`. Polling de segurança 60s
+  (offline) / 5min (live). Falha silenciosa. Deriva
+  `meaningful_topics/regions/cities`.
+- **Componente novo:** `frontend/src/components/pulse/PulseBar.js` —
+  barra ambiental no topo do feed. Mensagens rotativas (8s) só com sinal
+  real: pulso global >20%, cidade/região meaningful, tópico a crescer,
+  mood dominante. Sem sinal → `null`. Read-only (sem cliques). Reusa
+  `live-dot` (coral, on-brand).
+- **Componente novo:** `frontend/src/components/pulse/TopicBurstChips.js`
+  — chips de hashtags meaningful (max 5), clicáveis → `/tag/{tag}`.
+  Sem nenhuma → `null`.
+- **Integração:** `frontend/src/pages/Feed.js` — `<PulseBar />` +
+  `<TopicBurstChips />` acima do `SmartTodayBanner` (feed é single-column,
+  não há sidebar).
+- **Opt-out:** toggle "Contribuir para o pulso social" em
+  `settings/PrivacyTab.js`. Liga a `PATCH /api/users/me` com
+  `pulse_opt_out: !value` via `Settings.js` (`priv_pulse`). Default =
+  contribui (pulse_opt_out=False).
+- **NOTA — 2.3 PulseGlobe adiado:** o feed é single-column (sem sidebar),
+  por isso um globo lateral não tem onde encaixar limpo. O sinal de
+  intensidade ("BPM social") pode mais tarde ser dobrado dentro do
+  PulseBar ou reaparecer quando/se houver layout com sidebar. Decisão
+  consciente para não poluir a coluna única.
+- **Por validar:** `node_modules` não está instalado neste ambiente, por
+  isso não foi possível correr o frontend nem o testing agent. Sintaxe
+  JSX validada via esbuild (transform-only). Falta teste visual/E2E:
+  confirmar que os widgets aparecem só com sinal e devolvem `null` com DB
+  vazio sem partir o layout.
+
+### Fix — Smart cache invalidation no Pulse Engine ✅
+- `pulse_engine.get_last_snapshot_cache_with_age()` (idade via monotonic).
+- `/api/pulse/now`: cache fresca (<30s) → devolve; cache velha →
+  recalcula on-demand (Mongo está igualmente velho); cold boot → Mongo
+  depois compute.
+
+### Fase 3 — Presence Layer ✅ (já existia no código)
+- Auditado: já estava implementado, não foi preciso `presence_engine.py`.
+  - Backend: `ws_manager.viewers_by_post`, `add/remove_post_viewer`,
+    broadcast `post_viewers`, eventos WS `post_view`/`post_unview`,
+    `c_typing`, endpoint `/posts/{id}/viewers`, presença de DMs, heartbeat
+    `last_seen`.
+  - Frontend: `usePostPresence`, `PostViewersBadge`,
+    `ConversationPresence`, `useCommentTyping`, `CommentTypingIndicator`
+    — renderizados em `PostDetail`.
+  - **Decisão:** NÃO adicionar "N a ler" a cada card do feed — enviar
+    `post_view` ao scrollar seria semanticamente errado (scrollar ≠ ver).
+    Presença fica no contexto focado (PostDetail).
+
+### Fase 4 — Context Engine ✅
+- **Módulo novo:** `backend/context_engine.py` —
+  `get_feed_context_weights(now, dominant_mood, calendar_theme,
+  calendar_label)`. Math puro + lookup (slot de hora, dia da semana,
+  evento PT, mood dominante). Devolve `tempo`, `freshness_mult`,
+  `mood_boost_for/boost`, `label`. Sem IA.
+- **Scoring:** `compute_ranking_score(..., context=ctx)` — ajusta o peso
+  de frescura por `freshness_mult` e dá boost suave a posts cujo mood
+  combina com o contexto. Contexto calculado 1x/pedido em `/feed/v2` via
+  `_build_feed_context()` (mood vem da cache do Pulse, evento do calendário).
+- **Endpoint:** `GET /api/feed/context` → `{tempo, slot, label}`.
+- **Frontend:** `components/pulse/FeedContextLine.js` mostra o label
+  subtil no cabeçalho do feed (refresh 10 min). `null` se vazio.
+
+### Fase 5 — Mesas (conversas efémeras) ✅
+- **Módulo novo:** `backend/mesas.py` — helpers puros + `init_mesas_indexes`
+  (TTL Mongo em `expire_at`). Tipos: rapida(2h)/noturna(até 6h UTC)/
+  tema(24h). `mesa_messages` com TTL próprio = expiry da mesa.
+- **Endpoints (server.py):** `POST /api/mesas`, `GET /api/mesas` (vivas,
+  ordenadas por atividade), `GET /api/mesas/{id}` (+ mensagens),
+  `POST /api/mesas/{id}/join`, `POST /api/mesas/{id}/message` (auto-join +
+  difusão WS `mesa_message` só aos participantes via `send_personal`).
+- **Frontend:** página `pages/Mesas.js` (lista + criar + sala em tempo
+  real com composer e countdown), rota `/mesas`, nav "Mesas" (Coffee) na
+  LeftSidebar. WS via `useWsMessages` filtrando por `mesa_id`, dedupe por id.
+- **Auto-criação por evento (mesa de evento):** adiada — depende de
+  trigger de eventos; o tipo "evento" não está exposto (só rapida/noturna/
+  tema). Pode ser adicionado depois.
+
+### Fase 6 — Reputação Humana Invisível ✅
+- **Módulo novo:** `backend/reputation_engine.py` — `health_score` 0–100
+  recalculado em loop diário (`recompute_all`, mesmo padrão de loop do
+  pulse). Sinais reais (30d): reciprocidade (respostas em fios),
+  diversidade (fios distintos), presença, − reports (user+conteúdo),
+  − toxicidade (léxico PT curado, match por fronteira de palavra),
+  − volume obsessivo. Math determinística, sem IA.
+- **Aplicação:** `health_multiplier(score)` (subtil: <30 → 0.75, >75 →
+  1.08) multiplicado no `compute_ranking_score`. Autores carregados numa
+  query em `/feed/v2` (`author_health`).
+- **Invisível:** guardado em `users.health_score`, nunca em `public_user`.
+  Sem leaderboards/badges/níveis.
+  - ⚠️ Nota: a invisibilidade assenta em `public_user()` ser o caminho
+    padrão de saída de utilizador. Recomenda-se auditar endpoints que
+    devolvam docs de utilizador em bruto (projeção sem `health_score`).
+
+### Fase 7 — Activity Topology / Mapa Social Vivo ✅
+- **Endpoint:** `GET /api/pulse/topology` — intensidade normalizada (0..1)
+  por região + cidades, do snapshot do Pulse. Granularidade máxima cidade
+  (sem freguesia/coordenadas), igual ao resto do Pulse.
+- **Frontend:** página `pages/Topologia.js` — mapa esquemático (continente
+  em coluna Norte→Algarve + ilhas), tiles com opacidade por intensidade e
+  `live-dot` nas regiões `meaningful`; lista de cidades a crescer.
+  Atualiza no WS `pulse_tick`. Rota `/topologia`, nav (Map).
+- **Nota:** mapa esquemático (não SVG geográfico ao pixel) — escolha
+  consciente para evitar dependência nova não testável e manter
+  acessibilidade. Um SVG geográfico pode substituí-lo depois.
+
+### Fase 8 — Anti-Doomscrolling Inteligente ✅
+- **Hook novo:** `frontend/src/hooks/useScrollHealth.js` — mede tempo na
+  página, distância de scroll e tempo desde a última interação. Em consumo
+  passivo prolongado (≥12 min, ≥8 min sem interagir, ≥6000px) mostra UM
+  toast suave (sonner) com cooldown de 45 min (localStorage). De dia sugere
+  uma Mesa (ação → /mesas); à noite adapta para "recolher". Montado no Feed.
+- **Nota:** o escurecimento gradual do feed à noite foi deixado de fora
+  (nice-to-have, arriscado sem teste visual); o tom noturno está no copy.
+
+### Fase 9 — Identidade Portuguesa Viva ✅
+- **9.1 Calendário alargado:** +8 eventos recorrentes autênticos em
+  `PT_CALENDAR_EVENTS` (Reis, Fátima, solstícios/equinócios, véspera de
+  S. João, Assunção, S. Martinho/Magusto). Móveis (Carnaval/Páscoa) ficam
+  de fora por exigirem cálculo da Páscoa.
+- **9.2 Copy mood-aware:** coberto pela Fase 4 (`FeedContextLine` +
+  `context_engine.label`): "Domingo à noite · ritmo calmo" vs "Sexta ao
+  fim do dia · a rede está acesa". O tema do evento do dia também entra no
+  contexto e dá boost no feed.
+- **9.3 Tom:** literário, breve, sem bandeirinhas/sardinhas — respeitado
+  no copy dos widgets e nudges.
+- **Refinamento opcional:** banner de evento "confirmado pelo pulse" (só
+  mostrar a festa se o pulse confirmar pico) — o banner de calendário já
+  existe; a confirmação cruzada com o pulse fica como polish futuro.
+
+---
+
+## 🟢 EM CURSO — Comunidades vivas (SSS tier, presence-first)
+
+Objetivo: comunidades como "bairros vivos" — presence-first, realtime,
+atmosfera própria. Decisões: vertical slice primeiro · moderação completa
+(a fazer) · persistir snapshots (memória social / ritmo horário).
+
+### Vertical slice — ENTREGUE ✅
+- **`backend/community_pulse.py`**: motor de pulso por comunidade (espelha
+  pulse_engine, filtrado por `community_id`). Janela 60s, baseline própria
+  à mesma hora (snapshots persistidos, TTL 30d → ritmo/memória),
+  temperatura/estado/energia, mood coletivo, trends internas. Loop só de
+  comunidades ativas, difunde `community_pulse` à sala WS.
+- **WS rooms** no `ws_manager`: `viewers_by_community`, eventos
+  `community_view/unview/typing`, `community_presence`, `broadcast_to_community`,
+  cleanup no disconnect. `community_activity` (ticker) emitido na criação
+  real de posts/comentários. Comentários passam a ter `community_id`.
+- **Endpoints**: `GET /communities/{slug}/pulse` e `/now` (Agora: presentes,
+  conversas a crescer, ticker recente). Tudo dados reais.
+- **Frontend**: `useCommunityPulse(slug, communityId)` (pulso + sala WS) e
+  `Community.js` reconstruída presence-first — header com estado vivo,
+  `LiveStrip` sempre visível (temperatura/energia/"X aqui agora"/mood/trend),
+  6 tabs (Conversas · Em alta · Pessoas · Media · Agora · Sobre), tab
+  **Agora** com presença ao vivo + conversas a crescer + activity ticker
+  (semente via /now, ao vivo via WS `community_activity`).
+
+### A FAZER (próximas iterações)
+- **Moderação completa** (decisão do user): roles/permissões por comunidade,
+  remover post, silenciar/banir membro, fila de reports da comunidade, log
+  de moderação dedicado — com eventos WS ao vivo.
+- **Desktop multi-column**: right-rail lateral com widgets vivos (pulso,
+  presentes, trends, ticker) — adiado do slice por precisar de teste visual.
+- **Polir**: micro-eventos sociais, "comunidade calma/intensa" copy
+  contextual, typing indicator no composer da comunidade (evento
+  `community_typing` já existe no backend), densidade mobile.
+- **Validação runtime**: nada testado em runtime (sem deps/Mongo neste
+  ambiente) — só sintaxe (py_compile/esbuild). Falta testar ponta-a-ponta.
+
 ---
 
 ## 🟡 PENDENTE — POR FAZER
@@ -62,7 +234,12 @@ Não bloqueia nada. Pode-se saltar e deixar como está.
 
 ---
 
-### 🔵 Fase 2 — Ambient Pulse Widgets (UI)
+### 🔵 Fase 2 — Ambient Pulse Widgets (UI)  ✅ ENTREGUE (ver topo)
+
+> A maior parte desta fase já está feita — ver "JÁ ENTREGUE ▸ Fase 2".
+> O que resta é **2.3 PulseGlobe** (adiado: feed single-column) e o
+> **teste visual/E2E** quando houver `node_modules`. Spec original
+> mantida abaixo para referência.
 
 **Objetivo:** Transformar os 5 endpoints da Fase 1 em widgets *ambientais*
 que aparecem **só quando há sinal real** (regra `meaningful: true`).
@@ -352,10 +529,15 @@ Bibliotecas:
 
 ---
 
-## 🟠 PENDENTE — TAREFA ADMINISTRATIVA (pausada)
+## 🟢 TAREFA ADMINISTRATIVA — Tradução do painel Admin ✅
 
-### Tradução do painel Admin (inglês → português)
-**Estado:** Pausada pelo user no início desta sessão.
+**Estado:** Concluída. Strings EN→pt-PT traduzidas em `SecurityTab.js`
+(maioria), `Cockpit.js`, `CommandPalette.js`, `DeployMini.js`,
+`navConfig.js`. O resto do painel já estava em PT. Siglas técnicas
+(JWT, TTL, WS, API, IP, JTI, CSV, SameSite, ID…) preservadas — só os
+qualificadores foram traduzidos. `data-testid`/classes/chaves intactos.
+
+<details><summary>Lista original (referência)</summary>
 
 Strings já identificadas em inglês (auditadas nos files):
 - `Token Debugger` → "Diagnóstico de Token"
@@ -384,14 +566,16 @@ Ficheiros a varrer sistematicamente:
 inglês. Manter siglas técnicas (JWT, TTL, WS, API, HTTP, HTTPS, CORS,
 SameSite, IP, UA, JTI, etc.) — só traduzir a palavra qualificadora.
 
+</details>
+
 ---
 
 ## 📋 RESUMO DA ORDEM SUGERIDA PARA RETOMAR
 
 ```
 1. (opcional) Pequeno fix cache invalidation no Pulse Engine
-2. Fase 2 — Ambient Pulse Widgets (UI) [PRÓXIMO PASSO LÓGICO]
-3. Fase 3 — Presence Layer
+2. Fase 2 — Ambient Pulse Widgets (UI) ✅ FEITO (falta 2.3 PulseGlobe + teste E2E)
+3. Fase 3 — Presence Layer [PRÓXIMO PASSO LÓGICO]
 4. Fase 4 — Context Engine
 5. Tradução Admin (pausada) — pode ser intercalada em qualquer altura
 6. Fase 5 — Mesas

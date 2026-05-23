@@ -1,4 +1,4 @@
-import { Eye, Pencil, Search } from "lucide-react";
+import { Eye, Pencil, Search, Activity } from "lucide-react";
 import { SectionHeader, SwitchPill } from "./_shared";
 
 /* =============================================================
@@ -28,6 +28,13 @@ const TOGGLES = [
         label: "Aparecer em pesquisas",
         sub: "O teu @ aparece nas buscas e nas sugestões",
         tint: "bg-indigo-50 text-indigo-700",
+    },
+    {
+        k: "priv_pulse",
+        icon: Activity,
+        label: "Contribuir para o pulso social",
+        sub: "Os teus posts somam no mapa coletivo ‘a tua cidade está ativa’. Nunca te identifica.",
+        tint: "bg-rose-50 text-rose-700",
     },
 ];
 
