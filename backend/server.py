@@ -55,6 +55,9 @@ import happenings
 # Comunidades — saúde do bairro (score coletivo) + núcleo/densidade social.
 import community_health
 import community_graph
+# Premium — motor de direitos (server-side) + billing real (Stripe).
+import entitlements
+import billing
 
 JWT_ALGORITHM = "HS256"
 
@@ -567,15 +570,25 @@ async def auto_publish_due_posts() -> None:
 # ============================================================
 # Helpers
 # ============================================================
-def hash_password(password: str) -> str:
+def _hash_password_sync(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_password(plain: str, hashed: str) -> bool:
+def _verify_password_sync(plain: str, hashed: str) -> bool:
     try:
         return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
     except Exception:
         return False
+
+
+# bcrypt é CPU-bound (~100ms). Em handlers async, correr no event-loop bloqueia
+# todos os outros pedidos → offload para um worker thread.
+async def hash_password(password: str) -> str:
+    return await asyncio.to_thread(_hash_password_sync, password)
+
+
+async def verify_password(plain: str, hashed: str) -> bool:
+    return await asyncio.to_thread(_verify_password_sync, plain, hashed)
 
 
 async def _validate_password_policy(password: str) -> None:
@@ -1172,6 +1185,10 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "presence": user.get("presence") or {"status": "online", "emoji": "", "text": "", "until": None},
         "charms_equipped": user.get("charms_equipped", []),
         "cosmetics_equipped": user.get("cosmetics_equipped") or {"frame": "", "sticker": ""},
+        # Premium — só sinais seguros e públicos (badge discreta); a verdade
+        # premium completa vem de /premium/status (resolvida server-side).
+        "plan": entitlements.plan_of(user),
+        "early_supporter": bool(user.get("early_supporter")),
         "track_visits": user.get("track_visits", True),
         # Privacy prefs (settings → Privacidade)
         "show_online": user.get("show_online", True),
@@ -1289,8 +1306,23 @@ async def get_current_user(request: Request) -> dict:
                           "last_ua": request.headers.get("user-agent", "")[:300]}},
                 upsert=False,
             )
-        # update last seen (best-effort)
-        await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
+        # update last seen (best-effort) — no máximo 1×/60s para não fazer um
+        # write na coleção users a cada pedido autenticado.
+        try:
+            _prev = user.get("last_seen")
+            _stale = True
+            if _prev:
+                try:
+                    _stale = (datetime.now(timezone.utc) - datetime.fromisoformat(
+                        str(_prev).replace("Z", "+00:00"))).total_seconds() > 60
+                except Exception:
+                    _stale = True
+            if _stale:
+                _ts = now_iso()
+                await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": _ts}})
+                user["last_seen"] = _ts
+        except Exception:
+            pass
         return user
     except jwt.ExpiredSignatureError:
         try:
@@ -1662,10 +1694,20 @@ async def can_view_profile(target: dict, viewer: Optional[dict]) -> bool:
     return viewer["id"] in target.get("followers", [])
 
 
-async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
-    author = await db.users.find_one({"id": post["author_id"]}, {"_id": 0})
+async def enrich_post(post: dict, viewer: Optional[dict],
+                      _author_map: Optional[dict] = None,
+                      _count_map: Optional[dict] = None) -> dict:
+    # _author_map / _count_map: lookups pré-carregados em lote por enrich_posts
+    # (evita N+1). Quando ausentes, faz o fetch individual (comportamento antigo).
+    if _author_map is not None:
+        author = _author_map.get(post["author_id"])
+    else:
+        author = await db.users.find_one({"id": post["author_id"]}, {"_id": 0})
     viewer_id = viewer["id"] if viewer else None
-    comments_count = await db.comments.count_documents({"post_id": post["id"]})
+    if _count_map is not None:
+        comments_count = _count_map.get(post["id"], 0)
+    else:
+        comments_count = await db.comments.count_documents({"post_id": post["id"]})
     repost_origin = None
     if post.get("repost_of"):
         orig = await db.posts.find_one({"id": post["repost_of"]}, {"_id": 0})
@@ -1728,6 +1770,28 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         # v2 — collaborators
         "collaborators": await _enrich_collab_authors(post.get("collaborators", [])),
     }
+
+
+async def enrich_posts(posts: list, viewer: Optional[dict]) -> list:
+    """Enriquece uma lista de posts SEM N+1: pré-carrega autores (1 query) e
+    contagens de comentários (1 aggregation) e reutiliza o mesmo shaper do
+    enrich_post. Output e ordem idênticos a [enrich_post(p) for p in posts]."""
+    if not posts:
+        return []
+    author_ids = list({p["author_id"] for p in posts if p.get("author_id")})
+    author_map = {}
+    if author_ids:
+        rows = await db.users.find({"id": {"$in": author_ids}}, {"_id": 0}).to_list(len(author_ids))
+        author_map = {u["id"]: u for u in rows}
+    post_ids = [p["id"] for p in posts if p.get("id")]
+    count_map = {}
+    if post_ids:
+        agg = await db.comments.aggregate([
+            {"$match": {"post_id": {"$in": post_ids}}},
+            {"$group": {"_id": "$post_id", "n": {"$sum": 1}}},
+        ]).to_list(len(post_ids))
+        count_map = {c["_id"]: c["n"] for c in agg}
+    return [await enrich_post(p, viewer, _author_map=author_map, _count_map=count_map) for p in posts]
 
 
 async def _enrich_collab_authors(ids: list) -> list:
@@ -2150,7 +2214,7 @@ async def register(payload: RegisterIn, request: Request, response: Response):
     auto_verified = bool(await is_feature_enabled("new_users_auto_verify"))
     user = {
         "id": str(uuid.uuid4()), "email": email, "username": username,
-        "name": payload.name, "password_hash": hash_password(payload.password),
+        "name": payload.name, "password_hash": await hash_password(payload.password),
         "bio": "", "avatar": "", "banner": "",
         "verified": auto_verified, "private": False, "onboarded": False,
         "followers": [], "following": [], "bookmarks": [],
@@ -2203,7 +2267,7 @@ async def login(payload: LoginIn, request: Request, response: Response):
         raise HTTPException(429, "Demasiadas tentativas. Tenta novamente em alguns minutos.")
 
     user = await db.users.find_one({"email": email})
-    if not user or not verify_password(payload.password, user["password_hash"]):
+    if not user or not await verify_password(payload.password, user["password_hash"]):
         state = await register_failed_login(email, ip=ip)
         await auth_event("login_fail", email=email, ip=ip, ua=ua,
                          detail={"reason": "bad_credentials", "fail_count": state["fail_count"]})
@@ -2353,7 +2417,7 @@ async def reset_password(payload: ResetPasswordIn, request: Request, response: R
         raise HTTPException(400, "Token expirado")
     # Admin-controlled password policy
     await _validate_password_policy(payload.password)
-    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": hash_password(payload.password), "password_changed_at": now_iso()}})
+    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": await hash_password(payload.password), "password_changed_at": now_iso()}})
     await db.password_resets.update_one({"token": payload.token}, {"$set": {"used": True}})
     return {"ok": True}
 
@@ -2364,7 +2428,7 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
     fresh = await db.users.find_one({"id": user["id"]})
     if not fresh:
         raise HTTPException(404, "Utilizador não encontrado")
-    if not verify_password(payload.current_password, fresh.get("password_hash", "")):
+    if not await verify_password(payload.current_password, fresh.get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe atual incorreta")
     if payload.current_password == payload.new_password:
         raise HTTPException(400, "A nova palavra-passe tem de ser diferente da atual")
@@ -2373,7 +2437,7 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
     await db.users.update_one(
         {"id": user["id"]},
         {"$set": {
-            "password_hash": hash_password(payload.new_password),
+            "password_hash": await hash_password(payload.new_password),
             "password_changed_at": now_iso(),
         }},
     )
@@ -2595,7 +2659,7 @@ async def two_fa_disable(payload: TwoFADisableIn, user=Depends(get_current_user)
     """Disable 2FA — requires current password. If 2FA was active, also requires
     a valid TOTP code (or backup code)."""
     fresh = await db.users.find_one({"id": user["id"]})
-    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+    if not await verify_password(payload.password, (fresh or {}).get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
     if (fresh or {}).get("two_fa_enabled"):
         if not await _verify_2fa_code(fresh or {}, payload.code or ""):
@@ -2620,7 +2684,7 @@ async def two_fa_regenerate_backup(payload: TwoFADisableIn, user=Depends(get_cur
     fresh = await db.users.find_one({"id": user["id"]})
     if not (fresh or {}).get("two_fa_enabled"):
         raise HTTPException(400, "2FA não está ativo")
-    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+    if not await verify_password(payload.password, (fresh or {}).get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
     backup = _generate_backup_codes(10)
     await db.users.update_one(
@@ -2703,7 +2767,7 @@ async def global_search(q: str = "", viewer: Optional[dict] = Depends(maybe_user
     tagged = await db.posts.count_documents({"hashtags": tag})
     return {
         "users": [public_user(u) for u in users],
-        "posts": [await enrich_post(p, viewer) for p in posts],
+        "posts": await enrich_posts(posts, viewer),
         "tags": [{"tag": tag, "count": tagged}] if tagged else [],
     }
 
@@ -2758,10 +2822,21 @@ async def activity_feed(limit: int = 30):
     items = await db.notifications.find(
         {"type": {"$in": ["like", "comment", "follow", "repost", "quote"]}}, {"_id": 0},
     ).sort("created_at", -1).limit(limit).to_list(limit)
+    # Pré-carrega todos os utilizadores envolvidos numa só query (evita N+1).
+    uid_set = set()
+    for n in items:
+        if n.get("from_user_id"):
+            uid_set.add(n["from_user_id"])
+        if n.get("user_id"):
+            uid_set.add(n["user_id"])
+    umap = {}
+    if uid_set:
+        rows = await db.users.find({"id": {"$in": list(uid_set)}}, {"_id": 0}).to_list(len(uid_set))
+        umap = {u["id"]: u for u in rows}
     out = []
     for n in items:
-        from_user = await db.users.find_one({"id": n["from_user_id"]}, {"_id": 0})
-        target = await db.users.find_one({"id": n["user_id"]}, {"_id": 0})
+        from_user = umap.get(n["from_user_id"])
+        target = umap.get(n["user_id"])
         if not from_user or not target:
             continue
         verb = {
@@ -2833,7 +2908,7 @@ async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] =
     else:
         query = {"author_id": user["id"], **visibility}
     posts = await db.posts.find(query, {"_id": 0}).sort([("pinned", -1), ("created_at", -1)]).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/users/{username}/stats")
@@ -3044,7 +3119,7 @@ async def delete_my_account(payload: DeleteAccountIn, response: Response, user=D
     fresh = await db.users.find_one({"id": user["id"]})
     if not fresh:
         raise HTTPException(404, "Utilizador não encontrado")
-    if not verify_password(payload.password, fresh.get("password_hash", "")):
+    if not await verify_password(payload.password, fresh.get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
 
     uid = user["id"]
@@ -3576,7 +3651,7 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
     if not user.get("is_admin"):
         _fps = await get_limit("feed_page_size") or 20
         posts = posts[: max(_fps, 5)]
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.get("/posts/explore")
@@ -3638,7 +3713,7 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
                        reverse=True)[:100]
     else:
         posts = posts[:100]
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/posts/_explore_legacy")
@@ -3677,7 +3752,7 @@ async def list_drafts(user=Depends(get_current_user)):
         {"author_id": user["id"], "is_draft": True},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.get("/posts/scheduled")
@@ -3686,7 +3761,7 @@ async def list_scheduled(user=Depends(get_current_user)):
         {"author_id": user["id"], "is_draft": {"$ne": True}, "scheduled_at": {"$gt": now_iso()}},
         {"_id": 0},
     ).sort("scheduled_at", 1).to_list(100)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.post("/posts/{post_id}/publish")
@@ -3806,7 +3881,7 @@ async def posts_by_tag(tag: str, viewer: Optional[dict] = Depends(maybe_user)):
             "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
         }, {"_id": 0}
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/posts/{post_id}")
@@ -5684,7 +5759,7 @@ async def community_posts(slug: str, viewer: Optional[dict] = Depends(maybe_user
     if not c:
         raise HTTPException(404, "Comunidade não encontrada")
     posts = await db.posts.find({"community_id": c["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 def _community_public(c: dict, viewer: Optional[dict]) -> dict:
@@ -5845,13 +5920,27 @@ async def mark_read_all(user=Depends(get_current_user)):
 async def list_conversations(filter: str = "all", user=Depends(get_current_user)):
     """filter: all | pinned | unread | archived"""
     convs = await db.conversations.find({"participants": user["id"]}, {"_id": 0}).sort("last_at", -1).to_list(200)
+    # Pré-carrega os "outros" utilizadores (1 query) e os unread por conversa
+    # (1 aggregation) — evita 2×N round-trips.
+    other_by_conv = {c["key"]: next((p for p in c["participants"] if p != user["id"]), None) for c in convs}
+    other_ids = list({o for o in other_by_conv.values() if o})
+    umap = {}
+    if other_ids:
+        rows = await db.users.find({"id": {"$in": other_ids}}, {"_id": 0}).to_list(len(other_ids))
+        umap = {u["id"]: u for u in rows}
+    keys = [c["key"] for c in convs]
+    unread_map = {}
+    if keys:
+        agg = await db.messages.aggregate([
+            {"$match": {"conversation_key": {"$in": keys}, "sender_id": {"$ne": user["id"]}, "read": False}},
+            {"$group": {"_id": "$conversation_key", "n": {"$sum": 1}}},
+        ]).to_list(len(keys))
+        unread_map = {a["_id"]: a["n"] for a in agg}
     out = []
     for c in convs:
-        other_id = next((p for p in c["participants"] if p != user["id"]), None)
-        other = await db.users.find_one({"id": other_id}, {"_id": 0}) if other_id else None
-        unread = await db.messages.count_documents({
-            "conversation_key": c["key"], "sender_id": {"$ne": user["id"]}, "read": False,
-        })
+        other_id = other_by_conv.get(c["key"])
+        other = umap.get(other_id) if other_id else None
+        unread = unread_map.get(c["key"], 0)
         pinned = user["id"] in c.get("pinned_by", [])
         archived = user["id"] in c.get("archived_by", [])
         item = {
@@ -6487,7 +6576,7 @@ async def explore_by_mood(mood: str = "", viewer: Optional[dict] = Depends(maybe
                   {"scheduled_at": {"$lte": now_iso()}}]},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/explore/by-city")
@@ -6503,7 +6592,7 @@ async def explore_by_city(city: str = "", viewer: Optional[dict] = Depends(maybe
          "$or": [{"hashtags": city_key}, {"content": {"$regex": rx, "$options": "i"}}]},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/explore/people")
@@ -6907,6 +6996,32 @@ async def startup():
     await db.comments.create_index("post_id")
     await db.comments.create_index("author_id")
     await db.reports.create_index("status")
+    # Índices compostos para as queries quentes (sort por data dentro de um
+    # filtro). create_index é idempotente — seguro re-correr.
+    await db.posts.create_index([("community_id", 1), ("created_at", -1)], name="posts_community_created")
+    await db.posts.create_index([("author_id", 1), ("created_at", -1)], name="posts_author_created")
+    await db.comments.create_index([("post_id", 1), ("created_at", -1)], name="comments_post_created")
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)], name="notif_user_created")
+    await db.messages.create_index([("conversation_key", 1), ("created_at", 1)], name="msg_conv_created")
+    await db.users.create_index("last_seen", name="users_last_seen")
+    await db.bookmark_collections.create_index([("user_id", 1), ("created_at", -1)], name="bmk_user_created")
+    # ── Premium / billing ───────────────────────────────────────────
+    try:
+        await db.users.create_index("plan", name="users_plan")
+        await db.stripe_customers.create_index("user_id", unique=True, name="scust_user")
+        await db.stripe_customers.create_index("customer_id", name="scust_cust")
+        await db.subscriptions.create_index("user_id", name="subs_user")
+        await db.subscriptions.create_index("subscription_id", unique=True, sparse=True, name="subs_sub")
+        await db.subscription_events.create_index([("user_id", 1), ("created_at", -1)], name="subev_user")
+        await db.billing_logs.create_index([("created_at", -1)], name="blog_created")
+        await db.billing_idempotency.create_index("event_id", unique=True, name="bidem_event")
+        await db.invoices.create_index([("user_id", 1), ("created_at", -1)], name="inv_user")
+        await db.payments.create_index([("user_id", 1), ("created_at", -1)], name="pay_user")
+        await db.payment_failures.create_index([("user_id", 1), ("created_at", -1)], name="payfail_user")
+        await db.grace_periods.create_index("user_id", name="grace_user")
+        logger.info("premium: indexes ready")
+    except Exception as exc:
+        logger.warning(f"premium: index creation skipped: {exc}")
     admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
     admin_password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
     admin_username = (os.environ.get("ADMIN_USERNAME") or "admin").strip().lower()
@@ -6919,7 +7034,7 @@ async def startup():
         if not existing:
             await db.users.insert_one({
                 "id": str(uuid.uuid4()), "email": admin_email, "username": admin_username,
-                "name": admin_name, "password_hash": hash_password(admin_password),
+                "name": admin_name, "password_hash": await hash_password(admin_password),
                 "bio": "",
                 "avatar": "", "banner": "",
                 "verified": True, "private": False, "onboarded": True,
@@ -6931,8 +7046,8 @@ async def startup():
         else:
             # Keep admin password in sync AND ensure is_admin flag is present.
             updates = {}
-            if not verify_password(admin_password, existing.get("password_hash", "")):
-                updates["password_hash"] = hash_password(admin_password)
+            if not await verify_password(admin_password, existing.get("password_hash", "")):
+                updates["password_hash"] = await hash_password(admin_password)
             if not existing.get("is_admin"):
                 updates["is_admin"] = True
             if not existing.get("verified"):
@@ -6997,6 +7112,15 @@ async def startup():
     except Exception as exc:
         logger.warning(f"community_health/graph: startup wiring failed: {exc}")
 
+    # ── Premium — sweeper de graça/expiração ────────────────────────
+    try:
+        global _premium_sweeper_task
+        if _premium_sweeper_task is None or _premium_sweeper_task.done():
+            _premium_sweeper_task = asyncio.create_task(_premium_sweeper_loop(), name="premium_sweeper")
+        logger.info(f"premium: billing configured={billing.is_configured()}, sweeper scheduled")
+    except Exception as exc:
+        logger.warning(f"premium: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -7020,6 +7144,11 @@ async def shutdown():
         pass
     try:
         await community_graph.stop_community_graph_loop()
+    except Exception:
+        pass
+    try:
+        if _premium_sweeper_task and not _premium_sweeper_task.done():
+            _premium_sweeper_task.cancel()
     except Exception:
         pass
     client.close()
@@ -7149,7 +7278,7 @@ async def daily_digest(viewer: Optional[dict] = Depends(maybe_user)):
         if len(picked) >= 3:
             break
 
-    enriched = [await enrich_post(p, viewer) for p in picked]
+    enriched = await enrich_posts(picked, viewer)
     return {
         "digest": enriched,
         "generated_at": now_iso(),
@@ -8171,7 +8300,7 @@ async def get_series_posts(series_id: str, viewer: Optional[dict] = Depends(mayb
     raw = await db.posts.find({"id": {"$in": ids}}, {"_id": 0}).to_list(200)
     by_id = {p["id"]: p for p in raw}
     ordered = [by_id[pid] for pid in ids if pid in by_id]
-    return [await enrich_post(p, viewer) for p in ordered]
+    return await enrich_posts(ordered, viewer)
 
 
 @api.post("/series/{series_id}/posts")
@@ -8996,10 +9125,11 @@ async def feed_v2(mood: str = "", user=Depends(get_current_user)):
                 gem = gems[i]
                 gem["_is_gem"] = True
                 top.insert(insert_at, gem)
-    # Enrich + attach reason
+    # Enrich (em lote, sem N+1) + attach reason
+    top80 = top[:80]
+    enriched = await enrich_posts(top80, user)
     out = []
-    for p in top[:80]:
-        e = await enrich_post(p, user)
+    for p, e in zip(top80, enriched):
         reason = await compute_reason_for_post(p, user)
         if p.get("_is_gem"):
             reason = {"type": "gem", "label": "Pérola escondida", "emoji": "💎"}
@@ -9182,6 +9312,296 @@ async def suggest_hashtags(q: str = "", user=Depends(get_current_user)):
 # ---------- Polls v2 (server validates schema) ----------
 # Existing PostIn poll already supports "options" + "allow_multiple". We extend.
 # Frontend passes poll={type:"choice"|"scale"|"sentiment"|"ranking", ...}
+
+
+# ============================================================
+# PREMIUM — Lusorae Plus & Aura (entitlements + billing real)
+# ============================================================
+# Verdade premium = server-side. O cliente nunca decide; só reflete o que o
+# entitlement engine resolve a partir do estado escrito pelos webhooks Stripe.
+
+class PremiumCheckoutIn(BaseModel):
+    plan: str          # "plus" | "aura"
+    interval: str = "month"   # "month" | "year"
+
+
+def _premium_payload(user: dict) -> dict:
+    """Forma canónica do estado premium para o cliente (sem ids de billing)."""
+    return {
+        **entitlements.public_premium(user),
+        "entitlements": entitlements.resolved_entitlements(user),
+        "tiers": {
+            "plus": {"month": 4.99, "year": 49.99},
+            "aura": {"month": 9.99, "year": 99.99},
+        },
+        "billing_available": billing.is_configured(),
+    }
+
+
+async def _sync_premium_realtime(user_id: str) -> None:
+    """Propaga o estado premium em tempo real para todas as sessões do user."""
+    try:
+        fresh = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if fresh and "ws_manager" in globals():
+            await ws_manager.send_personal(user_id, {
+                "type": "entitlements_updated",
+                "premium": _premium_payload(fresh),
+            })
+    except Exception:
+        pass
+
+
+async def _billing_log(action: str, *, user_id: Optional[str] = None,
+                       event_id: Optional[str] = None, detail: Optional[dict] = None) -> None:
+    try:
+        await db.billing_logs.insert_one({
+            "id": str(uuid.uuid4()), "action": action, "user_id": user_id,
+            "event_id": event_id, "detail": detail or {}, "created_at": now_iso(),
+        })
+    except Exception:
+        pass
+
+
+async def _apply_subscription_state(user_id: str, state: dict, *, source: str) -> None:
+    """Escreve o estado premium canónico no doc do user + premium_users +
+    subscriptions, e regista o evento. Único sítio que muda direitos premium."""
+    plan = state.get("plan") or "free"
+    status = state.get("status") or "active"
+    now = datetime.now(timezone.utc)
+
+    user_set = {
+        "plan": plan if plan in entitlements.PLANS else "free",
+        "plan_status": status,
+        "plan_expires_at": state.get("current_period_end"),
+        "plan_cancel_at_period_end": bool(state.get("cancel_at_period_end")),
+    }
+    # Período de graça em falha de pagamento.
+    if status in ("past_due", "unpaid"):
+        user_set["grace_until"] = entitlements.grace_until_from(now)
+    elif status in ("active", "trialing"):
+        user_set["grace_until"] = None
+
+    existing = await db.users.find_one({"id": user_id}, {"_id": 0, "plan_since": 1, "early_supporter": 1})
+    if plan != "free" and not (existing or {}).get("plan_since"):
+        user_set["plan_since"] = now.isoformat()
+        # Early supporter: marca quem entrou premium cedo (badge discreta).
+        user_set["early_supporter"] = True
+
+    await db.users.update_one({"id": user_id}, {"$set": user_set})
+    await db.premium_users.update_one(
+        {"user_id": user_id},
+        {"$set": {"user_id": user_id, **user_set, "updated_at": now.isoformat()},
+         "$setOnInsert": {"created_at": now.isoformat()}},
+        upsert=True,
+    )
+    if state.get("subscription_id"):
+        await db.subscriptions.update_one(
+            {"subscription_id": state["subscription_id"]},
+            {"$set": {"user_id": user_id, **state, "updated_at": now.isoformat()}},
+            upsert=True,
+        )
+    await db.subscription_events.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user_id, "source": source,
+        "plan": user_set["plan"], "status": status, "state": state,
+        "created_at": now.isoformat(),
+    })
+    await _sync_premium_realtime(user_id)
+
+
+async def _user_id_for_customer(customer_id: Optional[str]) -> Optional[str]:
+    if not customer_id:
+        return None
+    rec = await db.stripe_customers.find_one({"customer_id": customer_id}, {"_id": 0, "user_id": 1})
+    return rec.get("user_id") if rec else None
+
+
+@api.get("/premium/status")
+async def premium_status(user=Depends(get_current_user)):
+    """Estado premium do utilizador (resolvido server-side)."""
+    return _premium_payload(user)
+
+
+@api.get("/premium/entitlements")
+async def premium_entitlements(user=Depends(get_current_user)):
+    return {"plan": entitlements.plan_of(user), "entitlements": entitlements.resolved_entitlements(user)}
+
+
+@api.post("/premium/checkout")
+async def premium_checkout(payload: PremiumCheckoutIn, user=Depends(get_current_user)):
+    """Cria uma sessão de checkout Stripe (subscription). Devolve o URL."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    if payload.plan not in ("plus", "aura") or payload.interval not in ("month", "year"):
+        raise HTTPException(400, "Plano/intervalo inválido.")
+    if not billing.price_for(payload.plan, payload.interval):
+        raise HTTPException(503, "Este plano ainda não está disponível.")
+    base = os.environ.get("PUBLIC_APP_URL", "").rstrip("/") or "https://lusorae.pt"
+    try:
+        url = await billing.create_checkout_session(
+            db, user, payload.plan, payload.interval,
+            success_url=f"{base}/settings?premium=success",
+            cancel_url=f"{base}/settings?premium=cancel",
+        )
+    except Exception as exc:
+        logger.warning(f"premium: checkout failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível iniciar o checkout.")
+    await _billing_log("checkout.created", user_id=user["id"], detail={"plan": payload.plan, "interval": payload.interval})
+    return {"url": url}
+
+
+@api.post("/premium/portal")
+async def premium_portal(user=Depends(get_current_user)):
+    """Abre o Customer Portal do Stripe (gerir/cancelar/upgrade/downgrade/
+    métodos de pagamento/faturas/restore)."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    base = os.environ.get("PUBLIC_APP_URL", "").rstrip("/") or "https://lusorae.pt"
+    try:
+        url = await billing.create_billing_portal_session(db, user, return_url=f"{base}/settings")
+    except Exception as exc:
+        logger.warning(f"premium: portal failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível abrir a gestão de subscrição.")
+    return {"url": url}
+
+
+@api.get("/premium/invoices")
+async def premium_invoices(user=Depends(get_current_user)):
+    """Histórico de faturas (sincronizado pelos webhooks)."""
+    rows = await db.invoices.find(
+        {"user_id": user["id"]}, {"_id": 0, "id": 1, "amount": 1, "currency": 1,
+                                  "status": 1, "hosted_invoice_url": 1, "pdf": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(60)
+    return rows
+
+
+@api.post("/premium/restore")
+async def premium_restore(user=Depends(get_current_user)):
+    """Restore purchases: reconcilia o estado com o Stripe (caso o webhook se
+    tenha perdido). Lê as subscrições do customer e reaplica o estado."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    rec = await db.stripe_customers.find_one({"user_id": user["id"]}, {"_id": 0, "customer_id": 1})
+    if not rec or not rec.get("customer_id"):
+        return _premium_payload(user)
+    try:
+        subs = await billing.list_subscriptions_for_customer(rec["customer_id"])
+    except Exception as exc:
+        logger.warning(f"premium: restore failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível restaurar a subscrição.")
+    active = next((s for s in subs if s.get("status") in ("active", "trialing", "past_due")), None)
+    if active:
+        await _apply_subscription_state(user["id"], billing.subscription_to_state(active), source="restore")
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return _premium_payload(fresh or user)
+
+
+@api.post("/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    """Único ponto de fulfilment. Valida a assinatura, é idempotente, e
+    sincroniza o estado premium. Nunca confia em eventos não-assinados."""
+    if not billing.webhook_configured():
+        raise HTTPException(503, "Webhook não configurado.")
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        event = billing.verify_and_parse_webhook(payload, sig)
+    except Exception as exc:
+        logger.warning(f"premium: webhook signature inválida: {exc}")
+        raise HTTPException(400, "Assinatura inválida.")
+
+    event_id = event.get("id")
+    # Idempotência: regista o event_id ANTES de processar; duplicado → 200 sem reprocessar.
+    try:
+        await db.billing_idempotency.insert_one({"event_id": event_id, "type": event.get("type"), "created_at": now_iso()})
+    except Exception:
+        return {"received": True, "duplicate": True}
+
+    etype = event.get("type", "")
+    obj = (event.get("data") or {}).get("object") or {}
+    await _billing_log("webhook." + etype, event_id=event_id)
+
+    try:
+        if etype == "checkout.session.completed":
+            user_id = obj.get("client_reference_id") or (obj.get("metadata") or {}).get("user_id")
+            if not user_id:
+                user_id = await _user_id_for_customer(obj.get("customer"))
+            sub_id = obj.get("subscription")
+            if user_id and sub_id:
+                sub = await billing.retrieve_subscription(sub_id)
+                await _apply_subscription_state(user_id, billing.subscription_to_state(sub), source="checkout")
+
+        elif etype in ("customer.subscription.created", "customer.subscription.updated",
+                       "customer.subscription.deleted"):
+            user_id = (obj.get("metadata") or {}).get("user_id") or await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                state = billing.subscription_to_state(obj)
+                if etype == "customer.subscription.deleted":
+                    state["status"] = "canceled"
+                await _apply_subscription_state(user_id, state, source=etype)
+
+        elif etype == "invoice.paid":
+            user_id = await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                await db.invoices.update_one(
+                    {"id": obj.get("id")},
+                    {"$set": {"id": obj.get("id"), "user_id": user_id,
+                              "amount": (obj.get("amount_paid") or 0) / 100.0,
+                              "currency": obj.get("currency", "eur"),
+                              "status": "paid",
+                              "hosted_invoice_url": obj.get("hosted_invoice_url"),
+                              "pdf": obj.get("invoice_pdf"),
+                              "created_at": now_iso()}},
+                    upsert=True,
+                )
+
+        elif etype == "invoice.payment_failed":
+            user_id = await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                await db.payment_failures.insert_one({
+                    "id": str(uuid.uuid4()), "user_id": user_id,
+                    "invoice_id": obj.get("id"), "amount": (obj.get("amount_due") or 0) / 100.0,
+                    "attempt": obj.get("attempt_count"), "created_at": now_iso(),
+                })
+                # Entra em graça; o Stripe faz os retries automaticamente.
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {"plan_status": "past_due", "grace_until": entitlements.grace_until_from()}},
+                )
+                await _sync_premium_realtime(user_id)
+    except Exception as exc:
+        logger.exception(f"premium: webhook handler error ({etype}): {exc}")
+        # Não relança: já registámos a idempotência; devolver 200 evita storms
+        # de retry por erros não-relacionados com a assinatura.
+
+    return {"received": True}
+
+
+_premium_sweeper_task: Optional[asyncio.Task] = None
+
+
+async def _premium_sweeper_loop():
+    """Persiste downgrades de quem saiu da graça/período (o entitlement engine
+    já os trata em leitura; isto consolida no doc + propaga em realtime)."""
+    await asyncio.sleep(120)
+    while True:
+        try:
+            cur = db.users.find(
+                {"plan": {"$in": ["plus", "aura"]},
+                 "plan_status": {"$in": ["past_due", "unpaid", "canceled", "cancelled", "grace"]}},
+                {"_id": 0, "id": 1, "plan": 1, "plan_status": 1, "plan_expires_at": 1, "grace_until": 1},
+            )
+            async for u in cur:
+                if entitlements.plan_of(u) == "free":
+                    await db.users.update_one(
+                        {"id": u["id"]},
+                        {"$set": {"plan": "free", "plan_status": "expired", "grace_until": None}},
+                    )
+                    await _sync_premium_realtime(u["id"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.exception(f"premium: sweeper error: {exc}")
+        await asyncio.sleep(3600)
 
 
 # ---------- WebSocket gateway ----------
@@ -10287,7 +10707,7 @@ async def feed_mesa(user=Depends(get_current_user)):
         "created_at": {"$gt": cutoff},
         "is_draft": {"$ne": True},
     }, {"_id": 0}).sort("created_at", -1).to_list(60)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 # ---------- Custom Community Emoji Pack ----------
@@ -10886,7 +11306,7 @@ async def unified_search(q: str = "", kind: str = "all", limit: int = 20):
             {"content": {"$regex": re.escape(qn), "$options": "i"}, "is_draft": {"$ne": True}},
             {"_id": 0},
         ).sort("created_at", -1).limit(limit).to_list(limit)
-        out["posts"] = [await enrich_post(p, None) for p in posts]
+        out["posts"] = await enrich_posts(posts, None)
     if kind in {"all", "people"}:
         people = await db.users.find(
             {"$or": [
