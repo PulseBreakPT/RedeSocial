@@ -13,7 +13,7 @@ from typing import Optional
 
 # Backend URL (use /api prefix for all routes)
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://violet-commerce.preview.emergentagent.com/api"
+    "BASE_URL", "https://premium-ui-fixes.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment (read from /app/backend/.env or
