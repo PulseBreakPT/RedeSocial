@@ -6,7 +6,7 @@ import { DynamicWord } from "../components/DynamicWord";
 // Cinematic Portuguese hero — Porto / Douro at golden hour.
 // Frames the "welcome back" moment in saudade (solitary, contemplative).
 const LOGIN_HERO =
-    "/hero/login.jpg";
+    "/hero/login.webp";
 
 export default function Login() {
     const { user, login } = useAuth();
