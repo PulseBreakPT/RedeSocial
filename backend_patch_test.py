@@ -9,7 +9,7 @@ import base64
 from datetime import datetime, timezone, timedelta
 
 # Base URL from frontend/.env
-BASE_URL = "https://premium-ui-fixes.preview.emergentagent.com"
+BASE_URL = "https://structured-pages.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 API2_BASE = f"{BASE_URL}/api2"
 
