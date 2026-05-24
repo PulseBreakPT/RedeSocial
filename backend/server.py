@@ -567,15 +567,25 @@ async def auto_publish_due_posts() -> None:
 # ============================================================
 # Helpers
 # ============================================================
-def hash_password(password: str) -> str:
+def _hash_password_sync(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
-def verify_password(plain: str, hashed: str) -> bool:
+def _verify_password_sync(plain: str, hashed: str) -> bool:
     try:
         return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
     except Exception:
         return False
+
+
+# bcrypt é CPU-bound (~100ms). Em handlers async, correr no event-loop bloqueia
+# todos os outros pedidos → offload para um worker thread.
+async def hash_password(password: str) -> str:
+    return await asyncio.to_thread(_hash_password_sync, password)
+
+
+async def verify_password(plain: str, hashed: str) -> bool:
+    return await asyncio.to_thread(_verify_password_sync, plain, hashed)
 
 
 async def _validate_password_policy(password: str) -> None:
@@ -2150,7 +2160,7 @@ async def register(payload: RegisterIn, request: Request, response: Response):
     auto_verified = bool(await is_feature_enabled("new_users_auto_verify"))
     user = {
         "id": str(uuid.uuid4()), "email": email, "username": username,
-        "name": payload.name, "password_hash": hash_password(payload.password),
+        "name": payload.name, "password_hash": await hash_password(payload.password),
         "bio": "", "avatar": "", "banner": "",
         "verified": auto_verified, "private": False, "onboarded": False,
         "followers": [], "following": [], "bookmarks": [],
@@ -2203,7 +2213,7 @@ async def login(payload: LoginIn, request: Request, response: Response):
         raise HTTPException(429, "Demasiadas tentativas. Tenta novamente em alguns minutos.")
 
     user = await db.users.find_one({"email": email})
-    if not user or not verify_password(payload.password, user["password_hash"]):
+    if not user or not await verify_password(payload.password, user["password_hash"]):
         state = await register_failed_login(email, ip=ip)
         await auth_event("login_fail", email=email, ip=ip, ua=ua,
                          detail={"reason": "bad_credentials", "fail_count": state["fail_count"]})
@@ -2353,7 +2363,7 @@ async def reset_password(payload: ResetPasswordIn, request: Request, response: R
         raise HTTPException(400, "Token expirado")
     # Admin-controlled password policy
     await _validate_password_policy(payload.password)
-    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": hash_password(payload.password), "password_changed_at": now_iso()}})
+    await db.users.update_one({"id": rec["user_id"]}, {"$set": {"password_hash": await hash_password(payload.password), "password_changed_at": now_iso()}})
     await db.password_resets.update_one({"token": payload.token}, {"$set": {"used": True}})
     return {"ok": True}
 
@@ -2364,7 +2374,7 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
     fresh = await db.users.find_one({"id": user["id"]})
     if not fresh:
         raise HTTPException(404, "Utilizador não encontrado")
-    if not verify_password(payload.current_password, fresh.get("password_hash", "")):
+    if not await verify_password(payload.current_password, fresh.get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe atual incorreta")
     if payload.current_password == payload.new_password:
         raise HTTPException(400, "A nova palavra-passe tem de ser diferente da atual")
@@ -2373,7 +2383,7 @@ async def change_password(payload: ChangePasswordIn, request: Request, user=Depe
     await db.users.update_one(
         {"id": user["id"]},
         {"$set": {
-            "password_hash": hash_password(payload.new_password),
+            "password_hash": await hash_password(payload.new_password),
             "password_changed_at": now_iso(),
         }},
     )
@@ -2595,7 +2605,7 @@ async def two_fa_disable(payload: TwoFADisableIn, user=Depends(get_current_user)
     """Disable 2FA — requires current password. If 2FA was active, also requires
     a valid TOTP code (or backup code)."""
     fresh = await db.users.find_one({"id": user["id"]})
-    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+    if not await verify_password(payload.password, (fresh or {}).get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
     if (fresh or {}).get("two_fa_enabled"):
         if not await _verify_2fa_code(fresh or {}, payload.code or ""):
@@ -2620,7 +2630,7 @@ async def two_fa_regenerate_backup(payload: TwoFADisableIn, user=Depends(get_cur
     fresh = await db.users.find_one({"id": user["id"]})
     if not (fresh or {}).get("two_fa_enabled"):
         raise HTTPException(400, "2FA não está ativo")
-    if not verify_password(payload.password, (fresh or {}).get("password_hash", "")):
+    if not await verify_password(payload.password, (fresh or {}).get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
     backup = _generate_backup_codes(10)
     await db.users.update_one(
@@ -3044,7 +3054,7 @@ async def delete_my_account(payload: DeleteAccountIn, response: Response, user=D
     fresh = await db.users.find_one({"id": user["id"]})
     if not fresh:
         raise HTTPException(404, "Utilizador não encontrado")
-    if not verify_password(payload.password, fresh.get("password_hash", "")):
+    if not await verify_password(payload.password, fresh.get("password_hash", "")):
         raise HTTPException(400, "Palavra-passe incorreta")
 
     uid = user["id"]
@@ -6907,6 +6917,15 @@ async def startup():
     await db.comments.create_index("post_id")
     await db.comments.create_index("author_id")
     await db.reports.create_index("status")
+    # Índices compostos para as queries quentes (sort por data dentro de um
+    # filtro). create_index é idempotente — seguro re-correr.
+    await db.posts.create_index([("community_id", 1), ("created_at", -1)], name="posts_community_created")
+    await db.posts.create_index([("author_id", 1), ("created_at", -1)], name="posts_author_created")
+    await db.comments.create_index([("post_id", 1), ("created_at", -1)], name="comments_post_created")
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)], name="notif_user_created")
+    await db.messages.create_index([("conversation_key", 1), ("created_at", 1)], name="msg_conv_created")
+    await db.users.create_index("last_seen", name="users_last_seen")
+    await db.bookmark_collections.create_index([("user_id", 1), ("created_at", -1)], name="bmk_user_created")
     admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
     admin_password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
     admin_username = (os.environ.get("ADMIN_USERNAME") or "admin").strip().lower()
@@ -6919,7 +6938,7 @@ async def startup():
         if not existing:
             await db.users.insert_one({
                 "id": str(uuid.uuid4()), "email": admin_email, "username": admin_username,
-                "name": admin_name, "password_hash": hash_password(admin_password),
+                "name": admin_name, "password_hash": await hash_password(admin_password),
                 "bio": "",
                 "avatar": "", "banner": "",
                 "verified": True, "private": False, "onboarded": True,
@@ -6931,8 +6950,8 @@ async def startup():
         else:
             # Keep admin password in sync AND ensure is_admin flag is present.
             updates = {}
-            if not verify_password(admin_password, existing.get("password_hash", "")):
-                updates["password_hash"] = hash_password(admin_password)
+            if not await verify_password(admin_password, existing.get("password_hash", "")):
+                updates["password_hash"] = await hash_password(admin_password)
             if not existing.get("is_admin"):
                 updates["is_admin"] = True
             if not existing.get("verified"):
