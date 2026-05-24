@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "sonner";
 import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
@@ -11,35 +11,47 @@ import { AdminLayout } from "./components/AdminLayout";
 import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import Feed from "./pages/Feed";
-import Explore from "./pages/Explore";
-import Notifications from "./pages/Notifications";
-import Messages from "./pages/Messages";
-import Bookmarks from "./pages/Bookmarks";
-import Profile from "./pages/Profile";
-import PostDetail from "./pages/PostDetail";
-import Settings from "./pages/Settings";
-import TagPage from "./pages/TagPage";
-import Communities from "./pages/Communities";
-import Mesas from "./pages/Mesas";
-import Topologia from "./pages/Topologia";
-import Community from "./pages/Community";
-import Trending from "./pages/Trending";
-import Drafts from "./pages/Drafts";
-import Scheduled from "./pages/Scheduled";
-import LegalIndex from "./pages/legal/LegalIndex";
-import Terms from "./pages/legal/Terms";
-import Privacy from "./pages/legal/Privacy";
-import Cookies from "./pages/legal/Cookies";
-import CommunityGuidelines from "./pages/legal/CommunityGuidelines";
-import Manifesto from "./pages/Manifesto";
-import Visitors from "./pages/Visitors";
-import SeriesPage from "./pages/SeriesPage";
-import StoryArchive from "./pages/StoryArchive";
-import Admin from "./pages/Admin";
+
+// Páginas carregadas sob demanda (code-splitting por rota). Corta o bundle
+// inicial: cada página vira um chunk próprio, e libs que só servem uma rota
+// (recharts no Admin, react-day-picker no Settings) saem do main.js.
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Feed = lazy(() => import("./pages/Feed"));
+const Explore = lazy(() => import("./pages/Explore"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Bookmarks = lazy(() => import("./pages/Bookmarks"));
+const Profile = lazy(() => import("./pages/Profile"));
+const PostDetail = lazy(() => import("./pages/PostDetail"));
+const Settings = lazy(() => import("./pages/Settings"));
+const TagPage = lazy(() => import("./pages/TagPage"));
+const Communities = lazy(() => import("./pages/Communities"));
+const Mesas = lazy(() => import("./pages/Mesas"));
+const Topologia = lazy(() => import("./pages/Topologia"));
+const Community = lazy(() => import("./pages/Community"));
+const Trending = lazy(() => import("./pages/Trending"));
+const Drafts = lazy(() => import("./pages/Drafts"));
+const Scheduled = lazy(() => import("./pages/Scheduled"));
+const LegalIndex = lazy(() => import("./pages/legal/LegalIndex"));
+const Terms = lazy(() => import("./pages/legal/Terms"));
+const Privacy = lazy(() => import("./pages/legal/Privacy"));
+const Cookies = lazy(() => import("./pages/legal/Cookies"));
+const CommunityGuidelines = lazy(() => import("./pages/legal/CommunityGuidelines"));
+const Manifesto = lazy(() => import("./pages/Manifesto"));
+const Visitors = lazy(() => import("./pages/Visitors"));
+const SeriesPage = lazy(() => import("./pages/SeriesPage"));
+const StoryArchive = lazy(() => import("./pages/StoryArchive"));
+const Admin = lazy(() => import("./pages/Admin"));
+
+function RouteFallback() {
+    return (
+        <div className="min-h-screen grid place-items-center">
+            <p className="type-overline">a carregar…</p>
+        </div>
+    );
+}
 
 function App() {
     // Activa scroll suave global (CSS-only; respeita prefers-reduced-motion).
@@ -75,6 +87,7 @@ function App() {
                             },
                         }}
                     />
+                    <Suspense fallback={<RouteFallback />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
@@ -125,6 +138,7 @@ function App() {
                             <Route path="/admin" element={<Admin />} />
                         </Route>
                     </Routes>
+                    </Suspense>
                     <CookieBanner />
                     <ConfirmDialogHost />
                 </BrowserRouter>
