@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
     User, Settings, Archive, LogOut, Bookmark, FileText, Clock,
-    Shield, ChevronRight,
+    Shield, ChevronRight, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -168,6 +168,7 @@ export function ProfileSidebarMenu({
         {
             title: "Conta",
             items: [
+                { to: "/premium", label: "Plus & Aura", icon: Sparkles, testid: "drawer-premium" },
                 { to: "/settings", label: "Definições", icon: Settings, testid: "drawer-settings" },
                 { to: "/legal", label: "Centro legal", icon: Shield, testid: "drawer-legal" },
             ],

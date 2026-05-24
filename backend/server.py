@@ -6722,8 +6722,14 @@ async def list_collections(user=Depends(get_current_user)):
 @api.post("/bookmark-collections")
 async def create_collection(payload: CollectionIn, user=Depends(get_current_user)):
     existing = await db.bookmark_collections.count_documents({"user_id": user["id"]})
-    if existing >= 20:
-        raise HTTPException(400, "Limite de 20 coleções atingido")
+    # Entitlement real (server-side): free limitado; Plus/Aura ilimitado.
+    cap = entitlements.plan_limit(user, "collections_max", 20)
+    if existing >= cap:
+        raise HTTPException(
+            402 if not entitlements.is_premium(user) else 400,
+            "Atingiste o limite de coleções. O Plus & Aura desbloqueiam coleções ilimitadas."
+            if not entitlements.is_premium(user) else "Limite de coleções atingido.",
+        )
     doc = {
         "id": str(uuid.uuid4()), "user_id": user["id"],
         "name": payload.name.strip(),

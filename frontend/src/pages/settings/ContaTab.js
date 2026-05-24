@@ -1,6 +1,7 @@
 import { Camera, Lock, MapPin, AtSign, ShieldCheck } from "lucide-react";
 import { Avatar } from "../../components/Avatar";
 import { SwitchPill } from "./_shared";
+import { PremiumStatusCard } from "../../components/PremiumStatusCard";
 
 /* =================== ContaTab — Perfil principal SSS tier ====================
    Layout 12-col com cards bem hierarquizados:
@@ -139,6 +140,11 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                     >
                         {busy ? "A guardar…" : "Guardar perfil"}
                     </button>
+                </div>
+
+                {/* Subscrição — estado, gestão e faturas */}
+                <div className="max-w-5xl mt-8">
+                    <PremiumStatusCard />
                 </div>
             </div>
         </div>

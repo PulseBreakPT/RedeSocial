@@ -16,6 +16,7 @@ import {
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { PremiumBadge } from "./PremiumBadge";
 import { ExpandableText } from "./ExpandableText";
 import { SocialProofRow } from "./SocialProofRow";
 import { ImageLightbox } from "./ImageLightbox";
@@ -222,6 +223,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                 {post.author?.name}
                             </Link>
                             {post.author?.verified && <VerifiedBadge size={14} />}
+                            <PremiumBadge user={post.author} size={13} />
                             <span className="font-mono text-[12px] text-black/45 truncate">@{post.author?.username}</span>
                             <span className="text-black/20">·</span>
                             <span className="font-mono text-[12px] text-black/45" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
