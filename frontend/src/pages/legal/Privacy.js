@@ -1,12 +1,12 @@
 import { LegalShell } from "./LegalShell";
 import {
-    LegalSignalPills, LegalKPIs, LegalFlow, LegalDataMap, LegalRightsGrid, LegalTimeline, LegalVisualBlock,
+    LegalFlow, LegalDataMap, LegalRightsGrid, LegalTimeline, LegalVisualBlock,
 } from "./_visuals";
 import {
-    ShieldCheck, Scale, FileText, Globe, Clock, Calendar, Lock, FileCheck,
+    FileText, Lock,
     User, Database, Monitor, MousePointerClick, MapPin, MessageCircle, Cookie,
     Building2, Gavel, ArrowRight, Download, Edit3, Trash2, Ban, Key, EyeOff,
-    AlertTriangle, BadgeCheck, Server,
+    Server,
 } from "lucide-react";
 
 export default function Privacy() {
@@ -17,24 +17,6 @@ export default function Privacy() {
             subtitle="O documento que descreve, em detalhe, como tratamos dados pessoais &mdash; o que recolhemos, porque o fazemos, durante quanto tempo o conservamos, com quem o partilhamos, e quais os direitos que assistem a quem usa o Lusorae."
             lastUpdated="[data da última versão]"
         >
-            <LegalSignalPills items={[
-                { label: "RGPD",          tone: "tone-eu",  icon: ShieldCheck, ref: "UE 2016/679" },
-                { label: "L. 58/2019",    tone: "tone-pt",  icon: FileText,    ref: "RGPD-PT" },
-                { label: "L. 41/2004",    tone: "tone-pt",  icon: Cookie,      ref: "ePrivacy" },
-                { label: "L. 27/2021",    tone: "tone-pt",  icon: Scale,       ref: "Carta Digital" },
-                { label: "CNPD",          tone: "tone-key", icon: BadgeCheck,  ref: "Aut. controlo" },
-                { label: "PT · UE",       tone: "tone-key", icon: Globe },
-            ]} />
-
-            <LegalKPIs items={[
-                { value: "7",       label: "categorias de dados",   sub: "Mapeadas em &sect;4",      icon: Database },
-                { value: "8",       label: "direitos RGPD",          sub: "Acesso, retificação, ...", icon: BadgeCheck },
-                { value: "30 dias", label: "para eliminação",        sub: "Após pedido válido",       icon: Clock },
-                { value: "72h",     label: "comunicação CNPD",       sub: "Em caso de violação",      icon: AlertTriangle },
-                { value: "0",       label: "venda de dados",         sub: "Compromisso #3 da Visão",  icon: Lock },
-                { value: "13/16",   label: "idade mínima",           sub: "Consentimento / autónomo", icon: Calendar },
-            ]} />
-
             <div className="legal-callout">
                 <strong>O que faz e não faz esta política</strong>
                 Esta política descreve o tratamento de dados pessoais por parte do Lusorae. Reflecte, em particular,

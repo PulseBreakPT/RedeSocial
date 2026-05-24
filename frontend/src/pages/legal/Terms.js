@@ -1,9 +1,6 @@
 import { LegalShell } from "./LegalShell";
+import { LegalIconGrid, LegalLadder, LegalVisualBlock } from "./_visuals";
 import {
-    LegalSignalPills, LegalKPIs, LegalIconGrid, LegalLadder, LegalVisualBlock,
-} from "./_visuals";
-import {
-    Scale, ShieldCheck, FileText, Sparkle, Globe, Calendar, FileCheck, Clock,
     AlertTriangle, EyeOff, Slash, ShieldAlert, ShieldOff, UserX, Ban, MessageCircle,
     Flag, ArrowDownToLine,
 } from "lucide-react";
@@ -16,24 +13,6 @@ export default function Terms() {
             subtitle="O contrato entre ti e o Lusorae. Lê com atenção &mdash; ao criar conta, aceder ou utilizar o Serviço, aceitas integralmente o que aqui está escrito. Este documento é redigido em português e o original em português europeu prevalece sobre qualquer tradução."
             lastUpdated="[data da última versão]"
         >
-            <LegalSignalPills items={[
-                { label: "Contrato",       tone: "tone-key", icon: FileText },
-                { label: "Lei portuguesa", tone: "tone-pt",  icon: Globe },
-                { label: "RGPD",           tone: "tone-eu",  icon: ShieldCheck },
-                { label: "DSA",            tone: "tone-eu",  icon: Scale },
-                { label: "DL 7/2004",      tone: "tone-pt",  icon: FileText,  ref: "e-commerce" },
-                { label: "L. 24/96",       tone: "tone-pt",  icon: Sparkle,   ref: "consumidor" },
-            ]} />
-
-            <LegalKPIs items={[
-                { value: "13+",     label: "idade mínima",         sub: "Com consentimento parental (RGPD)", icon: Calendar },
-                { value: "16+",     label: "uso autónomo",          sub: "Lei n.º 58/2019",                  icon: Calendar },
-                { value: "14 dias", label: "livre resolução",       sub: "DL 24/2014 · subscrições pagas",   icon: Clock },
-                { value: "15 dias", label: "aviso de alteração",    sub: "Sempre que material",               icon: FileCheck },
-                { value: "6 meses", label: "janela de recurso",     sub: "Art. 20.º DSA",                    icon: Clock },
-                { value: "72h",     label: "comunicação CNPD",       sub: "Em caso de violação de dados",      icon: AlertTriangle },
-            ]} />
-
             <div className="legal-callout">
                 <strong>Em poucas palavras</strong>
                 Estes Termos descrevem o que podes esperar do Lusorae e o que o Lusorae espera de ti. Reflectem os{" "}

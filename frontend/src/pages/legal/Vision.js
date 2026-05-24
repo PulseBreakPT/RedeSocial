@@ -1,11 +1,8 @@
 import { LegalShell } from "./LegalShell";
+import { LegalVisualBlock, LegalIconGrid } from "./_visuals";
 import {
-    LegalSignalPills, LegalKPIs, LegalVisualBlock, LegalIconGrid,
-} from "./_visuals";
-import {
-    Scale, ShieldCheck, FileText, Sparkle, Globe, Heart, Brain,
-    Eye, Lock, Compass, BookOpen, AlertTriangle, Slash, EyeOff, Ban, Megaphone,
-    Activity, Users, BadgeCheck, FileCheck, Clock,
+    ShieldCheck, Lock, Heart, Brain, AlertTriangle, Slash, EyeOff, Ban, Megaphone,
+    Activity,
 } from "lucide-react";
 
 export default function Vision() {
@@ -16,21 +13,6 @@ export default function Vision() {
             subtitle="Porque é que o Lusorae existe, em que se compromete, e o que recusa fazer. Esta página é o documento de referência a que todos os outros &mdash; Termos, Privacidade, Cookies, Diretrizes &mdash; respondem."
             lastUpdated="[data da última versão]"
         >
-            <LegalSignalPills items={[
-                { label: "Documento de referência", tone: "tone-key", icon: BookOpen },
-                { label: "PT · UE",                  tone: "tone-key", icon: Globe },
-                { label: "Revisão anual",            tone: "tone-pt",  icon: FileCheck },
-                { label: "Conselho de Integridade",   tone: "tone-pt",  icon: BadgeCheck },
-                { label: "DSA · RGPD",               tone: "tone-eu",  icon: Scale },
-            ]} />
-
-            <LegalKPIs items={[
-                { value: "6",       label: "compromissos públicos",       sub: "Citados nos restantes documentos", icon: ShieldCheck },
-                { value: "0",       label: "venda de dados pessoais",      sub: "Compromisso institucional",         icon: Lock },
-                { value: "0",       label: "métricas de vício",            sub: "Sem badges nem streaks coercivos",   icon: Eye },
-                { value: "1",       label: "revisão anual obrigatória",    sub: "Todos os documentos",                icon: Clock },
-            ]} />
-
             <div className="legal-callout">
                 <strong>Sobre este documento</strong>
                 O Lusorae é uma rede social com sede em Portugal. Esta página descreve o que somos e o que queremos

@@ -1,12 +1,9 @@
 import { Link } from "react-router-dom";
 import {
-    FileText, ShieldCheck, Cookie, Sparkle, ChevronRight, ExternalLink, Scale, FileCheck, Globe, Compass,
-    BookOpen,
+    FileText, ShieldCheck, Cookie, Sparkle, ChevronRight, ExternalLink, Compass,
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
-import {
-    LegalSignalPills, LegalKPIs, LegalComplianceBoard, LegalVisualBlock,
-} from "./_visuals";
+import { LegalComplianceBoard, LegalVisualBlock } from "./_visuals";
 
 const CARDS = [
     {
@@ -59,22 +56,6 @@ export default function LegalIndex() {
             title="Centro Legal"
             subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa &mdash; e não apenas por advogados."
         >
-            <LegalSignalPills items={[
-                { label: "RGPD",      ref: "UE 2016/679",   tone: "tone-eu", icon: ShieldCheck },
-                { label: "DSA",       ref: "UE 2022/2065",  tone: "tone-eu", icon: Scale },
-                { label: "ePrivacy",  ref: "L. 41/2004",    tone: "tone-pt", icon: Cookie },
-                { label: "L. 58/2019",ref: "RGPD-PT",       tone: "tone-pt", icon: FileText },
-                { label: "L. 27/2021",ref: "Carta Digital", tone: "tone-pt", icon: Sparkle },
-                { label: "PT-PT · UE",                       tone: "tone-key", icon: Globe },
-            ]} />
-
-            <LegalKPIs items={[
-                { value: "5",   label: "documentos institucionais", sub: "Visão · Termos · Privacidade · Cookies · Diretrizes", icon: FileCheck },
-                { value: "7+",  label: "instrumentos jurídicos",     sub: "RGPD · DSA · ePrivacy · L. 58 · L. 27 · DL 7 · DL 84", icon: Scale },
-                { value: "PT",  label: "jurisdição & língua",        sub: "Portugal · UE · português europeu",                  icon: Globe },
-                { value: "1×",  label: "revisão anual mínima",        sub: "Mais sempre que a lei ou a realidade o exijam",       icon: BookOpen },
-            ]} />
-
             <div className="legal-callout">
                 <strong>Antes de começares</strong>
                 Se só vais ler um documento, lê <a href="/legal/vision">A nossa visão</a>. É a página onde estão
