@@ -1672,10 +1672,20 @@ async def can_view_profile(target: dict, viewer: Optional[dict]) -> bool:
     return viewer["id"] in target.get("followers", [])
 
 
-async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
-    author = await db.users.find_one({"id": post["author_id"]}, {"_id": 0})
+async def enrich_post(post: dict, viewer: Optional[dict],
+                      _author_map: Optional[dict] = None,
+                      _count_map: Optional[dict] = None) -> dict:
+    # _author_map / _count_map: lookups pré-carregados em lote por enrich_posts
+    # (evita N+1). Quando ausentes, faz o fetch individual (comportamento antigo).
+    if _author_map is not None:
+        author = _author_map.get(post["author_id"])
+    else:
+        author = await db.users.find_one({"id": post["author_id"]}, {"_id": 0})
     viewer_id = viewer["id"] if viewer else None
-    comments_count = await db.comments.count_documents({"post_id": post["id"]})
+    if _count_map is not None:
+        comments_count = _count_map.get(post["id"], 0)
+    else:
+        comments_count = await db.comments.count_documents({"post_id": post["id"]})
     repost_origin = None
     if post.get("repost_of"):
         orig = await db.posts.find_one({"id": post["repost_of"]}, {"_id": 0})
@@ -1738,6 +1748,28 @@ async def enrich_post(post: dict, viewer: Optional[dict]) -> dict:
         # v2 — collaborators
         "collaborators": await _enrich_collab_authors(post.get("collaborators", [])),
     }
+
+
+async def enrich_posts(posts: list, viewer: Optional[dict]) -> list:
+    """Enriquece uma lista de posts SEM N+1: pré-carrega autores (1 query) e
+    contagens de comentários (1 aggregation) e reutiliza o mesmo shaper do
+    enrich_post. Output e ordem idênticos a [enrich_post(p) for p in posts]."""
+    if not posts:
+        return []
+    author_ids = list({p["author_id"] for p in posts if p.get("author_id")})
+    author_map = {}
+    if author_ids:
+        rows = await db.users.find({"id": {"$in": author_ids}}, {"_id": 0}).to_list(len(author_ids))
+        author_map = {u["id"]: u for u in rows}
+    post_ids = [p["id"] for p in posts if p.get("id")]
+    count_map = {}
+    if post_ids:
+        agg = await db.comments.aggregate([
+            {"$match": {"post_id": {"$in": post_ids}}},
+            {"$group": {"_id": "$post_id", "n": {"$sum": 1}}},
+        ]).to_list(len(post_ids))
+        count_map = {c["_id"]: c["n"] for c in agg}
+    return [await enrich_post(p, viewer, _author_map=author_map, _count_map=count_map) for p in posts]
 
 
 async def _enrich_collab_authors(ids: list) -> list:
@@ -2713,7 +2745,7 @@ async def global_search(q: str = "", viewer: Optional[dict] = Depends(maybe_user
     tagged = await db.posts.count_documents({"hashtags": tag})
     return {
         "users": [public_user(u) for u in users],
-        "posts": [await enrich_post(p, viewer) for p in posts],
+        "posts": await enrich_posts(posts, viewer),
         "tags": [{"tag": tag, "count": tagged}] if tagged else [],
     }
 
@@ -2768,10 +2800,21 @@ async def activity_feed(limit: int = 30):
     items = await db.notifications.find(
         {"type": {"$in": ["like", "comment", "follow", "repost", "quote"]}}, {"_id": 0},
     ).sort("created_at", -1).limit(limit).to_list(limit)
+    # Pré-carrega todos os utilizadores envolvidos numa só query (evita N+1).
+    uid_set = set()
+    for n in items:
+        if n.get("from_user_id"):
+            uid_set.add(n["from_user_id"])
+        if n.get("user_id"):
+            uid_set.add(n["user_id"])
+    umap = {}
+    if uid_set:
+        rows = await db.users.find({"id": {"$in": list(uid_set)}}, {"_id": 0}).to_list(len(uid_set))
+        umap = {u["id"]: u for u in rows}
     out = []
     for n in items:
-        from_user = await db.users.find_one({"id": n["from_user_id"]}, {"_id": 0})
-        target = await db.users.find_one({"id": n["user_id"]}, {"_id": 0})
+        from_user = umap.get(n["from_user_id"])
+        target = umap.get(n["user_id"])
         if not from_user or not target:
             continue
         verb = {
@@ -2843,7 +2886,7 @@ async def user_posts(username: str, tab: str = "posts", viewer: Optional[dict] =
     else:
         query = {"author_id": user["id"], **visibility}
     posts = await db.posts.find(query, {"_id": 0}).sort([("pinned", -1), ("created_at", -1)]).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/users/{username}/stats")
@@ -3586,7 +3629,7 @@ async def feed(mood: str = "", sort: str = "recent", user=Depends(get_current_us
     if not user.get("is_admin"):
         _fps = await get_limit("feed_page_size") or 20
         posts = posts[: max(_fps, 5)]
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.get("/posts/explore")
@@ -3648,7 +3691,7 @@ async def explore(sort: str = "trending", mood: str = "", viewer: Optional[dict]
                        reverse=True)[:100]
     else:
         posts = posts[:100]
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/posts/_explore_legacy")
@@ -3687,7 +3730,7 @@ async def list_drafts(user=Depends(get_current_user)):
         {"author_id": user["id"], "is_draft": True},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.get("/posts/scheduled")
@@ -3696,7 +3739,7 @@ async def list_scheduled(user=Depends(get_current_user)):
         {"author_id": user["id"], "is_draft": {"$ne": True}, "scheduled_at": {"$gt": now_iso()}},
         {"_id": 0},
     ).sort("scheduled_at", 1).to_list(100)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 @api.post("/posts/{post_id}/publish")
@@ -3816,7 +3859,7 @@ async def posts_by_tag(tag: str, viewer: Optional[dict] = Depends(maybe_user)):
             "$or": [{"scheduled_at": None}, {"scheduled_at": {"$exists": False}}, {"scheduled_at": {"$lte": now_iso()}}],
         }, {"_id": 0}
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/posts/{post_id}")
@@ -5694,7 +5737,7 @@ async def community_posts(slug: str, viewer: Optional[dict] = Depends(maybe_user
     if not c:
         raise HTTPException(404, "Comunidade não encontrada")
     posts = await db.posts.find({"community_id": c["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 def _community_public(c: dict, viewer: Optional[dict]) -> dict:
@@ -5855,13 +5898,27 @@ async def mark_read_all(user=Depends(get_current_user)):
 async def list_conversations(filter: str = "all", user=Depends(get_current_user)):
     """filter: all | pinned | unread | archived"""
     convs = await db.conversations.find({"participants": user["id"]}, {"_id": 0}).sort("last_at", -1).to_list(200)
+    # Pré-carrega os "outros" utilizadores (1 query) e os unread por conversa
+    # (1 aggregation) — evita 2×N round-trips.
+    other_by_conv = {c["key"]: next((p for p in c["participants"] if p != user["id"]), None) for c in convs}
+    other_ids = list({o for o in other_by_conv.values() if o})
+    umap = {}
+    if other_ids:
+        rows = await db.users.find({"id": {"$in": other_ids}}, {"_id": 0}).to_list(len(other_ids))
+        umap = {u["id"]: u for u in rows}
+    keys = [c["key"] for c in convs]
+    unread_map = {}
+    if keys:
+        agg = await db.messages.aggregate([
+            {"$match": {"conversation_key": {"$in": keys}, "sender_id": {"$ne": user["id"]}, "read": False}},
+            {"$group": {"_id": "$conversation_key", "n": {"$sum": 1}}},
+        ]).to_list(len(keys))
+        unread_map = {a["_id"]: a["n"] for a in agg}
     out = []
     for c in convs:
-        other_id = next((p for p in c["participants"] if p != user["id"]), None)
-        other = await db.users.find_one({"id": other_id}, {"_id": 0}) if other_id else None
-        unread = await db.messages.count_documents({
-            "conversation_key": c["key"], "sender_id": {"$ne": user["id"]}, "read": False,
-        })
+        other_id = other_by_conv.get(c["key"])
+        other = umap.get(other_id) if other_id else None
+        unread = unread_map.get(c["key"], 0)
         pinned = user["id"] in c.get("pinned_by", [])
         archived = user["id"] in c.get("archived_by", [])
         item = {
@@ -6497,7 +6554,7 @@ async def explore_by_mood(mood: str = "", viewer: Optional[dict] = Depends(maybe
                   {"scheduled_at": {"$lte": now_iso()}}]},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/explore/by-city")
@@ -6513,7 +6570,7 @@ async def explore_by_city(city: str = "", viewer: Optional[dict] = Depends(maybe
          "$or": [{"hashtags": city_key}, {"content": {"$regex": rx, "$options": "i"}}]},
         {"_id": 0},
     ).sort("created_at", -1).to_list(100)
-    return [await enrich_post(p, viewer) for p in posts]
+    return await enrich_posts(posts, viewer)
 
 
 @api.get("/explore/people")
@@ -7168,7 +7225,7 @@ async def daily_digest(viewer: Optional[dict] = Depends(maybe_user)):
         if len(picked) >= 3:
             break
 
-    enriched = [await enrich_post(p, viewer) for p in picked]
+    enriched = await enrich_posts(picked, viewer)
     return {
         "digest": enriched,
         "generated_at": now_iso(),
@@ -8190,7 +8247,7 @@ async def get_series_posts(series_id: str, viewer: Optional[dict] = Depends(mayb
     raw = await db.posts.find({"id": {"$in": ids}}, {"_id": 0}).to_list(200)
     by_id = {p["id"]: p for p in raw}
     ordered = [by_id[pid] for pid in ids if pid in by_id]
-    return [await enrich_post(p, viewer) for p in ordered]
+    return await enrich_posts(ordered, viewer)
 
 
 @api.post("/series/{series_id}/posts")
@@ -9015,10 +9072,11 @@ async def feed_v2(mood: str = "", user=Depends(get_current_user)):
                 gem = gems[i]
                 gem["_is_gem"] = True
                 top.insert(insert_at, gem)
-    # Enrich + attach reason
+    # Enrich (em lote, sem N+1) + attach reason
+    top80 = top[:80]
+    enriched = await enrich_posts(top80, user)
     out = []
-    for p in top[:80]:
-        e = await enrich_post(p, user)
+    for p, e in zip(top80, enriched):
         reason = await compute_reason_for_post(p, user)
         if p.get("_is_gem"):
             reason = {"type": "gem", "label": "Pérola escondida", "emoji": "💎"}
@@ -10306,7 +10364,7 @@ async def feed_mesa(user=Depends(get_current_user)):
         "created_at": {"$gt": cutoff},
         "is_draft": {"$ne": True},
     }, {"_id": 0}).sort("created_at", -1).to_list(60)
-    return [await enrich_post(p, user) for p in posts]
+    return await enrich_posts(posts, user)
 
 
 # ---------- Custom Community Emoji Pack ----------
@@ -10905,7 +10963,7 @@ async def unified_search(q: str = "", kind: str = "all", limit: int = 20):
             {"content": {"$regex": re.escape(qn), "$options": "i"}, "is_draft": {"$ne": True}},
             {"_id": 0},
         ).sort("created_at", -1).limit(limit).to_list(limit)
-        out["posts"] = [await enrich_post(p, None) for p in posts]
+        out["posts"] = await enrich_posts(posts, None)
     if kind in {"all", "people"}:
         people = await db.users.find(
             {"$or": [
