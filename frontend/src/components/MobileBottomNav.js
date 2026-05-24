@@ -11,7 +11,7 @@ const navItems = [
     { to: "/explore", icon: Compass, testid: "mnav-explore", label: "Explorar" },
     { to: null, icon: Plus, testid: "mnav-compose", center: true },
     { to: "/messages", icon: MessageCircle, testid: "mnav-messages", label: "DMs", badgeKey: "msg" },
-    { to: "/profile", icon: User, testid: "mnav-profile", label: "Perfil" },
+    { to: "/premium", icon: Sparkles, testid: "mnav-premium", label: "Premium", isPremium: true },
 ];
 
 // Whisper tooltip: appears once per session on the central FAB to hint creation.
@@ -267,6 +267,8 @@ export function MobileBottomNav({ onCompose }) {
                     }
                     const to = it.to === "/profile" ? `/u/${user?.username}` : it.to;
                     const isMsg = it.badgeKey === "msg";
+                    const isPremium = it.isPremium === true;
+                    
                     return (
                         <NavLink
                             key={idx}
@@ -278,20 +280,38 @@ export function MobileBottomNav({ onCompose }) {
                                     isActive ? "text-grad-active" : "text-black"
                                 }`
                             }
+                            style={({ isActive }) => 
+                                isPremium && isActive
+                                    ? {
+                                          background: "linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.08))",
+                                          filter: "saturate(1.3)",
+                                      }
+                                    : {}
+                            }
                         >
                             {({ isActive }) => (
                                 <>
-                                    {isActive && (
+                                    {isActive && !isPremium && (
                                         <span
                                             aria-hidden
                                             className="absolute top-1 w-8 h-[3px] rounded-full grad-bar"
+                                        />
+                                    )}
+                                    {isActive && isPremium && (
+                                        <span
+                                            aria-hidden
+                                            className="absolute top-1 w-8 h-[3px] rounded-full"
+                                            style={{
+                                                background: "linear-gradient(90deg, #8b5cf6, #ec4899, #a855f7)",
+                                                filter: "saturate(1.4)",
+                                            }}
                                         />
                                     )}
                                     <span className="relative">
                                         <Icon
                                             size={22}
                                             strokeWidth={isActive ? 2.2 : 1.7}
-                                            color={isActive ? "#0a0a0a" : undefined}
+                                            color={isPremium ? (isActive ? "#8b5cf6" : undefined) : (isActive ? "#0a0a0a" : undefined)}
                                         />
                                         {isMsg && msgCount > 0 && (
                                             <span
@@ -306,6 +326,7 @@ export function MobileBottomNav({ onCompose }) {
                                         className={`text-[10px] tracking-tight ${
                                             isActive ? "font-semibold" : "font-medium"
                                         }`}
+                                        style={isPremium && isActive ? { color: "#8b5cf6" } : {}}
                                     >
                                         {it.label}
                                     </span>

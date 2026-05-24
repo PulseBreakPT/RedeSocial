@@ -91,18 +91,37 @@ export function LeftSidebar({ onCompose }) {
                 {[...NAV_ITEMS, ...(user?.is_admin ? [ADMIN_NAV] : [])].map((item) => {
                     const Icon = item.icon;
                     const badge = item.badgeKey ? counts[item.badgeKey] : 0;
+                    const isPremiumLink = item.to === "/premium";
+                    
                     return (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             end={item.end}
                             data-testid={item.testid}
-                            className={({ isActive }) =>
-                                `group relative flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
+                            className={({ isActive }) => {
+                                if (isPremiumLink) {
+                                    return `group relative flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
+                                        isActive
+                                            ? "text-white font-semibold"
+                                            : "text-black/85 hover:text-white"
+                                    }`;
+                                }
+                                return `group relative flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all tap-shrink ${
                                     isActive
                                         ? "bg-black text-white font-semibold"
                                         : "text-black/85 hover:bg-black/[0.05] hover:text-black"
-                                }`
+                                }`;
+                            }}
+                            style={({ isActive }) => 
+                                isPremiumLink
+                                    ? {
+                                          background: isActive 
+                                              ? "linear-gradient(135deg, #8b5cf6, #ec4899, #a855f7)"
+                                              : "linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.15))",
+                                          filter: isActive ? "saturate(1.4)" : "saturate(1)",
+                                      }
+                                    : {}
                             }
                         >
                             {({ isActive }) => (
@@ -111,7 +130,11 @@ export function LeftSidebar({ onCompose }) {
                                         <Icon
                                             size={20}
                                             strokeWidth={isActive ? 2.1 : 1.7}
-                                            className={isActive ? "text-white" : "text-black/80 group-hover:text-black"}
+                                            className={
+                                                isPremiumLink
+                                                    ? (isActive ? "text-white" : "text-purple-600")
+                                                    : (isActive ? "text-white" : "text-black/80 group-hover:text-black")
+                                            }
                                         />
                                         {badge > 0 && (
                                             <span
