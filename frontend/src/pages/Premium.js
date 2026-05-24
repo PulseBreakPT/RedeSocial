@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import {
     Check, ArrowRight, Sparkles, Heart, Shield, Zap, Star, Crown, Info,
     Palette, Music, Eye, BookOpen, MessageCircle, TrendingUp, Lock,
@@ -46,71 +46,11 @@ const COMPARISON = [
     { label: "Privacidade total",         icon: Lock,          free: true,  plus: true,  aura: true },
 ];
 
-/* ═══ Reveal on scroll — opacity + transform only ═══ */
-function Reveal({ children, delay = 0, className = "" }) {
-    const ref = useRef(null);
-    const [v, setV] = useState(false);
-    useEffect(() => {
-        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setV(true); }, { threshold: 0.08 });
-        if (ref.current) obs.observe(ref.current);
-        return () => obs.disconnect();
-    }, []);
-    return (
-        <div ref={ref} className={className} style={{
-            opacity: v ? 1 : 0,
-            transform: v ? "translateY(0)" : "translateY(24px)",
-            transition: `opacity 0.65s cubic-bezier(0.22,1,0.36,1) ${delay}s, transform 0.65s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
-        }}>{children}</div>
-    );
-}
-
-/* ═══ Liquid morph background blobs ═══
-   3 organic shapes that morph via border-radius (GPU: only compositing, no paint)
-   No filter:blur — color softness comes from radial-gradient itself */
-function LiquidBackground() {
-    return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-            {/* Base gradient */}
-            <div className="absolute inset-0"
-                 style={{ background: "linear-gradient(140deg, #6d28d9 0%, #a21caf 28%, #db2777 52%, #9333ea 78%, #7c3aed 100%)" }} />
-
-            {/* Blob 1 — top-left pink */}
-            <div className="absolute liq-blob-1"
-                 style={{
-                     width: "55%", height: "70%", top: "-10%", left: "-5%",
-                     background: "radial-gradient(ellipse at 40% 40%, rgba(236,72,153,0.55) 0%, rgba(236,72,153,0) 70%)",
-                 }} />
-
-            {/* Blob 2 — center-right blue */}
-            <div className="absolute liq-blob-2"
-                 style={{
-                     width: "50%", height: "65%", top: "5%", right: "-8%",
-                     background: "radial-gradient(ellipse at 60% 50%, rgba(99,102,241,0.4) 0%, rgba(99,102,241,0) 70%)",
-                 }} />
-
-            {/* Blob 3 — bottom violet */}
-            <div className="absolute liq-blob-3"
-                 style={{
-                     width: "60%", height: "55%", bottom: "-5%", left: "20%",
-                     background: "radial-gradient(ellipse at 50% 60%, rgba(168,85,247,0.45) 0%, rgba(168,85,247,0) 70%)",
-                 }} />
-
-            {/* Slow drifting gradient overlay */}
-            <div className="absolute inset-0 liq-drift opacity-30"
-                 style={{ background: "linear-gradient(60deg, rgba(219,39,119,0.3), rgba(99,102,241,0.3), rgba(168,85,247,0.3), rgba(236,72,153,0.3))" }} />
-
-            {/* Conic light accent */}
-            <div className="absolute inset-0 opacity-[0.05]"
-                 style={{ background: "conic-gradient(from 200deg at 50% 45%, white, transparent 25%, white 50%, transparent 75%)" }} />
-        </div>
-    );
-}
-
-/* ═══ Price tag ═══ */
-function PriceTag({ amount, interval }) {
+/* ═══ Price ═══ */
+function PriceTag({ amount, interval, color }) {
     return (
         <div className="flex items-baseline gap-2 mb-1">
-            <span className="font-display text-[44px] sm:text-[50px] lg:text-[56px] tracking-[-0.04em] leading-none text-white tabular-nums shimmer-text">
+            <span className={`font-display text-[44px] sm:text-[50px] lg:text-[56px] tracking-[-0.04em] leading-none tabular-nums ${color}`}>
                 &euro;{amount.toFixed(2)}
             </span>
             <span className="text-white/50 text-[13px] font-medium pb-1">
@@ -139,10 +79,11 @@ function FeatureList({ items }) {
     );
 }
 
-/* ═══ Liquid glass tier card ═══ */
+/* ═══ Tier card ═══ */
 function TierCard({
-    tier, name, tagline, price, interval, features, current,
-    billingAvailable, onSubscribe, onManage, borderGrad, isRecommended
+    tier, name, subtitle, tagline, price, interval, features, current,
+    billingAvailable, onSubscribe, onManage, bg, borderGrad, priceColor,
+    orbGrad, isRecommended
 }) {
     const ref = useRef(null);
     const onMove = useCallback((e) => {
@@ -154,7 +95,6 @@ function TierCard({
 
     return (
         <div ref={ref} className="relative group" onMouseMove={onMove} style={{ "--mx": "50%", "--my": "50%" }}>
-            {/* Recommended tag */}
             {isRecommended && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20">
                     <div className="relative px-5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider text-black overflow-hidden"
@@ -165,56 +105,45 @@ function TierCard({
                 </div>
             )}
 
-            {/* Gradient border wrapper */}
             <div className="relative overflow-hidden rounded-[32px] p-[1.5px] transition-transform duration-300 ease-out group-hover:-translate-y-1.5"
                  style={{ background: borderGrad }}>
 
-                {/* Liquid spotlight (CSS custom props, no re-render) */}
+                {/* Spotlight */}
                 <div className="absolute inset-0 rounded-[32px] opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none z-10"
-                     style={{ background: "radial-gradient(400px circle at var(--mx) var(--my), rgba(255,255,255,0.13), transparent 50%)" }} />
+                     style={{ background: "radial-gradient(400px circle at var(--mx) var(--my), rgba(255,255,255,0.12), transparent 50%)" }} />
 
-                {/* Glass card */}
-                <div className="relative liq-glass rounded-[calc(2rem-1.5px)] p-6 sm:p-7 lg:p-8 flex flex-col h-full">
-                    {/* Inner gradient orb (static, no blur) */}
-                    <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-                         style={{ background: tier === "aura"
-                             ? "radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%)"
-                             : "radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 70%)" }} />
+                <div className="relative rounded-[calc(2rem-1.5px)] p-6 sm:p-7 lg:p-8 flex flex-col h-full border border-white/[0.08]"
+                     style={{ background: bg }}>
+
+                    {/* Decorative orb */}
+                    <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none" style={{ background: orbGrad }} />
 
                     {/* Header */}
                     <div className="mb-5 relative">
-                        <div className="flex items-center gap-2 mb-1.5">
+                        <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-display text-[26px] sm:text-[30px] lg:text-[32px] tracking-tight text-white leading-none">
-                                {name.replace("Lusorae ", "")}
+                                {name}
                             </h3>
-                            {tier === "aura" && (
-                                <Crown size={20} className="text-yellow-300" style={{ filter: "drop-shadow(0 0 4px rgba(253,224,71,0.4))" }} />
-                            )}
+                            {tier === "aura" && <Crown size={20} className="text-yellow-300" style={{ filter: "drop-shadow(0 0 4px rgba(253,224,71,0.4))" }} />}
                         </div>
-                        <p className="text-[13px] sm:text-[14px] text-white/60 leading-relaxed max-w-[30ch]">{tagline}</p>
+                        <p className="text-[12px] uppercase tracking-[0.12em] text-white/40 font-mono font-semibold mb-2">{subtitle}</p>
+                        <p className="text-[13.5px] text-white/60 leading-relaxed max-w-[32ch]">{tagline}</p>
                     </div>
 
                     {/* Price */}
                     <div className="mb-3">
-                        <PriceTag amount={price} interval={interval} />
+                        <PriceTag amount={price} interval={interval} color={priceColor} />
                         {interval === "year" && (
-                            <p className="text-[11.5px] text-white/40 font-medium">
-                                Equivalente a &euro;{(price / 12).toFixed(2)}/mês
-                            </p>
+                            <p className="text-[11.5px] text-white/40 font-medium">Equivalente a &euro;{(price / 12).toFixed(2)}/mês &middot; Poupas 17%</p>
                         )}
                     </div>
 
-                    {/* Liquid divider */}
+                    {/* Divider */}
                     <div className="relative h-px mb-5 overflow-hidden">
-                        <div className="absolute inset-0"
-                             style={{ background: tier === "aura"
-                                 ? "linear-gradient(90deg, transparent 5%, rgba(236,72,153,0.4) 30%, rgba(168,85,247,0.35) 60%, transparent 95%)"
-                                 : "linear-gradient(90deg, transparent 5%, rgba(139,92,246,0.35) 40%, rgba(168,85,247,0.25) 70%, transparent 95%)" }} />
-                        <div className="absolute inset-0 shimmer-line"
-                             style={{ background: "linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%)" }} />
+                        <div className="absolute inset-0" style={{ background: borderGrad, opacity: 0.4 }} />
+                        <div className="absolute inset-0 shimmer-line" style={{ background: "linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%)" }} />
                     </div>
 
-                    {/* Features */}
                     <FeatureList items={features} />
 
                     {/* CTA */}
@@ -228,7 +157,7 @@ function TierCard({
                             <button onClick={() => onSubscribe(tier, interval)}
                                 data-testid={`premium-subscribe-${tier}`}
                                 className="w-full h-12 rounded-2xl bg-white text-black text-[14px] font-bold hover:shadow-lg active:scale-[0.97] transition-all duration-150 inline-flex items-center justify-center gap-2 group/btn">
-                                Escolher {name.replace("Lusorae ", "")}
+                                Escolher {name}
                                 <ArrowRight size={16} className="group-hover/btn:translate-x-0.5 transition-transform duration-150" strokeWidth={2.5} />
                             </button>
                         ) : (
@@ -260,10 +189,10 @@ function CCell({ ok, hl }) {
     );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MAIN — Liquid Morphism: organic blobs, glass cards, zero lag
-   All animations: border-radius, background-position, transform, opacity
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   MAIN — fundo branco, gradientes opostos,
+   sem animações de scroll, tudo instantâneo
+   ═══════════════════════════════════════════ */
 export default function Premium() {
     const { plan, tiers, billing_available, isPlus, isAura, checkout, openPortal } = usePremium();
     const [interval, setInterval] = useState("month");
@@ -286,251 +215,301 @@ export default function Premium() {
         <div data-testid="premium-page" className="min-h-screen bg-white">
             <PageHeader title="Plus & Aura" subtitle="Uma camada mais profunda do teu Lusorae" back />
 
-            {/* ═══ HERO + PLANOS — liquid morphism background ═══ */}
-            <section className="relative overflow-hidden">
-                <LiquidBackground />
-
-                <div className="relative px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-24 sm:pb-28 max-w-6xl mx-auto">
-                    {/* Toggle mensal / anual */}
-                    <div className="flex justify-center mb-8 sm:mb-10">
-                        <div className="inline-flex items-center gap-1 p-1 rounded-2xl liq-glass">
-                            {["month", "year"].map((i) => (
-                                <button key={i} onClick={() => setInterval(i)}
-                                    className={`px-5 sm:px-6 h-10 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                                        interval === i
-                                            ? "bg-white text-black shadow-md"
-                                            : "text-white/65 hover:text-white hover:bg-white/10"
-                                    }`}>
-                                    {i === "month" ? "Mensal" : "Anual"}
-                                    {i === "year" && (
-                                        <span className={`ml-1.5 text-[10px] font-black tracking-wide ${
-                                            interval === i ? "text-violet-600" : "text-yellow-300"
-                                        }`}>-17%</span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Cards de plano */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 lg:gap-8 max-w-[1050px] mx-auto">
-                        <TierCard
-                            tier="plus"
-                            name="Lusorae Plus"
-                            tagline="Para quem quer mais da sua experiência social"
-                            price={prices.plus}
-                            interval={interval}
-                            features={PLUS_FEATURES}
-                            current={isPlus}
-                            billingAvailable={billing_available}
-                            onSubscribe={subscribe}
-                            onManage={manage}
-                            borderGrad="linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc, #8b5cf6)"
-                        />
-                        <TierCard
-                            tier="aura"
-                            name="Lusorae Aura"
-                            tagline="A experiência definitiva. O Lusorae ao máximo."
-                            price={prices.aura}
-                            interval={interval}
-                            features={AURA_FEATURES}
-                            current={isAura}
-                            billingAvailable={billing_available}
-                            onSubscribe={subscribe}
-                            onManage={manage}
-                            borderGrad="linear-gradient(135deg, #ec4899, #d946ef, #a855f7, #8b5cf6, #ec4899)"
-                            isRecommended
-                        />
-                    </div>
-
-                    {plan !== "free" && (
-                        <p className="text-[12px] text-white/45 text-center mt-7 font-medium">
-                            Subscrição ativa &middot; gere pagamentos, faturas e cancelamento no portal seguro
-                        </p>
-                    )}
+            {/* ═══ PLANOS ═══ */}
+            <section className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-16 sm:pb-20 max-w-6xl mx-auto">
+                {/* Título da secção */}
+                <div className="text-center mb-8 sm:mb-10">
+                    <h2 className="font-display text-[28px] sm:text-[36px] lg:text-[42px] tracking-tight text-black leading-tight mb-3">
+                        Escolhe o teu plano
+                    </h2>
+                    <p className="text-[14px] sm:text-[16px] text-black/50 max-w-xl mx-auto leading-relaxed">
+                        Sem anúncios. Sem algoritmos manipulados. Apenas ferramentas que aprofundam a tua presença — ao teu ritmo.
+                    </p>
                 </div>
 
-                {/* Bottom fade */}
-                <div className="absolute bottom-0 inset-x-0 h-28 sm:h-36 pointer-events-none"
-                     style={{ background: "linear-gradient(to top, white 0%, rgba(255,255,255,0.85) 40%, transparent 100%)" }} />
+                {/* Toggle */}
+                <div className="flex justify-center mb-8 sm:mb-10">
+                    <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-black/[0.04] border border-black/[0.06]">
+                        {["month", "year"].map((i) => (
+                            <button key={i} onClick={() => setInterval(i)}
+                                className={`px-5 sm:px-7 h-10 rounded-xl text-[13px] font-bold transition-all duration-200 ${
+                                    interval === i
+                                        ? "bg-black text-white shadow-md"
+                                        : "text-black/50 hover:text-black hover:bg-black/[0.04]"
+                                }`}>
+                                {i === "month" ? "Mensal" : "Anual"}
+                                {i === "year" && (
+                                    <span className={`ml-1.5 text-[10px] font-black tracking-wide ${interval === i ? "text-green-400" : "text-green-600"}`}>
+                                        POUPA 17%
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Cards — gradientes opostos */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 lg:gap-8 max-w-[1050px] mx-auto">
+                    {/* PLUS — Azul profundo / Índigo / Ciano frio
+                        Identidade visual: calmo, profundo, sereno, noturno */}
+                    <TierCard
+                        tier="plus"
+                        name="Plus"
+                        subtitle="Presença elevada"
+                        tagline="Para quem quer personalizar a sua experiência. Mais expressão, mais controlo, mais conforto no dia-a-dia."
+                        price={prices.plus}
+                        interval={interval}
+                        features={PLUS_FEATURES}
+                        current={isPlus}
+                        billingAvailable={billing_available}
+                        onSubscribe={subscribe}
+                        onManage={manage}
+                        bg="linear-gradient(160deg, #1e1b4b 0%, #312e81 30%, #1e3a5f 60%, #0f172a 100%)"
+                        borderGrad="linear-gradient(135deg, #6366f1, #3b82f6, #06b6d4, #6366f1)"
+                        priceColor="text-cyan-300"
+                        orbGrad="radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)"
+                    />
+
+                    {/* AURA — Rosa quente / Âmbar / Dourado solar
+                        Identidade visual: quente, luxuoso, vibrante, solar */}
+                    <TierCard
+                        tier="aura"
+                        name="Aura"
+                        subtitle="A experiência definitiva"
+                        tagline="Tudo do Plus, mais uma camada de profundidade. O teu perfil ganha vida — adapta-se a ti, à hora e ao momento."
+                        price={prices.aura}
+                        interval={interval}
+                        features={AURA_FEATURES}
+                        current={isAura}
+                        billingAvailable={billing_available}
+                        onSubscribe={subscribe}
+                        onManage={manage}
+                        bg="linear-gradient(160deg, #4a1942 0%, #831843 30%, #7c2d12 60%, #451a03 100%)"
+                        borderGrad="linear-gradient(135deg, #f43f5e, #ec4899, #f59e0b, #eab308, #f43f5e)"
+                        priceColor="text-amber-300"
+                        orbGrad="radial-gradient(circle, rgba(244,63,94,0.12) 0%, transparent 70%)"
+                        isRecommended
+                    />
+                </div>
+
+                {plan !== "free" && (
+                    <p className="text-[12px] text-black/40 text-center mt-7 font-medium">
+                        Subscrição ativa &middot; gere pagamentos, faturas e cancelamento no portal seguro
+                    </p>
+                )}
             </section>
 
-            {/* ═══ COMPARAÇÃO ═══ */}
+            {/* Separador gradiente subtil */}
+            <div className="h-px max-w-5xl mx-auto" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)" }} />
+
+            {/* ═══ COMPARAÇÃO DETALHADA ═══ */}
             <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 lg:py-20 max-w-4xl mx-auto">
-                <Reveal>
-                    <div className="text-center mb-8 sm:mb-10">
-                        <p className="text-[10.5px] uppercase tracking-[0.18em] text-black/35 font-mono mb-2 font-semibold">Comparação detalhada</p>
-                        <h2 className="font-display text-[28px] sm:text-[34px] lg:text-[40px] tracking-tight text-black leading-tight">
-                            O que inclui cada plano
-                        </h2>
-                    </div>
-                </Reveal>
-                <Reveal delay={0.08}>
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
-                        <div className="min-w-[520px] sm:min-w-0 px-4 sm:px-0">
-                            <div className="rounded-2xl border border-black/[0.06] liq-glass-light overflow-hidden shadow-sm">
-                                <table className="w-full text-[13px] sm:text-[14px]">
-                                    <thead>
-                                        <tr style={{ background: "linear-gradient(90deg, rgba(139,92,246,0.04), rgba(236,72,153,0.04), rgba(168,85,247,0.04))" }}>
-                                            <th className="text-left py-3.5 px-4 sm:px-5 font-semibold text-black/65 w-[50%]">Funcionalidade</th>
-                                            <th className="text-center py-3.5 px-2 font-semibold text-black/40 w-[16%]">Grátis</th>
-                                            <th className="text-center py-3.5 px-2 font-bold w-[17%]">
-                                                <span style={{ background: "linear-gradient(90deg,#7c3aed,#a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Plus</span>
-                                            </th>
-                                            <th className="text-center py-3.5 px-2 font-bold w-[17%]">
-                                                <span style={{ background: "linear-gradient(90deg,#ec4899,#a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Aura</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {COMPARISON.map((r, i) => {
-                                            const Icon = r.icon;
-                                            return (
-                                                <tr key={i} className="border-b border-black/[0.04] hover:bg-violet-50/25 transition-colors duration-100">
-                                                    <td className="py-3 px-4 sm:px-5">
-                                                        <div className="flex items-center gap-2">
-                                                            <Icon size={14} className="text-black/30 flex-shrink-0 hidden sm:block" strokeWidth={2} />
-                                                            <span className="text-black/70">{r.label}</span>
-                                                        </div>
-                                                    </td>
-                                                    <CCell ok={r.free} />
-                                                    <CCell ok={r.plus} hl />
-                                                    <CCell ok={r.aura} hl />
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                <div className="text-center mb-8 sm:mb-10">
+                    <p className="text-[10.5px] uppercase tracking-[0.18em] text-black/35 font-mono mb-2 font-semibold">
+                        Lado a lado
+                    </p>
+                    <h2 className="font-display text-[26px] sm:text-[32px] lg:text-[38px] tracking-tight text-black leading-tight mb-3">
+                        Comparação completa dos planos
+                    </h2>
+                    <p className="text-[13.5px] sm:text-[15px] text-black/45 max-w-lg mx-auto leading-relaxed">
+                        Todas as funcionalidades, sem letras pequenas. O plano grátis já inclui o essencial — o premium acrescenta profundidade.
+                    </p>
+                </div>
+
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <div className="min-w-[520px] sm:min-w-0 px-4 sm:px-0">
+                        <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden shadow-sm">
+                            <table className="w-full text-[13px] sm:text-[14px]">
+                                <thead>
+                                    <tr className="bg-black/[0.02]">
+                                        <th className="text-left py-3.5 px-4 sm:px-5 font-semibold text-black/60 w-[50%]">Funcionalidade</th>
+                                        <th className="text-center py-3.5 px-2 font-semibold text-black/35 w-[16%]">Grátis</th>
+                                        <th className="text-center py-3.5 px-2 font-bold w-[17%]">
+                                            <span style={{ background: "linear-gradient(90deg,#4f46e5,#06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Plus</span>
+                                        </th>
+                                        <th className="text-center py-3.5 px-2 font-bold w-[17%]">
+                                            <span style={{ background: "linear-gradient(90deg,#f43f5e,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Aura</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {COMPARISON.map((r, i) => {
+                                        const Icon = r.icon;
+                                        return (
+                                            <tr key={i} className="border-b border-black/[0.04] hover:bg-black/[0.015] transition-colors duration-100">
+                                                <td className="py-3 px-4 sm:px-5">
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon size={14} className="text-black/25 flex-shrink-0 hidden sm:block" strokeWidth={2} />
+                                                        <span className="text-black/65">{r.label}</span>
+                                                    </div>
+                                                </td>
+                                                <CCell ok={r.free} />
+                                                <CCell ok={r.plus} hl />
+                                                <CCell ok={r.aura} hl />
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </Reveal>
+                </div>
             </section>
 
-            {/* ═══ TRÊS PILARES ═══ */}
-            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 lg:py-20 max-w-6xl mx-auto relative">
-                {/* Decorative gradient mesh */}
-                <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: `
-                    radial-gradient(ellipse 55% 40% at 15% 50%, rgba(139,92,246,0.05) 0%, transparent 70%),
-                    radial-gradient(ellipse 45% 45% at 80% 45%, rgba(236,72,153,0.04) 0%, transparent 70%)
-                `}} />
+            {/* Separador */}
+            <div className="h-px max-w-5xl mx-auto" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)" }} />
 
-                <Reveal>
-                    <div className="text-center mb-10 sm:mb-12">
-                        <h2 className="font-display text-[28px] sm:text-[34px] lg:text-[40px] tracking-tight text-black mb-2 leading-tight">
-                            Três pilares, uma promessa
-                        </h2>
-                        <p className="text-[14px] sm:text-[15px] text-black/45 max-w-lg mx-auto leading-relaxed">
-                            O premium é sobre ti, não sobre os outros
-                        </p>
-                    </div>
-                </Reveal>
+            {/* ═══ OS NOSSOS PRINCÍPIOS ═══ */}
+            <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 lg:py-20 max-w-6xl mx-auto">
+                <div className="text-center mb-10 sm:mb-12">
+                    <p className="text-[10.5px] uppercase tracking-[0.18em] text-black/35 font-mono mb-2 font-semibold">
+                        Os nossos princípios
+                    </p>
+                    <h2 className="font-display text-[26px] sm:text-[32px] lg:text-[38px] tracking-tight text-black mb-3 leading-tight">
+                        Três pilares que definem o premium
+                    </h2>
+                    <p className="text-[13.5px] sm:text-[15px] text-black/45 max-w-lg mx-auto leading-relaxed">
+                        Não vendemos atenção, alcance ou prioridade. O premium existe para te dar mais conforto — nunca mais poder.
+                    </p>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
                     {[
-                        { icon: Heart,  title: "Pertença Real",    desc: "Comunidade que valoriza autenticidade e profundidade. O premium não te separa dos outros.", g: "from-violet-50 to-pink-50" },
-                        { icon: Shield, title: "Sem Distrações",   desc: "Controlo total sobre o que vês. Feed calmo, notificações inteligentes, ritmo respeitado.", g: "from-indigo-50 to-violet-50" },
-                        { icon: Star,   title: "Identidade Única", desc: "Ferramentas que se adaptam a ti. Expressa-te de forma autêntica, sem pressão social.", g: "from-pink-50 to-rose-50" },
+                        {
+                            icon: Heart,
+                            title: "Pertença Real",
+                            desc: "O premium não cria uma classe à parte. A comunidade é uma só. As ferramentas premium aprofundam a tua experiência sem afetar a dos outros.",
+                            g: "from-indigo-50 to-cyan-50",
+                            ic: "text-indigo-600",
+                        },
+                        {
+                            icon: Shield,
+                            title: "Sem Distrações",
+                            desc: "Controlo total sobre o que vês e quando. Feed calmo, notificações inteligentes, modo noturno por defeito. O teu ritmo é respeitado.",
+                            g: "from-violet-50 to-fuchsia-50",
+                            ic: "text-violet-600",
+                        },
+                        {
+                            icon: Star,
+                            title: "Identidade Única",
+                            desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.",
+                            g: "from-amber-50 to-orange-50",
+                            ic: "text-amber-600",
+                        },
                     ].map((item, idx) => {
                         const Icon = item.icon;
                         return (
-                            <Reveal key={idx} delay={idx * 0.08}>
-                                <div className={`group rounded-2xl p-5 sm:p-6 bg-gradient-to-br ${item.g} border border-black/[0.05] hover:shadow-lg transition-shadow duration-200 h-full`}>
-                                    <div className="w-10 h-10 rounded-xl bg-white/80 grid place-items-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">
-                                        <Icon size={18} className="text-violet-600" strokeWidth={2} />
-                                    </div>
-                                    <h3 className="font-bold text-[15px] sm:text-[16px] text-black mb-1.5 tracking-tight">{item.title}</h3>
-                                    <p className="text-[13px] text-black/55 leading-relaxed">{item.desc}</p>
+                            <div key={idx} className={`group rounded-2xl p-5 sm:p-6 bg-gradient-to-br ${item.g} border border-black/[0.05] hover:shadow-lg transition-shadow duration-200 h-full`}>
+                                <div className="w-10 h-10 rounded-xl bg-white/80 grid place-items-center mb-4 shadow-sm group-hover:scale-105 transition-transform duration-200">
+                                    <Icon size={18} className={item.ic} strokeWidth={2} />
                                 </div>
-                            </Reveal>
+                                <h3 className="font-bold text-[15px] sm:text-[16px] text-black mb-2 tracking-tight">{item.title}</h3>
+                                <p className="text-[13px] text-black/55 leading-relaxed">{item.desc}</p>
+                            </div>
                         );
                     })}
                 </div>
             </section>
 
-            {/* ═══ O QUE PREMIUM NÃO FAZ ═══ */}
-            <section className="px-4 sm:px-6 lg:px-8 py-10 sm:py-12 max-w-4xl mx-auto">
-                <Reveal>
-                    <div className="relative overflow-hidden rounded-3xl p-[1.5px]"
-                         style={{ background: "linear-gradient(135deg, #8b5cf6, #d946ef, #ec4899, #a855f7, #7c3aed)", backgroundSize: "300% 300%", animation: "premGradientFlow 8s ease infinite" }}>
-                        <div className="relative bg-white rounded-[calc(1.5rem-1.5px)] p-6 sm:p-8 lg:p-9">
-                            <div className="flex items-start gap-3 sm:gap-4 mb-5">
-                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl grid place-items-center flex-shrink-0"
-                                     style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.12), rgba(236,72,153,0.12))" }}>
-                                    <Info size={18} className="text-violet-600" strokeWidth={2} />
-                                </div>
-                                <div>
-                                    <p className="text-[10.5px] uppercase tracking-[0.14em] text-black/35 font-mono mb-1 font-semibold">Alinhado com o manifesto</p>
-                                    <h2 className="font-display text-[22px] sm:text-[26px] lg:text-[30px] leading-tight tracking-tight text-black">
-                                        O que o Premium{" "}
-                                        <span style={{ background: "linear-gradient(90deg,#7c3aed,#ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>não faz</span>
-                                    </h2>
-                                </div>
-                            </div>
+            {/* Separador */}
+            <div className="h-px max-w-5xl mx-auto" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)" }} />
 
-                            <div className="space-y-3 mb-5">
-                                {[
-                                    "Não te dá mais alcance, visibilidade ou prioridade no feed dos outros.",
-                                    "Não muda o algoritmo para te favorecer.",
-                                    "Não remove anúncios — porque não há anúncios no Lusorae.",
-                                    "Não te torna melhor que os outros utilizadores.",
-                                ].map((t, i) => (
-                                    <div key={i} className="flex items-start gap-2.5">
-                                        <div className="w-5 h-5 rounded-full bg-green-500/10 grid place-items-center flex-shrink-0 mt-0.5">
-                                            <Check size={11} className="text-green-600" strokeWidth={3} />
-                                        </div>
-                                        <p className="text-[13.5px] text-black/70 leading-relaxed">{t}</p>
-                                    </div>
-                                ))}
+            {/* ═══ O QUE O PREMIUM NÃO FAZ ═══ */}
+            <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-16 max-w-4xl mx-auto">
+                <div className="relative overflow-hidden rounded-3xl p-[1.5px]"
+                     style={{ background: "linear-gradient(135deg, #4f46e5, #06b6d4, #f43f5e, #f59e0b, #4f46e5)", backgroundSize: "300% 300%", animation: "premGradientFlow 10s ease infinite" }}>
+                    <div className="relative bg-white rounded-[calc(1.5rem-1.5px)] p-6 sm:p-8 lg:p-9">
+                        <div className="flex items-start gap-3 sm:gap-4 mb-5">
+                            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl grid place-items-center flex-shrink-0"
+                                 style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.10), rgba(244,63,94,0.10))" }}>
+                                <Info size={18} className="text-indigo-600" strokeWidth={2} />
                             </div>
-
-                            <div className="h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.1), rgba(236,72,153,0.1), transparent)" }} />
-                            <p className="text-[13px] text-black/50 leading-relaxed">
-                                O premium é conforto, identidade e ferramentas. Nunca é vantagem social.
-                                <strong className="block mt-1.5 text-black font-semibold">O tempo que passas aqui é teu. Não nosso.</strong>
-                            </p>
+                            <div>
+                                <p className="text-[10.5px] uppercase tracking-[0.14em] text-black/35 font-mono mb-1 font-semibold">
+                                    Transparência total
+                                </p>
+                                <h2 className="font-display text-[22px] sm:text-[26px] lg:text-[30px] leading-tight tracking-tight text-black">
+                                    O que o premium{" "}
+                                    <span className="underline decoration-2 decoration-red-400/40 underline-offset-4">não faz</span>
+                                </h2>
+                            </div>
                         </div>
+
+                        <p className="text-[13.5px] text-black/50 leading-relaxed mb-5 max-w-2xl">
+                            Acreditamos que a confiança se constrói com clareza. Por isso, dizemos-te exactamente o que o premium nunca vai fazer — para que saibas exactamente o que estás a pagar.
+                        </p>
+
+                        <div className="space-y-3 mb-5">
+                            {[
+                                { bold: "Sem alcance extra", rest: " — o premium não te dá mais visibilidade, prioridade no feed ou destaque nas tendências." },
+                                { bold: "Sem algoritmo diferente", rest: " — o teu conteúdo é tratado exactamente como o de qualquer outro utilizador." },
+                                { bold: "Sem remoção de anúncios", rest: " — porque o Lusorae não tem anúncios. Ponto." },
+                                { bold: "Sem hierarquia social", rest: " — o premium não te torna melhor, mais importante ou mais visível que os outros." },
+                            ].map((t, i) => (
+                                <div key={i} className="flex items-start gap-2.5">
+                                    <div className="w-5 h-5 rounded-full bg-green-500/10 grid place-items-center flex-shrink-0 mt-0.5">
+                                        <Check size={11} className="text-green-600" strokeWidth={3} />
+                                    </div>
+                                    <p className="text-[13.5px] text-black/70 leading-relaxed">
+                                        <strong className="text-black font-semibold">{t.bold}</strong>{t.rest}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)" }} />
+                        <p className="text-[13px] text-black/50 leading-relaxed">
+                            O premium é conforto, identidade e ferramentas. Nunca é vantagem social.
+                            <strong className="block mt-1.5 text-black font-semibold">O tempo que passas aqui é teu. Não nosso.</strong>
+                        </p>
                     </div>
-                </Reveal>
+                </div>
             </section>
+
+            {/* Separador */}
+            <div className="h-px max-w-5xl mx-auto" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent)" }} />
 
             {/* ═══ FAQ ═══ */}
             <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16 max-w-3xl mx-auto prem-faq">
-                <Reveal>
-                    <div className="text-center mb-8 sm:mb-10">
-                        <h2 className="font-display text-[26px] sm:text-[32px] lg:text-[36px] tracking-tight text-black mb-2">Perguntas frequentes</h2>
-                        <p className="text-[13px] sm:text-[14px] text-black/40">Tudo o que precisas de saber</p>
-                    </div>
-                </Reveal>
+                <div className="text-center mb-8 sm:mb-10">
+                    <p className="text-[10.5px] uppercase tracking-[0.18em] text-black/35 font-mono mb-2 font-semibold">
+                        Dúvidas
+                    </p>
+                    <h2 className="font-display text-[24px] sm:text-[30px] lg:text-[34px] tracking-tight text-black mb-2">
+                        Perguntas frequentes
+                    </h2>
+                    <p className="text-[13px] sm:text-[14px] text-black/40 max-w-md mx-auto leading-relaxed">
+                        Respostas directas, sem rodeios. Se tiveres outra pergunta, estamos sempre disponíveis.
+                    </p>
+                </div>
 
                 <div className="space-y-2.5">
                     {[
-                        { q: "Posso cancelar a qualquer momento?", a: "Sim. Sem compromissos ou taxas de cancelamento. Manténs o acesso até ao fim do período pago." },
-                        { q: "O que acontece aos meus dados se cancelar?", a: "Nada. Os teus posts, mensagens e perfil mantêm-se. Só perdes acesso às funcionalidades premium." },
-                        { q: "Há garantia de reembolso?", a: "Sim, 14 dias de garantia total. Se não adorares, devolvemos o teu dinheiro sem perguntas." },
-                        { q: "Posso mudar entre Plus e Aura?", a: "Sim, a qualquer momento. O valor é ajustado proporcionalmente no próximo ciclo de faturação." },
-                        { q: "O premium dá-me mais visibilidade?", a: "Não. O feed, o algoritmo e as tendências tratam todos os utilizadores de forma igual. O premium melhora a tua experiência, nunca a manipula para outros." },
+                        { q: "Posso cancelar a qualquer momento?", a: "Sim. Sem compromissos, sem taxas, sem perguntas. Manténs o acesso até ao fim do período que já pagaste." },
+                        { q: "O que acontece aos meus dados se cancelar?", a: "Absolutamente nada. Os teus posts, mensagens, perfil e coleções ficam exactamente como estão. Só perdes acesso às funcionalidades premium." },
+                        { q: "Há garantia de reembolso?", a: "Sim. Tens 14 dias de garantia total. Se não adorares a experiência, devolvemos o teu dinheiro sem perguntas." },
+                        { q: "Posso mudar entre Plus e Aura?", a: "Sim, a qualquer momento. O valor é ajustado proporcionalmente no próximo ciclo de faturação — sem custos escondidos." },
+                        { q: "O premium dá-me mais visibilidade no feed?", a: "Não. O feed, o algoritmo e as tendências tratam todos os utilizadores de forma exactamente igual. O premium melhora a tua experiência pessoal — nunca manipula a dos outros." },
+                        { q: "Porque é que não há anúncios?", a: "Porque o nosso modelo de negócio é o premium. Quem paga é quem usa — não anunciantes. Isto significa que nunca precisamos de te manter 'preso' para vender a tua atenção." },
                     ].map((faq, idx) => (
-                        <Reveal key={idx} delay={idx * 0.04}>
-                            <details className="group liq-glass-light p-4 sm:p-5 rounded-2xl cursor-pointer hover:shadow-md transition-shadow duration-150">
-                                <summary className="flex items-center justify-between font-semibold text-[14px] sm:text-[15px] text-black">
-                                    <span className="pr-4">{faq.q}</span>
-                                    <span className="w-7 h-7 rounded-full bg-violet-50 grid place-items-center flex-shrink-0 group-open:bg-violet-100 transition-colors duration-150">
-                                        <ChevronDown size={15} className="text-violet-600 group-open:rotate-180 transition-transform duration-200" strokeWidth={2.5} />
-                                    </span>
-                                </summary>
-                                <div className="prem-faq-answer">
-                                    <p className="mt-3 text-[13px] sm:text-[14px] text-black/55 leading-relaxed">{faq.a}</p>
-                                </div>
-                            </details>
-                        </Reveal>
+                        <details key={idx} className="group bg-black/[0.015] border border-black/[0.06] p-4 sm:p-5 rounded-2xl cursor-pointer hover:border-black/[0.10] transition-colors duration-100">
+                            <summary className="flex items-center justify-between font-semibold text-[14px] sm:text-[15px] text-black">
+                                <span className="pr-4">{faq.q}</span>
+                                <span className="w-7 h-7 rounded-full bg-black/[0.04] grid place-items-center flex-shrink-0 group-open:bg-black/[0.08] transition-colors duration-150">
+                                    <ChevronDown size={15} className="text-black/50 group-open:rotate-180 transition-transform duration-200" strokeWidth={2.5} />
+                                </span>
+                            </summary>
+                            <div className="prem-faq-answer">
+                                <p className="mt-3 text-[13px] sm:text-[14px] text-black/50 leading-relaxed">{faq.a}</p>
+                            </div>
+                        </details>
                     ))}
                 </div>
             </section>
 
             {!billing_available && (
                 <div className="px-4 py-10 text-center border-t border-black/[0.06]">
-                    <p className="text-[12px] text-black/30 font-mono">Sistema de pagamentos a ser ativado em breve</p>
+                    <p className="text-[12px] text-black/25 font-mono">Sistema de pagamentos a ser ativado em breve</p>
                 </div>
             )}
         </div>
