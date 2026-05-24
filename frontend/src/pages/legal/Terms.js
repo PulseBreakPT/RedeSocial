@@ -1,207 +1,370 @@
 import { LegalShell } from "./LegalShell";
+import {
+    LegalSignalPills, LegalKPIs, LegalIconGrid, LegalLadder, LegalVisualBlock,
+} from "./_visuals";
+import {
+    Scale, ShieldCheck, FileText, Sparkle, Globe, Calendar, FileCheck, Clock,
+    AlertTriangle, EyeOff, Slash, ShieldAlert, ShieldOff, UserX, Ban, MessageCircle,
+    Flag, ArrowDownToLine,
+} from "lucide-react";
 
 export default function Terms() {
     return (
         <LegalShell
             active="terms"
             title="Termos e Condições de Utilização"
-            subtitle="O contrato entre ti e o Lusorae. Lê com atenção — ao criar conta ou usar o serviço aceitas integralmente os termos aqui descritos."
+            subtitle="O contrato entre ti e o Lusorae. Lê com atenção &mdash; ao criar conta, aceder ou utilizar o Serviço, aceitas integralmente o que aqui está escrito. Este documento é redigido em português e o original em português europeu prevalece sobre qualquer tradução."
             lastUpdated="[data da última versão]"
         >
+            <LegalSignalPills items={[
+                { label: "Contrato",       tone: "tone-key", icon: FileText },
+                { label: "Lei portuguesa", tone: "tone-pt",  icon: Globe },
+                { label: "RGPD",           tone: "tone-eu",  icon: ShieldCheck },
+                { label: "DSA",            tone: "tone-eu",  icon: Scale },
+                { label: "DL 7/2004",      tone: "tone-pt",  icon: FileText,  ref: "e-commerce" },
+                { label: "L. 24/96",       tone: "tone-pt",  icon: Sparkle,   ref: "consumidor" },
+            ]} />
+
+            <LegalKPIs items={[
+                { value: "13+",     label: "idade mínima",         sub: "Com consentimento parental (RGPD)", icon: Calendar },
+                { value: "16+",     label: "uso autónomo",          sub: "Lei n.º 58/2019",                  icon: Calendar },
+                { value: "14 dias", label: "livre resolução",       sub: "DL 24/2014 · subscrições pagas",   icon: Clock },
+                { value: "15 dias", label: "aviso de alteração",    sub: "Sempre que material",               icon: FileCheck },
+                { value: "6 meses", label: "janela de recurso",     sub: "Art. 20.º DSA",                    icon: Clock },
+                { value: "72h",     label: "comunicação CNPD",       sub: "Em caso de violação de dados",      icon: AlertTriangle },
+            ]} />
+
             <div className="legal-callout">
-                <strong>Em síntese</strong>
-                Estes Termos regulam a utilização do Lusorae, uma rede social com sede em Portugal. Aplicam-se,
-                entre outros, o Regulamento (UE) 2016/679 (RGPD), o Regulamento (UE) 2022/2065 (Regulamento dos
-                Serviços Digitais — DSA), o Decreto-Lei n.º 7/2004 (comércio eletrónico) e a Lei n.º 27/2021 (Carta
-                Portuguesa dos Direitos Humanos na Era Digital). A lei aplicável é a lei portuguesa.
+                <strong>Em poucas palavras</strong>
+                Estes Termos descrevem o que podes esperar do Lusorae e o que o Lusorae espera de ti. Reflectem os{" "}
+                <a href="/legal/vision">seis compromissos</a> que assumimos publicamente. Aplicam-se a partir do momento
+                em que crias conta ou utilizas o Serviço, e regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo
+                dos teus direitos imperativos enquanto consumidor.
             </div>
 
-            <h2>1. Identificação do prestador</h2>
+            <h2>Identificação do prestador</h2>
             <p>
-                O serviço Lusorae (adiante &ldquo;<strong>Plataforma</strong>&rdquo; ou &ldquo;<strong>Serviço</strong>&rdquo;)
-                é prestado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa coletiva n.º{" "}
-                <strong>[NIPC]</strong>, com sede em <strong>[Morada]</strong>, contactável em{" "}
-                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Cumpre-se assim o dever de informação previsto
-                no artigo 10.º do Decreto-Lei n.º 7/2004, de 7 de janeiro.
+                O Serviço Lusorae (adiante &ldquo;<strong>Plataforma</strong>&rdquo; ou &ldquo;<strong>Serviço</strong>&rdquo;)
+                é prestado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa coletiva de direito
+                português, NIPC <strong>[NIPC]</strong>, com sede em <strong>[Morada completa]</strong>, contactável
+                em <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. O cumprimento do dever de informação
+                resulta do artigo 10.º do Decreto-Lei n.º 7/2004, de 7 de janeiro, e dos artigos 11.º e seguintes do DSA.
             </p>
 
-            <h2>2. Objeto e aceitação</h2>
+            <h2>Definições</h2>
+            <p>Para efeitos destes Termos, entende-se por:</p>
+            <table>
+                <thead><tr><th>Termo</th><th>Significado</th></tr></thead>
+                <tbody>
+                    <tr><td>Plataforma / Serviço</td><td>O conjunto de produtos digitais disponibilizados sob a marca Lusorae, incluindo aplicações web e móveis, APIs e qualquer extensão futura identificada com a mesma marca.</td></tr>
+                    <tr><td>Utilizador</td><td>Pessoa singular, com idade igual ou superior a 13 anos, que tenha conta registada na Plataforma.</td></tr>
+                    <tr><td>Visitante</td><td>Pessoa que aceda à Plataforma sem conta registada.</td></tr>
+                    <tr><td>Conteúdo</td><td>Qualquer texto, imagem, vídeo, áudio, ligação, código, reação ou outro elemento criado, carregado, partilhado ou reagido na Plataforma.</td></tr>
+                    <tr><td>Conteúdo do Utilizador</td><td>O Conteúdo gerado, carregado ou partilhado pelo Utilizador.</td></tr>
+                    <tr><td>Decisão de moderação</td><td>Qualquer ato do prestador relativo à visibilidade, disponibilidade ou existência de Conteúdo, ou à conta de Utilizador, abrangido pelo artigo 14.º do DSA.</td></tr>
+                    <tr><td>Recurso</td><td>Reclamação interna apresentada pelo Utilizador contra uma decisão de moderação, ao abrigo do artigo 20.º do DSA.</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Objeto e aceitação</h2>
             <p>
-                Estes Termos constituem o contrato celebrado entre a Plataforma e o utilizador (&ldquo;<strong>Utilizador</strong>&rdquo;).
-                Ao criar conta, aceder ou utilizar o Serviço, o Utilizador declara ter lido, compreendido e aceitar
-                integralmente os Termos, bem como a <a href="/legal/privacy">Política de Privacidade</a>,
-                a <a href="/legal/cookies">Política de Cookies</a> e as <a href="/legal/community">Diretrizes da Comunidade</a>.
+                Estes Termos constituem o contrato celebrado entre a Plataforma e o Utilizador. Ao criar conta,
+                aceder ou continuar a utilizar o Serviço, o Utilizador declara ter lido, compreendido e aceitar
+                integralmente: estes Termos, a <a href="/legal/privacy">Política de Privacidade</a>, a{" "}
+                <a href="/legal/cookies">Política de Cookies</a>, as{" "}
+                <a href="/legal/community">Diretrizes da Comunidade</a> e os{" "}
+                <a href="/legal/vision">seis compromissos institucionais</a> que descrevem a nossa visão.
             </p>
             <p>
-                Quando o Utilizador for um consumidor (artigo 2.º da Lei n.º 24/96, de 31 de julho), são aplicáveis
-                as garantias imperativas previstas no Decreto-Lei n.º 84/2021 (conteúdos e serviços digitais) e demais
-                legislação de defesa do consumidor.
+                Quando o Utilizador seja consumidor, na aceção do artigo 2.º da Lei n.º 24/96, de 31 de julho, são
+                aplicáveis as garantias imperativas previstas no Decreto-Lei n.º 84/2021 (conteúdos e serviços
+                digitais) e a demais legislação de defesa do consumidor, prevalecendo sobre qualquer cláusula destes
+                Termos que contra elas dispusesse.
             </p>
 
-            <h2>3. Idade mínima e capacidade</h2>
+            <h2>Capacidade jurídica e idade mínima</h2>
             <p>
-                Nos termos do artigo 8.º do RGPD e do artigo 16.º da Lei n.º 58/2019, de 8 de agosto, o tratamento de
-                dados pessoais de menor com base no consentimento (artigo 6.º, n.º 1, alínea a) do RGPD) só é lícito
-                a partir dos <strong>13 anos</strong>; abaixo dessa idade exige-se autorização dos representantes legais.
-                Para utilização autónoma do Serviço, a idade mínima é de <strong>16 anos</strong>. Reservamo-nos o
-                direito de adotar mecanismos razoáveis de verificação etária.
+                Nos termos do artigo 8.º do RGPD e do artigo 16.º da Lei n.º 58/2019, de 8 de agosto, o tratamento
+                de dados pessoais de menor com fundamento no consentimento (artigo 6.º, n.º 1, alínea a) do RGPD)
+                só é lícito a partir dos <strong>13 anos</strong>; abaixo dessa idade exige-se autorização dos
+                representantes legais. Para utilização autónoma do Serviço, exigimos <strong>16 anos</strong>.
+            </p>
+            <p>
+                A Plataforma reserva-se o direito de adotar mecanismos razoáveis e proporcionais de verificação
+                etária, em particular nos termos do artigo 28.º do DSA. A submissão de informação falsa sobre idade
+                constitui violação contratual e fundamento bastante para suspensão da conta.
             </p>
 
-            <h2>4. Conta de utilizador</h2>
-            <h3>4.1 Criação</h3>
+            <h2>Conta de utilizador</h2>
+            <h3>Criação</h3>
             <p>
-                A criação de conta exige um endereço de e-mail válido, palavra-passe e um nome de utilizador único.
-                O Utilizador é responsável pela veracidade dos dados fornecidos e pela atualização dos mesmos.
+                A criação de conta exige um endereço de e-mail válido, uma palavra-passe e um nome de utilizador
+                único. O Utilizador é responsável pela veracidade dos dados fornecidos e por os manter atualizados.
             </p>
-            <h3>4.2 Segurança e responsabilidade</h3>
+            <h3>Segurança e responsabilidade</h3>
             <p>
                 O Utilizador é responsável pela confidencialidade das credenciais de acesso e por qualquer atividade
-                realizada a partir da sua conta. Deve notificar imediatamente o Lusorae em caso de acesso não
-                autorizado.
+                realizada a partir da sua conta. Em caso de suspeita de acesso não autorizado, deve notificar
+                imediatamente o Lusorae através de <a href="mailto:abuso@lusorae.pt">abuso@lusorae.pt</a> e proceder
+                à alteração imediata da palavra-passe.
             </p>
-            <h3>4.3 Encerramento pelo Utilizador</h3>
+            <h3>Uma pessoa, uma conta</h3>
+            <p>
+                Cada Utilizador deve manter, em regra, uma única conta. Contas adicionais com finalidade legítima
+                (e.g. profissional vs. pessoal, conta de projeto, conta institucional) são admitidas; contas adicionais
+                cuja única função seja contornar uma sanção anteriormente aplicada constituem infração destes Termos.
+            </p>
+            <h3>Encerramento pelo Utilizador</h3>
             <p>
                 O Utilizador pode, a todo o tempo, encerrar a sua conta nas Definições, sem necessidade de invocar
-                motivo. A eliminação é executada nos termos da Política de Privacidade, salvo períodos de conservação
-                legalmente exigidos.
+                motivo. A eliminação é executada nos termos da{" "}
+                <a href="/legal/privacy">Política de Privacidade</a> &mdash; em regra, em até 30 dias &mdash; salvo
+                períodos de conservação legalmente exigidos.
             </p>
 
-            <h2>5. Conteúdos do Utilizador</h2>
-            <h3>5.1 Propriedade e licença</h3>
+            <h2>Conteúdos do Utilizador</h2>
+            <h3>Titularidade</h3>
             <p>
-                O Utilizador mantém a titularidade dos direitos sobre os conteúdos que publica. Ao publicar,
-                concede ao Lusorae uma <strong>licença mundial, não exclusiva, isenta de royalties</strong> e
-                limitada à operação, promoção e melhoria do Serviço, incluindo o direito de armazenar, reproduzir,
-                distribuir, transmitir e exibir os conteúdos no contexto do Serviço. A licença caduca com a eliminação
-                do conteúdo, salvo quando seja necessário conservá-lo para cumprimento de obrigação legal, prevenção
-                de fraude ou exercício de direitos em processo judicial.
+                O Utilizador mantém integralmente a titularidade dos direitos sobre os Conteúdos que publica. A
+                Plataforma não reivindica qualquer direito de autor ou direito conexo sobre esses Conteúdos.
             </p>
-            <h3>5.2 Garantias do Utilizador</h3>
+            <h3>Licença concedida ao Lusorae</h3>
+            <p>
+                Ao publicar um Conteúdo na Plataforma, o Utilizador concede ao Lusorae uma{" "}
+                <strong>licença mundial, não exclusiva, gratuita</strong> e estritamente limitada à operação,
+                exibição, distribuição interna na Plataforma, indexação, moderação, salvaguarda técnica e
+                eventual promoção do próprio Conteúdo dentro do Serviço. Esta licença:
+            </p>
             <ul>
-                <li>É titular dos direitos sobre o conteúdo ou dispõe de autorização para o publicar.</li>
-                <li>O conteúdo não viola direitos de terceiros, nomeadamente direitos de autor (Código do Direito de Autor e dos Direitos Conexos), direitos de personalidade ou dados pessoais.</li>
-                <li>O conteúdo cumpre a lei, as Diretrizes da Comunidade e o presente contrato.</li>
+                <li><strong>não autoriza</strong> a venda, sublicenciamento comercial ou cessão do Conteúdo a terceiros para finalidade independente da operação da Plataforma;</li>
+                <li><strong>não autoriza</strong> a utilização do Conteúdo para treino de modelos de inteligência artificial sem consentimento adicional expresso do Utilizador;</li>
+                <li><strong>caduca</strong> com a eliminação do Conteúdo, salvo quando seja necessário conservá-lo para cumprimento de obrigação legal, prevenção de fraude ou exercício de direitos em processo judicial ou administrativo.</li>
             </ul>
-            <h3>5.3 Conteúdo ilícito e Direitos de Autor</h3>
-            <p>
-                Em conformidade com os artigos 16.º a 18.º do DSA, qualquer pessoa pode notificar conteúdo
-                potencialmente ilícito através do mecanismo &ldquo;<em>Reportar</em>&rdquo;. Para violações de direito
-                de autor, podem ser apresentadas notificações nos termos do regime aplicável, incluindo a Diretiva (UE)
-                2019/790 transposta pela Lei n.º 49/2024 (sempre que aplicável).
-            </p>
-
-            <h2>6. Condutas proibidas</h2>
-            <p>O Utilizador compromete-se a não:</p>
+            <h3>Garantias do Utilizador</h3>
+            <p>O Utilizador declara e garante, ao publicar Conteúdo:</p>
             <ul>
-                <li>Publicar conteúdo ilegal nos termos da lei portuguesa ou da União Europeia, incluindo, sem limitar, conteúdo de exploração sexual de menores (artigo 176.º do Código Penal), discurso de ódio (artigo 240.º do Código Penal), apologia da violência ou do terrorismo, ou difamação;</li>
-                <li>Praticar fraude, engano ou usurpação de identidade;</li>
-                <li>Recolher dados pessoais de outros utilizadores sem fundamento legal (incluindo <em>scraping</em> não autorizado);</li>
-                <li>Comprometer a integridade técnica do Serviço (ataques, engenharia inversa, contornar limites);</li>
-                <li>Utilizar o Serviço para difundir spam, malware ou conteúdo enganador;</li>
-                <li>Operar contas automatizadas sem identificação inequívoca como tal;</li>
-                <li>Publicar dados pessoais de terceiros sem base legal (designadamente <em>doxing</em>).</li>
+                <li>Ser titular dos direitos ou dispor de autorização suficiente para o publicar;</li>
+                <li>Que o Conteúdo não viola direitos de terceiros, designadamente direitos de autor (Código do Direito de Autor e dos Direitos Conexos), direitos de personalidade ou de proteção de dados pessoais;</li>
+                <li>Que o Conteúdo cumpre a lei, as <a href="/legal/community">Diretrizes da Comunidade</a> e estes Termos.</li>
             </ul>
+            <h3>Notificações de conteúdo ilícito e Direitos de Autor</h3>
+            <p>
+                Em conformidade com os artigos 16.º a 18.º do DSA, qualquer pessoa, mesmo sem conta, pode notificar
+                Conteúdo potencialmente ilícito através do mecanismo &ldquo;<em>Reportar</em>&rdquo; presente em cada
+                publicação, ou enviando notificação fundamentada para{" "}
+                <a href="mailto:reportar@lusorae.pt">reportar@lusorae.pt</a>. Para alegadas violações de direitos
+                de autor, aplicam-se ainda os regimes específicos resultantes da Diretiva (UE) 2019/790 e da sua
+                transposição nacional, sempre que aplicáveis.
+            </p>
 
-            <h2>7. Moderação de conteúdos</h2>
+            <h2>Condutas proibidas</h2>
             <p>
-                Em cumprimento dos artigos 14.º, 15.º, 17.º e 24.º do DSA, o Lusorae publica os termos da sua
-                política de moderação e elabora relatórios periódicos de transparência. As medidas de moderação
-                podem incluir: rotulagem, redução de visibilidade, remoção de conteúdo, suspensão temporária ou
-                permanente de conta.
+                Sem prejuízo das <a href="/legal/community">Diretrizes da Comunidade</a> (que detalham casos
+                concretos), o Utilizador compromete-se a não utilizar a Plataforma para:
             </p>
-            <h3>7.1 Notificação ao Utilizador (Statement of Reasons)</h3>
+
+            <LegalIconGrid tone="danger" items={[
+                { label: "Conteúdo ilegal: violência, ódio, abuso de menores ou apologia do terrorismo", ref: "CP · L. 52/2003", icon: ShieldAlert },
+                { label: "Fraude, engano ou usurpação de identidade",                                  ref: "CP · DSA",        icon: UserX },
+                { label: "Recolha não autorizada de dados (scraping) ou raspagem em escala",            ref: "RGPD",            icon: EyeOff },
+                { label: "Compromisso da integridade técnica, acesso indevido ou exfiltração",          ref: "Acesso indevido", icon: ShieldOff },
+                { label: "Spam, malware, smishing ou conteúdo enganador automatizado",                   ref: "DSA art. 14.º",   icon: Ban },
+                { label: "Operação de contas automatizadas (bots) sem identificação clara",              ref: "DSA",             icon: Slash },
+                { label: "Doxing &mdash; divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
+                { label: "Difamação, injúria, assédio ou perseguição (stalking)",                         ref: "Arts. 180.º · 181.º · 154.º-A CP", icon: MessageCircle },
+            ]} />
+
+            <h2>Moderação e medidas</h2>
             <p>
-                Sempre que adotemos uma medida que afete a visibilidade ou disponibilidade de um conteúdo do
-                Utilizador, ou a sua conta, comunicaremos a decisão e a respetiva fundamentação, identificando os
-                factos, a base legal/contratual e os meios de recurso, nos termos do artigo 17.º do DSA.
+                Em cumprimento dos artigos 14.º, 15.º, 17.º, 20.º, 24.º e 42.º do DSA, mantemos uma política de
+                moderação pública (estes Termos e as Diretrizes), notificamos as decisões aos seus destinatários
+                com a respetiva fundamentação, e publicamos relatórios periódicos de transparência.
             </p>
-            <h3>7.2 Sistema interno de reclamação</h3>
             <p>
-                O Utilizador pode contestar a decisão através do mecanismo de reclamação interna previsto no
-                artigo 20.º do DSA, gratuito e disponível durante, pelo menos, <strong>seis meses</strong> após a
-                comunicação da decisão.
+                As medidas seguem o <strong>princípio da proporcionalidade</strong>: começam pelo menos restritivo
+                e só escalam quando a gravidade do facto, o impacto sobre terceiros, ou a reincidência o justifiquem.
             </p>
-            <h3>7.3 Resolução extrajudicial de litígios</h3>
+
+            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas &mdash; do menos ao mais restritivo">
+                <LegalLadder steps={[
+                    { label: "Aviso interno",            desc: "Notificação ao Utilizador, com identificação do Conteúdo e da regra aplicável. Sem efeito visível para terceiros.", icon: Flag },
+                    { label: "Rotulagem (label)",        desc: "O Conteúdo permanece visível, mas com aviso contextual (e.g. sensível, possivelmente desinformação verificada).",      icon: AlertTriangle },
+                    { label: "Redução de alcance",       desc: "Diminuída a exposição algorítmica em superfícies de descoberta, sem ocultação para seguidores diretos.",                icon: ArrowDownToLine },
+                    { label: "Remoção do Conteúdo",      desc: "O Conteúdo é retirado e o autor notificado com Statement of Reasons fundamentado (art. 17.º DSA).",                      icon: EyeOff },
+                    { label: "Suspensão temporária",     desc: "A conta fica inativa por período determinado e proporcionado. Recorrível durante 6 meses.",                                 icon: UserX },
+                    { label: "Suspensão permanente",     desc: "Apenas em casos manifestamente graves ou de reincidência. Recorrível. Não impede o exercício dos direitos RGPD.",          icon: ShieldOff },
+                ]}
+                caption="Cada medida pode ser objeto de Recurso interno gratuito (art. 20.º DSA) durante pelo menos 6 meses após a comunicação da decisão." />
+            </LegalVisualBlock>
+
+            <h3>Notificação fundamentada ao Utilizador</h3>
             <p>
-                Sem prejuízo dos meios judiciais, o Utilizador pode submeter o litígio a um órgão de resolução
-                extrajudicial certificado nos termos do artigo 21.º do DSA, ou recorrer aos centros de arbitragem
-                de consumo em Portugal e à plataforma europeia de Resolução de Litígios em Linha (ODR):{" "}
+                Sempre que adotemos uma decisão de moderação que afete a visibilidade ou disponibilidade de um
+                Conteúdo, ou a conta do Utilizador, comunicamos a decisão por meio durável, identificando: o facto
+                concreto, a regra aplicável (estes Termos, as Diretrizes ou a lei), os meios de recurso disponíveis
+                e o prazo para os exercer. Este dever resulta do artigo 17.º do DSA.
+            </p>
+            <h3>Decisões automatizadas</h3>
+            <p>
+                A primeira triagem de algum Conteúdo manifestamente ilegal (e.g. material de abuso sexual infantil)
+                pode ser feita por sistemas automatizados, com revisão humana subsequente sempre que tecnicamente
+                viável. Para classes de Conteúdo cuja apreciação dependa de contexto (e.g. crítica política,
+                sátira, conteúdo artístico), a decisão é, em regra, humana.
+            </p>
+
+            <h2>Sistema interno de reclamação (Recurso)</h2>
+            <p>
+                O Utilizador pode contestar qualquer decisão de moderação através do <strong>Recurso interno</strong>{" "}
+                previsto no artigo 20.º do DSA. O Recurso:
+            </p>
+            <ul>
+                <li>é gratuito;</li>
+                <li>está disponível durante, pelo menos, <strong>6 meses</strong> a contar da comunicação da decisão;</li>
+                <li>é apreciado por pessoa qualificada que não tenha participado na decisão original;</li>
+                <li>é decidido em prazo razoável, em regra inferior a 14 dias úteis, sem prejuízo da complexidade do caso;</li>
+                <li>obriga ao restabelecimento do Conteúdo ou da conta sempre que o resultado seja procedente, sem custos para o Utilizador.</li>
+            </ul>
+            <p>
+                O Recurso pode ser apresentado a partir da própria notificação de decisão ou enviado para{" "}
+                <a href="mailto:recurso@lusorae.pt">recurso@lusorae.pt</a>.
+            </p>
+
+            <h2>Resolução extrajudicial e judicial</h2>
+            <p>
+                Sem prejuízo do direito de recurso aos tribunais comuns, o Utilizador pode submeter litígios sobre
+                decisões de moderação a um órgão de resolução extrajudicial certificado nos termos do artigo 21.º
+                do DSA. Pode ainda recorrer aos centros de arbitragem de consumo em Portugal e à plataforma europeia
+                de Resolução de Litígios em Linha (ODR):{" "}
                 <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">
                     ec.europa.eu/consumers/odr
                 </a>.
             </p>
 
-            <h2>8. Suspensão e cessação</h2>
+            <h2>Suspensão pelo prestador</h2>
             <p>
-                Nos termos do artigo 23.º do DSA, o Lusorae pode suspender o serviço a utilizadores que
-                frequentemente publiquem conteúdos manifestamente ilegais ou apresentem reclamações ou notificações
-                manifestamente infundadas, mediante aviso prévio e fundamentado e tendo em conta as circunstâncias
-                do caso.
+                Nos termos do artigo 23.º do DSA, podemos suspender o Serviço a utilizadores que, com manifesta
+                frequência, publiquem Conteúdo ilegal, ou apresentem notificações ou recursos manifestamente
+                infundados, sempre mediante aviso prévio e fundamentado, tendo em conta as circunstâncias concretas
+                do caso (gravidade, intenção, contexto e reincidência).
             </p>
 
-            <h2>9. Publicidade e algoritmos de recomendação</h2>
+            <h2>Publicidade e algoritmos de recomendação</h2>
             <p>
-                Sempre que existam conteúdos publicitários, estes serão identificados de forma clara e em tempo
-                real, com indicação do anunciante (artigo 26.º do DSA). Os parâmetros principais do sistema de
-                recomendação são descritos nestes Termos e nas Definições da conta (artigo 27.º do DSA); sempre que
-                seja oferecida personalização baseada em <em>profiling</em>, é disponibilizada uma alternativa
-                não personalizada.
+                Sempre que apresentemos conteúdo publicitário, esse conteúdo é identificado em tempo real, de forma
+                clara, e acompanhado da indicação do anunciante e dos parâmetros principais que motivaram a sua
+                apresentação ao Utilizador (artigos 26.º e 39.º do DSA).
             </p>
             <p>
-                Em conformidade com o artigo 28.º do DSA, não é apresentada publicidade baseada em <em>profiling</em>
-                a utilizadores que se saiba (ou se presuma com razoabilidade) serem menores.
+                Os parâmetros principais dos sistemas de recomendação que utilizamos são descritos nas Definições da
+                conta, em linguagem clara, conforme o artigo 27.º do DSA. Sempre que ofereçamos personalização
+                baseada em <em>profiling</em>, está disponível, no mesmo lugar, uma alternativa não personalizada
+                que o Utilizador pode escolher.
             </p>
-
-            <h2>10. Propriedade intelectual da Plataforma</h2>
             <p>
-                A marca &ldquo;Lusorae&rdquo;, logótipo, interface, código-fonte e demais elementos distintivos
-                são propriedade do prestador ou licenciados ao mesmo, encontrando-se protegidos pelo Código da
-                Propriedade Industrial e pelo Código do Direito de Autor e dos Direitos Conexos.
+                Em conformidade com o artigo 28.º do DSA, e com o terceiro dos nossos{" "}
+                <a href="/legal/vision">seis compromissos</a>, não apresentamos publicidade baseada em{" "}
+                <em>profiling</em> a utilizadores que se saiba (ou se presuma com razoabilidade) serem menores.
             </p>
 
-            <h2>11. Disponibilidade do Serviço</h2>
+            <h2>Propriedade intelectual da Plataforma</h2>
             <p>
-                Envidamos esforços razoáveis para manter o Serviço disponível, mas não garantimos disponibilidade
-                ininterrupta. Reservamo-nos o direito de realizar manutenções, atualizações e interrupções
-                programadas, sendo o Utilizador, sempre que possível, informado com antecedência.
+                A marca &ldquo;Lusorae&rdquo;, o logótipo, a interface, o sistema de desenho, o código-fonte
+                proprietário e demais elementos distintivos são propriedade do prestador ou estão licenciados ao
+                prestador, encontrando-se protegidos pelo Código da Propriedade Industrial e pelo Código do Direito
+                de Autor e dos Direitos Conexos. Componentes de código aberto utilizados na Plataforma estão sujeitos
+                às respetivas licenças, disponíveis a pedido para <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
             </p>
 
-            <h2>12. Limitação de responsabilidade</h2>
+            <h2>Disponibilidade do Serviço</h2>
             <p>
-                Nos limites máximos permitidos pela lei aplicável, a responsabilidade do Lusorae abrange apenas
-                os danos diretos resultantes de incumprimento doloso ou com culpa grave. As cláusulas de exclusão
-                ou limitação de responsabilidade estão sujeitas ao regime das cláusulas contratuais gerais
-                (Decreto-Lei n.º 446/85, de 25 de outubro), prevalecendo as normas imperativas a favor do consumidor.
+                Envidamos esforços razoáveis para manter o Serviço disponível e operacional. Não garantimos, contudo,
+                disponibilidade ininterrupta: o Serviço pode ser objeto de manutenções programadas, atualizações,
+                ou interrupções decorrentes de falhas de infraestrutura. Quando possível, comunicamos manutenções
+                programadas com antecedência razoável através das superfícies oficiais da Plataforma. Eventos
+                de força maior (catástrofe natural, falha generalizada de redes públicas, decisão regulatória
+                superveniente) suspendem a responsabilidade pelo período da sua duração.
             </p>
 
-            <h2>13. Alteração dos Termos</h2>
+            <h2>Limitação de responsabilidade</h2>
             <p>
-                Estes Termos podem ser atualizados. As alterações materialmente relevantes são comunicadas com,
-                pelo menos, <strong>15 dias</strong> de antecedência, por aviso na Plataforma e/ou por e-mail. A
-                continuação de utilização após a entrada em vigor implica aceitação; se o Utilizador não concordar,
-                pode encerrar a conta.
+                Nos limites máximos permitidos pela lei aplicável, e sem prejuízo das normas imperativas a favor
+                do consumidor, a responsabilidade do Lusorae limita-se aos danos diretos resultantes de incumprimento
+                doloso ou com culpa grave. Não respondemos por danos indiretos, lucros cessantes ou perda de
+                oportunidade. As cláusulas de exclusão ou limitação de responsabilidade estão sujeitas ao regime
+                das cláusulas contratuais gerais (Decreto-Lei n.º 446/85, de 25 de outubro), prevalecendo as normas
+                imperativas em matéria de defesa do consumidor.
             </p>
 
-            <h2>14. Direito de livre resolução (consumidores)</h2>
+            <h2>Subscrições pagas (Plus, Aura)</h2>
             <p>
-                Quando o Utilizador seja consumidor e tenha contratado serviços onerosos à distância, dispõe do
-                direito de livre resolução no prazo de <strong>14 dias</strong> após a celebração do contrato,
-                nos termos do Decreto-Lei n.º 24/2014, de 14 de fevereiro, sem necessidade de invocar motivo.
-                O Serviço-base do Lusorae é gratuito; este direito aplica-se apenas a subscrições pagas, quando
-                e se vierem a existir.
+                A utilização do Serviço-base é, e continuará a ser, gratuita. Determinadas funcionalidades adicionais
+                de expressão, conforto e identidade podem ser disponibilizadas mediante subscrição paga (planos{" "}
+                <em>Plus</em> e <em>Aura</em>, descritos com detalhe em <a href="/premium">/premium</a>).
+            </p>
+            <p>
+                Quando o Utilizador subscreva um plano pago, e na qualidade de consumidor à distância na aceção do
+                Decreto-Lei n.º 24/2014, de 14 de fevereiro, dispõe do <strong>direito de livre resolução</strong>{" "}
+                no prazo de <strong>14 dias</strong> a contar da celebração do contrato, sem necessidade de invocar
+                motivo e sem custos, salvo eventual valor proporcional ao serviço já prestado quando a execução tenha
+                começado com consentimento expresso do Utilizador. As subscrições renovam-se automaticamente até
+                ao cancelamento, que pode ser efetuado nas Definições da conta. Em caso de falha temporária de
+                cobrança, mantemos os direitos premium ativos durante <strong>7 dias</strong> de tolerância antes
+                de regressar o plano ao gratuito.
+            </p>
+            <p>
+                Coerentemente com o quinto dos nossos <a href="/legal/vision">seis compromissos</a>, os planos pagos
+                não conferem qualquer vantagem algorítmica, social ou de prioridade na moderação.
             </p>
 
-            <h2>15. Lei aplicável e foro</h2>
+            <h2>Alteração destes Termos</h2>
+            <p>
+                Podemos atualizar estes Termos. Alterações materialmente relevantes são comunicadas com pelo menos{" "}
+                <strong>15 dias</strong> de antecedência, por aviso na Plataforma e/ou por e-mail. A continuação
+                de utilização após a entrada em vigor das alterações implica a sua aceitação; se o Utilizador não
+                concordar, pode encerrar a conta sem qualquer penalização. As versões anteriores ficam acessíveis,
+                a pedido, para <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
+            </p>
+
+            <h2>Inatividade prolongada e sucessão</h2>
+            <p>
+                Contas com inatividade superior a <strong>36 meses</strong> podem ser objeto de procedimento de
+                arquivamento técnico, com aviso prévio ao endereço de e-mail associado, sem prejuízo dos direitos
+                de privacidade do titular.
+            </p>
+            <p>
+                Em caso de falecimento do Utilizador, herdeiros ou pessoas com legitimidade reconhecida podem,
+                mediante prova documental adequada (certidão de óbito, comprovação de legitimidade), solicitar:
+                (i) a memorialização da conta, com restrição de novas publicações; (ii) a transferência de Conteúdos
+                em formato portátil, nos termos do artigo 20.º do RGPD; ou (iii) a eliminação da conta. Os pedidos
+                são tratados em <a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a>.
+            </p>
+
+            <h2>Reorganizações societárias e cessão</h2>
+            <p>
+                Em caso de fusão, aquisição ou transmissão de estabelecimento, os contratos com utilizadores são
+                transmitidos ao novo titular, no quadro do regime do RGPD, com prévia comunicação aos utilizadores e
+                respeito pelos seus direitos de oposição e eliminação da conta. A transmissão não pode degradar os
+                direitos contratuais já adquiridos pelo Utilizador.
+            </p>
+
+            <h2>Lei aplicável e foro</h2>
             <p>
                 Estes Termos regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo dos direitos imperativos
-                que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008 — Roma I), as partes
+                que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008 &mdash; Roma I), as partes
                 elegem o <strong>foro da Comarca de [Cidade da sede]</strong>, com expressa renúncia a qualquer
-                outro.
+                outro. Consumidores podem, em alternativa, recorrer ao seu próprio foro nos termos do Regulamento
+                (UE) n.º 1215/2012.
             </p>
 
-            <h2>16. Contactos</h2>
+            <h2>Contactos institucionais</h2>
             <p>
-                Para qualquer questão sobre estes Termos: <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
+                Para qualquer matéria contratual:{" "}
+                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Para exercício de direitos RGPD:{" "}
+                <a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a>. Para denúncias de Conteúdo:{" "}
+                <a href="mailto:reportar@lusorae.pt">reportar@lusorae.pt</a>. Para Recursos:{" "}
+                <a href="mailto:recurso@lusorae.pt">recurso@lusorae.pt</a>. Para incidentes de segurança:{" "}
+                <a href="mailto:abuso@lusorae.pt">abuso@lusorae.pt</a>. Apoio geral:{" "}
+                <a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a>.
             </p>
         </LegalShell>
     );

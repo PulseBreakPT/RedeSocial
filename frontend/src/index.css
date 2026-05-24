@@ -2167,4 +2167,632 @@
             animation: none !important;
         }
     }
+
+    /* ============================================================
+       LEGAL VISUALS — primitives for /legal/* pages
+       (used inside .prose-legal .not-prose blocks)
+       Design goal: hierarchical, informative, never decorative.
+       ============================================================ */
+
+    /* — Signal pills (frameworks regulatórios) — */
+    .legal-viz-pills {
+        display: flex; flex-wrap: wrap; gap: 6px 6px;
+        margin: 1rem 0 1.6rem;
+    }
+    .legal-viz-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 9px 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-family: "JetBrains Mono", "Inter", monospace;
+        letter-spacing: 0.02em;
+        line-height: 1;
+        background: rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.07);
+        color: rgba(0,0,0,0.72);
+        white-space: nowrap;
+    }
+    .legal-viz-pill svg { color: rgba(0,0,0,0.55); }
+    .legal-viz-pill-label { font-weight: 600; letter-spacing: 0.02em; }
+    .legal-viz-pill-ref {
+        font-size: 9.5px; opacity: 0.6;
+        padding-left: 5px; margin-left: 4px;
+        border-left: 1px solid rgba(0,0,0,0.10);
+    }
+    .legal-viz-pill.tone-eu {
+        background: linear-gradient(180deg, rgba(0,51,153,0.06), rgba(0,51,153,0.02));
+        border-color: rgba(0,51,153,0.18);
+        color: #0a3d91;
+    }
+    .legal-viz-pill.tone-eu svg { color: #0a3d91; }
+    .legal-viz-pill.tone-pt {
+        background: rgba(212,93,57,0.06);
+        border-color: rgba(212,93,57,0.20);
+        color: #b24433;
+    }
+    .legal-viz-pill.tone-pt svg { color: #b24433; }
+    .legal-viz-pill.tone-key {
+        background: rgba(8,8,8,0.85);
+        border-color: rgba(8,8,8,0.85);
+        color: #ffffff;
+    }
+    .legal-viz-pill.tone-key svg { color: rgba(255,255,255,0.9); }
+    .legal-viz-pill.tone-key .legal-viz-pill-ref {
+        border-left-color: rgba(255,255,255,0.20);
+        color: rgba(255,255,255,0.65);
+    }
+
+    /* — KPI row — */
+    .legal-viz-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 1.4rem 0 2rem;
+    }
+    .legal-viz-kpi {
+        display: flex; gap: 11px; align-items: flex-start;
+        padding: 12px 13px;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.012) 0%, rgba(0,0,0,0) 100%);
+    }
+    .legal-viz-kpi-icon {
+        width: 26px; height: 26px;
+        border-radius: 8px;
+        background: #0a0a0a;
+        color: #ffffff;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+    }
+    .legal-viz-kpi-icon svg { color: #ffffff; }
+    .legal-viz-kpi-body { min-width: 0; }
+    .legal-viz-kpi-value {
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.018em;
+        font-feature-settings: "tnum";
+        line-height: 1.1;
+        color: #0a0a0a;
+    }
+    .legal-viz-kpi-label {
+        margin-top: 3px;
+        font-size: 11.5px;
+        line-height: 1.35;
+        color: rgba(0,0,0,0.6);
+    }
+    .legal-viz-kpi-sub {
+        margin-top: 3px;
+        font-size: 10px;
+        color: rgba(0,0,0,0.40);
+        font-family: "JetBrains Mono", monospace;
+        letter-spacing: 0.02em;
+    }
+
+    /* — Visual block wrapper — */
+    .legal-viz-block {
+        margin: 1.5rem 0 1.8rem;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.07);
+        background: linear-gradient(180deg, rgba(0,0,0,0.018), rgba(0,0,0,0));
+    }
+    .legal-viz-block--danger { background: rgba(212,93,57,0.04); border-color: rgba(212,93,57,0.20); }
+    .legal-viz-block--info { background: rgba(74,123,191,0.04); border-color: rgba(74,123,191,0.20); }
+    .legal-viz-block-eyebrow {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(0,0,0,0.5);
+        font-family: "JetBrains Mono", monospace;
+        margin: 0 0 4px;
+        font-weight: 600;
+    }
+    .legal-viz-block-title {
+        font-size: 14.5px;
+        font-weight: 600;
+        color: #0a0a0a;
+        margin: 0 0 10px;
+        letter-spacing: -0.01em;
+    }
+
+    /* — Flow diagram — */
+    .legal-viz-flow {
+        margin: 1.2rem 0 1.6rem;
+        padding: 16px 14px 12px;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 14px;
+        background: rgba(0,0,0,0.015);
+        overflow-x: auto;
+    }
+    .legal-viz-flow-track {
+        display: flex; align-items: stretch; gap: 0;
+        min-width: max-content;
+    }
+    .legal-viz-flow-step {
+        display: flex; align-items: center; gap: 8px;
+        min-width: 110px;
+    }
+    .legal-viz-flow-node {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1.5px solid rgba(0,0,0,0.10);
+        display: grid; place-items: center;
+        color: #0a0a0a;
+        flex-shrink: 0;
+    }
+    .legal-viz-flow-node.accent-strong { background: #0a0a0a; color: #ffffff; border-color: #0a0a0a; }
+    .legal-viz-flow-node.accent-strong svg { color: #ffffff; }
+    .legal-viz-flow-node.accent-warn { background: rgba(212,93,57,0.10); border-color: rgba(212,93,57,0.45); }
+    .legal-viz-flow-node.accent-warn svg { color: #b24433; }
+    .legal-viz-flow-meta {
+        flex: 1; min-width: 0;
+    }
+    .legal-viz-flow-label {
+        font-size: 12px; font-weight: 600;
+        color: #0a0a0a;
+        line-height: 1.25;
+    }
+    .legal-viz-flow-sub {
+        font-size: 10.5px; color: rgba(0,0,0,0.5);
+        margin-top: 1px;
+        line-height: 1.3;
+    }
+    .legal-viz-flow-arrow {
+        color: rgba(0,0,0,0.30);
+        display: grid; place-items: center;
+        padding: 0 6px;
+    }
+    .legal-viz-flow-caption {
+        margin: 10px 4px 0;
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.5);
+        font-style: italic;
+    }
+
+    /* — Ladder (proporcionalidade) — */
+    .legal-viz-ladder {
+        margin: 1.2rem 0 1.6rem;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .legal-viz-ladder-row {
+        display: grid;
+        grid-template-columns: 38px 1fr 2fr;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .legal-viz-ladder-row:last-child { border-bottom: 0; }
+    .legal-viz-ladder-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: rgba(0,0,0,0.45);
+        font-weight: 600;
+    }
+    .legal-viz-ladder-bar-wrap {
+        height: 6px;
+        background: rgba(0,0,0,0.05);
+        border-radius: 999px;
+        position: relative;
+        overflow: hidden;
+    }
+    .legal-viz-ladder-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #e9d6b8 0%, #d97757 60%, #b03128 100%);
+        border-radius: 999px;
+        transition: width 250ms ease;
+    }
+    .legal-viz-ladder-label {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 13px; font-weight: 600;
+        color: #0a0a0a;
+    }
+    .legal-viz-ladder-label svg { color: rgba(0,0,0,0.55); }
+    .legal-viz-ladder-desc {
+        font-size: 12px; color: rgba(0,0,0,0.55);
+        margin-top: 2px; line-height: 1.4;
+    }
+    .legal-viz-ladder-caption {
+        margin: 0; padding: 8px 12px;
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.55);
+        background: rgba(0,0,0,0.025);
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* — Rights grid (RGPD) — */
+    .legal-viz-rights {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 10px;
+        margin: 1.2rem 0 1.6rem;
+    }
+    .legal-viz-right {
+        display: flex; gap: 11px;
+        padding: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 12px;
+        background: #ffffff;
+        transition: border-color 180ms ease, transform 180ms ease;
+    }
+    .legal-viz-right:hover {
+        border-color: rgba(0,0,0,0.20);
+        transform: translateY(-1px);
+    }
+    .legal-viz-right-icon {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.05);
+        display: grid; place-items: center;
+        flex-shrink: 0;
+        color: #0a0a0a;
+    }
+    .legal-viz-right-body { min-width: 0; flex: 1; }
+    .legal-viz-right-title {
+        font-size: 13px; font-weight: 600;
+        color: #0a0a0a;
+        letter-spacing: -0.005em;
+    }
+    .legal-viz-right-desc {
+        font-size: 12px; color: rgba(0,0,0,0.55);
+        margin-top: 3px;
+        line-height: 1.45;
+    }
+    .legal-viz-right-ref {
+        font-size: 10px;
+        color: rgba(0,0,0,0.40);
+        margin-top: 5px;
+        font-family: "JetBrains Mono", monospace;
+    }
+
+    /* — Data map (categorias de dados) — */
+    .legal-viz-datamap {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 8px;
+        margin: 1.2rem 0 1.6rem;
+    }
+    .legal-viz-datacard {
+        padding: 10px 12px;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 10px;
+        background: #ffffff;
+        border-left-width: 3px;
+    }
+    .legal-viz-datacard[data-tone="identity"] { border-left-color: #0a0a0a; }
+    .legal-viz-datacard[data-tone="content"] { border-left-color: #4a7bbf; }
+    .legal-viz-datacard[data-tone="technical"] { border-left-color: #6b7280; }
+    .legal-viz-datacard[data-tone="usage"] { border-left-color: #b86d3e; }
+    .legal-viz-datacard[data-tone="location"] { border-left-color: #4f8a4f; }
+    .legal-viz-datacard[data-tone="comm"] { border-left-color: #8b5cf6; }
+    .legal-viz-datacard[data-tone="cookies"] { border-left-color: #d4751a; }
+    .legal-viz-datacard-head {
+        display: flex; align-items: center; gap: 7px;
+        margin-bottom: 4px;
+    }
+    .legal-viz-datacard-icon {
+        width: 22px; height: 22px;
+        border-radius: 6px;
+        background: rgba(0,0,0,0.04);
+        display: grid; place-items: center;
+        color: #0a0a0a;
+    }
+    .legal-viz-datacard-title {
+        font-size: 12px; font-weight: 600;
+        color: #0a0a0a;
+        letter-spacing: -0.005em;
+    }
+    .legal-viz-datacard-examples {
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.55);
+        line-height: 1.45;
+    }
+
+    /* — Timeline (conservação) — */
+    .legal-viz-timeline {
+        position: relative;
+        margin: 1.2rem 0 1.6rem;
+        padding: 8px 0 8px 22px;
+        border-left: 0;
+    }
+    .legal-viz-timeline-axis {
+        position: absolute;
+        left: 6px; top: 14px; bottom: 14px;
+        width: 1px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.18), rgba(0,0,0,0.05));
+    }
+    .legal-viz-timeline-row {
+        position: relative;
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 8px 0;
+    }
+    .legal-viz-timeline-dot {
+        position: absolute;
+        left: -20px;
+        top: 12px;
+        width: 11px; height: 11px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #0a0a0a;
+        box-shadow: 0 0 0 3px #ffffff;
+        z-index: 1;
+    }
+    .legal-viz-timeline-dot[data-tone="short"] { border-color: #4f8a4f; }
+    .legal-viz-timeline-dot[data-tone="medium"] { border-color: #b86d3e; }
+    .legal-viz-timeline-dot[data-tone="long"] { border-color: #b03128; }
+    .legal-viz-timeline-meta { flex: 1; min-width: 0; }
+    .legal-viz-timeline-when {
+        font-size: 11px; font-weight: 700;
+        color: #0a0a0a;
+        font-family: "JetBrains Mono", monospace;
+        letter-spacing: 0.02em;
+        margin-bottom: 2px;
+    }
+    .legal-viz-timeline-what {
+        font-size: 13px;
+        color: rgba(0,0,0,0.78);
+        font-weight: 500;
+        line-height: 1.4;
+    }
+    .legal-viz-timeline-note {
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.5);
+        margin-top: 2px;
+        font-style: italic;
+    }
+    .legal-viz-timeline-caption {
+        margin-top: 8px;
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.5);
+    }
+
+    /* — Icon grid (proibições / condutas) — */
+    .legal-viz-icongrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 8px;
+        margin: 1.2rem 0 1.6rem;
+    }
+    .legal-viz-icongrid-item {
+        display: flex; gap: 9px; align-items: flex-start;
+        padding: 10px 11px;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 10px;
+        background: #ffffff;
+        border-left-width: 3px;
+        border-left-color: rgba(0,0,0,0.20);
+    }
+    .legal-viz-icongrid--danger .legal-viz-icongrid-item {
+        border-left-color: #b03128;
+        background: rgba(212,93,57,0.025);
+    }
+    .legal-viz-icongrid--warn .legal-viz-icongrid-item {
+        border-left-color: #d97757;
+        background: rgba(217,119,87,0.025);
+    }
+    .legal-viz-icongrid-icon {
+        width: 26px; height: 26px;
+        border-radius: 7px;
+        background: rgba(0,0,0,0.05);
+        display: grid; place-items: center;
+        flex-shrink: 0;
+        color: #0a0a0a;
+    }
+    .legal-viz-icongrid--danger .legal-viz-icongrid-icon {
+        background: rgba(176,49,40,0.10);
+        color: #b03128;
+    }
+    .legal-viz-icongrid-body { flex: 1; min-width: 0; }
+    .legal-viz-icongrid-label {
+        font-size: 12.5px;
+        color: rgba(0,0,0,0.82);
+        line-height: 1.42;
+        font-weight: 500;
+    }
+    .legal-viz-icongrid-ref {
+        font-size: 10px;
+        color: rgba(0,0,0,0.42);
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 3px;
+        letter-spacing: 0.02em;
+    }
+
+    /* — Cookie stack — */
+    .legal-viz-cookiestack {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 1.2rem 0 1.6rem;
+    }
+    .legal-viz-cookie {
+        display: flex; gap: 0;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 12px;
+        background: #ffffff;
+        overflow: hidden;
+    }
+    .legal-viz-cookie-strip {
+        width: 6px;
+        background: rgba(0,0,0,0.10);
+        flex-shrink: 0;
+    }
+    .legal-viz-cookie[data-required="1"] .legal-viz-cookie-strip { background: #0a0a0a; }
+    .legal-viz-cookie[data-required="0"] .legal-viz-cookie-strip {
+        background: repeating-linear-gradient(135deg, rgba(0,0,0,0.18) 0 5px, rgba(0,0,0,0.05) 5px 10px);
+    }
+    .legal-viz-cookie-body {
+        padding: 12px 14px;
+        flex: 1; min-width: 0;
+    }
+    .legal-viz-cookie-head {
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+    }
+    .legal-viz-cookie-icon {
+        width: 24px; height: 24px;
+        border-radius: 7px;
+        background: rgba(0,0,0,0.04);
+        display: grid; place-items: center;
+        color: #0a0a0a;
+        flex-shrink: 0;
+    }
+    .legal-viz-cookie-title {
+        font-size: 13px; font-weight: 600;
+        color: #0a0a0a;
+        letter-spacing: -0.005em;
+    }
+    .legal-viz-cookie-flag {
+        margin-left: auto;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.10em;
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.04);
+        color: rgba(0,0,0,0.55);
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+    }
+    .legal-viz-cookie-flag.is-needed {
+        background: rgba(8,8,8,0.92);
+        color: #ffffff;
+    }
+    .legal-viz-cookie-desc {
+        font-size: 12.5px;
+        color: rgba(0,0,0,0.62);
+        line-height: 1.5;
+        margin: 0;
+    }
+    .legal-viz-cookie-examples {
+        margin: 6px 0 0;
+        font-size: 11.5px;
+        color: rgba(0,0,0,0.5);
+        line-height: 1.45;
+    }
+    .legal-viz-cookie-examples strong {
+        color: rgba(0,0,0,0.68);
+        font-weight: 600;
+    }
+
+    /* — Report flow (vertical) — */
+    .legal-viz-reportflow {
+        margin: 1.2rem 0 1.6rem;
+        padding: 4px 0;
+    }
+    .legal-viz-reportflow-step {
+        display: flex; gap: 12px;
+        align-items: flex-start;
+        padding-bottom: 6px;
+    }
+    .legal-viz-reportflow-marker {
+        display: flex; flex-direction: column; align-items: center;
+        flex-shrink: 0;
+    }
+    .legal-viz-reportflow-circle {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1.5px solid rgba(0,0,0,0.18);
+        display: grid; place-items: center;
+        color: #0a0a0a;
+        position: relative; z-index: 1;
+    }
+    .legal-viz-reportflow-line {
+        width: 1.5px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.06));
+        flex: 1;
+        min-height: 28px;
+        margin-top: 2px;
+    }
+    .legal-viz-reportflow-content {
+        flex: 1; min-width: 0;
+        padding-bottom: 14px;
+        padding-top: 3px;
+    }
+    .legal-viz-reportflow-title {
+        font-size: 13.5px; font-weight: 600;
+        color: #0a0a0a;
+        letter-spacing: -0.005em;
+        display: inline-flex; align-items: baseline; gap: 8px;
+    }
+    .legal-viz-reportflow-step-num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: rgba(0,0,0,0.40);
+        font-weight: 600;
+    }
+    .legal-viz-reportflow-desc {
+        font-size: 12.5px;
+        color: rgba(0,0,0,0.6);
+        margin: 4px 0 0;
+        line-height: 1.55;
+    }
+    .legal-viz-reportflow-meta {
+        margin-top: 5px;
+        font-size: 11px;
+        color: rgba(0,0,0,0.42);
+        font-family: "JetBrains Mono", monospace;
+        letter-spacing: 0.01em;
+    }
+
+    /* — Compliance board — */
+    .legal-viz-compliance {
+        margin: 1.2rem 0 1.6rem;
+        border: 1px solid rgba(0,0,0,0.07);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .legal-viz-compliance-row {
+        display: grid;
+        grid-template-columns: 14px 1fr 1.5fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 13px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        background: #ffffff;
+    }
+    .legal-viz-compliance-row:last-child { border-bottom: 0; }
+    .legal-viz-compliance-row:nth-child(even) { background: rgba(0,0,0,0.012); }
+    .legal-viz-compliance-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f8a4f, #2d6b2d);
+    }
+    .legal-viz-compliance-name {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #0a0a0a;
+    }
+    .legal-viz-compliance-scope {
+        font-size: 12px;
+        color: rgba(0,0,0,0.55);
+        line-height: 1.4;
+    }
+    .legal-viz-compliance-ref {
+        font-size: 10.5px;
+        color: rgba(0,0,0,0.5);
+        font-family: "JetBrains Mono", monospace;
+        white-space: nowrap;
+    }
+
+    /* — Mobile adjustments — */
+    @media (max-width: 640px) {
+        .legal-viz-kpis { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .legal-viz-kpi-value { font-size: 17px; }
+        .legal-viz-ladder-row { grid-template-columns: 26px 1fr 1.5fr; gap: 10px; padding: 9px; }
+        .legal-viz-ladder-desc { display: none; }
+        .legal-viz-compliance-row { grid-template-columns: 12px 1fr; }
+        .legal-viz-compliance-scope, .legal-viz-compliance-ref { grid-column: 2; font-size: 11px; }
+    }
+
+    /* — Print: keep visuals minimal — */
+    @media print {
+        .legal-viz-kpi { break-inside: avoid; }
+        .legal-viz-flow, .legal-viz-ladder, .legal-viz-reportflow { break-inside: avoid; }
+    }
+
 }
