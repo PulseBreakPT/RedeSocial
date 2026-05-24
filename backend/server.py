@@ -1299,8 +1299,23 @@ async def get_current_user(request: Request) -> dict:
                           "last_ua": request.headers.get("user-agent", "")[:300]}},
                 upsert=False,
             )
-        # update last seen (best-effort)
-        await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": now_iso()}})
+        # update last seen (best-effort) — no máximo 1×/60s para não fazer um
+        # write na coleção users a cada pedido autenticado.
+        try:
+            _prev = user.get("last_seen")
+            _stale = True
+            if _prev:
+                try:
+                    _stale = (datetime.now(timezone.utc) - datetime.fromisoformat(
+                        str(_prev).replace("Z", "+00:00"))).total_seconds() > 60
+                except Exception:
+                    _stale = True
+            if _stale:
+                _ts = now_iso()
+                await db.users.update_one({"id": user["id"]}, {"$set": {"last_seen": _ts}})
+                user["last_seen"] = _ts
+        except Exception:
+            pass
         return user
     except jwt.ExpiredSignatureError:
         try:
