@@ -55,6 +55,9 @@ import happenings
 # Comunidades — saúde do bairro (score coletivo) + núcleo/densidade social.
 import community_health
 import community_graph
+# Premium — motor de direitos (server-side) + billing real (Stripe).
+import entitlements
+import billing
 
 JWT_ALGORITHM = "HS256"
 
@@ -1182,6 +1185,10 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         "presence": user.get("presence") or {"status": "online", "emoji": "", "text": "", "until": None},
         "charms_equipped": user.get("charms_equipped", []),
         "cosmetics_equipped": user.get("cosmetics_equipped") or {"frame": "", "sticker": ""},
+        # Premium — só sinais seguros e públicos (badge discreta); a verdade
+        # premium completa vem de /premium/status (resolvida server-side).
+        "plan": entitlements.plan_of(user),
+        "early_supporter": bool(user.get("early_supporter")),
         "track_visits": user.get("track_visits", True),
         # Privacy prefs (settings → Privacidade)
         "show_online": user.get("show_online", True),
@@ -6998,6 +7005,23 @@ async def startup():
     await db.messages.create_index([("conversation_key", 1), ("created_at", 1)], name="msg_conv_created")
     await db.users.create_index("last_seen", name="users_last_seen")
     await db.bookmark_collections.create_index([("user_id", 1), ("created_at", -1)], name="bmk_user_created")
+    # ── Premium / billing ───────────────────────────────────────────
+    try:
+        await db.users.create_index("plan", name="users_plan")
+        await db.stripe_customers.create_index("user_id", unique=True, name="scust_user")
+        await db.stripe_customers.create_index("customer_id", name="scust_cust")
+        await db.subscriptions.create_index("user_id", name="subs_user")
+        await db.subscriptions.create_index("subscription_id", unique=True, sparse=True, name="subs_sub")
+        await db.subscription_events.create_index([("user_id", 1), ("created_at", -1)], name="subev_user")
+        await db.billing_logs.create_index([("created_at", -1)], name="blog_created")
+        await db.billing_idempotency.create_index("event_id", unique=True, name="bidem_event")
+        await db.invoices.create_index([("user_id", 1), ("created_at", -1)], name="inv_user")
+        await db.payments.create_index([("user_id", 1), ("created_at", -1)], name="pay_user")
+        await db.payment_failures.create_index([("user_id", 1), ("created_at", -1)], name="payfail_user")
+        await db.grace_periods.create_index("user_id", name="grace_user")
+        logger.info("premium: indexes ready")
+    except Exception as exc:
+        logger.warning(f"premium: index creation skipped: {exc}")
     admin_email = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
     admin_password = (os.environ.get("ADMIN_PASSWORD") or "").strip()
     admin_username = (os.environ.get("ADMIN_USERNAME") or "admin").strip().lower()
@@ -7088,6 +7112,15 @@ async def startup():
     except Exception as exc:
         logger.warning(f"community_health/graph: startup wiring failed: {exc}")
 
+    # ── Premium — sweeper de graça/expiração ────────────────────────
+    try:
+        global _premium_sweeper_task
+        if _premium_sweeper_task is None or _premium_sweeper_task.done():
+            _premium_sweeper_task = asyncio.create_task(_premium_sweeper_loop(), name="premium_sweeper")
+        logger.info(f"premium: billing configured={billing.is_configured()}, sweeper scheduled")
+    except Exception as exc:
+        logger.warning(f"premium: startup wiring failed: {exc}")
+
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -7111,6 +7144,11 @@ async def shutdown():
         pass
     try:
         await community_graph.stop_community_graph_loop()
+    except Exception:
+        pass
+    try:
+        if _premium_sweeper_task and not _premium_sweeper_task.done():
+            _premium_sweeper_task.cancel()
     except Exception:
         pass
     client.close()
@@ -9274,6 +9312,296 @@ async def suggest_hashtags(q: str = "", user=Depends(get_current_user)):
 # ---------- Polls v2 (server validates schema) ----------
 # Existing PostIn poll already supports "options" + "allow_multiple". We extend.
 # Frontend passes poll={type:"choice"|"scale"|"sentiment"|"ranking", ...}
+
+
+# ============================================================
+# PREMIUM — Lusorae Plus & Aura (entitlements + billing real)
+# ============================================================
+# Verdade premium = server-side. O cliente nunca decide; só reflete o que o
+# entitlement engine resolve a partir do estado escrito pelos webhooks Stripe.
+
+class PremiumCheckoutIn(BaseModel):
+    plan: str          # "plus" | "aura"
+    interval: str = "month"   # "month" | "year"
+
+
+def _premium_payload(user: dict) -> dict:
+    """Forma canónica do estado premium para o cliente (sem ids de billing)."""
+    return {
+        **entitlements.public_premium(user),
+        "entitlements": entitlements.resolved_entitlements(user),
+        "tiers": {
+            "plus": {"month": 4.99, "year": 49.99},
+            "aura": {"month": 9.99, "year": 99.99},
+        },
+        "billing_available": billing.is_configured(),
+    }
+
+
+async def _sync_premium_realtime(user_id: str) -> None:
+    """Propaga o estado premium em tempo real para todas as sessões do user."""
+    try:
+        fresh = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if fresh and "ws_manager" in globals():
+            await ws_manager.send_personal(user_id, {
+                "type": "entitlements_updated",
+                "premium": _premium_payload(fresh),
+            })
+    except Exception:
+        pass
+
+
+async def _billing_log(action: str, *, user_id: Optional[str] = None,
+                       event_id: Optional[str] = None, detail: Optional[dict] = None) -> None:
+    try:
+        await db.billing_logs.insert_one({
+            "id": str(uuid.uuid4()), "action": action, "user_id": user_id,
+            "event_id": event_id, "detail": detail or {}, "created_at": now_iso(),
+        })
+    except Exception:
+        pass
+
+
+async def _apply_subscription_state(user_id: str, state: dict, *, source: str) -> None:
+    """Escreve o estado premium canónico no doc do user + premium_users +
+    subscriptions, e regista o evento. Único sítio que muda direitos premium."""
+    plan = state.get("plan") or "free"
+    status = state.get("status") or "active"
+    now = datetime.now(timezone.utc)
+
+    user_set = {
+        "plan": plan if plan in entitlements.PLANS else "free",
+        "plan_status": status,
+        "plan_expires_at": state.get("current_period_end"),
+        "plan_cancel_at_period_end": bool(state.get("cancel_at_period_end")),
+    }
+    # Período de graça em falha de pagamento.
+    if status in ("past_due", "unpaid"):
+        user_set["grace_until"] = entitlements.grace_until_from(now)
+    elif status in ("active", "trialing"):
+        user_set["grace_until"] = None
+
+    existing = await db.users.find_one({"id": user_id}, {"_id": 0, "plan_since": 1, "early_supporter": 1})
+    if plan != "free" and not (existing or {}).get("plan_since"):
+        user_set["plan_since"] = now.isoformat()
+        # Early supporter: marca quem entrou premium cedo (badge discreta).
+        user_set["early_supporter"] = True
+
+    await db.users.update_one({"id": user_id}, {"$set": user_set})
+    await db.premium_users.update_one(
+        {"user_id": user_id},
+        {"$set": {"user_id": user_id, **user_set, "updated_at": now.isoformat()},
+         "$setOnInsert": {"created_at": now.isoformat()}},
+        upsert=True,
+    )
+    if state.get("subscription_id"):
+        await db.subscriptions.update_one(
+            {"subscription_id": state["subscription_id"]},
+            {"$set": {"user_id": user_id, **state, "updated_at": now.isoformat()}},
+            upsert=True,
+        )
+    await db.subscription_events.insert_one({
+        "id": str(uuid.uuid4()), "user_id": user_id, "source": source,
+        "plan": user_set["plan"], "status": status, "state": state,
+        "created_at": now.isoformat(),
+    })
+    await _sync_premium_realtime(user_id)
+
+
+async def _user_id_for_customer(customer_id: Optional[str]) -> Optional[str]:
+    if not customer_id:
+        return None
+    rec = await db.stripe_customers.find_one({"customer_id": customer_id}, {"_id": 0, "user_id": 1})
+    return rec.get("user_id") if rec else None
+
+
+@api.get("/premium/status")
+async def premium_status(user=Depends(get_current_user)):
+    """Estado premium do utilizador (resolvido server-side)."""
+    return _premium_payload(user)
+
+
+@api.get("/premium/entitlements")
+async def premium_entitlements(user=Depends(get_current_user)):
+    return {"plan": entitlements.plan_of(user), "entitlements": entitlements.resolved_entitlements(user)}
+
+
+@api.post("/premium/checkout")
+async def premium_checkout(payload: PremiumCheckoutIn, user=Depends(get_current_user)):
+    """Cria uma sessão de checkout Stripe (subscription). Devolve o URL."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    if payload.plan not in ("plus", "aura") or payload.interval not in ("month", "year"):
+        raise HTTPException(400, "Plano/intervalo inválido.")
+    if not billing.price_for(payload.plan, payload.interval):
+        raise HTTPException(503, "Este plano ainda não está disponível.")
+    base = os.environ.get("PUBLIC_APP_URL", "").rstrip("/") or "https://lusorae.pt"
+    try:
+        url = await billing.create_checkout_session(
+            db, user, payload.plan, payload.interval,
+            success_url=f"{base}/settings?premium=success",
+            cancel_url=f"{base}/settings?premium=cancel",
+        )
+    except Exception as exc:
+        logger.warning(f"premium: checkout failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível iniciar o checkout.")
+    await _billing_log("checkout.created", user_id=user["id"], detail={"plan": payload.plan, "interval": payload.interval})
+    return {"url": url}
+
+
+@api.post("/premium/portal")
+async def premium_portal(user=Depends(get_current_user)):
+    """Abre o Customer Portal do Stripe (gerir/cancelar/upgrade/downgrade/
+    métodos de pagamento/faturas/restore)."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    base = os.environ.get("PUBLIC_APP_URL", "").rstrip("/") or "https://lusorae.pt"
+    try:
+        url = await billing.create_billing_portal_session(db, user, return_url=f"{base}/settings")
+    except Exception as exc:
+        logger.warning(f"premium: portal failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível abrir a gestão de subscrição.")
+    return {"url": url}
+
+
+@api.get("/premium/invoices")
+async def premium_invoices(user=Depends(get_current_user)):
+    """Histórico de faturas (sincronizado pelos webhooks)."""
+    rows = await db.invoices.find(
+        {"user_id": user["id"]}, {"_id": 0, "id": 1, "amount": 1, "currency": 1,
+                                  "status": 1, "hosted_invoice_url": 1, "pdf": 1, "created_at": 1},
+    ).sort("created_at", -1).to_list(60)
+    return rows
+
+
+@api.post("/premium/restore")
+async def premium_restore(user=Depends(get_current_user)):
+    """Restore purchases: reconcilia o estado com o Stripe (caso o webhook se
+    tenha perdido). Lê as subscrições do customer e reaplica o estado."""
+    if not billing.is_configured():
+        raise HTTPException(503, "Billing ainda não está configurado.")
+    rec = await db.stripe_customers.find_one({"user_id": user["id"]}, {"_id": 0, "customer_id": 1})
+    if not rec or not rec.get("customer_id"):
+        return _premium_payload(user)
+    try:
+        subs = await billing.list_subscriptions_for_customer(rec["customer_id"])
+    except Exception as exc:
+        logger.warning(f"premium: restore failed for {user['id']}: {exc}")
+        raise HTTPException(502, "Não foi possível restaurar a subscrição.")
+    active = next((s for s in subs if s.get("status") in ("active", "trialing", "past_due")), None)
+    if active:
+        await _apply_subscription_state(user["id"], billing.subscription_to_state(active), source="restore")
+    fresh = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return _premium_payload(fresh or user)
+
+
+@api.post("/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    """Único ponto de fulfilment. Valida a assinatura, é idempotente, e
+    sincroniza o estado premium. Nunca confia em eventos não-assinados."""
+    if not billing.webhook_configured():
+        raise HTTPException(503, "Webhook não configurado.")
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        event = billing.verify_and_parse_webhook(payload, sig)
+    except Exception as exc:
+        logger.warning(f"premium: webhook signature inválida: {exc}")
+        raise HTTPException(400, "Assinatura inválida.")
+
+    event_id = event.get("id")
+    # Idempotência: regista o event_id ANTES de processar; duplicado → 200 sem reprocessar.
+    try:
+        await db.billing_idempotency.insert_one({"event_id": event_id, "type": event.get("type"), "created_at": now_iso()})
+    except Exception:
+        return {"received": True, "duplicate": True}
+
+    etype = event.get("type", "")
+    obj = (event.get("data") or {}).get("object") or {}
+    await _billing_log("webhook." + etype, event_id=event_id)
+
+    try:
+        if etype == "checkout.session.completed":
+            user_id = obj.get("client_reference_id") or (obj.get("metadata") or {}).get("user_id")
+            if not user_id:
+                user_id = await _user_id_for_customer(obj.get("customer"))
+            sub_id = obj.get("subscription")
+            if user_id and sub_id:
+                sub = await billing.retrieve_subscription(sub_id)
+                await _apply_subscription_state(user_id, billing.subscription_to_state(sub), source="checkout")
+
+        elif etype in ("customer.subscription.created", "customer.subscription.updated",
+                       "customer.subscription.deleted"):
+            user_id = (obj.get("metadata") or {}).get("user_id") or await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                state = billing.subscription_to_state(obj)
+                if etype == "customer.subscription.deleted":
+                    state["status"] = "canceled"
+                await _apply_subscription_state(user_id, state, source=etype)
+
+        elif etype == "invoice.paid":
+            user_id = await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                await db.invoices.update_one(
+                    {"id": obj.get("id")},
+                    {"$set": {"id": obj.get("id"), "user_id": user_id,
+                              "amount": (obj.get("amount_paid") or 0) / 100.0,
+                              "currency": obj.get("currency", "eur"),
+                              "status": "paid",
+                              "hosted_invoice_url": obj.get("hosted_invoice_url"),
+                              "pdf": obj.get("invoice_pdf"),
+                              "created_at": now_iso()}},
+                    upsert=True,
+                )
+
+        elif etype == "invoice.payment_failed":
+            user_id = await _user_id_for_customer(obj.get("customer"))
+            if user_id:
+                await db.payment_failures.insert_one({
+                    "id": str(uuid.uuid4()), "user_id": user_id,
+                    "invoice_id": obj.get("id"), "amount": (obj.get("amount_due") or 0) / 100.0,
+                    "attempt": obj.get("attempt_count"), "created_at": now_iso(),
+                })
+                # Entra em graça; o Stripe faz os retries automaticamente.
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {"plan_status": "past_due", "grace_until": entitlements.grace_until_from()}},
+                )
+                await _sync_premium_realtime(user_id)
+    except Exception as exc:
+        logger.exception(f"premium: webhook handler error ({etype}): {exc}")
+        # Não relança: já registámos a idempotência; devolver 200 evita storms
+        # de retry por erros não-relacionados com a assinatura.
+
+    return {"received": True}
+
+
+_premium_sweeper_task: Optional[asyncio.Task] = None
+
+
+async def _premium_sweeper_loop():
+    """Persiste downgrades de quem saiu da graça/período (o entitlement engine
+    já os trata em leitura; isto consolida no doc + propaga em realtime)."""
+    await asyncio.sleep(120)
+    while True:
+        try:
+            cur = db.users.find(
+                {"plan": {"$in": ["plus", "aura"]},
+                 "plan_status": {"$in": ["past_due", "unpaid", "canceled", "cancelled", "grace"]}},
+                {"_id": 0, "id": 1, "plan": 1, "plan_status": 1, "plan_expires_at": 1, "grace_until": 1},
+            )
+            async for u in cur:
+                if entitlements.plan_of(u) == "free":
+                    await db.users.update_one(
+                        {"id": u["id"]},
+                        {"$set": {"plan": "free", "plan_status": "expired", "grace_until": None}},
+                    )
+                    await _sync_premium_realtime(u["id"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.exception(f"premium: sweeper error: {exc}")
+        await asyncio.sleep(3600)
 
 
 # ---------- WebSocket gateway ----------
