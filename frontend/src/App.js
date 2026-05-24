@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "sonner";
 import "@/App.css";
 import { AuthProvider } from "./context/AuthContext";
+import { PremiumProvider } from "./context/PremiumContext";
 import { PublicSettingsProvider } from "./context/PublicSettingsContext";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -44,6 +45,7 @@ const Visitors = lazy(() => import("./pages/Visitors"));
 const SeriesPage = lazy(() => import("./pages/SeriesPage"));
 const StoryArchive = lazy(() => import("./pages/StoryArchive"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Premium = lazy(() => import("./pages/Premium"));
 
 function RouteFallback() {
     return (
@@ -71,6 +73,7 @@ function App() {
         <div className="App">
             <PublicSettingsProvider>
                 <AuthProvider>
+                    <PremiumProvider>
                     <BrowserRouter>
                         <ScrollToTopOnNavigate />
                         <AnnouncementBanner />
@@ -123,6 +126,7 @@ function App() {
                             <Route path="/post/:postId" element={<PostDetail />} />
                             <Route path="/tag/:tag" element={<TagPage />} />
                             <Route path="/settings" element={<Settings />} />
+                            <Route path="/premium" element={<Premium />} />
                             <Route path="/visitors" element={<Visitors />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
                             <Route path="/stories/archive" element={<StoryArchive />} />
@@ -142,6 +146,7 @@ function App() {
                     <CookieBanner />
                     <ConfirmDialogHost />
                 </BrowserRouter>
+                    </PremiumProvider>
                 </AuthProvider>
             </PublicSettingsProvider>
         </div>
