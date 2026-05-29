@@ -5,7 +5,7 @@ import SiteFooter from "../components/SiteFooter";
 import {
     PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
-    DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
+    DoodleSpiral, DoodleZigzag, DoodleUnderline, DoodleSparkles,
     DoodleLongArrow, DoodleCross, HandNote,
     GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
@@ -154,10 +154,6 @@ export default function Login() {
                                     bom regresso.
                                 </span>
                             </h2>
-                            {/* Círculo desenhado à mão à volta de "Olá," */}
-                            <div className="absolute -top-2 -left-3 pointer-events-none" style={{ width: 150 }}>
-                                <DoodleCircleNote color={PT.azul} w={150} h={70} rotate={-4} />
-                            </div>
                             {/* Nota manuscrita ao lado do título — só sm+ */}
                             <div className="absolute -right-2 top-0 pointer-events-none hidden sm:block">
                                 <HandNote color={PT.red} rotate={8} size={20}>
