@@ -6,16 +6,24 @@ import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { DynamicWord } from "../components/DynamicWord";
 
-// Convivial Portuguese hero — street decorated for Santos Populares.
-// Frames the "come to the table" moment with community / festa popular.
-const REGISTER_HERO =
-    "/hero/register.webp";
+// =============================================================================
+// LUSORAE — Register (cores portuguesas vibrantes)
+// Verde como cor de painel · Vermelho/Dourado em acentos
+// =============================================================================
+
+const PT = {
+    red: "#C8102E",
+    green: "#046A38",
+    gold: "#FFCC00",
+    azul: "#0E4D92",
+    cream: "#FFF8E7",
+    ink: "#1A1A1A",
+};
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 
 // =====================================================================
-// Password strength — single source of truth used both by the meter
-// and by the canSubmit guard. Returns 0..5 + label + color.
+// Password strength
 // =====================================================================
 function evaluatePassword(pwd) {
     if (!pwd) return { score: 0, label: "", color: "#cccccc", reasons: [] };
@@ -32,19 +40,13 @@ function evaluatePassword(pwd) {
     if (/[^a-zA-Z\d]/.test(pwd)) score++;
     else reasons.push("um símbolo (!@#…)");
     const labels = ["Muito fraca", "Fraca", "Razoável", "Boa", "Forte", "Excelente"];
-    const colors = ["#dc6055", "#dc6055", "#e0833a", "#d4a418", "#16a34a", "#0a0a0a"];
-    return {
-        score,
-        label: labels[score],
-        color: colors[score],
-        reasons,
-    };
+    // Paleta PT para o medidor: vermelho → dourado → verde
+    const colors = [PT.red, PT.red, "#e0833a", PT.gold, PT.green, PT.ink];
+    return { score, label: labels[score], color: colors[score], reasons };
 }
 
 // =====================================================================
-// Generic availability hook — debounced live check against any endpoint
-// of the shape /api/auth/check-X?<paramName>=<value>.
-// State machine: idle | checking | available | taken | invalid | disposable
+// Availability check hook (idêntico)
 // =====================================================================
 function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
     const [state, setState] = useState({ status: "idle", message: "" });
@@ -52,7 +54,6 @@ function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
 
     useEffect(() => {
         const v = (value || "").trim();
-        // Cancel previous in-flight request
         if (abortRef.current) {
             try { abortRef.current.abort(); } catch { /* noop */ }
             abortRef.current = null;
@@ -61,7 +62,6 @@ function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
             setState({ status: "idle", message: "" });
             return;
         }
-        // Cheap client-side validation first — avoid wasting a request
         if (localValidate) {
             const local = localValidate(v);
             if (local && !local.ok) {
@@ -97,7 +97,6 @@ function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
     return state;
 }
 
-// Pre-built local validators for username and email
 const _validateUsernameLocal = (u) => {
     if (u.length < 3) return { ok: false, message: "Mínimo 3 caracteres." };
     if (u.length > 20) return { ok: false, message: "Máximo 20 caracteres." };
@@ -110,17 +109,12 @@ const _validateEmailLocal = (e) => {
     return { ok: true };
 };
 
-/**
- * F2.1 — Onboarding 30s.
- * 2 steps: credentials → consent.
- * Identity moved to onboarding inside the app (saltável).
- */
+// =============================================================================
 export default function Register() {
     const { user, register } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
 
-    // Step 1 — credentials (now with password confirmation)
     const [form, setForm] = useState({
         name: "",
         username: "",
@@ -131,10 +125,7 @@ export default function Register() {
     const [showPwd, setShowPwd] = useState(false);
     const [showPwdConfirm, setShowPwdConfirm] = useState(false);
 
-    // Step 2 — cidade (PT identity)
     const [city, setCity] = useState(null);
-
-    // Step 3 — consent
     const [consent, setConsent] = useState({ age: false, terms: false, marketing: false });
 
     const [error, setError] = useState("");
@@ -167,8 +158,8 @@ export default function Register() {
         nameValid &&
         usernameState.status === "available" &&
         emailState.status === "available" &&
-        pwdEval.score >= 2 &&        // require at least "Razoável"
-        form.password.length >= 8 && // hard floor (security)
+        pwdEval.score >= 2 &&
+        form.password.length >= 8 &&
         pwdMatches;
 
     const canSubmit = consent.age && consent.terms && !busy;
@@ -187,7 +178,6 @@ export default function Register() {
             if (pwdEval.score < 2) return setError("A palavra-passe é demasiado fraca. Reforça-a.");
             if (!pwdMatches) return setError("As palavras-passe não coincidem.");
         }
-        // Step 2 — cidade é OPCIONAL, deixamos passar
         setStep((s) => Math.min(3, s + 1));
     };
     const back = () => setStep((s) => Math.max(1, s - 1));
@@ -205,7 +195,6 @@ export default function Register() {
             username: form.username,
             email: form.email,
             password: form.password,
-            // PT identity — cidade já no registo (opcional)
             city: city?.name || null,
             region: city?.region || null,
             mood_initial: null,
@@ -232,120 +221,88 @@ export default function Register() {
         navigate("/");
     };
 
+    const stepTitle =
+        step === 1 ? "Cria a tua conta" :
+        step === 2 ? "De onde és?" :
+        "Última coisa, juramos";
+
     return (
-        <div className="min-h-screen grid lg:grid-cols-2 bg-white text-black">
-            {/* Left — Portugal atmosphere panel */}
-            <div className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden isolate">
-                <img
-                    src={REGISTER_HERO}
-                    alt="Rua portuguesa decorada para os Santos Populares"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="eager"
-                />
-                <div
-                    className="absolute inset-0"
-                    style={{
-                        background:
-                            "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 32%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.78) 100%)",
-                    }}
-                    aria-hidden
-                />
-                <div className="relative">
-                    <h1 className="font-display text-[36px] leading-none tracking-tight text-white flex items-baseline gap-2">
-                        <span className="silver-foil text-[28px] translate-y-[1px]">◆</span>
-                        <span>lusorae</span>
-                    </h1>
-                </div>
-                <div className="relative max-w-md">
-                    <h2 className="font-display text-[52px] leading-[1] tracking-tight text-white">
-                        A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />
-                    </h2>
-                    <p className="font-body text-white/85 mt-6 leading-relaxed text-[15px] max-w-sm">
-                        Conta criada em 30 segundos. Duas perguntas — e estás dentro.
-                    </p>
-                </div>
-                <div className="relative text-[12px] text-white/55 font-medium tracking-[0.18em] uppercase">
-                    © lusorae · {new Date().getFullYear()}
-                </div>
-            </div>
+        <div className="min-h-screen grid lg:grid-cols-[1fr_1.05fr]" style={{ background: PT.cream }}>
+            {/* ============ ESQUERDA · Formulário ============ */}
+            <div className="flex flex-col min-h-screen order-2 lg:order-1" style={{ background: PT.cream }}>
+                <MobileMiniBrand testId="register-mobile-dynamic-word" step={step} />
 
-            {/* Right form panel */}
-            <div className="flex flex-col lg:justify-center pb-safe min-h-screen bg-white">
-                {/* Mobile-only hero */}
-                <div className="lg:hidden relative h-[200px] sm:h-[240px] overflow-hidden">
-                    <img
-                        src={REGISTER_HERO}
-                        alt="Rua portuguesa decorada para os Santos Populares"
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="eager"
-                    />
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background:
-                                "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.72) 100%)",
-                        }}
-                        aria-hidden
-                    />
-                    <div className="absolute inset-x-0 bottom-5 px-6 text-center">
-                        <h1 className="font-display text-[32px] leading-none tracking-tight text-white">
-                            <span className="silver-foil">◆</span> lusorae
-                        </h1>
-                        <p className="text-white/85 font-body text-[13px] mt-2">
-                            A tua cidade tem <DynamicWord variant="compact" testId="register-mobile-dynamic-word" />
-                        </p>
-                    </div>
-                </div>
+                <div className="px-6 sm:px-10 lg:px-16 pt-10 lg:pt-0 pb-12 flex flex-col lg:justify-center flex-1">
+                    <div className="max-w-md w-full mx-auto lg:mx-0">
+                        {/* Logo (desktop) */}
+                        <div className="hidden lg:flex items-baseline gap-2 mb-8">
+                            <span style={{ color: PT.green }} className="text-3xl font-black leading-none">✱</span>
+                            <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>
+                                lusorae
+                            </span>
+                        </div>
 
-                <div className="px-6 sm:px-8 pt-8 lg:p-16 lg:pt-12 flex flex-col lg:justify-center flex-1">
-                    <div className="max-w-sm w-full mx-auto">
-                        {/* Step indicator — 3 steps */}
-                        <div className="flex items-center gap-2 mb-7" data-testid="register-stepper">
+                        {/* Stepper */}
+                        <div className="flex items-center gap-2 mb-5" data-testid="register-stepper">
                             {[1, 2, 3].map((n) => (
                                 <div
                                     key={n}
-                                    className={`h-1 flex-1 rounded-full transition-colors ${
-                                        step >= n ? "grad-bar" : "bg-black/10"
-                                    }`}
+                                    className="h-1.5 flex-1 rounded-full transition-colors"
+                                    style={{
+                                        background: step >= n
+                                            ? (n === 1 ? PT.red : n === 2 ? PT.gold : PT.green)
+                                            : "rgba(26,26,26,0.10)",
+                                    }}
                                 />
                             ))}
                         </div>
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-black/45 font-mono mb-2">
-                            Passo {step} de 3
+
+                        <p
+                            className="text-[11px] uppercase font-mono mb-2"
+                            style={{ letterSpacing: "0.18em", color: PT.green }}
+                        >
+                            // passo {step} de 3
                         </p>
-                        <h2 className="editorial-hero leading-[1.02]" style={{ fontSize: "clamp(30px, 3.4vw, 38px)" }}>
-                            {step === 1 && "Cria a tua conta"}
-                            {step === 2 && "De onde és?"}
-                            {step === 3 && "Última coisa, juramos"}
+                        <h2
+                            className="font-black leading-[0.95] tracking-tight"
+                            style={{ fontSize: "clamp(36px, 4.5vw, 52px)", color: PT.ink }}
+                        >
+                            {step === 1 && (<>Cria a tua <span style={{ background: PT.gold, padding: "0 0.14em" }}>conta</span>.</>)}
+                            {step === 2 && (<>De onde <span style={{ background: PT.gold, padding: "0 0.14em" }}>és</span>?</>)}
+                            {step === 3 && (<>Última coisa,<br /><span style={{ background: PT.gold, padding: "0 0.14em" }}>juramos</span>.</>)}
                         </h2>
-                        <p className="text-black/55 text-[14px] mt-2 leading-relaxed">
+                        <p className="text-[14.5px] mt-3 leading-relaxed" style={{ color: "rgba(26,26,26,0.65)" }}>
                             {step === 1 && "Nome, email e palavra-passe. Mais nada para já."}
                             {step === 2 && "Escolhe a tua cidade — ajuda-nos a mostrar-te o que importa perto. Podes saltar."}
                             {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
                         </p>
 
+                        {/* Benefit callout */}
                         <div
                             data-testid={`register-benefit-${step}`}
-                            className="mt-5 rounded-xl border border-black/[0.07] bg-paper grain isolate px-3.5 py-2.5 flex items-start gap-2.5"
+                            className="mt-5 rounded-xl px-4 py-3 flex items-start gap-3"
+                            style={{
+                                background: "#fff",
+                                border: `2px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.gold}`,
+                            }}
                         >
-                            <span aria-hidden className="silver-foil text-[14px] leading-none mt-0.5">◆</span>
-                            <p className="text-[12.5px] leading-relaxed text-black/75">
+                            <span aria-hidden style={{ color: PT.red, fontWeight: 900 }} className="text-[18px] leading-none mt-0.5">✱</span>
+                            <p className="text-[13px] leading-relaxed" style={{ color: "rgba(26,26,26,0.78)" }}>
                                 {step === 1 && (
                                     <>
-                                        <strong className="text-black">30 segundos.</strong> Sem cartão, sem upsell, sem trial.
-                                        Conta gratuita para sempre.
+                                        <strong style={{ color: PT.ink }}>30 segundos.</strong> Sem cartão, sem upsell, sem trial. Conta gratuita para sempre.
                                     </>
                                 )}
                                 {step === 2 && (
                                     <>
-                                        <strong className="text-black">Lisboa, Porto, Olhão, Funchal…</strong>{" "}
+                                        <strong style={{ color: PT.ink }}>Lisboa, Porto, Olhão, Funchal…</strong>{" "}
                                         ~300 cidades portuguesas. A tua identidade começa pelo lugar.
                                     </>
                                 )}
                                 {step === 3 && (
                                     <>
-                                        <strong className="text-black">Sem letra pequena.</strong> Os teus dados são
-                                        teus. Podes apagar a conta com um clique a qualquer momento.
+                                        <strong style={{ color: PT.ink }}>Sem letra pequena.</strong> Os teus dados são teus. Podes apagar a conta com um clique.
                                     </>
                                 )}
                             </p>
@@ -354,195 +311,167 @@ export default function Register() {
                         <form onSubmit={submit} className="mt-6" data-testid="register-form">
                             {step === 1 && (
                                 <div className="space-y-4">
-                                    <Field label="Nome">
+                                    <PtField label="Nome">
                                         <input
                                             data-testid="register-name"
                                             type="text" value={form.name} onChange={update("name")} required
                                             placeholder="O teu nome"
-                                            className="vm-input"
+                                            className="pt-input"
                                             autoComplete="name"
                                         />
-                                    </Field>
+                                    </PtField>
 
-                                    {/* Username with live availability check */}
-                                    <Field label="Username">
+                                    <PtField label="Username">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-username"
                                                 type="text"
                                                 value={form.username}
                                                 onChange={(e) => setForm({ ...form, username: e.target.value.trim() })}
-                                                required
-                                                minLength={3}
-                                                maxLength={20}
+                                                required minLength={3} maxLength={20}
                                                 pattern="[a-zA-Z0-9_]+"
                                                 placeholder="o_teu_user"
-                                                className="vm-input pr-9"
-                                                style={
-                                                    usernameState.status === "available"
-                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
-                                                        : (usernameState.status === "taken" || usernameState.status === "invalid")
-                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
-                                                        : undefined
-                                                }
-                                                autoComplete="off"
-                                                autoCapitalize="off"
-                                                spellCheck={false}
+                                                className="pt-input pr-10"
+                                                style={statusBorder(usernameState.status)}
+                                                autoComplete="off" autoCapitalize="off" spellCheck={false}
                                             />
                                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid="register-username-status">
-                                                {usernameState.status === "checking" && <Loader2 size={14} className="animate-spin text-black/45" />}
-                                                {usernameState.status === "available" && <CheckCircle2 size={15} className="text-emerald-600" />}
-                                                {(usernameState.status === "taken" || usernameState.status === "invalid") && <X size={15} className="text-red-soft" />}
+                                                {usernameState.status === "checking" && <Loader2 size={14} className="animate-spin" style={{ color: "rgba(26,26,26,0.45)" }} />}
+                                                {usernameState.status === "available" && <CheckCircle2 size={16} style={{ color: PT.green }} />}
+                                                {(usernameState.status === "taken" || usernameState.status === "invalid") && <X size={16} style={{ color: PT.red }} />}
                                             </div>
                                         </div>
                                         {usernameState.message && (
                                             <p
                                                 data-testid="register-username-message"
-                                                className={`mt-1.5 text-[11.5px] font-mono ${
-                                                    usernameState.status === "available" ? "text-emerald-700" :
-                                                    (usernameState.status === "taken" || usernameState.status === "invalid") ? "text-red-soft" :
-                                                    "text-black/55"
-                                                }`}
+                                                className="mt-1.5 text-[12px] font-mono"
+                                                style={{
+                                                    color:
+                                                        usernameState.status === "available" ? PT.green :
+                                                        (usernameState.status === "taken" || usernameState.status === "invalid") ? PT.red :
+                                                        "rgba(26,26,26,0.55)",
+                                                }}
                                             >
                                                 {usernameState.status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
                                                 {(usernameState.status === "taken" || usernameState.status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
                                                 {usernameState.message}
                                             </p>
                                         )}
-                                    </Field>
+                                    </PtField>
 
-                                    <Field label="Email">
+                                    <PtField label="Email">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-email"
                                                 type="email" value={form.email} onChange={update("email")} required
                                                 placeholder="tu@exemplo.com"
-                                                className="vm-input pr-9"
-                                                style={
-                                                    emailState.status === "available"
-                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
-                                                        : (emailState.status === "taken" || emailState.status === "invalid")
-                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
-                                                        : undefined
-                                                }
-                                                autoComplete="email"
-                                                inputMode="email"
-                                                autoCapitalize="off"
-                                                spellCheck={false}
+                                                className="pt-input pr-10"
+                                                style={statusBorder(emailState.status)}
+                                                autoComplete="email" inputMode="email" autoCapitalize="off" spellCheck={false}
                                             />
                                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid="register-email-status">
-                                                {emailState.status === "checking" && <Loader2 size={14} className="animate-spin text-black/45" />}
-                                                {emailState.status === "available" && <CheckCircle2 size={15} className="text-emerald-600" />}
-                                                {(emailState.status === "taken" || emailState.status === "invalid") && <X size={15} className="text-red-soft" />}
+                                                {emailState.status === "checking" && <Loader2 size={14} className="animate-spin" style={{ color: "rgba(26,26,26,0.45)" }} />}
+                                                {emailState.status === "available" && <CheckCircle2 size={16} style={{ color: PT.green }} />}
+                                                {(emailState.status === "taken" || emailState.status === "invalid") && <X size={16} style={{ color: PT.red }} />}
                                             </div>
                                         </div>
                                         {emailState.message && (
                                             <p
                                                 data-testid="register-email-message"
-                                                className={`mt-1.5 text-[11.5px] font-mono ${
-                                                    emailState.status === "available" ? "text-emerald-700" :
-                                                    (emailState.status === "taken" || emailState.status === "invalid") ? "text-red-soft" :
-                                                    "text-black/55"
-                                                }`}
+                                                className="mt-1.5 text-[12px] font-mono"
+                                                style={{
+                                                    color:
+                                                        emailState.status === "available" ? PT.green :
+                                                        (emailState.status === "taken" || emailState.status === "invalid") ? PT.red :
+                                                        "rgba(26,26,26,0.55)",
+                                                }}
                                             >
                                                 {emailState.status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
                                                 {(emailState.status === "taken" || emailState.status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
                                                 {emailState.status === "taken" ? (
                                                     <>
                                                         {emailState.message}{" "}
-                                                        <Link to="/login" className="underline underline-offset-2 hover:no-underline font-medium">
+                                                        <Link to="/login" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
                                                             Entrar?
                                                         </Link>
                                                     </>
-                                                ) : (
-                                                    emailState.message
-                                                )}
+                                                ) : emailState.message}
                                             </p>
                                         )}
-                                    </Field>
+                                    </PtField>
 
-                                    {/* Password with strength meter */}
-                                    <Field label="Palavra-passe">
+                                    <PtField label="Palavra-passe">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-password"
                                                 type={showPwd ? "text" : "password"}
-                                                value={form.password}
-                                                onChange={update("password")}
-                                                required
-                                                minLength={8}
+                                                value={form.password} onChange={update("password")}
+                                                required minLength={8}
                                                 placeholder="Mínimo 8 caracteres"
-                                                className="vm-input pr-10"
+                                                className="pt-input pr-12"
                                                 style={(() => {
                                                     if (!form.password) return undefined;
-                                                    // Override max-strength black with green so border still signals "secure"
-                                                    const borderColor = pwdEval.score >= 4 ? "#16a34a" : pwdEval.color;
-                                                    return {
-                                                        borderColor,
-                                                        borderWidth: 2,
-                                                        boxShadow: `0 0 0 3px ${borderColor}1A`,
-                                                    };
+                                                    const borderColor = pwdEval.score >= 4 ? PT.green : pwdEval.color;
+                                                    return { borderColor, borderWidth: 2, boxShadow: `0 0 0 4px ${borderColor}22` };
                                                 })()}
                                                 autoComplete="new-password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPwd((v) => !v)}
-                                                className="absolute inset-y-0 right-2 px-1.5 text-black/40 hover:text-black/70"
+                                                className="absolute inset-y-0 right-2 px-2 hover:opacity-80"
+                                                style={{ color: "rgba(26,26,26,0.55)" }}
                                                 aria-label={showPwd ? "Esconder palavra-passe" : "Mostrar palavra-passe"}
                                                 data-testid="register-password-toggle"
                                                 tabIndex={-1}
                                             >
-                                                {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
                                             </button>
                                         </div>
                                         {form.password && (
-                                            <div className="mt-2" data-testid="register-password-strength">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex-1 h-1.5 bg-black/[0.06] rounded-full overflow-hidden">
+                                            <div className="mt-2.5" data-testid="register-password-strength">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(26,26,26,0.08)" }}>
                                                         <div
                                                             className="h-full rounded-full transition-all duration-300"
                                                             style={{ width: `${(pwdEval.score / 5) * 100}%`, background: pwdEval.color }}
                                                         />
                                                     </div>
                                                     <span
-                                                        className="text-[10.5px] font-mono tracking-wider uppercase tabular-nums shrink-0"
-                                                        style={{ color: pwdEval.color }}
+                                                        className="text-[11px] font-mono uppercase tabular-nums shrink-0 font-bold"
+                                                        style={{ color: pwdEval.color, letterSpacing: "0.08em" }}
                                                     >
                                                         {pwdEval.label}
                                                     </span>
                                                 </div>
                                                 {pwdEval.reasons.length > 0 && pwdEval.score < 5 && (
-                                                    <p className="text-[11px] text-black/50 mt-1.5 leading-relaxed">
+                                                    <p className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(26,26,26,0.55)" }}>
                                                         Falta: {pwdEval.reasons.slice(0, 3).join(" · ")}
                                                     </p>
                                                 )}
                                             </div>
                                         )}
                                         {!form.password && (
-                                            <p className="text-[11px] text-black/45 mt-1.5 leading-relaxed">
+                                            <p className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(26,26,26,0.50)" }}>
                                                 Mistura maiúsculas, minúsculas, números e símbolos.
                                             </p>
                                         )}
-                                    </Field>
+                                    </PtField>
 
-                                    {/* Password confirmation */}
-                                    <Field label="Repetir palavra-passe">
+                                    <PtField label="Repetir palavra-passe">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-password-confirm"
                                                 type={showPwdConfirm ? "text" : "password"}
-                                                value={form.passwordConfirm}
-                                                onChange={update("passwordConfirm")}
-                                                required
-                                                minLength={8}
+                                                value={form.passwordConfirm} onChange={update("passwordConfirm")}
+                                                required minLength={8}
                                                 placeholder="Escreve novamente"
-                                                className="vm-input pr-10"
+                                                className="pt-input pr-12"
                                                 style={
                                                     pwdMatches
-                                                        ? { borderColor: "#16a34a", borderWidth: 2, boxShadow: "0 0 0 3px rgba(22,163,74,0.10)" }
+                                                        ? { borderColor: PT.green, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.green}22` }
                                                         : pwdMismatch
-                                                        ? { borderColor: "#dc2626", borderWidth: 2, boxShadow: "0 0 0 3px rgba(220,38,38,0.10)" }
+                                                        ? { borderColor: PT.red, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.red}22` }
                                                         : undefined
                                                 }
                                                 autoComplete="new-password"
@@ -550,43 +479,47 @@ export default function Register() {
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPwdConfirm((v) => !v)}
-                                                className="absolute inset-y-0 right-2 px-1.5 text-black/40 hover:text-black/70"
+                                                className="absolute inset-y-0 right-2 px-2 hover:opacity-80"
+                                                style={{ color: "rgba(26,26,26,0.55)" }}
                                                 aria-label={showPwdConfirm ? "Esconder palavra-passe" : "Mostrar palavra-passe"}
                                                 tabIndex={-1}
                                             >
-                                                {showPwdConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                {showPwdConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                                             </button>
                                         </div>
                                         {pwdMatches && (
-                                            <p className="mt-1.5 text-[11.5px] font-mono text-emerald-700" data-testid="register-password-match">
+                                            <p className="mt-1.5 text-[12px] font-mono font-bold" style={{ color: PT.green }} data-testid="register-password-match">
                                                 <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" /> Coincide.
                                             </p>
                                         )}
                                         {pwdMismatch && (
-                                            <p className="mt-1.5 text-[11.5px] font-mono text-red-soft" data-testid="register-password-mismatch">
+                                            <p className="mt-1.5 text-[12px] font-mono font-bold" style={{ color: PT.red }} data-testid="register-password-mismatch">
                                                 <AlertCircle size={11} className="inline mr-1 -mt-0.5" /> As palavras-passe não coincidem.
                                             </p>
                                         )}
-                                    </Field>
+                                    </PtField>
                                 </div>
                             )}
 
                             {step === 2 && (
                                 <div className="space-y-4 pt-1" data-testid="register-step-city">
-                                    <Field label="A tua cidade">
+                                    <PtField label="A tua cidade">
                                         <CitySelect
                                             value={city?.id || null}
                                             onChange={setCity}
                                             placeholder="Pesquisa — Lisboa, Olhão, Funchal…"
                                             testid="register-city"
                                         />
-                                    </Field>
+                                    </PtField>
                                     {!city && (
-                                        <div className="rounded-xl border border-dashed border-black/[0.10] px-4 py-5 text-center">
-                                            <MapPin size={18} className="inline text-black/35 mb-2" />
-                                            <p className="text-[13px] text-black/55 leading-relaxed">
+                                        <div
+                                            className="rounded-xl px-4 py-5 text-center"
+                                            style={{ border: `2px dashed ${PT.green}40`, background: "#fff" }}
+                                        >
+                                            <MapPin size={20} className="inline mb-2" style={{ color: PT.green }} />
+                                            <p className="text-[13.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.65)" }}>
                                                 Escolhe a tua cidade — mostraremos a sua história e cultura.<br/>
-                                                <span className="text-[11px] text-black/40">Podes saltar este passo se preferires.</span>
+                                                <span className="text-[11.5px]" style={{ color: "rgba(26,26,26,0.45)" }}>Podes saltar este passo se preferires.</span>
                                             </p>
                                         </div>
                                     )}
@@ -595,14 +528,17 @@ export default function Register() {
 
                             {step === 3 && (
                                 <div className="space-y-3 pt-1">
-                                    {/* Micro-testimonial */}
-                                    <div className="rounded-xl border border-black/[0.08] bg-white p-3.5">
-                                        <blockquote className="font-display text-[17px] leading-[1.25] tracking-tight text-black max-w-[34ch]">
-                                            “Finalmente uma rede que não me <span className="silver-foil">trata</span>{" "}
+                                    <div
+                                        className="rounded-xl px-4 py-3.5"
+                                        style={{ background: PT.azul, color: "#fff" }}
+                                    >
+                                        <blockquote className="font-black text-[18px] leading-[1.25] tracking-tight max-w-[34ch]">
+                                            “Finalmente uma rede que não me{" "}
+                                            <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.18em" }}>trata</span>{" "}
                                             como produto.”
                                         </blockquote>
-                                        <p className="mt-2 text-[11px] text-black/50 font-mono uppercase tracking-[0.12em]">
-                                            — Manifesto, promessa 04
+                                        <p className="mt-2 text-[11px] font-mono uppercase" style={{ letterSpacing: "0.14em", opacity: 0.85 }}>
+                                            — manifesto, promessa 04
                                         </p>
                                     </div>
 
@@ -612,7 +548,7 @@ export default function Register() {
                                         testid="consent-age" required
                                     >
                                         Confirmo que tenho <strong>16 anos ou mais</strong>.
-                                        <span className="block text-[11px] text-black/50 mt-0.5">
+                                        <span className="block text-[11.5px] mt-0.5" style={{ color: "rgba(26,26,26,0.55)" }}>
                                             Exigido pela Lei n.º 58/2019, art. 16.º. Menores com autorização dos representantes legais.
                                         </span>
                                     </ConsentCheckbox>
@@ -622,11 +558,11 @@ export default function Register() {
                                         testid="consent-terms" required
                                     >
                                         Li e aceito os{" "}
-                                        <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
+                                        <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
                                             Termos e Condições
                                         </Link>{" "}
                                         e a{" "}
-                                        <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:text-black font-medium">
+                                        <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
                                             Política de Privacidade
                                         </Link>.
                                     </ConsentCheckbox>
@@ -635,8 +571,8 @@ export default function Register() {
                                         onChange={() => toggleConsent("marketing")}
                                         testid="consent-marketing"
                                     >
-                                        <span className="text-black/70">Opcional</span> — quero novidades por e-mail.
-                                        <span className="block text-[11px] text-black/50 mt-0.5">
+                                        <span style={{ color: "rgba(26,26,26,0.70)" }}>Opcional</span> — quero novidades por e-mail.
+                                        <span className="block text-[11.5px] mt-0.5" style={{ color: "rgba(26,26,26,0.55)" }}>
                                             Revogável a qualquer momento nas Definições.
                                         </span>
                                     </ConsentCheckbox>
@@ -644,7 +580,11 @@ export default function Register() {
                             )}
 
                             {error && (
-                                <div data-testid="register-error" className="text-sm text-red-soft font-medium mt-4 flex items-start gap-1.5">
+                                <div
+                                    data-testid="register-error"
+                                    className="text-[13px] font-semibold mt-4 flex items-start gap-2 rounded-xl px-3.5 py-2.5"
+                                    style={{ color: PT.red, background: "rgba(200,16,46,0.08)", border: `1px solid rgba(200,16,46,0.20)` }}
+                                >
                                     <AlertCircle size={14} className="shrink-0 mt-0.5" /> <span>{error}</span>
                                 </div>
                             )}
@@ -654,9 +594,9 @@ export default function Register() {
                                     <button
                                         type="button" onClick={back}
                                         data-testid="register-back"
-                                        className="btn-silver text-[13px] py-3 px-4"
+                                        className="pt-btn-ghost text-[13.5px] py-3 px-5"
                                     >
-                                        Voltar
+                                        ← Voltar
                                     </button>
                                 )}
                                 {step < 3 ? (
@@ -664,61 +604,241 @@ export default function Register() {
                                         type="button" onClick={next}
                                         data-testid="register-next"
                                         disabled={step === 1 ? !canStep1 : false}
-                                        className="btn-obsidian flex-1 text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                                        className="pt-btn-primary flex-1 text-[15px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={15} />
+                                        {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={16} />
                                     </button>
                                 ) : (
                                     <button
                                         type="submit" disabled={!canSubmit}
                                         data-testid="register-submit"
-                                        className="btn-obsidian flex-1 text-[14px] py-3.5 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+                                        className="pt-btn-primary flex-1 text-[15px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        {busy ? (<><Loader2 size={14} className="animate-spin" /> A criar conta…</>) : (<>Criar conta <Check size={15} /></>)}
+                                        {busy ? (<><Loader2 size={14} className="animate-spin" /> A criar conta…</>) : (<>Criar conta <Check size={16} /></>)}
                                     </button>
                                 )}
                             </div>
                         </form>
 
-                        <p className="mt-8 text-[13px] text-black/55 text-center lg:text-left">
+                        <p className="mt-8 text-[14px]" style={{ color: "rgba(26,26,26,0.65)" }}>
                             Já tens conta?{" "}
-                            <Link to="/login" data-testid="goto-login" className="text-black ink-link font-semibold">
+                            <Link
+                                to="/login"
+                                data-testid="goto-login"
+                                className="font-bold underline underline-offset-4 decoration-2"
+                                style={{ color: PT.green, textDecorationColor: PT.gold }}
+                            >
                                 Entrar
                             </Link>
                         </p>
 
-                        <div className="mt-10 pt-6 border-t border-black/[0.06]">
-                            <p className="text-[11px] text-black/45 leading-relaxed text-center lg:text-left">
+                        <div className="mt-10 pt-6" style={{ borderTop: "1px dashed rgba(26,26,26,0.15)" }}>
+                            <p className="text-[11.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.50)" }}>
                                 Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Lê o nosso{" "}
-                                <Link to="/manifesto" className="underline underline-offset-2 hover:text-black font-medium">
+                                <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-medium" style={{ color: PT.ink }}>
                                     manifesto
                                 </Link>{" "}
                                 — declaramos publicamente o que não fazemos.
                             </p>
-                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-black/45 justify-center lg:justify-start">
-                                <Link to="/legal" className="hover:text-black hover:underline underline-offset-2">Centro Legal</Link>
-                                <Link to="/legal/terms" className="hover:text-black hover:underline underline-offset-2">Termos</Link>
-                                <Link to="/legal/privacy" className="hover:text-black hover:underline underline-offset-2">Privacidade</Link>
-                                <Link to="/legal/cookies" className="hover:text-black hover:underline underline-offset-2">Cookies</Link>
-                                <Link to="/manifesto" className="hover:text-black hover:underline underline-offset-2">Manifesto</Link>
+                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "rgba(26,26,26,0.50)" }}>
+                                <Link to="/legal" className="hover:underline underline-offset-2">Centro Legal</Link>
+                                <Link to="/legal/terms" className="hover:underline underline-offset-2">Termos</Link>
+                                <Link to="/legal/privacy" className="hover:underline underline-offset-2">Privacidade</Link>
+                                <Link to="/legal/cookies" className="hover:underline underline-offset-2">Cookies</Link>
+                                <Link to="/manifesto" className="hover:underline underline-offset-2">Manifesto</Link>
                             </div>
                         </div>
 
-                        {/* Mobile footer copyright */}
-                        <div className="lg:hidden mt-8 mb-2 flex justify-center text-[11px] text-black/40 tracking-[0.18em] uppercase">
+                        <div className="lg:hidden mt-8 mb-2 text-center text-[11px] uppercase" style={{ letterSpacing: "0.18em", color: "rgba(26,26,26,0.45)" }}>
                             © lusorae · {new Date().getFullYear()}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* ============ DIREITA · Painel verde com decorações PT ============ */}
+            <BrandPanel currentStep={step} stepTitle={stepTitle} />
+
+            <PtStyles />
+        </div>
+    );
+}
+
+// =============================================================================
+// PAINEL VERDE com decorações
+// =============================================================================
+function BrandPanel({ currentStep, stepTitle }) {
+    return (
+        <div
+            className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden isolate order-1 lg:order-2"
+            style={{ background: PT.green, color: "#fff" }}
+            data-testid="brand-panel"
+        >
+            {/* Asterisco dourado gigante */}
+            <div
+                className="absolute -top-12 -right-10 select-none pointer-events-none"
+                style={{ fontSize: 280, lineHeight: 1, color: PT.gold, fontWeight: 900 }}
+                aria-hidden
+            >
+                ✱
+            </div>
+
+            {/* Quadrado vermelho rodado */}
+            <div
+                className="absolute left-12 pointer-events-none"
+                style={{
+                    top: "32%",
+                    width: 64, height: 64,
+                    background: PT.red,
+                    transform: "rotate(18deg)",
+                    boxShadow: `6px 6px 0 ${PT.ink}`,
+                }}
+                aria-hidden
+            />
+
+            {/* Onda dourada/azul (bottom) */}
+            <svg
+                className="absolute -bottom-2 -right-8 pointer-events-none"
+                width="420" height="180" viewBox="0 0 420 180" fill="none" aria-hidden
+            >
+                <path
+                    d="M0 110 Q 70 50, 140 100 T 280 100 T 420 100"
+                    stroke={PT.gold} strokeWidth="10" strokeLinecap="round" fill="none"
+                />
+                <path
+                    d="M0 140 Q 70 90, 140 130 T 280 130 T 420 130"
+                    stroke={PT.azul} strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.85"
+                />
+            </svg>
+
+            {/* Header */}
+            <div className="relative flex items-start justify-between">
+                <h1 className="font-black tracking-tight text-[34px] leading-none flex items-baseline gap-2">
+                    <span style={{ color: PT.gold }} className="text-[30px]">✱</span>
+                    <span>lusorae</span>
+                </h1>
+                <div
+                    className="text-[11px] font-bold uppercase rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
+                    style={{ background: PT.gold, color: PT.ink, letterSpacing: "0.10em" }}
+                >
+                    <span aria-hidden>🇵🇹</span> feito em pt
+                </div>
+            </div>
+
+            {/* Conteúdo central */}
+            <div className="relative max-w-xl">
+                <p className="text-[12px] uppercase font-mono mb-3" style={{ letterSpacing: "0.20em", color: PT.gold }}>
+                    // {stepTitle?.toLowerCase()}
+                </p>
+                <h2 className="font-black leading-[0.92] tracking-tight" style={{ fontSize: "clamp(48px, 5vw, 72px)" }}>
+                    Vivemos.<br />
+                    Partilhamos.<br />
+                    <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.14em", display: "inline-block" }}>
+                        Lusorae.
+                    </span>
+                </h2>
+                <p className="font-medium mt-7 leading-relaxed text-[16px] max-w-md" style={{ color: "rgba(255,255,255,0.90)" }}>
+                    Conta criada em 30 segundos. Sem cartão, sem upsell. A tua cidade tem{" "}
+                    <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
+                </p>
+
+                {/* Pílulas de progresso (espelho do stepper do formulário) */}
+                <div className="mt-8 flex items-center gap-2">
+                    {[
+                        { n: 1, label: "Conta" },
+                        { n: 2, label: "Cidade" },
+                        { n: 3, label: "Consentimento" },
+                    ].map(({ n, label }) => {
+                        const active = currentStep >= n;
+                        return (
+                            <div
+                                key={n}
+                                className="text-[11px] font-bold uppercase rounded-full px-3 py-1.5"
+                                style={{
+                                    letterSpacing: "0.10em",
+                                    background: active ? PT.gold : "rgba(255,255,255,0.12)",
+                                    color: active ? PT.ink : "rgba(255,255,255,0.55)",
+                                    border: active ? `2px solid ${PT.ink}` : "2px solid transparent",
+                                }}
+                            >
+                                {n}. {label}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Callout citação (vermelho) */}
+            <div className="relative">
+                <div
+                    className="inline-block rounded-2xl px-5 py-4 max-w-md"
+                    style={{ background: PT.red, boxShadow: `6px 6px 0 ${PT.ink}` }}
+                >
+                    <p className="font-black text-[19px] leading-tight tracking-tight italic">
+                        “o sítio certo para seres tu, sem pedir desculpa.”
+                    </p>
+                    <p className="mt-2 text-[12px] font-mono uppercase" style={{ letterSpacing: "0.14em", opacity: 0.85 }}>
+                        — pessoas, não perfis.
+                    </p>
+                </div>
+                <div
+                    className="mt-6 text-[11.5px] uppercase font-medium"
+                    style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.60)" }}
+                >
+                    © lusorae · {new Date().getFullYear()}
                 </div>
             </div>
         </div>
     );
 }
 
-function Field({ label, children }) {
+// =============================================================================
+// HERO MOBILE
+// =============================================================================
+function MobileMiniBrand({ testId, step }) {
+    return (
+        <div
+            className="lg:hidden relative overflow-hidden px-6 pt-7 pb-8"
+            style={{ background: PT.green, color: "#fff" }}
+        >
+            <div
+                className="absolute -top-8 -right-4 pointer-events-none"
+                style={{ fontSize: 140, lineHeight: 1, color: PT.gold, fontWeight: 900 }}
+                aria-hidden
+            >
+                ✱
+            </div>
+            <div className="relative flex items-center justify-between mb-5">
+                <h1 className="font-black text-[26px] leading-none flex items-baseline gap-1.5">
+                    <span style={{ color: PT.gold }}>✱</span>
+                    <span>lusorae</span>
+                </h1>
+                <span
+                    className="text-[10px] font-bold uppercase rounded-full px-2.5 py-1"
+                    style={{ background: PT.gold, color: PT.ink, letterSpacing: "0.10em" }}
+                >
+                    passo {step}/3
+                </span>
+            </div>
+            <p className="relative font-black leading-[0.95] tracking-tight text-[30px]">
+                Cria a tua <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.14em" }}>conta</span>.
+            </p>
+            <p className="relative mt-3 text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.88)" }}>
+                30 segundos. <DynamicWord variant="compact" testId={testId} />.
+            </p>
+        </div>
+    );
+}
+
+// =============================================================================
+// Componentes utilitários
+// =============================================================================
+function PtField({ label, children }) {
     return (
         <div>
-            <label className="text-[12px] font-medium text-black/65 mb-1.5 block">{label}</label>
+            <label className="text-[12px] font-bold uppercase mb-1.5 block" style={{ letterSpacing: "0.10em", color: "rgba(26,26,26,0.65)" }}>
+                {label}
+            </label>
             {children}
         </div>
     );
@@ -728,21 +848,96 @@ function ConsentCheckbox({ id, checked, onChange, testid, required, children }) 
     return (
         <label
             htmlFor={id}
-            className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none ${
-                checked
-                    ? "border-black/30 bg-black/[0.02]"
-                    : "border-black/[0.08] hover:border-black/20 hover:bg-black/[0.015]"
-            }`}
+            className="flex items-start gap-3 p-3.5 rounded-xl cursor-pointer transition select-none"
+            style={{
+                background: checked ? "rgba(4,106,56,0.06)" : "#fff",
+                border: checked ? `2px solid ${PT.green}` : "2px solid rgba(26,26,26,0.10)",
+            }}
         >
             <input
                 id={id} type="checkbox" checked={checked} onChange={onChange}
                 data-testid={testid}
-                className="mt-0.5 w-4 h-4 accent-black shrink-0 cursor-pointer"
+                className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer"
+                style={{ accentColor: PT.green }}
             />
-            <span className="text-[12.5px] leading-relaxed text-black/80">
+            <span className="text-[12.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.82)" }}>
                 {children}
-                {required && <span className="text-red-soft ml-1" aria-hidden>*</span>}
+                {required && <span className="ml-1" style={{ color: PT.red }} aria-hidden>*</span>}
             </span>
         </label>
+    );
+}
+
+function statusBorder(status) {
+    if (status === "available") return { borderColor: PT.green, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.green}22` };
+    if (status === "taken" || status === "invalid") return { borderColor: PT.red, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.red}22` };
+    return undefined;
+}
+
+// =============================================================================
+function PtStyles() {
+    return (
+        <style>{`
+            .pt-input {
+                width: 100%;
+                background: #ffffff;
+                border: 2px solid rgba(26,26,26,0.10);
+                border-radius: 14px;
+                padding: 14px 16px;
+                font-size: 15px;
+                color: ${PT.ink};
+                transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+                outline: none;
+                font-family: inherit;
+            }
+            .pt-input::placeholder { color: rgba(26,26,26,0.35); }
+            .pt-input:hover { border-color: rgba(26,26,26,0.22); }
+            .pt-input:focus {
+                border-color: ${PT.azul};
+                box-shadow: 0 0 0 4px rgba(14,77,146,0.14);
+                background: #fff;
+            }
+            .pt-btn-primary {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                background: ${PT.red};
+                color: #fff;
+                font-weight: 800;
+                border-radius: 999px;
+                border: 2px solid ${PT.ink};
+                box-shadow: 4px 4px 0 ${PT.ink};
+                transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+                cursor: pointer;
+                letter-spacing: -0.01em;
+            }
+            .pt-btn-primary:hover:not(:disabled) {
+                transform: translate(-2px,-2px);
+                box-shadow: 6px 6px 0 ${PT.ink};
+                background: #d11833;
+            }
+            .pt-btn-primary:active:not(:disabled) {
+                transform: translate(2px,2px);
+                box-shadow: 0px 0px 0 ${PT.ink};
+            }
+            .pt-btn-ghost {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background: #fff;
+                color: ${PT.ink};
+                font-weight: 700;
+                border-radius: 999px;
+                border: 2px solid ${PT.ink};
+                transition: background .12s ease, transform .12s ease;
+                cursor: pointer;
+            }
+            .pt-btn-ghost:hover { background: ${PT.cream}; }
+            .pt-btn-ghost:active { transform: scale(0.97); }
+        `}</style>
     );
 }

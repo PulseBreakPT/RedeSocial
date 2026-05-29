@@ -1,6 +1,9 @@
 # Lusorae — Product Requirements (Living)
 
-> Última atualização: 18 Fev 2026 (rev 3 — O Selo Lusorae)
+> Última atualização: 29 Mai 2026 (rev 4 — Auth Pages PT Vibrant Redesign)
+
+## Histórico recente
+- **29 Mai 2026 — Auth Pages redesign vibrante (cores PT):** `Login.js` e `Register.js` totalmente redesenhados removendo a estética editorial/cinemática a preto e branco. Nova paleta inspirada na bandeira PT: vermelho `#C8102E`, verde `#046A38`, dourado `#FFCC00`, azul azulejo `#0E4D92`, fundo creme `#FFF8E7`. Layout 2 colunas com painel de branding colorido (vermelho no Login, verde no Register), asterisco dourado gigante, scribbles SVG, badge "feito em pt", callouts com sombra dura "neo-brutalist", botões pill com border 2px+shadow, headline gigante com highlight amarelo. Toda a lógica funcional foi preservada (auth context, validações live username/email, password strength meter, multi-step, consentimentos RGPD, todos os data-testid).
 
 ## Visão
 "A internet portuguesa moderna" — uma rede social PT-PT com profundidade, identidade emocional e UX premium. Mistura de Twitter/X, Reddit, Discord social, Instagram identity, BeReal intimacy, Letterboxd personality.
