@@ -187,13 +187,51 @@ export default function Register() {
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
-                        {/* Header — visível em todos os tamanhos */}
-                        <div className="flex items-center justify-between mb-7">
+                        {/* Header — só desktop (lg+); marca também presente no SiteFooter */}
+                        <div className="hidden lg:flex items-center justify-between mb-7 relative">
                             <div className="flex items-baseline gap-1.5">
-                                <span style={{ color: PT.green, fontSize: 30 }} className="font-black leading-none">✱</span>
-                                <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
+                                <span style={{ color: PT.green, fontSize: 32, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
+                                <span
+                                    className="text-[24px] font-black tracking-tight"
+                                    style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}
+                                >
+                                    lusorae
+                                </span>
                             </div>
-                            <Sticker bg={PT.azul} color="#fff" rotate={6}>Pg. {String(step + 1).padStart(2, "0")}</Sticker>
+
+                            {/* Indicador LIVE */}
+                            <div className="flex items-center gap-2">
+                                <span className="relative flex h-2.5 w-2.5" aria-hidden>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.green }} />
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: PT.green, border: `1.5px solid ${PT.ink}` }} />
+                                </span>
+                                <span className="text-[10.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.14em", color: PT.ink }}>
+                                    novo · agora
+                                </span>
+                            </div>
+
+                            {/* Chip EST. + Sticker passo */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="text-[10px] font-mono font-black uppercase"
+                                    style={{
+                                        letterSpacing: "0.16em",
+                                        background: PT.ink,
+                                        color: PT.gold,
+                                        padding: "3px 7px",
+                                        border: `1.5px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.green}`,
+                                    }}
+                                >
+                                    EST. 2026
+                                </span>
+                                <Sticker bg={PT.azul} color="#fff" rotate={6}>Pg. {String(step + 1).padStart(2, "0")}</Sticker>
+                            </div>
+
+                            {/* Doodle entre marca e LIVE */}
+                            <div className="absolute left-[28%] -bottom-3 pointer-events-none">
+                                <DoodleStar color={PT.red} size={20} rotate={-12} />
+                            </div>
                         </div>
 
                         {/* STEPPER tipo "barra de revista" */}
@@ -237,19 +275,45 @@ export default function Register() {
                             >
                                 {step === 1 && (<>
                                     <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Cria a tua</span>{" "}
-                                    <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                    <span style={{
+                                        background: PT.gold,
+                                        padding: "0 0.10em",
+                                        boxShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.green}`,
+                                        display: "inline-block",
+                                        transform: "rotate(1deg)",
+                                        border: `3px solid ${PT.ink}`,
+                                        WebkitTextStroke: `0.5px ${PT.ink}`,
+                                    }}>
                                         conta.
                                     </span>
                                 </>)}
                                 {step === 2 && (<>
                                     <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>De onde</span>{" "}
-                                    <span style={{ background: PT.red, color: "#fff", padding: "0 0.12em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(2deg)" }}>
+                                    <span style={{
+                                        background: PT.red,
+                                        color: "#fff",
+                                        padding: "0 0.12em",
+                                        boxShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.gold}`,
+                                        display: "inline-block",
+                                        transform: "rotate(2deg)",
+                                        border: `3px solid ${PT.ink}`,
+                                        WebkitTextStroke: `0.5px ${PT.ink}`,
+                                    }}>
                                         és?
                                     </span>
                                 </>)}
                                 {step === 3 && (<>
                                     <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Última coisa,</span><br/>
-                                    <span style={{ background: PT.green, color: "#fff", padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                    <span style={{
+                                        background: PT.green,
+                                        color: "#fff",
+                                        padding: "0 0.10em",
+                                        boxShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.gold}`,
+                                        display: "inline-block",
+                                        transform: "rotate(1deg)",
+                                        border: `3px solid ${PT.ink}`,
+                                        WebkitTextStroke: `0.5px ${PT.ink}`,
+                                    }}>
                                         juramos.
                                     </span>
                                 </>)}
@@ -677,17 +741,23 @@ function PosterRight({ step }) {
                             fontSize: "clamp(42px, 9.5vw, 96px)",
                             lineHeight: 0.86,
                             color: "#fff",
-                            textShadow: `4px 4px 0 ${PT.ink}`,
                         }}
                     >
-                        <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
+                        <span style={{
+                            display: "inline-block",
+                            transform: "rotate(-2deg)",
+                            textShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.red}`,
+                            WebkitTextStroke: `2px ${PT.ink}`,
+                        }}>VIVEMOS.</span><br />
                         <span style={{
                             display: "inline-block",
                             transform: "rotate(1deg)",
                             background: PT.gold,
                             color: PT.ink,
                             padding: "0 0.10em",
-                            boxShadow: `5px 5px 0 ${PT.ink}`,
+                            border: `4px solid ${PT.ink}`,
+                            boxShadow: `5px 5px 0 ${PT.ink}, 12px 12px 0 rgba(10,10,10,0.18)`,
+                            WebkitTextStroke: `1px ${PT.ink}`,
                         }}>
                             PARTILHAMOS.
                         </span>
@@ -773,7 +843,15 @@ function PosterRight({ step }) {
                         <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 02</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem trial.{" "}
-                            <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
+                            <span style={{
+                                background: PT.ink,
+                                color: PT.gold,
+                                padding: "2px 8px",
+                                border: `2px solid ${PT.gold}`,
+                                boxShadow: `2px 2px 0 ${PT.gold}`,
+                                display: "inline-block",
+                                transform: "rotate(-1deg)",
+                            }}>
                                 sem upsell
                             </span>.
                         </p>

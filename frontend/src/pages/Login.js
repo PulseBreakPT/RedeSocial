@@ -72,15 +72,51 @@ export default function Login() {
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
-                        {/* CABEÇALHO REVISTA — visível em todos os tamanhos */}
-                        <div className="flex items-center justify-between mb-7">
+                        {/* CABEÇALHO REVISTA — só desktop (lg+); marca também presente no SiteFooter */}
+                        <div className="hidden lg:flex items-center justify-between mb-7 relative">
                             <div className="flex items-baseline gap-1.5">
-                                <span style={{ color: PT.red, fontSize: 30 }} className="font-black leading-none">✱</span>
-                                <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>
+                                <span style={{ color: PT.red, fontSize: 32, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
+                                <span
+                                    className="text-[24px] font-black tracking-tight"
+                                    style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}
+                                >
                                     lusorae
                                 </span>
                             </div>
-                            <Sticker bg={PT.gold} color={PT.ink} rotate={6}>Pg. 01</Sticker>
+
+                            {/* Indicador LIVE — gente online agora */}
+                            <div className="flex items-center gap-2">
+                                <span className="relative flex h-2.5 w-2.5" aria-hidden>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.green }} />
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: PT.green, border: `1.5px solid ${PT.ink}` }} />
+                                </span>
+                                <span className="text-[10.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.14em", color: PT.ink }}>
+                                    online · agora
+                                </span>
+                            </div>
+
+                            {/* Chip EST. + Sticker página */}
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="text-[10px] font-mono font-black uppercase"
+                                    style={{
+                                        letterSpacing: "0.16em",
+                                        background: PT.ink,
+                                        color: PT.gold,
+                                        padding: "3px 7px",
+                                        border: `1.5px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.gold}`,
+                                    }}
+                                >
+                                    EST. 2026
+                                </span>
+                                <Sticker bg={PT.gold} color={PT.ink} rotate={6}>Pg. 01</Sticker>
+                            </div>
+
+                            {/* Doodle pequeno entre marca e LIVE */}
+                            <div className="absolute left-[28%] -bottom-3 pointer-events-none">
+                                <DoodleStar color={PT.gold} size={20} rotate={12} />
+                            </div>
                         </div>
 
                         {/* KICKER */}
@@ -95,11 +131,26 @@ export default function Login() {
                                 className="font-black tracking-[-0.04em]"
                                 style={{ fontSize: "clamp(38px, 5.2vw, 68px)", lineHeight: 0.92, color: PT.ink }}
                             >
-                                <span style={{ display: "inline-block", color: PT.red, transform: "rotate(-2deg)", textShadow: `3px 3px 0 ${PT.gold}` }}>
+                                <span style={{
+                                    display: "inline-block",
+                                    color: PT.red,
+                                    transform: "rotate(-2deg)",
+                                    textShadow: `3px 3px 0 ${PT.gold}, 6px 6px 0 ${PT.ink}`,
+                                    WebkitTextStroke: `1.5px ${PT.ink}`,
+                                }}>
                                     Olá,
                                 </span>
                                 <br />
-                                <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                <span style={{
+                                    background: PT.gold,
+                                    padding: "0 0.10em",
+                                    boxShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.red}`,
+                                    display: "inline-block",
+                                    transform: "rotate(1deg)",
+                                    border: `3px solid ${PT.ink}`,
+                                    color: PT.ink,
+                                    WebkitTextStroke: `0.5px ${PT.ink}`,
+                                }}>
                                     bom regresso.
                                 </span>
                             </h2>
@@ -122,7 +173,17 @@ export default function Login() {
                         <div className="mt-5 flex items-start gap-3 relative">
                             <DoodleHeart color={PT.red} size={28} rotate={-12} style={{ flexShrink: 0, marginTop: 2 }} />
                             <p className="text-[15.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
-                                Continua a conversa onde a deixaste. <span style={{ background: PT.azul, color: "#fff", padding: "1px 6px", fontWeight: 800 }}>sem ruído</span>.
+                                Continua a conversa onde a deixaste.{" "}
+                                <span style={{
+                                    background: PT.azul,
+                                    color: "#fff",
+                                    padding: "2px 8px",
+                                    fontWeight: 800,
+                                    border: `2px solid ${PT.ink}`,
+                                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                                    display: "inline-block",
+                                    transform: "rotate(-1deg)",
+                                }}>sem ruído</span>.
                             </p>
                             <div className="absolute -bottom-2 left-10 pointer-events-none hidden sm:block">
                                 <DoodleUnderline color={PT.red} w={120} h={12} />
@@ -311,17 +372,23 @@ function PosterLeft() {
                             fontSize: "clamp(42px, 9.5vw, 96px)",
                             lineHeight: 0.86,
                             color: "#fff",
-                            textShadow: `4px 4px 0 ${PT.ink}`,
                         }}
                     >
-                        <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
+                        <span style={{
+                            display: "inline-block",
+                            transform: "rotate(-2deg)",
+                            textShadow: `4px 4px 0 ${PT.ink}, 8px 8px 0 ${PT.gold}`,
+                            WebkitTextStroke: `2px ${PT.ink}`,
+                        }}>VIVEMOS.</span><br />
                         <span style={{
                             display: "inline-block",
                             transform: "rotate(1deg)",
                             background: PT.gold,
                             color: PT.ink,
                             padding: "0 0.10em",
-                            boxShadow: `5px 5px 0 ${PT.ink}`,
+                            border: `4px solid ${PT.ink}`,
+                            boxShadow: `5px 5px 0 ${PT.ink}, 12px 12px 0 rgba(10,10,10,0.18)`,
+                            WebkitTextStroke: `1px ${PT.ink}`,
                         }}>
                             PARTILHAMOS.
                         </span>
@@ -406,7 +473,15 @@ function PosterLeft() {
                         <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 01</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem algoritmo a empurrar.{" "}
-                            <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
+                            <span style={{
+                                background: PT.ink,
+                                color: PT.gold,
+                                padding: "2px 8px",
+                                border: `2px solid ${PT.gold}`,
+                                boxShadow: `2px 2px 0 ${PT.gold}`,
+                                display: "inline-block",
+                                transform: "rotate(-1deg)",
+                            }}>
                                 sem letra pequena
                             </span>.
                         </p>
