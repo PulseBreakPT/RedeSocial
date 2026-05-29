@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { PT } from "../pages/auth/AuthDecor";
 
 // =============================================================================
-// LUSORAE — Site Footer (compacto · 2 colunas · só links que existem)
+// LUSORAE — Site Footer (centrado · compacto · só links que existem)
 // =============================================================================
 
 const LEGAL_LINKS = [
@@ -40,130 +40,127 @@ export default function SiteFooter() {
             {/* Decoração: scribble azul + sticker verde "acontece aqui." */}
             <DecorBlock />
 
-            <div className="relative max-w-[1200px] mx-auto px-6 sm:px-10 lg:px-14 py-10 lg:py-12">
-                {/* 2 colunas: newsletter | letra miúda */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            <div className="relative max-w-[680px] mx-auto px-6 sm:px-8 py-10 lg:py-14 flex flex-col items-center text-center">
 
-                    {/* === NEWSLETTER === */}
-                    <div
-                        className="relative"
-                        style={{
-                            background: PT.cream,
-                            color: PT.ink,
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `6px 6px 0 ${PT.red}`,
-                            padding: "18px 20px",
-                            maxWidth: 480,
-                        }}
+                {/* === NEWSLETTER (centrado) === */}
+                <div
+                    className="relative w-full"
+                    style={{
+                        background: PT.cream,
+                        color: PT.ink,
+                        border: `3px solid ${PT.ink}`,
+                        boxShadow: `6px 6px 0 ${PT.red}`,
+                        padding: "20px 22px",
+                        maxWidth: 520,
+                    }}
+                >
+                    <p
+                        className="font-black tracking-tight text-center"
+                        style={{ fontSize: "clamp(18px, 1.8vw, 22px)", lineHeight: 1.15, color: PT.ink }}
                     >
-                        <p
-                            className="font-black tracking-tight"
-                            style={{ fontSize: "clamp(18px, 1.8vw, 22px)", lineHeight: 1.15, color: PT.ink }}
-                        >
-                            Fica a par do Lusorae.{" "}
-                            <span style={{ color: "rgba(10,10,10,0.65)" }}>O melhor do que acontece perto de ti.</span>
-                        </p>
-                        <form
-                            onSubmit={onSubmit}
-                            className="mt-4 flex"
-                            data-testid="footer-newsletter-form"
-                            noValidate
-                        >
-                            <label htmlFor="footer-newsletter-email" className="sr-only">O teu email</label>
-                            <input
-                                id="footer-newsletter-email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder={submitted ? "Obrigado!" : "O teu email"}
-                                data-testid="footer-newsletter-input"
-                                className="flex-1 min-w-0 px-4 py-2.5 text-[14px] font-semibold"
-                                style={{
-                                    background: "#fff",
-                                    border: `2.5px solid ${PT.ink}`,
-                                    borderRight: "none",
-                                    color: PT.ink,
-                                    outline: "none",
-                                }}
-                            />
-                            <button
-                                type="submit"
-                                data-testid="footer-newsletter-submit"
-                                aria-label="Subscrever newsletter"
-                                className="grid place-items-center px-4 transition hover:opacity-90"
-                                style={{
-                                    background: PT.ink,
-                                    color: PT.gold,
-                                    border: `2.5px solid ${PT.ink}`,
-                                    minWidth: 50,
-                                }}
-                            >
-                                <ArrowRight size={17} strokeWidth={2.6} />
-                            </button>
-                        </form>
-                        <p
-                            className="mt-2.5 text-[10.5px] font-mono font-bold uppercase"
-                            style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}
-                        >
-                            Sem spam · <span style={{ color: PT.green }}>revogável a qualquer momento</span>
-                        </p>
-                    </div>
-
-                    {/* === LETRA MIÚDA + LINKS LEGAIS === */}
-                    <div className="lg:pt-1">
-                        <p
-                            className="font-mono font-bold uppercase mb-3"
+                        Fica a par do Lusorae.{" "}
+                        <span style={{ color: "rgba(10,10,10,0.65)" }}>O melhor do que acontece perto de ti.</span>
+                    </p>
+                    <form
+                        onSubmit={onSubmit}
+                        className="mt-4 flex"
+                        data-testid="footer-newsletter-form"
+                        noValidate
+                    >
+                        <label htmlFor="footer-newsletter-email" className="sr-only">O teu email</label>
+                        <input
+                            id="footer-newsletter-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder={submitted ? "Obrigado!" : "O teu email"}
+                            data-testid="footer-newsletter-input"
+                            className="flex-1 min-w-0 px-4 py-2.5 text-[14px] font-semibold text-center"
                             style={{
-                                color: PT.gold,
-                                letterSpacing: "0.20em",
-                                fontSize: 11,
+                                background: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                borderRight: "none",
+                                color: PT.ink,
+                                outline: "none",
                             }}
-                            data-testid="footer-letra-miuda-kicker"
+                        />
+                        <button
+                            type="submit"
+                            data-testid="footer-newsletter-submit"
+                            aria-label="Subscrever newsletter"
+                            className="grid place-items-center px-4 transition hover:opacity-90"
+                            style={{
+                                background: PT.ink,
+                                color: PT.gold,
+                                border: `2.5px solid ${PT.ink}`,
+                                minWidth: 50,
+                            }}
                         >
-                            // LETRA MIÚDA — TERMOS &amp; PRIVACIDADE
-                        </p>
-                        <p
-                            className="text-[13px] leading-relaxed font-medium mb-4"
-                            style={{ color: "rgba(255,255,255,0.78)" }}
-                        >
-                            Os teus dados são tratados conforme o{" "}
-                            <span style={{ color: "#fff", fontWeight: 700 }}>RGPD</span> e a{" "}
-                            <span style={{ color: "#fff", fontWeight: 700 }}>Lei n.º 58/2019</span>.
-                            Não há letra pequena — declaramos publicamente o que não fazemos no{" "}
-                            <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.gold }}>
-                                manifesto
-                            </Link>.
-                        </p>
+                            <ArrowRight size={17} strokeWidth={2.6} />
+                        </button>
+                    </form>
+                    <p
+                        className="mt-2.5 text-[10.5px] font-mono font-bold uppercase text-center"
+                        style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}
+                    >
+                        Sem spam · <span style={{ color: PT.green }}>revogável a qualquer momento</span>
+                    </p>
+                </div>
 
-                        {/* Links legais como pills */}
-                        <ul className="flex flex-wrap gap-2" data-testid="footer-legal-links">
-                            {LEGAL_LINKS.map(({ label, to }) => (
-                                <li key={to}>
-                                    <Link
-                                        to={to}
-                                        data-testid={`footer-legal-${to.split("/").pop() || "index"}`}
-                                        className="inline-block text-[11.5px] font-black uppercase px-3 py-1.5 transition hover:opacity-100"
-                                        style={{
-                                            background: "transparent",
-                                            color: "rgba(255,255,255,0.85)",
-                                            border: `2px solid rgba(255,255,255,0.30)`,
-                                            borderRadius: 999,
-                                            letterSpacing: "0.08em",
-                                        }}
-                                    >
-                                        {label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                {/* === LETRA MIÚDA + LINKS LEGAIS (centrado) === */}
+                <div className="mt-10 w-full max-w-[560px]">
+                    <p
+                        className="font-mono font-bold uppercase mb-3 text-center"
+                        style={{
+                            color: PT.gold,
+                            letterSpacing: "0.20em",
+                            fontSize: 11,
+                        }}
+                        data-testid="footer-letra-miuda-kicker"
+                    >
+                        // LETRA MIÚDA — TERMOS &amp; PRIVACIDADE
+                    </p>
+                    <p
+                        className="text-[13px] leading-relaxed font-medium mb-5 text-center"
+                        style={{ color: "rgba(255,255,255,0.78)" }}
+                    >
+                        Os teus dados são tratados conforme o{" "}
+                        <span style={{ color: "#fff", fontWeight: 700 }}>RGPD</span> e a{" "}
+                        <span style={{ color: "#fff", fontWeight: 700 }}>Lei n.º 58/2019</span>.
+                        Não há letra pequena — declaramos publicamente o que não fazemos no{" "}
+                        <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.gold }}>
+                            manifesto
+                        </Link>.
+                    </p>
+
+                    {/* Links legais como pills (centrados) */}
+                    <ul className="flex flex-wrap gap-2 justify-center" data-testid="footer-legal-links">
+                        {LEGAL_LINKS.map(({ label, to }) => (
+                            <li key={to}>
+                                <Link
+                                    to={to}
+                                    data-testid={`footer-legal-${to.split("/").pop() || "index"}`}
+                                    className="inline-block text-[11.5px] font-black uppercase px-3 py-1.5 transition hover:opacity-100"
+                                    style={{
+                                        background: "transparent",
+                                        color: "rgba(255,255,255,0.85)",
+                                        border: `2px solid rgba(255,255,255,0.30)`,
+                                        borderRadius: 999,
+                                        letterSpacing: "0.08em",
+                                    }}
+                                >
+                                    {label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
 
                 {/* Linha tape decorativa */}
-                <div className="pt-tape h-1.5 w-full mt-8 mb-5" aria-hidden />
+                <div className="pt-tape h-1.5 w-full mt-10 mb-5" aria-hidden />
 
-                {/* Copyright */}
-                <div className="flex items-center justify-between gap-4 flex-wrap">
+                {/* Copyright (centrado em coluna) */}
+                <div className="flex flex-col items-center gap-2 text-center">
                     <p
                         className="text-[11px] font-mono font-bold uppercase"
                         style={{ letterSpacing: "0.18em", color: PT.gold }}
