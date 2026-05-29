@@ -99,7 +99,7 @@ export default function Register() {
     const pwdMatches = form.password && form.passwordConfirm && form.password === form.passwordConfirm;
     const pwdMismatch = form.password && form.passwordConfirm && form.password !== form.passwordConfirm;
 
-    if (user) return <Navigate to="/" replace />;
+    if (user) return <Navigate to="/feed" replace />;
 
     const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
     const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
@@ -153,7 +153,7 @@ export default function Register() {
                 marketing_opt_in: consent.marketing, terms_version: 1, privacy_version: 1,
             }));
         } catch { /* ignore */ }
-        navigate("/");
+        navigate("/feed");
     };
 
     return (

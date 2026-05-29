@@ -16762,4 +16762,90 @@ async def admin_cockpit_snapshot(
     }
 
 
+# =============================================================================
+# Landing page · public stats (no auth)
+# =============================================================================
+@api2.get("/stats/landing")
+async def landing_stats():
+    """
+    Public, lightweight stats for the marketing landing page.
+    Counts are real but bucketed by recency so they always feel "alive".
+    """
+    now = datetime.now(timezone.utc)
+    five_min_ago = (now - timedelta(minutes=5)).isoformat()
+    one_hour_ago = (now - timedelta(hours=1)).isoformat()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    seven_days_ago = (now - timedelta(days=7)).isoformat()
+
+    # People online now (last_seen_at within 5 min) — fallback to total users if none
+    try:
+        online_now = await db.users.count_documents({"last_seen_at": {"$gte": five_min_ago}})
+    except Exception:
+        online_now = 0
+
+    total_users = await db.users.count_documents({})
+
+    # Conversations active in last hour (messages sent recently, distinct conversation_id or pairs)
+    try:
+        active_conversations = await db.messages.count_documents({"created_at": {"$gte": one_hour_ago}})
+    except Exception:
+        active_conversations = 0
+
+    # Posts created today (community-level activity)
+    try:
+        posts_today = await db.posts.count_documents({
+            "created_at": {"$gte": today_start},
+            "is_draft": {"$ne": True},
+        })
+    except Exception:
+        posts_today = 0
+
+    # Cities active = distinct city values from users active in last 7 days
+    try:
+        cities_pipeline = [
+            {"$match": {"last_seen_at": {"$gte": seven_days_ago}, "city": {"$nin": [None, ""]}}},
+            {"$group": {"_id": "$city"}},
+            {"$count": "n"},
+        ]
+        agg = await db.users.aggregate(cities_pipeline).to_list(1)
+        cities_active = (agg[0]["n"] if agg else 0)
+    except Exception:
+        cities_active = 0
+
+    # Communities total (for "comunidades" feature card)
+    try:
+        communities_total = await db.communities.count_documents({})
+    except Exception:
+        communities_total = 0
+
+    # Recent member avatars for the social-proof avatar stack
+    avatars: list[dict] = []
+    try:
+        cursor = db.users.find(
+            {"avatar_url": {"$nin": [None, ""]}},
+            {"_id": 0, "id": 1, "name": 1, "username": 1, "avatar_url": 1, "city": 1},
+        ).sort("created_at", -1).limit(6)
+        async for u in cursor:
+            avatars.append({
+                "id": u.get("id"),
+                "name": u.get("name") or u.get("username") or "",
+                "username": u.get("username"),
+                "avatar_url": u.get("avatar_url"),
+                "city": u.get("city"),
+            })
+    except Exception:
+        avatars = []
+
+    return {
+        "online_now": int(online_now),
+        "total_users": int(total_users),
+        "active_conversations": int(active_conversations),
+        "posts_today": int(posts_today),
+        "cities_active": int(cities_active),
+        "communities_total": int(communities_total),
+        "avatars": avatars,
+        "generated_at": now_iso(),
+    }
+
+
 app.include_router(api2)

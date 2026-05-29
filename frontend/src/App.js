@@ -41,6 +41,7 @@ const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Cookies = lazy(() => import("./pages/legal/Cookies"));
 const CommunityGuidelines = lazy(() => import("./pages/legal/CommunityGuidelines"));
 const Manifesto = lazy(() => import("./pages/Manifesto"));
+const Landing = lazy(() => import("./pages/Landing"));
 const Visitors = lazy(() => import("./pages/Visitors"));
 const SeriesPage = lazy(() => import("./pages/SeriesPage"));
 const StoryArchive = lazy(() => import("./pages/StoryArchive"));
@@ -102,6 +103,7 @@ function App() {
                         <Route path="/legal/cookies" element={<Cookies />} />
                         <Route path="/legal/community" element={<CommunityGuidelines />} />
                         <Route path="/manifesto" element={<Manifesto />} />
+                        <Route path="/" element={<Landing />} />
                         <Route
                             element={
                                 <ProtectedRoute>
@@ -109,7 +111,7 @@ function App() {
                                 </ProtectedRoute>
                             }
                         >
-                            <Route index element={<Feed />} />
+                            <Route path="/feed" element={<Feed />} />
                             <Route path="/explore" element={<Explore />} />
                             <Route path="/trending" element={<Trending />} />
                             <Route path="/notifications" element={<Notifications />} />

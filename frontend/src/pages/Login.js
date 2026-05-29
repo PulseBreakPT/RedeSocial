@@ -23,7 +23,7 @@ export default function Login() {
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    if (user) return <Navigate to="/" replace />;
+    if (user) return <Navigate to="/feed" replace />;
 
     const submit = async (e) => {
         e.preventDefault();
@@ -32,7 +32,7 @@ export default function Login() {
         const res = await login(email, password);
         setBusy(false);
         if (!res.ok) setError(res.error);
-        else navigate("/");
+        else navigate("/feed");
     };
 
     return (

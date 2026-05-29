@@ -13,7 +13,7 @@ import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 
 // Vertical primary nav (social-network standard, X/Bluesky style)
 const NAV_ITEMS = [
-    { to: "/", label: "Início", icon: Home, testid: "nav-home", end: true },
+    { to: "/feed", label: "Início", icon: Home, testid: "nav-home", end: true },
     { to: "/explore", label: "Explorar", icon: Compass, testid: "nav-explore" },
     { to: "/trending", label: "Tendências", icon: Flame, testid: "nav-trending" },
     { to: "/notifications", label: "Notificações", icon: Bell, testid: "nav-notifications", badgeKey: "notif" },
@@ -78,7 +78,7 @@ export function LeftSidebar({ onCompose }) {
         >
             {/* Logo */}
             <Link
-                to="/"
+                to="/feed"
                 className="flex items-center gap-2 px-3 py-2 mb-2 tap-shrink shrink-0"
                 data-testid="left-sidebar-logo"
             >

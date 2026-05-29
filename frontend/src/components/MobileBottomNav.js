@@ -7,7 +7,7 @@ import { useHideOnScroll } from "../hooks/useHideOnScroll";
 import { haptic as centralHaptic } from "../lib/haptics";
 
 const navItems = [
-    { to: "/", icon: Home, testid: "mnav-home", end: true, label: "Início" },
+    { to: "/feed", icon: Home, testid: "mnav-home", end: true, label: "Início" },
     { to: "/explore", icon: Compass, testid: "mnav-explore", label: "Explorar" },
     { to: null, icon: Plus, testid: "mnav-compose", center: true },
     { to: "/messages", icon: MessageCircle, testid: "mnav-messages", label: "DMs", badgeKey: "msg" },
@@ -139,7 +139,7 @@ export function MobileBottomNav({ onCompose }) {
         haptic(10);
         // Story creation lives on the home feed (StoriesBar). Navigate there and
         // dispatch a window event that StoriesBar listens for.
-        navigate("/");
+        navigate("/feed");
         setTimeout(() => {
             try { window.dispatchEvent(new Event("vermillion:open-story-composer")); } catch {}
         }, 60);
