@@ -1,19 +1,16 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { DynamicWord } from "../components/DynamicWord";
 import SiteFooter from "../components/SiteFooter";
 import {
-    PT, Sticker, StampCircle, PolaroidStack, PosterCard, Kicker, AuthStyles,
+    PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
     DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
-    DoodleSmiley, DoodleLongArrow, DoodleCross, HandNote,
+    DoodleLongArrow, DoodleCross, HandNote,
     GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
 
 const LOGIN_HERO = "/hero/login.webp";
-const MANIFESTO_HERO = "/hero/manifesto.webp";
-const REGISTER_HERO = "/hero/register.webp";
 
 // =============================================================================
 // LUSORAE — Login (cartaz urbano · fanzine portuguesa)
@@ -45,41 +42,38 @@ export default function Login() {
             ================================================================= */}
             <div className="pt-tape h-3 w-full" />
 
-            {/* Hero compacto SÓ em mobile (substitui o poster gigante) */}
-            <MobileHero />
-
             <div className="grid lg:grid-cols-[1.05fr_1fr] relative">
-                {/* PAINEL ESQUERDO — POSTER URBANO (apenas desktop) */}
+                {/* PAINEL ESQUERDO — POSTER URBANO (desktop + mobile) */}
                 <PosterLeft />
 
                 {/* PAINEL DIREITO — FORMULÁRIO */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-14 pb-16" style={{ background: PT.cream }}>
-                    {/* Doodles decorativos espalhados (desktop only) */}
-                    <div className="absolute top-8 right-8 hidden lg:block pointer-events-none">
+                    {/* Doodles decorativos — só sm+ para não poluir mobile */}
+                    <div className="absolute top-8 right-8 pointer-events-none hidden sm:block">
                         <DoodleStar color={PT.gold} size={52} rotate={18} />
                     </div>
-                    <div className="absolute top-1/2 -left-3 hidden lg:block pointer-events-none">
+                    <div className="absolute top-1/2 -left-3 pointer-events-none hidden sm:block">
                         <DoodleScribble color={PT.azul} w={120} h={50} style={{ transform: "rotate(-6deg)" }} />
                     </div>
-                    <div className="absolute top-24 right-20 hidden lg:block pointer-events-none">
+                    <div className="absolute top-24 right-20 pointer-events-none hidden sm:block">
                         <DoodleSparkles color={PT.red} size={48} rotate={6} />
                     </div>
-                    <div className="absolute bottom-40 right-6 hidden lg:block pointer-events-none">
+                    <div className="absolute bottom-40 right-6 pointer-events-none hidden sm:block">
                         <DoodleSpiral color={PT.red} size={70} rotate={-10} />
                     </div>
-                    <div className="absolute bottom-12 left-6 hidden lg:block pointer-events-none">
+                    <div className="absolute bottom-12 left-6 pointer-events-none hidden sm:block">
                         <DoodleZigzag color={PT.azul} w={140} h={32} style={{ transform: "rotate(-8deg)" }} />
                     </div>
-                    <div className="absolute top-[55%] right-2 hidden lg:block pointer-events-none">
+                    <div className="absolute top-[55%] right-2 pointer-events-none hidden sm:block">
                         <GeoTriangle color={PT.green} size={32} rotate={-20} />
                     </div>
-                    <div className="absolute top-[30%] right-12 hidden lg:block pointer-events-none">
+                    <div className="absolute top-[30%] right-12 pointer-events-none hidden sm:block">
                         <DoodleCross color={PT.red} size={22} rotate={14} />
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
-                        {/* CABEÇALHO REVISTA (desktop only — mobile tem MobileHero) */}
-                        <div className="hidden lg:flex items-center justify-between mb-7">
+                        {/* CABEÇALHO REVISTA — visível em todos os tamanhos */}
+                        <div className="flex items-center justify-between mb-7">
                             <div className="flex items-baseline gap-1.5">
                                 <span style={{ color: PT.red, fontSize: 30 }} className="font-black leading-none">✱</span>
                                 <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>
@@ -113,8 +107,8 @@ export default function Login() {
                             <div className="absolute -top-2 -left-3 pointer-events-none" style={{ width: 150 }}>
                                 <DoodleCircleNote color={PT.azul} w={150} h={70} rotate={-4} />
                             </div>
-                            {/* Nota manuscrita ao lado do título */}
-                            <div className="absolute -right-2 top-0 hidden lg:block pointer-events-none">
+                            {/* Nota manuscrita ao lado do título — só sm+ */}
+                            <div className="absolute -right-2 top-0 pointer-events-none hidden sm:block">
                                 <HandNote color={PT.red} rotate={8} size={20}>
                                     finalmente!
                                 </HandNote>
@@ -130,7 +124,7 @@ export default function Login() {
                             <p className="text-[15.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
                                 Continua a conversa onde a deixaste. <span style={{ background: PT.azul, color: "#fff", padding: "1px 6px", fontWeight: 800 }}>sem ruído</span>.
                             </p>
-                            <div className="absolute -bottom-2 left-10 pointer-events-none">
+                            <div className="absolute -bottom-2 left-10 pointer-events-none hidden sm:block">
                                 <DoodleUnderline color={PT.red} w={120} h={12} />
                             </div>
                         </div>
@@ -209,12 +203,12 @@ export default function Login() {
                                     {busy ? "A entrar…" : "ENTRAR →"}
                                 </button>
                                 {/* Sticker desalinhado e doodle no botão */}
-                                <div className="absolute -top-5 -right-3 hidden lg:block pointer-events-none">
+                                <div className="absolute -top-5 -right-3 pointer-events-none hidden sm:block">
                                     <Sticker bg={PT.red} color="#fff" rotate={14} style={{ fontSize: 9.5, padding: "5px 9px" }}>
                                         ✱ vai!
                                     </Sticker>
                                 </div>
-                                <div className="absolute -bottom-6 -left-2 hidden lg:block pointer-events-none">
+                                <div className="absolute -bottom-6 -left-2 pointer-events-none hidden sm:block">
                                     <DoodleZigzag color={PT.gold} w={120} h={18} />
                                 </div>
                             </div>
@@ -259,7 +253,7 @@ export default function Login() {
                                 </Link>
                             </p>
                             <Sticker bg={PT.green} color="#fff" rotate={-5}>30 SEG.</Sticker>
-                            <div className="absolute -top-4 left-12 hidden lg:block pointer-events-none">
+                            <div className="absolute -top-4 left-12 pointer-events-none hidden sm:block">
                                 <DoodleArrow color={PT.red} w={50} h={24} style={{ transform: "rotate(120deg)" }} />
                             </div>
                         </div>
@@ -279,55 +273,23 @@ export default function Login() {
 }
 
 // =============================================================================
-// MOBILE HERO — substitui o poster gigante em <lg
-// =============================================================================
-function MobileHero() {
-    return (
-        <div className="lg:hidden relative overflow-hidden" style={{ background: PT.red, color: "#fff" }}>
-            {/* Asterisco dourado canto */}
-            <div className="absolute -top-8 -right-6 z-0">
-                <GiantAsterisk color={PT.gold} size={160} rotate={-8} />
-            </div>
-            <div className="relative z-10 px-5 py-7">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="font-black tracking-tight text-[24px] leading-none flex items-baseline gap-1.5" style={{ color: PT.ink }}>
-                        <span style={{ color: PT.gold, fontSize: 22, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
-                        <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
-                    </h1>
-                </div>
-                <Kicker color={PT.gold} className="mb-1">// MANCHETE · ENTRAR</Kicker>
-                <h2
-                    className="font-black tracking-[-0.03em]"
-                    style={{ fontSize: "clamp(32px, 8.5vw, 48px)", lineHeight: 1.05, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
-                >
-                    <span style={{ display: "block" }}>Vivemos. Partilhamos.</span>
-                    <span style={{ background: PT.gold, color: PT.ink, padding: "2px 0.10em", boxShadow: `3px 3px 0 ${PT.ink}`, display: "inline-block", marginTop: 14, textShadow: "none" }}>
-                        Lusorae.
-                    </span>
-                </h2>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// PAINEL ESQUERDO — POSTER URBANO denso (vermelho · desktop only)
+// PAINEL ESQUERDO — POSTER URBANO denso (vermelho · responsivo)
 // =============================================================================
 function PosterLeft() {
     return (
         <div
-            className="hidden lg:flex relative overflow-hidden isolate pt-grain flex-col"
-            style={{ background: PT.red, color: "#fff", minHeight: "calc(100vh - 60px)" }}
+            className="flex relative overflow-hidden isolate pt-grain flex-col"
+            style={{ background: PT.red, color: "#fff" }}
             data-testid="brand-panel"
         >
             {/* Asterisco gigante (canto sup. esq.) */}
-            <div className="absolute -top-10 -left-12 z-0">
+            <div className="absolute -top-10 -left-12 z-0 scale-50 sm:scale-75 lg:scale-100 origin-top-left">
                 <GiantAsterisk color={PT.gold} size={300} rotate={-8} />
             </div>
 
-            {/* Faixa "manchete" dourada (atrás) */}
+            {/* Faixa "manchete" dourada (atrás) — só sm+ para não cruzar manchete em mobile */}
             <div
-                className="absolute top-[26%] -left-8 z-0"
+                className="absolute top-[26%] -left-8 z-0 hidden sm:block"
                 style={{
                     width: "115%",
                     height: 56,
@@ -339,27 +301,21 @@ function PosterLeft() {
             />
 
             {/* Conteúdo principal layered */}
-            <div className="relative z-10 p-10 xl:p-14 flex flex-col gap-5 flex-1">
-                {/* ROW topo */}
-                <div className="flex items-start justify-between gap-3">
-                    <h1 className="font-black tracking-tight text-[30px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
-                        <span style={{ color: PT.gold, fontSize: 26, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
-                        <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
-                    </h1>
-                    <div className="flex items-start gap-3">
-                        <StampCircle bg={PT.ink} color={PT.gold} rotate={12} size={68}>
-                            EDIÇÃO<br/>Nº&nbsp;{new Date().getFullYear() % 100}
-                        </StampCircle>
-                    </div>
+            <div className="relative z-10 p-5 sm:p-8 lg:p-10 xl:p-14 flex flex-col gap-5 flex-1">
+                {/* ROW topo — apenas stamp da edição (sem duplicar nome da marca) */}
+                <div className="flex items-start justify-end gap-3">
+                    <StampCircle bg={PT.ink} color={PT.gold} rotate={12} size={68}>
+                        EDIÇÃO<br/>Nº&nbsp;{new Date().getFullYear() % 100}
+                    </StampCircle>
                 </div>
 
-                {/* MANCHETE — controlada para nunca sair do contentor */}
+                {/* MANCHETE — sem "Lusorae" (reservado para header/footer) */}
                 <div className="relative">
                     <Kicker color={PT.ink} className="mb-2">// MANCHETE · CAPA</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
-                            fontSize: "clamp(48px, 6vw, 96px)",
+                            fontSize: "clamp(42px, 9.5vw, 96px)",
                             lineHeight: 0.86,
                             color: "#fff",
                             textShadow: `4px 4px 0 ${PT.ink}`,
@@ -378,7 +334,7 @@ function PosterLeft() {
                             boxShadow: `5px 5px 0 ${PT.ink}`,
                             marginTop: 6,
                         }}>
-                            LUSORAE.
+                            JUNTOS.
                         </span>
                     </h2>
                 </div>
@@ -386,7 +342,7 @@ function PosterLeft() {
                 {/* COLAGEM */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
                     {/* Pilha de polaroids coladas */}
-                    <div className="relative shrink-0" style={{ width: 260, height: 290 }}>
+                    <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: 260, height: 290 }}>
                         <PolaroidStack
                             photos={[
                                 { src: REGISTER_HERO, alt: "Festa popular", rotate: -9, w: 150, h: 180, top: 6, left: 70, z: 1, caption: "santos · 2026", tapeColor: "rgba(4,106,56,0.55)" },
@@ -394,8 +350,8 @@ function PosterLeft() {
                                 { src: LOGIN_HERO, alt: "Porto · Douro", rotate: -3, w: 165, h: 200, top: 50, left: 95, z: 3, caption: "porto · douro" },
                             ]}
                         />
-                        {/* Doodles sobre a pilha */}
-                        <div className="absolute -top-4 -left-2 z-10 pointer-events-none">
+                        {/* Doodles sobre a pilha — secundários escondidos em mobile */}
+                        <div className="absolute -top-4 -left-2 z-10 pointer-events-none hidden sm:block">
                             <DoodleSparkles color={PT.gold} size={56} rotate={-12} />
                         </div>
                         <div className="absolute top-[-6px] right-[-18px] z-20 pointer-events-none">
@@ -408,21 +364,21 @@ function PosterLeft() {
                                 📍 PORTO · DOURO
                             </Sticker>
                         </div>
-                        <div className="absolute top-[34%] left-[-22px] z-30 pointer-events-none">
+                        <div className="absolute top-[34%] left-[-22px] z-30 pointer-events-none hidden sm:block">
                             <DoodleLongArrow color={PT.gold} w={90} h={70} rotate={20} />
                         </div>
-                        <div className="absolute -bottom-6 right-2 z-30 pointer-events-none">
+                        <div className="absolute -bottom-6 right-2 z-30 pointer-events-none hidden sm:block">
                             <HandNote color={PT.gold} rotate={-6} size={22}>
                                 ↳ Pessoas a sério
                             </HandNote>
                         </div>
-                        <div className="absolute top-[42%] right-[-12px] z-30 pointer-events-none">
+                        <div className="absolute top-[42%] right-[-12px] z-30 pointer-events-none hidden sm:block">
                             <DoodleCross color={PT.gold} size={26} rotate={18} />
                         </div>
                     </div>
 
                     {/* Cartões "citação" + "manifesto" sobrepostos */}
-                    <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2">
+                    <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
                             <Kicker color={PT.gold} className="mb-1.5">// CITAÇÃO Nº 03</Kicker>
                             <p className="font-black tracking-tight text-[17px] leading-[1.15]">
@@ -435,7 +391,7 @@ function PosterLeft() {
                         </PosterCard>
 
                         {/* Doodle a "anotar" o cartão */}
-                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none">
+                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none hidden sm:block">
                             <DoodleSpiral color={PT.gold} size={56} rotate={20} />
                         </div>
 
@@ -445,27 +401,27 @@ function PosterLeft() {
                                     A tua cidade tem <DynamicWord variant="hero" testId="login-hero-dynamic-word" />.
                                 </p>
                             </PosterCard>
-                            <div className="absolute -top-5 -left-6 z-20 pointer-events-none">
+                            <div className="absolute -top-5 -left-6 z-20 pointer-events-none hidden sm:block">
                                 <DoodleSmiley color={PT.gold} size={42} rotate={-14} />
                             </div>
-                            <div className="absolute -bottom-3 right-4 z-20 pointer-events-none">
+                            <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
                                 <DoodleUnderline color={PT.gold} w={100} h={12} />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* FIGURAS GEOMÉTRICAS dispersas */}
-                <div className="absolute top-[16%] right-10 z-0">
+                {/* FIGURAS GEOMÉTRICAS dispersas — só sm+ */}
+                <div className="absolute top-[16%] right-10 z-0 hidden sm:block">
                     <GeoTriangle color={PT.gold} size={56} rotate={22} />
                 </div>
-                <div className="absolute top-[44%] right-[12%] z-0">
+                <div className="absolute top-[44%] right-[12%] z-0 hidden sm:block">
                     <GeoSquare color={PT.azul} size={36} rotate={26} />
                 </div>
-                <div className="absolute bottom-[28%] left-[44%] z-0">
+                <div className="absolute bottom-[28%] left-[44%] z-0 hidden sm:block">
                     <GeoCircle color={PT.gold} size={24} />
                 </div>
-                <div className="absolute bottom-[14%] left-[6%] z-0">
+                <div className="absolute bottom-[14%] left-[6%] z-0 hidden sm:block">
                     <DoodleExclamation color={PT.gold} size={56} rotate={-12} />
                 </div>
 

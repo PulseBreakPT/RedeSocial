@@ -161,41 +161,37 @@ export default function Register() {
 
     return (
         <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream }}>
-            {/* Faixa topo tipo jornal */}
             <div className="pt-tape h-3 w-full" />
-
-            {/* Hero compacto em mobile (substitui o poster verde gigante) */}
-            <MobileHero step={step} />
 
             <div className="grid lg:grid-cols-[1fr_1.05fr] relative">
                 {/* ============ ESQUERDA · FORMULÁRIO ============ */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
-                    {/* Decorações pelos cantos (desktop only) */}
-                    <div className="absolute top-6 right-6 hidden lg:block pointer-events-none">
+                    {/* Decorações secundárias — só sm+ para não poluir mobile */}
+                    <div className="absolute top-6 right-6 pointer-events-none hidden sm:block">
                         <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />
                     </div>
-                    <div className="absolute bottom-32 -left-3 hidden lg:block pointer-events-none">
+                    <div className="absolute bottom-32 -left-3 pointer-events-none hidden sm:block">
                         <DoodleStar color={PT.red} size={50} rotate={-12} />
                     </div>
-                    <div className="absolute top-32 right-2 hidden lg:block pointer-events-none">
+                    <div className="absolute top-32 right-2 pointer-events-none hidden sm:block">
                         <DoodleSparkles color={PT.red} size={48} rotate={-8} />
                     </div>
-                    <div className="absolute bottom-48 right-4 hidden lg:block pointer-events-none">
+                    <div className="absolute bottom-48 right-4 pointer-events-none hidden sm:block">
                         <DoodleSpiral color={PT.gold} size={68} rotate={12} />
                     </div>
-                    <div className="absolute top-[58%] -right-2 hidden lg:block pointer-events-none">
+                    <div className="absolute top-[58%] -right-2 pointer-events-none hidden sm:block">
                         <GeoCircle color={PT.azul} size={26} />
                     </div>
-                    <div className="absolute top-[42%] right-16 hidden lg:block pointer-events-none">
+                    <div className="absolute top-[42%] right-16 pointer-events-none hidden sm:block">
                         <DoodleCross color={PT.green} size={22} rotate={-14} />
                     </div>
-                    <div className="absolute bottom-10 left-6 hidden lg:block pointer-events-none">
+                    <div className="absolute bottom-10 left-6 pointer-events-none hidden sm:block">
                         <DoodleZigzag color={PT.red} w={140} h={32} style={{ transform: "rotate(6deg)" }} />
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
-                        {/* Header (desktop only — mobile tem MobileHero) */}
-                        <div className="hidden lg:flex items-center justify-between mb-7">
+                        {/* Header — visível em todos os tamanhos */}
+                        <div className="flex items-center justify-between mb-7">
                             <div className="flex items-baseline gap-1.5">
                                 <span style={{ color: PT.green, fontSize: 30 }} className="font-black leading-none">✱</span>
                                 <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
@@ -262,14 +258,14 @@ export default function Register() {
                                 </>)}
                             </h2>
                             {/* Círculo a marcar a palavra colorida */}
-                            <div className="absolute -bottom-3 right-2 hidden lg:block pointer-events-none">
+                            <div className="absolute -bottom-3 right-2 pointer-events-none">
                                 <DoodleCircleNote
                                     color={step === 1 ? PT.red : step === 2 ? PT.green : PT.red}
                                     w={160} h={64} rotate={3}
                                 />
                             </div>
                             {/* Nota manuscrita */}
-                            <div className="absolute -right-2 -top-4 hidden lg:block pointer-events-none">
+                            <div className="absolute -right-2 -top-4 pointer-events-none hidden sm:block">
                                 <HandNote color={PT.green} rotate={-6} size={20}>
                                     {step === 1 ? "rápido!" : step === 2 ? "opcional" : "promessa!"}
                                 </HandNote>
@@ -567,12 +563,12 @@ export default function Register() {
                                         {busy ? (<><Loader2 size={16} className="animate-spin" /> A CRIAR…</>) : (<>CRIAR CONTA <Check size={18} /></>)}
                                     </button>
                                 )}
-                                <div className="absolute -top-5 right-6 hidden lg:block pointer-events-none">
+                                <div className="absolute -top-5 right-4 sm:right-6 pointer-events-none hidden sm:block">
                                     <Sticker bg={PT.gold} color={PT.ink} rotate={-12} style={{ fontSize: 9.5, padding: "5px 9px" }}>
                                         GRÁTIS ✱
                                     </Sticker>
                                 </div>
-                                <div className="absolute -bottom-7 right-12 hidden lg:block pointer-events-none">
+                                <div className="absolute -bottom-7 right-8 sm:right-12 pointer-events-none hidden sm:block">
                                     <DoodleZigzag color={PT.green} w={140} h={20} />
                                 </div>
                             </div>
@@ -642,55 +638,21 @@ export default function Register() {
 }
 
 // =============================================================================
-// MOBILE HERO — substitui o poster verde gigante em <lg
-// =============================================================================
-function MobileHero({ step }) {
-    return (
-        <div className="lg:hidden relative overflow-hidden" style={{ background: PT.green, color: "#fff" }}>
-            <div className="absolute -top-8 -right-6 z-0">
-                <GiantAsterisk color={PT.gold} size={160} rotate={12} />
-            </div>
-            <div className="relative z-10 px-5 py-7">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="font-black tracking-tight text-[24px] leading-none flex items-baseline gap-1.5" style={{ color: PT.ink }}>
-                        <span style={{ color: PT.gold, fontSize: 22, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
-                        <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
-                    </h1>
-                    <Sticker bg={PT.gold} color={PT.ink} rotate={-6} style={{ fontSize: 10, padding: "6px 10px" }}>
-                        PASSO {step}/3
-                    </Sticker>
-                </div>
-                <Kicker color={PT.gold} className="mb-1">// JUNTA-TE</Kicker>
-                <h2
-                    className="font-black tracking-[-0.03em]"
-                    style={{ fontSize: "clamp(28px, 7.5vw, 44px)", lineHeight: 1.05, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
-                >
-                    <span style={{ display: "block" }}>Vivemos. Partilhamos.</span>
-                    <span style={{ background: PT.gold, color: PT.ink, padding: "2px 0.10em", boxShadow: `3px 3px 0 ${PT.ink}`, display: "inline-block", marginTop: 14, textShadow: "none" }}>
-                        Lusorae.
-                    </span>
-                </h2>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// POSTER DIREITO — verde (desktop only)
+// POSTER DIREITO — verde (responsivo)
 // =============================================================================
 function PosterRight({ step }) {
     return (
         <div
-            className="hidden lg:flex relative overflow-hidden isolate pt-grain flex-col order-1 lg:order-2"
-            style={{ background: PT.green, color: "#fff", minHeight: "calc(100vh - 60px)" }}
+            className="flex relative overflow-hidden isolate pt-grain flex-col order-1 lg:order-2"
+            style={{ background: PT.green, color: "#fff" }}
             data-testid="brand-panel"
         >
-            <div className="absolute -top-14 -right-10 z-0">
+            <div className="absolute -top-14 -right-10 z-0 scale-50 sm:scale-75 lg:scale-100 origin-top-right">
                 <GiantAsterisk color={PT.gold} size={300} rotate={12} />
             </div>
 
             <div
-                className="absolute top-[28%] -right-8 z-0"
+                className="absolute top-[28%] -right-8 z-0 hidden sm:block"
                 style={{
                     width: "115%",
                     height: 52,
@@ -701,7 +663,7 @@ function PosterRight({ step }) {
                 aria-hidden
             />
 
-            <div className="relative z-10 p-10 xl:p-14 flex flex-col gap-5 flex-1">
+            <div className="relative z-10 p-5 sm:p-8 lg:p-10 xl:p-14 flex flex-col gap-5 flex-1">
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                     <h1 className="font-black tracking-tight text-[30px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
@@ -717,11 +679,11 @@ function PosterRight({ step }) {
 
                 {/* MANCHETE — controlada */}
                 <div className="relative">
-                    <Kicker color={PT.gold} className="mb-2">// JUNTA-TE · MANCHETE</Kicker>
+                    <Kicker color={PT.gold} className="mb-2">// JUNTA-TE</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
-                            fontSize: "clamp(48px, 6vw, 96px)",
+                            fontSize: "clamp(42px, 9.5vw, 96px)",
                             lineHeight: 0.86,
                             color: "#fff",
                             textShadow: `4px 4px 0 ${PT.ink}`,
@@ -747,7 +709,7 @@ function PosterRight({ step }) {
 
                 {/* COLAGEM */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
-                    <div className="relative shrink-0" style={{ width: 260, height: 290 }}>
+                    <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: 260, height: 290 }}>
                         <PolaroidStack
                             photos={[
                                 { src: LOGIN_HERO_R, alt: "Porto · Douro", rotate: 7, w: 145, h: 175, top: 4, left: 60, z: 1, caption: "douro", tapeColor: "rgba(255,204,0,0.78)" },
@@ -755,8 +717,8 @@ function PosterRight({ step }) {
                                 { src: REGISTER_HERO, alt: "Santos Populares", rotate: 4, w: 165, h: 200, top: 60, left: 0, z: 3, caption: "santos pop. ’26" },
                             ]}
                         />
-                        {/* Doodles sobre a pilha */}
-                        <div className="absolute -top-4 right-2 z-10 pointer-events-none">
+                        {/* Doodles secundários — só sm+ */}
+                        <div className="absolute -top-4 right-2 z-10 pointer-events-none hidden sm:block">
                             <DoodleSparkles color={PT.gold} size={56} rotate={14} />
                         </div>
                         <div className="absolute -top-4 -left-4 z-20 pointer-events-none">
@@ -769,21 +731,21 @@ function PosterRight({ step }) {
                                 📍 LISBOA · ALFAMA
                             </Sticker>
                         </div>
-                        <div className="absolute top-[42%] right-[-18px] z-30 pointer-events-none">
+                        <div className="absolute top-[42%] right-[-18px] z-30 pointer-events-none hidden sm:block">
                             <DoodleLongArrow color={PT.gold} w={90} h={70} rotate={-30} />
                         </div>
-                        <div className="absolute -bottom-2 left-4 z-30 pointer-events-none">
+                        <div className="absolute -bottom-2 left-4 z-30 pointer-events-none hidden sm:block">
                             <HandNote color={PT.gold} rotate={4} size={22}>
                                 ↳ a tua rua
                             </HandNote>
                         </div>
-                        <div className="absolute top-[60%] left-[-14px] z-30 pointer-events-none">
+                        <div className="absolute top-[60%] left-[-14px] z-30 pointer-events-none hidden sm:block">
                             <DoodleCross color={PT.gold} size={24} rotate={-10} />
                         </div>
                     </div>
 
                     {/* Cartões "passos" */}
-                    <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2">
+                    <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
                             <Kicker color={PT.gold} className="mb-2">// 3 PASSOS</Kicker>
                             <ul className="space-y-1.5 text-[13.5px] font-bold leading-tight">
@@ -792,7 +754,7 @@ function PosterRight({ step }) {
                                 <PassoItem n={3} done={false} label="Aceita os termos" color={PT.green} />
                             </ul>
                         </PosterCard>
-                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none">
+                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none hidden sm:block">
                             <DoodleSpiral color={PT.gold} size={56} rotate={-15} />
                         </div>
 
@@ -802,27 +764,27 @@ function PosterRight({ step }) {
                                     A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
                                 </p>
                             </PosterCard>
-                            <div className="absolute -top-5 -right-4 z-20 pointer-events-none">
+                            <div className="absolute -top-5 -right-4 z-20 pointer-events-none hidden sm:block">
                                 <DoodleSmiley color={PT.ink} size={42} rotate={12} />
                             </div>
-                            <div className="absolute -bottom-3 left-6 z-20 pointer-events-none">
+                            <div className="absolute -bottom-3 left-6 z-20 pointer-events-none hidden sm:block">
                                 <DoodleUnderline color={PT.ink} w={100} h={12} />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Geométricas */}
-                <div className="absolute top-[18%] left-[40%] z-0">
+                {/* Geométricas — só sm+ */}
+                <div className="absolute top-[18%] left-[40%] z-0 hidden sm:block">
                     <GeoTriangle color={PT.red} size={48} rotate={-14} />
                 </div>
-                <div className="absolute top-[50%] left-[6%] z-0">
+                <div className="absolute top-[50%] left-[6%] z-0 hidden sm:block">
                     <GeoSquare color={PT.gold} size={32} rotate={-22} />
                 </div>
-                <div className="absolute bottom-[30%] right-[8%] z-0">
+                <div className="absolute bottom-[30%] right-[8%] z-0 hidden sm:block">
                     <GeoCircle color={PT.red} size={30} />
                 </div>
-                <div className="absolute bottom-[10%] right-[24%] z-0">
+                <div className="absolute bottom-[10%] right-[24%] z-0 hidden sm:block">
                     <DoodleExclamation color={PT.gold} size={54} rotate={14} />
                 </div>
 
