@@ -4,12 +4,16 @@ import { useAuth } from "../context/AuthContext";
 import { DynamicWord } from "../components/DynamicWord";
 import SiteFooter from "../components/SiteFooter";
 import {
-    PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
+    PT, Sticker, StampCircle, PolaroidStack, PosterCard, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
+    DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
+    DoodleSmiley, DoodleLongArrow, DoodleCross, HandNote,
     GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
 
 const LOGIN_HERO = "/hero/login.webp";
+const MANIFESTO_HERO = "/hero/manifesto.webp";
+const REGISTER_HERO = "/hero/register.webp";
 
 // =============================================================================
 // LUSORAE — Login (cartaz urbano · fanzine portuguesa)
@@ -40,17 +44,6 @@ export default function Login() {
                 FAIXA TOPO ESTILO JORNAL — tape preta + dourada
             ================================================================= */}
             <div className="pt-tape h-3 w-full" />
-            <div
-                className="flex items-center justify-between px-5 sm:px-8 py-3"
-                style={{ background: PT.ink, color: PT.bone, borderBottom: `3px solid ${PT.ink}` }}
-            >
-                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    LUSORAE // EDIÇÃO Nº {new Date().getFullYear()} // ENTRAR
-                </span>
-                <span className="hidden sm:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
-                    PORTO · LISBOA · FUNCHAL · OLHÃO
-                </span>
-            </div>
 
             {/* Hero compacto SÓ em mobile (substitui o poster gigante) */}
             <MobileHero />
@@ -61,12 +54,27 @@ export default function Login() {
 
                 {/* PAINEL DIREITO — FORMULÁRIO */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-14 pb-16" style={{ background: PT.cream }}>
-                    {/* Doodle decorativo no canto (desktop only) */}
-                    <div className="absolute top-8 right-8 hidden lg:block">
+                    {/* Doodles decorativos espalhados (desktop only) */}
+                    <div className="absolute top-8 right-8 hidden lg:block pointer-events-none">
                         <DoodleStar color={PT.gold} size={52} rotate={18} />
                     </div>
-                    <div className="absolute top-1/2 -left-3 hidden lg:block">
+                    <div className="absolute top-1/2 -left-3 hidden lg:block pointer-events-none">
                         <DoodleScribble color={PT.azul} w={120} h={50} style={{ transform: "rotate(-6deg)" }} />
+                    </div>
+                    <div className="absolute top-24 right-20 hidden lg:block pointer-events-none">
+                        <DoodleSparkles color={PT.red} size={48} rotate={6} />
+                    </div>
+                    <div className="absolute bottom-40 right-6 hidden lg:block pointer-events-none">
+                        <DoodleSpiral color={PT.red} size={70} rotate={-10} />
+                    </div>
+                    <div className="absolute bottom-12 left-6 hidden lg:block pointer-events-none">
+                        <DoodleZigzag color={PT.azul} w={140} h={32} style={{ transform: "rotate(-8deg)" }} />
+                    </div>
+                    <div className="absolute top-[55%] right-2 hidden lg:block pointer-events-none">
+                        <GeoTriangle color={PT.green} size={32} rotate={-20} />
+                    </div>
+                    <div className="absolute top-[30%] right-12 hidden lg:block pointer-events-none">
+                        <DoodleCross color={PT.red} size={22} rotate={14} />
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
@@ -87,29 +95,62 @@ export default function Login() {
                             <DoodleArrow color={PT.red} w={60} h={28} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
-                        {/* TITULO — cap a tamanhos seguros */}
-                        <h2
-                            className="font-black tracking-[-0.04em]"
-                            style={{ fontSize: "clamp(38px, 5.2vw, 68px)", lineHeight: 0.92, color: PT.ink }}
-                        >
-                            <span style={{ display: "inline-block", color: PT.red, transform: "rotate(-2deg)", textShadow: `3px 3px 0 ${PT.gold}` }}>
-                                Olá,
-                            </span>
-                            <br />
-                            <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
-                                bom regresso.
-                            </span>
-                        </h2>
+                        {/* TITULO — cap a tamanhos seguros + doodle circle a marcar "Olá," */}
+                        <div className="relative">
+                            <h2
+                                className="font-black tracking-[-0.04em]"
+                                style={{ fontSize: "clamp(38px, 5.2vw, 68px)", lineHeight: 0.92, color: PT.ink }}
+                            >
+                                <span style={{ display: "inline-block", color: PT.red, transform: "rotate(-2deg)", textShadow: `3px 3px 0 ${PT.gold}` }}>
+                                    Olá,
+                                </span>
+                                <br />
+                                <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                    bom regresso.
+                                </span>
+                            </h2>
+                            {/* Círculo desenhado à mão à volta de "Olá," */}
+                            <div className="absolute -top-2 -left-3 pointer-events-none" style={{ width: 150 }}>
+                                <DoodleCircleNote color={PT.azul} w={150} h={70} rotate={-4} />
+                            </div>
+                            {/* Nota manuscrita ao lado do título */}
+                            <div className="absolute -right-2 top-0 hidden lg:block pointer-events-none">
+                                <HandNote color={PT.red} rotate={8} size={20}>
+                                    finalmente!
+                                </HandNote>
+                            </div>
+                            {/* Seta a apontar ao bloco dourado */}
+                            <div className="absolute -right-4 bottom-[-30px] hidden lg:block pointer-events-none">
+                                <DoodleLongArrow color={PT.green} w={110} h={70} rotate={-150} />
+                            </div>
+                        </div>
 
-                        <div className="mt-5 flex items-start gap-3">
+                        <div className="mt-5 flex items-start gap-3 relative">
                             <DoodleHeart color={PT.red} size={28} rotate={-12} style={{ flexShrink: 0, marginTop: 2 }} />
                             <p className="text-[15.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
                                 Continua a conversa onde a deixaste. <span style={{ background: PT.azul, color: "#fff", padding: "1px 6px", fontWeight: 800 }}>sem ruído</span>.
                             </p>
+                            <div className="absolute -bottom-2 left-10 pointer-events-none">
+                                <DoodleUnderline color={PT.red} w={120} h={12} />
+                            </div>
                         </div>
 
                         {/* FORM */}
-                        <form onSubmit={submit} className="mt-9 space-y-5" data-testid="login-form">
+                        <form onSubmit={submit} className="mt-9 space-y-5 relative" data-testid="login-form">
+                            {/* Doodle a anotar o primeiro campo */}
+                            <div className="hidden lg:block absolute -left-16 top-2 pointer-events-none z-0">
+                                <HandNote color={PT.azul} rotate={-10} size={18}>
+                                    o teu &nbsp;email →
+                                </HandNote>
+                            </div>
+                            {/* Doodle a anotar o campo password */}
+                            <div className="hidden lg:block absolute -right-16 top-[120px] pointer-events-none z-0">
+                                <HandNote color={PT.red} rotate={6} size={18}>
+                                    ← secreta!
+                                </HandNote>
+                                <DoodleArrow color={PT.red} w={50} h={24} style={{ transform: "rotate(170deg)", display: "block", marginTop: -4 }} />
+                            </div>
+
                             <PtField label="Email" number="01">
                                 <input
                                     data-testid="login-email"
@@ -158,14 +199,25 @@ export default function Login() {
                                 </PosterCard>
                             )}
 
-                            <button
-                                type="submit"
-                                disabled={busy}
-                                data-testid="login-submit"
-                                className="pt-btn-primary w-full text-[16px] py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {busy ? "A entrar…" : "ENTRAR →"}
-                            </button>
+                            <div className="relative">
+                                <button
+                                    type="submit"
+                                    disabled={busy}
+                                    data-testid="login-submit"
+                                    className="pt-btn-primary w-full text-[16px] py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {busy ? "A entrar…" : "ENTRAR →"}
+                                </button>
+                                {/* Sticker desalinhado e doodle no botão */}
+                                <div className="absolute -top-5 -right-3 hidden lg:block pointer-events-none">
+                                    <Sticker bg={PT.red} color="#fff" rotate={14} style={{ fontSize: 9.5, padding: "5px 9px" }}>
+                                        ✱ vai!
+                                    </Sticker>
+                                </div>
+                                <div className="absolute -bottom-6 -left-2 hidden lg:block pointer-events-none">
+                                    <DoodleZigzag color={PT.gold} w={120} h={18} />
+                                </div>
+                            </div>
 
                             {/* Disclaimer legal — entrada na conta */}
                             <p
@@ -194,7 +246,7 @@ export default function Login() {
                         </form>
 
                         {/* CTA registo + sticker */}
-                        <div className="mt-8 flex items-center justify-between flex-wrap gap-3">
+                        <div className="mt-8 flex items-center justify-between flex-wrap gap-3 relative">
                             <p className="text-[14px] font-semibold" style={{ color: "rgba(10,10,10,0.72)" }}>
                                 Sem conta?{" "}
                                 <Link
@@ -207,6 +259,9 @@ export default function Login() {
                                 </Link>
                             </p>
                             <Sticker bg={PT.green} color="#fff" rotate={-5}>30 SEG.</Sticker>
+                            <div className="absolute -top-4 left-12 hidden lg:block pointer-events-none">
+                                <DoodleArrow color={PT.red} w={50} h={24} style={{ transform: "rotate(120deg)" }} />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -334,24 +389,39 @@ function PosterLeft() {
 
                 {/* COLAGEM */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
-                    {/* Foto colada */}
-                    <div className="relative shrink-0">
-                        <TapedPhoto
-                            src={LOGIN_HERO}
-                            alt="Porto · Douro ao anoitecer"
-                            rotate={-4}
-                            w={180}
-                            h={220}
+                    {/* Pilha de polaroids coladas */}
+                    <div className="relative shrink-0" style={{ width: 260, height: 290 }}>
+                        <PolaroidStack
+                            photos={[
+                                { src: REGISTER_HERO, alt: "Festa popular", rotate: -9, w: 150, h: 180, top: 6, left: 70, z: 1, caption: "santos · 2026", tapeColor: "rgba(4,106,56,0.55)" },
+                                { src: MANIFESTO_HERO, alt: "Manifesto", rotate: 8, w: 140, h: 170, top: 80, left: 0, z: 2, caption: "manifesto", tapeColor: "rgba(200,16,46,0.55)" },
+                                { src: LOGIN_HERO, alt: "Porto · Douro", rotate: -3, w: 165, h: 200, top: 50, left: 95, z: 3, caption: "porto · douro" },
+                            ]}
                         />
-                        <div className="absolute -top-3 -right-5">
-                            <StampCircle bg={PT.green} color="#fff" rotate={-16} size={60}>
+                        {/* Doodles sobre a pilha */}
+                        <div className="absolute -top-4 -left-2 z-10 pointer-events-none">
+                            <DoodleSparkles color={PT.gold} size={56} rotate={-12} />
+                        </div>
+                        <div className="absolute top-[-6px] right-[-18px] z-20 pointer-events-none">
+                            <StampCircle bg={PT.green} color="#fff" rotate={-16} size={62}>
                                 REAL<br/>NÃO<br/>STOCK
                             </StampCircle>
                         </div>
-                        <div className="absolute -bottom-3 left-3">
-                            <Sticker bg={PT.ink} color={PT.gold} rotate={-3} style={{ fontSize: 9.5, padding: "5px 10px" }}>
+                        <div className="absolute bottom-[-2px] left-[20px] z-20 pointer-events-none">
+                            <Sticker bg={PT.ink} color={PT.gold} rotate={-5} style={{ fontSize: 9.5, padding: "5px 10px" }}>
                                 📍 PORTO · DOURO
                             </Sticker>
+                        </div>
+                        <div className="absolute top-[34%] left-[-22px] z-30 pointer-events-none">
+                            <DoodleLongArrow color={PT.gold} w={90} h={70} rotate={20} />
+                        </div>
+                        <div className="absolute -bottom-6 right-2 z-30 pointer-events-none">
+                            <HandNote color={PT.gold} rotate={-6} size={22}>
+                                ↳ Pessoas a sério
+                            </HandNote>
+                        </div>
+                        <div className="absolute top-[42%] right-[-12px] z-30 pointer-events-none">
+                            <DoodleCross color={PT.gold} size={26} rotate={18} />
                         </div>
                     </div>
 
@@ -368,12 +438,23 @@ function PosterLeft() {
                             </p>
                         </PosterCard>
 
-                        <div className="mt-4">
+                        {/* Doodle a "anotar" o cartão */}
+                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none">
+                            <DoodleSpiral color={PT.gold} size={56} rotate={20} />
+                        </div>
+
+                        <div className="mt-4 relative">
                             <PosterCard bg={PT.green} color="#fff" rotate={3} shadow={PT.ink} style={{ padding: "10px 14px" }}>
                                 <p className="font-black text-[13.5px] leading-tight">
                                     A tua cidade tem <DynamicWord variant="hero" testId="login-hero-dynamic-word" />.
                                 </p>
                             </PosterCard>
+                            <div className="absolute -top-5 -left-6 z-20 pointer-events-none">
+                                <DoodleSmiley color={PT.gold} size={42} rotate={-14} />
+                            </div>
+                            <div className="absolute -bottom-3 right-4 z-20 pointer-events-none">
+                                <DoodleUnderline color={PT.gold} w={100} h={12} />
+                            </div>
                         </div>
                     </div>
                 </div>

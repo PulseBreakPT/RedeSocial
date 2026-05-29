@@ -66,7 +66,7 @@ export function StampCircle({ children, size = 86, bg = PT.red, color = "#fff", 
 }
 
 // ============ FOTO COLADA com fita-cola ============
-export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, style = {} }) {
+export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, caption = null, style = {}, tapeColor = "rgba(255,204,0,0.78)", tapeColor2 = "rgba(14,77,146,0.55)" }) {
     return (
         <div
             className="relative"
@@ -75,6 +75,7 @@ export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, style
                 height: h,
                 background: "#fff",
                 padding: 8,
+                paddingBottom: caption ? 28 : 8,
                 border: `2px solid ${PT.ink}`,
                 boxShadow: `8px 8px 0 ${PT.ink}`,
                 transform: `rotate(${rotate}deg)`,
@@ -90,7 +91,7 @@ export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, style
                     left: "32%",
                     width: 64,
                     height: 20,
-                    background: "rgba(255,204,0,0.78)",
+                    background: tapeColor,
                     border: "1px dashed rgba(0,0,0,0.18)",
                     transform: "rotate(-8deg)",
                 }}
@@ -103,7 +104,7 @@ export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, style
                     right: "18%",
                     width: 52,
                     height: 18,
-                    background: "rgba(14,77,146,0.55)",
+                    background: tapeColor2,
                     border: "1px dashed rgba(0,0,0,0.18)",
                     transform: "rotate(6deg)",
                 }}
@@ -111,9 +112,54 @@ export function TapedPhoto({ src, alt = "", rotate = -4, w = 200, h = 240, style
             <img
                 src={src}
                 alt={alt}
-                className="block w-full h-full object-cover"
+                className="block w-full object-cover"
+                style={{ height: caption ? `calc(100% - 26px)` : "100%" }}
                 loading="lazy"
             />
+            {caption && (
+                <span
+                    className="absolute left-0 right-0 bottom-1 text-center font-bold"
+                    style={{
+                        fontFamily: "'Caveat','Patrick Hand',cursive",
+                        fontSize: 16,
+                        color: PT.ink,
+                        letterSpacing: "0.02em",
+                    }}
+                >
+                    {caption}
+                </span>
+            )}
+        </div>
+    );
+}
+
+// ============ PILHA DE POLAROIDS — várias fotos sobrepostas com rotações ============
+export function PolaroidStack({ photos = [], style = {} }) {
+    // photos: [{ src, alt, rotate, w, h, caption, top, left, z, tapeColor, tapeColor2 }, ...]
+    return (
+        <div className="relative" style={{ width: 240, height: 280, ...style }}>
+            {photos.map((p, i) => (
+                <div
+                    key={i}
+                    className="absolute"
+                    style={{
+                        top: p.top ?? 0,
+                        left: p.left ?? 0,
+                        zIndex: p.z ?? i + 1,
+                    }}
+                >
+                    <TapedPhoto
+                        src={p.src}
+                        alt={p.alt || ""}
+                        rotate={p.rotate ?? 0}
+                        w={p.w ?? 170}
+                        h={p.h ?? 200}
+                        caption={p.caption}
+                        tapeColor={p.tapeColor}
+                        tapeColor2={p.tapeColor2}
+                    />
+                </div>
+            ))}
         </div>
     );
 }
@@ -225,6 +271,124 @@ export function DoodleExclamation({ color = PT.gold, size = 60, rotate = 8, styl
     );
 }
 
+// ============ DOODLE: espiral rabiscado ============
+export function DoodleSpiral({ color = PT.ink, size = 60, rotate = 0, style = {} }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 60 60" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <path
+                d="M30 30 m-3 0 a3 3 0 1 1 6 0 a6 6 0 1 1 -12 0 a9 9 0 1 1 18 0 a12 12 0 1 1 -24 0 a16 16 0 1 1 32 0"
+                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
+            />
+        </svg>
+    );
+}
+
+// ============ DOODLE: zigzag (raio/eclair) ============
+export function DoodleZigzag({ color = PT.red, w = 120, h = 28, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox="0 0 120 28" fill="none" style={style} aria-hidden>
+            <path
+                d="M3 14 L20 4 L32 22 L50 6 L66 22 L84 4 L100 22 L117 10"
+                stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"
+            />
+        </svg>
+    );
+}
+
+// ============ DOODLE: círculo de anotação (à mão) à volta de palavra ============
+export function DoodleCircleNote({ color = PT.red, w = 180, h = 70, rotate = -3, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox="0 0 180 70" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <path
+                d="M30 35 C 20 10, 80 -2, 130 8 C 165 16, 175 38, 155 55 C 130 70, 60 70, 30 58 C 8 48, 5 38, 30 32"
+                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
+                strokeDasharray="0"
+            />
+        </svg>
+    );
+}
+
+// ============ DOODLE: sublinhado ondulado ============
+export function DoodleUnderline({ color = PT.gold, w = 140, h = 14, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox="0 0 140 14" fill="none" style={style} aria-hidden>
+            <path
+                d="M3 8 Q 18 1, 35 8 T 70 8 T 105 8 T 137 8"
+                stroke={color} strokeWidth="4" strokeLinecap="round" fill="none"
+            />
+        </svg>
+    );
+}
+
+// ============ DOODLE: sparkles (3 estrelinhas mini) ============
+export function DoodleSparkles({ color = PT.gold, size = 60, rotate = 0, style = {} }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 60 60" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <path d="M15 8 L17 14 L23 16 L17 18 L15 24 L13 18 L7 16 L13 14 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M44 22 L46 28 L52 30 L46 32 L44 38 L42 32 L36 30 L42 28 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M22 38 L24 44 L30 46 L24 48 L22 54 L20 48 L14 46 L20 44 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+// ============ DOODLE: smiley desenhado à mão ============
+export function DoodleSmiley({ color = PT.ink, size = 44, rotate = -6, style = {} }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <circle cx="22" cy="22" r="18" stroke={color} strokeWidth="2.8" fill="#fff" />
+            <circle cx="16" cy="19" r="2" fill={color} />
+            <circle cx="28" cy="19" r="2" fill={color} />
+            <path d="M14 27 Q 22 34, 30 27" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        </svg>
+    );
+}
+
+// ============ DOODLE: seta longa curvada com cauda ============
+export function DoodleLongArrow({ color = PT.ink, w = 160, h = 100, rotate = 0, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox="0 0 160 100" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <path
+                d="M8 20 C 30 5, 70 -5, 100 20 C 120 38, 90 60, 60 60 C 40 60, 30 78, 60 90"
+                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
+            />
+            <path
+                d="M50 82 L60 90 L68 80"
+                stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"
+            />
+        </svg>
+    );
+}
+
+// ============ DOODLE: cruzes/X de marcação ============
+export function DoodleCross({ color = PT.red, size = 28, rotate = 12, style = {} }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 28 28" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
+            <path d="M5 5 L23 23" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M23 5 L5 23" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+// ============ NOTA MANUSCRITA — pequeno texto inclinado tipo nota à mão ============
+export function HandNote({ children, color = PT.ink, rotate = -4, size = 18, style = {} }) {
+    return (
+        <span
+            className="inline-block font-bold select-none"
+            style={{
+                fontFamily: "'Caveat','Patrick Hand',cursive",
+                fontSize: size,
+                lineHeight: 1.05,
+                color,
+                transform: `rotate(${rotate}deg)`,
+                letterSpacing: "0.01em",
+                ...style,
+            }}
+        >
+            {children}
+        </span>
+    );
+}
+
 export function GeoTriangle({ color = PT.gold, size = 56, rotate = 12, style = {} }) {
     return (
         <div
@@ -317,6 +481,7 @@ export function Kicker({ children, color = PT.red, className = "" }) {
 export function AuthStyles() {
     return (
         <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap');
             .pt-input {
                 width: 100%;
                 background: #fff;

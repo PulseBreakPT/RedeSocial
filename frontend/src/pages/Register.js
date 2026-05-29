@@ -7,12 +7,16 @@ import { CitySelect } from "../components/CitySelect";
 import { DynamicWord } from "../components/DynamicWord";
 import SiteFooter from "../components/SiteFooter";
 import {
-    PT, Sticker, StampCircle, TapedPhoto, PosterCard, MagNumber, Kicker, AuthStyles,
+    PT, Sticker, StampCircle, PolaroidStack, PosterCard, MagNumber, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
+    DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
+    DoodleSmiley, DoodleLongArrow, DoodleCross, HandNote,
     GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
 
 const REGISTER_HERO = "/hero/register.webp";
+const LOGIN_HERO_R = "/hero/login.webp";
+const MANIFESTO_HERO_R = "/hero/manifesto.webp";
 const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 
 // =====================================================================
@@ -159,17 +163,6 @@ export default function Register() {
         <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream }}>
             {/* Faixa topo tipo jornal */}
             <div className="pt-tape h-3 w-full" />
-            <div
-                className="flex items-center justify-between px-5 sm:px-8 py-3"
-                style={{ background: PT.ink, color: PT.bone }}
-            >
-                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    LUSORAE // RECRUTAMENTO ABERTO // PASSO {step}/3
-                </span>
-                <span className="hidden sm:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
-                    SEM CARTÃO · SEM UPSELL · SEM TRIAL
-                </span>
-            </div>
 
             {/* Hero compacto em mobile (substitui o poster verde gigante) */}
             <MobileHero step={step} />
@@ -178,11 +171,26 @@ export default function Register() {
                 {/* ============ ESQUERDA · FORMULÁRIO ============ */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
                     {/* Decorações pelos cantos (desktop only) */}
-                    <div className="absolute top-6 right-6 hidden lg:block">
+                    <div className="absolute top-6 right-6 hidden lg:block pointer-events-none">
                         <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />
                     </div>
-                    <div className="absolute bottom-32 -left-3 hidden lg:block">
+                    <div className="absolute bottom-32 -left-3 hidden lg:block pointer-events-none">
                         <DoodleStar color={PT.red} size={50} rotate={-12} />
+                    </div>
+                    <div className="absolute top-32 right-2 hidden lg:block pointer-events-none">
+                        <DoodleSparkles color={PT.red} size={48} rotate={-8} />
+                    </div>
+                    <div className="absolute bottom-48 right-4 hidden lg:block pointer-events-none">
+                        <DoodleSpiral color={PT.gold} size={68} rotate={12} />
+                    </div>
+                    <div className="absolute top-[58%] -right-2 hidden lg:block pointer-events-none">
+                        <GeoCircle color={PT.azul} size={26} />
+                    </div>
+                    <div className="absolute top-[42%] right-16 hidden lg:block pointer-events-none">
+                        <DoodleCross color={PT.green} size={22} rotate={-14} />
+                    </div>
+                    <div className="absolute bottom-10 left-6 hidden lg:block pointer-events-none">
+                        <DoodleZigzag color={PT.red} w={140} h={32} style={{ transform: "rotate(6deg)" }} />
                     </div>
 
                     <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
@@ -228,30 +236,45 @@ export default function Register() {
                             <DoodleArrow color={PT.green} w={60} h={26} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
-                        {/* TÍTULO — controlado para evitar overflow */}
-                        <h2
-                            className="font-black tracking-[-0.04em]"
-                            style={{ fontSize: "clamp(34px, 4.6vw, 60px)", lineHeight: 0.92, color: PT.ink }}
-                        >
-                            {step === 1 && (<>
-                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Cria a tua</span>{" "}
-                                <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
-                                    conta.
-                                </span>
-                            </>)}
-                            {step === 2 && (<>
-                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>De onde</span>{" "}
-                                <span style={{ background: PT.red, color: "#fff", padding: "0 0.12em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(2deg)" }}>
-                                    és?
-                                </span>
-                            </>)}
-                            {step === 3 && (<>
-                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Última coisa,</span><br/>
-                                <span style={{ background: PT.green, color: "#fff", padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
-                                    juramos.
-                                </span>
-                            </>)}
-                        </h2>
+                        {/* TÍTULO — controlado para evitar overflow + doodles a marcar */}
+                        <div className="relative">
+                            <h2
+                                className="font-black tracking-[-0.04em]"
+                                style={{ fontSize: "clamp(34px, 4.6vw, 60px)", lineHeight: 0.92, color: PT.ink }}
+                            >
+                                {step === 1 && (<>
+                                    <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Cria a tua</span>{" "}
+                                    <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                        conta.
+                                    </span>
+                                </>)}
+                                {step === 2 && (<>
+                                    <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>De onde</span>{" "}
+                                    <span style={{ background: PT.red, color: "#fff", padding: "0 0.12em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(2deg)" }}>
+                                        és?
+                                    </span>
+                                </>)}
+                                {step === 3 && (<>
+                                    <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Última coisa,</span><br/>
+                                    <span style={{ background: PT.green, color: "#fff", padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                        juramos.
+                                    </span>
+                                </>)}
+                            </h2>
+                            {/* Círculo a marcar a palavra colorida */}
+                            <div className="absolute -bottom-3 right-2 hidden lg:block pointer-events-none">
+                                <DoodleCircleNote
+                                    color={step === 1 ? PT.red : step === 2 ? PT.green : PT.red}
+                                    w={160} h={64} rotate={3}
+                                />
+                            </div>
+                            {/* Nota manuscrita */}
+                            <div className="absolute -right-2 -top-4 hidden lg:block pointer-events-none">
+                                <HandNote color={PT.green} rotate={-6} size={20}>
+                                    {step === 1 ? "rápido!" : step === 2 ? "opcional" : "promessa!"}
+                                </HandNote>
+                            </div>
+                        </div>
 
                         <div className="mt-4 flex items-start gap-3">
                             <DoodleHeart color={PT.green} size={26} rotate={-12} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -516,7 +539,7 @@ export default function Register() {
                                 </PosterCard>
                             )}
 
-                            <div className="mt-7 flex items-center gap-3">
+                            <div className="mt-7 flex items-center gap-3 relative">
                                 {step > 1 && (
                                     <button
                                         type="button" onClick={back}
@@ -544,6 +567,14 @@ export default function Register() {
                                         {busy ? (<><Loader2 size={16} className="animate-spin" /> A CRIAR…</>) : (<>CRIAR CONTA <Check size={18} /></>)}
                                     </button>
                                 )}
+                                <div className="absolute -top-5 right-6 hidden lg:block pointer-events-none">
+                                    <Sticker bg={PT.gold} color={PT.ink} rotate={-12} style={{ fontSize: 9.5, padding: "5px 9px" }}>
+                                        GRÁTIS ✱
+                                    </Sticker>
+                                </div>
+                                <div className="absolute -bottom-7 right-12 hidden lg:block pointer-events-none">
+                                    <DoodleZigzag color={PT.green} w={140} h={20} />
+                                </div>
                             </div>
 
                             {/* Disclaimer legal — criação de conta (só step 3) */}
@@ -717,22 +748,38 @@ function PosterRight({ step }) {
 
                 {/* COLAGEM */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
-                    <div className="relative shrink-0">
-                        <TapedPhoto
-                            src={REGISTER_HERO}
-                            alt="Rua portuguesa decorada para os Santos Populares"
-                            rotate={3}
-                            w={180} h={220}
+                    <div className="relative shrink-0" style={{ width: 260, height: 290 }}>
+                        <PolaroidStack
+                            photos={[
+                                { src: LOGIN_HERO_R, alt: "Porto · Douro", rotate: 7, w: 145, h: 175, top: 4, left: 60, z: 1, caption: "douro", tapeColor: "rgba(255,204,0,0.78)" },
+                                { src: MANIFESTO_HERO_R, alt: "Manifesto", rotate: -6, w: 140, h: 170, top: 90, left: 110, z: 2, caption: "rua viva", tapeColor: "rgba(200,16,46,0.55)" },
+                                { src: REGISTER_HERO, alt: "Santos Populares", rotate: 4, w: 165, h: 200, top: 60, left: 0, z: 3, caption: "santos pop. ’26" },
+                            ]}
                         />
-                        <div className="absolute -top-3 -left-4">
-                            <StampCircle bg={PT.red} color="#fff" rotate={-14} size={60}>
+                        {/* Doodles sobre a pilha */}
+                        <div className="absolute -top-4 right-2 z-10 pointer-events-none">
+                            <DoodleSparkles color={PT.gold} size={56} rotate={14} />
+                        </div>
+                        <div className="absolute -top-4 -left-4 z-20 pointer-events-none">
+                            <StampCircle bg={PT.red} color="#fff" rotate={-14} size={62}>
                                 SANTOS<br/>POP.<br/>2026
                             </StampCircle>
                         </div>
-                        <div className="absolute -bottom-3 right-2">
-                            <Sticker bg={PT.ink} color={PT.gold} rotate={3} style={{ fontSize: 9.5, padding: "5px 10px" }}>
+                        <div className="absolute bottom-1 right-2 z-20 pointer-events-none">
+                            <Sticker bg={PT.ink} color={PT.gold} rotate={5} style={{ fontSize: 9.5, padding: "5px 10px" }}>
                                 📍 LISBOA · ALFAMA
                             </Sticker>
+                        </div>
+                        <div className="absolute top-[42%] right-[-18px] z-30 pointer-events-none">
+                            <DoodleLongArrow color={PT.gold} w={90} h={70} rotate={-30} />
+                        </div>
+                        <div className="absolute -bottom-2 left-4 z-30 pointer-events-none">
+                            <HandNote color={PT.gold} rotate={4} size={22}>
+                                ↳ a tua rua
+                            </HandNote>
+                        </div>
+                        <div className="absolute top-[60%] left-[-14px] z-30 pointer-events-none">
+                            <DoodleCross color={PT.gold} size={24} rotate={-10} />
                         </div>
                     </div>
 
@@ -746,13 +793,22 @@ function PosterRight({ step }) {
                                 <PassoItem n={3} done={false} label="Aceita os termos" color={PT.green} />
                             </ul>
                         </PosterCard>
+                        <div className="absolute -top-3 -right-3 z-20 pointer-events-none">
+                            <DoodleSpiral color={PT.gold} size={56} rotate={-15} />
+                        </div>
 
-                        <div className="mt-4">
+                        <div className="mt-4 relative">
                             <PosterCard bg={PT.gold} color={PT.ink} rotate={3} shadow={PT.ink} style={{ padding: "10px 14px" }}>
                                 <p className="font-black text-[13.5px] leading-tight">
                                     A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
                                 </p>
                             </PosterCard>
+                            <div className="absolute -top-5 -right-4 z-20 pointer-events-none">
+                                <DoodleSmiley color={PT.ink} size={42} rotate={12} />
+                            </div>
+                            <div className="absolute -bottom-3 left-6 z-20 pointer-events-none">
+                                <DoodleUnderline color={PT.ink} w={100} h={12} />
+                            </div>
                         </div>
                     </div>
                 </div>
