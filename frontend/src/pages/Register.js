@@ -5,82 +5,51 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { DynamicWord } from "../components/DynamicWord";
+import {
+    PT, Sticker, StampCircle, TapedPhoto, PosterCard, MagNumber, Kicker, AuthStyles,
+    DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
+    GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
+} from "./auth/AuthDecor";
 
-// =============================================================================
-// LUSORAE — Register (cores portuguesas vibrantes)
-// Verde como cor de painel · Vermelho/Dourado em acentos
-// =============================================================================
-
-const PT = {
-    red: "#C8102E",
-    green: "#046A38",
-    gold: "#FFCC00",
-    azul: "#0E4D92",
-    cream: "#FFF8E7",
-    ink: "#1A1A1A",
-};
-
+const REGISTER_HERO = "/hero/register.webp";
 const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 
 // =====================================================================
-// Password strength
+// Password strength (paleta PT)
 // =====================================================================
 function evaluatePassword(pwd) {
     if (!pwd) return { score: 0, label: "", color: "#cccccc", reasons: [] };
     const reasons = [];
     let score = 0;
-    if (pwd.length >= 8) score++;
-    else reasons.push("8+ caracteres");
-    if (pwd.length >= 12) score++;
-    else if (pwd.length >= 8) reasons.push("12+ ainda melhor");
-    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
-    else reasons.push("maiúsculas e minúsculas");
-    if (/\d/.test(pwd)) score++;
-    else reasons.push("um número");
-    if (/[^a-zA-Z\d]/.test(pwd)) score++;
-    else reasons.push("um símbolo (!@#…)");
+    if (pwd.length >= 8) score++; else reasons.push("8+ caracteres");
+    if (pwd.length >= 12) score++; else if (pwd.length >= 8) reasons.push("12+ ainda melhor");
+    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++; else reasons.push("maiúsculas e minúsculas");
+    if (/\d/.test(pwd)) score++; else reasons.push("um número");
+    if (/[^a-zA-Z\d]/.test(pwd)) score++; else reasons.push("um símbolo (!@#…)");
     const labels = ["Muito fraca", "Fraca", "Razoável", "Boa", "Forte", "Excelente"];
-    // Paleta PT para o medidor: vermelho → dourado → verde
     const colors = [PT.red, PT.red, "#e0833a", PT.gold, PT.green, PT.ink];
     return { score, label: labels[score], color: colors[score], reasons };
 }
 
-// =====================================================================
-// Availability check hook (idêntico)
-// =====================================================================
 function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
     const [state, setState] = useState({ status: "idle", message: "" });
     const abortRef = useRef(null);
-
     useEffect(() => {
         const v = (value || "").trim();
-        if (abortRef.current) {
-            try { abortRef.current.abort(); } catch { /* noop */ }
-            abortRef.current = null;
-        }
-        if (!v) {
-            setState({ status: "idle", message: "" });
-            return;
-        }
+        if (abortRef.current) { try { abortRef.current.abort(); } catch { /* noop */ } abortRef.current = null; }
+        if (!v) { setState({ status: "idle", message: "" }); return; }
         if (localValidate) {
             const local = localValidate(v);
-            if (local && !local.ok) {
-                setState({ status: "invalid", message: local.message });
-                return;
-            }
+            if (local && !local.ok) { setState({ status: "invalid", message: local.message }); return; }
         }
         setState({ status: "checking", message: "A verificar…" });
         const ctrl = new AbortController();
         abortRef.current = ctrl;
         const t = setTimeout(async () => {
             try {
-                const { data } = await axios.get(`${BACKEND}${endpoint}`, {
-                    params: { [paramName]: v },
-                    signal: ctrl.signal,
-                });
-                if (data.available) {
-                    setState({ status: "available", message: data.message || "Disponível" });
-                } else {
+                const { data } = await axios.get(`${BACKEND}${endpoint}`, { params: { [paramName]: v }, signal: ctrl.signal });
+                if (data.available) setState({ status: "available", message: data.message || "Disponível" });
+                else {
                     let status = "invalid";
                     if (data.reason === "taken") status = "taken";
                     else if (data.reason === "disposable") status = "invalid";
@@ -93,7 +62,6 @@ function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
         }, 380);
         return () => { clearTimeout(t); ctrl.abort(); };
     }, [value, endpoint, paramName, localValidate]);
-
     return state;
 }
 
@@ -115,34 +83,16 @@ export default function Register() {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
 
-    const [form, setForm] = useState({
-        name: "",
-        username: "",
-        email: "",
-        password: "",
-        passwordConfirm: "",
-    });
+    const [form, setForm] = useState({ name: "", username: "", email: "", password: "", passwordConfirm: "" });
     const [showPwd, setShowPwd] = useState(false);
     const [showPwdConfirm, setShowPwdConfirm] = useState(false);
-
     const [city, setCity] = useState(null);
     const [consent, setConsent] = useState({ age: false, terms: false, marketing: false });
-
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    const usernameState = useAvailabilityCheck({
-        value: form.username,
-        endpoint: "/api/auth/check-username",
-        paramName: "u",
-        localValidate: _validateUsernameLocal,
-    });
-    const emailState = useAvailabilityCheck({
-        value: form.email,
-        endpoint: "/api/auth/check-email",
-        paramName: "e",
-        localValidate: _validateEmailLocal,
-    });
+    const usernameState = useAvailabilityCheck({ value: form.username, endpoint: "/api/auth/check-username", paramName: "u", localValidate: _validateUsernameLocal });
+    const emailState = useAvailabilityCheck({ value: form.email, endpoint: "/api/auth/check-email", paramName: "e", localValidate: _validateEmailLocal });
     const pwdEval = useMemo(() => evaluatePassword(form.password), [form.password]);
     const pwdMatches = form.password && form.passwordConfirm && form.password === form.passwordConfirm;
     const pwdMismatch = form.password && form.passwordConfirm && form.password !== form.passwordConfirm;
@@ -151,7 +101,6 @@ export default function Register() {
 
     const update = (k) => (e) => setForm({ ...form, [k]: e.target.value });
     const toggleConsent = (k) => setConsent((c) => ({ ...c, [k]: !c[k] }));
-
     const nameValid = form.name.trim().length >= 1;
 
     const canStep1 =
@@ -161,7 +110,6 @@ export default function Register() {
         pwdEval.score >= 2 &&
         form.password.length >= 8 &&
         pwdMatches;
-
     const canSubmit = consent.age && consent.terms && !busy;
 
     const next = () => {
@@ -188,130 +136,149 @@ export default function Register() {
         if (!consent.age) return setError("É necessário confirmar que tens 16 anos ou mais.");
         if (!consent.terms) return setError("É necessário aceitar os Termos e a Política de Privacidade.");
         if (form.password !== form.passwordConfirm) return setError("As palavras-passe não coincidem.");
-
         setBusy(true);
         const res = await register({
-            name: form.name,
-            username: form.username,
-            email: form.email,
-            password: form.password,
-            city: city?.name || null,
-            region: city?.region || null,
-            mood_initial: null,
-            team: null,
-            terms_accepted: consent.terms,
-            age_confirmed: consent.age,
-            marketing_opt_in: consent.marketing,
+            name: form.name, username: form.username, email: form.email, password: form.password,
+            city: city?.name || null, region: city?.region || null, mood_initial: null, team: null,
+            terms_accepted: consent.terms, age_confirmed: consent.age, marketing_opt_in: consent.marketing,
         });
         setBusy(false);
         if (!res.ok) { setError(res.error); return; }
         try {
-            localStorage.setItem(
-                "vm_signup_consent",
-                JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    age_confirmed: consent.age,
-                    terms_accepted: consent.terms,
-                    marketing_opt_in: consent.marketing,
-                    terms_version: 1,
-                    privacy_version: 1,
-                }),
-            );
+            localStorage.setItem("vm_signup_consent", JSON.stringify({
+                timestamp: new Date().toISOString(),
+                age_confirmed: consent.age, terms_accepted: consent.terms,
+                marketing_opt_in: consent.marketing, terms_version: 1, privacy_version: 1,
+            }));
         } catch { /* ignore */ }
         navigate("/");
     };
 
-    const stepTitle =
-        step === 1 ? "Cria a tua conta" :
-        step === 2 ? "De onde és?" :
-        "Última coisa, juramos";
-
     return (
-        <div className="min-h-screen grid lg:grid-cols-[1fr_1.05fr]" style={{ background: PT.cream }}>
-            {/* ============ ESQUERDA · Formulário ============ */}
-            <div className="flex flex-col min-h-screen order-2 lg:order-1" style={{ background: PT.cream }}>
-                <MobileMiniBrand testId="register-mobile-dynamic-word" step={step} />
+        <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream }}>
+            {/* Faixa topo tipo jornal */}
+            <div className="pt-tape h-3 w-full" />
+            <div
+                className="flex items-center justify-between px-5 sm:px-8 py-3"
+                style={{ background: PT.ink, color: PT.bone }}
+            >
+                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
+                    LUSORAE // RECRUTAMENTO ABERTO // PASSO {step}/3
+                </span>
+                <span className="hidden sm:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
+                    SEM CARTÃO · SEM UPSELL · SEM TRIAL
+                </span>
+            </div>
 
-                <div className="px-6 sm:px-10 lg:px-16 pt-10 lg:pt-0 pb-12 flex flex-col lg:justify-center flex-1">
-                    <div className="max-w-md w-full mx-auto lg:mx-0">
-                        {/* Logo (desktop) */}
-                        <div className="hidden lg:flex items-baseline gap-2 mb-8">
-                            <span style={{ color: PT.green }} className="text-3xl font-black leading-none">✱</span>
-                            <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>
-                                lusorae
-                            </span>
+            <div className="grid lg:grid-cols-[1fr_1.1fr] relative">
+                {/* ============ ESQUERDA · FORMULÁRIO (revista moderna) ============ */}
+                <div className="relative px-6 sm:px-10 lg:px-16 pt-12 lg:pt-14 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
+                    {/* Decorações pelos cantos */}
+                    <div className="absolute top-6 right-6 hidden sm:block">
+                        <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />
+                    </div>
+                    <div className="absolute bottom-32 -left-3 hidden lg:block">
+                        <DoodleStar color={PT.red} size={50} rotate={-12} />
+                    </div>
+
+                    <div className="relative max-w-md mx-auto lg:mx-0 z-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-7">
+                            <div className="flex items-baseline gap-1.5">
+                                <span style={{ color: PT.green, fontSize: 30 }} className="font-black leading-none">✱</span>
+                                <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
+                            </div>
+                            <Sticker bg={PT.azul} color="#fff" rotate={6}>Pg. {String(step + 1).padStart(2, "0")}</Sticker>
                         </div>
 
-                        {/* Stepper */}
+                        {/* STEPPER tipo "barra de revista" */}
                         <div className="flex items-center gap-2 mb-5" data-testid="register-stepper">
-                            {[1, 2, 3].map((n) => (
-                                <div
-                                    key={n}
-                                    className="h-1.5 flex-1 rounded-full transition-colors"
-                                    style={{
-                                        background: step >= n
-                                            ? (n === 1 ? PT.red : n === 2 ? PT.gold : PT.green)
-                                            : "rgba(26,26,26,0.10)",
-                                    }}
-                                />
-                            ))}
+                            {[
+                                { n: 1, color: PT.red, label: "Conta" },
+                                { n: 2, color: PT.gold, label: "Cidade" },
+                                { n: 3, color: PT.green, label: "OK" },
+                            ].map(({ n, color, label }) => {
+                                const active = step >= n;
+                                return (
+                                    <div key={n} className="flex-1 flex items-center gap-2">
+                                        <div
+                                            className="h-2 flex-1 rounded-full transition-colors"
+                                            style={{
+                                                background: active ? color : "rgba(10,10,10,0.10)",
+                                                border: active ? `2px solid ${PT.ink}` : "2px solid transparent",
+                                            }}
+                                        />
+                                        <span
+                                            className="text-[9.5px] font-mono font-black uppercase shrink-0"
+                                            style={{ letterSpacing: "0.10em", color: active ? PT.ink : "rgba(10,10,10,0.35)" }}
+                                        >
+                                            {label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
 
-                        <p
-                            className="text-[11px] uppercase font-mono mb-2"
-                            style={{ letterSpacing: "0.18em", color: PT.green }}
-                        >
-                            // passo {step} de 3
-                        </p>
-                        <h2
-                            className="font-black leading-[0.95] tracking-tight"
-                            style={{ fontSize: "clamp(36px, 4.5vw, 52px)", color: PT.ink }}
-                        >
-                            {step === 1 && (<>Cria a tua <span style={{ background: PT.gold, padding: "0 0.14em" }}>conta</span>.</>)}
-                            {step === 2 && (<>De onde <span style={{ background: PT.gold, padding: "0 0.14em" }}>és</span>?</>)}
-                            {step === 3 && (<>Última coisa,<br /><span style={{ background: PT.gold, padding: "0 0.14em" }}>juramos</span>.</>)}
-                        </h2>
-                        <p className="text-[14.5px] mt-3 leading-relaxed" style={{ color: "rgba(26,26,26,0.65)" }}>
-                            {step === 1 && "Nome, email e palavra-passe. Mais nada para já."}
-                            {step === 2 && "Escolhe a tua cidade — ajuda-nos a mostrar-te o que importa perto. Podes saltar."}
-                            {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
-                        </p>
+                        <div className="flex items-center gap-3 mb-2">
+                            <Kicker color={PT.green}>// PASSO {String(step).padStart(2, "0")} DE 03</Kicker>
+                            <DoodleArrow color={PT.green} w={60} h={26} style={{ transform: "rotate(-4deg)" }} />
+                        </div>
 
-                        {/* Benefit callout */}
-                        <div
-                            data-testid={`register-benefit-${step}`}
-                            className="mt-5 rounded-xl px-4 py-3 flex items-start gap-3"
-                            style={{
-                                background: "#fff",
-                                border: `2px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.gold}`,
-                            }}
+                        {/* TÍTULO GIGANTE */}
+                        <h2
+                            className="font-black tracking-[-0.04em]"
+                            style={{ fontSize: "clamp(46px, 6.5vw, 78px)", lineHeight: 0.88, color: PT.ink }}
                         >
-                            <span aria-hidden style={{ color: PT.red, fontWeight: 900 }} className="text-[18px] leading-none mt-0.5">✱</span>
-                            <p className="text-[13px] leading-relaxed" style={{ color: "rgba(26,26,26,0.78)" }}>
-                                {step === 1 && (
-                                    <>
-                                        <strong style={{ color: PT.ink }}>30 segundos.</strong> Sem cartão, sem upsell, sem trial. Conta gratuita para sempre.
-                                    </>
-                                )}
-                                {step === 2 && (
-                                    <>
-                                        <strong style={{ color: PT.ink }}>Lisboa, Porto, Olhão, Funchal…</strong>{" "}
-                                        ~300 cidades portuguesas. A tua identidade começa pelo lugar.
-                                    </>
-                                )}
-                                {step === 3 && (
-                                    <>
-                                        <strong style={{ color: PT.ink }}>Sem letra pequena.</strong> Os teus dados são teus. Podes apagar a conta com um clique.
-                                    </>
-                                )}
+                            {step === 1 && (<>
+                                <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>Cria a tua</span>{" "}
+                                <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                    conta.
+                                </span>
+                            </>)}
+                            {step === 2 && (<>
+                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>De onde</span>{" "}
+                                <span style={{ background: PT.red, color: "#fff", padding: "0 0.12em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(2deg)" }}>
+                                    és?
+                                </span>
+                            </>)}
+                            {step === 3 && (<>
+                                <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>Última coisa,</span><br/>
+                                <span style={{ background: PT.green, color: "#fff", padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
+                                    juramos.
+                                </span>
+                            </>)}
+                        </h2>
+
+                        <div className="mt-4 flex items-start gap-3">
+                            <DoodleHeart color={PT.green} size={26} rotate={-12} style={{ flexShrink: 0, marginTop: 2 }} />
+                            <p className="text-[15px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
+                                {step === 1 && "Nome, email e palavra-passe. Mais nada para já."}
+                                {step === 2 && "Escolhe a tua cidade — ajuda-nos a mostrar-te o que importa perto. Podes saltar."}
+                                {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
                             </p>
                         </div>
 
-                        <form onSubmit={submit} className="mt-6" data-testid="register-form">
+                        {/* Benefit poster card */}
+                        <div
+                            data-testid={`register-benefit-${step}`}
+                            className="mt-6 relative"
+                        >
+                            <PosterCard bg="#fff" color={PT.ink} rotate={-1.5} shadow={PT.gold} style={{ padding: "14px 16px" }}>
+                                <div className="flex items-start gap-3">
+                                    <MagNumber n={step} color={step === 1 ? PT.red : step === 2 ? PT.gold : PT.green} size={42} />
+                                    <p className="text-[13px] font-medium leading-relaxed pt-1.5">
+                                        {step === 1 && (<><strong className="font-black">30 segundos.</strong> Sem cartão, sem upsell, sem trial. Conta gratuita para sempre.</>)}
+                                        {step === 2 && (<><strong className="font-black">Lisboa, Porto, Olhão, Funchal…</strong> ~300 cidades portuguesas. A tua identidade começa pelo lugar.</>)}
+                                        {step === 3 && (<><strong className="font-black">Sem letra pequena.</strong> Os teus dados são teus. Podes apagar a conta com um clique.</>)}
+                                    </p>
+                                </div>
+                            </PosterCard>
+                        </div>
+
+                        <form onSubmit={submit} className="mt-7" data-testid="register-form">
                             {step === 1 && (
-                                <div className="space-y-4">
-                                    <PtField label="Nome">
+                                <div className="space-y-5">
+                                    <PtField label="Nome" number="01">
                                         <input
                                             data-testid="register-name"
                                             type="text" value={form.name} onChange={update("name")} required
@@ -321,7 +288,7 @@ export default function Register() {
                                         />
                                     </PtField>
 
-                                    <PtField label="Username">
+                                    <PtField label="Username" number="02">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-username"
@@ -331,76 +298,41 @@ export default function Register() {
                                                 required minLength={3} maxLength={20}
                                                 pattern="[a-zA-Z0-9_]+"
                                                 placeholder="o_teu_user"
-                                                className="pt-input pr-10"
+                                                className="pt-input pr-11"
                                                 style={statusBorder(usernameState.status)}
                                                 autoComplete="off" autoCapitalize="off" spellCheck={false}
                                             />
-                                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid="register-username-status">
-                                                {usernameState.status === "checking" && <Loader2 size={14} className="animate-spin" style={{ color: "rgba(26,26,26,0.45)" }} />}
-                                                {usernameState.status === "available" && <CheckCircle2 size={16} style={{ color: PT.green }} />}
-                                                {(usernameState.status === "taken" || usernameState.status === "invalid") && <X size={16} style={{ color: PT.red }} />}
-                                            </div>
+                                            <StatusIcon status={usernameState.status} testid="register-username-status" />
                                         </div>
-                                        {usernameState.message && (
-                                            <p
-                                                data-testid="register-username-message"
-                                                className="mt-1.5 text-[12px] font-mono"
-                                                style={{
-                                                    color:
-                                                        usernameState.status === "available" ? PT.green :
-                                                        (usernameState.status === "taken" || usernameState.status === "invalid") ? PT.red :
-                                                        "rgba(26,26,26,0.55)",
-                                                }}
-                                            >
-                                                {usernameState.status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
-                                                {(usernameState.status === "taken" || usernameState.status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
-                                                {usernameState.message}
-                                            </p>
-                                        )}
+                                        <FieldMessage status={usernameState.status} message={usernameState.message} testid="register-username-message" />
                                     </PtField>
 
-                                    <PtField label="Email">
+                                    <PtField label="Email" number="03">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-email"
                                                 type="email" value={form.email} onChange={update("email")} required
                                                 placeholder="tu@exemplo.com"
-                                                className="pt-input pr-10"
+                                                className="pt-input pr-11"
                                                 style={statusBorder(emailState.status)}
                                                 autoComplete="email" inputMode="email" autoCapitalize="off" spellCheck={false}
                                             />
-                                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid="register-email-status">
-                                                {emailState.status === "checking" && <Loader2 size={14} className="animate-spin" style={{ color: "rgba(26,26,26,0.45)" }} />}
-                                                {emailState.status === "available" && <CheckCircle2 size={16} style={{ color: PT.green }} />}
-                                                {(emailState.status === "taken" || emailState.status === "invalid") && <X size={16} style={{ color: PT.red }} />}
-                                            </div>
+                                            <StatusIcon status={emailState.status} testid="register-email-status" />
                                         </div>
-                                        {emailState.message && (
-                                            <p
-                                                data-testid="register-email-message"
-                                                className="mt-1.5 text-[12px] font-mono"
-                                                style={{
-                                                    color:
-                                                        emailState.status === "available" ? PT.green :
-                                                        (emailState.status === "taken" || emailState.status === "invalid") ? PT.red :
-                                                        "rgba(26,26,26,0.55)",
-                                                }}
-                                            >
-                                                {emailState.status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
-                                                {(emailState.status === "taken" || emailState.status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
-                                                {emailState.status === "taken" ? (
-                                                    <>
-                                                        {emailState.message}{" "}
-                                                        <Link to="/login" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
-                                                            Entrar?
-                                                        </Link>
-                                                    </>
-                                                ) : emailState.message}
-                                            </p>
-                                        )}
+                                        <FieldMessage
+                                            status={emailState.status} message={emailState.message} testid="register-email-message"
+                                            taken={emailState.status === "taken" ? (
+                                                <>
+                                                    {emailState.message}{" "}
+                                                    <Link to="/login" className="underline underline-offset-2 hover:no-underline font-black" style={{ color: PT.red }}>
+                                                        Entrar?
+                                                    </Link>
+                                                </>
+                                            ) : null}
+                                        />
                                     </PtField>
 
-                                    <PtField label="Palavra-passe">
+                                    <PtField label="Palavra-passe" number="04">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-password"
@@ -411,54 +343,48 @@ export default function Register() {
                                                 className="pt-input pr-12"
                                                 style={(() => {
                                                     if (!form.password) return undefined;
-                                                    const borderColor = pwdEval.score >= 4 ? PT.green : pwdEval.color;
-                                                    return { borderColor, borderWidth: 2, boxShadow: `0 0 0 4px ${borderColor}22` };
+                                                    const c = pwdEval.score >= 4 ? PT.green : pwdEval.color;
+                                                    return { borderColor: c, boxShadow: `4px 4px 0 ${c}` };
                                                 })()}
                                                 autoComplete="new-password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPwd((v) => !v)}
-                                                className="absolute inset-y-0 right-2 px-2 hover:opacity-80"
-                                                style={{ color: "rgba(26,26,26,0.55)" }}
+                                                className="absolute inset-y-0 right-3 flex items-center hover:opacity-70"
+                                                style={{ color: PT.ink }}
                                                 aria-label={showPwd ? "Esconder palavra-passe" : "Mostrar palavra-passe"}
                                                 data-testid="register-password-toggle"
                                                 tabIndex={-1}
                                             >
-                                                {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                                                {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
                                         {form.password && (
                                             <div className="mt-2.5" data-testid="register-password-strength">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(26,26,26,0.08)" }}>
-                                                        <div
-                                                            className="h-full rounded-full transition-all duration-300"
-                                                            style={{ width: `${(pwdEval.score / 5) * 100}%`, background: pwdEval.color }}
-                                                        />
+                                                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(10,10,10,0.10)", border: `1.5px solid ${PT.ink}` }}>
+                                                        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${(pwdEval.score / 5) * 100}%`, background: pwdEval.color }} />
                                                     </div>
-                                                    <span
-                                                        className="text-[11px] font-mono uppercase tabular-nums shrink-0 font-bold"
-                                                        style={{ color: pwdEval.color, letterSpacing: "0.08em" }}
-                                                    >
+                                                    <span className="text-[10.5px] font-mono font-black uppercase tabular-nums shrink-0" style={{ color: pwdEval.color, letterSpacing: "0.08em" }}>
                                                         {pwdEval.label}
                                                     </span>
                                                 </div>
                                                 {pwdEval.reasons.length > 0 && pwdEval.score < 5 && (
-                                                    <p className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(26,26,26,0.55)" }}>
+                                                    <p className="text-[11.5px] mt-1.5 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
                                                         Falta: {pwdEval.reasons.slice(0, 3).join(" · ")}
                                                     </p>
                                                 )}
                                             </div>
                                         )}
                                         {!form.password && (
-                                            <p className="text-[11.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(26,26,26,0.50)" }}>
+                                            <p className="text-[11.5px] mt-1.5 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.50)" }}>
                                                 Mistura maiúsculas, minúsculas, números e símbolos.
                                             </p>
                                         )}
                                     </PtField>
 
-                                    <PtField label="Repetir palavra-passe">
+                                    <PtField label="Repetir palavra-passe" number="05">
                                         <div className="relative">
                                             <input
                                                 data-testid="register-password-confirm"
@@ -468,32 +394,29 @@ export default function Register() {
                                                 placeholder="Escreve novamente"
                                                 className="pt-input pr-12"
                                                 style={
-                                                    pwdMatches
-                                                        ? { borderColor: PT.green, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.green}22` }
-                                                        : pwdMismatch
-                                                        ? { borderColor: PT.red, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.red}22` }
-                                                        : undefined
+                                                    pwdMatches ? { borderColor: PT.green, boxShadow: `4px 4px 0 ${PT.green}` } :
+                                                    pwdMismatch ? { borderColor: PT.red, boxShadow: `4px 4px 0 ${PT.red}` } : undefined
                                                 }
                                                 autoComplete="new-password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPwdConfirm((v) => !v)}
-                                                className="absolute inset-y-0 right-2 px-2 hover:opacity-80"
-                                                style={{ color: "rgba(26,26,26,0.55)" }}
+                                                className="absolute inset-y-0 right-3 flex items-center hover:opacity-70"
+                                                style={{ color: PT.ink }}
                                                 aria-label={showPwdConfirm ? "Esconder palavra-passe" : "Mostrar palavra-passe"}
                                                 tabIndex={-1}
                                             >
-                                                {showPwdConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                                                {showPwdConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                                             </button>
                                         </div>
                                         {pwdMatches && (
-                                            <p className="mt-1.5 text-[12px] font-mono font-bold" style={{ color: PT.green }} data-testid="register-password-match">
+                                            <p className="mt-1.5 text-[12px] font-mono font-black" style={{ color: PT.green }} data-testid="register-password-match">
                                                 <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" /> Coincide.
                                             </p>
                                         )}
                                         {pwdMismatch && (
-                                            <p className="mt-1.5 text-[12px] font-mono font-bold" style={{ color: PT.red }} data-testid="register-password-mismatch">
+                                            <p className="mt-1.5 text-[12px] font-mono font-black" style={{ color: PT.red }} data-testid="register-password-mismatch">
                                                 <AlertCircle size={11} className="inline mr-1 -mt-0.5" /> As palavras-passe não coincidem.
                                             </p>
                                         )}
@@ -503,7 +426,7 @@ export default function Register() {
 
                             {step === 2 && (
                                 <div className="space-y-4 pt-1" data-testid="register-step-city">
-                                    <PtField label="A tua cidade">
+                                    <PtField label="A tua cidade" number="01">
                                         <CitySelect
                                             value={city?.id || null}
                                             onChange={setCity}
@@ -513,13 +436,17 @@ export default function Register() {
                                     </PtField>
                                     {!city && (
                                         <div
-                                            className="rounded-xl px-4 py-5 text-center"
-                                            style={{ border: `2px dashed ${PT.green}40`, background: "#fff" }}
+                                            className="rounded-xl px-4 py-6 text-center relative"
+                                            style={{
+                                                border: `3px dashed ${PT.ink}`,
+                                                background: "#fff",
+                                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                            }}
                                         >
-                                            <MapPin size={20} className="inline mb-2" style={{ color: PT.green }} />
-                                            <p className="text-[13.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.65)" }}>
+                                            <MapPin size={24} className="inline mb-2" style={{ color: PT.red }} />
+                                            <p className="text-[13.5px] leading-relaxed font-medium" style={{ color: PT.ink }}>
                                                 Escolhe a tua cidade — mostraremos a sua história e cultura.<br/>
-                                                <span className="text-[11.5px]" style={{ color: "rgba(26,26,26,0.45)" }}>Podes saltar este passo se preferires.</span>
+                                                <span className="text-[11.5px] font-mono uppercase font-bold" style={{ letterSpacing: "0.12em", color: "rgba(10,10,10,0.50)" }}>Podes saltar este passo</span>
                                             </p>
                                         </div>
                                     )}
@@ -528,19 +455,17 @@ export default function Register() {
 
                             {step === 3 && (
                                 <div className="space-y-3 pt-1">
-                                    <div
-                                        className="rounded-xl px-4 py-3.5"
-                                        style={{ background: PT.azul, color: "#fff" }}
-                                    >
-                                        <blockquote className="font-black text-[18px] leading-[1.25] tracking-tight max-w-[34ch]">
+                                    <PosterCard bg={PT.azul} color="#fff" rotate={-1.5} shadow={PT.gold} style={{ padding: "16px 18px" }}>
+                                        <Kicker color={PT.gold} className="mb-2">// CITAÇÃO Nº 04</Kicker>
+                                        <blockquote className="font-black text-[19px] leading-[1.18] tracking-tight max-w-[34ch]">
                                             “Finalmente uma rede que não me{" "}
-                                            <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.18em" }}>trata</span>{" "}
+                                            <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.16em" }}>trata</span>{" "}
                                             como produto.”
                                         </blockquote>
-                                        <p className="mt-2 text-[11px] font-mono uppercase" style={{ letterSpacing: "0.14em", opacity: 0.85 }}>
-                                            — manifesto, promessa 04
+                                        <p className="mt-2 text-[11px] font-mono uppercase font-bold" style={{ letterSpacing: "0.14em", opacity: 0.80 }}>
+                                            — Manifesto, promessa 04
                                         </p>
-                                    </div>
+                                    </PosterCard>
 
                                     <ConsentCheckbox
                                         id="consent-age" checked={consent.age}
@@ -548,8 +473,8 @@ export default function Register() {
                                         testid="consent-age" required
                                     >
                                         Confirmo que tenho <strong>16 anos ou mais</strong>.
-                                        <span className="block text-[11.5px] mt-0.5" style={{ color: "rgba(26,26,26,0.55)" }}>
-                                            Exigido pela Lei n.º 58/2019, art. 16.º. Menores com autorização dos representantes legais.
+                                        <span className="block text-[11.5px] mt-0.5 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                            Exigido pela Lei n.º 58/2019, art. 16.º.
                                         </span>
                                     </ConsentCheckbox>
                                     <ConsentCheckbox
@@ -558,11 +483,11 @@ export default function Register() {
                                         testid="consent-terms" required
                                     >
                                         Li e aceito os{" "}
-                                        <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
-                                            Termos e Condições
+                                        <Link to="/legal/terms" target="_blank" className="underline underline-offset-2 hover:no-underline font-black" style={{ color: PT.red }}>
+                                            Termos
                                         </Link>{" "}
                                         e a{" "}
-                                        <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.red }}>
+                                        <Link to="/legal/privacy" target="_blank" className="underline underline-offset-2 hover:no-underline font-black" style={{ color: PT.red }}>
                                             Política de Privacidade
                                         </Link>.
                                     </ConsentCheckbox>
@@ -571,8 +496,8 @@ export default function Register() {
                                         onChange={() => toggleConsent("marketing")}
                                         testid="consent-marketing"
                                     >
-                                        <span style={{ color: "rgba(26,26,26,0.70)" }}>Opcional</span> — quero novidades por e-mail.
-                                        <span className="block text-[11.5px] mt-0.5" style={{ color: "rgba(26,26,26,0.55)" }}>
+                                        <span style={{ color: "rgba(10,10,10,0.70)" }}>Opcional</span> — quero novidades por e-mail.
+                                        <span className="block text-[11.5px] mt-0.5 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
                                             Revogável a qualquer momento nas Definições.
                                         </span>
                                     </ConsentCheckbox>
@@ -580,13 +505,11 @@ export default function Register() {
                             )}
 
                             {error && (
-                                <div
-                                    data-testid="register-error"
-                                    className="text-[13px] font-semibold mt-4 flex items-start gap-2 rounded-xl px-3.5 py-2.5"
-                                    style={{ color: PT.red, background: "rgba(200,16,46,0.08)", border: `1px solid rgba(200,16,46,0.20)` }}
-                                >
-                                    <AlertCircle size={14} className="shrink-0 mt-0.5" /> <span>{error}</span>
-                                </div>
+                                <PosterCard bg={PT.red} color="#fff" rotate={-1} shadow={PT.ink} className="mt-4" style={{ padding: "12px 16px" }}>
+                                    <div data-testid="register-error" className="flex items-start gap-2 font-black text-[13.5px] uppercase" style={{ letterSpacing: "0.04em" }}>
+                                        <AlertCircle size={16} className="shrink-0 mt-0.5" /> <span>{error}</span>
+                                    </div>
+                                </PosterCard>
                             )}
 
                             <div className="mt-7 flex items-center gap-3">
@@ -594,9 +517,9 @@ export default function Register() {
                                     <button
                                         type="button" onClick={back}
                                         data-testid="register-back"
-                                        className="pt-btn-ghost text-[13.5px] py-3 px-5"
+                                        className="pt-btn-ghost text-[13px] py-3 px-5"
                                     >
-                                        ← Voltar
+                                        ← VOLTAR
                                     </button>
                                 )}
                                 {step < 3 ? (
@@ -604,243 +527,277 @@ export default function Register() {
                                         type="button" onClick={next}
                                         data-testid="register-next"
                                         disabled={step === 1 ? !canStep1 : false}
-                                        className="pt-btn-primary flex-1 text-[15px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="pt-btn-primary flex-1 text-[16px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={16} />
+                                        {step === 2 && !city ? "SALTAR" : "SEGUINTE"} <ArrowRight size={18} />
                                     </button>
                                 ) : (
                                     <button
                                         type="submit" disabled={!canSubmit}
                                         data-testid="register-submit"
-                                        className="pt-btn-primary flex-1 text-[15px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="pt-btn-primary flex-1 text-[16px] py-4 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        {busy ? (<><Loader2 size={14} className="animate-spin" /> A criar conta…</>) : (<>Criar conta <Check size={16} /></>)}
+                                        {busy ? (<><Loader2 size={16} className="animate-spin" /> A CRIAR…</>) : (<>CRIAR CONTA <Check size={18} /></>)}
                                     </button>
                                 )}
                             </div>
                         </form>
 
-                        <p className="mt-8 text-[14px]" style={{ color: "rgba(26,26,26,0.65)" }}>
-                            Já tens conta?{" "}
-                            <Link
-                                to="/login"
-                                data-testid="goto-login"
-                                className="font-bold underline underline-offset-4 decoration-2"
-                                style={{ color: PT.green, textDecorationColor: PT.gold }}
-                            >
-                                Entrar
-                            </Link>
-                        </p>
-
-                        <div className="mt-10 pt-6" style={{ borderTop: "1px dashed rgba(26,26,26,0.15)" }}>
-                            <p className="text-[11.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.50)" }}>
-                                Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Lê o nosso{" "}
-                                <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-medium" style={{ color: PT.ink }}>
-                                    manifesto
-                                </Link>{" "}
-                                — declaramos publicamente o que não fazemos.
+                        <div className="mt-8 flex items-center justify-between flex-wrap gap-3">
+                            <p className="text-[14px] font-semibold" style={{ color: "rgba(10,10,10,0.72)" }}>
+                                Já tens conta?{" "}
+                                <Link
+                                    to="/login"
+                                    data-testid="goto-login"
+                                    className="font-black underline underline-offset-4 decoration-[3px]"
+                                    style={{ color: PT.green, textDecorationColor: PT.gold }}
+                                >
+                                    Entrar
+                                </Link>
                             </p>
-                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px]" style={{ color: "rgba(26,26,26,0.50)" }}>
-                                <Link to="/legal" className="hover:underline underline-offset-2">Centro Legal</Link>
-                                <Link to="/legal/terms" className="hover:underline underline-offset-2">Termos</Link>
-                                <Link to="/legal/privacy" className="hover:underline underline-offset-2">Privacidade</Link>
-                                <Link to="/legal/cookies" className="hover:underline underline-offset-2">Cookies</Link>
-                                <Link to="/manifesto" className="hover:underline underline-offset-2">Manifesto</Link>
-                            </div>
+                            <Sticker bg={PT.red} color="#fff" rotate={5}>RGPD ✓</Sticker>
                         </div>
 
-                        <div className="lg:hidden mt-8 mb-2 text-center text-[11px] uppercase" style={{ letterSpacing: "0.18em", color: "rgba(26,26,26,0.45)" }}>
-                            © lusorae · {new Date().getFullYear()}
+                        <div className="mt-10 pt-5 relative" style={{ borderTop: `3px solid ${PT.ink}` }}>
+                            <Kicker color={PT.ink} className="mb-3">// COLOFÃO · DADOS</Kicker>
+                            <p className="text-[11.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
+                                Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Lê o nosso{" "}
+                                <Link to="/manifesto" className="underline underline-offset-2 font-black" style={{ color: PT.ink }}>manifesto</Link>{" "}
+                                — declaramos publicamente o que não fazemos.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
+                                <Link to="/legal" className="hover:underline">Centro Legal</Link>
+                                <span aria-hidden>·</span>
+                                <Link to="/legal/terms" className="hover:underline">Termos</Link>
+                                <span aria-hidden>·</span>
+                                <Link to="/legal/privacy" className="hover:underline">Privacidade</Link>
+                                <span aria-hidden>·</span>
+                                <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
+                                <span aria-hidden>·</span>
+                                <Link to="/manifesto" className="hover:underline">Manifesto</Link>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* ============ DIREITA · POSTER URBANO VERDE ============ */}
+                <PosterRight step={step} />
             </div>
 
-            {/* ============ DIREITA · Painel verde com decorações PT ============ */}
-            <BrandPanel currentStep={step} stepTitle={stepTitle} />
-
-            <PtStyles />
+            <div className="pt-tape h-3 w-full" />
+            <AuthStyles />
         </div>
     );
 }
 
 // =============================================================================
-// PAINEL VERDE com decorações
+// POSTER DIREITO — verde, denso, recheado de elementos PT
 // =============================================================================
-function BrandPanel({ currentStep, stepTitle }) {
+function PosterRight({ step }) {
     return (
         <div
-            className="hidden lg:flex relative flex-col justify-between p-14 overflow-hidden isolate order-1 lg:order-2"
+            className="relative overflow-hidden isolate pt-grain min-h-[640px] lg:min-h-[calc(100vh-60px)] order-1 lg:order-2"
             style={{ background: PT.green, color: "#fff" }}
             data-testid="brand-panel"
         >
-            {/* Asterisco dourado gigante */}
-            <div
-                className="absolute -top-12 -right-10 select-none pointer-events-none"
-                style={{ fontSize: 280, lineHeight: 1, color: PT.gold, fontWeight: 900 }}
-                aria-hidden
-            >
-                ✱
+            {/* Asterisco gigante canto superior direito */}
+            <div className="absolute -top-14 -right-10 z-0">
+                <GiantAsterisk color={PT.gold} size={340} rotate={12} />
             </div>
 
-            {/* Quadrado vermelho rodado */}
+            {/* Faixa "manchete" diagonal */}
             <div
-                className="absolute left-12 pointer-events-none"
+                className="absolute top-[26%] -right-10 z-0"
                 style={{
-                    top: "32%",
-                    width: 64, height: 64,
+                    width: "115%",
+                    height: 60,
                     background: PT.red,
-                    transform: "rotate(18deg)",
-                    boxShadow: `6px 6px 0 ${PT.ink}`,
+                    transform: "rotate(3deg)",
+                    boxShadow: `inset 0 0 0 3px ${PT.ink}`,
                 }}
                 aria-hidden
             />
 
-            {/* Onda dourada/azul (bottom) */}
-            <svg
-                className="absolute -bottom-2 -right-8 pointer-events-none"
-                width="420" height="180" viewBox="0 0 420 180" fill="none" aria-hidden
-            >
-                <path
-                    d="M0 110 Q 70 50, 140 100 T 280 100 T 420 100"
-                    stroke={PT.gold} strokeWidth="10" strokeLinecap="round" fill="none"
-                />
-                <path
-                    d="M0 140 Q 70 90, 140 130 T 280 130 T 420 130"
-                    stroke={PT.azul} strokeWidth="6" strokeLinecap="round" fill="none" opacity="0.85"
-                />
-            </svg>
+            <div className="relative z-10 p-8 sm:p-12 lg:p-14 flex flex-col gap-6 h-full">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                    <h1 className="font-black tracking-tight text-[34px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
+                        <span style={{ color: PT.gold, fontSize: 30, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
+                        <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
+                    </h1>
+                    <div className="flex items-start gap-3">
+                        <Sticker bg={PT.gold} color={PT.ink} rotate={-6}>🇵🇹 FEITO EM PT</Sticker>
+                        <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={78}>
+                            NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
+                        </StampCircle>
+                    </div>
+                </div>
 
-            {/* Header */}
-            <div className="relative flex items-start justify-between">
-                <h1 className="font-black tracking-tight text-[34px] leading-none flex items-baseline gap-2">
-                    <span style={{ color: PT.gold }} className="text-[30px]">✱</span>
-                    <span>lusorae</span>
-                </h1>
-                <div
-                    className="text-[11px] font-bold uppercase rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
-                    style={{ background: PT.gold, color: PT.ink, letterSpacing: "0.10em" }}
-                >
-                    <span aria-hidden>🇵🇹</span> feito em pt
+                {/* MANCHETE GIGANTE */}
+                <div className="relative mt-2">
+                    <Kicker color={PT.gold} className="mb-2">// JUNTA-TE · MANCHETE</Kicker>
+                    <h2
+                        className="font-black tracking-[-0.04em]"
+                        style={{
+                            fontSize: "clamp(60px, 7.8vw, 124px)",
+                            lineHeight: 0.82,
+                            color: "#fff",
+                            textShadow: `5px 5px 0 ${PT.ink}`,
+                        }}
+                    >
+                        <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
+                        <span style={{ display: "inline-block", transform: "rotate(1deg)", marginLeft: "0.4em", color: PT.ink, textShadow: `5px 5px 0 ${PT.gold}` }}>
+                            PARTILHAMOS.
+                        </span><br />
+                        <span style={{
+                            display: "inline-block",
+                            background: PT.gold,
+                            color: PT.ink,
+                            padding: "0 0.12em",
+                            transform: "rotate(-1deg)",
+                            boxShadow: `6px 6px 0 ${PT.ink}`,
+                            marginTop: 8,
+                        }}>
+                            LUSORAE.
+                        </span>
+                    </h2>
+                </div>
+
+                {/* COLAGEM */}
+                <div className="relative mt-5 flex flex-wrap items-start gap-8 lg:gap-12 pl-2">
+                    <div className="relative">
+                        <TapedPhoto
+                            src={REGISTER_HERO}
+                            alt="Rua portuguesa decorada para os Santos Populares"
+                            rotate={4}
+                            w={220} h={270}
+                        />
+                        <div className="absolute -top-4 -left-5">
+                            <StampCircle bg={PT.red} color="#fff" rotate={-14} size={72}>
+                                SANTOS<br/>POP.<br/>2026
+                            </StampCircle>
+                        </div>
+                        <div className="absolute -bottom-4 right-2">
+                            <Sticker bg={PT.ink} color={PT.gold} rotate={4} style={{ fontSize: 10, padding: "6px 12px" }}>
+                                📍 LISBOA · ALFAMA
+                            </Sticker>
+                        </div>
+                    </div>
+
+                    {/* Cartões "passos" sobrepostos (espelha o stepper) */}
+                    <div className="relative pt-2 max-w-[340px]">
+                        <PosterCard bg={PT.ink} color="#fff" rotate={-3} shadow={PT.gold} style={{ padding: "14px 16px" }}>
+                            <Kicker color={PT.gold} className="mb-2">// 3 PASSOS PARA DENTRO</Kicker>
+                            <ul className="space-y-2 text-[14px] font-bold leading-tight">
+                                <PassoItem n={1} done={step > 1} label="Cria conta" color={PT.red} />
+                                <PassoItem n={2} done={step > 2} label="Escolhe cidade" color={PT.gold} />
+                                <PassoItem n={3} done={false} label="Aceita os termos" color={PT.green} />
+                            </ul>
+                        </PosterCard>
+
+                        {/* Cartão amarelo sobreposto */}
+                        <div className="absolute -bottom-10 -right-3 max-w-[260px]">
+                            <PosterCard bg={PT.gold} color={PT.ink} rotate={5} shadow={PT.ink} style={{ padding: "12px 14px" }}>
+                                <p className="font-black text-[14px] leading-tight">
+                                    A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
+                                </p>
+                            </PosterCard>
+                        </div>
+
+                        <DoodleArrow
+                            color={PT.gold}
+                            w={120} h={60}
+                            style={{ position: "absolute", top: -36, left: -80, transform: "rotate(165deg)" }}
+                        />
+                    </div>
+                </div>
+
+                {/* Geométricas */}
+                <div className="absolute top-[16%] left-[42%] z-0">
+                    <GeoTriangle color={PT.red} size={52} rotate={-14} />
+                </div>
+                <div className="absolute top-[48%] left-[8%] z-0">
+                    <GeoSquare color={PT.gold} size={38} rotate={-22} />
+                </div>
+                <div className="absolute bottom-[28%] right-[8%] z-0">
+                    <GeoCircle color={PT.red} size={36} />
+                </div>
+                <div className="absolute bottom-[8%] right-[24%] z-0">
+                    <DoodleExclamation color={PT.gold} size={62} rotate={14} />
+                </div>
+
+                {/* RODAPÉ poster */}
+                <div className="mt-auto relative pt-10">
+                    <div className="pt-tape absolute -right-12 left-0 h-2.5" style={{ transform: "rotate(2deg)", bottom: 60 }} aria-hidden />
+                    <div className="flex items-end justify-between gap-4 flex-wrap mt-4">
+                        <div>
+                            <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 02</Kicker>
+                            <p className="font-black text-[15px] leading-tight tracking-tight max-w-xs" style={{ color: PT.ink }}>
+                                Sem trial. <span style={{ background: "#fff", padding: "1px 6px" }}>sem upsell</span>. para sempre gratuito.
+                            </p>
+                        </div>
+                        <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.ink }}>
+                            © LUSORAE · {new Date().getFullYear()} · ABERTO A QUEM CHEGA
+                        </p>
+                    </div>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            {/* Conteúdo central */}
-            <div className="relative max-w-xl">
-                <p className="text-[12px] uppercase font-mono mb-3" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    // {stepTitle?.toLowerCase()}
-                </p>
-                <h2 className="font-black leading-[0.92] tracking-tight" style={{ fontSize: "clamp(48px, 5vw, 72px)" }}>
-                    Vivemos.<br />
-                    Partilhamos.<br />
-                    <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.14em", display: "inline-block" }}>
-                        Lusorae.
+// =============================================================================
+// Componentes utilitários (form)
+// =============================================================================
+function PtField({ label, number, children }) {
+    return (
+        <div className="relative">
+            <div className="flex items-baseline gap-2 mb-2">
+                {number && (
+                    <span
+                        className="font-mono font-black text-[11px]"
+                        style={{
+                            color: PT.gold,
+                            letterSpacing: "0.10em",
+                            background: PT.ink,
+                            padding: "2px 6px",
+                            borderRadius: 3,
+                        }}
+                    >
+                        {number}
                     </span>
-                </h2>
-                <p className="font-medium mt-7 leading-relaxed text-[16px] max-w-md" style={{ color: "rgba(255,255,255,0.90)" }}>
-                    Conta criada em 30 segundos. Sem cartão, sem upsell. A tua cidade tem{" "}
-                    <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
-                </p>
-
-                {/* Pílulas de progresso (espelho do stepper do formulário) */}
-                <div className="mt-8 flex items-center gap-2">
-                    {[
-                        { n: 1, label: "Conta" },
-                        { n: 2, label: "Cidade" },
-                        { n: 3, label: "Consentimento" },
-                    ].map(({ n, label }) => {
-                        const active = currentStep >= n;
-                        return (
-                            <div
-                                key={n}
-                                className="text-[11px] font-bold uppercase rounded-full px-3 py-1.5"
-                                style={{
-                                    letterSpacing: "0.10em",
-                                    background: active ? PT.gold : "rgba(255,255,255,0.12)",
-                                    color: active ? PT.ink : "rgba(255,255,255,0.55)",
-                                    border: active ? `2px solid ${PT.ink}` : "2px solid transparent",
-                                }}
-                            >
-                                {n}. {label}
-                            </div>
-                        );
-                    })}
-                </div>
+                )}
+                <label className="text-[12px] font-black uppercase" style={{ letterSpacing: "0.12em", color: PT.ink }}>
+                    {label}
+                </label>
             </div>
-
-            {/* Callout citação (vermelho) */}
-            <div className="relative">
-                <div
-                    className="inline-block rounded-2xl px-5 py-4 max-w-md"
-                    style={{ background: PT.red, boxShadow: `6px 6px 0 ${PT.ink}` }}
-                >
-                    <p className="font-black text-[19px] leading-tight tracking-tight italic">
-                        “o sítio certo para seres tu, sem pedir desculpa.”
-                    </p>
-                    <p className="mt-2 text-[12px] font-mono uppercase" style={{ letterSpacing: "0.14em", opacity: 0.85 }}>
-                        — pessoas, não perfis.
-                    </p>
-                </div>
-                <div
-                    className="mt-6 text-[11.5px] uppercase font-medium"
-                    style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.60)" }}
-                >
-                    © lusorae · {new Date().getFullYear()}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// HERO MOBILE
-// =============================================================================
-function MobileMiniBrand({ testId, step }) {
-    return (
-        <div
-            className="lg:hidden relative overflow-hidden px-6 pt-7 pb-8"
-            style={{ background: PT.green, color: "#fff" }}
-        >
-            <div
-                className="absolute -top-8 -right-4 pointer-events-none"
-                style={{ fontSize: 140, lineHeight: 1, color: PT.gold, fontWeight: 900 }}
-                aria-hidden
-            >
-                ✱
-            </div>
-            <div className="relative flex items-center justify-between mb-5">
-                <h1 className="font-black text-[26px] leading-none flex items-baseline gap-1.5">
-                    <span style={{ color: PT.gold }}>✱</span>
-                    <span>lusorae</span>
-                </h1>
-                <span
-                    className="text-[10px] font-bold uppercase rounded-full px-2.5 py-1"
-                    style={{ background: PT.gold, color: PT.ink, letterSpacing: "0.10em" }}
-                >
-                    passo {step}/3
-                </span>
-            </div>
-            <p className="relative font-black leading-[0.95] tracking-tight text-[30px]">
-                Cria a tua <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.14em" }}>conta</span>.
-            </p>
-            <p className="relative mt-3 text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.88)" }}>
-                30 segundos. <DynamicWord variant="compact" testId={testId} />.
-            </p>
-        </div>
-    );
-}
-
-// =============================================================================
-// Componentes utilitários
-// =============================================================================
-function PtField({ label, children }) {
-    return (
-        <div>
-            <label className="text-[12px] font-bold uppercase mb-1.5 block" style={{ letterSpacing: "0.10em", color: "rgba(26,26,26,0.65)" }}>
-                {label}
-            </label>
             {children}
         </div>
+    );
+}
+
+function StatusIcon({ status, testid }) {
+    return (
+        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none" data-testid={testid}>
+            {status === "checking" && <Loader2 size={15} className="animate-spin" style={{ color: PT.ink }} />}
+            {status === "available" && <CheckCircle2 size={18} style={{ color: PT.green }} />}
+            {(status === "taken" || status === "invalid") && <X size={18} style={{ color: PT.red }} />}
+        </div>
+    );
+}
+
+function FieldMessage({ status, message, testid, taken }) {
+    if (!message) return null;
+    const color =
+        status === "available" ? PT.green :
+        (status === "taken" || status === "invalid") ? PT.red :
+        "rgba(10,10,10,0.55)";
+    return (
+        <p className="mt-1.5 text-[12px] font-mono font-bold" style={{ color }} data-testid={testid}>
+            {status === "available" && <CheckCircle2 size={11} className="inline mr-1 -mt-0.5" />}
+            {(status === "taken" || status === "invalid") && <AlertCircle size={11} className="inline mr-1 -mt-0.5" />}
+            {taken ?? message}
+        </p>
     );
 }
 
@@ -850,8 +807,10 @@ function ConsentCheckbox({ id, checked, onChange, testid, required, children }) 
             htmlFor={id}
             className="flex items-start gap-3 p-3.5 rounded-xl cursor-pointer transition select-none"
             style={{
-                background: checked ? "rgba(4,106,56,0.06)" : "#fff",
-                border: checked ? `2px solid ${PT.green}` : "2px solid rgba(26,26,26,0.10)",
+                background: checked ? "#fff" : "rgba(255,255,255,0.65)",
+                border: `3px solid ${PT.ink}`,
+                boxShadow: checked ? `4px 4px 0 ${PT.green}` : `4px 4px 0 ${PT.ink}`,
+                transform: checked ? "translate(-1px,-1px)" : "translate(0,0)",
             }}
         >
             <input
@@ -860,84 +819,38 @@ function ConsentCheckbox({ id, checked, onChange, testid, required, children }) 
                 className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer"
                 style={{ accentColor: PT.green }}
             />
-            <span className="text-[12.5px] leading-relaxed" style={{ color: "rgba(26,26,26,0.82)" }}>
+            <span className="text-[12.5px] leading-relaxed font-medium" style={{ color: PT.ink }}>
                 {children}
-                {required && <span className="ml-1" style={{ color: PT.red }} aria-hidden>*</span>}
+                {required && <span className="ml-1 font-black" style={{ color: PT.red }} aria-hidden>*</span>}
             </span>
         </label>
     );
 }
 
-function statusBorder(status) {
-    if (status === "available") return { borderColor: PT.green, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.green}22` };
-    if (status === "taken" || status === "invalid") return { borderColor: PT.red, borderWidth: 2, boxShadow: `0 0 0 4px ${PT.red}22` };
-    return undefined;
+function PassoItem({ n, done, label, color }) {
+    return (
+        <li className="flex items-center gap-2.5">
+            <span
+                className="inline-flex items-center justify-center font-black"
+                style={{
+                    width: 28, height: 28,
+                    background: done ? color : "rgba(255,255,255,0.08)",
+                    color: done ? PT.ink : "rgba(255,255,255,0.55)",
+                    borderRadius: "50%",
+                    border: `2.5px solid ${PT.ink}`,
+                    fontSize: 13,
+                    flexShrink: 0,
+                }}
+            >
+                {done ? "✓" : n}
+            </span>
+            <span style={{ textDecoration: done ? "line-through" : "none", opacity: done ? 0.55 : 1 }}>{label}</span>
+        </li>
+    );
 }
 
-// =============================================================================
-function PtStyles() {
-    return (
-        <style>{`
-            .pt-input {
-                width: 100%;
-                background: #ffffff;
-                border: 2px solid rgba(26,26,26,0.10);
-                border-radius: 14px;
-                padding: 14px 16px;
-                font-size: 15px;
-                color: ${PT.ink};
-                transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-                outline: none;
-                font-family: inherit;
-            }
-            .pt-input::placeholder { color: rgba(26,26,26,0.35); }
-            .pt-input:hover { border-color: rgba(26,26,26,0.22); }
-            .pt-input:focus {
-                border-color: ${PT.azul};
-                box-shadow: 0 0 0 4px rgba(14,77,146,0.14);
-                background: #fff;
-            }
-            .pt-btn-primary {
-                position: relative;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                background: ${PT.red};
-                color: #fff;
-                font-weight: 800;
-                border-radius: 999px;
-                border: 2px solid ${PT.ink};
-                box-shadow: 4px 4px 0 ${PT.ink};
-                transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
-                cursor: pointer;
-                letter-spacing: -0.01em;
-            }
-            .pt-btn-primary:hover:not(:disabled) {
-                transform: translate(-2px,-2px);
-                box-shadow: 6px 6px 0 ${PT.ink};
-                background: #d11833;
-            }
-            .pt-btn-primary:active:not(:disabled) {
-                transform: translate(2px,2px);
-                box-shadow: 0px 0px 0 ${PT.ink};
-            }
-            .pt-btn-ghost {
-                position: relative;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                background: #fff;
-                color: ${PT.ink};
-                font-weight: 700;
-                border-radius: 999px;
-                border: 2px solid ${PT.ink};
-                transition: background .12s ease, transform .12s ease;
-                cursor: pointer;
-            }
-            .pt-btn-ghost:hover { background: ${PT.cream}; }
-            .pt-btn-ghost:active { transform: scale(0.97); }
-        `}</style>
-    );
+function statusBorder(status) {
+    if (status === "available") return { borderColor: PT.green, boxShadow: `4px 4px 0 ${PT.green}` };
+    if (status === "taken" || status === "invalid") return { borderColor: PT.red, boxShadow: `4px 4px 0 ${PT.red}` };
+    return undefined;
 }
