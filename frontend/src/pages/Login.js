@@ -7,7 +7,7 @@ import {
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
     DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
     DoodleLongArrow, DoodleCross, HandNote,
-    GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
+    GeoTriangle, GeoSquare, GeoCircle,
 } from "./auth/AuthDecor";
 
 const LOGIN_HERO = "/hero/login.webp";
