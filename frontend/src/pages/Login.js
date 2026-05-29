@@ -339,7 +339,7 @@ export default function Login() {
 function PosterLeft() {
     return (
         <div
-            className="flex relative overflow-hidden isolate pt-grain flex-col"
+            className="hidden lg:flex relative overflow-hidden isolate pt-grain flex-col"
             style={{ background: PT.red, color: "#fff" }}
             data-testid="brand-panel"
         >

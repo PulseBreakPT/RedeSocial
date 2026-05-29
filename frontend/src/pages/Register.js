@@ -704,7 +704,7 @@ export default function Register() {
 function PosterRight({ step }) {
     return (
         <div
-            className="flex relative overflow-hidden isolate pt-grain flex-col order-1 lg:order-2"
+            className="hidden lg:flex relative overflow-hidden isolate pt-grain flex-col order-1 lg:order-2"
             style={{ background: PT.green, color: "#fff" }}
             data-testid="brand-panel"
         >
