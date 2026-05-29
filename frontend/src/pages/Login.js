@@ -294,9 +294,6 @@ function MobileHero() {
                         <span style={{ color: PT.gold, fontSize: 22, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
                         <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
-                    <Sticker bg={PT.gold} color={PT.ink} rotate={-6} style={{ fontSize: 10, padding: "6px 10px" }}>
-                        🇵🇹 criado com ❤️ em Portugal
-                    </Sticker>
                 </div>
                 <Kicker color={PT.gold} className="mb-1">// MANCHETE · ENTRAR</Kicker>
                 <h2
@@ -350,7 +347,6 @@ function PosterLeft() {
                         <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <div className="flex items-start gap-3">
-                        <Sticker bg={PT.gold} color={PT.ink} rotate={-8}>🇵🇹 criado com ❤️ em Portugal</Sticker>
                         <StampCircle bg={PT.ink} color={PT.gold} rotate={12} size={68}>
                             EDIÇÃO<br/>Nº&nbsp;{new Date().getFullYear() % 100}
                         </StampCircle>

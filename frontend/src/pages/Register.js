@@ -657,7 +657,7 @@ function MobileHero({ step }) {
                         <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <Sticker bg={PT.gold} color={PT.ink} rotate={-6} style={{ fontSize: 10, padding: "6px 10px" }}>
-                        🇵🇹 PASSO {step}/3
+                        PASSO {step}/3
                     </Sticker>
                 </div>
                 <Kicker color={PT.gold} className="mb-1">// JUNTA-TE</Kicker>
@@ -709,7 +709,6 @@ function PosterRight({ step }) {
                         <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <div className="flex items-start gap-3">
-                        <Sticker bg={PT.gold} color={PT.ink} rotate={-6}>🇵🇹 criado com ❤️ em Portugal</Sticker>
                         <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
                             NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
                         </StampCircle>
