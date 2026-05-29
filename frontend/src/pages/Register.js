@@ -170,20 +170,23 @@ export default function Register() {
                 </span>
             </div>
 
-            <div className="grid lg:grid-cols-[1fr_1.1fr] relative">
-                {/* ============ ESQUERDA · FORMULÁRIO (revista moderna) ============ */}
-                <div className="relative px-6 sm:px-10 lg:px-16 pt-12 lg:pt-14 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
-                    {/* Decorações pelos cantos */}
-                    <div className="absolute top-6 right-6 hidden sm:block">
+            {/* Hero compacto em mobile (substitui o poster verde gigante) */}
+            <MobileHero step={step} />
+
+            <div className="grid lg:grid-cols-[1fr_1.05fr] relative">
+                {/* ============ ESQUERDA · FORMULÁRIO ============ */}
+                <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
+                    {/* Decorações pelos cantos (desktop only) */}
+                    <div className="absolute top-6 right-6 hidden lg:block">
                         <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />
                     </div>
                     <div className="absolute bottom-32 -left-3 hidden lg:block">
                         <DoodleStar color={PT.red} size={50} rotate={-12} />
                     </div>
 
-                    <div className="relative max-w-md mx-auto lg:mx-0 z-10">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-7">
+                    <div className="relative max-w-md w-full mx-auto lg:mx-0 z-10">
+                        {/* Header (desktop only — mobile tem MobileHero) */}
+                        <div className="hidden lg:flex items-center justify-between mb-7">
                             <div className="flex items-baseline gap-1.5">
                                 <span style={{ color: PT.green, fontSize: 30 }} className="font-black leading-none">✱</span>
                                 <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
@@ -224,13 +227,13 @@ export default function Register() {
                             <DoodleArrow color={PT.green} w={60} h={26} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
-                        {/* TÍTULO GIGANTE */}
+                        {/* TÍTULO — controlado para evitar overflow */}
                         <h2
                             className="font-black tracking-[-0.04em]"
-                            style={{ fontSize: "clamp(46px, 6.5vw, 78px)", lineHeight: 0.88, color: PT.ink }}
+                            style={{ fontSize: "clamp(34px, 4.6vw, 60px)", lineHeight: 0.92, color: PT.ink }}
                         >
                             {step === 1 && (<>
-                                <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>Cria a tua</span>{" "}
+                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Cria a tua</span>{" "}
                                 <span style={{ background: PT.gold, padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
                                     conta.
                                 </span>
@@ -242,7 +245,7 @@ export default function Register() {
                                 </span>
                             </>)}
                             {step === 3 && (<>
-                                <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>Última coisa,</span><br/>
+                                <span style={{ display: "inline-block", transform: "rotate(-1deg)" }}>Última coisa,</span><br/>
                                 <span style={{ background: PT.green, color: "#fff", padding: "0 0.10em", boxShadow: `4px 4px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
                                     juramos.
                                 </span>
@@ -591,26 +594,58 @@ export default function Register() {
 }
 
 // =============================================================================
-// POSTER DIREITO — verde, denso, recheado de elementos PT
+// MOBILE HERO — substitui o poster verde gigante em <lg
+// =============================================================================
+function MobileHero({ step }) {
+    return (
+        <div className="lg:hidden relative overflow-hidden" style={{ background: PT.green, color: "#fff" }}>
+            <div className="absolute -top-8 -right-6 z-0">
+                <GiantAsterisk color={PT.gold} size={160} rotate={12} />
+            </div>
+            <div className="relative z-10 px-5 py-7">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="font-black tracking-tight text-[24px] leading-none flex items-baseline gap-1.5" style={{ color: PT.ink }}>
+                        <span style={{ color: PT.gold, fontSize: 22, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
+                        <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
+                    </h1>
+                    <Sticker bg={PT.gold} color={PT.ink} rotate={-6} style={{ fontSize: 10, padding: "6px 10px" }}>
+                        🇵🇹 PASSO {step}/3
+                    </Sticker>
+                </div>
+                <Kicker color={PT.gold} className="mb-1">// JUNTA-TE</Kicker>
+                <h2
+                    className="font-black tracking-[-0.03em]"
+                    style={{ fontSize: "clamp(28px, 7.5vw, 44px)", lineHeight: 1.05, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
+                >
+                    <span style={{ display: "block" }}>Vivemos. Partilhamos.</span>
+                    <span style={{ background: PT.gold, color: PT.ink, padding: "2px 0.10em", boxShadow: `3px 3px 0 ${PT.ink}`, display: "inline-block", marginTop: 14, textShadow: "none" }}>
+                        Lusorae.
+                    </span>
+                </h2>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// POSTER DIREITO — verde (desktop only)
 // =============================================================================
 function PosterRight({ step }) {
     return (
         <div
-            className="relative overflow-hidden isolate pt-grain min-h-[640px] lg:min-h-[calc(100vh-60px)] order-1 lg:order-2"
-            style={{ background: PT.green, color: "#fff" }}
+            className="hidden lg:flex relative overflow-hidden isolate pt-grain flex-col order-1 lg:order-2"
+            style={{ background: PT.green, color: "#fff", minHeight: "calc(100vh - 60px)" }}
             data-testid="brand-panel"
         >
-            {/* Asterisco gigante canto superior direito */}
             <div className="absolute -top-14 -right-10 z-0">
-                <GiantAsterisk color={PT.gold} size={340} rotate={12} />
+                <GiantAsterisk color={PT.gold} size={300} rotate={12} />
             </div>
 
-            {/* Faixa "manchete" diagonal */}
             <div
-                className="absolute top-[26%] -right-10 z-0"
+                className="absolute top-[28%] -right-8 z-0"
                 style={{
                     width: "115%",
-                    height: 60,
+                    height: 52,
                     background: PT.red,
                     transform: "rotate(3deg)",
                     boxShadow: `inset 0 0 0 3px ${PT.ink}`,
@@ -618,45 +653,45 @@ function PosterRight({ step }) {
                 aria-hidden
             />
 
-            <div className="relative z-10 p-8 sm:p-12 lg:p-14 flex flex-col gap-6 h-full">
+            <div className="relative z-10 p-10 xl:p-14 flex flex-col gap-5 flex-1">
                 {/* Header */}
-                <div className="flex items-start justify-between gap-4">
-                    <h1 className="font-black tracking-tight text-[34px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
-                        <span style={{ color: PT.gold, fontSize: 30, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
+                <div className="flex items-start justify-between gap-3">
+                    <h1 className="font-black tracking-tight text-[30px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
+                        <span style={{ color: PT.gold, fontSize: 26, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
                         <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <div className="flex items-start gap-3">
                         <Sticker bg={PT.gold} color={PT.ink} rotate={-6}>🇵🇹 FEITO EM PT</Sticker>
-                        <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={78}>
+                        <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
                             NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
                         </StampCircle>
                     </div>
                 </div>
 
-                {/* MANCHETE GIGANTE */}
-                <div className="relative mt-2">
+                {/* MANCHETE — controlada */}
+                <div className="relative">
                     <Kicker color={PT.gold} className="mb-2">// JUNTA-TE · MANCHETE</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
-                            fontSize: "clamp(60px, 7.8vw, 124px)",
-                            lineHeight: 0.82,
+                            fontSize: "clamp(48px, 6vw, 96px)",
+                            lineHeight: 0.86,
                             color: "#fff",
-                            textShadow: `5px 5px 0 ${PT.ink}`,
+                            textShadow: `4px 4px 0 ${PT.ink}`,
                         }}
                     >
                         <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
-                        <span style={{ display: "inline-block", transform: "rotate(1deg)", marginLeft: "0.4em", color: PT.ink, textShadow: `5px 5px 0 ${PT.gold}` }}>
+                        <span style={{ display: "inline-block", transform: "rotate(1deg)", color: PT.ink, textShadow: `4px 4px 0 ${PT.gold}` }}>
                             PARTILHAMOS.
                         </span><br />
                         <span style={{
                             display: "inline-block",
                             background: PT.gold,
                             color: PT.ink,
-                            padding: "0 0.12em",
+                            padding: "0 0.10em",
                             transform: "rotate(-1deg)",
-                            boxShadow: `6px 6px 0 ${PT.ink}`,
-                            marginTop: 8,
+                            boxShadow: `5px 5px 0 ${PT.ink}`,
+                            marginTop: 6,
                         }}>
                             LUSORAE.
                         </span>
@@ -664,80 +699,75 @@ function PosterRight({ step }) {
                 </div>
 
                 {/* COLAGEM */}
-                <div className="relative mt-5 flex flex-wrap items-start gap-8 lg:gap-12 pl-2">
-                    <div className="relative">
+                <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
+                    <div className="relative shrink-0">
                         <TapedPhoto
                             src={REGISTER_HERO}
                             alt="Rua portuguesa decorada para os Santos Populares"
-                            rotate={4}
-                            w={220} h={270}
+                            rotate={3}
+                            w={180} h={220}
                         />
-                        <div className="absolute -top-4 -left-5">
-                            <StampCircle bg={PT.red} color="#fff" rotate={-14} size={72}>
+                        <div className="absolute -top-3 -left-4">
+                            <StampCircle bg={PT.red} color="#fff" rotate={-14} size={60}>
                                 SANTOS<br/>POP.<br/>2026
                             </StampCircle>
                         </div>
-                        <div className="absolute -bottom-4 right-2">
-                            <Sticker bg={PT.ink} color={PT.gold} rotate={4} style={{ fontSize: 10, padding: "6px 12px" }}>
+                        <div className="absolute -bottom-3 right-2">
+                            <Sticker bg={PT.ink} color={PT.gold} rotate={3} style={{ fontSize: 9.5, padding: "5px 10px" }}>
                                 📍 LISBOA · ALFAMA
                             </Sticker>
                         </div>
                     </div>
 
-                    {/* Cartões "passos" sobrepostos (espelha o stepper) */}
-                    <div className="relative pt-2 max-w-[340px]">
-                        <PosterCard bg={PT.ink} color="#fff" rotate={-3} shadow={PT.gold} style={{ padding: "14px 16px" }}>
-                            <Kicker color={PT.gold} className="mb-2">// 3 PASSOS PARA DENTRO</Kicker>
-                            <ul className="space-y-2 text-[14px] font-bold leading-tight">
+                    {/* Cartões "passos" */}
+                    <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2">
+                        <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
+                            <Kicker color={PT.gold} className="mb-2">// 3 PASSOS</Kicker>
+                            <ul className="space-y-1.5 text-[13.5px] font-bold leading-tight">
                                 <PassoItem n={1} done={step > 1} label="Cria conta" color={PT.red} />
                                 <PassoItem n={2} done={step > 2} label="Escolhe cidade" color={PT.gold} />
                                 <PassoItem n={3} done={false} label="Aceita os termos" color={PT.green} />
                             </ul>
                         </PosterCard>
 
-                        {/* Cartão amarelo sobreposto */}
-                        <div className="absolute -bottom-10 -right-3 max-w-[260px]">
-                            <PosterCard bg={PT.gold} color={PT.ink} rotate={5} shadow={PT.ink} style={{ padding: "12px 14px" }}>
-                                <p className="font-black text-[14px] leading-tight">
+                        <div className="mt-4">
+                            <PosterCard bg={PT.gold} color={PT.ink} rotate={3} shadow={PT.ink} style={{ padding: "10px 14px" }}>
+                                <p className="font-black text-[13.5px] leading-tight">
                                     A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
                                 </p>
                             </PosterCard>
                         </div>
-
-                        <DoodleArrow
-                            color={PT.gold}
-                            w={120} h={60}
-                            style={{ position: "absolute", top: -36, left: -80, transform: "rotate(165deg)" }}
-                        />
                     </div>
                 </div>
 
                 {/* Geométricas */}
-                <div className="absolute top-[16%] left-[42%] z-0">
-                    <GeoTriangle color={PT.red} size={52} rotate={-14} />
+                <div className="absolute top-[18%] left-[40%] z-0">
+                    <GeoTriangle color={PT.red} size={48} rotate={-14} />
                 </div>
-                <div className="absolute top-[48%] left-[8%] z-0">
-                    <GeoSquare color={PT.gold} size={38} rotate={-22} />
+                <div className="absolute top-[50%] left-[6%] z-0">
+                    <GeoSquare color={PT.gold} size={32} rotate={-22} />
                 </div>
-                <div className="absolute bottom-[28%] right-[8%] z-0">
-                    <GeoCircle color={PT.red} size={36} />
+                <div className="absolute bottom-[30%] right-[8%] z-0">
+                    <GeoCircle color={PT.red} size={30} />
                 </div>
-                <div className="absolute bottom-[8%] right-[24%] z-0">
-                    <DoodleExclamation color={PT.gold} size={62} rotate={14} />
+                <div className="absolute bottom-[10%] right-[24%] z-0">
+                    <DoodleExclamation color={PT.gold} size={54} rotate={14} />
                 </div>
 
-                {/* RODAPÉ poster */}
-                <div className="mt-auto relative pt-10">
-                    <div className="pt-tape absolute -right-12 left-0 h-2.5" style={{ transform: "rotate(2deg)", bottom: 60 }} aria-hidden />
-                    <div className="flex items-end justify-between gap-4 flex-wrap mt-4">
-                        <div>
+                {/* RODAPÉ — texto BRANCO/DOURADO para contraste */}
+                <div className="mt-auto relative pt-8">
+                    <div className="flex items-end justify-between gap-4 flex-wrap">
+                        <div className="max-w-[260px]">
                             <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 02</Kicker>
-                            <p className="font-black text-[15px] leading-tight tracking-tight max-w-xs" style={{ color: PT.ink }}>
-                                Sem trial. <span style={{ background: "#fff", padding: "1px 6px" }}>sem upsell</span>. para sempre gratuito.
+                            <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
+                                Sem trial.{" "}
+                                <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
+                                    sem upsell
+                                </span>.
                             </p>
                         </div>
-                        <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.ink }}>
-                            © LUSORAE · {new Date().getFullYear()} · ABERTO A QUEM CHEGA
+                        <p className="text-[10px] font-mono font-bold uppercase shrink-0" style={{ letterSpacing: "0.18em", color: PT.gold }}>
+                            © LUSORAE · {new Date().getFullYear()}
                         </p>
                     </div>
                 </div>
