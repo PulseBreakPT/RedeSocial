@@ -197,3 +197,7 @@ Polimentos pedidos pelo utilizador para reduzir ruído visual:
 
 ## Endpoints / Coleções
 Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints, 16 coleções MongoDB).
+
+## Changelog
+- **2026-02-XX** — Simplificação UI Login/Register: marca "Lusorae" reservada ao header do formulário + `SiteFooter` (removida de `<h1>` do PosterRight, da manchete "LUSORAE.", e do "© LUSORAE" rodapé poster). Substituídas pilhas de polaroids (`PolaroidStack` 3 fotos) por **uma única `TapedPhoto`** em cada página. Removidos os cartões verde/dourado "A tua cidade tem [DynamicWord]". Manchete unificada em ambas: "VIVEMOS. PARTILHAMOS. JUNTOS." Imports limpos.
+

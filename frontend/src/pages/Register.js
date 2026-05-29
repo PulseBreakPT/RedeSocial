@@ -4,19 +4,16 @@ import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2, 
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
-import { DynamicWord } from "../components/DynamicWord";
 import SiteFooter from "../components/SiteFooter";
 import {
-    PT, Sticker, StampCircle, PolaroidStack, PosterCard, MagNumber, Kicker, AuthStyles,
+    PT, Sticker, StampCircle, TapedPhoto, PosterCard, MagNumber, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
     DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
-    DoodleSmiley, DoodleLongArrow, DoodleCross, HandNote,
+    DoodleLongArrow, DoodleCross, HandNote,
     GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
 
 const REGISTER_HERO = "/hero/register.webp";
-const LOGIN_HERO_R = "/hero/login.webp";
-const MANIFESTO_HERO_R = "/hero/manifesto.webp";
 const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 
 // =====================================================================
@@ -664,17 +661,11 @@ function PosterRight({ step }) {
             />
 
             <div className="relative z-10 p-5 sm:p-8 lg:p-10 xl:p-14 flex flex-col gap-5 flex-1">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-3">
-                    <h1 className="font-black tracking-tight text-[30px] leading-none flex items-baseline gap-2" style={{ color: PT.ink }}>
-                        <span style={{ color: PT.gold, fontSize: 26, textShadow: `2px 2px 0 ${PT.ink}` }}>✱</span>
-                        <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
-                    </h1>
-                    <div className="flex items-start gap-3">
-                        <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
-                            NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
-                        </StampCircle>
-                    </div>
+                {/* Stamp da edição (sem duplicar nome da marca — reservada para header/SiteFooter) */}
+                <div className="flex items-start justify-end gap-3">
+                    <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
+                        NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
+                    </StampCircle>
                 </div>
 
                 {/* MANCHETE — controlada */}
@@ -702,21 +693,24 @@ function PosterRight({ step }) {
                             boxShadow: `5px 5px 0 ${PT.ink}`,
                             marginTop: 6,
                         }}>
-                            LUSORAE.
+                            JUNTOS.
                         </span>
                     </h2>
                 </div>
 
-                {/* COLAGEM */}
+                {/* COLAGEM — uma única foto colada com fita */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
                     <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: 260, height: 290 }}>
-                        <PolaroidStack
-                            photos={[
-                                { src: LOGIN_HERO_R, alt: "Porto · Douro", rotate: 7, w: 145, h: 175, top: 4, left: 60, z: 1, caption: "douro", tapeColor: "rgba(255,204,0,0.78)" },
-                                { src: MANIFESTO_HERO_R, alt: "Manifesto", rotate: -6, w: 140, h: 170, top: 90, left: 110, z: 2, caption: "rua viva", tapeColor: "rgba(200,16,46,0.55)" },
-                                { src: REGISTER_HERO, alt: "Santos Populares", rotate: 4, w: 165, h: 200, top: 60, left: 0, z: 3, caption: "santos pop. ’26" },
-                            ]}
-                        />
+                        <div className="absolute" style={{ top: 30, left: 40 }}>
+                            <TapedPhoto
+                                src={REGISTER_HERO}
+                                alt="Santos Populares"
+                                rotate={4}
+                                w={180}
+                                h={220}
+                                caption="santos pop. ’26"
+                            />
+                        </div>
                         {/* Doodles secundários — só sm+ */}
                         <div className="absolute -top-4 right-2 z-10 pointer-events-none hidden sm:block">
                             <DoodleSparkles color={PT.gold} size={56} rotate={14} />
@@ -744,7 +738,7 @@ function PosterRight({ step }) {
                         </div>
                     </div>
 
-                    {/* Cartões "passos" */}
+                    {/* Cartão "3 passos" */}
                     <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
                             <Kicker color={PT.gold} className="mb-2">// 3 PASSOS</Kicker>
@@ -757,19 +751,8 @@ function PosterRight({ step }) {
                         <div className="absolute -top-3 -right-3 z-20 pointer-events-none hidden sm:block">
                             <DoodleSpiral color={PT.gold} size={56} rotate={-15} />
                         </div>
-
-                        <div className="mt-4 relative">
-                            <PosterCard bg={PT.gold} color={PT.ink} rotate={3} shadow={PT.ink} style={{ padding: "10px 14px" }}>
-                                <p className="font-black text-[13.5px] leading-tight">
-                                    A tua cidade tem <DynamicWord variant="hero" testId="register-hero-dynamic-word" />.
-                                </p>
-                            </PosterCard>
-                            <div className="absolute -top-5 -right-4 z-20 pointer-events-none hidden sm:block">
-                                <DoodleSmiley color={PT.ink} size={42} rotate={12} />
-                            </div>
-                            <div className="absolute -bottom-3 left-6 z-20 pointer-events-none hidden sm:block">
-                                <DoodleUnderline color={PT.ink} w={100} h={12} />
-                            </div>
+                        <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
+                            <DoodleUnderline color={PT.ink} w={100} h={12} />
                         </div>
                     </div>
                 </div>
@@ -788,20 +771,15 @@ function PosterRight({ step }) {
                     <DoodleExclamation color={PT.gold} size={54} rotate={14} />
                 </div>
 
-                {/* RODAPÉ — texto BRANCO/DOURADO para contraste */}
+                {/* RODAPÉ — sem nome da marca (reservado para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
-                    <div className="flex items-end justify-between gap-4 flex-wrap">
-                        <div className="max-w-[260px]">
-                            <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 02</Kicker>
-                            <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
-                                Sem trial.{" "}
-                                <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
-                                    sem upsell
-                                </span>.
-                            </p>
-                        </div>
-                        <p className="text-[10px] font-mono font-bold uppercase shrink-0" style={{ letterSpacing: "0.18em", color: PT.gold }}>
-                            © LUSORAE · {new Date().getFullYear()}
+                    <div className="max-w-[260px]">
+                        <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 02</Kicker>
+                        <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
+                            Sem trial.{" "}
+                            <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
+                                sem upsell
+                            </span>.
                         </p>
                     </div>
                 </div>

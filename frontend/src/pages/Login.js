@@ -7,7 +7,7 @@ import {
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
     DoodleSpiral, DoodleZigzag, DoodleCircleNote, DoodleUnderline, DoodleSparkles,
     DoodleLongArrow, DoodleCross, HandNote,
-    GeoTriangle, GeoSquare, GeoCircle,
+    GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
 } from "./auth/AuthDecor";
 
 const LOGIN_HERO = "/hero/login.webp";
@@ -339,18 +339,20 @@ function PosterLeft() {
                     </h2>
                 </div>
 
-                {/* COLAGEM */}
+                {/* COLAGEM — uma única foto colada com fita */}
                 <div className="relative mt-2 flex items-start gap-6 xl:gap-10 flex-wrap">
-                    {/* Pilha de polaroids coladas */}
                     <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: 260, height: 290 }}>
-                        <PolaroidStack
-                            photos={[
-                                { src: REGISTER_HERO, alt: "Festa popular", rotate: -9, w: 150, h: 180, top: 6, left: 70, z: 1, caption: "santos · 2026", tapeColor: "rgba(4,106,56,0.55)" },
-                                { src: MANIFESTO_HERO, alt: "Manifesto", rotate: 8, w: 140, h: 170, top: 80, left: 0, z: 2, caption: "manifesto", tapeColor: "rgba(200,16,46,0.55)" },
-                                { src: LOGIN_HERO, alt: "Porto · Douro", rotate: -3, w: 165, h: 200, top: 50, left: 95, z: 3, caption: "porto · douro" },
-                            ]}
-                        />
-                        {/* Doodles sobre a pilha — secundários escondidos em mobile */}
+                        <div className="absolute" style={{ top: 30, left: 50 }}>
+                            <TapedPhoto
+                                src={LOGIN_HERO}
+                                alt="Porto · Douro"
+                                rotate={-3}
+                                w={180}
+                                h={220}
+                                caption="porto · douro"
+                            />
+                        </div>
+                        {/* Doodles sobre a foto — secundários escondidos em mobile */}
                         <div className="absolute -top-4 -left-2 z-10 pointer-events-none hidden sm:block">
                             <DoodleSparkles color={PT.gold} size={56} rotate={-12} />
                         </div>
@@ -377,7 +379,7 @@ function PosterLeft() {
                         </div>
                     </div>
 
-                    {/* Cartões "citação" + "manifesto" sobrepostos */}
+                    {/* Cartão "citação" */}
                     <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
                             <Kicker color={PT.gold} className="mb-1.5">// CITAÇÃO Nº 03</Kicker>
@@ -394,19 +396,8 @@ function PosterLeft() {
                         <div className="absolute -top-3 -right-3 z-20 pointer-events-none hidden sm:block">
                             <DoodleSpiral color={PT.gold} size={56} rotate={20} />
                         </div>
-
-                        <div className="mt-4 relative">
-                            <PosterCard bg={PT.green} color="#fff" rotate={3} shadow={PT.ink} style={{ padding: "10px 14px" }}>
-                                <p className="font-black text-[13.5px] leading-tight">
-                                    A tua cidade tem <DynamicWord variant="hero" testId="login-hero-dynamic-word" />.
-                                </p>
-                            </PosterCard>
-                            <div className="absolute -top-5 -left-6 z-20 pointer-events-none hidden sm:block">
-                                <DoodleSmiley color={PT.gold} size={42} rotate={-14} />
-                            </div>
-                            <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
-                                <DoodleUnderline color={PT.gold} w={100} h={12} />
-                            </div>
+                        <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
+                            <DoodleUnderline color={PT.gold} w={100} h={12} />
                         </div>
                     </div>
                 </div>
@@ -425,23 +416,15 @@ function PosterLeft() {
                     <DoodleExclamation color={PT.gold} size={56} rotate={-12} />
                 </div>
 
-                {/* RODAPÉ poster — texto BRANCO/DOURADO para contraste */}
+                {/* RODAPÉ poster — manifesto sem mencionar a marca (reservada para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
-                    <div className="flex items-end justify-between gap-4 flex-wrap">
-                        <div className="max-w-[260px]">
-                            <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 01</Kicker>
-                            <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
-                                Sem algoritmo a empurrar.{" "}
-                                <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
-                                    sem letra pequena
-                                </span>.
-                            </p>
-                        </div>
-                        <p
-                            className="text-[10px] font-mono font-bold uppercase shrink-0"
-                            style={{ letterSpacing: "0.18em", color: PT.gold }}
-                        >
-                            © LUSORAE · {new Date().getFullYear()}
+                    <div className="max-w-[260px]">
+                        <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 01</Kicker>
+                        <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
+                            Sem algoritmo a empurrar.{" "}
+                            <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
+                                sem letra pequena
+                            </span>.
                         </p>
                     </div>
                 </div>
