@@ -85,7 +85,7 @@ export default function Login() {
 
                         {/* KICKER */}
                         <div className="flex items-center gap-3 mb-3">
-                            <Kicker color={PT.red}>// SECÇÃO &nbsp;·&nbsp; ENTRAR</Kicker>
+                            <Kicker color={PT.red}>// ÁREA &nbsp;·&nbsp; LOGIN</Kicker>
                             <DoodleArrow color={PT.red} w={60} h={28} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
@@ -302,16 +302,9 @@ function PosterLeft() {
 
             {/* Conteúdo principal layered */}
             <div className="relative z-10 p-5 sm:p-8 lg:p-10 xl:p-14 flex flex-col gap-5 flex-1">
-                {/* ROW topo — apenas stamp da edição (sem duplicar nome da marca) */}
-                <div className="flex items-start justify-end gap-3">
-                    <StampCircle bg={PT.ink} color={PT.gold} rotate={12} size={68}>
-                        EDIÇÃO<br/>Nº&nbsp;{new Date().getFullYear() % 100}
-                    </StampCircle>
-                </div>
-
                 {/* MANCHETE — sem "Lusorae" (reservado para header/footer) */}
                 <div className="relative">
-                    <Kicker color={PT.ink} className="mb-2">// MANCHETE · CAPA</Kicker>
+                    <Kicker color={PT.ink} className="mb-2">// COMUNIDADE · PORTUGAL</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
@@ -322,19 +315,15 @@ function PosterLeft() {
                         }}
                     >
                         <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
-                        <span style={{ display: "inline-block", transform: "rotate(1deg)", color: PT.ink, textShadow: `4px 4px 0 ${PT.gold}` }}>
-                            PARTILHAMOS.
-                        </span><br />
                         <span style={{
                             display: "inline-block",
+                            transform: "rotate(1deg)",
                             background: PT.gold,
                             color: PT.ink,
                             padding: "0 0.10em",
-                            transform: "rotate(-1deg)",
                             boxShadow: `5px 5px 0 ${PT.ink}`,
-                            marginTop: 6,
                         }}>
-                            JUNTOS.
+                            PARTILHAMOS.
                         </span>
                     </h2>
                 </div>
@@ -361,11 +350,6 @@ function PosterLeft() {
                                 REAL<br/>NÃO<br/>STOCK
                             </StampCircle>
                         </div>
-                        <div className="absolute bottom-[-2px] left-[20px] z-20 pointer-events-none">
-                            <Sticker bg={PT.ink} color={PT.gold} rotate={-5} style={{ fontSize: 9.5, padding: "5px 10px" }}>
-                                📍 PORTO · DOURO
-                            </Sticker>
-                        </div>
                         <div className="absolute top-[34%] left-[-22px] z-30 pointer-events-none hidden sm:block">
                             <DoodleLongArrow color={PT.gold} w={90} h={70} rotate={20} />
                         </div>
@@ -382,7 +366,7 @@ function PosterLeft() {
                     {/* Cartão "citação" */}
                     <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
-                            <Kicker color={PT.gold} className="mb-1.5">// CITAÇÃO Nº 03</Kicker>
+                            <Kicker color={PT.gold} className="mb-1.5">// POST · DESTACADO</Kicker>
                             <p className="font-black tracking-tight text-[17px] leading-[1.15]">
                                 “não é sobre quantos seguem.<br/>
                                 é sobre <span style={{ color: PT.gold }}>quem está à mesa</span>.”
@@ -419,7 +403,7 @@ function PosterLeft() {
                 {/* RODAPÉ poster — manifesto sem mencionar a marca (reservada para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
                     <div className="max-w-[260px]">
-                        <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 01</Kicker>
+                        <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 01</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem algoritmo a empurrar.{" "}
                             <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>

@@ -476,14 +476,14 @@ export default function Register() {
                             {step === 3 && (
                                 <div className="space-y-3 pt-1">
                                     <PosterCard bg={PT.azul} color="#fff" rotate={-1.5} shadow={PT.gold} style={{ padding: "16px 18px" }}>
-                                        <Kicker color={PT.gold} className="mb-2">// CITAÇÃO Nº 04</Kicker>
+                                        <Kicker color={PT.gold} className="mb-2">// VOZ · COMUNIDADE</Kicker>
                                         <blockquote className="font-black text-[19px] leading-[1.18] tracking-tight max-w-[34ch]">
                                             “Finalmente uma rede que não me{" "}
                                             <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.16em" }}>trata</span>{" "}
                                             como produto.”
                                         </blockquote>
                                         <p className="mt-2 text-[11px] font-mono uppercase font-bold" style={{ letterSpacing: "0.14em", opacity: 0.80 }}>
-                                            — Manifesto, promessa 04
+                                            — Ana, Lisboa
                                         </p>
                                     </PosterCard>
 
@@ -664,7 +664,7 @@ function PosterRight({ step }) {
                 {/* Stamp da edição (sem duplicar nome da marca — reservada para header/SiteFooter) */}
                 <div className="flex items-start justify-end gap-3">
                     <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
-                        NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
+                        NOVO<br/>MEMBRO<br/>Nº&nbsp;∞
                     </StampCircle>
                 </div>
 
@@ -681,19 +681,15 @@ function PosterRight({ step }) {
                         }}
                     >
                         <span style={{ display: "inline-block", transform: "rotate(-2deg)" }}>VIVEMOS.</span><br />
-                        <span style={{ display: "inline-block", transform: "rotate(1deg)", color: PT.ink, textShadow: `4px 4px 0 ${PT.gold}` }}>
-                            PARTILHAMOS.
-                        </span><br />
                         <span style={{
                             display: "inline-block",
+                            transform: "rotate(1deg)",
                             background: PT.gold,
                             color: PT.ink,
                             padding: "0 0.10em",
-                            transform: "rotate(-1deg)",
                             boxShadow: `5px 5px 0 ${PT.ink}`,
-                            marginTop: 6,
                         }}>
-                            JUNTOS.
+                            PARTILHAMOS.
                         </span>
                     </h2>
                 </div>
@@ -774,7 +770,7 @@ function PosterRight({ step }) {
                 {/* RODAPÉ — sem nome da marca (reservado para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
                     <div className="max-w-[260px]">
-                        <Kicker color={PT.gold} className="mb-1">// MANIFESTO · LINHA 02</Kicker>
+                        <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 02</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem trial.{" "}
                             <span style={{ background: PT.ink, color: PT.gold, padding: "1px 6px" }}>
