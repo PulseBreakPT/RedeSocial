@@ -161,7 +161,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     LUSORAE // CENTRO LEGAL // EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
                 </span>
                 <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
-                    JURISDIÇÃO PT · UE · RGPD · DSA
+                    RGPD · DSA · LEI Nº 58/2019
                 </span>
             </div>
 
@@ -201,7 +201,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     </span>
                     <div className="ml-auto flex items-center gap-2">
                         <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
-                            🇵🇹 FEITO EM PT
+                            🇵🇹 criado com ❤️ em Portugal
                         </Sticker>
                         <button
                             onClick={onShare}
@@ -317,7 +317,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 🇵🇹 PT-PT
                             </Sticker>
                             <Sticker bg={PT.azul} color="#fff" rotate={-1} style={{ fontSize: 10, padding: "5px 10px" }}>
-                                JURISDIÇÃO PT · UE
+                                RGPD · DSA
                             </Sticker>
                         </div>
 

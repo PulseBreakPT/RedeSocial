@@ -174,7 +174,7 @@ export default function SiteFooter() {
                         className="text-[10.5px] font-mono font-bold uppercase"
                         style={{ letterSpacing: "0.14em", color: "rgba(255,255,255,0.45)" }}
                     >
-                        🇵🇹 FEITO EM PT · JURISDIÇÃO PT · UE
+                        🇵🇹 criado com ❤️ em Portugal
                     </p>
                 </div>
             </div>

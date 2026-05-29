@@ -166,6 +166,31 @@ export default function Login() {
                             >
                                 {busy ? "A entrar…" : "ENTRAR →"}
                             </button>
+
+                            {/* Disclaimer legal — entrada na conta */}
+                            <p
+                                data-testid="login-legal-disclaimer"
+                                className="text-[11.5px] leading-relaxed font-medium text-center"
+                                style={{ color: "rgba(10,10,10,0.55)" }}
+                            >
+                                Ao entrar, confirmas que aceitas os{" "}
+                                <Link
+                                    to="/legal/terms"
+                                    className="font-black underline underline-offset-2"
+                                    style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
+                                >
+                                    Termos
+                                </Link>{" "}
+                                e a{" "}
+                                <Link
+                                    to="/legal/privacy"
+                                    className="font-black underline underline-offset-2"
+                                    style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
+                                >
+                                    Política de Privacidade
+                                </Link>{" "}
+                                do Lusorae. Sessão protegida — sem rastreio entre sites.
+                            </p>
                         </form>
 
                         {/* CTA registo + sticker */}
@@ -215,7 +240,7 @@ function MobileHero() {
                         <span style={{ textShadow: `2px 2px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <Sticker bg={PT.gold} color={PT.ink} rotate={-6} style={{ fontSize: 10, padding: "6px 10px" }}>
-                        🇵🇹 FEITO EM PT
+                        🇵🇹 criado com ❤️ em Portugal
                     </Sticker>
                 </div>
                 <Kicker color={PT.gold} className="mb-1">// MANCHETE · ENTRAR</Kicker>
@@ -270,7 +295,7 @@ function PosterLeft() {
                         <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <div className="flex items-start gap-3">
-                        <Sticker bg={PT.gold} color={PT.ink} rotate={-8}>🇵🇹 FEITO EM PT</Sticker>
+                        <Sticker bg={PT.gold} color={PT.ink} rotate={-8}>🇵🇹 criado com ❤️ em Portugal</Sticker>
                         <StampCircle bg={PT.ink} color={PT.gold} rotate={12} size={68}>
                             EDIÇÃO<br/>Nº&nbsp;{new Date().getFullYear() % 100}
                         </StampCircle>

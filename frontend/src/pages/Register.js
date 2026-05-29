@@ -545,6 +545,41 @@ export default function Register() {
                                     </button>
                                 )}
                             </div>
+
+                            {/* Disclaimer legal — criação de conta (só step 3) */}
+                            {step === 3 && (
+                                <p
+                                    data-testid="register-legal-disclaimer"
+                                    className="mt-4 text-[11.5px] leading-relaxed font-medium text-center"
+                                    style={{ color: "rgba(10,10,10,0.55)" }}
+                                >
+                                    Ao criar conta, comprometes-te com os{" "}
+                                    <Link
+                                        to="/legal/terms"
+                                        className="font-black underline underline-offset-2"
+                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
+                                    >
+                                        Termos
+                                    </Link>
+                                    , a{" "}
+                                    <Link
+                                        to="/legal/privacy"
+                                        className="font-black underline underline-offset-2"
+                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
+                                    >
+                                        Política de Privacidade
+                                    </Link>{" "}
+                                    e as{" "}
+                                    <Link
+                                        to="/legal/community"
+                                        className="font-black underline underline-offset-2"
+                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
+                                    >
+                                        Diretrizes da Comunidade
+                                    </Link>
+                                    . Os teus dados são protegidos pelo RGPD e podes apagar a conta a qualquer momento.
+                                </p>
+                            )}
                         </form>
 
                         <div className="mt-8 flex items-center justify-between flex-wrap gap-3">
@@ -643,7 +678,7 @@ function PosterRight({ step }) {
                         <span style={{ textShadow: `3px 3px 0 ${PT.gold}` }}>lusorae</span>
                     </h1>
                     <div className="flex items-start gap-3">
-                        <Sticker bg={PT.gold} color={PT.ink} rotate={-6}>🇵🇹 FEITO EM PT</Sticker>
+                        <Sticker bg={PT.gold} color={PT.ink} rotate={-6}>🇵🇹 criado com ❤️ em Portugal</Sticker>
                         <StampCircle bg={PT.ink} color={PT.gold} rotate={-10} size={68}>
                             NOVO<br/>SÓCIO<br/>Nº&nbsp;∞
                         </StampCircle>
