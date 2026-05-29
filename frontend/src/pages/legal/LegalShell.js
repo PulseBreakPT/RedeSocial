@@ -4,6 +4,7 @@ import {
     ArrowLeft, ArrowUp, Check, Cookie, FileText,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
+import { PT, Sticker, Kicker, AuthStyles } from "../auth/AuthDecor";
 
 const NAV = [
     { to: "/legal",            label: "Visão geral",            short: "Visão",       icon: Scale,        key: "index" },
@@ -134,54 +135,97 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const eyebrow = NAV.find((n) => n.key === active)?.label || "Documento legal";
 
     return (
-        <div className="min-h-screen bg-white text-black">
-            {/* Reading progress bar */}
+        <div className="min-h-screen text-black" style={{ background: PT.cream }}>
+            {/* Reading progress bar (mantida) */}
             <div
-                className="legal-shell-progress fixed top-0 left-0 right-0 h-[2px] z-40 pointer-events-none"
+                className="legal-shell-progress fixed top-0 left-0 right-0 h-[3px] z-50 pointer-events-none"
                 aria-hidden
                 data-testid="legal-progress-bar"
             >
                 <div
-                    className="h-full grad-bar transition-[width] duration-150 ease-out"
-                    style={{ width: `${progress}%` }}
+                    className="h-full transition-[width] duration-150 ease-out"
+                    style={{ width: `${progress}%`, background: PT.red }}
                 />
             </div>
 
-            {/* Top bar */}
-            <header className="legal-shell-header sticky top-0 z-30 glass border-b border-black/[0.06]">
+            {/* TAPE topo poster — preto+dourado */}
+            <div className="pt-tape h-3 w-full" />
+
+            {/* Faixa "jornal" em INK */}
+            <div
+                className="flex items-center justify-between px-5 sm:px-8 py-2.5"
+                style={{ background: PT.ink, color: PT.bone }}
+            >
+                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
+                    LUSORAE // CENTRO LEGAL // EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
+                </span>
+                <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
+                    JURISDIÇÃO PT · UE · RGPD · DSA
+                </span>
+            </div>
+
+            {/* Top bar do shell (mantém ações: voltar, partilhar, imprimir) */}
+            <header
+                className="sticky top-0 z-30 backdrop-blur"
+                style={{
+                    background: "rgba(255,244,220,0.92)",
+                    borderBottom: `3px solid ${PT.ink}`,
+                }}
+            >
                 <div className="max-w-[1280px] mx-auto flex items-center gap-3 px-4 lg:px-8 py-3">
                     <button
                         onClick={() => navigate(-1)}
                         data-testid="legal-back-btn"
-                        className="w-9 h-9 rounded-full grid place-items-center text-black hover:bg-black/[0.06] tap-shrink"
+                        className="w-10 h-10 grid place-items-center tap-shrink"
+                        style={{
+                            background: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            borderRadius: 999,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            color: PT.ink,
+                        }}
                         aria-label="Voltar"
                     >
-                        <ArrowLeft size={18} />
+                        <ArrowLeft size={18} strokeWidth={2.5} />
                     </button>
-                    <Link to="/" className="inline-flex items-center gap-2 group" data-testid="legal-home-link">
-                        <span aria-hidden className="w-2.5 h-2.5 rotate-45 bg-black rounded-[2px]" />
-                        <span className="font-display text-[17px] font-bold tracking-tight">lusorae</span>
+                    <Link to="/" className="inline-flex items-baseline gap-1.5 group" data-testid="legal-home-link">
+                        <span aria-hidden style={{ color: PT.red, fontSize: 22, fontWeight: 900, lineHeight: 1 }}>✱</span>
+                        <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
                     </Link>
-                    <span className="ml-2 hidden sm:inline text-[11px] uppercase tracking-[0.14em] text-black/45 font-mono">
-                        Centro Legal
+                    <span
+                        className="ml-2 hidden sm:inline text-[11px] uppercase font-mono font-bold"
+                        style={{ letterSpacing: "0.16em", color: PT.red }}
+                    >
+                        // CENTRO LEGAL
                     </span>
-                    <div className="ml-auto flex items-center gap-1.5">
+                    <div className="ml-auto flex items-center gap-2">
+                        <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            🇵🇹 FEITO EM PT
+                        </Sticker>
                         <button
                             onClick={onShare}
                             data-testid="legal-share-btn"
-                            className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full border border-black/10 hover:border-black/30 tap-press"
+                            className="hidden sm:inline-flex items-center gap-1.5 text-[11.5px] font-black uppercase px-3 py-2 tap-press"
+                            style={{
+                                background: "#fff", color: PT.ink, border: `2px solid ${PT.ink}`,
+                                borderRadius: 999, boxShadow: `3px 3px 0 ${PT.ink}`, letterSpacing: "0.06em",
+                            }}
                             aria-label="Partilhar"
                         >
-                            {copied ? <Check size={14} /> : <Share2 size={14} />}
+                            {copied ? <Check size={13} /> : <Share2 size={13} />}
                             <span>{copied ? "Copiado" : "Partilhar"}</span>
                         </button>
                         <button
                             onClick={onPrint}
                             data-testid="legal-print-btn"
-                            className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full border border-black/10 hover:border-black/30 tap-press"
+                            className="hidden sm:inline-flex items-center gap-1.5 text-[11.5px] font-black uppercase px-3 py-2 tap-press"
+                            style={{
+                                background: "#fff", color: PT.ink, border: `2px solid ${PT.ink}`,
+                                borderRadius: 999, boxShadow: `3px 3px 0 ${PT.ink}`, letterSpacing: "0.06em",
+                            }}
                             aria-label="Imprimir"
                         >
-                            <Printer size={14} />
+                            <Printer size={13} />
                             <span>Imprimir</span>
                         </button>
                     </div>
@@ -192,12 +236,12 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 {/* Left sidebar — document switcher */}
                 <aside className="legal-shell-sidebar col-span-12 lg:col-span-3 order-1">
                     <div className="lg:sticky lg:top-[80px]">
-                        <p className="hidden lg:block text-[10.5px] uppercase tracking-[0.14em] text-black/45 font-mono mb-3 px-2">
-                            Documentos
-                        </p>
+                        <Kicker color={PT.red} className="hidden lg:block mb-3 px-1">
+                            // DOCUMENTOS
+                        </Kicker>
                         <nav
                             data-testid="legal-doc-nav"
-                            className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible no-scrollbar pb-1 -mx-1 lg:mx-0 px-1"
+                            className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible no-scrollbar pb-1 -mx-1 lg:mx-0 px-1"
                         >
                             {NAV.map(({ to, label, short, icon: Icon, key }) => {
                                 const isActive = active === key;
@@ -206,13 +250,18 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                         key={key}
                                         to={to}
                                         data-testid={`legal-nav-${key}`}
-                                        className={`shrink-0 lg:shrink inline-flex items-center gap-2.5 px-3.5 py-2.5 rounded-full lg:rounded-xl text-[13px] tracking-tight transition ${
-                                            isActive
-                                                ? "chip-on font-semibold"
-                                                : "text-black/85 hover:bg-black/[0.045]"
-                                        }`}
+                                        className="shrink-0 lg:shrink inline-flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-black uppercase transition"
+                                        style={{
+                                            background: isActive ? PT.ink : "#fff",
+                                            color: isActive ? PT.gold : PT.ink,
+                                            border: `2.5px solid ${PT.ink}`,
+                                            borderRadius: 999,
+                                            boxShadow: isActive ? `4px 4px 0 ${PT.red}` : `3px 3px 0 ${PT.ink}`,
+                                            letterSpacing: "0.06em",
+                                            transform: isActive ? "translate(-1px,-1px)" : "translate(0,0)",
+                                        }}
                                     >
-                                        <Icon size={15} strokeWidth={isActive ? 2.1 : 1.6} />
+                                        <Icon size={15} strokeWidth={isActive ? 2.4 : 2} />
                                         <span className="whitespace-nowrap lg:hidden">{short}</span>
                                         <span className="whitespace-nowrap hidden lg:inline">{label}</span>
                                     </Link>
@@ -220,8 +269,8 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             })}
                         </nav>
                         {lastUpdated && (
-                            <div className="hidden lg:flex mt-6 px-2 items-center gap-2 text-[11px] text-black/45 font-mono">
-                                <span className="w-1 h-1 rounded-full bg-black/30" />
+                            <div className="hidden lg:flex mt-6 px-2 items-center gap-2 text-[11px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: PT.green }} />
                                 Atualizado · {lastUpdated}
                             </div>
                         )}
@@ -231,56 +280,78 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 {/* Main reading column */}
                 <main className="col-span-12 lg:col-span-6 order-2 min-w-0">
                     <article ref={articleRef} className="max-w-[760px]">
-                        <p
-                            data-testid="legal-eyebrow"
-                            className="text-[11px] uppercase tracking-[0.18em] text-black/45 font-mono mb-4"
-                        >
-                            {eyebrow}
-                        </p>
+                        <div className="flex items-center gap-3 mb-3">
+                            <Kicker color={PT.red}>// {eyebrow}</Kicker>
+                            <span aria-hidden style={{ flex: 1, height: 2, background: PT.ink }} />
+                        </div>
                         <h1
                             data-testid="legal-title"
-                            className="editorial-hero leading-[1.04] text-black"
-                            style={{ fontSize: "clamp(32px, 4.2vw, 52px)" }}
+                            className="font-black tracking-[-0.04em]"
+                            style={{ fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 0.94, color: PT.ink }}
                         >
-                            {title}
+                            <span style={{
+                                background: PT.gold,
+                                padding: "0 0.10em",
+                                boxShadow: `5px 5px 0 ${PT.ink}`,
+                                display: "inline-block",
+                                transform: "rotate(-1deg)",
+                            }}>
+                                {title}
+                            </span>
                         </h1>
                         {subtitle && (
-                            <p className="mt-4 text-[15.5px] lg:text-[16.5px] text-black/65 leading-relaxed max-w-[64ch]">
-                                {subtitle}
-                            </p>
+                            <p
+                                className="mt-6 text-[15.5px] lg:text-[17px] leading-relaxed max-w-[64ch] font-medium"
+                                style={{ color: "rgba(10,10,10,0.78)" }}
+                                dangerouslySetInnerHTML={{ __html: subtitle }}
+                            />
                         )}
-                        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-black/45 font-mono">
+                        <div className="mt-5 flex flex-wrap items-center gap-2">
                             {lastUpdated && (
-                                <span className="inline-flex items-center gap-1.5">
-                                    <span className="w-1 h-1 rounded-full bg-black/30" />
-                                    Atualizado · {lastUpdated}
-                                </span>
+                                <Sticker bg={PT.green} color="#fff" rotate={-2} style={{ fontSize: 10, padding: "5px 10px" }}>
+                                    ✓ ATUALIZADO · {lastUpdated}
+                                </Sticker>
                             )}
-                            <span className="inline-flex items-center gap-1.5">
-                                <span className="w-1 h-1 rounded-full bg-black/30" />
-                                Português (PT-PT)
-                            </span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <span className="w-1 h-1 rounded-full bg-black/30" />
-                                Jurisdição PT · UE
-                            </span>
+                            <Sticker bg="#fff" color={PT.ink} rotate={1} style={{ fontSize: 10, padding: "5px 10px" }}>
+                                🇵🇹 PT-PT
+                            </Sticker>
+                            <Sticker bg={PT.azul} color="#fff" rotate={-1} style={{ fontSize: 10, padding: "5px 10px" }}>
+                                JURISDIÇÃO PT · UE
+                            </Sticker>
                         </div>
 
                         {eli5 && (
-                            <div className="legal-callout is-tldr mt-7" data-testid="legal-eli5">
-                                <strong>Em duas linhas</strong>
-                                {eli5}
+                            <div
+                                className="mt-8 px-5 py-4 relative"
+                                data-testid="legal-eli5"
+                                style={{
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                                    transform: "rotate(-0.5deg)",
+                                }}
+                            >
+                                <strong className="block font-black uppercase mb-1.5 text-[12px]" style={{ letterSpacing: "0.10em" }}>
+                                    ⚡ EM DUAS LINHAS
+                                </strong>
+                                <span className="text-[14.5px] font-medium leading-relaxed">{eli5}</span>
                             </div>
                         )}
 
                         {/* Mobile TOC (collapsible) */}
                         {toc.length > 1 && (
                             <details
-                                className="lg:hidden mt-7 rounded-2xl border border-black/[0.08] bg-white"
+                                className="lg:hidden mt-7"
                                 data-testid="legal-toc-mobile"
+                                style={{
+                                    background: "#fff",
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                }}
                             >
-                                <summary className="flex items-center gap-2 cursor-pointer select-none px-4 py-3 text-[13px] font-semibold text-black list-none">
-                                    <ListTree size={14} />
+                                <summary className="flex items-center gap-2 cursor-pointer select-none px-4 py-3 text-[12.5px] font-black uppercase list-none" style={{ color: PT.ink, letterSpacing: "0.08em" }}>
+                                    <ListTree size={14} strokeWidth={2.5} />
                                     Índice ({toc.length} secções)
                                 </summary>
                                 <ol className="px-4 pb-3 pt-1 space-y-0.5">
@@ -288,12 +359,13 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                         <li key={t.id}>
                                             <a
                                                 href={`#${t.id}`}
-                                                className="flex gap-2 text-[13px] text-black/70 hover:text-black py-1"
+                                                className="flex gap-2 text-[13px] py-1 hover:opacity-70"
+                                                style={{ color: PT.ink }}
                                             >
-                                                <span className="font-mono text-[11px] text-black/35 mt-[2px] w-6 shrink-0">
+                                                <span className="font-mono font-black text-[10.5px] mt-[3px] w-7 shrink-0" style={{ color: PT.red }}>
                                                     {String(i + 1).padStart(2, "0")}
                                                 </span>
-                                                <span>{t.label}</span>
+                                                <span className="font-medium">{t.label}</span>
                                             </a>
                                         </li>
                                     ))}
@@ -303,25 +375,44 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
 
                         <div className="mt-9 prose-legal">{children}</div>
 
-                        <hr className="my-12 border-black/[0.08]" />
+                        <hr className="my-12" style={{ border: "none", borderTop: `3px dashed ${PT.ink}` }} />
 
-                        <div className="legal-seealso not-prose mb-10" data-testid="legal-seealso">
-                            <strong>Vê também</strong>
-                            {NAV.filter((n) => n.key !== active && n.key !== "index").slice(0, 4).map((n) => (
-                                <Link
-                                    key={n.key}
-                                    to={n.to}
-                                    className="underline underline-offset-2 hover:text-[color:var(--coral-500)]"
-                                >
-                                    {n.label}
-                                </Link>
-                            ))}
+                        <div
+                            className="not-prose mb-10 px-5 py-4 relative"
+                            data-testid="legal-seealso"
+                            style={{
+                                background: "#fff",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `5px 5px 0 ${PT.green}`,
+                            }}
+                        >
+                            <Kicker color={PT.green} className="mb-2">// VÊ TAMBÉM</Kicker>
+                            <div className="flex flex-wrap gap-2">
+                                {NAV.filter((n) => n.key !== active && n.key !== "index").slice(0, 4).map((n) => (
+                                    <Link
+                                        key={n.key}
+                                        to={n.to}
+                                        className="inline-flex items-center text-[12.5px] font-black uppercase px-3 py-1.5 hover:opacity-80 transition"
+                                        style={{
+                                            background: PT.cream,
+                                            color: PT.ink,
+                                            border: `2px solid ${PT.ink}`,
+                                            borderRadius: 999,
+                                            letterSpacing: "0.06em",
+                                        }}
+                                    >
+                                        {n.label} →
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
 
-                        <footer className="text-[12px] text-black/50 leading-relaxed">
+                        <footer className="text-[12.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                             <p>
                                 As menções entre{" "}
-                                <code className="bg-black/[0.04] px-1 py-0.5 rounded text-[11px]">[ ]</code>{" "}
+                                <code className="px-1.5 py-0.5 text-[11.5px] font-black" style={{ background: PT.ink, color: PT.gold }}>
+                                    [ ]
+                                </code>{" "}
                                 identificam dados a preencher pela entidade responsável antes da publicação definitiva.
                             </p>
                             <p className="mt-2">
@@ -335,13 +426,13 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 {/* Right rail — TOC scroll-spy */}
                 <aside className="legal-shell-tools hidden lg:block lg:col-span-3 order-3">
                     <div className="sticky top-[80px]">
-                        <div className="flex items-center gap-2 px-2 mb-3 text-[10.5px] uppercase tracking-[0.14em] text-black/45 font-mono">
-                            <ListTree size={12} />
-                            Nesta página
+                        <div className="flex items-center gap-2 px-2 mb-3">
+                            <ListTree size={13} strokeWidth={2.4} style={{ color: PT.red }} />
+                            <Kicker color={PT.red}>// NESTA PÁGINA</Kicker>
                         </div>
-                        <nav data-testid="legal-toc" className="border-l border-black/[0.08]">
+                        <nav data-testid="legal-toc" style={{ borderLeft: `3px solid ${PT.ink}` }}>
                             {toc.length === 0 && (
-                                <p className="pl-4 text-[12px] text-black/40">Sem secções</p>
+                                <p className="pl-4 text-[12px] font-mono" style={{ color: "rgba(10,10,10,0.40)" }}>Sem secções</p>
                             )}
                             {toc.map((t, i) => {
                                 const isActive = activeId === t.id;
@@ -355,19 +446,22 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                             const el = document.getElementById(t.id);
                                             if (el) {
                                                 window.scrollTo({
-                                                    top: el.getBoundingClientRect().top + window.scrollY - 88,
+                                                    top: el.getBoundingClientRect().top + window.scrollY - 96,
                                                     behavior: "smooth",
                                                 });
                                                 history.replaceState(null, "", `#${t.id}`);
                                             }
                                         }}
-                                        className={`group block -ml-px pl-4 pr-2 py-1.5 text-[12.5px] leading-snug border-l-2 transition ${
-                                            isActive
-                                                ? "border-l-black text-black font-semibold"
-                                                : "border-l-transparent text-black/55 hover:text-black hover:border-l-black/30"
-                                        }`}
+                                        className="group block pl-4 pr-2 py-1.5 text-[12.5px] leading-snug transition"
+                                        style={{
+                                            marginLeft: -3,
+                                            borderLeft: `3px solid ${isActive ? PT.red : "transparent"}`,
+                                            color: isActive ? PT.ink : "rgba(10,10,10,0.55)",
+                                            fontWeight: isActive ? 800 : 500,
+                                            background: isActive ? "rgba(200,16,46,0.06)" : "transparent",
+                                        }}
                                     >
-                                        <span className="font-mono text-[10.5px] text-black/35 mr-1.5">
+                                        <span className="font-mono font-black text-[10.5px] mr-1.5" style={{ color: isActive ? PT.red : "rgba(10,10,10,0.35)" }}>
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
                                         {t.label}
@@ -379,13 +473,22 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         <button
                             onClick={scrollTop}
                             data-testid="legal-top-btn"
-                            className="mt-5 ml-2 inline-flex items-center gap-1.5 text-[11.5px] text-black/55 hover:text-black tap-press"
+                            className="mt-5 ml-1 inline-flex items-center gap-1.5 text-[11.5px] font-black uppercase px-3 py-1.5 tap-press"
+                            style={{
+                                background: "#fff", color: PT.ink, border: `2px solid ${PT.ink}`,
+                                borderRadius: 999, boxShadow: `3px 3px 0 ${PT.ink}`, letterSpacing: "0.06em",
+                            }}
                         >
-                            <ArrowUp size={12} /> Voltar ao topo
+                            <ArrowUp size={12} strokeWidth={2.5} /> Topo
                         </button>
                     </div>
                 </aside>
             </div>
+
+            {/* TAPE rodapé */}
+            <div className="pt-tape h-3 w-full" />
+
+            <AuthStyles />
         </div>
     );
 }

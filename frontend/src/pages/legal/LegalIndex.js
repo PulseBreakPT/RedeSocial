@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
 import { LegalComplianceBoard, LegalVisualBlock } from "./_visuals";
+import { PT, Sticker, Kicker } from "../auth/AuthDecor";
 
 const CARDS = [
     {
@@ -14,6 +15,7 @@ const CARDS = [
         desc: "Os seis compromissos institucionais que dão coerência a todos os outros documentos. Leitura recomendada antes de qualquer outra.",
         meta: "7 secções · ~8 min de leitura",
         emphasis: true,
+        accent: PT.red,
     },
     {
         to: "/legal/terms",
@@ -22,6 +24,7 @@ const CARDS = [
         ref: "Contrato",
         desc: "O contrato entre ti e o Lusorae. Regras de utilização, conta, conteúdos, moderação, suspensão, subscrições e foro competente.",
         meta: "21 secções · ~14 min de leitura",
+        accent: PT.azul,
     },
     {
         to: "/legal/privacy",
@@ -30,6 +33,7 @@ const CARDS = [
         ref: "Dados pessoais",
         desc: "Que dados tratamos, com que finalidade e fundamento legal, durante quanto tempo, e quais os teus direitos ao abrigo do RGPD.",
         meta: "17 secções · ~12 min de leitura",
+        accent: PT.green,
     },
     {
         to: "/legal/cookies",
@@ -38,6 +42,7 @@ const CARDS = [
         ref: "Tecnologias",
         desc: "Cookies e tecnologias equivalentes em uso. Categorias, inventário, validade do consentimento e como o gerir.",
         meta: "9 secções · ~5 min de leitura",
+        accent: PT.gold,
     },
     {
         to: "/legal/community",
@@ -46,6 +51,7 @@ const CARDS = [
         ref: "Convivência",
         desc: "O que é permitido, o que é proibido, como reportamos, e como decidimos quando há infrações. Em conformidade com o DSA.",
         meta: "11 secções · ~9 min de leitura",
+        accent: PT.red,
     },
 ];
 
@@ -56,38 +62,103 @@ export default function LegalIndex() {
             title="Centro Legal"
             subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa &mdash; e não apenas por advogados."
         >
-            <div className="legal-callout">
-                <strong>Antes de começares</strong>
-                Se só vais ler um documento, lê <a href="/legal/vision">A nossa visão</a>. É a página onde estão
-                escritos, por extenso, os <strong>seis compromissos</strong> que dão coerência a todos os outros
-                documentos &mdash; os Termos, a Privacidade, os Cookies, as Diretrizes. Todas as decisões difíceis
-                que tomamos depois respondem perante esses seis compromissos.
+            {/* Antes de começares — callout poster */}
+            <div
+                className="not-prose px-5 py-4 relative"
+                style={{
+                    background: PT.gold,
+                    color: PT.ink,
+                    border: `3px solid ${PT.ink}`,
+                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    transform: "rotate(-0.4deg)",
+                    marginTop: "1.5rem",
+                }}
+            >
+                <strong className="block font-black uppercase mb-1.5 text-[12px]" style={{ letterSpacing: "0.10em" }}>
+                    ⚠ ANTES DE COMEÇARES
+                </strong>
+                <p className="text-[14.5px] font-medium leading-relaxed">
+                    Se só vais ler um documento, lê{" "}
+                    <Link to="/legal/vision" className="font-black underline underline-offset-4 decoration-[3px]" style={{ color: PT.red, textDecorationColor: PT.ink }}>
+                        A nossa visão
+                    </Link>
+                    . É a página onde estão escritos, por extenso, os <strong>seis compromissos</strong> que dão coerência a todos os outros
+                    documentos &mdash; os Termos, a Privacidade, os Cookies, as Diretrizes. Todas as decisões difíceis
+                    que tomamos depois respondem perante esses seis compromissos.
+                </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 not-prose" style={{ marginTop: "1.4rem" }}>
-                {CARDS.map(({ to, icon: Icon, title, ref, desc, meta, emphasis }) => (
+            {/* CARDS dos documentos — estilo poster */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose" style={{ marginTop: "1.8rem" }}>
+                {CARDS.map(({ to, icon: Icon, title, ref, desc, meta, emphasis, accent }, idx) => (
                     <Link
                         key={to}
                         to={to}
-                        className={`group block rounded-2xl p-5 hover:-translate-y-[2px] transition bg-white ${emphasis ? "border-2 border-black/[0.40] hover:border-black/[0.80] sm:col-span-2" : "border border-black/[0.08] hover:border-black/30"}`}
                         data-testid={`legal-card-${to.split("/").pop()}`}
+                        className={`group block p-5 hover:-translate-y-[3px] transition relative ${emphasis ? "sm:col-span-2" : ""}`}
+                        style={{
+                            background: emphasis ? PT.ink : "#fff",
+                            color: emphasis ? "#fff" : PT.ink,
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `5px 5px 0 ${accent}`,
+                            transform: idx % 2 === 0 ? "rotate(-0.4deg)" : "rotate(0.4deg)",
+                        }}
                     >
+                        {/* Número grande tipo revista */}
+                        <span
+                            className="absolute -top-3 -left-3 inline-flex items-center justify-center font-black"
+                            style={{
+                                width: 40, height: 40,
+                                background: accent,
+                                color: accent === PT.gold ? PT.ink : "#fff",
+                                borderRadius: "50%",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                fontSize: 14,
+                                lineHeight: 1,
+                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                            }}
+                        >
+                            {String(idx + 1).padStart(2, "0")}
+                        </span>
+
                         <div className="flex items-start gap-3.5">
-                            <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${emphasis ? "bg-black text-white" : "bg-black/[0.04] text-black"}`}>
-                                <Icon size={17} strokeWidth={1.7} />
+                            <div
+                                className="w-11 h-11 grid place-items-center shrink-0"
+                                style={{
+                                    background: accent,
+                                    color: accent === PT.gold ? PT.ink : "#fff",
+                                    border: `2.5px solid ${emphasis ? PT.gold : PT.ink}`,
+                                    borderRadius: 12,
+                                    boxShadow: `3px 3px 0 ${emphasis ? PT.gold : PT.ink}`,
+                                }}
+                            >
+                                <Icon size={19} strokeWidth={2.4} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-semibold text-[15px] tracking-tight flex items-center gap-1 text-black">
+                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                    <h3 className="font-black text-[16.5px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
                                         {title}
-                                        <ChevronRight size={14} className="opacity-0 group-hover:opacity-60 -ml-0.5 transition" />
+                                        <ChevronRight size={16} strokeWidth={2.5} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
                                     </h3>
-                                    <span className="text-[9.5px] uppercase tracking-[0.10em] text-black/40 font-mono px-1.5 py-0.5 rounded-full bg-black/[0.04] ml-auto">
+                                    <span
+                                        className="text-[10px] font-black uppercase ml-auto px-2.5 py-1 shrink-0"
+                                        style={{
+                                            background: emphasis ? PT.gold : PT.ink,
+                                            color: emphasis ? PT.ink : PT.gold,
+                                            borderRadius: 999,
+                                            letterSpacing: "0.08em",
+                                        }}
+                                    >
                                         {ref}
                                     </span>
                                 </div>
-                                <p className="text-[13px] leading-relaxed text-black/65 mb-2">{desc}</p>
-                                <p className="text-[10.5px] text-black/35 font-mono uppercase tracking-[0.06em]">{meta}</p>
+                                <p className="text-[13.5px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.72)" }}>
+                                    {desc}
+                                </p>
+                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: emphasis ? "rgba(255,204,0,0.85)" : PT.red }}>
+                                    {meta}
+                                </p>
                             </div>
                         </div>
                     </Link>
