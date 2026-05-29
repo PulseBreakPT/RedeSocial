@@ -902,14 +902,14 @@ function FinalCta() {
                     alt=""
                     aria-hidden
                     className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                    style={{ opacity: 0.32, mixBlendMode: "multiply" }}
+                    style={{ opacity: 0.62, mixBlendMode: "multiply" }}
                     loading="lazy"
                 />
-                {/* Overlay vermelho gradiente — garante legibilidade do texto branco */}
+                {/* Overlay vermelho mais leve — deixa ver mais a ilustração */}
                 <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                        background: `linear-gradient(105deg, ${PT.red} 0%, ${PT.red}E6 45%, ${PT.red}99 100%)`,
+                        background: `linear-gradient(105deg, ${PT.red}E6 0%, ${PT.red}B3 45%, ${PT.red}80 100%)`,
                     }}
                     aria-hidden
                 />
