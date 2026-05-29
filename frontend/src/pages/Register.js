@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { CitySelect } from "../components/CitySelect";
 import { DynamicWord } from "../components/DynamicWord";
+import SiteFooter from "../components/SiteFooter";
 import {
     PT, Sticker, StampCircle, TapedPhoto, PosterCard, MagNumber, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
@@ -560,26 +561,6 @@ export default function Register() {
                             </p>
                             <Sticker bg={PT.red} color="#fff" rotate={5}>RGPD ✓</Sticker>
                         </div>
-
-                        <div className="mt-10 pt-5 relative" style={{ borderTop: `3px solid ${PT.ink}` }}>
-                            <Kicker color={PT.ink} className="mb-3">// COLOFÃO · DADOS</Kicker>
-                            <p className="text-[11.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                Os teus dados são tratados conforme o RGPD e a Lei n.º 58/2019. Lê o nosso{" "}
-                                <Link to="/manifesto" className="underline underline-offset-2 font-black" style={{ color: PT.ink }}>manifesto</Link>{" "}
-                                — declaramos publicamente o que não fazemos.
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
-                                <Link to="/legal" className="hover:underline">Centro Legal</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/terms" className="hover:underline">Termos</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/privacy" className="hover:underline">Privacidade</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/manifesto" className="hover:underline">Manifesto</Link>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -588,6 +569,7 @@ export default function Register() {
             </div>
 
             <div className="pt-tape h-3 w-full" />
+            <SiteFooter />
             <AuthStyles />
         </div>
     );

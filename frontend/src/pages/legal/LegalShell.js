@@ -5,6 +5,7 @@ import {
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
 import { PT, Sticker, Kicker, AuthStyles } from "../auth/AuthDecor";
+import SiteFooter from "../../components/SiteFooter";
 
 const NAV = [
     { to: "/legal",            label: "Visão geral",            short: "Visão",       icon: Scale,        key: "index" },
@@ -487,6 +488,9 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
 
             {/* TAPE rodapé */}
             <div className="pt-tape h-3 w-full" />
+
+            {/* SITE FOOTER */}
+            <SiteFooter />
 
             <AuthStyles />
         </div>

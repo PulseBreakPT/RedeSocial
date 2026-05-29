@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { DynamicWord } from "../components/DynamicWord";
+import SiteFooter from "../components/SiteFooter";
 import {
     PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
     DoodleArrow, DoodleScribble, DoodleStar, DoodleHeart, DoodleExclamation,
@@ -182,37 +183,15 @@ export default function Login() {
                             </p>
                             <Sticker bg={PT.green} color="#fff" rotate={-5}>30 SEG.</Sticker>
                         </div>
-
-                        {/* COLOFÃO / Rodapé legal */}
-                        <div
-                            className="mt-12 pt-6 relative"
-                            style={{ borderTop: `3px solid ${PT.ink}` }}
-                        >
-                            <Kicker color={PT.ink} className="mb-3">// LETRA MIÚDA — TERMOS &amp; PRIVACIDADE</Kicker>
-                            <p className="text-[11.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                Ao entrar concordas com os{" "}
-                                <Link to="/legal/terms" className="underline underline-offset-2 font-bold" style={{ color: PT.ink }}>Termos</Link>{" "}
-                                e a{" "}
-                                <Link to="/legal/privacy" className="underline underline-offset-2 font-bold" style={{ color: PT.ink }}>Política de Privacidade</Link>.
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
-                                <Link to="/legal" className="hover:underline">Centro Legal</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/terms" className="hover:underline">Termos</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/privacy" className="hover:underline">Privacidade</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/cookies" className="hover:underline">Cookies</Link>
-                                <span aria-hidden>·</span>
-                                <Link to="/legal/community" className="hover:underline">Diretrizes</Link>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
             {/* TAPE rodapé */}
             <div className="pt-tape h-3 w-full" />
+
+            {/* SITE FOOTER (poster preto pesado) */}
+            <SiteFooter />
 
             <AuthStyles />
         </div>
