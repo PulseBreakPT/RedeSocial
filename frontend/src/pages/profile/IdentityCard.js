@@ -91,7 +91,15 @@ export function IdentityCard({
     return (
         <div className="px-4 lg:px-6 -mt-12 lg:-mt-14 relative" data-testid="identity-card">
             <div className="flex items-end justify-between gap-3">
-                <div className="rounded-full p-1 bg-white shadow-[0_8px_24px_-12px_rgba(13,13,16,0.30)]">
+                <div
+                    className="p-1.5"
+                    style={{
+                        background: "#fff",
+                        border: "3px solid #0A0A0A",
+                        boxShadow: "4px 4px 0 #0A0A0A",
+                        borderRadius: 999,
+                    }}
+                >
                     <Avatar user={profile} size={88} showOnline />
                 </div>
                 <div className="hidden sm:flex gap-2 pb-1">
@@ -100,18 +108,30 @@ export function IdentityCard({
                             onClick={onToggleFav}
                             data-testid="profile-favourite-btn"
                             title={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                            className={`w-10 h-10 grid place-items-center rounded-full border tap-shrink transition ${
-                                fav ? "border-amber-300 bg-amber-50 text-amber-600" : "border-black/[0.10] hover:bg-black/[0.04] text-black/65"
-                            }`}
+                            className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
+                            style={{
+                                background: fav ? "#FFD93D" : "#fff",
+                                color: fav ? "#0A0A0A" : "rgba(10,10,10,0.6)",
+                                border: "2.5px solid #0A0A0A",
+                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                borderRadius: 999,
+                            }}
                         >
-                            <Star size={15} strokeWidth={1.7} fill={fav ? "currentColor" : "none"} />
+                            <Star size={15} strokeWidth={2.2} fill={fav ? "currentColor" : "none"} />
                         </button>
                     )}
                     <button
                         onClick={() => setSeloOpen(true)}
                         title="Ver o selo pessoal"
                         data-testid="profile-selo-btn"
-                        className="w-10 h-10 grid place-items-center rounded-full border border-[color:var(--coral-500)]/40 bg-[color:var(--coral-500)]/[0.06] hover:bg-[color:var(--coral-500)]/[0.10] text-[color:var(--coral-500)] transition tap-shrink"
+                        className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
+                        style={{
+                            background: "#C8261E",
+                            color: "#fff",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            borderRadius: 999,
+                        }}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M 12 3 L 21 12 L 12 21 L 3 12 Z" fill="currentColor" />
@@ -121,16 +141,23 @@ export function IdentityCard({
                         onClick={onShare}
                         title="Partilhar perfil"
                         data-testid="profile-share-btn"
-                        className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
+                        className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
+                        style={{
+                            background: "#fff",
+                            color: "#0A0A0A",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            borderRadius: 999,
+                        }}
                     >
-                        <Share2 size={15} />
+                        <Share2 size={15} strokeWidth={2.2} />
                     </button>
                     <ProfileMoreMenu profile={profile} onProfileUpdate={onProfileUpdate} />
                     {profile.is_self ? (
                         <button
                             onClick={onEditProfile}
                             data-testid="edit-profile-btn"
-                            className="btn-silver px-5 py-2 text-[12px]"
+                            className="btn-silver px-5 py-2"
                         >
                             Editar perfil
                         </button>
@@ -140,20 +167,37 @@ export function IdentityCard({
                                 <button
                                     onClick={() => setQuickOpen((v) => !v)}
                                     data-testid="profile-quick-msg-btn"
-                                    className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
+                                    className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
+                                    style={{
+                                        background: "#fff",
+                                        color: "#0A0A0A",
+                                        border: "2.5px solid #0A0A0A",
+                                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                        borderRadius: 999,
+                                    }}
                                     title="Mensagem rápida"
                                 >
-                                    <MessageCircle size={16} />
+                                    <MessageCircle size={15} strokeWidth={2.2} />
                                 </button>
                                 {quickOpen && (
                                     <div
                                         data-testid="profile-quick-msg-popover"
-                                        className="absolute right-0 top-full mt-2 z-30 w-80 bg-white border border-black/[0.08] rounded-2xl p-3 shadow-[0_20px_50px_-12px_rgba(13,13,16,0.18)] anim-fade-up"
+                                        className="absolute right-0 top-full mt-2 z-30 w-80 p-3 anim-fade-up"
+                                        style={{
+                                            background: "#fff",
+                                            border: "2.5px solid #0A0A0A",
+                                            boxShadow: "5px 5px 0 #0A0A0A",
+                                            borderRadius: 12,
+                                        }}
                                     >
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="type-overline mb-0">Mensagem rápida</span>
-                                            <button onClick={() => setQuickOpen(false)} className="w-6 h-6 grid place-items-center rounded-full hover:bg-black/[0.05]">
-                                                <X size={12} />
+                                            <span className="type-overline">Mensagem rápida</span>
+                                            <button
+                                                onClick={() => setQuickOpen(false)}
+                                                className="w-6 h-6 grid place-items-center tap-shrink"
+                                                style={{ background: "#FFF4DC", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                                            >
+                                                <X size={11} strokeWidth={2.4} />
                                             </button>
                                         </div>
                                         <textarea
@@ -163,23 +207,31 @@ export function IdentityCard({
                                             rows={3}
                                             maxLength={500}
                                             data-testid="profile-quick-msg-input"
-                                            className="w-full bg-black/[0.03] border border-black/[0.06] rounded-xl px-3 py-2 text-[13px] focus:bg-white focus:border-black/30 outline-none resize-none"
+                                            className="w-full px-3 py-2 outline-none resize-none font-medium"
+                                            style={{
+                                                background: "#FFF4DC",
+                                                border: "2px solid #0A0A0A",
+                                                borderRadius: 8,
+                                                fontSize: 13,
+                                                color: "#0A0A0A",
+                                            }}
                                         />
                                         <div className="flex items-center justify-between mt-2">
                                             <button
                                                 onClick={onMessage}
                                                 data-testid="profile-quick-msg-open-thread"
-                                                className="text-[11px] font-mono text-black/55 hover:text-black"
+                                                className="font-mono font-black uppercase"
+                                                style={{ fontSize: 10.5, letterSpacing: "0.10em", color: "#C8261E" }}
                                             >
-                                                abrir conversa →
+                                                // abrir conversa →
                                             </button>
                                             <button
                                                 onClick={sendQuick}
                                                 disabled={sending || !quickMsg.trim()}
                                                 data-testid="profile-quick-msg-send"
-                                                className="btn-obsidian px-4 py-2 text-[11.5px] inline-flex items-center gap-1.5 disabled:opacity-40"
+                                                className="btn-obsidian px-4 py-2 inline-flex items-center gap-1.5 disabled:opacity-40"
                                             >
-                                                <Send size={12} /> {sending ? "A enviar…" : "Enviar"}
+                                                <Send size={12} strokeWidth={2.4} /> {sending ? "A enviar…" : "Enviar"}
                                             </button>
                                         </div>
                                     </div>

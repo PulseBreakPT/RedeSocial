@@ -93,41 +93,59 @@ function Ring({ value, size = 96, accent, sub }) {
     );
 }
 
-function StatCard({ icon: Icon, value, label, sub, tint }) {
+function StatCard({ icon: Icon, value, label, sub, tintBg, tintFg }) {
     return (
-        <div className="card-lux p-4 hover:shadow-md transition h-full flex flex-col">
-            <div className={`w-9 h-9 rounded-xl grid place-items-center ${tint || "bg-black/[0.04] text-black/70"}`}>
-                <Icon size={15} strokeWidth={1.8} />
+        <div className="card-lux p-4 h-full flex flex-col">
+            <div
+                className="w-10 h-10 grid place-items-center shrink-0"
+                style={{
+                    background: tintBg || "#FFD93D",
+                    color: tintFg || "#0A0A0A",
+                    border: "2px solid #0A0A0A",
+                    borderRadius: 8,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                <Icon size={15} strokeWidth={2.2} />
             </div>
-            <div className="font-display text-[24px] font-bold tabular-nums text-black leading-none mt-3.5">{value}</div>
-            <div className="text-[10.5px] font-mono tracking-wider uppercase text-black/45 mt-1.5 truncate">{label}</div>
-            {sub && <div className="text-[11px] text-black/55 mt-0.5 leading-snug truncate">{sub}</div>}
+            <div className="font-black tabular-nums leading-none mt-3.5" style={{ fontSize: 26, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
+            <div className="font-mono font-black uppercase mt-2 truncate" style={{ fontSize: 10, letterSpacing: "0.14em", color: "#C8261E" }}>// {label}</div>
+            {sub && <div className="text-[11.5px] mt-1 leading-snug truncate font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
         </div>
     );
 }
 
-function ActionTile({ icon: Icon, title, sub, onClick, to, badge, dataTestid, tint }) {
+function ActionTile({ icon: Icon, title, sub, onClick, to, badge, dataTestid, tintBg, tintFg }) {
     const Cmp = to ? Link : "button";
     const cmpProps = to ? { to } : { onClick, type: "button" };
     return (
         <Cmp
             {...cmpProps}
             data-testid={dataTestid}
-            className="group flex items-center gap-3 p-3.5 card-lux hover:shadow-md transition tap-shrink text-left w-full"
+            className="group flex items-center gap-3 p-3.5 card-lux tap-shrink text-left w-full"
         >
-            <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${tint || "bg-black/[0.04] text-black/75"} group-hover:bg-black group-hover:text-white transition`}>
-                <Icon size={17} strokeWidth={1.7} />
+            <div
+                className="w-11 h-11 grid place-items-center shrink-0"
+                style={{
+                    background: tintBg || "#FFD93D",
+                    color: tintFg || "#0A0A0A",
+                    border: "2px solid #0A0A0A",
+                    borderRadius: 8,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                <Icon size={16} strokeWidth={2.2} />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1.5">
+                <div className="font-black tracking-tight flex items-center gap-1.5" style={{ fontSize: 13.5, color: "#0A0A0A" }}>
                     {title}
                     {badge && (
-                        <span className="text-[9.5px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/55">{badge}</span>
+                        <span className="font-mono font-black uppercase px-1.5 py-0.5" style={{ fontSize: 9.5, letterSpacing: "0.10em", background: "#FFF4DC", color: "#0A0A0A", border: "1.5px solid #0A0A0A", borderRadius: 999 }}>{badge}</span>
                     )}
                 </div>
-                {sub && <div className="text-[11.5px] text-black/55 mt-0.5 leading-snug">{sub}</div>}
+                {sub && <div className="text-[11.5px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
             </div>
-            <ChevronRight size={16} className="text-black/30 group-hover:translate-x-0.5 group-hover:text-black/60 transition shrink-0" />
+            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition shrink-0" style={{ color: "#0A0A0A" }} />
         </Cmp>
     );
 }
@@ -187,10 +205,18 @@ export function HubTab({ user, form, stats, setActiveTab }) {
         <div className="px-4 lg:px-8 py-5 lg:py-7" data-testid="settings-hub">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 max-w-6xl">
 
-                {/* HERO — duplo ring + identidade */}
-                <div className="lg:col-span-12 relative overflow-hidden rounded-3xl border border-black/[0.08] bg-gradient-to-br from-white via-white to-black/[0.03] p-6 lg:p-8">
-                    <div className="absolute -top-16 -right-12 w-56 h-56 rounded-full bg-black/[0.025] pointer-events-none" />
-                    <div className="absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-black/[0.02] pointer-events-none" />
+                {/* HERO — duplo ring + identidade · FANZINE */}
+                <div
+                    className="lg:col-span-12 relative overflow-hidden p-6 lg:p-8"
+                    style={{
+                        background: "#FFF4DC",
+                        border: "3px solid #0A0A0A",
+                        boxShadow: "5px 5px 0 #0A0A0A",
+                        borderRadius: 14,
+                    }}
+                >
+                    <div className="absolute top-0 left-0 right-0 h-2 pt-tape pointer-events-none" />
+                    <div className="absolute -top-12 -right-10 w-44 h-44 pointer-events-none opacity-20" aria-hidden style={{ background: "#C8261E", borderRadius: "50%", border: "3px solid #0A0A0A" }} />
 
                     <div className="relative flex items-start justify-between gap-6 flex-wrap">
                         <div className="min-w-0 max-w-xl">
@@ -237,10 +263,10 @@ export function HubTab({ user, form, stats, setActiveTab }) {
 
                 {/* STATS — 4 cards reais (likes recebidos, comments, reposts, engagement) */}
                 <div className="lg:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                    <StatCard icon={Activity} value={fmtNumber(rich?.posts_count ?? 0)} label="Publicações" sub={`média ${fmtNumber(Math.round(rich?.avg_likes || 0))} gostos/post`} tint="bg-indigo-50 text-indigo-700" />
-                    <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tint="bg-rose-50 text-rose-700" />
-                    <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tint="bg-amber-50 text-amber-700" />
-                    <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tint="bg-emerald-50 text-emerald-700" />
+                    <StatCard icon={Activity} value={fmtNumber(rich?.posts_count ?? 0)} label="Publicações" sub={`média ${fmtNumber(Math.round(rich?.avg_likes || 0))} gostos/post`} tintBg="#3E5C9A" tintFg="#fff" />
+                    <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tintBg="#C8261E" tintFg="#fff" />
+                    <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tintBg="#FFD93D" tintFg="#0A0A0A" />
+                    <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tintBg="#1F7A5A" tintFg="#fff" />
                 </div>
 
                 {/* SCORES — completude + segurança detalhada */}
@@ -340,10 +366,10 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                     <div className="card-lux p-5 h-full">
                         <p className="type-overline mb-3.5">Acessos rápidos</p>
                         <div className="grid grid-cols-1 gap-2">
-                            <ActionTile icon={Bell} title="Notificações" sub="Modos saudáveis, tipos, som & vibração" onClick={() => setActiveTab("notif")} dataTestid="hub-action-notif" tint="bg-amber-50 text-amber-700" />
-                            <ActionTile icon={Lock} title="Privacidade & Segurança" sub="2FA, sessões, palavra-passe, alertas" onClick={() => setActiveTab("priv-seg")} dataTestid="hub-action-priv" tint="bg-indigo-50 text-indigo-700" />
-                            <ActionTile icon={Database} title="Dados & Legal" sub="Exportar, apagar conta, RGPD" onClick={() => setActiveTab("dados-legal")} dataTestid="hub-action-dados" tint="bg-emerald-50 text-emerald-700" />
-                            <ActionTile icon={FileText} title="Editar perfil" sub="Nome, bio, capa, cidade, aparência" onClick={() => setActiveTab("perfil")} dataTestid="hub-action-perfil" tint="bg-rose-50 text-rose-700" />
+                            <ActionTile icon={Bell} title="Notificações" sub="Modos saudáveis, tipos, som & vibração" onClick={() => setActiveTab("notif")} dataTestid="hub-action-notif" tintBg="#FFD93D" tintFg="#0A0A0A" />
+                            <ActionTile icon={Lock} title="Privacidade & Segurança" sub="2FA, sessões, palavra-passe, alertas" onClick={() => setActiveTab("priv-seg")} dataTestid="hub-action-priv" tintBg="#3E5C9A" tintFg="#fff" />
+                            <ActionTile icon={Database} title="Dados & Legal" sub="Exportar, apagar conta, RGPD" onClick={() => setActiveTab("dados-legal")} dataTestid="hub-action-dados" tintBg="#1F7A5A" tintFg="#fff" />
+                            <ActionTile icon={FileText} title="Editar perfil" sub="Nome, bio, capa, cidade, aparência" onClick={() => setActiveTab("perfil")} dataTestid="hub-action-perfil" tintBg="#C8261E" tintFg="#fff" />
                         </div>
                     </div>
                 </div>
@@ -362,10 +388,18 @@ export function HubTab({ user, form, stats, setActiveTab }) {
 
 function Pill({ on, label }) {
     return (
-        <span className={`inline-flex items-center gap-1 text-[10.5px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-full border ${
-            on ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-black/[0.03] text-black/45 border-black/[0.08]"
-        }`}>
-            {on ? <CheckCircle2 size={9} /> : <span className="w-1.5 h-1.5 rounded-full bg-black/30" />}
+        <span
+            className="inline-flex items-center gap-1 font-mono font-black uppercase px-2 py-0.5"
+            style={{
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                background: on ? "#1F7A5A" : "#FFF4DC",
+                color: on ? "#fff" : "rgba(10,10,10,0.55)",
+                border: "1.5px solid #0A0A0A",
+                borderRadius: 999,
+            }}
+        >
+            {on ? <CheckCircle2 size={9} strokeWidth={2.6} /> : <span className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(10,10,10,0.35)" }} />}
             {label}
         </span>
     );
@@ -373,24 +407,49 @@ function Pill({ on, label }) {
 
 function SecRow({ ok, label }) {
     return (
-        <div className="flex items-center gap-2 text-[12px]">
-            <span className={`w-4 h-4 rounded-full grid place-items-center shrink-0 ${ok ? "bg-emerald-100 text-emerald-700" : "bg-black/[0.06] text-black/40"}`}>
-                {ok ? <CheckCircle2 size={10} strokeWidth={2.2} /> : <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+        <div className="flex items-center gap-2 text-[12.5px]">
+            <span
+                className="w-5 h-5 grid place-items-center shrink-0"
+                style={{
+                    background: ok ? "#1F7A5A" : "#FFF4DC",
+                    color: ok ? "#fff" : "rgba(10,10,10,0.45)",
+                    border: "1.5px solid #0A0A0A",
+                    borderRadius: 999,
+                }}
+            >
+                {ok ? <CheckCircle2 size={11} strokeWidth={2.6} /> : <span className="w-1.5 h-1.5 rounded-full bg-current" />}
             </span>
-            <span className={ok ? "text-black/75" : "text-black/55"}>{label}</span>
+            <span className="font-medium" style={{ color: ok ? "#0A0A0A" : "rgba(10,10,10,0.55)" }}>{label}</span>
         </div>
     );
 }
 
 function MicroStat({ icon: Icon, label, value }) {
     return (
-        <div className="flex items-center gap-3 p-3 rounded-2xl border border-black/[0.06] bg-white/60 hover:bg-white transition">
-            <div className="w-8 h-8 rounded-lg bg-black/[0.04] grid place-items-center text-black/65 shrink-0">
-                <Icon size={14} strokeWidth={1.8} />
+        <div
+            className="flex items-center gap-3 p-3"
+            style={{
+                background: "#fff",
+                border: "2px solid #0A0A0A",
+                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                borderRadius: 10,
+            }}
+        >
+            <div
+                className="w-9 h-9 grid place-items-center shrink-0"
+                style={{
+                    background: "#FFD93D",
+                    color: "#0A0A0A",
+                    border: "2px solid #0A0A0A",
+                    borderRadius: 7,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                <Icon size={14} strokeWidth={2.2} />
             </div>
             <div className="min-w-0">
-                <div className="font-display text-[15.5px] font-bold tabular-nums text-black leading-none">{value}</div>
-                <div className="text-[10px] font-mono tracking-wider uppercase text-black/45 mt-1 truncate">{label}</div>
+                <div className="font-black tabular-nums leading-none" style={{ fontSize: 17, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
+                <div className="font-mono font-black uppercase mt-1 truncate" style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#C8261E" }}>// {label}</div>
             </div>
         </div>
     );

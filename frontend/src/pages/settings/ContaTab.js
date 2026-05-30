@@ -12,42 +12,72 @@ import { SwitchPill } from "./_shared";
 export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, save, busy }) {
     return (
         <div data-testid="settings-conta">
-            {/* COVER + AVATAR */}
-            <div className="relative h-36 lg:h-52 overflow-hidden">
-                <div className="absolute inset-0 silver-grad" />
-                <div className="absolute inset-0 opacity-50 mix-blend-multiply" style={{ background: "radial-gradient(circle at 25% 35%, rgba(13,13,16,0.10), transparent 55%), radial-gradient(circle at 80% 70%, rgba(13,13,16,0.06), transparent 55%)" }} />
+            {/* COVER + AVATAR — FANZINE PT */}
+            <div
+                className="relative h-36 lg:h-52 overflow-hidden"
+                style={{
+                    background: "#3E5C9A",
+                    borderBottom: "4px solid #0A0A0A",
+                }}
+            >
+                <div className="pt-tape h-2 w-full absolute top-0 left-0 z-10" />
+                <div className="absolute inset-0 grain pointer-events-none opacity-50" />
                 {form.banner && <img src={form.banner} alt="" className="relative w-full h-full object-cover" />}
                 <button
                     onClick={() => bannerRef.current?.click()}
                     data-testid="banner-upload-btn"
-                    className="absolute bottom-3 right-3 bg-black/85 hover:bg-black p-2.5 rounded-full text-white shadow-lg backdrop-blur-sm transition tap-shrink inline-flex items-center gap-1.5"
+                    className="absolute bottom-3 right-3 p-2.5 tap-shrink inline-flex items-center gap-1.5 font-mono font-black uppercase"
+                    style={{
+                        background: "#0A0A0A",
+                        color: "#FFD93D",
+                        border: "2.5px solid #0A0A0A",
+                        boxShadow: "2.5px 2.5px 0 #C8261E",
+                        borderRadius: 999,
+                        fontSize: 10.5,
+                        letterSpacing: "0.10em",
+                    }}
                     aria-label="alterar capa"
                 >
-                    <Camera size={14} />
-                    <span className="text-[11px] font-mono tracking-wider uppercase hidden sm:inline">Capa</span>
+                    <Camera size={13} strokeWidth={2.4} />
+                    <span className="hidden sm:inline">Capa</span>
                 </button>
                 <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, banner: d }))} />
             </div>
 
             <div className="px-4 lg:px-8 -mt-14 lg:-mt-16 relative">
                 <div className="flex items-end justify-between gap-4 mb-2">
-                    <div className="relative inline-block rounded-full p-1.5 bg-white shadow-[0_10px_30px_-12px_rgba(13,13,16,0.30)]">
+                    <div
+                        className="relative inline-block p-1.5"
+                        style={{
+                            background: "#fff",
+                            border: "3px solid #0A0A0A",
+                            boxShadow: "4px 4px 0 #0A0A0A",
+                            borderRadius: 999,
+                        }}
+                    >
                         <Avatar user={{ ...user, avatar: form.avatar }} size={92} />
                         <button
                             onClick={() => avatarRef.current?.click()}
                             data-testid="avatar-upload-btn"
-                            className="absolute bottom-1 right-1 bg-black/90 hover:bg-black p-2 rounded-full text-white shadow-md transition tap-shrink"
+                            className="absolute bottom-1 right-1 p-2 tap-shrink"
+                            style={{
+                                background: "#0A0A0A",
+                                color: "#FFD93D",
+                                border: "2px solid #0A0A0A",
+                                boxShadow: "2px 2px 0 #C8261E",
+                                borderRadius: 999,
+                            }}
                             aria-label="alterar avatar"
                         >
-                            <Camera size={12} />
+                            <Camera size={12} strokeWidth={2.4} />
                         </button>
                         <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => readFile(e.target.files?.[0], (d) => setForm({ ...form, avatar: d }))} />
                     </div>
                     {user?.username && (
                         <div className="mb-1 text-right">
                             <p className="type-overline">Identificador</p>
-                            <p className="font-mono text-[14px] tracking-tight text-black/80 inline-flex items-center gap-1 mt-1">
-                                <AtSign size={12} />{user.username}
+                            <p className="font-mono font-black tracking-tight inline-flex items-center gap-1 mt-1.5" style={{ fontSize: 14, color: "#0A0A0A" }}>
+                                <AtSign size={12} strokeWidth={2.4} />{user.username}
                             </p>
                         </div>
                     )}
@@ -97,26 +127,54 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                             onChange={(e) => setForm({ ...form, bio: e.target.value })}
                             rows={3} maxLength={160}
                             placeholder="Conta-nos algo em poucas palavras…"
-                            className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3.5 focus:border-black/40 focus:bg-white focus:outline-none transition resize-none text-[14px] leading-relaxed"
+                            className="mt-2 w-full px-4 py-3.5 focus:outline-none resize-none font-medium"
+                            style={{
+                                background: "#FFF4DC",
+                                color: "#0A0A0A",
+                                border: "2.5px solid #0A0A0A",
+                                boxShadow: "2px 2px 0 #0A0A0A",
+                                borderRadius: 10,
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                            }}
                         />
                     </div>
 
-                    {/* Conta privada — 12 cols, design switch premium */}
+                    {/* Conta privada — 12 cols · FANZINE switch */}
                     <div className="lg:col-span-12 p-4 sm:p-5 card-lux flex items-center justify-between gap-3" data-testid="privacy-toggle">
                         <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl grid place-items-center bg-indigo-50 text-indigo-700 shrink-0">
-                                <Lock size={16} strokeWidth={1.7} />
+                            <div
+                                className="w-11 h-11 grid place-items-center shrink-0"
+                                style={{
+                                    background: "#3E5C9A",
+                                    color: "#fff",
+                                    border: "2px solid #0A0A0A",
+                                    borderRadius: 8,
+                                    transform: "rotate(-4deg)",
+                                }}
+                            >
+                                <Lock size={15} strokeWidth={2.2} />
                             </div>
                             <div className="min-w-0">
-                                <div className="font-heading font-semibold text-[14px] tracking-tight text-black inline-flex items-center gap-2">
+                                <div className="font-black tracking-tight inline-flex items-center gap-2" style={{ fontSize: 14, color: "#0A0A0A" }}>
                                     Conta privada
                                     {form.private && (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.12em] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                                            <ShieldCheck size={9} /> Ativo
+                                        <span
+                                            className="inline-flex items-center gap-1 font-mono font-black uppercase px-1.5 py-0.5"
+                                            style={{
+                                                fontSize: 10,
+                                                letterSpacing: "0.10em",
+                                                background: "#1F7A5A",
+                                                color: "#fff",
+                                                border: "1.5px solid #0A0A0A",
+                                                borderRadius: 999,
+                                            }}
+                                        >
+                                            <ShieldCheck size={9} strokeWidth={2.6} /> Ativo
                                         </span>
                                     )}
                                 </div>
-                                <div className="font-mono text-[11px] text-black/50 mt-0.5 leading-snug">
+                                <div className="font-mono text-[11px] mt-1.5 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
                                     Apenas seguidores aprovados podem ver as tuas publicações.
                                 </div>
                             </div>

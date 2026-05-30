@@ -54,37 +54,55 @@ export function LegalTab() {
                 />
                 <div className="lg:col-span-8 card-lux p-5">
                     <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-black/[0.04] grid place-items-center shrink-0 text-black"><Scale size={16} strokeWidth={1.7} /></div>
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{ background: "#0A0A0A", color: "#FFD93D", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        >
+                            <Scale size={16} strokeWidth={2.2} />
+                        </div>
                         <div className="min-w-0 flex-1">
-                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Encarregado de Proteção de Dados (DPO)</div>
-                            <p className="text-[12.5px] text-black/65 leading-relaxed mt-1">
+                            <div className="font-black tracking-tight" style={{ fontSize: 14, color: "#0A0A0A" }}>Encarregado de Proteção de Dados (DPO)</div>
+                            <p className="text-[12.5px] mt-2 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                                 Para exerceres qualquer um dos teus direitos, ou para qualquer questão sobre os teus dados pessoais.
                             </p>
                             <a
                                 href="mailto:dpo@lusorae.pt"
                                 data-testid="legal-dpo-email"
-                                className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 rounded-full bg-black/[0.05] hover:bg-black/[0.10] text-[12.5px] font-medium tap-shrink transition"
+                                className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 font-black uppercase tap-shrink"
+                                style={{
+                                    background: "#FFF4DC", color: "#0A0A0A",
+                                    border: "2.5px solid #0A0A0A",
+                                    boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                    borderRadius: 999,
+                                    fontSize: 12, letterSpacing: "0.04em",
+                                }}
                             >
-                                <ExternalLink size={12} /> dpo@lusorae.pt
+                                <ExternalLink size={12} strokeWidth={2.4} /> dpo@lusorae.pt
                             </a>
                         </div>
                     </div>
                 </div>
                 <div className="lg:col-span-4 card-lux p-5">
                     <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-black/[0.04] grid place-items-center shrink-0 text-black"><Building2 size={16} strokeWidth={1.7} /></div>
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{ background: "#C8261E", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        >
+                            <Building2 size={16} strokeWidth={2.2} />
+                        </div>
                         <div className="min-w-0">
                             <p className="type-overline mb-0">Autoridade de controlo</p>
-                            <p className="font-heading font-semibold text-[13px] tracking-tight text-black mt-1 leading-snug">
+                            <p className="font-black tracking-tight mt-2 leading-snug" style={{ fontSize: 13, color: "#0A0A0A" }}>
                                 Comissão Nacional de Proteção de Dados
                             </p>
                             <a
                                 href="https://www.cnpd.pt"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 mt-2 text-[12px] underline underline-offset-2 hover:text-black tap-shrink"
+                                className="inline-flex items-center gap-1 mt-2 font-mono font-black uppercase tap-shrink"
+                                style={{ fontSize: 11, letterSpacing: "0.10em", color: "#C8261E" }}
                             >
-                                www.cnpd.pt <ExternalLink size={10} />
+                                www.cnpd.pt <ExternalLink size={10} strokeWidth={2.4} />
                             </a>
                         </div>
                     </div>

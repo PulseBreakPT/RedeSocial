@@ -9,6 +9,7 @@ import { PtPageShell } from "../components/PtPageShell";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
+import { PT } from "./auth/AuthDecor";
 
 import { HubTab } from "./settings/HubTab";
 import { SecurityTab } from "./settings/SecurityTab";
@@ -287,9 +288,9 @@ export default function Settings() {
 
     return (
         <PtPageShell testid="settings-page" className="pb-32" doodles="minimal">
-            <PageHeader title="Definições" subtitle="Conta, segurança, dados e mais" back testid="settings-header">
+            <PageHeader title="Definições" back testid="settings-header">
                 {/* Mobile-only chip tabs */}
-                <div className="lg:hidden px-3 pb-2 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
+                <div className="lg:hidden px-3 pb-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderTop: `2.5px dashed ${PT.ink}` }}>
                     {filteredTabs.map((t) => {
                         const Icon = t.icon;
                         const active = tab === t.key;
@@ -298,11 +299,17 @@ export default function Settings() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 data-testid={`settings-tab-${t.key}`}
-                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition tap-shrink ${
-                                    active ? "tab-grad-on" : "border-transparent text-black/65 hover:text-black"
-                                }`}
+                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase tap-shrink transition-transform"
+                                style={{
+                                    background: active ? PT.ink : "#fff",
+                                    color: active ? PT.gold : PT.ink,
+                                    border: `2px solid ${PT.ink}`,
+                                    boxShadow: active ? `2.5px 2.5px 0 ${PT.gold}` : `2px 2px 0 ${PT.ink}`,
+                                    borderRadius: 999,
+                                    letterSpacing: "0.06em",
+                                }}
                             >
-                                <Icon size={13} /> {t.short || t.label}
+                                <Icon size={12} strokeWidth={2.6} /> {t.short || t.label}
                             </button>
                         );
                     })}
@@ -310,16 +317,34 @@ export default function Settings() {
             </PageHeader>
 
             <div className="lg:grid lg:grid-cols-[300px_1fr] lg:gap-0">
-                {/* Desktop vertical sidebar — SSS tier */}
-                <aside className="hidden lg:flex flex-col border-r border-black/[0.06] min-h-[calc(100vh-80px)] sticky top-0 self-start py-6 px-3 bg-gradient-to-b from-white to-black/[0.015]">
+                {/* Desktop vertical sidebar — fanzine */}
+                <aside
+                    className="hidden lg:flex flex-col min-h-[calc(100vh-80px)] sticky top-0 self-start py-6 px-3"
+                    style={{
+                        borderRight: `2.5px solid ${PT.ink}`,
+                        background: PT.cream,
+                    }}
+                >
                     {/* Brand row */}
-                    <div className="px-3 pb-4 flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-black text-white grid place-items-center shrink-0 shadow-md">
-                            <SettingsIcon size={15} strokeWidth={1.8} />
+                    <div className="px-3 pb-5 flex items-center gap-3">
+                        <div
+                            className="w-11 h-11 grid place-items-center shrink-0"
+                            style={{
+                                background: PT.ink,
+                                color: PT.gold,
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.red}`,
+                                borderRadius: 10,
+                                transform: "rotate(-4deg)",
+                            }}
+                        >
+                            <SettingsIcon size={17} strokeWidth={2.4} />
                         </div>
                         <div className="min-w-0">
-                            <p className="type-overline mb-0">Definições</p>
-                            <p className="font-display text-[15px] font-bold tracking-tight text-black leading-none mt-0.5 truncate">
+                            <p className="font-mono font-black uppercase mb-0.5" style={{ fontSize: 10, letterSpacing: "0.16em", color: PT.red }}>
+                                // DEFINIÇÕES
+                            </p>
+                            <p className="font-black tracking-tight leading-none truncate" style={{ fontSize: 16, color: PT.ink }}>
                                 {user?.name?.split(" ")[0] || user?.username || "Utilizador"}
                             </p>
                         </div>
@@ -328,7 +353,7 @@ export default function Settings() {
                     {/* Search */}
                     <div className="px-2 mb-4">
                         <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none" strokeWidth={1.8} />
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: PT.ink }} strokeWidth={2.4} />
                             <input
                                 ref={searchRef}
                                 type="text"
@@ -336,24 +361,40 @@ export default function Settings() {
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Pesquisar…"
                                 data-testid="settings-search"
-                                className="w-full pl-9 pr-9 py-2.5 bg-black/[0.04] hover:bg-black/[0.05] focus:bg-white focus:border-black/30 rounded-xl border border-transparent text-[13px] outline-none transition"
+                                className="w-full pl-9 pr-9 py-2.5 text-[13px] outline-none font-medium"
+                                style={{
+                                    background: "#fff",
+                                    color: PT.ink,
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                    borderRadius: 10,
+                                }}
                             />
                             {search ? (
                                 <button
                                     onClick={() => { setSearch(""); searchRef.current?.focus(); }}
                                     data-testid="settings-search-clear"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-black/40 hover:text-black/80 p-1 tap-shrink"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 tap-shrink"
+                                    style={{ color: PT.red }}
                                     aria-label="Limpar pesquisa"
                                 >
-                                    <X size={13} />
+                                    <X size={13} strokeWidth={2.6} />
                                 </button>
                             ) : (
-                                <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 rounded bg-white border border-black/[0.10] text-[10px] font-mono text-black/50">/</kbd>
+                                <kbd
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 text-[10px] font-mono font-black"
+                                    style={{
+                                        background: PT.gold,
+                                        color: PT.ink,
+                                        border: `1.5px solid ${PT.ink}`,
+                                        borderRadius: 4,
+                                    }}
+                                >/</kbd>
                             )}
                         </div>
                     </div>
 
-                    <nav className="flex flex-col gap-1 px-1">
+                    <nav className="flex flex-col gap-2 px-1">
                         {filteredTabs.map((t) => {
                             const Icon = t.icon;
                             const active = tab === t.key;
@@ -362,40 +403,57 @@ export default function Settings() {
                                     key={t.key}
                                     onClick={() => setTab(t.key)}
                                     data-testid={`settings-side-${t.key}`}
-                                    className={`relative w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition group tap-shrink ${
-                                        active ? "bg-black text-white shadow-[0_8px_20px_-12px_rgba(13,13,16,0.35)]" : "text-black/65 hover:bg-black/[0.04] hover:text-black"
-                                    }`}
+                                    className="relative w-full flex items-start gap-3 px-3 py-3 text-left tap-shrink transition-transform"
+                                    style={{
+                                        background: active ? PT.ink : "#fff",
+                                        color: active ? PT.gold : PT.ink,
+                                        border: `2.5px solid ${PT.ink}`,
+                                        boxShadow: active ? `3px 3px 0 ${PT.red}` : `2.5px 2.5px 0 ${PT.ink}`,
+                                        borderRadius: 10,
+                                    }}
                                 >
-                                    {active && (
-                                        <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-8 rounded-r-full bg-amber-400" />
-                                    )}
-                                    <div className={`w-9 h-9 rounded-lg grid place-items-center shrink-0 mt-0.5 transition ${
-                                        active ? "bg-white/15 text-white" : "bg-black/[0.04] text-black/65 group-hover:bg-black/[0.07]"
-                                    }`}>
-                                        <Icon size={15} strokeWidth={active ? 2 : 1.7} />
+                                    <div
+                                        className="w-9 h-9 grid place-items-center shrink-0 mt-0.5"
+                                        style={{
+                                            background: active ? PT.gold : PT.cream,
+                                            color: PT.ink,
+                                            border: `2px solid ${PT.ink}`,
+                                            borderRadius: 7,
+                                            transform: "rotate(-4deg)",
+                                        }}
+                                    >
+                                        <Icon size={15} strokeWidth={2.4} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className={`text-[13.5px] tracking-tight ${active ? "font-bold" : "font-semibold"}`}>{t.label}</div>
+                                        <div className="text-[13.5px] tracking-tight font-black">{t.label}</div>
                                         {t.desc && (
-                                            <div className={`text-[11px] leading-snug mt-0.5 line-clamp-2 ${active ? "text-white/70" : "text-black/45"}`}>{t.desc}</div>
+                                            <div className="text-[11px] leading-snug mt-1 line-clamp-2 font-medium" style={{ color: active ? "rgba(255,244,220,0.7)" : "rgba(10,10,10,0.55)" }}>{t.desc}</div>
                                         )}
                                     </div>
                                 </button>
                             );
                         })}
                         {filteredTabs.length === 0 && (
-                            <div className="px-3 py-6 text-center text-[12.5px] text-black/45">
-                                Sem resultados para “{search}”.
+                            <div className="px-3 py-6 text-center text-[12.5px] font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                Sem resultados para "{search}".
                             </div>
                         )}
                     </nav>
 
                     {/* Footer mini help */}
-                    <div className="mt-auto px-3 pt-4 hairline-t mx-1 mt-4">
-                        <p className="text-[10.5px] font-mono uppercase tracking-wider text-black/40 mb-1.5">Atalhos</p>
-                        <ul className="text-[11.5px] text-black/55 space-y-1">
-                            <li className="flex items-center justify-between gap-2"><span>Focar pesquisa</span><kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] border border-black/[0.08]">/</kbd></li>
-                            <li className="flex items-center justify-between gap-2"><span>Fechar modal</span><kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-black/[0.04] border border-black/[0.08]">esc</kbd></li>
+                    <div className="mt-auto px-3 pt-4 mx-1 mt-4" style={{ borderTop: `2.5px dashed ${PT.ink}` }}>
+                        <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 10, letterSpacing: "0.14em", color: PT.red }}>
+                            // ATALHOS
+                        </p>
+                        <ul className="text-[11.5px] space-y-1.5 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
+                            <li className="flex items-center justify-between gap-2">
+                                <span>Focar pesquisa</span>
+                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-black" style={{ background: PT.gold, color: PT.ink, border: `1.5px solid ${PT.ink}`, borderRadius: 4 }}>/</kbd>
+                            </li>
+                            <li className="flex items-center justify-between gap-2">
+                                <span>Fechar modal</span>
+                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-black" style={{ background: PT.gold, color: PT.ink, border: `1.5px solid ${PT.ink}`, borderRadius: 4 }}>esc</kbd>
+                            </li>
                         </ul>
                     </div>
                 </aside>
@@ -403,25 +461,51 @@ export default function Settings() {
                 {/* Main content area */}
                 <main className="min-w-0">
                     {/* Group header */}
-                    <div className="hidden lg:flex items-end justify-between gap-4 flex-wrap px-4 lg:px-8 pt-6 pb-3 border-b border-black/[0.06] bg-gradient-to-r from-transparent via-transparent to-black/[0.02]">
+                    <div className="hidden lg:flex items-end justify-between gap-4 flex-wrap px-4 lg:px-8 pt-6 pb-4" style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
                         <div className="min-w-0 flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${activeGroup.accent} border border-black/[0.06] grid place-items-center shrink-0`}>
-                                <ActiveIcon size={20} strokeWidth={1.7} className="text-black/80" />
+                            <div
+                                className="w-14 h-14 grid place-items-center shrink-0"
+                                style={{
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                    borderRadius: 14,
+                                    transform: "rotate(-4deg)",
+                                }}
+                            >
+                                <ActiveIcon size={22} strokeWidth={2.4} />
                             </div>
                             <div className="min-w-0">
-                                <p className="type-overline mb-0">Definições</p>
-                                <h1 className="font-display text-[26px] lg:text-[32px] font-bold tracking-tight text-black leading-tight mt-1">
+                                <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                                    // DEFINIÇÕES
+                                </p>
+                                <h1
+                                    className="font-black tracking-[-0.025em] leading-tight"
+                                    style={{ fontSize: "clamp(24px, 3.5vw, 36px)", color: PT.ink }}
+                                >
                                     {activeGroup.label}
                                 </h1>
                                 {activeGroup.desc && (
-                                    <p className="text-[13px] text-black/55 leading-relaxed mt-1.5 max-w-2xl">{activeGroup.desc}</p>
+                                    <p className="text-[13.5px] leading-relaxed mt-2 max-w-2xl font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{activeGroup.desc}</p>
                                 )}
                             </div>
                         </div>
                         {isDirty && (
-                            <span className="text-[10.5px] font-mono tracking-wider uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                alterações por guardar
+                            <span
+                                className="font-mono font-black uppercase px-3 py-1.5 inline-flex items-center gap-2"
+                                style={{
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `2.5px 2.5px 0 ${PT.red}`,
+                                    fontSize: 10.5,
+                                    letterSpacing: "0.10em",
+                                    transform: "rotate(-1deg)",
+                                }}
+                            >
+                                <span className="w-2 h-2 animate-pulse" style={{ background: PT.red, border: `1.5px solid ${PT.ink}`, borderRadius: 999 }} />
+                                // POR GUARDAR
                             </span>
                         )}
                     </div>
@@ -429,8 +513,8 @@ export default function Settings() {
                     {/* Sub-section jump nav */}
                     {activeGroup.sections.length > 1 && activeGroup.sections.some((s) => s.label) && (
                         <div className="px-4 lg:px-8 pt-5 pb-1 flex items-center gap-2 flex-wrap">
-                            <span className="text-[10.5px] uppercase tracking-[0.16em] font-mono text-black/40">
-                                Nesta secção
+                            <span className="font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                                // NESTA SECÇÃO
                             </span>
                             {activeGroup.sections.map((s) => s.label && (
                                 <a
@@ -441,7 +525,15 @@ export default function Settings() {
                                         document.getElementById(`sec-${s.key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                                     }}
                                     data-testid={`settings-jump-${s.key}`}
-                                    className="text-[12px] font-medium px-3 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-black/70 hover:text-black transition tap-shrink"
+                                    className="text-[11.5px] font-black uppercase px-3 py-1.5 tap-shrink transition-transform hover:-translate-y-0.5"
+                                    style={{
+                                        background: "#fff",
+                                        color: PT.ink,
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        borderRadius: 999,
+                                        letterSpacing: "0.06em",
+                                    }}
                                 >
                                     {s.label}
                                 </a>
@@ -455,14 +547,28 @@ export default function Settings() {
                             key={sec.key}
                             id={`sec-${sec.key}`}
                             data-testid={`settings-section-${sec.key}`}
-                            className={idx > 0 ? "mt-4 pt-6 border-t border-black/[0.06]" : ""}
+                            className={idx > 0 ? "mt-4 pt-6" : ""}
+                            style={idx > 0 ? { borderTop: `2.5px dashed ${PT.ink}` } : undefined}
                         >
                             {sec.label && idx > 0 && (
-                                <div className="px-4 lg:px-8 -mb-1 flex items-center gap-2">
-                                    {sec.key === "aparencia" && <Palette size={14} className="text-black/55" />}
-                                    {sec.key === "seg" && <Shield size={14} className="text-black/55" />}
-                                    {sec.key === "legal" && <Shield size={14} className="text-black/55" />}
-                                    <h2 className="font-heading text-[18px] tracking-tight text-black font-bold">
+                                <div className="px-4 lg:px-8 -mb-1 flex items-center gap-2.5">
+                                    <span
+                                        className="w-8 h-8 grid place-items-center"
+                                        style={{
+                                            background: PT.gold,
+                                            color: PT.ink,
+                                            border: `2.5px solid ${PT.ink}`,
+                                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                                            borderRadius: 8,
+                                            transform: "rotate(-4deg)",
+                                        }}
+                                    >
+                                        {sec.key === "aparencia" && <Palette size={14} strokeWidth={2.4} />}
+                                        {sec.key === "seg" && <Shield size={14} strokeWidth={2.4} />}
+                                        {sec.key === "legal" && <Shield size={14} strokeWidth={2.4} />}
+                                        {!["aparencia", "seg", "legal"].includes(sec.key) && <SettingsIcon size={14} strokeWidth={2.4} />}
+                                    </span>
+                                    <h2 className="font-black tracking-tight" style={{ fontSize: 19, color: PT.ink }}>
                                         {sec.label}
                                     </h2>
                                 </div>
@@ -507,16 +613,41 @@ export default function Settings() {
                     className="fixed left-1/2 -translate-x-1/2 bottom-6 lg:bottom-5 z-40 anim-slide-up"
                     data-testid="unsaved-bar"
                 >
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-black text-white shadow-[0_20px_50px_-10px_rgba(13,13,16,0.45)] border border-white/10 backdrop-blur">
-                        <div className="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-amber-300">
-                            <Check size={13} strokeWidth={2.2} />
+                    <div
+                        className="flex items-center gap-3 px-4 py-3"
+                        style={{
+                            background: PT.ink,
+                            color: PT.cream,
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `5px 5px 0 ${PT.gold}, 5px 5px 0 2.5px ${PT.ink}`,
+                            borderRadius: 14,
+                        }}
+                    >
+                        <div
+                            className="w-8 h-8 grid place-items-center"
+                            style={{
+                                background: PT.gold,
+                                color: PT.ink,
+                                border: `2px solid ${PT.gold}`,
+                                borderRadius: 999,
+                                transform: "rotate(-4deg)",
+                            }}
+                        >
+                            <Check size={14} strokeWidth={2.8} />
                         </div>
-                        <span className="text-[13px] tracking-tight">Alterações por guardar</span>
-                        <div className="flex items-center gap-1.5 ml-2">
+                        <span className="text-[13px] font-black tracking-tight uppercase" style={{ letterSpacing: "0.04em" }}>// Alterações por guardar</span>
+                        <div className="flex items-center gap-2 ml-2">
                             <button
                                 onClick={discard}
                                 data-testid="unsaved-discard"
-                                className="px-3 py-1.5 rounded-full text-[12px] font-medium text-white/70 hover:text-white hover:bg-white/10 transition tap-shrink"
+                                className="px-3 py-1.5 text-[11.5px] font-black uppercase tap-shrink transition-colors"
+                                style={{
+                                    background: "transparent",
+                                    color: "rgba(255,244,220,0.75)",
+                                    border: `2px solid rgba(255,244,220,0.35)`,
+                                    borderRadius: 999,
+                                    letterSpacing: "0.06em",
+                                }}
                             >
                                 Descartar
                             </button>
@@ -524,7 +655,15 @@ export default function Settings() {
                                 onClick={save}
                                 disabled={busy}
                                 data-testid="unsaved-save"
-                                className="px-4 py-1.5 rounded-full text-[12px] font-semibold bg-white text-black hover:bg-white/90 disabled:opacity-50 transition tap-shrink"
+                                className="px-4 py-1.5 text-[11.5px] font-black uppercase tap-shrink disabled:opacity-50"
+                                style={{
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    border: `2px solid ${PT.gold}`,
+                                    boxShadow: `2px 2px 0 ${PT.red}`,
+                                    borderRadius: 999,
+                                    letterSpacing: "0.06em",
+                                }}
                             >
                                 {busy ? "A guardar…" : "Guardar"}
                             </button>

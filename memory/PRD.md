@@ -99,3 +99,24 @@ Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
   - Wrap em PtPageShell aplicado a: Explore, Notifications, Mesas, Bookmarks, Topologia, TagPage, Settings, Trending, Premium, SeriesPage, StoryArchive, Community, PostDetail, Messages
   - Communities/Drafts/Scheduled/Visitors herdam automaticamente do PageShell redesenhado
   - Smoke test: 13 rotas validadas em desktop 1280px com login real (user `reskin@test.pt`)
+
+- **2026-02-30 (parte 5)** — Continuação fanzine PT em Premium, Notifications, Explore, Feed, Centro Legal (CSS prose-legal + legal-viz-*); remoção de eyebrows não usados (// AO VIVO, // SEM · NOVIDADES…).
+
+- **2026-02-31** — **P0 Settings + Profile · Fanzine PT completo**:
+  - **CSS foundation** (`/app/frontend/src/index.css`): redefinido `.card-lux`, `.btn-obsidian`, `.btn-silver`, `.vm-input`, `.type-overline`, `.hairline-t/b` para vocabulário Fanzine (bordas 2.5px ink, sombras offset 3px ink/red, paleta PT, cantos 10-12px, eyebrow mono `//` automático em `.type-overline`). Removido bloco CSS duplicado corrompido (linhas 3002-3013).
+  - **`/app/frontend/src/pages/settings/_shared.js`**: reescrito SectionHeader (idx em sticker rotated com offset), ToggleRow, SwitchPill (chunky), LinkRow, StatusPill (5 tons PT: success/warning/danger/neutral/accent).
+  - **HubTab.js**: hero com fundo cream + tape gold + border 3px + offset 5px; StatCard/ActionTile/MicroStat agora com tints PT (azul/red/gold/green) em ícones rotated -4deg.
+  - **ContaTab.js**: cover azul sólida + tape; avatar com border 3px + offset 4px; textarea cream + ink + offset; Conta Privada com sticker verde "Ativo".
+  - **AppearanceTab.js**: OptionCard fanzine (gold quando ativo + offset red); seletor de idiomas com active black/gold + offset red.
+  - **NotifTab.js**: tints PT em todos NOTIF_TYPES; Boa Noite (azul), Cafezinho (gold), Som (verde), Vibração (red); manifesto link cream + offset red.
+  - **PrivacyTab.js**: 4 toggles com tints PT (verde/gold/azul/red).
+  - **SecurityTab.js**: TwoFA setup modal e disable modal totalmente fanzine; sessões com tint verde (atual) ou cream (outras); recovery email (gold) + login alerts (azul) com tints PT; botões regenerate/disable em pill mono uppercase.
+  - **DataTab.js**: ExportTile JSON (azul) / CSV (verde); DataRow cache (gold) / pesquisas (azul) / imagens (red); Danger Zone com border red 3px + offset ink + número sticker "03" rotated; delete confirm form fanzine.
+  - **LegalTab.js**: DPO card (ink + gold) e CNPD card (red + white) com chunky borders.
+  - **Profile.js**: BlockedWallView reescrita em fanzine (banner listrado dashed cream/ink, avatar placeholder com border 3px + offset, wall card border red 3px + offset ink, botões pill fanzine).
+  - **profile/IdentityCard.js**: avatar com border 3px + offset 4px; botões fav (gold)/selo (red)/share/quick-msg em pill chunky com offset; popover quick-msg fanzine; textarea cream + ink.
+  - **profile/ProfileTabBar.js**: rewrite completo — pills com gold-on-ink-active e offset red; bordas dashed top/bottom.
+  - **profile/MobileActionBar.js**: barra mobile com border-top 3px ink; botões selo/share/message em pills chunky com offset.
+  - **profile/ProfileActionRow.js**: blocked view com border 3px red + offset ink; normal view (Seguir black-gold-red / A seguir verde / Levantar muro cream-red).
+  - **profile/ProfileMoreMenu.js**: kebab trigger em pill chunky; dropdown com border 2.5px + offset 5px; MenuRow fanzine (active black/gold); ReportModal totalmente fanzine com 2-col grid de reasons.
+  - **Testing**: criado utilizador de teste `tester01@lusorae.pt` / `Test1234!` (em `/app/memory/test_credentials.md`); validado visualmente via screenshot em /settings e /u/tester01 — ambos renderizam Fanzine PT consistente.

@@ -13,28 +13,28 @@ const TOGGLES = [
         icon: Eye,
         label: "Mostrar quando estou online",
         sub: "Ponto verde no avatar + estado nas listas de pessoas",
-        tint: "bg-emerald-50 text-emerald-700",
+        tintBg: "#1F7A5A", tintFg: "#fff",
     },
     {
         k: "priv_typing",
         icon: Pencil,
         label: "Indicador a escrever",
         sub: "‘Está a escrever…’ visível em conversas privadas",
-        tint: "bg-amber-50 text-amber-700",
+        tintBg: "#FFD93D", tintFg: "#0A0A0A",
     },
     {
         k: "priv_search",
         icon: Search,
         label: "Aparecer em pesquisas",
         sub: "O teu @ aparece nas buscas e nas sugestões",
-        tint: "bg-indigo-50 text-indigo-700",
+        tintBg: "#3E5C9A", tintFg: "#fff",
     },
     {
         k: "priv_pulse",
         icon: Activity,
         label: "Contribuir para o pulso social",
         sub: "Os teus posts somam no mapa coletivo ‘a tua cidade está ativa’. Nunca te identifica.",
-        tint: "bg-rose-50 text-rose-700",
+        tintBg: "#C8261E", tintFg: "#fff",
     },
 ];
 
@@ -61,14 +61,23 @@ export function PrivacyTab({ prefs, setPref }) {
 function PrivacyToggle({ entry, prefs, setPref }) {
     const Icon = entry.icon;
     return (
-        <div className="card-lux p-4 sm:p-5 hover:shadow-md transition h-full flex flex-col justify-between gap-3">
+        <div className="card-lux p-4 sm:p-5 h-full flex flex-col justify-between gap-3">
             <div className="flex items-start gap-3">
-                <div className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${entry.tint}`}>
-                    <Icon size={16} strokeWidth={1.7} />
+                <div
+                    className="w-11 h-11 grid place-items-center shrink-0"
+                    style={{
+                        background: entry.tintBg,
+                        color: entry.tintFg,
+                        border: "2px solid #0A0A0A",
+                        borderRadius: 8,
+                        transform: "rotate(-4deg)",
+                    }}
+                >
+                    <Icon size={15} strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0">
-                    <div className="font-heading font-semibold text-[14px] tracking-tight text-black">{entry.label}</div>
-                    <div className="font-mono text-[11px] text-black/50 mt-1 leading-snug">{entry.sub}</div>
+                    <div className="font-black tracking-tight" style={{ fontSize: 14, color: "#0A0A0A" }}>{entry.label}</div>
+                    <div className="font-mono text-[11px] mt-1.5 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>{entry.sub}</div>
                 </div>
             </div>
             <div className="flex justify-end">

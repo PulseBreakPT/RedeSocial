@@ -145,30 +145,45 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
         finally { setBusy(null); }
     };
 
-    // ====== BLOCKED VIEW — colapsa a barra para um único botão ======
+    // ====== BLOCKED VIEW — colapsa a barra para um único botão · FANZINE ======
     if (blocked) {
         return (
             <div
                 className="px-4 lg:px-6 mt-4"
                 data-testid="profile-action-row-blocked"
             >
-                <div className="rounded-2xl border border-red-200/70 bg-red-50/40 px-4 py-3 flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 text-red-700">
-                        <ShieldAlert size={16} strokeWidth={1.8} />
-                        <span className="font-heading font-semibold text-[13.5px] tracking-tight">
+                <div
+                    className="px-4 py-3 flex flex-wrap items-center gap-3"
+                    style={{
+                        background: "#FFF4DC",
+                        border: "3px solid #C8261E",
+                        boxShadow: "4px 4px 0 #0A0A0A",
+                        borderRadius: 14,
+                    }}
+                >
+                    <div className="flex items-center gap-2" style={{ color: "#C8261E" }}>
+                        <ShieldAlert size={16} strokeWidth={2.4} />
+                        <span className="font-black tracking-tight" style={{ fontSize: 13.5 }}>
                             Muro levantado com {firstName}
                         </span>
                     </div>
-                    <p className="text-[12px] text-red-700/75 leading-snug flex-1 min-w-[180px]">
+                    <p className="text-[12px] leading-snug flex-1 min-w-[180px] font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                         Não se veem mutuamente. Podes voltar a abrir quando quiseres.
                     </p>
                     <button
                         onClick={doBlock}
                         disabled={busy === "block"}
                         data-testid="action-unblock"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-red-300 bg-white hover:bg-red-100 text-red-700 text-[12.5px] font-heading font-medium tap-shrink transition disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 font-black uppercase tap-shrink disabled:opacity-50"
+                        style={{
+                            background: "#fff", color: "#C8261E",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            borderRadius: 999,
+                            fontSize: 12, letterSpacing: "0.04em",
+                        }}
                     >
-                        {busy === "block" ? <Loader2 size={13} className="animate-spin" /> : <ShieldOff size={13} strokeWidth={1.8} />}
+                        {busy === "block" ? <Loader2 size={13} className="animate-spin" /> : <ShieldOff size={13} strokeWidth={2.4} />}
                         Voltar a abrir
                     </button>
                 </div>
@@ -176,27 +191,22 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
         );
     }
 
-    // ====== NORMAL VIEW — Seguir · Mensagem · Levantar muro ======
-    let followClass = "btn-obsidian";
-    let followLabel = "Seguir";
-    let followIcon = <UserPlus size={14} strokeWidth={1.9} />;
-
+    // ====== NORMAL VIEW — Seguir · Mensagem · Levantar muro · FANZINE ======
+    let followStyle, followLabel, followIcon;
     if (isFollowing) {
         if (hover) {
-            followClass = "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100";
+            followStyle = { background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A" };
             followLabel = "Deixar de seguir";
-            followIcon = <UserMinus size={14} strokeWidth={1.9} />;
-        } else if (isMutual) {
-            followClass = "chip-on !text-white";
-            followLabel = "Seguem-se";
-            followIcon = <Check size={14} strokeWidth={2.4} />;
+            followIcon = <UserMinus size={14} strokeWidth={2.4} />;
         } else {
-            followClass = "chip-on !text-white";
-            followLabel = "A seguir";
-            followIcon = <Check size={14} strokeWidth={2.4} />;
+            followStyle = { background: "#1F7A5A", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A" };
+            followLabel = isMutual ? "Seguem-se" : "A seguir";
+            followIcon = <Check size={14} strokeWidth={2.6} />;
         }
-    } else if (followsMe) {
-        followLabel = "Seguir de volta";
+    } else {
+        followStyle = { background: "#0A0A0A", color: "#FFD93D", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #C8261E" };
+        followLabel = followsMe ? "Seguir de volta" : "Seguir";
+        followIcon = <UserPlus size={14} strokeWidth={2.4} />;
     }
 
     return (
@@ -204,7 +214,15 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
             className="px-4 lg:px-6 mt-4"
             data-testid="profile-action-row"
         >
-            <div className="rounded-2xl border border-black/[0.07] bg-white/85 backdrop-blur-sm grain isolate p-3 sm:p-3.5">
+            <div
+                className="grain isolate p-3 sm:p-3.5"
+                style={{
+                    background: "#fff",
+                    border: "2.5px solid #0A0A0A",
+                    boxShadow: "4px 4px 0 #0A0A0A",
+                    borderRadius: 12,
+                }}
+            >
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
                     {/* Seguir / Deixar de seguir */}
                     <button
@@ -216,7 +234,8 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         disabled={busy === "follow"}
                         aria-pressed={isFollowing}
                         data-testid={isFollowing ? "action-following" : "action-follow"}
-                        className={`h-11 px-5 rounded-full inline-flex items-center justify-center gap-2 font-heading font-medium text-[13px] tracking-tight transition tap-shrink disabled:opacity-60 ${followClass}`}
+                        className="h-11 px-5 inline-flex items-center justify-center gap-2 font-black uppercase tap-shrink disabled:opacity-60"
+                        style={{ ...followStyle, borderRadius: 999, fontSize: 12.5, letterSpacing: "0.04em" }}
                     >
                         {busy === "follow" ? <Loader2 size={14} className="animate-spin" /> : followIcon}
                         <span className="whitespace-nowrap">{followLabel}</span>
@@ -227,24 +246,38 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         onClick={onMessage}
                         data-testid="action-message"
                         title={`Enviar mensagem a ${firstName}`}
-                        className="h-11 px-5 rounded-full inline-flex items-center justify-center gap-2 border border-black/[0.12] hover:border-black/35 hover:bg-black/[0.03] text-black font-heading font-medium text-[13px] tracking-tight tap-shrink transition"
+                        className="h-11 px-5 inline-flex items-center justify-center gap-2 font-black uppercase tap-shrink"
+                        style={{
+                            background: "#fff", color: "#0A0A0A",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "3px 3px 0 #0A0A0A",
+                            borderRadius: 999,
+                            fontSize: 12.5, letterSpacing: "0.04em",
+                        }}
                     >
-                        <MessageCircleHeart size={14} strokeWidth={1.8} />
+                        <MessageCircleHeart size={14} strokeWidth={2.2} />
                         <span className="whitespace-nowrap">Mensagem</span>
                     </button>
 
-                    {/* Levantar muro — vermelho */}
+                    {/* Levantar muro · FANZINE vermelho */}
                     <button
                         onClick={doBlock}
                         disabled={busy === "block"}
                         data-testid="action-block"
                         title={`Levantar muro com ${firstName}`}
-                        className="h-11 px-4 rounded-full inline-flex items-center justify-center gap-1.5 border border-red-200 bg-red-50/60 text-red-600 hover:bg-red-100 hover:border-red-300 font-heading font-medium text-[12.5px] tracking-tight tap-shrink transition disabled:opacity-50"
+                        className="h-11 px-4 inline-flex items-center justify-center gap-1.5 font-black uppercase tap-shrink disabled:opacity-50"
+                        style={{
+                            background: "#FFF4DC", color: "#C8261E",
+                            border: "2.5px solid #C8261E",
+                            boxShadow: "3px 3px 0 #0A0A0A",
+                            borderRadius: 999,
+                            fontSize: 12, letterSpacing: "0.04em",
+                        }}
                     >
                         {busy === "block" ? (
                             <Loader2 size={13} className="animate-spin" />
                         ) : (
-                            <ShieldAlert size={13} strokeWidth={2} />
+                            <ShieldAlert size={13} strokeWidth={2.4} />
                         )}
                         <span className="hidden sm:inline whitespace-nowrap">Levantar muro</span>
                         <span className="sm:hidden whitespace-nowrap">Muro</span>
@@ -253,9 +286,8 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
 
                 {/* Hint — quando ela já te segue mas ainda não retribuíste */}
                 {!isFollowing && followsMe && (
-                    <p className="mt-2 text-[11.5px] text-black/55 font-mono leading-snug">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 align-middle" />
-                        {firstName} segue-te — segue de volta?
+                    <p className="mt-2.5 font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8261E" }}>
+                        // {firstName} SEGUE-TE — SEGUE DE VOLTA?
                     </p>
                 )}
             </div>

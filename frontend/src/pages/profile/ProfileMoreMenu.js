@@ -18,16 +18,20 @@ const REASONS = [
 ];
 
 function MenuRow({ icon: Icon, label, onClick, danger, busy, active }) {
+    const bg = danger ? "transparent" : active ? "#0A0A0A" : "transparent";
+    const fg = danger ? "#C8261E" : active ? "#FFD93D" : "#0A0A0A";
     return (
         <button
             onClick={onClick} disabled={busy}
-            className={`w-full text-left px-3 py-2.5 text-[13px] font-mono inline-flex items-center gap-2 transition ${
-                danger ? "text-red-600 hover:bg-red-50"
-                : active ? "bg-black text-white hover:bg-black/90"
-                : "text-black/80 hover:bg-black/[0.04]"
-            }`}
+            className="w-full text-left px-3 py-2.5 inline-flex items-center gap-2 font-black uppercase transition-colors tap-shrink"
+            style={{
+                background: bg,
+                color: fg,
+                fontSize: 12,
+                letterSpacing: "0.04em",
+            }}
         >
-            {busy ? <Spinner size={12} /> : <Icon size={13} />} {label}
+            {busy ? <Spinner size={12} /> : <Icon size={13} strokeWidth={2.4} />} {label}
         </button>
     );
 }
@@ -37,42 +41,78 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
     const [detail, setDetail] = useState("");
     const [busy, setBusy] = useState(false);
     return (
-        <div className="fixed inset-0 z-[400] bg-black/45 backdrop-blur-sm grid place-items-center p-4 anim-fade-up">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-                <div className="flex items-center justify-between mb-3">
+        <div className="fixed inset-0 z-[400] grid place-items-center p-4 anim-fade-up" style={{ background: "rgba(10,10,10,0.55)" }}>
+            <div
+                className="max-w-md w-full p-6"
+                style={{
+                    background: "#fff",
+                    border: "3px solid #0A0A0A",
+                    boxShadow: "6px 6px 0 #C8261E",
+                    borderRadius: 14,
+                }}
+            >
+                <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="type-overline">Reportar</p>
-                        <h3 className="font-display text-[20px] tracking-tight">{targetLabel}</h3>
+                        <h3 className="font-black tracking-tight mt-1.5" style={{ fontSize: 20, color: "#0A0A0A" }}>{targetLabel}</h3>
                     </div>
-                    <button onClick={onCancel} className="text-black/40 hover:text-black tap-shrink"><X size={18} /></button>
+                    <button
+                        onClick={onCancel}
+                        className="w-9 h-9 grid place-items-center tap-shrink"
+                        style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    >
+                        <X size={14} strokeWidth={2.4} />
+                    </button>
                 </div>
-                <div className="space-y-1 mb-3">
-                    {REASONS.map((r) => (
-                        <button
-                            key={r.key}
-                            onClick={() => setReason(r.key)}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-[13.5px] font-mono transition ${
-                                reason === r.key ? "bg-black text-white" : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
-                            }`}
-                        >
-                            {r.label}
-                        </button>
-                    ))}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    {REASONS.map((r) => {
+                        const active = reason === r.key;
+                        return (
+                            <button
+                                key={r.key}
+                                onClick={() => setReason(r.key)}
+                                className="text-left px-3 py-2 font-black uppercase tap-shrink"
+                                style={{
+                                    background: active ? "#0A0A0A" : "#fff",
+                                    color: active ? "#FFD93D" : "#0A0A0A",
+                                    border: "2px solid #0A0A0A",
+                                    boxShadow: active ? "2px 2px 0 #C8261E" : "1.5px 1.5px 0 #0A0A0A",
+                                    borderRadius: 8,
+                                    fontSize: 11.5,
+                                    letterSpacing: "0.04em",
+                                }}
+                            >
+                                {r.label}
+                            </button>
+                        );
+                    })}
                 </div>
                 <textarea
                     value={detail} onChange={(e) => setDetail(e.target.value)}
                     rows={3} maxLength={400}
                     placeholder="Detalhes (opcional)…"
-                    className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3 py-2 text-[13.5px] focus:bg-white focus:border-black/30 focus:outline-none resize-none mb-3"
+                    className="w-full px-3 py-2 focus:outline-none resize-none mb-3 font-medium"
+                    style={{
+                        background: "#FFF4DC",
+                        color: "#0A0A0A",
+                        border: "2.5px solid #0A0A0A",
+                        boxShadow: "2px 2px 0 #0A0A0A",
+                        borderRadius: 10,
+                        fontSize: 13.5,
+                    }}
                 />
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 text-[11px] font-mono uppercase tracking-[0.14em] text-black/60 hover:text-black rounded-full hover:bg-black/[0.04]">
+                    <button
+                        onClick={onCancel}
+                        className="px-4 py-2 font-black uppercase tap-shrink"
+                        style={{ fontSize: 11, letterSpacing: "0.04em", color: "rgba(10,10,10,0.6)" }}
+                    >
                         Cancelar
                     </button>
                     <button
                         onClick={async () => { setBusy(true); await onSubmit({ reason, detail }); setBusy(false); }}
                         disabled={busy}
-                        className="btn-obsidian text-[11px] px-5 py-2 disabled:opacity-40 inline-flex items-center gap-1.5"
+                        className="btn-obsidian px-5 py-2 disabled:opacity-40 inline-flex items-center gap-1.5"
                     >
                         {busy && <Spinner size={11} />} Submeter
                     </button>
@@ -180,12 +220,26 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                     onClick={() => setOpen((o) => !o)}
                     data-testid="profile-more-btn"
                     title="Mais opções"
-                    className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
+                    className="w-10 h-10 grid place-items-center tap-shrink"
+                    style={{
+                        background: "#fff", color: "#0A0A0A",
+                        border: "2.5px solid #0A0A0A",
+                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                        borderRadius: 999,
+                    }}
                 >
-                    <MoreHorizontal size={16} />
+                    <MoreHorizontal size={15} strokeWidth={2.2} />
                 </button>
                 {open && (
-                    <div className="absolute right-0 top-full mt-2 z-40 w-60 bg-white border border-black/[0.08] rounded-2xl shadow-xl py-1.5 anim-fade-up overflow-hidden">
+                    <div
+                        className="absolute right-0 top-full mt-2 z-40 w-60 py-1.5 anim-fade-up overflow-hidden"
+                        style={{
+                            background: "#fff",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "5px 5px 0 #0A0A0A",
+                            borderRadius: 12,
+                        }}
+                    >
                         <MenuRow icon={CopyIcon} label="Copiar link do perfil" onClick={copyProfile} />
                         <MenuRow icon={Download} label="Exportar dados (JSON)" onClick={exportData} busy={busyKey === "export"} />
                     </div>
@@ -201,12 +255,26 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                     onClick={() => setOpen((o) => !o)}
                     data-testid="profile-more-btn"
                     title="Mais opções"
-                    className="w-10 h-10 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] transition tap-shrink"
+                    className="w-10 h-10 grid place-items-center tap-shrink"
+                    style={{
+                        background: "#fff", color: "#0A0A0A",
+                        border: "2.5px solid #0A0A0A",
+                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                        borderRadius: 999,
+                    }}
                 >
-                    <MoreHorizontal size={16} />
+                    <MoreHorizontal size={15} strokeWidth={2.2} />
                 </button>
                 {open && (
-                    <div className="absolute right-0 top-full mt-2 z-40 w-64 bg-white border border-black/[0.08] rounded-2xl shadow-xl py-1.5 anim-fade-up overflow-hidden">
+                    <div
+                        className="absolute right-0 top-full mt-2 z-40 w-64 py-1.5 anim-fade-up overflow-hidden"
+                        style={{
+                            background: "#fff",
+                            border: "2.5px solid #0A0A0A",
+                            boxShadow: "5px 5px 0 #0A0A0A",
+                            borderRadius: 12,
+                        }}
+                    >
                         <MenuRow icon={CopyIcon} label="Copiar link do perfil" onClick={copyProfile} />
                         <MenuRow
                             icon={Star}
@@ -229,7 +297,7 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                             busy={busyKey === "mute"}
                             active={rel.muted}
                         />
-                        <div className="h-px bg-black/[0.06] my-1" />
+                        <div className="my-1" style={{ borderTop: "2px dashed #0A0A0A" }} />
                         <MenuRow
                             icon={Flag} label="Reportar utilizador"
                             onClick={() => { setOpen(false); setReportOpen(true); }}

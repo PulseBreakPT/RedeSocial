@@ -230,7 +230,7 @@ export function DataTab({ user }) {
                         onClick={onExportJson}
                         loading={exporting.json}
                         dataTestid="data-export-json"
-                        accent="bg-indigo-50 text-indigo-700"
+                        tintBg="#3E5C9A" tintFg="#fff"
                     />
                 </div>
                 <div className="lg:col-span-6">
@@ -241,7 +241,7 @@ export function DataTab({ user }) {
                         onClick={onExportCsv}
                         loading={exporting.csv}
                         dataTestid="data-export-csv"
-                        accent="bg-emerald-50 text-emerald-700"
+                        tintBg="#1F7A5A" tintFg="#fff"
                     />
                 </div>
 
@@ -252,15 +252,16 @@ export function DataTab({ user }) {
                     title="Cache, pesquisas e imagens"
                     desc={`No teu dispositivo, ${fmtBytes(cacheBytes)} de dados estão guardados.`}
                 />
-                <div className="lg:col-span-12 card-lux divide-y divide-black/[0.06]">
+                <div className="lg:col-span-12 card-lux divide-y-[2.5px] divide-dashed" style={{ borderColor: "#0A0A0A" }}>
                     <DataRow
                         icon={RefreshCw}
                         title="Limpar cache local"
                         sub={`Inclui caches de feed, perfis e pesquisas (${fmtBytes(cacheBytes)})`}
-                        tint="bg-amber-50 text-amber-700"
+                        tintBg="#FFD93D" tintFg="#0A0A0A"
                         action={
                             <button onClick={onClearCache} data-testid="data-clear-cache"
-                                className="text-[11.5px] px-3 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] font-medium tap-shrink transition">
+                                className="font-mono font-black uppercase px-3 py-1.5 tap-shrink"
+                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
                                 Limpar
                             </button>
                         }
@@ -269,10 +270,11 @@ export function DataTab({ user }) {
                         icon={Search}
                         title="Pesquisas recentes"
                         sub={`${recentSearches} ${recentSearches === 1 ? "pesquisa guardada" : "pesquisas guardadas"}`}
-                        tint="bg-indigo-50 text-indigo-700"
+                        tintBg="#3E5C9A" tintFg="#fff"
                         action={
                             <button onClick={onClearSearches} data-testid="data-clear-searches"
-                                className="text-[11.5px] px-3 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] font-medium tap-shrink transition"
+                                className="font-mono font-black uppercase px-3 py-1.5 tap-shrink disabled:opacity-40"
+                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}
                                 disabled={recentSearches === 0}>
                                 Apagar
                             </button>
@@ -282,76 +284,126 @@ export function DataTab({ user }) {
                         icon={ImageIcon}
                         title="Imagens em cache"
                         sub="Thumbnails e pré-visualizações guardadas localmente"
-                        tint="bg-purple-50 text-purple-700"
+                        tintBg="#C8261E" tintFg="#fff"
                         action={
                             <button onClick={onClearImages} data-testid="data-clear-images"
-                                className="text-[11.5px] px-3 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] font-medium tap-shrink transition">
+                                className="font-mono font-black uppercase px-3 py-1.5 tap-shrink"
+                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
                                 Limpar
                             </button>
                         }
                     />
                 </div>
 
-                {/* DANGER ZONE */}
+                {/* DANGER ZONE · FANZINE */}
                 <div className="lg:col-span-12 flex items-end justify-between gap-4 flex-wrap mt-3">
                     <div className="flex items-start gap-3">
-                        <span className="hidden lg:grid place-items-center w-7 h-7 rounded-lg bg-red-soft text-white text-[10.5px] font-mono tabular-nums tracking-wider shrink-0 mt-0.5">03</span>
+                        <span
+                            className="hidden lg:grid place-items-center w-8 h-8 font-mono font-black tabular-nums shrink-0 mt-1"
+                            style={{
+                                background: "#C8261E", color: "#fff",
+                                border: "2.5px solid #0A0A0A",
+                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                borderRadius: 8,
+                                fontSize: 10.5, letterSpacing: "0.08em",
+                                transform: "rotate(-4deg)",
+                            }}
+                        >03</span>
                         <div>
-                            <p className="type-overline text-red-soft mb-0">Zona perigosa</p>
-                            <h3 className="font-heading font-bold text-[17px] lg:text-[19px] tracking-tight text-red-soft mt-1.5 leading-tight">Apagar conta permanentemente</h3>
-                            <p className="text-[12.5px] text-black/55 leading-relaxed mt-1.5 max-w-xl">
+                            <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: "#C8261E" }}>// ZONA PERIGOSA</p>
+                            <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 19, color: "#C8261E" }}>Apagar conta permanentemente</h3>
+                            <p className="text-[13px] leading-relaxed mt-1.5 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                                 Esta acção é irreversível. Todos os teus dados são apagados e removidos do sistema.
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="lg:col-span-12 rounded-2xl border border-red-soft/25 bg-red-soft/[0.04] p-5">
+                <div
+                    className="lg:col-span-12 p-5"
+                    style={{
+                        background: "#FFF4DC",
+                        border: "3px solid #C8261E",
+                        boxShadow: "4px 4px 0 #0A0A0A",
+                        borderRadius: 14,
+                    }}
+                >
                     <div className="flex items-start gap-3">
-                        <div className="w-11 h-11 rounded-xl grid place-items-center shrink-0 bg-red-soft/10 text-red-soft">
-                            <ShieldAlert size={17} strokeWidth={1.7} />
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{ background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        >
+                            <ShieldAlert size={17} strokeWidth={2.2} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black flex items-center gap-2 flex-wrap">
+                            <div className="font-black tracking-tight flex items-center gap-2 flex-wrap" style={{ fontSize: 14.5, color: "#0A0A0A" }}>
                                 Apagar a tua conta
-                                <span className="text-[9.5px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-red-soft/15 text-red-soft border border-red-soft/25">irreversível</span>
+                                <span
+                                    className="font-mono font-black uppercase px-2 py-0.5"
+                                    style={{
+                                        fontSize: 10, letterSpacing: "0.10em",
+                                        background: "#C8261E", color: "#fff",
+                                        border: "1.5px solid #0A0A0A",
+                                        borderRadius: 999,
+                                    }}
+                                >irreversível</span>
                             </div>
-                            <div className="text-[12px] text-black/65 mt-1 leading-relaxed">
+                            <div className="text-[12.5px] mt-2 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.7)" }}>
                                 Todas as tuas publicações, comentários, mensagens diretas, notificações e seguidores serão eliminados.
                             </div>
                             {!showDelete ? (
                                 <button onClick={() => setShowDelete(true)} data-testid="data-delete-account"
-                                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-red-soft text-white hover:bg-red-soft/90 text-[12px] font-medium tap-shrink transition">
-                                    <Trash2 size={13} strokeWidth={1.8} /> Quero apagar a minha conta
+                                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink"
+                                    style={{
+                                        background: "#C8261E", color: "#fff",
+                                        border: "2.5px solid #0A0A0A",
+                                        boxShadow: "3px 3px 0 #0A0A0A",
+                                        borderRadius: 999,
+                                        fontSize: 12, letterSpacing: "0.04em",
+                                    }}>
+                                    <Trash2 size={13} strokeWidth={2.4} /> Quero apagar a minha conta
                                 </button>
                             ) : (
-                                <form onSubmit={onConfirmDelete} className="mt-4 space-y-3 bg-white border border-red-soft/25 rounded-xl p-4">
+                                <form
+                                    onSubmit={onConfirmDelete}
+                                    className="mt-4 space-y-3 p-4"
+                                    style={{ background: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A", borderRadius: 12 }}
+                                >
                                     <div>
-                                        <label className="type-overline text-red-soft">Palavra-passe</label>
+                                        <label className="type-overline">Palavra-passe</label>
                                         <input type="password" value={delForm.password}
                                             onChange={(e) => setDelForm({ ...delForm, password: e.target.value })}
-                                            className="mt-1.5 vm-input" data-testid="delete-pwd"
+                                            className="mt-2 vm-input" data-testid="delete-pwd"
                                             autoComplete="current-password" required />
                                     </div>
                                     <div>
-                                        <label className="type-overline text-red-soft">
-                                            Escreve <span className="font-mono bg-red-soft/10 px-1.5 py-0.5 rounded">APAGAR</span> para confirmar
+                                        <label className="type-overline">
+                                            Escreve <span className="font-mono px-1.5 py-0.5" style={{ background: "#C8261E", color: "#fff", borderRadius: 4 }}>APAGAR</span> para confirmar
                                         </label>
                                         <input type="text" value={delForm.confirm}
                                             onChange={(e) => setDelForm({ ...delForm, confirm: e.target.value })}
-                                            className="mt-1.5 vm-input font-mono tracking-widest uppercase"
+                                            className="mt-2 vm-input font-mono tracking-widest uppercase"
                                             data-testid="delete-confirm" placeholder="APAGAR"
                                             autoComplete="off" required />
                                     </div>
                                     <div className="flex items-center justify-end gap-2 pt-1">
                                         <button type="button" onClick={() => { setShowDelete(false); setDelForm({ password: "", confirm: "" }); }}
-                                            className="px-3 py-2 text-[12px] text-black/65 hover:text-black font-medium" disabled={deleting}>
+                                            className="px-3 py-2 font-black uppercase tap-shrink"
+                                            style={{ fontSize: 11.5, letterSpacing: "0.04em", color: "rgba(10,10,10,0.65)" }}
+                                            disabled={deleting}>
                                             Cancelar
                                         </button>
                                         <button type="submit" disabled={deleting || delForm.confirm !== "APAGAR" || !delForm.password}
                                             data-testid="delete-confirm-btn"
-                                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-red-soft text-white hover:bg-red-soft/90 text-[12px] font-medium disabled:opacity-40 transition">
-                                            {deleting ? <><Loader2 size={12} className="animate-spin" /> A eliminar…</> : <><Trash2 size={12} /> Eliminar definitivamente</>}
+                                            className="inline-flex items-center gap-1.5 px-4 py-2 font-black uppercase disabled:opacity-40 tap-shrink"
+                                            style={{
+                                                background: "#C8261E", color: "#fff",
+                                                border: "2.5px solid #0A0A0A",
+                                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                                borderRadius: 999,
+                                                fontSize: 11.5, letterSpacing: "0.04em",
+                                            }}>
+                                            {deleting ? <><Loader2 size={12} className="animate-spin" /> A eliminar…</> : <><Trash2 size={12} strokeWidth={2.4} /> Eliminar definitivamente</>}
                                         </button>
                                     </div>
                                 </form>
@@ -364,34 +416,52 @@ export function DataTab({ user }) {
     );
 }
 
-function ExportTile({ icon: Icon, title, sub, onClick, loading, dataTestid, accent }) {
+function ExportTile({ icon: Icon, title, sub, onClick, loading, dataTestid, tintBg, tintFg }) {
     return (
         <button type="button" onClick={onClick} disabled={loading} data-testid={dataTestid}
-            className="group card-lux p-5 text-left hover:shadow-md transition tap-shrink disabled:opacity-60 disabled:cursor-wait w-full h-full">
-            <div className={`w-11 h-11 rounded-xl grid place-items-center mb-3 transition ${accent || "bg-black/[0.04] text-black/75"}`}>
-                {loading ? <Loader2 size={17} className="animate-spin" /> : <Icon size={17} strokeWidth={1.7} />}
+            className="group card-lux p-5 text-left tap-shrink disabled:opacity-60 disabled:cursor-wait w-full h-full">
+            <div
+                className="w-12 h-12 grid place-items-center mb-3"
+                style={{
+                    background: tintBg || "#FFD93D",
+                    color: tintFg || "#0A0A0A",
+                    border: "2px solid #0A0A0A",
+                    borderRadius: 8,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                {loading ? <Loader2 size={17} className="animate-spin" /> : <Icon size={17} strokeWidth={2.2} />}
             </div>
-            <div className="font-heading font-semibold text-[14px] tracking-tight text-black inline-flex items-center gap-2">
+            <div className="font-black tracking-tight inline-flex items-center gap-2" style={{ fontSize: 14, color: "#0A0A0A" }}>
                 {title}
-                <span className="text-[10px] font-mono tracking-wider uppercase text-black/40">.{title.toLowerCase()}</span>
+                <span className="font-mono font-black uppercase" style={{ fontSize: 10, letterSpacing: "0.14em", color: "rgba(10,10,10,0.45)" }}>.{title.toLowerCase()}</span>
             </div>
-            <div className="text-[12px] text-black/55 mt-1 leading-snug">{sub}</div>
-            <div className="text-[10.5px] font-mono tracking-wider uppercase text-black/45 inline-flex items-center gap-1 mt-3 group-hover:text-black/70 transition">
-                <Download size={11} /> Exportar
+            <div className="text-[12px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>
+            <div className="font-mono font-black uppercase inline-flex items-center gap-1 mt-3" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8261E" }}>
+                <Download size={11} strokeWidth={2.4} /> // EXPORTAR
             </div>
         </button>
     );
 }
 
-function DataRow({ icon: Icon, title, sub, action, tint }) {
+function DataRow({ icon: Icon, title, sub, action, tintBg, tintFg }) {
     return (
         <div className="flex items-center gap-3 p-4">
-            <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${tint || "bg-black/[0.04] text-black/70"}`}>
-                <Icon size={15} strokeWidth={1.8} />
+            <div
+                className="w-10 h-10 grid place-items-center shrink-0"
+                style={{
+                    background: tintBg || "#FFD93D",
+                    color: tintFg || "#0A0A0A",
+                    border: "2px solid #0A0A0A",
+                    borderRadius: 8,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                <Icon size={14} strokeWidth={2.2} />
             </div>
             <div className="flex-1 min-w-0">
-                <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black">{title}</div>
-                <div className="text-[11.5px] text-black/55 mt-0.5 leading-snug">{sub}</div>
+                <div className="font-black tracking-tight" style={{ fontSize: 13.5, color: "#0A0A0A" }}>{title}</div>
+                <div className="text-[11.5px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>
             </div>
             {action}
         </div>

@@ -8,9 +8,9 @@ import { SwitchPill } from "./_shared";
    ============================================================= */
 
 const THEMES = [
-    { key: "light", label: "Clara", desc: "Branco e tinta — a padrão.", icon: Sun, swatch: "bg-white border-black/15" },
-    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatch: "bg-[#f7f1e6] border-amber-200" },
-    { key: "auto", label: "Sistema", desc: "Segue a preferência do dispositivo.", icon: Sparkles, swatch: "bg-gradient-to-br from-white to-[#f7f1e6] border-black/15" },
+    { key: "light", label: "Clara", desc: "Branco e tinta — a padrão.", icon: Sun, swatchBg: "#fff" },
+    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatchBg: "#FFF4DC" },
+    { key: "auto", label: "Sistema", desc: "Segue a preferência do dispositivo.", icon: Sparkles, swatchBg: "#3E5C9A" },
 ];
 
 const DENSITIES = [
@@ -24,32 +24,47 @@ const LANGUAGES = [
     { key: "en", label: "English", flag: "🇬🇧" },
 ];
 
-function OptionCard({ active, onClick, icon: Icon, label, desc, swatch, testid }) {
+function OptionCard({ active, onClick, icon: Icon, label, desc, swatchBg, testid }) {
     return (
         <button
             type="button"
             onClick={onClick}
             data-testid={testid}
-            className={`relative card-lux p-4 sm:p-5 text-left transition tap-shrink ${
-                active ? "ring-2 ring-black border-black shadow-lg" : "hover:shadow-md hover:border-black/20"
-            }`}
+            className="relative p-4 sm:p-5 text-left tap-shrink transition-transform hover:-translate-y-0.5 w-full"
+            style={{
+                background: active ? "#FFD93D" : "#fff",
+                border: "2.5px solid #0A0A0A",
+                boxShadow: active ? "4px 4px 0 #C8261E" : "3px 3px 0 #0A0A0A",
+                borderRadius: 12,
+            }}
         >
             {active && (
-                <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-black text-white grid place-items-center" aria-hidden>
-                    <Check size={11} strokeWidth={2.5} />
+                <span
+                    className="absolute top-3 right-3 w-6 h-6 grid place-items-center"
+                    style={{ background: "#0A0A0A", color: "#FFD93D", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    aria-hidden
+                >
+                    <Check size={11} strokeWidth={2.8} />
                 </span>
             )}
             <div className="flex items-center gap-3 mb-2.5">
-                {swatch ? (
-                    <span className={`w-10 h-10 rounded-xl border ${swatch}`} aria-hidden />
+                {swatchBg ? (
+                    <span
+                        className="w-11 h-11"
+                        style={{ background: swatchBg, border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        aria-hidden
+                    />
                 ) : (
-                    <div className="w-10 h-10 rounded-xl grid place-items-center bg-black/[0.04] text-black/70">
-                        <Icon size={16} strokeWidth={1.8} />
+                    <div
+                        className="w-11 h-11 grid place-items-center"
+                        style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                    >
+                        <Icon size={15} strokeWidth={2.2} />
                     </div>
                 )}
             </div>
-            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">{label}</div>
-            <div className="text-[11.5px] text-black/55 leading-snug mt-1">{desc}</div>
+            <div className="font-black tracking-tight" style={{ fontSize: 14, color: "#0A0A0A" }}>{label}</div>
+            <div className="text-[12px] leading-snug mt-1 font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{desc}</div>
         </button>
     );
 }
@@ -72,7 +87,7 @@ export function AppearanceTab({ prefs, setPref }) {
                             active={prefs.theme === t.key}
                             onClick={() => setPref("theme", t.key)}
                             icon={t.icon}
-                            swatch={t.swatch}
+                            swatchBg={t.swatchBg}
                             label={t.label}
                             desc={t.desc}
                             testid={`theme-${t.key}`}
@@ -107,7 +122,7 @@ export function AppearanceTab({ prefs, setPref }) {
                         <p className="type-overline mb-0">Idioma</p>
                     </div>
                 </div>
-                <div className="lg:col-span-12 card-lux p-1 sm:p-1.5 grid grid-cols-3 gap-1">
+                <div className="lg:col-span-12 p-1.5 grid grid-cols-3 gap-1.5" style={{ background: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A", borderRadius: 12 }}>
                     {LANGUAGES.map((l) => {
                         const active = prefs.language === l.key;
                         return (
@@ -116,9 +131,16 @@ export function AppearanceTab({ prefs, setPref }) {
                                 type="button"
                                 onClick={() => setPref("language", l.key)}
                                 data-testid={`lang-${l.key}`}
-                                className={`relative px-3 py-2.5 rounded-xl text-[12.5px] font-medium transition tap-shrink flex items-center justify-center gap-2 ${
-                                    active ? "bg-black text-white shadow-sm" : "text-black/65 hover:bg-black/[0.04] hover:text-black"
-                                }`}
+                                className="relative px-3 py-2.5 font-black tap-shrink flex items-center justify-center gap-2 transition-transform"
+                                style={{
+                                    background: active ? "#0A0A0A" : "transparent",
+                                    color: active ? "#FFD93D" : "rgba(10,10,10,0.65)",
+                                    border: active ? "2px solid #0A0A0A" : "2px solid transparent",
+                                    boxShadow: active ? "2px 2px 0 #C8261E" : "none",
+                                    borderRadius: 10,
+                                    fontSize: 12.5,
+                                    letterSpacing: "0.02em",
+                                }}
                             >
                                 <span aria-hidden className="text-[15px] leading-none">{l.flag}</span>
                                 <span className="truncate">{l.label}</span>

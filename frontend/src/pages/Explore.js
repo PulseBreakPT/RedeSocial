@@ -167,37 +167,64 @@ export default function Explore() {
                 <>
                     {/* Quem seguir — horizontal scroll strip (lives only on Descobrir) */}
                     {suggestions.length > 0 && (
-                        <div className="px-3 lg:px-5 pt-4 pb-3 hairline-b" data-testid="explore-quem-seguir">
-                            <div className="flex items-center justify-between mb-2.5">
-                                <p className="type-overline inline-flex items-center gap-1.5">
-                                    <Sparkles size={11} strokeWidth={1.8} className="text-black/50" />
-                                    Quem seguir
+                        <div
+                            className="px-3 lg:px-5 pt-4 pb-4"
+                            style={{ borderBottom: `2.5px solid ${PT.ink}`, background: PT.cream }}
+                            data-testid="explore-quem-seguir"
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="font-mono font-black uppercase inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                                    <Sparkles size={12} strokeWidth={2.4} style={{ color: PT.red }} />
+                                    // QUEM SEGUIR
                                 </p>
                                 <button
                                     onClick={() => setTab("pessoas")}
-                                    className="text-[11.5px] text-black/55 hover:text-black font-medium tap-shrink transition-colors"
+                                    className="text-[11px] font-black uppercase px-2.5 py-1 tap-shrink"
+                                    style={{
+                                        background: "#fff",
+                                        color: PT.ink,
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        borderRadius: 999,
+                                        letterSpacing: "0.06em",
+                                    }}
                                 >
                                     ver todos →
                                 </button>
                             </div>
                             <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-5 px-3 lg:px-5 pb-1">
-                                {suggestions.slice(0, 8).map((u) => (
+                                {suggestions.slice(0, 8).map((u, idx) => (
                                     <Link
                                         key={u.id}
                                         to={`/u/${u.username}`}
                                         data-testid={`explore-suggestion-${u.username}`}
-                                        className="flex-shrink-0 w-[168px] card-lux p-3 active:scale-[0.98] transition"
+                                        className="flex-shrink-0 w-[170px] p-3 active:scale-[0.98] transition"
+                                        style={{
+                                            background: "#fff",
+                                            border: `2.5px solid ${PT.ink}`,
+                                            boxShadow: `3px 3px 0 ${idx % 3 === 0 ? PT.gold : idx % 3 === 1 ? PT.azul : PT.red}`,
+                                            borderRadius: 14,
+                                            transform: `rotate(${idx % 2 === 0 ? -0.6 : 0.6}deg)`,
+                                        }}
                                     >
                                         <Avatar user={u} size={44} />
-                                        <div className="mt-2 font-heading font-semibold text-[13px] tracking-tight text-black truncate flex items-center gap-1">
+                                        <div className="mt-2 font-black text-[13px] tracking-tight truncate flex items-center gap-1" style={{ color: PT.ink }}>
                                             {u.name || u.username} {u.verified && <VerifiedBadge size={10} />}
                                         </div>
-                                        <div className="text-[10.5px] text-black/50 truncate font-mono">
+                                        <div className="text-[10.5px] truncate font-mono font-bold" style={{ color: "rgba(10,10,10,0.55)" }}>
                                             @{u.username}{u.reason ? ` · ${u.reason}` : ""}
-                                        </div>                                        <button
+                                        </div>
+                                        <button
                                             onClick={(e) => handleSuggestionFollow(e, u.username)}
                                             data-testid={`explore-suggestion-follow-${u.username}`}
-                                            className="mt-3 w-full btn-obsidian !py-1.5 !text-[11.5px]"
+                                            className="mt-3 w-full py-1.5 text-[11.5px] font-black uppercase"
+                                            style={{
+                                                background: PT.ink,
+                                                color: PT.gold,
+                                                border: `2px solid ${PT.ink}`,
+                                                borderRadius: 999,
+                                                letterSpacing: "0.06em",
+                                            }}
                                         >
                                             Seguir
                                         </button>
@@ -215,16 +242,24 @@ export default function Explore() {
                 </>
             ) : tab === "pessoas" ? (
                 (filtered || pessoas).length === 0 ? <EmptyExplore msg="Sem sugestões agora" /> : (filtered || pessoas).map((u) => (
-                    <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b">
+                    <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
                         <Avatar user={u} size={44} />
                         <Link to={`/u/${u.username}`} className="flex-1 min-w-0">
-                            <div className="font-medium text-[14px] truncate">{u.display_name || u.username}</div>
-                            <div className="text-[12px] text-black/55 truncate">@{u.username}{u.reason ? <> · <span className="text-black/45">{u.reason}</span></> : null}</div>
+                            <div className="font-black text-[14px] truncate" style={{ color: PT.ink }}>{u.display_name || u.username}</div>
+                            <div className="text-[12px] truncate font-mono font-bold" style={{ color: "rgba(10,10,10,0.55)" }}>@{u.username}{u.reason ? <> · <span style={{ color: "rgba(10,10,10,0.45)" }}>{u.reason}</span></> : null}</div>
                         </Link>
                         <button
                             onClick={() => followUser(u.username)}
                             data-testid={`explore-follow-${u.username}`}
-                            className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-1.5 transition active:scale-95 ${u.is_following ? "chip-on" : "btn-obsidian"}`}
+                            className="text-[11px] font-black uppercase px-4 py-1.5 transition active:scale-95"
+                            style={{
+                                background: u.is_following ? "#fff" : PT.ink,
+                                color: u.is_following ? PT.ink : PT.gold,
+                                border: `2px solid ${PT.ink}`,
+                                boxShadow: `2px 2px 0 ${PT.ink}`,
+                                borderRadius: 999,
+                                letterSpacing: "0.06em",
+                            }}
                         >
                             {u.is_following ? "Seguindo" : "Seguir"}
                         </button>
@@ -232,38 +267,81 @@ export default function Explore() {
                 ))
             ) : tab === "tags" ? (
                 (filtered || tags).length === 0 ? <EmptyExplore msg="Sem hashtags em alta" /> : (filtered || tags).map((t, i) => (
-                    <Link key={t.tag} to={`/tag/${t.tag}`} className="flex items-center gap-4 px-4 lg:px-5 py-3.5 hairline-b hover:bg-black/[0.015]">
-                        <span className="w-7 text-right text-[18px] font-display text-black/25">{i + 1}</span>
-                        <Hash size={15} className="text-black/45" />
+                    <Link key={t.tag} to={`/tag/${t.tag}`} className="flex items-center gap-4 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
+                        <span
+                            className="w-8 h-8 grid place-items-center font-black tabular-nums"
+                            style={{
+                                background: i === 0 ? PT.gold : i === 1 ? PT.cream : "#fff",
+                                color: PT.ink,
+                                border: `2px solid ${PT.ink}`,
+                                boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                borderRadius: 8,
+                                fontSize: 12,
+                            }}
+                        >
+                            {i + 1}
+                        </span>
+                        <Hash size={16} strokeWidth={2.6} style={{ color: PT.red }} />
                         <div className="flex-1 min-w-0">
-                            <div className="font-display text-[18px] truncate">{t.tag}</div>
-                            <div className="text-[11px] font-mono text-black/45">{t.count} posts {t.velocity >= 0 ? `· ↑${t.velocity}%` : `· ↓${Math.abs(t.velocity)}%`}</div>
+                            <div className="font-black text-[17px] truncate tracking-tight" style={{ color: PT.ink }}>#{t.tag}</div>
+                            <div className="text-[11px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.5)" }}>
+                                {t.count} posts {t.velocity >= 0 ? `· ↑${t.velocity}%` : `· ↓${Math.abs(t.velocity)}%`}
+                            </div>
                         </div>
                     </Link>
                 ))
             ) : tab === "comunidades" ? (
                 (filtered || comunidades).length === 0 ? <EmptyExplore msg="Sem comunidades em alta" /> : (filtered || comunidades).map((c) => (
-                    <Link key={c.id} to={`/c/${c.slug}`} className="flex items-center gap-3 px-4 lg:px-5 py-3.5 hairline-b hover:bg-black/[0.015]">
-                        <div className="w-11 h-11 rounded-full bg-black/[0.05] grid place-items-center"><Layers size={18} className="text-black/65" /></div>
+                    <Link key={c.id} to={`/c/${c.slug}`} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
+                        <div
+                            className="w-11 h-11 grid place-items-center"
+                            style={{
+                                background: PT.azul,
+                                color: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                borderRadius: 10,
+                                transform: "rotate(-4deg)",
+                            }}
+                        >
+                            <Layers size={18} strokeWidth={2.4} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                            <div className="font-medium text-[15px] truncate">{c.name}</div>
-                            <div className="text-[12px] text-black/55">{c.members_count} membros · {c.trend_posts} posts esta semana</div>
+                            <div className="font-black text-[15px] truncate tracking-tight" style={{ color: PT.ink }}>{c.name}</div>
+                            <div className="text-[12px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                {c.members_count} membros · {c.trend_posts} posts esta semana
+                            </div>
                         </div>
                     </Link>
                 ))
             ) : (
                 (filtered || cidades).length === 0 ? <EmptyExplore msg="Sem cidades em alta" /> : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-black/[0.06]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2" style={{ background: PT.ink, gap: 2 }}>
                         {(filtered || cidades).map((c) => (
                             <button
                                 key={c.city}
                                 onClick={() => { setTab("posts"); }}
-                                className="flex items-center gap-3 bg-white px-4 py-3.5 hover:bg-black/[0.015]"
+                                className="flex items-center gap-3 px-4 py-3.5 transition"
+                                style={{ background: "#fff" }}
                             >
-                                <div className="w-10 h-10 rounded-full bg-rose-50 grid place-items-center"><MapPin size={16} className="text-rose-600" /></div>
+                                <div
+                                    className="w-10 h-10 grid place-items-center"
+                                    style={{
+                                        background: PT.red,
+                                        color: "#fff",
+                                        border: `2.5px solid ${PT.ink}`,
+                                        boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                        borderRadius: 10,
+                                        transform: "rotate(-4deg)",
+                                    }}
+                                >
+                                    <MapPin size={16} strokeWidth={2.4} />
+                                </div>
                                 <div className="flex-1 min-w-0 text-left">
-                                    <div className="font-display text-[18px] truncate">{c.city}</div>
-                                    <div className="text-[11px] font-mono text-black/45">{c.count} posts · {c.velocity >= 0 ? `↑${c.velocity}%` : `↓${Math.abs(c.velocity)}%`}</div>
+                                    <div className="font-black text-[17px] truncate tracking-tight" style={{ color: PT.ink }}>{c.city}</div>
+                                    <div className="text-[11px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                        {c.count} posts · {c.velocity >= 0 ? `↑${c.velocity}%` : `↓${Math.abs(c.velocity)}%`}
+                                    </div>
                                 </div>
                             </button>
                         ))}
@@ -276,13 +354,30 @@ export default function Explore() {
 
 function EmptyExplore({ msg = "Sem publicações" }) {
     return (
-        <div className="px-6 py-20 text-center anim-fade-up">
-            <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                <Compass size={26} strokeWidth={1.4} className="text-black/70" />
+        <div className="px-6 py-16 text-center anim-fade-up">
+            <div
+                className="w-20 h-20 grid place-items-center mx-auto mb-6"
+                style={{
+                    background: PT.gold,
+                    color: PT.ink,
+                    border: `3px solid ${PT.ink}`,
+                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    borderRadius: 18,
+                    transform: "rotate(-4deg)",
+                }}
+            >
+                <Compass size={26} strokeWidth={2.4} />
             </div>
-            <p className="type-overline mb-2">Nada por aqui</p>
-            <h3 className="font-display text-[19px] font-bold tracking-tight text-black">{msg}</h3>
-            <p className="text-black/55 text-sm mt-2">Tenta outro filtro.</p>
+            <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                // NADA POR AQUI
+            </p>
+            <h3
+                className="font-black tracking-[-0.025em] leading-tight"
+                style={{ fontSize: "clamp(20px, 2.8vw, 26px)", color: PT.ink }}
+            >
+                {msg}
+            </h3>
+            <p className="text-[13.5px] mt-3 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>Tenta outro filtro.</p>
         </div>
     );
 }

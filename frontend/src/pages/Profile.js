@@ -380,7 +380,6 @@ function BlockedWallView({ profile }) {
         try {
             const { data } = await api.post(`/users/${profile.username}/block`);
             if (data && data.blocked === false) {
-                // recarrega o perfil para mostrar a versão completa
                 navigate(0);
             }
         } catch (e) { toastApiError(e); }
@@ -388,7 +387,7 @@ function BlockedWallView({ profile }) {
     };
 
     return (
-        <div data-testid="profile-blocked-wall" className="pb-32 sm:pb-12">
+        <div data-testid="profile-blocked-wall" className="pb-32 sm:pb-12" style={{ background: PT.cream, minHeight: "100vh" }}>
             <PageHeader
                 title="Conta com muro"
                 subtitle="Não vês nada desta pessoa enquanto o muro estiver de pé"
@@ -397,59 +396,103 @@ function BlockedWallView({ profile }) {
                 testid="profile-header-blocked"
             />
 
-            {/* Banner placeholder — silver-grad uniforme, SEM imagem real */}
+            {/* Banner placeholder · FANZINE — listrado dashed cream/ink */}
             <div
-                className="relative h-36 lg:h-52 overflow-hidden border-b border-black/[0.06]"
+                className="relative h-36 lg:h-52 overflow-hidden"
                 style={{
                     background:
-                        "repeating-linear-gradient(45deg, rgba(13,13,16,0.04) 0 12px, rgba(13,13,16,0.02) 12px 24px), #f5f5f7",
+                        "repeating-linear-gradient(45deg, rgba(10,10,10,0.08) 0 14px, rgba(10,10,10,0.02) 14px 28px), #FFF4DC",
+                    borderBottom: `4px solid ${PT.ink}`,
                 }}
                 aria-hidden
             >
+                <div className="pt-tape h-2 w-full absolute top-0 left-0 z-10" />
                 <div className="absolute inset-0 grid place-items-center">
-                    <Lock size={32} className="text-black/25" strokeWidth={1.6} />
+                    <div
+                        className="w-16 h-16 grid place-items-center"
+                        style={{
+                            background: PT.red, color: "#fff",
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            borderRadius: 999,
+                            transform: "rotate(-4deg)",
+                        }}
+                    >
+                        <Lock size={26} strokeWidth={2.2} />
+                    </div>
                 </div>
             </div>
 
-            {/* Identity stub — APENAS iniciais + nome + @username */}
-            <div className="px-4 lg:px-6 -mt-10 lg:-mt-12 relative">
+            {/* Identity stub · FANZINE — APENAS iniciais + nome + @username */}
+            <div className="px-4 lg:px-6 -mt-12 lg:-mt-14 relative">
                 <div
-                    className="w-[84px] h-[84px] rounded-full grid place-items-center bg-[#f1f1f3] border border-black/[0.08] shadow-[0_8px_24px_-12px_rgba(13,13,16,0.18)] text-black/40 font-heading font-semibold text-[22px] tracking-tight select-none"
+                    className="w-[92px] h-[92px] grid place-items-center select-none font-black"
+                    style={{
+                        background: PT.cream,
+                        color: "rgba(10,10,10,0.45)",
+                        border: `3px solid ${PT.ink}`,
+                        boxShadow: `4px 4px 0 ${PT.ink}`,
+                        borderRadius: 999,
+                        fontSize: 26,
+                        letterSpacing: "-0.02em",
+                    }}
                     aria-label="Avatar oculto"
                     data-testid="blocked-avatar-placeholder"
                 >
                     {initials}
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-5">
+                    <p
+                        className="font-mono font-black uppercase mb-2"
+                        style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}
+                    >
+                        // PERFIL · COM · MURO
+                    </p>
                     <h1
-                        className="font-heading font-semibold text-[22px] lg:text-[26px] tracking-tight text-black"
+                        className="font-black tracking-tight leading-tight"
+                        style={{ fontSize: "clamp(24px, 4vw, 32px)", color: PT.ink }}
                         data-testid="blocked-name"
                     >
                         {profile.name || profile.username}
                     </h1>
                     <p
-                        className="font-mono text-[13px] text-black/55 mt-0.5"
+                        className="font-mono font-black mt-2"
+                        style={{ fontSize: 13, color: "rgba(10,10,10,0.55)" }}
                         data-testid="blocked-username"
                     >
                         @{profile.username}
                     </p>
                 </div>
 
-                {/* Wall info + unblock CTA */}
+                {/* Wall info + unblock CTA · FANZINE */}
                 <div
-                    className="mt-6 max-w-xl rounded-2xl border border-red-200 bg-red-50/40 p-4 sm:p-5"
+                    className="mt-6 max-w-xl p-5"
+                    style={{
+                        background: "#fff",
+                        border: `3px solid ${PT.red}`,
+                        boxShadow: `5px 5px 0 ${PT.ink}`,
+                        borderRadius: 14,
+                    }}
                     data-testid="blocked-wall-card"
                 >
                     <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full grid place-items-center bg-red-100 text-red-600 shrink-0">
-                            <Lock size={17} strokeWidth={1.8} />
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{
+                                background: PT.red, color: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                borderRadius: 8,
+                                transform: "rotate(-4deg)",
+                            }}
+                        >
+                            <Lock size={17} strokeWidth={2.2} />
                         </div>
                         <div className="min-w-0">
-                            <div className="font-heading font-semibold text-[15px] tracking-tight text-red-700">
+                            <div className="font-black tracking-tight" style={{ fontSize: 15, color: PT.red }}>
                                 Muro levantado
                             </div>
-                            <p className="text-[12.5px] text-red-700/80 leading-relaxed mt-1">
+                            <p className="text-[12.5px] leading-relaxed mt-1.5 font-medium" style={{ color: "rgba(10,10,10,0.7)" }}>
                                 Não vês nada desta conta: nem foto, nem capa, nem bio, nem
                                 publicações, nem stories, nem comunidades, nem mensagens.
                                 Esta pessoa também não te vê a ti.
@@ -457,19 +500,33 @@ function BlockedWallView({ profile }) {
                         </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2 sm:pl-[52px]">
+                    <div className="mt-5 flex flex-wrap gap-2 sm:pl-[60px]">
                         <button
                             onClick={unblock}
                             disabled={busy}
                             data-testid="blocked-unblock-btn"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white border border-red-300 text-red-700 hover:bg-red-100 font-heading font-medium text-[13px] tap-shrink transition disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink disabled:opacity-50"
+                            style={{
+                                background: PT.red, color: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                borderRadius: 999,
+                                fontSize: 12, letterSpacing: "0.04em",
+                            }}
                         >
                             {busy ? "A reabrir…" : "Voltar a abrir"}
                         </button>
                         <button
                             onClick={() => navigate(-1)}
                             data-testid="blocked-back-btn"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-black/[0.10] text-black/70 hover:bg-black/[0.04] font-heading font-medium text-[13px] tap-shrink transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink"
+                            style={{
+                                background: "#fff", color: PT.ink,
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                borderRadius: 999,
+                                fontSize: 12, letterSpacing: "0.04em",
+                            }}
                         >
                             Voltar
                         </button>

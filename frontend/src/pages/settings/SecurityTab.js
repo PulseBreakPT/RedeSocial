@@ -81,13 +81,24 @@ function TwoFaSetupModal({ onClose, onDone }) {
 
     return (
         <div
-            className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm grid place-items-center px-4"
+            className="fixed inset-0 z-50 grid place-items-center px-4"
+            style={{ background: "rgba(10,10,10,0.65)" }}
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
             data-testid="twofa-modal"
         >
-            <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-black/[0.06] overflow-hidden">
+            <div
+                className="relative w-full max-w-md overflow-hidden"
+                style={{
+                    background: "#fff",
+                    border: "3px solid #0A0A0A",
+                    boxShadow: "6px 6px 0 #C8261E",
+                    borderRadius: 14,
+                }}
+            >
                 <button onClick={onClose} aria-label="Fechar"
-                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05] z-10"><X size={14} /></button>
+                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center z-10 tap-shrink"
+                    style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                ><X size={14} strokeWidth={2.4} /></button>
 
                 <div className="p-6">
                     <p className="type-overline mb-1">Autenticação em dois passos</p>
@@ -195,11 +206,15 @@ function TwoFaDisableModal({ onClose, onDone }) {
         } finally { setBusy(false); }
     };
     return (
-        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm grid place-items-center px-4"
+        <div className="fixed inset-0 z-50 grid place-items-center px-4"
+            style={{ background: "rgba(10,10,10,0.65)" }}
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-black/[0.06] overflow-hidden p-6">
+            <div className="relative w-full max-w-md overflow-hidden p-6"
+                style={{ background: "#fff", border: "3px solid #0A0A0A", boxShadow: "6px 6px 0 #C8261E", borderRadius: 14 }}>
                 <button onClick={onClose} aria-label="Fechar"
-                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center rounded-full hover:bg-black/[0.05]"><X size={14} /></button>
+                    className="absolute top-3 right-3 w-8 h-8 grid place-items-center tap-shrink"
+                    style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                ><X size={14} strokeWidth={2.4} /></button>
                 <p className="type-overline mb-1">Desativar 2FA</p>
                 <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">Confirma a tua identidade</h3>
                 <p className="text-[12px] text-black/55 mt-1">Vais perder a camada extra de segurança até reativares.</p>
@@ -401,24 +416,33 @@ export function SecurityTab({ user, onUserUpdate }) {
                 <div className="lg:col-span-12 card-lux p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <div className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${twoFaStatus.enabled ? "bg-emerald-100 text-emerald-700" : "bg-black/[0.05] text-black/55"}`}>
-                                <ShieldCheck size={17} strokeWidth={1.7} />
+                            <div
+                                className="w-12 h-12 grid place-items-center shrink-0"
+                                style={{
+                                    background: twoFaStatus.enabled ? "#1F7A5A" : "#FFF4DC",
+                                    color: twoFaStatus.enabled ? "#fff" : "rgba(10,10,10,0.55)",
+                                    border: "2.5px solid #0A0A0A",
+                                    borderRadius: 8,
+                                    transform: "rotate(-4deg)",
+                                }}
+                            >
+                                <ShieldCheck size={17} strokeWidth={2.2} />
                             </div>
                             <div className="min-w-0">
-                                <div className="font-heading font-semibold text-[14.5px] tracking-tight text-black flex items-center gap-2 flex-wrap">
+                                <div className="font-black tracking-tight flex items-center gap-2 flex-wrap" style={{ fontSize: 14.5, color: "#0A0A0A" }}>
                                     Estado actual
                                     {twoFaStatus.enabled
                                         ? <StatusPill tone="success">Ativo</StatusPill>
                                         : <StatusPill tone="neutral">Inativo</StatusPill>}
                                 </div>
-                                <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                                <p className="text-[12.5px] mt-2 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                                     {twoFaStatus.enabled
                                         ? "A tua conta está protegida com TOTP. Guarda os códigos de backup num sítio seguro."
                                         : "Recomendamos ativar 2FA usando Google Authenticator, 1Password, Authy ou outra app TOTP."}
                                 </p>
                                 {twoFaStatus.enabled && (
-                                    <p className="text-[11.5px] text-black/55 mt-2 font-mono">
-                                        Códigos de backup restantes: <span className="text-black font-bold">{twoFaStatus.backup_codes_left}</span>
+                                    <p className="font-mono text-[11.5px] mt-2 font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                                        Códigos de backup restantes: <span className="font-black" style={{ color: "#0A0A0A" }}>{twoFaStatus.backup_codes_left}</span>
                                     </p>
                                 )}
                             </div>
@@ -428,20 +452,34 @@ export function SecurityTab({ user, onUserUpdate }) {
                                 <>
                                     <button type="button" onClick={regenerateBackup} disabled={regenBusy}
                                         data-testid="twofa-regenerate-btn"
-                                        className="px-3 py-2 rounded-full border border-black/15 hover:border-black/40 text-[11.5px] font-mono uppercase tracking-wider inline-flex items-center gap-1.5 disabled:opacity-50">
-                                        {regenBusy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Backup
+                                        className="font-mono font-black uppercase px-3 py-2 inline-flex items-center gap-1.5 disabled:opacity-50 tap-shrink"
+                                        style={{
+                                            background: "#fff", color: "#0A0A0A",
+                                            border: "2px solid #0A0A0A",
+                                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                            borderRadius: 999,
+                                            fontSize: 11, letterSpacing: "0.10em",
+                                        }}>
+                                        {regenBusy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} strokeWidth={2.4} />} Backup
                                     </button>
                                     <button type="button" onClick={() => setTwoFaDisableOpen(true)}
-                                        className="px-3 py-2 rounded-full border border-red-soft/40 text-red-soft text-[11.5px] font-mono uppercase tracking-wider hover:bg-red-soft/10 inline-flex items-center gap-1.5"
+                                        className="font-mono font-black uppercase px-3 py-2 inline-flex items-center gap-1.5 tap-shrink"
+                                        style={{
+                                            background: "#C8261E", color: "#fff",
+                                            border: "2px solid #0A0A0A",
+                                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                            borderRadius: 999,
+                                            fontSize: 11, letterSpacing: "0.10em",
+                                        }}
                                         data-testid="twofa-disable-btn">
-                                        <ShieldAlert size={12} /> Desativar
+                                        <ShieldAlert size={12} strokeWidth={2.4} /> Desativar
                                     </button>
                                 </>
                             ) : (
                                 <button type="button" onClick={() => setTwoFaSetupOpen(true)}
-                                    className="btn-obsidian px-4 py-2.5 text-[12px] inline-flex items-center gap-1.5"
+                                    className="btn-obsidian px-4 py-2.5 inline-flex items-center gap-1.5"
                                     data-testid="twofa-enable-btn">
-                                    <ShieldCheck size={12} /> Ativar 2FA
+                                    <ShieldCheck size={12} strokeWidth={2.4} /> Ativar 2FA
                                 </button>
                             )}
                         </div>
@@ -474,25 +512,41 @@ export function SecurityTab({ user, onUserUpdate }) {
                                 const Icon = s.device === "mobile" ? Smartphone : Monitor;
                                 return (
                                     <li key={s.id} className="card-lux p-4 flex items-center gap-3">
-                                        <div className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${s.current ? "bg-emerald-50 text-emerald-700" : "bg-black/[0.04] text-black/60"}`}>
-                                            <Icon size={17} strokeWidth={1.7} />
+                                        <div
+                                            className="w-11 h-11 grid place-items-center shrink-0"
+                                            style={{
+                                                background: s.current ? "#1F7A5A" : "#FFF4DC",
+                                                color: s.current ? "#fff" : "rgba(10,10,10,0.6)",
+                                                border: "2px solid #0A0A0A",
+                                                borderRadius: 8,
+                                                transform: "rotate(-4deg)",
+                                            }}
+                                        >
+                                            <Icon size={15} strokeWidth={2.2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="font-heading font-semibold text-[13.5px] tracking-tight text-black flex items-center gap-1.5 flex-wrap">
+                                            <div className="font-black tracking-tight flex items-center gap-1.5 flex-wrap" style={{ fontSize: 13.5, color: "#0A0A0A" }}>
                                                 {s.browser} em {s.os}
                                                 {s.current && <StatusPill tone="success">Atual</StatusPill>}
                                             </div>
-                                            <div className="text-[11.5px] text-black/55 mt-0.5 inline-flex items-center gap-1.5 flex-wrap">
-                                                <Clock size={10} /> {formatRelative(s.last_seen_at) || "—"}
-                                                {s.ip && <span className="font-mono text-black/45">· {s.ip}</span>}
+                                            <div className="text-[11.5px] mt-1 inline-flex items-center gap-1.5 flex-wrap font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                                <Clock size={10} strokeWidth={2.2} /> {formatRelative(s.last_seen_at) || "—"}
+                                                {s.ip && <span className="font-mono" style={{ color: "rgba(10,10,10,0.45)" }}>· {s.ip}</span>}
                                             </div>
                                         </div>
                                         {!s.current && (
                                             <button type="button" onClick={() => revokeSession(s.id)} disabled={revokingId === s.id}
                                                 data-testid={`session-revoke-${s.id}`}
-                                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-black/[0.04] text-black/70 hover:bg-red-soft/15 hover:text-red-soft transition disabled:opacity-40"
+                                                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 font-mono font-black uppercase tap-shrink disabled:opacity-40"
+                                                style={{
+                                                    background: "#fff", color: "#C8261E",
+                                                    border: "2px solid #0A0A0A",
+                                                    boxShadow: "2px 2px 0 #0A0A0A",
+                                                    borderRadius: 999,
+                                                    fontSize: 10.5, letterSpacing: "0.10em",
+                                                }}
                                                 aria-label="Terminar sessão">
-                                                {revokingId === s.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                                                {revokingId === s.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} strokeWidth={2.4} />}
                                                 Terminar
                                             </button>
                                         )}
@@ -512,12 +566,15 @@ export function SecurityTab({ user, onUserUpdate }) {
                 />
                 <div className="lg:col-span-12 card-lux p-5">
                     <div className="flex items-start gap-3 mb-3">
-                        <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 grid place-items-center shrink-0">
-                            <MailCheck size={16} strokeWidth={1.7} />
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{ background: "#FFD93D", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        >
+                            <MailCheck size={16} strokeWidth={2.2} />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Endereço alternativo</div>
-                            <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                            <div className="font-black tracking-tight" style={{ fontSize: 14, color: "#0A0A0A" }}>Endereço alternativo</div>
+                            <p className="text-[12.5px] mt-1 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                                 Tem de ser diferente do email principal. Não vai aparecer no teu perfil público.
                             </p>
                         </div>
@@ -549,12 +606,15 @@ export function SecurityTab({ user, onUserUpdate }) {
                 />
                 <div className="lg:col-span-12 card-lux p-5 flex items-center justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-700 grid place-items-center shrink-0">
-                            <Bell size={16} strokeWidth={1.7} />
+                        <div
+                            className="w-12 h-12 grid place-items-center shrink-0"
+                            style={{ background: "#3E5C9A", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        >
+                            <Bell size={16} strokeWidth={2.2} />
                         </div>
                         <div className="min-w-0">
-                            <div className="font-heading font-semibold text-[14px] tracking-tight text-black">Notificar entradas suspeitas</div>
-                            <p className="text-[12px] text-black/55 mt-1 leading-relaxed">
+                            <div className="font-black tracking-tight" style={{ fontSize: 14, color: "#0A0A0A" }}>Notificar entradas suspeitas</div>
+                            <p className="text-[12.5px] mt-1 leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                                 Email + push imediato. Recomendado.
                             </p>
                         </div>

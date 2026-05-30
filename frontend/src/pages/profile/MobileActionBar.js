@@ -10,15 +10,20 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
     const [seloOpen, setSeloOpen] = useState(false);
     return (
         <div
-            className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-black/[0.06] px-4 py-3 anim-slide-up"
+            className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-4 py-3 anim-slide-up"
             data-testid="profile-mobile-actions"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
+            style={{
+                background: "#fff",
+                borderTop: "3px solid #0A0A0A",
+                paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+            }}
         >
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => setSeloOpen(true)}
                     data-testid="mob-action-selo"
-                    className="w-11 h-11 grid place-items-center rounded-full border border-[color:var(--coral-500)]/40 bg-[color:var(--coral-500)]/[0.06] text-[color:var(--coral-500)] tap-shrink"
+                    className="w-11 h-11 grid place-items-center tap-shrink"
+                    style={{ background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
                     aria-label="Selo pessoal"
                     title="O selo pessoal"
                 >
@@ -29,28 +34,30 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                 <button
                     onClick={onShare}
                     data-testid="mob-action-share"
-                    className="w-11 h-11 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
+                    className="w-11 h-11 grid place-items-center tap-shrink"
+                    style={{ background: "#fff", color: "#0A0A0A", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
                     aria-label="Partilhar"
                 >
-                    <Share2 size={16} />
+                    <Share2 size={15} strokeWidth={2.2} />
                 </button>
                 {profile.is_self ? (
                     <button
                         onClick={onEditProfile}
                         data-testid="mob-action-edit"
-                        className="flex-1 btn-silver py-3 text-[12.5px] inline-flex items-center justify-center gap-1.5"
+                        className="flex-1 btn-silver py-3 inline-flex items-center justify-center gap-1.5"
                     >
-                        <Edit3 size={13} /> Editar perfil
+                        <Edit3 size={13} strokeWidth={2.4} /> Editar perfil
                     </button>
                 ) : (
                     <>
                         <button
                             onClick={onMessage}
                             data-testid="mob-action-message"
-                            className="w-11 h-11 grid place-items-center rounded-full border border-black/[0.10] hover:bg-black/[0.04] tap-shrink"
+                            className="w-11 h-11 grid place-items-center tap-shrink"
+                            style={{ background: "#fff", color: "#0A0A0A", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
                             aria-label="Mensagem"
                         >
-                            <MessageCircle size={16} />
+                            <MessageCircle size={15} strokeWidth={2.2} />
                         </button>
                         <RodaButton targetUsername={profile.username} />
                         <div className="flex-1" data-testid="mob-action-follow-wrap">
