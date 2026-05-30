@@ -867,6 +867,63 @@ export function PaperFoldCorner({ size = 22, color = "rgba(10,10,10,0.10)", corn
     );
 }
 
+// ============ TRAÇO RÁPIDO (slash mark manuscrito) ============
+export function QuickStroke({ color = PT.gold, w = 60, h = 22, rotate = -20, strokeWidth = 4, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden style={{ transform: `rotate(${rotate}deg)`, ...style }}>
+            <path
+                d={`M 4 ${h - 4} Q ${w * 0.4} 2 ${w - 4} ${h * 0.4}`}
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+            />
+        </svg>
+    );
+}
+
+// ============ SETA MANUSCRITA RÁPIDA (curva curta) ============
+export function HandArrow({ color = PT.ink, w = 72, h = 60, rotate = 0, dir = "right", style = {} }) {
+    // dir: right, left, down, up
+    const paths = {
+        right: { line: `M 6 ${h * 0.7} Q ${w * 0.5} 6 ${w - 14} ${h * 0.55}`, head: `M ${w - 22} ${h * 0.35} L ${w - 14} ${h * 0.55} L ${w - 26} ${h * 0.66}` },
+        left:  { line: `M ${w - 6} ${h * 0.7} Q ${w * 0.5} 6 14 ${h * 0.55}`, head: `M 22 ${h * 0.35} L 14 ${h * 0.55} L 26 ${h * 0.66}` },
+        down:  { line: `M ${w * 0.3} 6 Q ${w * 0.6} ${h * 0.5} ${w * 0.55} ${h - 12}`, head: `M ${w * 0.42} ${h - 22} L ${w * 0.55} ${h - 12} L ${w * 0.66} ${h - 24}` },
+        up:    { line: `M ${w * 0.3} ${h - 6} Q ${w * 0.6} ${h * 0.5} ${w * 0.55} 12`, head: `M ${w * 0.42} 22 L ${w * 0.55} 12 L ${w * 0.66} 24` },
+    };
+    const p = paths[dir] || paths.right;
+    return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden style={{ transform: `rotate(${rotate}deg)`, ...style }}>
+            <path d={p.line} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+            <path d={p.head} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+// ============ MINI CARIMBO RECTANGULAR (LIVE!/VISTO!/NOVO!) ============
+export function StampTag({ children, bg = PT.red, color = "#fff", rotate = -8, size = 14, style = {} }) {
+    return (
+        <span
+            aria-hidden
+            className="font-mono font-black uppercase select-none inline-block"
+            style={{
+                background: bg,
+                color,
+                padding: "5px 10px",
+                fontSize: size,
+                letterSpacing: "0.12em",
+                border: `2.5px solid ${PT.ink}`,
+                boxShadow: `2px 2px 0 ${PT.ink}`,
+                transform: `rotate(${rotate}deg)`,
+                lineHeight: 1,
+                ...style,
+            }}
+        >
+            {children}
+        </span>
+    );
+}
+
 // ============ ESTILOS partilhados (inputs + botões neo-brutalist) ============
 export function AuthStyles() {
     return (

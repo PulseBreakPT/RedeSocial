@@ -12,6 +12,7 @@ import {
     DoodleLongArrow, HandNote, GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
     PostIt, Receipt, Ticket, PostStamp, AzulejoBorder, Highlight, Coords,
     SpeechBubble, NewspaperClip, Signature, RouteDots, PaperFoldCorner,
+    QuickStroke, HandArrow, StampTag,
 } from "./auth/AuthDecor";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
@@ -256,6 +257,17 @@ function Hero({ stats }) {
                                 GRÁTIS ✱
                             </Sticker>
                         </div>
+                        {/* Seta manuscrita a apontar para o CTA — só desktop */}
+                        <div className="absolute -top-12 left-12 pointer-events-none hidden lg:block">
+                            <HandArrow color={PT.red} w={76} h={62} rotate={155} dir="right" />
+                        </div>
+                        <div className="absolute -top-14 left-32 pointer-events-none hidden lg:block">
+                            <Signature size={20} rotate={-8} color={PT.red}>começa aqui!</Signature>
+                        </div>
+                        {/* Traço rápido sob os botões */}
+                        <div className="absolute -bottom-5 left-0 pointer-events-none hidden sm:block">
+                            <QuickStroke color={PT.gold} w={120} h={18} rotate={-3} strokeWidth={5} />
+                        </div>
                     </div>
 
                     {/* Avatares + live dot */}
@@ -357,10 +369,16 @@ function Hero({ stats }) {
             </div>
 
             {/* Trust badges */}
-            <div className="mt-10 sm:mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-9 max-w-3xl mx-auto" data-testid="trust-badges">
+            <div className="mt-10 sm:mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-9 max-w-3xl mx-auto relative" data-testid="trust-badges">
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none hidden sm:block">
+                    <DoodleStar color={PT.gold} size={22} rotate={8} />
+                </div>
                 <TrustBadge icon={<Heart size={16} />} color={PT.red}>Feito em Portugal</TrustBadge>
                 <TrustBadge icon={<Lock size={16} />} color={PT.azul}>Privacidade primeiro</TrustBadge>
                 <TrustBadge icon={<MessageCircle size={16} />} color={PT.green}>Conversas reais</TrustBadge>
+                <div className="absolute -bottom-3 left-0 right-0 flex justify-center pointer-events-none hidden sm:flex">
+                    <DoodleUnderline color={PT.gold} w={280} h={10} />
+                </div>
             </div>
         </section>
     );
@@ -425,6 +443,18 @@ function StatsBand({ stats }) {
                             <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.08em", opacity: 0.92 }}>
                                 {it.label}
                             </p>
+                            {/* Mini carimbo "LIVE!" só na primeira card */}
+                            {i === 0 && (
+                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
+                                    <StampTag bg={PT.red} color="#fff" rotate={-12} size={10}>LIVE!</StampTag>
+                                </div>
+                            )}
+                            {/* Mini carimbo "HOJE!" na terceira (posts hoje) */}
+                            {i === 2 && (
+                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
+                                    <StampTag bg={PT.gold} color={PT.ink} rotate={10} size={10}>HOJE!</StampTag>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -467,7 +497,21 @@ function WhatYouFind() {
                     </h2>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-7 lg:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-7 lg:gap-4 relative">
+                    {/* Seta a apontar para "Conversas" */}
+                    <div className="absolute -top-10 left-2 pointer-events-none hidden lg:block">
+                        <HandArrow color={PT.red} w={66} h={56} rotate={-15} dir="down" />
+                    </div>
+                    <div className="absolute -top-8 left-16 pointer-events-none hidden lg:block">
+                        <Signature size={20} rotate={-6} color={PT.red}>começa por aqui</Signature>
+                    </div>
+                    {/* Sparkles entre categorias */}
+                    <div className="absolute top-6 left-[39%] pointer-events-none hidden lg:block">
+                        <DoodleSparkles color={PT.gold} size={30} rotate={20} />
+                    </div>
+                    <div className="absolute top-2 left-[78%] pointer-events-none hidden lg:block">
+                        <DoodleCross color={PT.red} size={20} rotate={12} />
+                    </div>
                     {cats.map((c, i) => (
                         <div key={i} className="text-center" data-testid={c.testid}>
                             <div
