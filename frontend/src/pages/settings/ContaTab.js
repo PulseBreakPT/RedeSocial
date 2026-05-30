@@ -129,7 +129,7 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                             placeholder="Conta-nos algo em poucas palavras…"
                             className="mt-2 w-full px-4 py-3.5 focus:outline-none resize-none font-medium"
                             style={{
-                                background: "#FFF4DC",
+                                background: "#F4F4F4",
                                 color: "#0A0A0A",
                                 border: "2.5px solid #0A0A0A",
                                 boxShadow: "2px 2px 0 #0A0A0A",

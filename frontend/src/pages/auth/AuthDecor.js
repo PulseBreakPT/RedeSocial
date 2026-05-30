@@ -8,9 +8,9 @@ export const PT = {
     green: "#046A38",
     gold: "#FFCC00",
     azul: "#0E4D92",
-    cream: "#FFF4DC",
+    cream: "#F4F4F4",
     ink: "#0A0A0A",
-    bone: "#F2EBD3",
+    bone: "#EDEDEC",
 };
 
 // ============ STICKER OVAL ROTADO ============
@@ -625,10 +625,10 @@ export function PostStamp({ city, code, value = "0.85€", color = PT.red, rotat
             style={{
                 width: size,
                 height: size * 1.18,
-                background: "#FFF4DC",
+                background: "#F4F4F4",
                 color: PT.ink,
                 border: `2px dashed ${PT.ink}`,
-                outline: `4px solid #FFF4DC`,
+                outline: `4px solid #F4F4F4`,
                 transform: `rotate(${rotate}deg)`,
                 boxShadow: `3px 3px 0 rgba(10,10,10,0.18)`,
                 padding: 6,
@@ -664,7 +664,7 @@ export function AzulejoTile({ size = 56, rotate = 0, style = {} }) {
             viewBox="0 0 40 40"
             style={{ transform: `rotate(${rotate}deg)`, ...style }}
         >
-            <rect width="40" height="40" fill="#FFF4DC" stroke={PT.ink} strokeWidth="0.6" />
+            <rect width="40" height="40" fill="#F4F4F4" stroke={PT.ink} strokeWidth="0.6" />
             {/* corners */}
             <path d="M0 0 L10 0 L0 10 Z" fill={PT.azul} />
             <path d="M40 0 L30 0 L40 10 Z" fill={PT.azul} />
@@ -727,7 +727,7 @@ export function Coords({ lat, lon, rotate = 0, color = PT.ink, style = {} }) {
                 color,
                 fontSize: 9.5,
                 letterSpacing: "0.10em",
-                background: "rgba(255,244,220,0.85)",
+                background: "rgba(244,244,244,0.85)",
                 padding: "2px 6px",
                 border: `1.2px solid ${color}`,
                 transform: `rotate(${rotate}deg)`,

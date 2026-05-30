@@ -13,7 +13,7 @@ export function MobileHomeHero({ greeting, firstName }) {
             className="lg:hidden px-4 pt-4 pb-3 relative"
             data-testid="mobile-home-hero"
             style={{
-                background: "rgba(255,244,220,0.96)",
+                background: "rgba(244,244,244,0.96)",
                 borderBottom: `2.5px solid ${PT.ink}`,
             }}
         >

@@ -44,7 +44,7 @@ export function MobileTopBar({ onOpenChat }) {
             className="lg:hidden sticky top-0 z-40 pt-safe"
             data-testid="mobile-topbar"
             style={{
-                background: "rgba(255,244,220,0.95)",
+                background: "rgba(244,244,244,0.95)",
                 backdropFilter: "blur(8px)",
                 borderBottom: `2.5px solid ${PT.ink}`,
             }}

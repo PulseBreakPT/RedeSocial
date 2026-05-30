@@ -195,7 +195,7 @@ export function IdentityCard({
                                             <button
                                                 onClick={() => setQuickOpen(false)}
                                                 className="w-6 h-6 grid place-items-center tap-shrink"
-                                                style={{ background: "#FFF4DC", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                                                style={{ background: "#F4F4F4", border: "2px solid #0A0A0A", borderRadius: 999 }}
                                             >
                                                 <X size={11} strokeWidth={2.4} />
                                             </button>
@@ -209,7 +209,7 @@ export function IdentityCard({
                                             data-testid="profile-quick-msg-input"
                                             className="w-full px-3 py-2 outline-none resize-none font-medium"
                                             style={{
-                                                background: "#FFF4DC",
+                                                background: "#F4F4F4",
                                                 border: "2px solid #0A0A0A",
                                                 borderRadius: 8,
                                                 fontSize: 13,

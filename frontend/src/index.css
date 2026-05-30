@@ -745,7 +745,7 @@
        FANZINE PT: chunky ink borders, gold/red/azul accents,
        mono `// LABEL` eyebrows, hard shadows, no soft greys.
        Tokens: ink #0A0A0A · gold #FFCC00 · red #C8102E · azul #0E4D92
-              · green #2D6E4B · cream #FFF4DC
+              · green #2D6E4B · cream #F4F4F4
        ============================================================ */
     .prose-legal { color: #0A0A0A; font-size: 15.5px; line-height: 1.75; font-family: "Inter", system-ui, sans-serif; max-width: 70ch; }
     .prose-legal h2 {
@@ -845,7 +845,7 @@
         color: #0A0A0A;
         font-family: "Geist", "Inter", sans-serif;
         font-size: 16px; line-height: 1.65;
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 4px 4px 0 #0A0A0A;
         font-weight: 500;
     }
@@ -914,7 +914,7 @@
         content: "//"; color: #C8102E; font-weight: 900;
     }
     .prose-legal .legal-callout.is-key {
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 5px 5px 0 #0E4D92;
     }
     .prose-legal .legal-callout.is-key > strong:first-child {
@@ -923,7 +923,7 @@
     }
     .prose-legal .legal-callout.is-key > strong:first-child::before { color: #FFCC00; }
     .prose-legal .legal-callout.is-warn {
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 5px 5px 0 #C8102E;
     }
     .prose-legal .legal-callout.is-warn > strong:first-child {
@@ -932,7 +932,7 @@
     }
     .prose-legal .legal-callout.is-warn > strong:first-child::before { color: #FFCC00; }
     .prose-legal .legal-callout.is-tldr {
-        background: #0A0A0A; color: #FFF4DC;
+        background: #0A0A0A; color: #F4F4F4;
         border-color: #0A0A0A;
         box-shadow: 5px 5px 0 #FFCC00;
     }
@@ -999,7 +999,7 @@
     .prose-legal .legal-seealso {
         margin-top: 1.2rem; padding: 14px 16px;
         border: 2.5px dashed #0A0A0A;
-        background: #FFF4DC;
+        background: #F4F4F4;
         font-size: 13px;
         color: #0A0A0A;
         display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center;
@@ -1024,7 +1024,7 @@
         transition: box-shadow 200ms ease, transform 200ms ease;
     }
     .prose-legal details[open] {
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 4px 4px 0 #C8102E;
     }
     .prose-legal details summary {
@@ -2277,7 +2277,7 @@
     /* ════════════════════════════════════════════════════════════
        LEGAL-VIZ — visual primitives library (FANZINE PT)
        Tokens: ink #0A0A0A · gold #FFCC00 · red #C8102E · azul #0E4D92
-              · green #2D6E4B · cream #FFF4DC
+              · green #2D6E4B · cream #F4F4F4
        ════════════════════════════════════════════════════════════ */
 
     /* — Signal pills (frameworks regulatórios) — */
@@ -2399,8 +2399,8 @@
         background: #ffffff;
         box-shadow: 4px 4px 0 #0A0A0A;
     }
-    .legal-viz-block--danger { background: #FFF4DC; box-shadow: 4px 4px 0 #C8102E; }
-    .legal-viz-block--info { background: #FFF4DC; box-shadow: 4px 4px 0 #0E4D92; }
+    .legal-viz-block--danger { background: #F4F4F4; box-shadow: 4px 4px 0 #C8102E; }
+    .legal-viz-block--info { background: #F4F4F4; box-shadow: 4px 4px 0 #0E4D92; }
     .legal-viz-block-eyebrow {
         font-size: 10.5px;
         text-transform: uppercase;
@@ -2424,7 +2424,7 @@
         margin: 1.2rem 0 1.6rem;
         padding: 16px 14px 14px;
         border: 2.5px solid #0A0A0A;
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 4px 4px 0 #0A0A0A;
         overflow-x: auto;
     }
@@ -2497,7 +2497,7 @@
         border-bottom: 1.5px dashed rgba(10,10,10,0.18);
     }
     .legal-viz-ladder-row:last-child { border-bottom: 0; }
-    .legal-viz-ladder-row:nth-child(odd) { background: #FFF4DC; }
+    .legal-viz-ladder-row:nth-child(odd) { background: #F4F4F4; }
     .legal-viz-ladder-num {
         font-family: "JetBrains Mono", monospace;
         font-size: 11px;
@@ -2731,12 +2731,12 @@
     }
     .legal-viz-icongrid--danger .legal-viz-icongrid-item {
         border-left-color: #C8102E;
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 2.5px 2.5px 0 #C8102E;
     }
     .legal-viz-icongrid--warn .legal-viz-icongrid-item {
         border-left-color: #FFCC00;
-        background: #FFF4DC;
+        background: #F4F4F4;
         box-shadow: 2.5px 2.5px 0 #FFCC00;
     }
     .legal-viz-icongrid-icon {
@@ -2948,7 +2948,7 @@
         background: #ffffff;
     }
     .legal-viz-compliance-row:last-child { border-bottom: 0; }
-    .legal-viz-compliance-row:nth-child(even) { background: #FFF4DC; }
+    .legal-viz-compliance-row:nth-child(even) { background: #F4F4F4; }
     .legal-viz-compliance-dot {
         width: 10px; height: 10px;
         background: #2D6E4B;

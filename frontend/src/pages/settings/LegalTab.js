@@ -70,7 +70,7 @@ export function LegalTab() {
                                 data-testid="legal-dpo-email"
                                 className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 font-black uppercase tap-shrink"
                                 style={{
-                                    background: "#FFF4DC", color: "#0A0A0A",
+                                    background: "#F4F4F4", color: "#0A0A0A",
                                     border: "2.5px solid #0A0A0A",
                                     boxShadow: "2.5px 2.5px 0 #0A0A0A",
                                     borderRadius: 999,

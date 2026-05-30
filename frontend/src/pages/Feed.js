@@ -199,7 +199,7 @@ export default function Feed() {
             <div
                 className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
                 style={{
-                    background: "rgba(255,244,220,0.94)",
+                    background: "rgba(244,244,244,0.94)",
                     borderBottom: `3px solid ${PT.ink}`,
                 }}
             >
@@ -309,7 +309,7 @@ export default function Feed() {
                 className="lg:hidden sticky z-20 backdrop-blur relative"
                 style={{
                     top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
-                    background: "rgba(255,244,220,0.94)",
+                    background: "rgba(244,244,244,0.94)",
                     borderBottom: `3px solid ${PT.ink}`,
                 }}
             >

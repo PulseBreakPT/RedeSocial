@@ -168,7 +168,7 @@ export function MobileBottomNav({ onCompose }) {
             className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe"
             data-testid="mobile-bottom-nav"
             style={{
-                background: "rgba(255,244,220,0.96)",
+                background: "rgba(244,244,244,0.96)",
                 backdropFilter: "blur(8px)",
                 borderTop: `2.5px solid ${PT.ink}`,
             }}

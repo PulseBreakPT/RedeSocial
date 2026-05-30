@@ -202,7 +202,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
             <header
                 className="sticky top-0 z-30 backdrop-blur"
                 style={{
-                    background: "rgba(255,244,220,0.92)",
+                    background: "rgba(244,244,244,0.92)",
                     borderBottom: `3px solid ${PT.ink}`,
                 }}
             >

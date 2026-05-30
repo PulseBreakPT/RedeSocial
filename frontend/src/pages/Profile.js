@@ -401,7 +401,7 @@ function BlockedWallView({ profile }) {
                 className="relative h-36 lg:h-52 overflow-hidden"
                 style={{
                     background:
-                        "repeating-linear-gradient(45deg, rgba(10,10,10,0.08) 0 14px, rgba(10,10,10,0.02) 14px 28px), #FFF4DC",
+                        "repeating-linear-gradient(45deg, rgba(10,10,10,0.08) 0 14px, rgba(10,10,10,0.02) 14px 28px), #F4F4F4",
                     borderBottom: `4px solid ${PT.ink}`,
                 }}
                 aria-hidden

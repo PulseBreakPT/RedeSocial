@@ -322,7 +322,7 @@ export function DataTab({ user }) {
                 <div
                     className="lg:col-span-12 p-5"
                     style={{
-                        background: "#FFF4DC",
+                        background: "#F4F4F4",
                         border: "3px solid #C8261E",
                         boxShadow: "4px 4px 0 #0A0A0A",
                         borderRadius: 14,

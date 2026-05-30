@@ -9,7 +9,7 @@ import { SwitchPill } from "./_shared";
 
 const THEMES = [
     { key: "light", label: "Clara", desc: "Branco e tinta — a padrão.", icon: Sun, swatchBg: "#fff" },
-    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatchBg: "#FFF4DC" },
+    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatchBg: "#F4F4F4" },
     { key: "auto", label: "Sistema", desc: "Segue a preferência do dispositivo.", icon: Sparkles, swatchBg: "#3E5C9A" },
 ];
 
@@ -57,7 +57,7 @@ function OptionCard({ active, onClick, icon: Icon, label, desc, swatchBg, testid
                 ) : (
                     <div
                         className="w-11 h-11 grid place-items-center"
-                        style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
                     >
                         <Icon size={15} strokeWidth={2.2} />
                     </div>

@@ -140,7 +140,7 @@ function ActionTile({ icon: Icon, title, sub, onClick, to, badge, dataTestid, ti
                 <div className="font-black tracking-tight flex items-center gap-1.5" style={{ fontSize: 13.5, color: "#0A0A0A" }}>
                     {title}
                     {badge && (
-                        <span className="font-mono font-black uppercase px-1.5 py-0.5" style={{ fontSize: 9.5, letterSpacing: "0.10em", background: "#FFF4DC", color: "#0A0A0A", border: "1.5px solid #0A0A0A", borderRadius: 999 }}>{badge}</span>
+                        <span className="font-mono font-black uppercase px-1.5 py-0.5" style={{ fontSize: 9.5, letterSpacing: "0.10em", background: "#F4F4F4", color: "#0A0A0A", border: "1.5px solid #0A0A0A", borderRadius: 999 }}>{badge}</span>
                     )}
                 </div>
                 {sub && <div className="text-[11.5px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
@@ -209,7 +209,7 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                 <div
                     className="lg:col-span-12 relative overflow-hidden p-6 lg:p-8"
                     style={{
-                        background: "#FFF4DC",
+                        background: "#F4F4F4",
                         border: "3px solid #0A0A0A",
                         boxShadow: "5px 5px 0 #0A0A0A",
                         borderRadius: 14,
@@ -393,7 +393,7 @@ function Pill({ on, label }) {
             style={{
                 fontSize: 10,
                 letterSpacing: "0.14em",
-                background: on ? "#1F7A5A" : "#FFF4DC",
+                background: on ? "#1F7A5A" : "#F4F4F4",
                 color: on ? "#fff" : "rgba(10,10,10,0.55)",
                 border: "1.5px solid #0A0A0A",
                 borderRadius: 999,
@@ -411,7 +411,7 @@ function SecRow({ ok, label }) {
             <span
                 className="w-5 h-5 grid place-items-center shrink-0"
                 style={{
-                    background: ok ? "#1F7A5A" : "#FFF4DC",
+                    background: ok ? "#1F7A5A" : "#F4F4F4",
                     color: ok ? "#fff" : "rgba(10,10,10,0.45)",
                     border: "1.5px solid #0A0A0A",
                     borderRadius: 999,

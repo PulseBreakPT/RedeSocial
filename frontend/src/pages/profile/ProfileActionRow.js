@@ -155,7 +155,7 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                 <div
                     className="px-4 py-3 flex flex-wrap items-center gap-3"
                     style={{
-                        background: "#FFF4DC",
+                        background: "#F4F4F4",
                         border: "3px solid #C8261E",
                         boxShadow: "4px 4px 0 #0A0A0A",
                         borderRadius: 14,
@@ -267,7 +267,7 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         title={`Levantar muro com ${firstName}`}
                         className="h-11 px-4 inline-flex items-center justify-center gap-1.5 font-black uppercase tap-shrink disabled:opacity-50"
                         style={{
-                            background: "#FFF4DC", color: "#C8261E",
+                            background: "#F4F4F4", color: "#C8261E",
                             border: "2.5px solid #C8261E",
                             boxShadow: "3px 3px 0 #0A0A0A",
                             borderRadius: 999,

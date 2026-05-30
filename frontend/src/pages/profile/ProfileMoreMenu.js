@@ -59,7 +59,7 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                     <button
                         onClick={onCancel}
                         className="w-9 h-9 grid place-items-center tap-shrink"
-                        style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                        style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
                     >
                         <X size={14} strokeWidth={2.4} />
                     </button>
@@ -93,7 +93,7 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                     placeholder="Detalhes (opcional)…"
                     className="w-full px-3 py-2 focus:outline-none resize-none mb-3 font-medium"
                     style={{
-                        background: "#FFF4DC",
+                        background: "#F4F4F4",
                         color: "#0A0A0A",
                         border: "2.5px solid #0A0A0A",
                         boxShadow: "2px 2px 0 #0A0A0A",

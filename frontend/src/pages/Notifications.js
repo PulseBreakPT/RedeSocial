@@ -388,7 +388,7 @@ export default function Notifications() {
                         <div
                             className="px-4 lg:px-5 py-2 sticky top-[calc(var(--mobile-topbar-h)+108px)] lg:top-[150px] backdrop-blur z-10"
                             style={{
-                                background: "rgba(255,244,220,0.94)",
+                                background: "rgba(244,244,244,0.94)",
                                 borderBottom: `2.5px solid ${PT.ink}`,
                                 borderTop: `2.5px solid ${PT.ink}`,
                             }}

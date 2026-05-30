@@ -97,7 +97,7 @@ function TwoFaSetupModal({ onClose, onDone }) {
             >
                 <button onClick={onClose} aria-label="Fechar"
                     className="absolute top-3 right-3 w-8 h-8 grid place-items-center z-10 tap-shrink"
-                    style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
                 ><X size={14} strokeWidth={2.4} /></button>
 
                 <div className="p-6">
@@ -213,7 +213,7 @@ function TwoFaDisableModal({ onClose, onDone }) {
                 style={{ background: "#fff", border: "3px solid #0A0A0A", boxShadow: "6px 6px 0 #C8261E", borderRadius: 14 }}>
                 <button onClick={onClose} aria-label="Fechar"
                     className="absolute top-3 right-3 w-8 h-8 grid place-items-center tap-shrink"
-                    style={{ background: "#FFF4DC", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
                 ><X size={14} strokeWidth={2.4} /></button>
                 <p className="type-overline mb-1">Desativar 2FA</p>
                 <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">Confirma a tua identidade</h3>
@@ -419,7 +419,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                             <div
                                 className="w-12 h-12 grid place-items-center shrink-0"
                                 style={{
-                                    background: twoFaStatus.enabled ? "#1F7A5A" : "#FFF4DC",
+                                    background: twoFaStatus.enabled ? "#1F7A5A" : "#F4F4F4",
                                     color: twoFaStatus.enabled ? "#fff" : "rgba(10,10,10,0.55)",
                                     border: "2.5px solid #0A0A0A",
                                     borderRadius: 8,
@@ -515,7 +515,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                                         <div
                                             className="w-11 h-11 grid place-items-center shrink-0"
                                             style={{
-                                                background: s.current ? "#1F7A5A" : "#FFF4DC",
+                                                background: s.current ? "#1F7A5A" : "#F4F4F4",
                                                 color: s.current ? "#fff" : "rgba(10,10,10,0.6)",
                                                 border: "2px solid #0A0A0A",
                                                 borderRadius: 8,
