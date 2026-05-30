@@ -193,7 +193,6 @@ export default function Notifications() {
         <PtPageShell testid="notifications-page">
             <PageHeader
                 title="Notificações"
-                subtitle={`${items.length} no total · ${unreadCount} por ler`}
                 testid="notifications-header"
                 action={
                     <div className="flex items-center gap-1.5">

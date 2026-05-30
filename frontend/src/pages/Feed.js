@@ -17,7 +17,7 @@ import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { FeedContextLine } from "../components/pulse/FeedContextLine";
 import { haptic } from "../lib/haptics";
 import {
-    PT, Kicker, Sticker, AuthStyles,
+    PT, Sticker, AuthStyles,
     DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
     DoodleZigzag, DoodleCross, GiantAsterisk,
 } from "./auth/AuthDecor";
@@ -214,10 +214,6 @@ export default function Feed() {
                 </div>
                 <div className="px-6 pt-4 pb-3 flex items-end justify-between gap-4 relative z-10">
                     <div className="min-w-0">
-                        <Kicker color={PT.red} className="mb-1.5 inline-flex items-center gap-1.5">
-                            <span className="live-dot" style={{ background: PT.green }} />
-                            <span>// AO VIVO · O QUE SE PASSA</span>
-                        </Kicker>
                         <h1
                             className="font-black tracking-[-0.03em] leading-[0.98]"
                             style={{ fontSize: 30, color: PT.ink }}
@@ -393,8 +389,7 @@ export default function Feed() {
                     >
                         <Sparkles size={26} strokeWidth={2.2} style={{ color: PT.ink }} />
                     </div>
-                    <Kicker color={PT.red} className="mb-2">// SEM · NOVIDADES</Kicker>
-                    <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 22, color: PT.ink }}>
+                    <h3 className="font-black tracking-tight leading-tight mt-2" style={{ fontSize: 22, color: PT.ink }}>
                         {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
                     </h3>
                     <p className="text-[14px] mt-3 max-w-xs mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>

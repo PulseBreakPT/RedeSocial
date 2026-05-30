@@ -603,7 +603,7 @@ export default function Premium() {
 
     return (
         <PtPageShell testid="premium-page">
-            <PageHeader title="Plus & Aura" subtitle="Uma camada mais profunda do teu Lusorae" back />
+            <PageHeader title="Plus & Aura" back />
 
             {/* ──────────────────────────────────────────
                 NÍVEL 1 — PLANOS (herói)

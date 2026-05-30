@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { PT, Kicker, Sticker } from "../pages/auth/AuthDecor";
+import { PT, Sticker } from "../pages/auth/AuthDecor";
 
 /**
  * Mobile-only personalized hero strip — fanzine PT.
@@ -19,10 +19,6 @@ export function MobileHomeHero({ greeting, firstName }) {
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <Kicker color={PT.red} className="mb-1.5 inline-flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: PT.green }} />
-                        <span>// AO VIVO · O QUE SE PASSA</span>
-                    </Kicker>
                     <h1
                         className="font-black tracking-[-0.03em] leading-[1.0]"
                         style={{ fontSize: 22, color: PT.ink }}

@@ -106,7 +106,7 @@ export default function Explore() {
 
     return (
         <PtPageShell testid="explore-page">
-            <PageHeader sticky={false} title="Explorar" subtitle="Descobre o que se passa em Portugal" testid="explore-header">
+            <PageHeader sticky={false} title="Explorar" testid="explore-header">
                 <div className="px-3 lg:px-4 pb-2.5 flex items-center gap-2">
                     <div className="flex-1 relative">
                         <Search size={14} strokeWidth={2.2} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: PT.ink }} />
