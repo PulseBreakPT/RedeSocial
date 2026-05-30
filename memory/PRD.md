@@ -64,3 +64,11 @@ Rede social portuguesa focada em conversas reais, presença local (cidades), com
 
 ## Endpoints / Coleções
 Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
+
+## Changelog
+- **2026-02-30**: Doodles/rabiscos decorativos agora **visíveis em mobile** com escala responsiva (`scale-[0.5-0.75]` + `opacity-60-70`) em todas as secções:
+  - `Login.js`: 5 doodles ativados (Star, Scribble azul, 2 Sparkles, Zigzag, Underline)
+  - `Register.js`: 5 doodles ativados (Scribble, Star, Sparkles, GeoCircle, Zigzag)
+  - `Landing.js`: doodles de fundo adicionados em StatsBand, WhatYouFind, ExploreCities, HowItWorks, PortugalMap, FeitoParaPessoas e Faq; existentes ativados (Sparkles, Scribble, Spiral, Star, Underline, Cross, Zigzag)
+  - `SiteFooter.js`: bloco decorativo "acontece aqui." agora também em mobile
+

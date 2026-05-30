@@ -185,7 +185,7 @@ export default function SiteFooter() {
 function DecorBlock() {
     return (
         <div
-            className="absolute pointer-events-none select-none hidden lg:block"
+            className="absolute pointer-events-none select-none block opacity-70 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-right"
             style={{ bottom: 16, right: 16, zIndex: 0 }}
             aria-hidden
         >

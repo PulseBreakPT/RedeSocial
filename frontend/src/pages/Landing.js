@@ -159,10 +159,10 @@ function Hero({ stats }) {
     return (
         <section className="relative px-5 sm:px-8 lg:px-16 pt-2 lg:pt-4 pb-12 sm:pb-16 lg:pb-20" data-testid="hero">
             {/* Doodles dispersos */}
-            <div className="absolute top-10 right-10 pointer-events-none hidden lg:block">
+            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
                 <DoodleSparkles color={PT.gold} size={64} rotate={14} />
             </div>
-            <div className="absolute bottom-20 left-6 pointer-events-none hidden lg:block">
+            <div className="absolute bottom-12 left-2 lg:bottom-20 lg:left-6 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
                 <DoodleScribble color={PT.azul} w={140} h={48} style={{ transform: "rotate(-8deg)" }} />
             </div>
 
@@ -370,14 +370,14 @@ function Hero({ stats }) {
 
             {/* Trust badges */}
             <div className="mt-10 sm:mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-9 max-w-3xl mx-auto relative" data-testid="trust-badges">
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 pointer-events-none hidden sm:block">
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none block opacity-70 scale-75 sm:scale-100 sm:opacity-100">
                     <DoodleStar color={PT.gold} size={22} rotate={8} />
                 </div>
                 <TrustBadge icon={<Heart size={16} />} color={PT.red}>Feito em Portugal</TrustBadge>
                 <TrustBadge icon={<Lock size={16} />} color={PT.azul}>Privacidade primeiro</TrustBadge>
                 <TrustBadge icon={<MessageCircle size={16} />} color={PT.green}>Conversas reais</TrustBadge>
-                <div className="absolute -bottom-3 left-0 right-0 flex justify-center pointer-events-none hidden sm:flex">
-                    <DoodleUnderline color={PT.gold} w={280} h={10} />
+                <div className="absolute -bottom-3 left-0 right-0 flex justify-center pointer-events-none opacity-70 sm:opacity-100">
+                    <DoodleUnderline color={PT.gold} w={280} h={10} className="scale-[0.6] sm:scale-100" />
                 </div>
             </div>
         </section>
@@ -416,8 +416,15 @@ function StatsBand({ stats }) {
         { value: stats?.cities_active, fallback: stats?.communities_total, label: "cidades · ativas", icon: <Building2 size={26} />, bg: PT.red, color: "#fff", testid: "stat-cities" },
     ];
     return (
-        <section className="px-5 sm:px-8 lg:px-16 py-10 sm:py-14 lg:py-16" data-testid="stats-band">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+        <section className="px-5 sm:px-8 lg:px-16 py-10 sm:py-14 lg:py-16 relative" data-testid="stats-band">
+            {/* Doodles decorativos de fundo */}
+            <div className="absolute top-2 left-4 sm:top-6 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
+                <DoodleSparkles color={PT.red} size={44} rotate={-12} />
+            </div>
+            <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
+                <DoodleSpiral color={PT.azul} size={48} rotate={14} />
+            </div>
+            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 relative z-10">
                 {items.map((it, i) => {
                     const v = (it.value != null && it.value > 0) ? it.value : (it.fallback ?? 0);
                     return (
@@ -476,7 +483,14 @@ function WhatYouFind() {
     ];
     return (
         <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="what-you-find">
-            <div className="max-w-7xl mx-auto">
+            {/* Doodles de fundo de secção */}
+            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
+                <DoodleStar color={PT.gold} size={42} rotate={-14} />
+            </div>
+            <div className="absolute bottom-8 right-4 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
+                <DoodleZigzag color={PT.red} w={120} h={28} style={{ transform: "rotate(8deg)" }} />
+            </div>
+            <div className="max-w-7xl mx-auto relative z-10">
                 <div className="text-center mb-10 sm:mb-12 relative inline-block left-1/2 -translate-x-1/2">
                     <Kicker color={PT.red} className="mb-2 block">// O QUE VAIS ENCONTRAR</Kicker>
                     <h2
@@ -506,10 +520,10 @@ function WhatYouFind() {
                         <Signature size={20} rotate={-6} color={PT.red}>começa por aqui</Signature>
                     </div>
                     {/* Sparkles entre categorias */}
-                    <div className="absolute top-6 left-[39%] pointer-events-none hidden lg:block">
+                    <div className="absolute top-2 left-[39%] lg:top-6 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
                         <DoodleSparkles color={PT.gold} size={30} rotate={20} />
                     </div>
-                    <div className="absolute top-2 left-[78%] pointer-events-none hidden lg:block">
+                    <div className="absolute top-1 left-[78%] lg:top-2 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
                         <DoodleCross color={PT.red} size={20} rotate={12} />
                     </div>
                     {cats.map((c, i) => (
@@ -546,8 +560,15 @@ function ExploreCities() {
         { src: HERO_CITY_3, name: "Algarve", code: "ALG", coords: { lat: "37.01", lon: "7.93" }, stampBg: PT.red, sBg: PT.red, sCol: "#fff", color: PT.azul, rotate: -1 },
     ];
     return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20" data-testid="explore-cities">
-            <div className="max-w-7xl mx-auto rounded-3xl relative" style={{ background: "#fff", border: `3.5px solid ${PT.ink}`, boxShadow: `6px 6px 0 ${PT.ink}` }}>
+        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="explore-cities">
+            {/* Doodles de fundo */}
+            <div className="absolute top-4 right-6 sm:top-8 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
+                <DoodleSparkles color={PT.green} size={40} rotate={10} />
+            </div>
+            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
+                <DoodleScribble color={PT.gold} w={120} h={36} style={{ transform: "rotate(-6deg)" }} />
+            </div>
+            <div className="max-w-7xl mx-auto rounded-3xl relative z-10" style={{ background: "#fff", border: `3.5px solid ${PT.ink}`, boxShadow: `6px 6px 0 ${PT.ink}` }}>
                 {/* Canto dobrado decorativo */}
                 <PaperFoldCorner size={26} color="rgba(10,10,10,0.10)" corner="top-right" style={{ borderRadius: "0 24px 0 0" }} />
 
@@ -611,7 +632,7 @@ function ExploreCities() {
                                 index={i}
                             />
                         ))}
-                        <div className="absolute -top-5 -right-5 pointer-events-none hidden sm:block">
+                        <div className="absolute -top-4 -right-3 sm:-top-5 sm:-right-5 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
                             <DoodleStar color={PT.red} size={40} rotate={12} />
                         </div>
                     </div>
@@ -674,8 +695,14 @@ function HowItWorks() {
     ];
     return (
         <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="how-it-works">
-            <div className="absolute top-10 right-10 pointer-events-none hidden lg:block">
+            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
                 <DoodleSpiral color={PT.gold} size={64} rotate={-12} />
+            </div>
+            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
+                <DoodleCross color={PT.azul} size={28} rotate={20} />
+            </div>
+            <div className="absolute top-1/2 left-2 sm:left-6 pointer-events-none block opacity-50 scale-[0.5] lg:scale-100 lg:opacity-100 origin-left">
+                <DoodleStar color={PT.red} size={36} rotate={-8} />
             </div>
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 sm:mb-10">
@@ -761,7 +788,14 @@ function HowItWorks() {
 function PortugalMap() {
     return (
         <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" style={{ background: PT.bone }} data-testid="portugal-map">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.1fr_1fr] gap-8 sm:gap-10 items-center">
+            {/* Doodles de fundo */}
+            <div className="absolute top-6 left-3 sm:top-10 sm:left-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
+                <DoodleSparkles color={PT.gold} size={44} rotate={-10} />
+            </div>
+            <div className="absolute bottom-8 right-3 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.5] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
+                <DoodleExclamation color={PT.green} size={42} rotate={12} />
+            </div>
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.1fr_1fr] gap-8 sm:gap-10 items-center relative z-10">
                 {/* COLUNA ESQ — título */}
                 <div className="order-1">
                     <Kicker color={PT.red} className="mb-2">// PORTUGAL · CONECTADO</Kicker>
@@ -804,7 +838,7 @@ function PortugalMap() {
                         />
                     </div>
                     {/* Doodle decorativo */}
-                    <div className="absolute -top-4 -right-3 z-10 pointer-events-none hidden sm:block">
+                    <div className="absolute -top-3 -right-2 sm:-top-4 sm:-right-3 z-10 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleStar color={PT.red} size={42} rotate={14} />
                     </div>
                     {/* Bilhete de evento sobreposto — só desktop */}
@@ -872,6 +906,13 @@ function FeitoParaPessoas() {
             >
                 <div className="absolute -top-10 -right-10 z-0 pointer-events-none opacity-15">
                     <GiantAsterisk color={PT.red} size={220} rotate={12} />
+                </div>
+                {/* Doodles decorativos */}
+                <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-0 pointer-events-none block opacity-70 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right">
+                    <DoodleStar color={PT.gold} size={42} rotate={-12} />
+                </div>
+                <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-10 z-0 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left">
+                    <DoodleZigzag color={PT.azul} w={120} h={28} style={{ transform: "rotate(-6deg)" }} />
                 </div>
 
                 <div className="relative z-10">
@@ -972,8 +1013,18 @@ function Faq({ openFaq, setOpenFaq }) {
         { q: "Existe aplicação móvel?", a: "Por agora estamos focados na web responsiva (mobile + desktop). Uma app nativa iOS/Android está no roadmap para 2026." },
     ];
     return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20" data-testid="faq">
-            <div className="max-w-4xl mx-auto">
+        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="faq">
+            {/* Doodles de fundo */}
+            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
+                <DoodleSpiral color={PT.green} size={48} rotate={-10} />
+            </div>
+            <div className="absolute top-12 right-4 sm:top-16 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
+                <DoodleSparkles color={PT.red} size={40} rotate={14} />
+            </div>
+            <div className="absolute bottom-8 left-4 sm:bottom-12 sm:left-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
+                <DoodleCross color={PT.gold} size={28} rotate={-12} />
+            </div>
+            <div className="max-w-4xl mx-auto relative z-10">
                 <div className="text-center mb-8 sm:mb-10">
                     <Kicker color={PT.green} className="mb-2 inline-block">// PERGUNTAS · FREQUENTES</Kicker>
                     <h2
@@ -1082,7 +1133,7 @@ function FinalCta() {
                 <div className="absolute -top-12 -right-12 z-0 pointer-events-none opacity-30">
                     <GiantAsterisk color={PT.gold} size={240} rotate={-14} />
                 </div>
-                <div className="absolute top-6 right-1/3 z-0 pointer-events-none hidden lg:block">
+                <div className="absolute top-3 right-1/4 lg:top-6 lg:right-1/3 z-0 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
                     <DoodleSparkles color={PT.gold} size={56} rotate={18} />
                 </div>
 

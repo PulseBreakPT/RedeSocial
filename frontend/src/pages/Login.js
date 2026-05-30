@@ -48,20 +48,20 @@ export default function Login() {
 
                 {/* PAINEL DIREITO — FORMULÁRIO */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-14 pb-16" style={{ background: PT.cream }}>
-                    {/* Doodles decorativos — só sm+ para não poluir mobile */}
-                    <div className="absolute top-8 right-8 pointer-events-none hidden sm:block">
+                    {/* Doodles decorativos — alguns visíveis em mobile (escalados) */}
+                    <div className="absolute top-4 right-4 sm:top-8 sm:right-8 pointer-events-none block opacity-70 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleStar color={PT.gold} size={52} rotate={18} />
                     </div>
-                    <div className="absolute top-1/2 -left-3 pointer-events-none hidden sm:block">
+                    <div className="absolute top-1/2 -left-2 sm:-left-3 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-left">
                         <DoodleScribble color={PT.azul} w={120} h={50} style={{ transform: "rotate(-6deg)" }} />
                     </div>
-                    <div className="absolute top-24 right-20 pointer-events-none hidden sm:block">
+                    <div className="absolute top-24 right-16 sm:right-20 pointer-events-none block opacity-60 scale-[0.5] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleSparkles color={PT.red} size={48} rotate={6} />
                     </div>
                     <div className="absolute bottom-40 right-6 pointer-events-none hidden sm:block">
                         <DoodleSpiral color={PT.red} size={70} rotate={-10} />
                     </div>
-                    <div className="absolute bottom-12 left-6 pointer-events-none hidden sm:block">
+                    <div className="absolute bottom-6 left-3 sm:bottom-12 sm:left-6 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-bottom-left">
                         <DoodleZigzag color={PT.azul} w={140} h={32} style={{ transform: "rotate(-8deg)" }} />
                     </div>
                     <div className="absolute top-[55%] right-2 pointer-events-none hidden sm:block">
@@ -181,7 +181,7 @@ export default function Login() {
                                     transform: "rotate(-1deg)",
                                 }}>sem ruído</span>.
                             </p>
-                            <div className="absolute -bottom-2 left-10 pointer-events-none hidden sm:block">
+                            <div className="absolute -bottom-2 left-10 pointer-events-none block opacity-80 scale-75 sm:scale-100 sm:opacity-100 origin-bottom-left">
                                 <DoodleUnderline color={PT.red} w={120} h={12} />
                             </div>
                         </div>

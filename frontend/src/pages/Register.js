@@ -163,26 +163,26 @@ export default function Register() {
             <div className="grid lg:grid-cols-[1fr_1.05fr] relative">
                 {/* ============ ESQUERDA · FORMULÁRIO ============ */}
                 <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
-                    {/* Decorações secundárias — só sm+ para não poluir mobile */}
-                    <div className="absolute top-6 right-6 pointer-events-none hidden sm:block">
+                    {/* Decorações secundárias — algumas visíveis em mobile (escaladas) */}
+                    <div className="absolute top-3 right-3 sm:top-6 sm:right-6 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />
                     </div>
-                    <div className="absolute bottom-32 -left-3 pointer-events-none hidden sm:block">
+                    <div className="absolute bottom-28 -left-2 sm:bottom-32 sm:-left-3 pointer-events-none block opacity-70 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left">
                         <DoodleStar color={PT.red} size={50} rotate={-12} />
                     </div>
-                    <div className="absolute top-32 right-2 pointer-events-none hidden sm:block">
+                    <div className="absolute top-32 right-2 pointer-events-none block opacity-60 scale-[0.5] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleSparkles color={PT.red} size={48} rotate={-8} />
                     </div>
                     <div className="absolute bottom-48 right-4 pointer-events-none hidden sm:block">
                         <DoodleSpiral color={PT.gold} size={68} rotate={12} />
                     </div>
-                    <div className="absolute top-[58%] -right-2 pointer-events-none hidden sm:block">
+                    <div className="absolute top-[58%] -right-1 sm:-right-2 pointer-events-none block opacity-60 scale-[0.6] sm:scale-100 sm:opacity-100">
                         <GeoCircle color={PT.azul} size={26} />
                     </div>
                     <div className="absolute top-[42%] right-16 pointer-events-none hidden sm:block">
                         <DoodleCross color={PT.green} size={22} rotate={-14} />
                     </div>
-                    <div className="absolute bottom-10 left-6 pointer-events-none hidden sm:block">
+                    <div className="absolute bottom-5 left-3 sm:bottom-10 sm:left-6 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-bottom-left">
                         <DoodleZigzag color={PT.red} w={140} h={32} style={{ transform: "rotate(6deg)" }} />
                     </div>
 
