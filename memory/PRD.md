@@ -72,3 +72,10 @@ Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
   - `Landing.js`: doodles de fundo adicionados em StatsBand, WhatYouFind, ExploreCities, HowItWorks, PortugalMap, FeitoParaPessoas e Faq; existentes ativados (Sparkles, Scribble, Spiral, Star, Underline, Cross, Zigzag)
   - `SiteFooter.js`: bloco decorativo "acontece aqui." agora também em mobile
 
+
+- **2026-02-30 (parte 2)**: Estilo decorativo "fanzine PT" aplicado às páginas legais via `LegalShell.js`:
+  - GiantAsterisk faded como mancha de fundo
+  - Cluster topo: DoodleStar (gold), DoodleSparkles (red), DoodleStar (red) junto ao título
+  - Cluster meio (apenas desktop ≥md): DoodleScribble (azul) + DoodleSpiral (gold)
+  - Cluster fundo: DoodleZigzag (red), DoodleUnderline (gold), DoodleSparkles (green) na caixa "Vê Também"
+  - Propaga automaticamente para `/legal`, `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/legal/community`

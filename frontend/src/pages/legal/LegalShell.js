@@ -4,7 +4,10 @@ import {
     ArrowLeft, ArrowUp, Check, Cookie, FileText,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
-import { PT, Sticker, Kicker, AuthStyles } from "../auth/AuthDecor";
+import { PT, Sticker, Kicker, AuthStyles,
+    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
+    DoodleZigzag, DoodleCross, DoodleUnderline, GiantAsterisk,
+} from "../auth/AuthDecor";
 import SiteFooter from "../../components/SiteFooter";
 
 const NAV = [
@@ -136,7 +139,37 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const eyebrow = NAV.find((n) => n.key === active)?.label || "Documento legal";
 
     return (
-        <div className="min-h-screen text-black" style={{ background: PT.cream }}>
+        <div className="min-h-screen text-black relative overflow-hidden" style={{ background: PT.cream }}>
+            {/* ============ DOODLES DECORATIVOS DE FUNDO ============ */}
+            {/* Asterisco gigante esbatido — só visual, no canto superior direito */}
+            <div className="absolute -top-16 -right-20 pointer-events-none opacity-[0.07] z-0 hidden sm:block" aria-hidden>
+                <GiantAsterisk color={PT.red} size={320} rotate={-12} />
+            </div>
+            {/* Estrela dourada — topo direito sob o tape */}
+            <div className="absolute top-20 right-3 sm:top-28 sm:right-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0" aria-hidden>
+                <DoodleStar color={PT.gold} size={48} rotate={14} />
+            </div>
+            {/* Sparkles vermelho — superior esquerdo */}
+            <div className="absolute top-28 left-3 sm:top-36 sm:left-6 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0" aria-hidden>
+                <DoodleSparkles color={PT.red} size={44} rotate={-10} />
+            </div>
+            {/* Scribble azul — esquerda, próximo do topo do conteúdo */}
+            <div className="absolute top-[420px] -left-3 sm:left-2 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-left z-0 hidden md:block" aria-hidden>
+                <DoodleScribble color={PT.azul} w={130} h={50} style={{ transform: "rotate(-6deg)" }} />
+            </div>
+            {/* Spiral dourado — direita, ao nível do scribble */}
+            <div className="absolute top-[520px] -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-right z-0 hidden md:block" aria-hidden>
+                <DoodleSpiral color={PT.gold} size={64} rotate={12} />
+            </div>
+            {/* Zigzag vermelho — inferior esquerdo */}
+            <div className="absolute bottom-24 left-3 sm:bottom-32 sm:left-8 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-left z-0" aria-hidden>
+                <DoodleZigzag color={PT.red} w={130} h={28} style={{ transform: "rotate(6deg)" }} />
+            </div>
+            {/* Underline dourado — inferior direito */}
+            <div className="absolute bottom-32 right-3 sm:bottom-40 sm:right-10 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-right z-0" aria-hidden>
+                <DoodleUnderline color={PT.gold} w={120} h={12} />
+            </div>
+
             {/* Reading progress bar (mantida) */}
             <div
                 className="legal-shell-progress fixed top-0 left-0 right-0 h-[3px] z-50 pointer-events-none"
@@ -233,7 +266,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 </div>
             </header>
 
-            <div className="max-w-[1280px] mx-auto px-4 lg:px-8 grid grid-cols-12 gap-6 lg:gap-10 py-6 lg:py-12">
+            <div className="max-w-[1280px] mx-auto px-4 lg:px-8 grid grid-cols-12 gap-6 lg:gap-10 py-6 lg:py-12 relative z-10">
                 {/* Left sidebar — document switcher */}
                 <aside className="legal-shell-sidebar col-span-12 lg:col-span-3 order-1">
                     <div className="lg:sticky lg:top-[80px]">
@@ -280,7 +313,11 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
 
                 {/* Main reading column */}
                 <main className="col-span-12 lg:col-span-6 order-2 min-w-0">
-                    <article ref={articleRef} className="max-w-[760px]">
+                    <article ref={articleRef} className="max-w-[760px] relative">
+                        {/* Doodle decorativo próximo ao título */}
+                        <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right z-0" aria-hidden>
+                            <DoodleStar color={PT.red} size={38} rotate={18} />
+                        </div>
                         <div className="flex items-center gap-3 mb-3">
                             <Kicker color={PT.red}>// {eyebrow}</Kicker>
                             <span aria-hidden style={{ flex: 1, height: 2, background: PT.ink }} />
@@ -387,6 +424,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 boxShadow: `5px 5px 0 ${PT.green}`,
                             }}
                         >
+                            {/* Doodle no canto da caixa "Vê Também" */}
+                            <div className="absolute -top-3 -right-3 pointer-events-none block opacity-80 scale-[0.7] sm:scale-100 origin-top-right" aria-hidden>
+                                <DoodleSparkles color={PT.green} size={36} rotate={-14} />
+                            </div>
                             <Kicker color={PT.green} className="mb-2">// VÊ TAMBÉM</Kicker>
                             <div className="flex flex-wrap gap-2">
                                 {NAV.filter((n) => n.key !== active && n.key !== "index").slice(0, 4).map((n) => (
