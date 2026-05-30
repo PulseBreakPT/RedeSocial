@@ -79,3 +79,14 @@ Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
   - Cluster meio (apenas desktop ≥md): DoodleScribble (azul) + DoodleSpiral (gold)
   - Cluster fundo: DoodleZigzag (red), DoodleUnderline (gold), DoodleSparkles (green) na caixa "Vê Também"
   - Propaga automaticamente para `/legal`, `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/legal/community`
+
+- **2026-02-30 (parte 3)**: `Manifesto.js` completamente redesenhado para estilo fanzine PT (era violet/indigo minimal). Mantém conteúdo (6 promessas anti-dark-pattern, stats animadas, regra interna, 3 razões, CTAs). Novo:
+  - Tape preto-dourado topo/fundo + faixa jornal INK
+  - Hero com highlight vermelho ("viciado.") + highlight dourado ("bem.")
+  - Cards de stats em 4 cores PT (red/azul/gold/green) com rotação
+  - 6 promessas em cards coloridos PT com número grande estilo revista
+  - Golden Rule com highlights verde/vermelho e signature manuscrita
+  - 3 cards "Por que diferentes" com sombras coloridas PT
+  - CTA conversão em vermelho PT com GiantAsterisk de fundo
+  - Doodles dispersos (Star, Sparkles, Scribble, Spiral, Zigzag, Cross, Heart, Exclamation) com responsividade mobile
+  - SiteFooter integrado no fim

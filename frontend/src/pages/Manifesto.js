@@ -2,12 +2,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
 import {
     ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
-    Shield, Heart, Users, Quote, ChevronRight, ExternalLink
+    Shield, Heart, Users, Quote, ChevronRight, ExternalLink,
 } from "lucide-react";
+import {
+    PT, Sticker, Kicker, PosterCard, Highlight, Signature, AuthStyles,
+    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
+    DoodleZigzag, DoodleCross, DoodleUnderline, DoodleHeart,
+    DoodleExclamation, GiantAsterisk, AzulejoBorder,
+} from "./auth/AuthDecor";
+import SiteFooter from "../components/SiteFooter";
 
 /**
- * /manifesto — public page declaring the 6 anti-dark-pattern promises.
- * Brand differentiator. Linked from /legal footer and Settings.
+ * /manifesto — Página pública das 6 promessas anti-dark-pattern.
+ * Reskin: estilo fanzine PT (cream + PT colors + doodles).
  */
 
 const PROMISES = [
@@ -17,9 +24,7 @@ const PROMISES = [
         title: "Sem streaks que punam.",
         body: "Não vais perder nada por não abrires um dia. Não há chamas a contar dias. Não há contrato emocional bilateral.",
         ref: "Anti-padrão Snapchat / TikTok",
-        gradient: "from-indigo-500/10 to-blue-500/10",
-        accent: "bg-indigo-500",
-        iconColor: "text-indigo-600",
+        color: PT.red,
     },
     {
         n: "02",
@@ -27,9 +32,7 @@ const PROMISES = [
         title: "Modo Boa Noite — por defeito.",
         body: "Entre as 23h00 e as 08h00 as notificações ficam silenciadas. Não te empurramos para acordado. Tu decides se queres opt-in.",
         ref: "Saúde mental > engagement",
-        gradient: "from-violet-500/10 to-purple-500/10",
-        accent: "bg-violet-500",
-        iconColor: "text-violet-600",
+        color: PT.azul,
     },
     {
         n: "03",
@@ -37,9 +40,8 @@ const PROMISES = [
         title: "Sem agrupar notificações para fingir urgência.",
         body: "Cada notificação tem 1 razão clara. Não somamos likes para empurrar com falsa urgência.",
         ref: "Anti-padrão Facebook",
-        gradient: "from-amber-500/10 to-orange-500/10",
-        accent: "bg-amber-500",
-        iconColor: "text-amber-600",
+        color: PT.gold,
+        inkText: true,
     },
     {
         n: "04",
@@ -47,9 +49,7 @@ const PROMISES = [
         title: "Algoritmo destacável e feed cronológico.",
         body: "Tens sempre uma versão não personalizada do feed. Podes resetar a tua bolha. Cumprimento integral do art. 27 do DSA.",
         ref: "Reg. UE 2022/2065",
-        gradient: "from-emerald-500/10 to-teal-500/10",
-        accent: "bg-emerald-500",
-        iconColor: "text-emerald-600",
+        color: PT.green,
     },
     {
         n: "05",
@@ -57,9 +57,7 @@ const PROMISES = [
         title: "Sem read receipts forçados.",
         body: "Nas mensagens, o emissor não sabe se leste. Read receipts são opt-in mútuo, e mesmo assim opcionais por conversa.",
         ref: "Anti-padrão WhatsApp",
-        gradient: "from-pink-500/10 to-rose-500/10",
-        accent: "bg-pink-500",
-        iconColor: "text-pink-600",
+        color: PT.red,
     },
     {
         n: "06",
@@ -67,17 +65,36 @@ const PROMISES = [
         title: "Contagens escondidas nos teus próprios posts.",
         body: "Vês quem reagiu, mas o número está esbatido até carregares. Não queremos comparação compulsiva contigo próprio.",
         ref: "Anti-padrão Instagram",
-        gradient: "from-cyan-500/10 to-sky-500/10",
-        accent: "bg-cyan-500",
-        iconColor: "text-cyan-600",
+        color: PT.azul,
     },
 ];
 
 const STATS = [
-    { value: "0", suffix: "", label: "Anúncios mostrados" },
-    { value: "0", suffix: "", label: "Dados vendidos a terceiros" },
-    { value: "6", suffix: "", label: "Promessas públicas" },
-    { value: "100", suffix: "%", label: "Transparência de código" },
+    { value: "0", suffix: "", label: "Anúncios mostrados", bg: PT.red, color: "#fff" },
+    { value: "0", suffix: "", label: "Dados vendidos a terceiros", bg: PT.azul, color: "#fff" },
+    { value: "6", suffix: "", label: "Promessas públicas", bg: PT.gold, color: PT.ink },
+    { value: "100", suffix: "%", label: "Transparência de código", bg: PT.green, color: "#fff" },
+];
+
+const WHY_DIFFERENT = [
+    {
+        icon: Shield,
+        title: "Sem anúncios",
+        desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa — não anunciantes.",
+        color: PT.green,
+    },
+    {
+        icon: Users,
+        title: "Feito em Portugal",
+        desc: "Equipa portuguesa, servidores europeus, dados protegidos pelo RGPD. Sem dependência de Big Tech.",
+        color: PT.azul,
+    },
+    {
+        icon: Heart,
+        title: "Pessoas, não métricas",
+        desc: "Não otimizamos por tempo de ecrã. Otimizamos por qualidade de conexão e satisfação real.",
+        color: PT.red,
+    },
 ];
 
 /* ─── Scroll reveal — opacity + translate only, NO blur ─── */
@@ -110,7 +127,7 @@ function Reveal({ children, delay = 0, className = "" }) {
 }
 
 /* ─── Animated stat counter ─── */
-function AnimatedStat({ value, suffix, label, delay }) {
+function AnimatedStat({ value, suffix, label, bg, color, delay, rotate }) {
     const ref = useRef(null);
     const [visible, setVisible] = useState(false);
     const [count, setCount] = useState(0);
@@ -141,58 +158,94 @@ function AnimatedStat({ value, suffix, label, delay }) {
     return (
         <div
             ref={ref}
-            className="text-center"
+            data-testid="manifesto-stat"
+            className="relative p-4 sm:p-5 lg:p-6"
             style={{
+                background: bg,
+                color,
+                border: `3px solid ${PT.ink}`,
+                boxShadow: `5px 5px 0 ${PT.ink}`,
+                transform: `rotate(${rotate}deg)`,
+                borderRadius: 16,
                 opacity: visible ? 1 : 0,
-                transform: visible ? "translateY(0)" : "translateY(16px)",
                 transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
             }}
         >
-            <div className="font-display text-[42px] lg:text-[56px] font-bold tracking-tight text-black leading-none tabular-nums">
+            <p
+                className="font-black tabular-nums leading-none"
+                style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: color === "#fff" ? `2px 2px 0 ${PT.ink}` : "none" }}
+            >
                 {count}{suffix}
-            </div>
-            <p className="text-[13px] text-black/50 mt-2 font-medium">{label}</p>
+            </p>
+            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.08em", opacity: 0.92 }}>
+                {label}
+            </p>
         </div>
     );
 }
 
-/* ─── Promise card ─── */
-function PromiseCard({ n, icon: Icon, title, body, ref: reference, gradient, accent, iconColor, delay }) {
+/* ─── Promise card — estilo fanzine PT ─── */
+function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkText, delay }) {
+    const textColor = inkText ? PT.ink : "#fff";
     return (
         <Reveal delay={delay}>
             <article
                 data-testid={`promise-${n}`}
-                className="group relative rounded-2xl border border-black/[0.06] p-6 bg-white transition-all duration-300 hover:shadow-xl hover:shadow-black/[0.06] hover:border-black/[0.12] hover:-translate-y-1 overflow-hidden"
+                className="relative p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1 hover:rotate-[-0.5deg]"
+                style={{
+                    background: color,
+                    color: textColor,
+                    border: `3px solid ${PT.ink}`,
+                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    borderRadius: 16,
+                }}
             >
-                {/* Gradient background on hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-                {/* Accent line */}
-                <div className={`absolute top-0 left-6 right-6 h-[2px] ${accent} opacity-0 group-hover:opacity-60 transition-opacity duration-300 rounded-full`} />
-
-                <div className="relative z-10 flex items-start gap-4">
-                    {/* Number + icon */}
-                    <div className="flex flex-col items-center gap-2.5 flex-shrink-0">
-                        <span className="font-mono text-[11px] text-black/30 tracking-wider font-bold">{n}</span>
-                        <div className={`w-11 h-11 rounded-xl bg-black/[0.04] grid place-items-center ${iconColor} group-hover:bg-white group-hover:shadow-md transition-all duration-200`}>
-                            <Icon size={20} strokeWidth={1.7} />
+                <div className="flex items-start gap-3">
+                    {/* Número grande estilo revista */}
+                    <span
+                        className="font-black leading-none shrink-0"
+                        style={{
+                            fontSize: 38,
+                            color: textColor,
+                            opacity: 0.85,
+                            textShadow: inkText ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                        }}
+                    >
+                        {n}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span
+                                className="inline-flex items-center justify-center"
+                                style={{
+                                    width: 30, height: 30, borderRadius: 999,
+                                    background: inkText ? PT.ink : "#fff",
+                                    color: inkText ? PT.gold : PT.ink,
+                                    border: `2px solid ${PT.ink}`,
+                                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                                }}
+                            >
+                                <Icon size={15} strokeWidth={2.4} />
+                            </span>
                         </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 pt-0.5">
-                        <h3 className="font-bold text-[16px] tracking-tight text-black leading-snug mb-2">
+                        <h3
+                            className="font-black tracking-tight leading-snug mb-2"
+                            style={{ fontSize: 16.5, color: textColor }}
+                        >
                             {title}
                         </h3>
-                        <p className="text-[13.5px] leading-relaxed text-black/60 group-hover:text-black/70 transition-colors duration-200">
+                        <p
+                            className="text-[13.5px] leading-relaxed font-medium"
+                            style={{ color: textColor, opacity: 0.92 }}
+                        >
                             {body}
                         </p>
-                        <div className="mt-3 flex items-center gap-1.5">
-                            <span className={`w-1.5 h-1.5 rounded-full ${accent} opacity-40`} />
-                            <p className="text-[10.5px] uppercase tracking-[0.10em] text-black/35 font-mono font-medium">
-                                {reference}
-                            </p>
-                        </div>
+                        <p
+                            className="mt-3 text-[10.5px] uppercase font-mono font-black"
+                            style={{ letterSpacing: "0.10em", color: textColor, opacity: 0.7 }}
+                        >
+                            {reference}
+                        </p>
                     </div>
                 </div>
             </article>
@@ -204,108 +257,219 @@ export default function Manifesto() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-white text-black">
-            {/* ═══ HEADER ═══ */}
-            <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
+        <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream, color: PT.ink }} data-testid="manifesto-page">
+            {/* ============ DOODLES DECORATIVOS DE FUNDO ============ */}
+            <div className="absolute -top-16 -right-20 pointer-events-none opacity-[0.07] z-0 hidden sm:block" aria-hidden>
+                <GiantAsterisk color={PT.red} size={320} rotate={-12} />
+            </div>
+            <div className="absolute top-20 right-3 sm:top-28 sm:right-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0" aria-hidden>
+                <DoodleStar color={PT.gold} size={48} rotate={14} />
+            </div>
+            <div className="absolute top-28 left-3 sm:top-36 sm:left-6 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0" aria-hidden>
+                <DoodleSparkles color={PT.red} size={44} rotate={-10} />
+            </div>
+            <div className="absolute top-[480px] -left-3 sm:left-2 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-left z-0 hidden md:block" aria-hidden>
+                <DoodleScribble color={PT.azul} w={130} h={50} style={{ transform: "rotate(-6deg)" }} />
+            </div>
+            <div className="absolute top-[580px] -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-right z-0 hidden md:block" aria-hidden>
+                <DoodleSpiral color={PT.gold} size={64} rotate={12} />
+            </div>
+            <div className="absolute bottom-32 left-3 sm:bottom-44 sm:left-8 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-left z-0" aria-hidden>
+                <DoodleZigzag color={PT.red} w={130} h={28} style={{ transform: "rotate(6deg)" }} />
+            </div>
+            <div className="absolute bottom-40 right-3 sm:bottom-52 sm:right-10 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-right z-0" aria-hidden>
+                <DoodleCross color={PT.green} size={30} rotate={-14} />
+            </div>
+
+            {/* TAPE topo */}
+            <div className="pt-tape h-3 w-full" />
+
+            {/* Faixa "jornal" em INK */}
+            <div
+                className="flex items-center justify-between px-5 sm:px-8 py-2.5 relative z-10"
+                style={{ background: PT.ink, color: PT.bone }}
+            >
+                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
+                    LUSORAE // MANIFESTO // EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
+                </span>
+                <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
+                    6 PROMESSAS · ANTI-DARK-PATTERN
+                </span>
+            </div>
+
+            {/* ═══ HEADER (sticky) ═══ */}
+            <header
+                className="sticky top-0 z-30 backdrop-blur"
+                style={{
+                    background: "rgba(255,244,220,0.92)",
+                    borderBottom: `3px solid ${PT.ink}`,
+                }}
+            >
                 <div className="max-w-[1100px] mx-auto flex items-center gap-3 px-4 lg:px-8 py-3">
                     <button
                         onClick={() => navigate(-1)}
                         data-testid="manifesto-back-btn"
-                        className="w-9 h-9 rounded-full grid place-items-center text-black hover:bg-black/[0.06] transition-colors tap-shrink"
+                        className="w-10 h-10 grid place-items-center tap-shrink"
+                        style={{
+                            background: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            borderRadius: 999,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            color: PT.ink,
+                        }}
                         aria-label="Voltar"
                     >
-                        <ArrowLeft size={18} />
+                        <ArrowLeft size={18} strokeWidth={2.5} />
                     </button>
-                    <Link to="/" className="inline-flex items-center gap-2" data-testid="manifesto-home-link">
-                        <span aria-hidden className="w-2.5 h-2.5 rotate-45 bg-black rounded-[2px]" />
-                        <span className="font-display text-[17px] font-bold tracking-tight">lusorae</span>
+                    <Link to="/" className="inline-flex items-baseline gap-1.5" data-testid="manifesto-home-link">
+                        <span aria-hidden style={{ color: PT.red, fontSize: 22, fontWeight: 900, lineHeight: 1 }}>✱</span>
+                        <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
                     </Link>
-                    <span className="ml-2 hidden sm:inline text-[11px] uppercase tracking-[0.14em] text-black/40 font-mono font-medium">
-                        Manifesto
+                    <span
+                        className="ml-2 hidden sm:inline text-[11px] uppercase font-mono font-bold"
+                        style={{ letterSpacing: "0.16em", color: PT.red }}
+                    >
+                        // MANIFESTO
                     </span>
+                    <div className="ml-auto">
+                        <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            🇵🇹 6 promessas públicas
+                        </Sticker>
+                    </div>
                 </div>
             </header>
 
-            {/* ═══ HERO SECTION ═══ */}
-            <div className="relative overflow-hidden">
-                {/* Subtle gradient background — estático, sem blur */}
-                <div className="absolute inset-0 -z-10 pointer-events-none"
-                     style={{ background: `
-                         radial-gradient(ellipse 50% 50% at 25% 30%, rgba(139,92,246,0.06) 0%, transparent 70%),
-                         radial-gradient(ellipse 40% 40% at 75% 40%, rgba(236,72,153,0.04) 0%, transparent 70%)
-                     `}} />
+            {/* ═══ HERO ═══ */}
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 pt-10 sm:pt-14 lg:pt-20 pb-8 max-w-[1100px] mx-auto">
+                <Reveal>
+                    <Kicker color={PT.red} className="mb-3 inline-flex items-center gap-2">
+                        <Shield size={12} strokeWidth={2.5} />
+                        <span>// COMPROMISSO · PÚBLICO</span>
+                    </Kicker>
+                </Reveal>
 
-                <div className="max-w-[1100px] mx-auto px-4 lg:px-8 pt-14 lg:pt-20 pb-8">
-                    <Reveal>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-black/40 font-mono mb-5 font-semibold inline-flex items-center gap-2">
-                            <Shield size={12} strokeWidth={2.5} />
-                            Compromisso público
-                        </p>
-                    </Reveal>
+                <Reveal delay={0.1}>
+                    <h1
+                        data-testid="manifesto-title"
+                        className="font-black tracking-[-0.04em]"
+                        style={{ fontSize: "clamp(36px, 6vw, 76px)", lineHeight: 0.96, color: PT.ink }}
+                    >
+                        Não te queremos{" "}
+                        <span style={{
+                            display: "inline-block",
+                            background: PT.red,
+                            color: "#fff",
+                            padding: "0 0.10em",
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            transform: "rotate(-1.5deg)",
+                            WebkitTextStroke: `0.5px ${PT.ink}`,
+                        }}>
+                            viciado.
+                        </span>
+                        <br/>
+                        <span className="inline-block mt-2 sm:mt-3">
+                            Queremos-te{" "}
+                            <Highlight color={PT.gold} rotate={-1}>
+                                <span style={{ color: PT.ink }}>bem.</span>
+                            </Highlight>
+                        </span>
+                    </h1>
+                </Reveal>
 
-                    <Reveal delay={0.1}>
-                        <h1
-                            data-testid="manifesto-title"
-                            className="font-editorial text-[40px] sm:text-[58px] lg:text-[76px] font-normal italic tracking-tight leading-[1.0] text-black max-w-[16ch] mb-7"
-                            style={{ fontVariationSettings: '"opsz" 144', fontWeight: 380 }}
-                        >
-                            Não te queremos viciado.{" "}
-                            <span className="not-italic font-display font-bold bg-gradient-to-r from-black via-black/85 to-violet-800 bg-clip-text text-transparent" style={{ fontVariationSettings: 'normal' }}>
-                                Queremos-te bem.
-                            </span>
-                        </h1>
-                    </Reveal>
+                <Reveal delay={0.2}>
+                    <p className="mt-6 sm:mt-7 text-[15.5px] sm:text-[17px] leading-relaxed max-w-[60ch] font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>
+                        O Lusorae é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos
+                        por quantos minutos passas aqui. Estas{" "}
+                        <strong className="font-black" style={{ color: PT.red }}>seis promessas</strong>{" "}
+                        não são marketing — são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui.
+                    </p>
+                </Reveal>
 
-                    <Reveal delay={0.2}>
-                        <p className="text-[16px] lg:text-[18px] text-black/60 leading-relaxed max-w-[60ch] mb-4">
-                            O Lusorae é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos
-                            por quantos minutos passas aqui. Estas seis promessas não são marketing — são regras de
-                            engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui.
-                        </p>
-                    </Reveal>
-                </div>
-            </div>
+                <Reveal delay={0.3}>
+                    <div className="mt-5 flex flex-wrap items-center gap-2">
+                        <Sticker bg={PT.green} color="#fff" rotate={-2} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            ✓ DOCUMENTO VIVO
+                        </Sticker>
+                        <Sticker bg="#fff" color={PT.ink} rotate={1} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            🇵🇹 PT-PT
+                        </Sticker>
+                        <Sticker bg={PT.azul} color="#fff" rotate={-1} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            DSA · ART. 27
+                        </Sticker>
+                    </div>
+                </Reveal>
+            </section>
 
             {/* ═══ STATS STRIP ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-10 lg:py-14">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 py-8 px-6 rounded-2xl bg-gradient-to-br from-black/[0.02] to-black/[0.04] border border-black/[0.05]">
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 sm:py-14 max-w-[1100px] mx-auto">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                     {STATS.map((stat, idx) => (
-                        <AnimatedStat key={idx} {...stat} delay={idx * 0.1} />
+                        <AnimatedStat
+                            key={idx}
+                            {...stat}
+                            rotate={idx % 2 === 0 ? -0.6 : 0.6}
+                            delay={idx * 0.08}
+                        />
                     ))}
                 </div>
-            </div>
+            </section>
 
-            {/* ═══ PROMISES ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-8">
+            {/* ═══ AS 6 PROMESSAS ═══ */}
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-8 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-black grid place-items-center">
-                            <Heart size={18} className="text-white" strokeWidth={2} />
-                        </div>
-                        <div>
-                            <h2 className="font-display text-[22px] font-bold tracking-tight text-black">As 6 promessas</h2>
-                            <p className="text-[13px] text-black/45">Regras de engenharia, não marketing</p>
+                    <div className="mb-7 sm:mb-8 relative">
+                        <Kicker color={PT.azul} className="mb-2">// REGRAS · DE · ENGENHARIA</Kicker>
+                        <h2
+                            className="font-black tracking-[-0.03em]"
+                            style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
+                        >
+                            As{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.gold,
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                transform: "rotate(-1deg)",
+                            }}>
+                                6 promessas.
+                            </span>
+                        </h2>
+                        <p className="mt-3 text-[13.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
+                            // regras, não marketing
+                        </p>
+                        <div className="absolute -top-3 -right-1 pointer-events-none hidden sm:block">
+                            <DoodleHeart color={PT.red} size={32} rotate={-12} />
                         </div>
                     </div>
                 </Reveal>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                     {PROMISES.map((promise, idx) => (
-                        <PromiseCard key={promise.n} {...promise} delay={idx * 0.08} />
+                        <PromiseCard key={promise.n} {...promise} delay={idx * 0.06} />
                     ))}
                 </div>
-            </div>
+
+                {/* Azulejos separador */}
+                <div className="mt-12 sm:mt-14 flex justify-center overflow-hidden">
+                    <AzulejoBorder count={6} size={32} />
+                </div>
+            </section>
 
             {/* ═══ CINEMATIC IMAGE BREAK ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-10">
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
                 <Reveal>
                     <figure
                         data-testid="manifesto-image"
-                        className="relative rounded-3xl overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9] shadow-2xl shadow-black/10"
+                        className="relative overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9]"
+                        style={{
+                            border: `4px solid ${PT.ink}`,
+                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            borderRadius: 24,
+                        }}
                     >
-                        {/* Gradient placeholder */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900" />
-
+                        <div className="absolute inset-0" style={{ background: PT.ink }} />
                         <img
                             src="/hero/manifesto.webp"
                             alt="Pessoa contemplativa ao pôr-do-sol sobre o Tejo, em Lisboa"
@@ -313,178 +477,276 @@ export default function Manifesto() {
                             loading="lazy"
                             onError={(e) => { e.target.style.display = "none"; }}
                         />
-
                         <div
                             className="absolute inset-0"
-                            style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.06) 30%, rgba(0,0,0,0.75) 100%)" }}
+                            style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.20) 30%, rgba(0,0,0,0.75) 100%)" }}
                             aria-hidden
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-violet-900/10 to-transparent" aria-hidden />
 
                         <figcaption className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-                            <p className="text-[10.5px] uppercase tracking-[0.2em] text-white/55 font-mono mb-3 font-semibold">
-                                A regra silenciosa
-                            </p>
-                            <h2 className="font-display text-[26px] sm:text-[40px] lg:text-[50px] leading-[1.0] tracking-tight text-white max-w-[18ch]">
-                                O tempo que passas aqui <span className="silver-foil">é teu</span>.{" "}
+                            <Kicker color={PT.gold} className="mb-3">// REGRA · SILENCIOSA</Kicker>
+                            <h2
+                                className="font-black tracking-[-0.03em]"
+                                style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
+                            >
+                                O tempo que passas aqui{" "}
+                                <span style={{
+                                    display: "inline-block",
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    padding: "0 0.10em",
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                    transform: "rotate(-1deg)",
+                                    textShadow: "none",
+                                }}>
+                                    é teu.
+                                </span>{" "}
                                 Não nosso.
                             </h2>
                         </figcaption>
+
+                        {/* Doodle no canto */}
+                        <div className="absolute top-4 right-4 z-10 pointer-events-none">
+                            <DoodleStar color={PT.gold} size={42} rotate={14} />
+                        </div>
                     </figure>
                 </Reveal>
-            </div>
+            </section>
 
-            {/* ═══ GOLDEN RULE SECTION ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-10">
+            {/* ═══ GOLDEN RULE ═══ */}
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <div className="relative rounded-3xl border border-black/[0.08] p-8 lg:p-10 bg-gradient-to-br from-white to-amber-50/30 overflow-hidden">
-                        <div className="absolute top-4 right-4 opacity-[0.04]">
-                            <Quote size={80} strokeWidth={1} />
+                    <div
+                        className="relative p-6 sm:p-8 lg:p-10 overflow-hidden"
+                        data-testid="manifesto-golden-rule"
+                        style={{
+                            background: "#fff",
+                            border: `4px solid ${PT.ink}`,
+                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            borderRadius: 24,
+                        }}
+                    >
+                        {/* Aspas gigantes esbatidas */}
+                        <div className="absolute top-4 right-6 opacity-[0.08] pointer-events-none" aria-hidden>
+                            <Quote size={120} strokeWidth={1} style={{ color: PT.red }} />
                         </div>
 
                         <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 grid place-items-center">
-                                    <Quote size={18} className="text-amber-700" strokeWidth={2} />
-                                </div>
-                                <p className="text-[12px] uppercase tracking-[0.14em] text-black/40 font-mono font-semibold">
-                                    A regra interna que aplicamos a cada feature nova
-                                </p>
+                            <div className="flex items-center gap-3 mb-5 sm:mb-6">
+                                <span
+                                    className="inline-flex items-center justify-center"
+                                    style={{
+                                        width: 40, height: 40,
+                                        background: PT.gold,
+                                        border: `2.5px solid ${PT.ink}`,
+                                        boxShadow: `3px 3px 0 ${PT.ink}`,
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Quote size={18} strokeWidth={2.2} style={{ color: PT.ink }} />
+                                </span>
+                                <Kicker color={PT.red}>// REGRA · INTERNA</Kicker>
                             </div>
 
-                            <blockquote className="font-display text-[24px] lg:text-[32px] leading-[1.2] tracking-tight text-black max-w-[40ch] mb-6">
-                                "Se fechasses a app agora e voltasses amanhã, sentir-te-ias{" "}
-                                <em className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent not-italic font-bold">melhor</em>{" "}
+                            <blockquote
+                                className="font-black tracking-tight max-w-[40ch] mb-6"
+                                style={{ fontSize: "clamp(20px, 3.5vw, 34px)", lineHeight: 1.15, color: PT.ink }}
+                            >
+                                <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginRight: 6 }}>“</span>
+                                Se fechasses a app agora e voltasses amanhã, sentir-te-ias{" "}
+                                <span style={{
+                                    background: PT.green, color: "#fff", padding: "0 0.10em",
+                                    border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    display: "inline-block", transform: "rotate(-1deg)",
+                                }}>
+                                    melhor
+                                </span>{" "}
                                 ou{" "}
-                                <em className="bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent not-italic font-bold">pior</em>{" "}
-                                contigo próprio?"
+                                <span style={{
+                                    background: PT.red, color: "#fff", padding: "0 0.10em",
+                                    border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    display: "inline-block", transform: "rotate(1deg)",
+                                }}>
+                                    pior
+                                </span>{" "}
+                                contigo próprio?
+                                <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginLeft: 6 }}>”</span>
                             </blockquote>
 
-                            <div className="w-16 h-[2px] bg-gradient-to-r from-amber-400 to-transparent rounded-full mb-5" />
+                            <hr className="my-5" style={{ border: "none", borderTop: `3px dashed ${PT.ink}` }} />
 
-                            <p className="text-[14px] text-black/55 max-w-[58ch] leading-relaxed">
-                                Se a resposta honesta for "pior", a feature não é lançada. É a única razão por que muitos dos
-                                padrões da indústria não existem aqui.
+                            <p className="text-[14px] sm:text-[15px] max-w-[58ch] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.72)" }}>
+                                Se a resposta honesta for{" "}
+                                <strong style={{ color: PT.red, fontWeight: 900 }}>“pior”</strong>, a feature não é lançada.
+                                É a única razão por que muitos dos padrões da indústria não existem aqui.
                             </p>
+
+                            <div className="mt-5">
+                                <Signature size={22} rotate={-3} color={PT.red}>
+                                    — equipa Lusorae
+                                </Signature>
+                            </div>
                         </div>
                     </div>
                 </Reveal>
-            </div>
+            </section>
 
-            {/* ═══ WHY DIFFERENT SECTION ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-10">
+            {/* ═══ POR QUE SOMOS DIFERENTES ═══ */}
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {[
-                            {
-                                icon: Shield,
-                                title: "Sem anúncios",
-                                desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa — não anunciantes.",
-                                gradient: "from-emerald-50 to-teal-50",
-                                iconBg: "bg-emerald-100",
-                                iconColor: "text-emerald-700",
-                            },
-                            {
-                                icon: Users,
-                                title: "Feito em Portugal",
-                                desc: "Equipa portuguesa, servidores europeus, dados protegidos pelo RGPD. Sem dependência de Big Tech.",
-                                gradient: "from-blue-50 to-indigo-50",
-                                iconBg: "bg-blue-100",
-                                iconColor: "text-blue-700",
-                            },
-                            {
-                                icon: Heart,
-                                title: "Pessoas, não métricas",
-                                desc: "Não otimizamos por tempo de ecrã. Otimizamos por qualidade de conexão e satisfação real.",
-                                gradient: "from-pink-50 to-rose-50",
-                                iconBg: "bg-pink-100",
-                                iconColor: "text-pink-700",
-                            },
-                        ].map((item, idx) => {
-                            const Icon = item.icon;
-                            return (
-                                <Reveal key={idx} delay={idx * 0.1}>
-                                    <div className={`group rounded-2xl p-6 bg-gradient-to-br ${item.gradient} border border-black/[0.04] hover:border-black/[0.08] hover:shadow-lg transition-all duration-200 h-full`}>
-                                        <div className={`w-10 h-10 rounded-xl ${item.iconBg} grid place-items-center mb-4 group-hover:scale-105 transition-transform duration-200`}>
-                                            <Icon size={18} className={item.iconColor} strokeWidth={2} />
-                                        </div>
-                                        <h3 className="font-bold text-[16px] text-black tracking-tight mb-2">{item.title}</h3>
-                                        <p className="text-[13.5px] text-black/55 leading-relaxed">{item.desc}</p>
-                                    </div>
-                                </Reveal>
-                            );
-                        })}
-                    </div>
+                    <Kicker color={PT.green} className="mb-3">// POR QUE · DIFERENTES</Kicker>
+                    <h2
+                        className="font-black tracking-[-0.03em] mb-7"
+                        style={{ fontSize: "clamp(26px, 4vw, 44px)", lineHeight: 1.0, color: PT.ink }}
+                    >
+                        Três razões{" "}
+                        <Highlight color={PT.gold} rotate={-1}>
+                            <span style={{ color: PT.ink }}>concretas.</span>
+                        </Highlight>
+                    </h2>
                 </Reveal>
-            </div>
 
-            {/* ═══ CTAs ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                    {WHY_DIFFERENT.map((item, idx) => {
+                        const Icon = item.icon;
+                        return (
+                            <Reveal key={idx} delay={idx * 0.1}>
+                                <PosterCard
+                                    bg="#fff"
+                                    color={PT.ink}
+                                    rotate={idx % 2 === 0 ? -1 : 1}
+                                    shadow={item.color}
+                                    style={{ padding: "20px 22px", height: "100%", border: `3px solid ${PT.ink}` }}
+                                >
+                                    <span
+                                        className="inline-flex items-center justify-center mb-3"
+                                        style={{
+                                            width: 42, height: 42,
+                                            background: item.color,
+                                            color: "#fff",
+                                            border: `2.5px solid ${PT.ink}`,
+                                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                                            borderRadius: 10,
+                                        }}
+                                    >
+                                        <Icon size={20} strokeWidth={2.2} />
+                                    </span>
+                                    <h3 className="font-black text-[17px] tracking-tight mb-2" style={{ color: PT.ink }}>{item.title}</h3>
+                                    <p className="text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.68)" }}>{item.desc}</p>
+                                </PosterCard>
+                            </Reveal>
+                        );
+                    })}
+                </div>
+            </section>
+
+            {/* ═══ CTAs secundários ═══ */}
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-8 max-w-[1100px] mx-auto">
                 <Reveal>
                     <div className="flex flex-wrap gap-3">
                         <Link
                             to="/legal"
                             data-testid="manifesto-cta-legal"
-                            className="btn-obsidian text-[13px] inline-flex items-center gap-1.5"
+                            className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
+                            style={{
+                                background: PT.ink, color: PT.gold,
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.red}`,
+                                letterSpacing: "0.06em",
+                                borderRadius: 999,
+                            }}
                         >
                             Ver Centro Legal <ChevronRight size={14} />
                         </Link>
                         <Link
                             to="/settings"
                             data-testid="manifesto-cta-settings"
-                            className="btn-silver text-[13px] inline-flex items-center gap-1.5"
+                            className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
+                            style={{
+                                background: "#fff", color: PT.ink,
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                letterSpacing: "0.06em",
+                                borderRadius: 999,
+                            }}
                         >
                             Ajustar preferências <ExternalLink size={12} />
                         </Link>
                     </div>
                 </Reveal>
-            </div>
+            </section>
 
             {/* ═══ CONVERSION CTA ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-8">
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
                 <Reveal>
                     <div
                         data-testid="manifesto-cta-register-card"
-                        className="relative rounded-3xl p-8 sm:p-12 overflow-hidden isolate"
-                        style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)" }}
+                        className="relative p-7 sm:p-10 lg:p-12 overflow-hidden"
+                        style={{
+                            background: PT.red,
+                            color: "#fff",
+                            border: `4px solid ${PT.ink}`,
+                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            borderRadius: 24,
+                        }}
                     >
-                        {/* Decorações estáticas — sem blur, sem animação */}
-                        <div className="absolute -right-16 -top-16 w-80 h-80 rounded-full opacity-20 pointer-events-none"
-                             style={{ background: "radial-gradient(circle, rgba(236,72,153,0.5), transparent 70%)" }}
-                             aria-hidden />
-                        <div className="absolute -left-10 -bottom-10 w-60 h-60 rounded-full opacity-15 pointer-events-none"
-                             style={{ background: "radial-gradient(circle, rgba(139,92,246,0.5), transparent 70%)" }}
-                             aria-hidden />
-
-                        <div className="absolute inset-0 opacity-[0.03]"
-                             style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "30px 30px" }}
-                             aria-hidden />
+                        {/* Decorações */}
+                        <div className="absolute -top-12 -right-12 z-0 pointer-events-none opacity-30" aria-hidden>
+                            <GiantAsterisk color={PT.gold} size={240} rotate={-14} />
+                        </div>
+                        <div className="absolute top-4 left-4 z-0 pointer-events-none block opacity-80 scale-[0.6] sm:scale-100">
+                            <DoodleStar color={PT.gold} size={36} rotate={12} />
+                        </div>
+                        <div className="absolute bottom-4 right-6 z-0 pointer-events-none block opacity-80 scale-[0.6] sm:scale-100">
+                            <DoodleExclamation color={PT.gold} size={42} rotate={-8} />
+                        </div>
 
                         <div className="relative z-10">
-                            <p className="text-[10.5px] uppercase tracking-[0.2em] text-white/45 font-mono mb-4 font-semibold">
-                                Se chegaste aqui
-                            </p>
-                            <h3 className="font-display text-[28px] sm:text-[38px] lg:text-[44px] leading-[1.05] tracking-tight text-white max-w-[22ch] mb-5">
+                            <Kicker color={PT.gold} className="mb-3">// SE CHEGASTE AQUI</Kicker>
+                            <h3
+                                className="font-black tracking-[-0.03em] max-w-[22ch] mb-5"
+                                style={{ fontSize: "clamp(24px, 4.2vw, 44px)", lineHeight: 1.04 }}
+                            >
                                 Então já percebeste que isto{" "}
-                                <span className="silver-foil">é diferente</span>.
+                                <span style={{
+                                    display: "inline-block",
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    padding: "0 0.10em",
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                    transform: "rotate(-1deg)",
+                                    WebkitTextStroke: `0.5px ${PT.ink}`,
+                                }}>
+                                    é diferente.
+                                </span>
                             </h3>
-                            <p className="text-[14.5px] text-white/65 leading-relaxed max-w-[52ch] mb-8">
-                                Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns. Se um dia mudarmos
-                                este manifesto, vais ser o primeiro a saber — e a poder ir embora.
+                            <p className="text-[14.5px] sm:text-[15px] leading-relaxed max-w-[52ch] mb-7 sm:mb-8 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
+                                Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns.
+                                <strong className="font-black"> Se um dia mudarmos este manifesto, vais ser o primeiro a saber — e a poder ir embora.</strong>
                             </p>
-                            <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                                 <Link
                                     to="/register"
                                     data-testid="manifesto-cta-register"
-                                    className="inline-flex items-center gap-2 bg-white text-black font-semibold text-[14px] px-6 py-3.5 rounded-full hover:bg-white/90 hover:shadow-xl hover:shadow-white/10 transition-all duration-200 tap-shrink group"
+                                    className="inline-flex items-center gap-2 font-black text-[14px] uppercase px-6 py-3 group"
+                                    style={{
+                                        background: PT.gold, color: PT.ink,
+                                        border: `3px solid ${PT.ink}`,
+                                        boxShadow: `5px 5px 0 ${PT.ink}`,
+                                        letterSpacing: "0.06em",
+                                        borderRadius: 999,
+                                    }}
                                 >
                                     Criar conta gratuita
-                                    <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
+                                    <ArrowRight size={16} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform duration-200" />
                                 </Link>
                                 <Link
                                     to="/login"
                                     data-testid="manifesto-cta-login"
-                                    className="inline-flex items-center text-[13.5px] font-medium text-white/70 hover:text-white transition-colors underline underline-offset-4 decoration-white/20 hover:decoration-white/50"
+                                    className="inline-flex items-center text-[13.5px] font-black uppercase underline underline-offset-4"
+                                    style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "0.06em" }}
                                 >
                                     Já tenho conta
                                 </Link>
@@ -492,17 +754,23 @@ export default function Manifesto() {
                         </div>
                     </div>
                 </Reveal>
-            </div>
+            </section>
 
             {/* ═══ FOOTER NOTE ═══ */}
-            <div className="max-w-[1100px] mx-auto px-4 lg:px-8 pb-12 pt-4">
+            <section className="relative z-10 px-5 sm:px-8 lg:px-16 pb-12 pt-4 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <p className="text-[12px] text-black/35 leading-relaxed border-t border-black/[0.06] pt-6">
-                        Este manifesto é um documento vivo, atualizado publicamente sempre que mudar. As versões anteriores
-                        ficam no histórico, com data de revisão visível.
+                    <p className="text-[12.5px] leading-relaxed font-mono font-medium" style={{ color: "rgba(10,10,10,0.55)", borderTop: `3px dashed ${PT.ink}`, paddingTop: 16 }}>
+                        Este manifesto é um <strong className="font-black" style={{ color: PT.ink }}>documento vivo</strong>, atualizado publicamente sempre que mudar.
+                        As versões anteriores ficam no histórico, com data de revisão visível.
                     </p>
                 </Reveal>
-            </div>
+            </section>
+
+            {/* TAPE rodapé */}
+            <div className="pt-tape h-3 w-full relative z-10" />
+
+            <SiteFooter />
+            <AuthStyles />
         </div>
     );
 }
