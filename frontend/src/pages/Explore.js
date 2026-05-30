@@ -4,6 +4,7 @@ import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
+import { PT } from "./auth/AuthDecor";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { Compass, Search, Users, Hash, Layers, MapPin, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
@@ -108,16 +109,23 @@ export default function Explore() {
             <PageHeader sticky={false} title="Explorar" subtitle="Descobre o que se passa em Portugal" testid="explore-header">
                 <div className="px-3 lg:px-4 pb-2.5 flex items-center gap-2">
                     <div className="flex-1 relative">
-                        <Search size={14} strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                        <Search size={14} strokeWidth={2.2} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: PT.ink }} />
                         <input
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
                             placeholder="Pesquisar..."
                             data-testid="explore-search"
-                            className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition"
+                            className="w-full pl-9 pr-9 py-2 text-[13px] outline-none font-medium"
+                            style={{
+                                background: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                borderRadius: 999,
+                                color: PT.ink,
+                                boxShadow: `2px 2px 0 ${PT.ink}`,
+                            }}
                         />
                         {q && (
-                            <button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40 hover:text-black">
+                            <button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: PT.ink }}>
                                 <X size={13} />
                             </button>
                         )}
@@ -126,7 +134,7 @@ export default function Explore() {
                         <div className="flex items-center gap-1" />
                     )}
                 </div>
-                <div className="px-3 lg:px-4 flex gap-1 overflow-x-auto scrollbar-hide pb-2 hairline-t pt-2">
+                <div className="px-3 lg:px-4 flex gap-1.5 overflow-x-auto scrollbar-hide pb-2 pt-2" style={{ borderTop: `2px dashed ${PT.ink}` }}>
                     {TABS.map((t) => {
                         const Icon = t.icon;
                         const active = tab === t.key;
@@ -135,9 +143,17 @@ export default function Explore() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 data-testid={`explore-tab-${t.key}`}
-                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border-b-2 transition ${active ? "tab-grad-on" : "border-transparent text-black hover:text-black"}`}
+                                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase transition`}
+                                style={{
+                                    background: active ? PT.ink : "#fff",
+                                    color: active ? PT.gold : PT.ink,
+                                    border: `2px solid ${PT.ink}`,
+                                    borderRadius: 999,
+                                    boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                                    letterSpacing: "0.04em",
+                                }}
                             >
-                                <Icon size={14} strokeWidth={1.6} /> {t.label}
+                                <Icon size={12} strokeWidth={2.4} /> {t.label}
                             </button>
                         );
                     })}

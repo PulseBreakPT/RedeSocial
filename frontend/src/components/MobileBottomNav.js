@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useHideOnScroll } from "../hooks/useHideOnScroll";
 import { haptic as centralHaptic } from "../lib/haptics";
+import { PT } from "../pages/auth/AuthDecor";
 
 const navItems = [
     { to: "/feed", icon: Home, testid: "mnav-home", end: true, label: "Início" },
@@ -164,8 +165,13 @@ export function MobileBottomNav({ onCompose }) {
 
     return (
         <nav
-            className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass-deep border-t border-black/[0.07] pb-safe"
+            className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe"
             data-testid="mobile-bottom-nav"
+            style={{
+                background: "rgba(255,244,220,0.96)",
+                backdropFilter: "blur(8px)",
+                borderTop: `2.5px solid ${PT.ink}`,
+            }}
         >
             <div className="grid grid-cols-5 items-center h-[68px] px-1.5">
                 {navItems.map((it, idx) => {
@@ -183,44 +189,85 @@ export function MobileBottomNav({ onCompose }) {
                                 {/* Quick actions sheet (long-press) */}
                                 {quickOpen && (
                                     <div className="fab-quick-sheet" data-fab-quick="sheet" data-testid="fab-quick-sheet">
-                                        <div className="bg-white rounded-2xl shadow-xl border border-black/[0.06] py-1.5 min-w-[200px] overflow-hidden">
+                                        <div
+                                            className="py-1.5 min-w-[220px] overflow-hidden"
+                                            style={{
+                                                background: "#fff",
+                                                border: `3px solid ${PT.ink}`,
+                                                boxShadow: `5px 5px 0 ${PT.ink}`,
+                                                borderRadius: 18,
+                                            }}
+                                        >
                                             <button
                                                 onClick={openText}
                                                 data-testid="fab-quick-post"
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/[0.04] active:bg-black/[0.06] transition text-left"
+                                                className="w-full flex items-center gap-3 px-4 py-3 transition text-left"
+                                                style={{ background: "transparent" }}
+                                                onMouseEnter={(e)=>e.currentTarget.style.background=PT.cream}
+                                                onMouseLeave={(e)=>e.currentTarget.style.background="transparent"}
                                             >
-                                                <span className="w-9 h-9 rounded-full bg-black text-white grid place-items-center">
-                                                    <PenSquare size={17} strokeWidth={2.1} />
+                                                <span
+                                                    className="w-9 h-9 grid place-items-center"
+                                                    style={{
+                                                        background: PT.ink, color: PT.gold,
+                                                        border: `2px solid ${PT.ink}`,
+                                                        boxShadow: `2px 2px 0 ${PT.red}`,
+                                                        borderRadius: 999,
+                                                    }}
+                                                >
+                                                    <PenSquare size={15} strokeWidth={2.2} />
                                                 </span>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-[14px] font-semibold tracking-tight text-black">Publicação</div>
-                                                    <div className="text-[11.5px] text-black/55">Escreve algo</div>
+                                                    <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Publicação</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// Escreve algo</div>
                                                 </div>
                                             </button>
                                             <button
                                                 onClick={openPhoto}
                                                 data-testid="fab-quick-photo"
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/[0.04] active:bg-black/[0.06] transition text-left border-t border-black/[0.05]"
+                                                className="w-full flex items-center gap-3 px-4 py-3 transition text-left"
+                                                style={{ background: "transparent", borderTop: `2px dashed ${PT.ink}` }}
+                                                onMouseEnter={(e)=>e.currentTarget.style.background=PT.cream}
+                                                onMouseLeave={(e)=>e.currentTarget.style.background="transparent"}
                                             >
-                                                <span className="w-9 h-9 rounded-full grid place-items-center text-white" style={{ background: "linear-gradient(135deg,#7c9eff,#3b6df3)" }}>
-                                                    <ImageIcon size={17} strokeWidth={2.1} />
+                                                <span
+                                                    className="w-9 h-9 grid place-items-center"
+                                                    style={{
+                                                        background: PT.azul, color: "#fff",
+                                                        border: `2px solid ${PT.ink}`,
+                                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                                        borderRadius: 999,
+                                                    }}
+                                                >
+                                                    <ImageIcon size={15} strokeWidth={2.2} />
                                                 </span>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-[14px] font-semibold tracking-tight text-black">Foto</div>
-                                                    <div className="text-[11.5px] text-black/55">Mostra-nos</div>
+                                                    <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Foto</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// Mostra-nos</div>
                                                 </div>
                                             </button>
                                             <button
                                                 onClick={openStory}
                                                 data-testid="fab-quick-story"
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/[0.04] active:bg-black/[0.06] transition text-left border-t border-black/[0.05]"
+                                                className="w-full flex items-center gap-3 px-4 py-3 transition text-left"
+                                                style={{ background: "transparent", borderTop: `2px dashed ${PT.ink}` }}
+                                                onMouseEnter={(e)=>e.currentTarget.style.background=PT.cream}
+                                                onMouseLeave={(e)=>e.currentTarget.style.background="transparent"}
                                             >
-                                                <span className="w-9 h-9 rounded-full grid place-items-center text-white" style={{ background: "linear-gradient(135deg,#f7c948,#e85d4f)" }}>
-                                                    <Sparkles size={17} strokeWidth={2.1} />
+                                                <span
+                                                    className="w-9 h-9 grid place-items-center"
+                                                    style={{
+                                                        background: PT.gold, color: PT.ink,
+                                                        border: `2px solid ${PT.ink}`,
+                                                        boxShadow: `2px 2px 0 ${PT.red}`,
+                                                        borderRadius: 999,
+                                                    }}
+                                                >
+                                                    <Sparkles size={15} strokeWidth={2.2} />
                                                 </span>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-[14px] font-semibold tracking-tight text-black">Story</div>
-                                                    <div className="text-[11.5px] text-black/55">Dura 24 horas</div>
+                                                    <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Story</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// 24 horas</div>
                                                 </div>
                                             </button>
                                         </div>
@@ -241,11 +288,30 @@ export function MobileBottomNav({ onCompose }) {
                                     aria-label={quickOpen ? "Fechar opções de criação" : (draftCount > 0 ? `Criar — ${draftCount} rascunho${draftCount === 1 ? "" : "s"} guardado${draftCount === 1 ? "" : "s"}` : "Criar publicação")}
                                     aria-haspopup="menu"
                                     aria-expanded={quickOpen}
-                                    className={`fab-compose chrome-transition -mt-7 w-14 h-14 rounded-full text-white grid place-items-center ring-[6px] ring-white ${pressed ? "is-pressed" : ""} ${fabHidden ? "chrome-hide-down" : ""}`}
+                                    className={`chrome-transition -mt-7 w-14 h-14 grid place-items-center ${pressed ? "is-pressed" : ""} ${fabHidden ? "chrome-hide-down" : ""}`}
+                                    style={{
+                                        background: PT.red,
+                                        color: "#fff",
+                                        border: `3px solid ${PT.ink}`,
+                                        boxShadow: `4px 4px 0 ${PT.ink}`,
+                                        borderRadius: 999,
+                                        transform: pressed ? "scale(0.94) rotate(-3deg)" : "none",
+                                        transition: "transform 180ms cubic-bezier(.22,1,.36,1)",
+                                    }}
                                 >
-                                    <Icon className="fab-compose-icon" size={26} strokeWidth={2.4} />
+                                    <Icon size={26} strokeWidth={2.4} />
                                     {draftCount > 0 && (
-                                        <span className="fab-draft-dot" data-testid="fab-draft-dot" aria-hidden>
+                                        <span
+                                            data-testid="fab-draft-dot"
+                                            aria-hidden
+                                            className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 grid place-items-center font-black"
+                                            style={{
+                                                background: PT.gold, color: PT.ink,
+                                                border: `2px solid ${PT.ink}`,
+                                                borderRadius: 999,
+                                                fontSize: 10,
+                                            }}
+                                        >
                                             {draftCount > 9 ? "9+" : draftCount}
                                         </span>
                                     )}
@@ -276,57 +342,50 @@ export function MobileBottomNav({ onCompose }) {
                             end={it.end}
                             data-testid={it.testid}
                             className={({ isActive }) =>
-                                `relative flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition-colors ${
-                                    isActive ? "text-grad-active" : "text-black"
-                                }`
+                                `relative flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition`
                             }
-                            style={({ isActive }) => 
-                                isPremium && isActive
-                                    ? {
-                                          background: "linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(236, 72, 153, 0.08))",
-                                          filter: "saturate(1.3)",
-                                      }
-                                    : {}
-                            }
+                            style={({ isActive }) => ({
+                                color: isActive ? PT.red : PT.ink,
+                            })}
                         >
                             {({ isActive }) => (
                                 <>
-                                    {isActive && !isPremium && (
+                                    {isActive && (
                                         <span
                                             aria-hidden
-                                            className="absolute top-1 w-8 h-[3px] rounded-full grad-bar"
-                                        />
-                                    )}
-                                    {isActive && isPremium && (
-                                        <span
-                                            aria-hidden
-                                            className="absolute top-1 w-8 h-[3px] rounded-full"
-                                            style={{
-                                                background: "linear-gradient(90deg, #8b5cf6, #ec4899, #a855f7)",
-                                                filter: "saturate(1.4)",
-                                            }}
+                                            className="absolute top-1 w-7 h-[3px] rounded-full"
+                                            style={{ background: PT.red }}
                                         />
                                     )}
                                     <span className="relative">
                                         <Icon
-                                            size={22}
-                                            strokeWidth={isActive ? 2.2 : 1.7}
-                                            color={isPremium ? (isActive ? "#8b5cf6" : undefined) : (isActive ? "#0a0a0a" : undefined)}
+                                            size={21}
+                                            strokeWidth={isActive ? 2.4 : 1.9}
+                                            style={{ color: isActive ? PT.red : PT.ink }}
                                         />
                                         {isMsg && msgCount > 0 && (
                                             <span
                                                 data-testid="mnav-msg-badge"
-                                                className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[10px] font-mono grid place-items-center text-white font-bold ring-2 ring-white"
+                                                className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 grid place-items-center font-black font-mono"
+                                                style={{
+                                                    background: PT.red, color: "#fff",
+                                                    border: `1.5px solid ${PT.ink}`,
+                                                    borderRadius: 999,
+                                                    fontSize: 9,
+                                                    letterSpacing: "0.02em",
+                                                }}
                                             >
                                                 {msgCount > 99 ? "99+" : msgCount}
                                             </span>
                                         )}
                                     </span>
                                     <span
-                                        className={`text-[10px] tracking-tight ${
-                                            isActive ? "font-semibold" : "font-medium"
-                                        }`}
-                                        style={isPremium && isActive ? { color: "#8b5cf6" } : {}}
+                                        className={`text-[10px] font-black uppercase`}
+                                        style={{
+                                            color: isActive ? PT.red : PT.ink,
+                                            letterSpacing: "0.04em",
+                                            opacity: isActive ? 1 : 0.75,
+                                        }}
                                     >
                                         {it.label}
                                     </span>

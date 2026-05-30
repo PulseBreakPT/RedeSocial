@@ -11,6 +11,7 @@ import { Avatar } from "../components/Avatar";
 import { ConvSkeleton } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
+import { PT } from "./auth/AuthDecor";
 import { Spinner } from "../components/Spinner";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
@@ -378,56 +379,98 @@ function ConversationList({ activeId, onSelect, onNew }) {
                 </div>
             )}
 
-            <div className="px-3 lg:px-4 py-2.5 hairline-b flex items-center gap-2">
+            <div className="px-3 lg:px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: `2px dashed ${PT.ink}` }}>
                 <div className="relative flex-1">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} strokeWidth={2.2} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: PT.ink }} />
                     <input
                         value={q} onChange={(e) => setQ(e.target.value)}
                         placeholder="Pesquisar conversa…" data-testid="messages-search"
-                        className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition"
+                        className="w-full pl-9 pr-9 py-2 text-[13px] outline-none font-medium"
+                        style={{
+                            background: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            borderRadius: 999,
+                            color: PT.ink,
+                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                        }}
                     />
                     {q && (
-                        <button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>
+                        <button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: PT.ink }}><X size={13} /></button>
                     )}
                 </div>
                 <button onClick={onNew} data-testid="messages-new-btn"
-                    className="shrink-0 h-9 pl-2.5 pr-3.5 rounded-full inline-flex items-center gap-1.5 text-white tap-shrink shadow-sm"
-                    style={{ background: "linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%)" }}
+                    className="shrink-0 h-9 pl-3 pr-4 inline-flex items-center gap-1.5 tap-shrink font-black uppercase"
+                    style={{
+                        background: PT.red,
+                        color: "#fff",
+                        border: `2.5px solid ${PT.ink}`,
+                        borderRadius: 999,
+                        boxShadow: `3px 3px 0 ${PT.ink}`,
+                        fontSize: 11,
+                        letterSpacing: "0.06em",
+                    }}
                     title="Nova conversa" aria-label="Nova conversa">
-                    <Plus size={15} strokeWidth={2.3} />
-                    <span className="text-[12px] font-semibold tracking-tight">Nova</span>
+                    <Plus size={13} strokeWidth={2.5} />
+                    <span>Nova</span>
                 </button>
             </div>
-            <div className="px-3 lg:px-4 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-                {FILTERS.map((f) => (
-                    <button key={f.key} onClick={() => setFilter(f.key)} data-testid={`messages-filter-${f.key}`}
-                        className={`shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition ${
-                            filter === f.key ? "chip-filter-on" : "bg-black/[0.04] text-black hover:bg-black/[0.08]"
-                        }`}>
-                        {f.label}
-                    </button>
-                ))}
+            <div className="px-3 lg:px-4 py-2 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderBottom: `2px dashed ${PT.ink}` }}>
+                {FILTERS.map((f) => {
+                    const active = filter === f.key;
+                    return (
+                        <button key={f.key} onClick={() => setFilter(f.key)} data-testid={`messages-filter-${f.key}`}
+                            className="shrink-0 px-3 py-1.5 text-[11.5px] font-black uppercase transition"
+                            style={{
+                                background: active ? PT.ink : "#fff",
+                                color: active ? PT.gold : PT.ink,
+                                border: `2px solid ${PT.ink}`,
+                                borderRadius: 999,
+                                boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                                letterSpacing: "0.05em",
+                            }}>
+                            {f.label}
+                        </button>
+                    );
+                })}
             </div>
             {loading ? (
                 <ConvSkeleton />
             ) : filtered.length === 0 ? (
-                <div className="px-6 py-20 text-center anim-fade-up">
-                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                        <MessageCircle size={26} strokeWidth={1.4} className="text-black/70" />
+                <div className="px-6 py-14 mx-4 my-6 text-center"
+                    style={{
+                        background: "#fff",
+                        border: `3px solid ${PT.ink}`,
+                        boxShadow: `5px 5px 0 ${PT.gold}`,
+                        borderRadius: 24,
+                    }}
+                >
+                    <div className="w-16 h-16 mx-auto mb-4 grid place-items-center"
+                        style={{
+                            background: PT.gold, color: PT.ink,
+                            border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                            borderRadius: 12, transform: "rotate(-3deg)",
+                        }}
+                    >
+                        <MessageCircle size={24} strokeWidth={2.2} />
                     </div>
-                    <p className="type-overline mb-2">Sem conversas</p>
-                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black">
+                    <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 11, color: PT.red, letterSpacing: "0.10em" }}>// SEM · CONVERSAS</p>
+                    <h3 className="font-black tracking-tight" style={{ fontSize: 18, color: PT.ink }}>
                         {filter === "all" ? "Sem mensagens ainda" : "Vazio neste filtro"}
                     </h3>
-                    <p className="text-black/55 text-sm mt-2 max-w-[34ch] mx-auto leading-relaxed">
+                    <p className="text-[13.5px] mt-2 max-w-[34ch] mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                         {filter === "all"
                             ? "Começa uma conversa com alguém. Sem read receipts forçados."
                             : "Não há nada para mostrar aqui agora."}
                     </p>
                     {filter === "all" && (
                         <button onClick={onNew} data-testid="messages-empty-cta"
-                            className="mt-6 btn-obsidian text-[12px] px-5 py-2.5 inline-flex items-center gap-1.5">
-                            <Plus size={13} /> Nova conversa
+                            className="mt-6 px-5 py-2.5 inline-flex items-center gap-1.5 font-black uppercase"
+                            style={{
+                                background: PT.red, color: "#fff",
+                                border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                borderRadius: 999, fontSize: 12, letterSpacing: "0.06em",
+                            }}>
+                            <Plus size={13} strokeWidth={2.5} /> Nova conversa
                         </button>
                     )}
                 </div>

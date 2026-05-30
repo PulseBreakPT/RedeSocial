@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
+import { PT } from "./auth/AuthDecor";
 import { usePremium } from "../context/PremiumContext";
 import { toast } from "sonner";
 
@@ -180,13 +181,22 @@ const FAQS = [
 
 function FeatureList({ items }) {
     return (
-        <ul className="space-y-3 mt-6">
+        <ul className="space-y-2.5 mt-6">
             {items.map((f, i) => {
                 const Icon = f.icon;
                 return (
-                    <li key={i} className={`flex items-start gap-3 text-[14px] leading-relaxed ${f.hl ? "text-white font-medium" : "text-white/75"}`}>
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-white/10 grid place-items-center mt-0.5">
-                            <Icon size={12} className="text-white" strokeWidth={2.5} />
+                    <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed font-medium" style={{ color: f.hl ? PT.ink : "rgba(10,10,10,0.72)", fontWeight: f.hl ? 700 : 500 }}>
+                        <span
+                            className="flex-shrink-0 w-6 h-6 grid place-items-center mt-0.5"
+                            style={{
+                                background: PT.gold,
+                                color: PT.ink,
+                                border: `2px solid ${PT.ink}`,
+                                boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                borderRadius: 6,
+                            }}
+                        >
+                            <Icon size={11} strokeWidth={2.5} />
                         </span>
                         <span>{f.text}</span>
                     </li>
@@ -198,87 +208,147 @@ function FeatureList({ items }) {
 
 function TierCard({
     tier, name, subtitle, tagline, price, interval, features, current,
-    billingAvailable, onSubscribe, onManage, bg, borderGrad, priceColor,
-    orbGrad, isRecommended, scale
+    billingAvailable, onSubscribe, onManage, accent, isRecommended, scale
 }) {
-    const ref = useRef(null);
-    const onMove = useCallback((e) => {
-        if (!ref.current) return;
-        const r = ref.current.getBoundingClientRect();
-        ref.current.style.setProperty("--mx", `${e.clientX - r.left}px`);
-        ref.current.style.setProperty("--my", `${e.clientY - r.top}px`);
-    }, []);
-
+    // accent — main PT color for this tier (gold for Aura, azul for Plus)
+    const accentColor = accent || PT.azul;
     return (
-        <div ref={ref} className={`relative group ${scale || ""}`} onMouseMove={onMove} style={{ "--mx": "50%", "--my": "50%" }}>
+        <div className={`relative ${scale || ""}`}>
             {isRecommended && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20">
-                    <div className="relative px-5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider text-black overflow-hidden"
-                         style={{ background: "linear-gradient(90deg, #fbbf24, #f59e0b, #d97706)" }}>
-                        <span className="relative z-10">Recomendado</span>
-                        <span className="absolute inset-0 shine-effect" />
+                    <div
+                        className="px-4 py-1 font-black uppercase"
+                        style={{
+                            background: PT.red,
+                            color: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            fontSize: 10.5,
+                            letterSpacing: "0.10em",
+                            transform: "rotate(-2deg)",
+                            borderRadius: 999,
+                        }}
+                    >
+                        ★ RECOMENDADO
                     </div>
                 </div>
             )}
 
-            <div className="relative overflow-hidden rounded-[32px] p-[1.5px] transition-transform duration-300 ease-out group-hover:-translate-y-1.5"
-                 style={{ background: borderGrad }}>
-                <div className="absolute inset-0 rounded-[32px] opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none z-10"
-                     style={{ background: "radial-gradient(400px circle at var(--mx) var(--my), rgba(255,255,255,0.12), transparent 50%)" }} />
-
-                <div className="relative rounded-[calc(2rem-1.5px)] p-6 sm:p-7 lg:p-8 flex flex-col h-full border border-white/[0.08]"
-                     style={{ background: bg }}>
-                    <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none" style={{ background: orbGrad }} />
-
-                    <div className="mb-5 relative">
-                        <div className="flex items-center gap-2.5 mb-1">
-                            <h3 className="font-display text-[28px] sm:text-[32px] lg:text-[36px] tracking-tight text-white leading-none font-bold">
-                                {name}
-                            </h3>
-                            {tier === "aura" && <Crown size={22} className="text-yellow-300" style={{ filter: "drop-shadow(0 0 4px rgba(253,224,71,0.4))" }} />}
-                        </div>
-                        <p className="text-[11px] uppercase tracking-[0.14em] text-white/35 font-mono font-semibold mb-2.5">{subtitle}</p>
-                        <p className="text-[14px] text-white/55 leading-relaxed max-w-[34ch]">{tagline}</p>
+            <div
+                className="relative p-6 sm:p-7 lg:p-8 flex flex-col h-full transition-transform duration-200 hover:-translate-y-1"
+                style={{
+                    background: "#fff",
+                    border: `3.5px solid ${PT.ink}`,
+                    boxShadow: `6px 6px 0 ${accentColor}`,
+                    borderRadius: 24,
+                }}
+            >
+                <div className="mb-5 relative">
+                    <div className="flex items-center gap-2.5 mb-2">
+                        <span
+                            className="inline-flex items-center justify-center"
+                            style={{
+                                width: 38, height: 38,
+                                background: accentColor,
+                                color: tier === "aura" ? PT.ink : "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                borderRadius: 10,
+                                transform: "rotate(-3deg)",
+                            }}
+                        >
+                            {tier === "aura" ? <Crown size={18} strokeWidth={2.4} /> : <Sparkles size={18} strokeWidth={2.4} />}
+                        </span>
+                        <h3 className="font-black tracking-tight leading-none" style={{ fontSize: 34, color: PT.ink }}>
+                            {name}
+                        </h3>
                     </div>
+                    <p className="font-mono font-black uppercase mb-2.5" style={{ fontSize: 10.5, letterSpacing: "0.12em", color: PT.red }}>
+                        // {subtitle}
+                    </p>
+                    <p className="text-[14px] leading-relaxed max-w-[34ch] font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{tagline}</p>
+                </div>
 
-                    <div className="mb-4">
-                        <div className="flex items-baseline gap-2 mb-1">
-                            <span className={`font-display text-[48px] sm:text-[54px] lg:text-[60px] tracking-[-0.04em] leading-none tabular-nums ${priceColor}`}>
-                                &euro;{price.toFixed(2)}
-                            </span>
-                            <span className="text-white/40 text-[13px] font-medium pb-1">
-                                /{interval === "year" ? "ano" : "mês"}
-                            </span>
-                        </div>
-                        {interval === "year" && (
-                            <p className="text-[11.5px] text-white/35 font-medium">Equivalente a &euro;{(price / 12).toFixed(2)}/mês &middot; Poupas 17%</p>
-                        )}
+                <div className="mb-4">
+                    <div className="flex items-baseline gap-2 mb-1">
+                        <span
+                            className="font-black tabular-nums tracking-[-0.04em] leading-none"
+                            style={{
+                                fontSize: "clamp(40px, 6vw, 56px)",
+                                color: PT.ink,
+                                background: PT.gold,
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                transform: "rotate(-1.5deg)",
+                                display: "inline-block",
+                            }}
+                        >
+                            €{price.toFixed(2)}
+                        </span>
+                        <span className="text-[13px] font-bold pb-1" style={{ color: "rgba(10,10,10,0.5)" }}>
+                            /{interval === "year" ? "ano" : "mês"}
+                        </span>
                     </div>
+                    {interval === "year" && (
+                        <p className="text-[11.5px] mt-3 font-mono font-bold uppercase" style={{ color: PT.green, letterSpacing: "0.05em" }}>
+                            ✓ €{(price / 12).toFixed(2)}/mês · POUPAS 17%
+                        </p>
+                    )}
+                </div>
 
-                    <div className="relative h-px mb-5 overflow-hidden">
-                        <div className="absolute inset-0" style={{ background: borderGrad, opacity: 0.35 }} />
-                        <div className="absolute inset-0 shimmer-line" style={{ background: "linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%)" }} />
-                    </div>
+                <div style={{ borderTop: `2.5px dashed ${PT.ink}`, marginBottom: 4 }} />
 
-                    <FeatureList items={features} />
+                <FeatureList items={features} />
 
-                    <div className="mt-auto pt-7">
-                        {current ? (
-                            <button onClick={onManage} className="w-full h-12 rounded-2xl bg-white/12 text-white text-[14px] font-bold hover:bg-white/18 transition-colors duration-150 border border-white/10 inline-flex items-center justify-center gap-2">
-                                O teu plano &middot; Gerir
-                            </button>
-                        ) : billingAvailable ? (
-                            <button onClick={() => onSubscribe(tier, interval)} data-testid={`premium-subscribe-${tier}`}
-                                className="w-full h-12 rounded-2xl bg-white text-black text-[14px] font-bold hover:shadow-lg active:scale-[0.97] transition-all duration-150 inline-flex items-center justify-center gap-2 group/btn">
-                                Escolher {name}
-                                <ArrowRight size={16} className="group-hover/btn:translate-x-0.5 transition-transform duration-150" strokeWidth={2.5} />
-                            </button>
-                        ) : (
-                            <button disabled className="w-full h-12 rounded-2xl bg-white/8 text-white/30 text-[14px] font-bold cursor-not-allowed border border-white/5">
-                                Brevemente
-                            </button>
-                        )}
-                    </div>
+                <div className="mt-auto pt-7">
+                    {current ? (
+                        <button
+                            onClick={onManage}
+                            className="w-full h-12 text-[13px] font-black uppercase inline-flex items-center justify-center gap-2"
+                            style={{
+                                background: "#fff",
+                                color: PT.ink,
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                borderRadius: 999,
+                                letterSpacing: "0.06em",
+                            }}
+                        >
+                            ✓ O teu plano · Gerir
+                        </button>
+                    ) : billingAvailable ? (
+                        <button
+                            onClick={() => onSubscribe(tier, interval)}
+                            data-testid={`premium-subscribe-${tier}`}
+                            className="w-full h-12 text-[13px] font-black uppercase inline-flex items-center justify-center gap-2 group/btn"
+                            style={{
+                                background: PT.red,
+                                color: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                borderRadius: 999,
+                                letterSpacing: "0.06em",
+                            }}
+                        >
+                            Escolher {name}
+                            <ArrowRight size={15} className="group-hover/btn:translate-x-0.5 transition-transform duration-150" strokeWidth={2.5} />
+                        </button>
+                    ) : (
+                        <button
+                            disabled
+                            className="w-full h-12 text-[13px] font-black uppercase cursor-not-allowed"
+                            style={{
+                                background: "#fff",
+                                color: "rgba(10,10,10,0.3)",
+                                border: `2.5px dashed ${PT.ink}`,
+                                borderRadius: 999,
+                                letterSpacing: "0.06em",
+                            }}
+                        >
+                            Brevemente
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -414,38 +484,70 @@ export default function Premium() {
                 ────────────────────────────────────────── */}
             <section className="px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-20 sm:pb-24 max-w-6xl mx-auto">
                 <div className="max-w-2xl mx-auto text-center mb-8 sm:mb-12">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/[0.04] border border-black/[0.06] mb-4">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[11px] uppercase tracking-[0.16em] text-black/55 font-mono font-semibold">Disponível agora</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 mb-5"
+                        style={{
+                            background: PT.green, color: "#fff",
+                            border: `2px solid ${PT.ink}`,
+                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                            borderRadius: 999,
+                            transform: "rotate(-2deg)",
+                        }}
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="text-[10.5px] uppercase tracking-[0.14em] font-black">// DISPONÍVEL AGORA</span>
                     </div>
-                    <h1 className="font-display text-[36px] sm:text-[48px] lg:text-[60px] tracking-[-0.025em] text-black leading-[1.05] mb-4">
-                        Escolhe o plano
-                        <br className="hidden sm:block" />
-                        <span className="sm:block">certo para ti</span>
+                    <h1
+                        className="font-black tracking-[-0.035em] leading-[1.0] mb-5"
+                        style={{ fontSize: "clamp(34px, 5.5vw, 60px)", color: PT.ink }}
+                    >
+                        Escolhe o plano{" "}
+                        <span style={{
+                            display: "inline-block",
+                            background: PT.gold,
+                            padding: "0 0.10em",
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            transform: "rotate(-1.5deg)",
+                            WebkitTextStroke: `0.5px ${PT.ink}`,
+                        }}>certo</span>{" "}
+                        para ti.
                     </h1>
-                    <p className="text-[15px] sm:text-[17px] text-black/45 leading-relaxed max-w-lg mx-auto">
+                    <p className="text-[15px] sm:text-[17px] leading-relaxed max-w-lg mx-auto font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                         Sem anúncios. Sem algoritmos manipulados. Apenas ferramentas que aprofundam a tua presença — ao teu ritmo.
                     </p>
                 </div>
 
-                {/* Toggle */}
+                {/* Toggle — estilo fanzine PT */}
                 <div className="flex justify-center mb-10 sm:mb-14">
-                    <div className="inline-flex items-center gap-1 p-1 rounded-2xl bg-black/[0.04] border border-black/[0.06]">
-                        {["month", "year"].map((i) => (
-                            <button key={i} onClick={() => setInterval(i)}
-                                className={`px-5 sm:px-7 h-10 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                                    interval === i
-                                        ? "bg-black text-white shadow-md"
-                                        : "text-black/50 hover:text-black hover:bg-black/[0.04]"
-                                }`}>
-                                {i === "month" ? "Mensal" : "Anual"}
-                                {i === "year" && (
-                                    <span className={`ml-1.5 text-[10px] font-black tracking-wide ${interval === i ? "text-green-400" : "text-green-600"}`}>
-                                        POUPA 17%
-                                    </span>
-                                )}
-                            </button>
-                        ))}
+                    <div className="inline-flex items-center gap-0 p-1"
+                        style={{
+                            background: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            borderRadius: 999,
+                        }}
+                    >
+                        {["month", "year"].map((i) => {
+                            const active = interval === i;
+                            return (
+                                <button key={i} onClick={() => setInterval(i)}
+                                    className="px-5 sm:px-7 h-9 text-[12px] font-black uppercase transition-all duration-200"
+                                    style={{
+                                        background: active ? PT.ink : "transparent",
+                                        color: active ? PT.gold : PT.ink,
+                                        borderRadius: 999,
+                                        letterSpacing: "0.05em",
+                                    }}
+                                >
+                                    {i === "month" ? "Mensal" : "Anual"}
+                                    {i === "year" && (
+                                        <span className="ml-1.5 text-[9.5px] font-black tracking-wide" style={{ color: active ? PT.green : PT.green }}>
+                                            POUPA 17%
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -455,20 +557,14 @@ export default function Premium() {
                         price={prices.plus} interval={interval} features={PLUS_FEATURES}
                         current={isPlus} billingAvailable={billing_available}
                         onSubscribe={subscribe} onManage={manage}
-                        bg="linear-gradient(160deg, #1e1b4b 0%, #312e81 30%, #1e3a5f 60%, #0f172a 100%)"
-                        borderGrad="linear-gradient(135deg, #6366f1, #3b82f6, #06b6d4, #6366f1)"
-                        priceColor="text-cyan-300"
-                        orbGrad="radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)"
+                        accent={PT.azul}
                     />
                     <TierCard tier="aura" name="Aura" subtitle="A experiência definitiva"
                         tagline="Tudo do Plus, mais uma camada de profundidade. O teu perfil ganha vida — adapta-se a ti, à hora e ao momento."
                         price={prices.aura} interval={interval} features={AURA_FEATURES}
                         current={isAura} billingAvailable={billing_available}
                         onSubscribe={subscribe} onManage={manage}
-                        bg="linear-gradient(160deg, #4a1942 0%, #831843 30%, #7c2d12 60%, #451a03 100%)"
-                        borderGrad="linear-gradient(135deg, #f43f5e, #ec4899, #f59e0b, #eab308, #f43f5e)"
-                        priceColor="text-amber-300"
-                        orbGrad="radial-gradient(circle, rgba(244,63,94,0.12) 0%, transparent 70%)"
+                        accent={PT.gold}
                         isRecommended
                         scale="lg:-mt-4"
                     />
@@ -483,20 +579,38 @@ export default function Premium() {
                 {/* Trust strip — confiança imediata */}
                 <div className="mt-12 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto">
                     {[
-                        { icon: Shield,   t: "14 dias",        s: "garantia total" },
-                        { icon: Lock,     t: "Pagamento",      s: "via Stripe" },
-                        { icon: MapPin,   t: "Portugal",       s: "feito por nós" },
-                        { icon: Heart,    t: "Sem anúncios",   s: "nunca" },
+                        { icon: Shield,   t: "14 dias",        s: "garantia total", c: PT.green },
+                        { icon: Lock,     t: "Pagamento",      s: "via Stripe", c: PT.azul },
+                        { icon: MapPin,   t: "Portugal",       s: "feito por nós", c: PT.red },
+                        { icon: Heart,    t: "Sem anúncios",   s: "nunca", c: PT.gold },
                     ].map((t, i) => {
                         const Ic = t.icon;
                         return (
-                            <div key={i} className="rounded-xl p-3 sm:p-3.5 border border-black/[0.05] bg-black/[0.012] flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-lg bg-white grid place-items-center flex-shrink-0 border border-black/[0.04]">
-                                    <Ic size={14} className="text-black/55" strokeWidth={2.2} />
+                            <div
+                                key={i}
+                                className="p-3 sm:p-3.5 flex items-center gap-2.5"
+                                style={{
+                                    background: "#fff",
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `3px 3px 0 ${t.c}`,
+                                    borderRadius: 14,
+                                }}
+                            >
+                                <div
+                                    className="w-9 h-9 grid place-items-center flex-shrink-0"
+                                    style={{
+                                        background: t.c,
+                                        color: t.c === PT.gold ? PT.ink : "#fff",
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        borderRadius: 8,
+                                    }}
+                                >
+                                    <Ic size={14} strokeWidth={2.4} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[12.5px] font-bold text-black/80 leading-tight">{t.t}</p>
-                                    <p className="text-[11px] text-black/40 leading-tight">{t.s}</p>
+                                    <p className="text-[12.5px] font-black leading-tight" style={{ color: PT.ink }}>{t.t}</p>
+                                    <p className="text-[10.5px] font-mono font-bold uppercase leading-tight" style={{ color: "rgba(10,10,10,0.5)", letterSpacing: "0.04em" }}>{t.s}</p>
                                 </div>
                             </div>
                         );
@@ -508,16 +622,27 @@ export default function Premium() {
                 NÍVEL 2 — DEEP-DIVE por categoria
                 Conteúdo verdadeiro: limites reais, features reais
                 ────────────────────────────────────────── */}
-            <section className="bg-black/[0.018] border-y border-black/[0.04]">
+            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}`, borderBottom: `2.5px solid ${PT.ink}` }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-14 max-w-2xl">
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-black/30 font-mono font-semibold mb-3">
-                            O que recebes
+                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                            // O QUE RECEBES
                         </p>
-                        <h2 className="font-display text-[28px] sm:text-[38px] lg:text-[46px] tracking-[-0.02em] text-black leading-[1.08] mb-4">
-                            Tudo o que muda <br className="hidden sm:block" />no Plus e no Aura
+                        <h2
+                            className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
+                            style={{ fontSize: "clamp(28px, 4.5vw, 46px)", color: PT.ink }}
+                        >
+                            Tudo o que muda{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.gold,
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                transform: "rotate(-1deg)",
+                            }}>no Plus e no Aura.</span>
                         </h2>
-                        <p className="text-[14.5px] sm:text-[16px] text-black/45 leading-relaxed max-w-xl">
+                        <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Seis categorias. Limites reais. Sem letras pequenas. Cada linha aqui é uma feature efetivamente implementada — não é marketing.
                         </p>
                     </div>

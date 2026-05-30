@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 import { HeaderLiveDot } from "./HeaderLiveDot";
+import { PT } from "../pages/auth/AuthDecor";
 
 export function MobileTopBar({ onOpenChat }) {
     const { user } = useAuth();
@@ -30,13 +31,25 @@ export function MobileTopBar({ onOpenChat }) {
         return () => clearInterval(id);
     }, []);
 
+    const iconBtnStyle = (active) => ({
+        background: active ? PT.ink : "rgba(255,255,255,0.6)",
+        color: active ? PT.gold : PT.ink,
+        border: `2px solid ${PT.ink}`,
+        boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+        borderRadius: 999,
+    });
+
     return (
         <header
-            className="lg:hidden sticky top-0 z-40 glass border-b border-black/[0.07] pt-safe"
+            className="lg:hidden sticky top-0 z-40 pt-safe"
             data-testid="mobile-topbar"
+            style={{
+                background: "rgba(255,244,220,0.95)",
+                backdropFilter: "blur(8px)",
+                borderBottom: `2.5px solid ${PT.ink}`,
+            }}
         >
-            <div className="flex items-center gap-3 px-4 h-[var(--mobile-topbar-h)]">
-                {/* Avatar — opens the unified profile dropdown menu */}
+            <div className="flex items-center gap-2.5 px-3.5 h-[var(--mobile-topbar-h)]">
                 <button
                     ref={avatarBtnRef}
                     type="button"
@@ -45,48 +58,70 @@ export function MobileTopBar({ onOpenChat }) {
                     aria-haspopup="menu"
                     aria-expanded={drawerOpen}
                     data-testid="mobile-topbar-avatar"
-                    className="tap-shrink rounded-full p-0.5 -ml-0.5 hover:bg-black/[0.05] transition shrink-0"
+                    className="tap-shrink p-0.5 shrink-0"
+                    style={{
+                        background: "transparent",
+                        borderRadius: 999,
+                    }}
                 >
-                    <Avatar user={user} size={32} showOnline />
+                    <span
+                        className="block"
+                        style={{
+                            border: `2px solid ${PT.ink}`,
+                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                            borderRadius: 999,
+                            padding: 0,
+                        }}
+                    >
+                        <Avatar user={user} size={30} showOnline />
+                    </span>
                 </button>
 
-                <Link to="/feed" className="flex items-center gap-1.5 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
-                    <span className="font-display text-[24px] leading-none tracking-tight text-black flex items-baseline gap-1">
-                        <span className="silver-foil text-[20px] not-italic translate-y-[1px]">◆</span>
+                <Link to="/feed" className="flex items-baseline gap-1 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
+                    <span aria-hidden style={{ color: PT.red, fontSize: 18, fontWeight: 900, lineHeight: 1 }}>✱</span>
+                    <span className="font-black tracking-tight" style={{ fontSize: 19, color: PT.ink, lineHeight: 1 }}>
                         lusorae
                     </span>
                     <HeaderLiveDot className="ml-1" />
                 </Link>
+
                 <button
                     onClick={() => navigate("/explore")}
-                    className={`w-10 h-10 rounded-full grid place-items-center tap-shrink transition ${
-                        isExplore ? "icon-grad-on" : "text-black hover:bg-black/[0.06] active:bg-black/[0.08]"
-                    }`}
+                    className="w-9 h-9 grid place-items-center tap-shrink transition"
+                    style={iconBtnStyle(isExplore)}
                     aria-label="buscar"
                     data-testid="mobile-search-btn"
                 >
-                    <Search size={20} strokeWidth={1.7} color={isExplore ? "#df8a7d" : undefined} />
+                    <Search size={16} strokeWidth={2.2} />
                 </button>
                 <button
                     onClick={() => onOpenChat && onOpenChat()}
-                    className="w-10 h-10 rounded-full grid place-items-center tap-shrink transition text-black hover:bg-black/[0.06] active:bg-black/[0.08]"
+                    className="w-9 h-9 grid place-items-center tap-shrink transition"
+                    style={iconBtnStyle(false)}
                     aria-label="chats"
                     data-testid="mobile-chat-btn"
                 >
-                    <MessageCircle size={20} strokeWidth={1.7} />
+                    <MessageCircle size={16} strokeWidth={2.2} />
                 </button>
                 <button
                     onClick={() => navigate("/notifications")}
                     data-testid="mobile-notif-btn"
-                    className={`relative w-10 h-10 rounded-full grid place-items-center tap-shrink transition ${
-                        isNotif ? "icon-grad-on" : "text-black hover:bg-black/[0.06] active:bg-black/[0.08]"
-                    }`}
+                    className="relative w-9 h-9 grid place-items-center tap-shrink transition"
+                    style={iconBtnStyle(isNotif)}
                     aria-label="notificações"
                 >
-                    <Bell size={20} strokeWidth={1.7} color={isNotif ? "#df8a7d" : undefined} />
+                    <Bell size={16} strokeWidth={2.2} />
                     {unread > 0 && (
                         <span
-                            className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-soft text-[10px] font-mono grid place-items-center text-white font-bold ring-2 ring-white"
+                            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 grid place-items-center font-black font-mono"
+                            style={{
+                                background: PT.red,
+                                color: "#fff",
+                                border: `1.5px solid ${PT.ink}`,
+                                borderRadius: 999,
+                                fontSize: 9,
+                                letterSpacing: "0.02em",
+                            }}
                         >
                             {unread > 99 ? "99+" : unread}
                         </span>
@@ -94,7 +129,6 @@ export function MobileTopBar({ onOpenChat }) {
                 </button>
             </div>
 
-            {/* Unified profile dropdown menu (also used by desktop LeftSidebar) */}
             <ProfileSidebarMenu
                 open={drawerOpen}
                 onClose={() => setDrawerOpen(false)}
