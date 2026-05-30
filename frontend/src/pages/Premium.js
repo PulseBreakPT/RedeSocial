@@ -356,22 +356,48 @@ function TierCard({
 }
 
 /* Cell renderer para a tabela comparativa: aceita string OU bool */
-function CCell({ value, hl, accent }) {
+function CCell({ value, hl, accent, tone }) {
     const isNone = value === "—" || value === false || value === null || value === undefined;
     const isYes  = value === true || value === "Sim";
 
+    // tone: "plus" → azul, "aura" → gold, undefined → neutro
+    const hlBg = tone === "aura" ? "rgba(255,204,0,0.12)" : tone === "plus" ? "rgba(14,77,146,0.07)" : "transparent";
+
     return (
-        <td className={`text-center py-3 px-2 align-middle ${hl ? "bg-violet-50/40" : ""}`}>
+        <td className="text-center py-3 px-2 align-middle" style={{ background: hl ? hlBg : "transparent" }}>
             {isNone ? (
-                <span className="inline-flex w-5 h-5 rounded-full bg-black/[0.04] items-center justify-center">
-                    <Minus size={10} className="text-black/20" strokeWidth={2.5} />
+                <span
+                    className="inline-flex w-6 h-6 items-center justify-center"
+                    style={{
+                        background: "#fff",
+                        border: `2px solid ${PT.ink}`,
+                        borderRadius: 6,
+                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                    }}
+                >
+                    <Minus size={11} style={{ color: PT.ink }} strokeWidth={3} />
                 </span>
             ) : isYes ? (
-                <span className="inline-flex w-5 h-5 rounded-full bg-green-500/10 items-center justify-center">
-                    <Check size={12} className="text-green-600" strokeWidth={3} />
+                <span
+                    className="inline-flex w-6 h-6 items-center justify-center"
+                    style={{
+                        background: PT.green,
+                        color: "#fff",
+                        border: `2px solid ${PT.ink}`,
+                        borderRadius: 6,
+                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                    }}
+                >
+                    <Check size={12} strokeWidth={3.2} />
                 </span>
             ) : (
-                <span className={`text-[12.5px] font-semibold tabular-nums ${accent ? accent : "text-black/75"}`}>
+                <span
+                    className="text-[12px] sm:text-[12.5px] font-black tabular-nums uppercase"
+                    style={{
+                        color: accent || PT.ink,
+                        letterSpacing: "0.02em",
+                    }}
+                >
                     {value}
                 </span>
             )}
@@ -382,9 +408,18 @@ function CCell({ value, hl, accent }) {
 /* Linha de categoria/grupo dentro da tabela */
 function GroupRow({ label }) {
     return (
-        <tr className="bg-black/[0.025]">
+        <tr style={{ background: PT.ink }}>
             <td colSpan={4} className="py-2.5 px-4 sm:px-5">
-                <span className="text-[10.5px] uppercase tracking-[0.16em] text-black/45 font-mono font-bold">{label}</span>
+                <span
+                    className="font-mono font-black uppercase"
+                    style={{
+                        fontSize: 10.5,
+                        letterSpacing: "0.16em",
+                        color: PT.gold,
+                    }}
+                >
+                    // {label}
+                </span>
             </td>
         </tr>
     );
@@ -393,17 +428,54 @@ function GroupRow({ label }) {
 /* Card de categoria do deep-dive */
 function CategoryCard({ cat, index }) {
     const Icon = cat.icon;
+    const accent = cat.auraOnly ? PT.gold : PT.azul;
     return (
-        <div className={`rounded-2xl border ${cat.auraOnly ? "border-amber-300/40" : "border-black/[0.06]"} bg-white overflow-hidden shadow-sm`}>
-            <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-black/[0.05] bg-black/[0.018]">
+        <div
+            className="relative overflow-hidden"
+            style={{
+                background: "#fff",
+                border: `3px solid ${PT.ink}`,
+                boxShadow: `5px 5px 0 ${accent}`,
+                borderRadius: 20,
+            }}
+        >
+            <div
+                className="px-5 sm:px-6 py-4 sm:py-5"
+                style={{
+                    background: cat.auraOnly ? "rgba(255,204,0,0.10)" : PT.cream,
+                    borderBottom: `2.5px solid ${PT.ink}`,
+                }}
+            >
                 <div className="flex items-start gap-3.5">
-                    <div className={`w-10 h-10 rounded-xl grid place-items-center flex-shrink-0 ${cat.auraOnly ? "bg-gradient-to-br from-rose-500/10 to-amber-500/10" : "bg-gradient-to-br from-indigo-500/10 to-cyan-500/10"}`}>
-                        <Icon size={18} className={cat.auraOnly ? "text-amber-600" : "text-indigo-600"} strokeWidth={2.2} />
+                    <div
+                        className="w-11 h-11 grid place-items-center flex-shrink-0"
+                        style={{
+                            background: accent,
+                            color: cat.auraOnly ? PT.ink : "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            borderRadius: 10,
+                            transform: "rotate(-4deg)",
+                        }}
+                    >
+                        <Icon size={19} strokeWidth={2.4} />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-black/30 font-mono font-bold mb-1">{cat.eyebrow}</p>
-                        <h3 className="font-display text-[19px] sm:text-[22px] tracking-tight text-black leading-tight font-bold mb-1.5">{cat.title}</h3>
-                        <p className="text-[13px] text-black/45 leading-relaxed max-w-[60ch]">{cat.desc}</p>
+                        <p
+                            className="font-mono font-black uppercase mb-1.5"
+                            style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.red }}
+                        >
+                            // {cat.eyebrow}
+                        </p>
+                        <h3
+                            className="font-black tracking-tight leading-tight mb-1.5"
+                            style={{ fontSize: "clamp(18px, 2.4vw, 22px)", color: PT.ink }}
+                        >
+                            {cat.title}
+                        </h3>
+                        <p className="text-[13px] sm:text-[13.5px] leading-relaxed max-w-[60ch] font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
+                            {cat.desc}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -411,24 +483,69 @@ function CategoryCard({ cat, index }) {
             <div className="overflow-x-auto">
                 <table className="w-full text-[13px] sm:text-[13.5px] min-w-[520px]">
                     <thead>
-                        <tr className="border-b border-black/[0.05]">
-                            <th className="text-left py-2.5 px-5 sm:px-6 font-semibold text-black/35 w-[44%] text-[11px] uppercase tracking-[0.12em]">Funcionalidade</th>
-                            <th className="text-center py-2.5 px-2 font-semibold text-black/25 w-[18%] text-[11px] uppercase tracking-[0.12em]">Grátis</th>
-                            <th className="text-center py-2.5 px-2 w-[19%]">
-                                <span className="text-[11px] uppercase tracking-[0.12em] font-bold" style={{ background: "linear-gradient(90deg,#4f46e5,#06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Plus</span>
+                        <tr style={{ background: "rgba(10,10,10,0.04)", borderBottom: `2px solid ${PT.ink}` }}>
+                            <th
+                                className="text-left py-3 px-5 sm:px-6 font-mono font-black uppercase w-[44%]"
+                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.ink }}
+                            >
+                                Funcionalidade
                             </th>
-                            <th className="text-center py-2.5 px-2 w-[19%]">
-                                <span className="text-[11px] uppercase tracking-[0.12em] font-bold" style={{ background: "linear-gradient(90deg,#f43f5e,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Aura</span>
+                            <th
+                                className="text-center py-3 px-2 font-mono font-black uppercase w-[18%]"
+                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "rgba(10,10,10,0.55)" }}
+                            >
+                                Grátis
+                            </th>
+                            <th className="text-center py-3 px-2 w-[19%]">
+                                <span
+                                    className="inline-block font-black uppercase"
+                                    style={{
+                                        background: PT.azul,
+                                        color: "#fff",
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        padding: "2px 9px",
+                                        borderRadius: 6,
+                                        fontSize: 10.5,
+                                        letterSpacing: "0.12em",
+                                        transform: "rotate(-2deg)",
+                                    }}
+                                >
+                                    Plus
+                                </span>
+                            </th>
+                            <th className="text-center py-3 px-2 w-[19%]">
+                                <span
+                                    className="inline-block font-black uppercase"
+                                    style={{
+                                        background: PT.gold,
+                                        color: PT.ink,
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        padding: "2px 9px",
+                                        borderRadius: 6,
+                                        fontSize: 10.5,
+                                        letterSpacing: "0.12em",
+                                        transform: "rotate(2deg)",
+                                    }}
+                                >
+                                    Aura
+                                </span>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         {cat.rows.map((r, i) => (
-                            <tr key={i} className="border-b border-black/[0.035] last:border-0 hover:bg-black/[0.012] transition-colors duration-100">
-                                <td className="py-3 px-5 sm:px-6 text-black/65">{r.label}</td>
+                            <tr
+                                key={i}
+                                style={{ borderBottom: i === cat.rows.length - 1 ? "none" : `1px dashed rgba(10,10,10,0.12)` }}
+                            >
+                                <td className="py-3 px-5 sm:px-6 font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>
+                                    {r.label}
+                                </td>
                                 <CCell value={r.free} />
-                                <CCell value={r.plus} hl accent="text-indigo-700" />
-                                <CCell value={r.aura} hl accent={cat.auraOnly || r.aura_only ? "text-rose-600" : "text-indigo-700"} />
+                                <CCell value={r.plus} hl tone="plus" accent={PT.azul} />
+                                <CCell value={r.aura} hl tone="aura" accent={cat.auraOnly || r.aura_only ? PT.red : PT.ink} />
                             </tr>
                         ))}
                     </tbody>
@@ -436,9 +553,18 @@ function CategoryCard({ cat, index }) {
             </div>
 
             {cat.note && (
-                <div className="px-5 sm:px-6 py-3 bg-amber-50/40 border-t border-amber-200/40">
-                    <p className="text-[12px] text-amber-900/70 leading-relaxed flex items-start gap-2">
-                        <Info size={12} className="text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={2.2} />
+                <div
+                    className="px-5 sm:px-6 py-3"
+                    style={{
+                        background: PT.gold,
+                        borderTop: `2.5px solid ${PT.ink}`,
+                    }}
+                >
+                    <p
+                        className="text-[12.5px] leading-relaxed flex items-start gap-2 font-bold"
+                        style={{ color: PT.ink }}
+                    >
+                        <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.6} />
                         <span>{cat.note}</span>
                     </p>
                 </div>
@@ -660,31 +786,93 @@ export default function Premium() {
                 ────────────────────────────────────────── */}
             <section>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-4xl mx-auto">
-                    <div className="mb-8 sm:mb-10">
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-black/30 font-mono font-semibold mb-3">
-                            Comparação rápida
+                    <div className="mb-8 sm:mb-10 max-w-2xl">
+                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                            // COMPARAÇÃO RÁPIDA
                         </p>
-                        <h2 className="font-display text-[26px] sm:text-[34px] lg:text-[40px] tracking-tight text-black leading-tight mb-3">
-                            Lado a lado, num só sítio
+                        <h2
+                            className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
+                            style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
+                        >
+                            Lado a lado,{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.azul,
+                                color: "#fff",
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                transform: "rotate(-1.5deg)",
+                            }}>
+                                num só sítio
+                            </span>
                         </h2>
-                        <p className="text-[14px] sm:text-[15px] text-black/40 max-w-xl leading-relaxed">
+                        <p className="text-[14px] sm:text-[15.5px] max-w-xl leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Os mesmos valores que vês acima, condensados. Para quando só queres comparar e decidir.
                         </p>
                     </div>
 
                     <div className="overflow-x-auto -mx-4 sm:mx-0">
                         <div className="min-w-[600px] sm:min-w-0 px-4 sm:px-0">
-                            <div className="rounded-2xl border border-black/[0.06] bg-white overflow-hidden shadow-sm">
+                            <div
+                                className="overflow-hidden"
+                                style={{
+                                    background: "#fff",
+                                    border: `3px solid ${PT.ink}`,
+                                    boxShadow: `6px 6px 0 ${PT.gold}`,
+                                    borderRadius: 20,
+                                }}
+                            >
                                 <table className="w-full text-[13px] sm:text-[14px]">
                                     <thead>
-                                        <tr className="bg-black/[0.04]">
-                                            <th className="text-left py-3.5 px-4 sm:px-5 font-semibold text-black/55 w-[44%]">Funcionalidade</th>
-                                            <th className="text-center py-3.5 px-2 font-semibold text-black/35 w-[18%]">Grátis</th>
-                                            <th className="text-center py-3.5 px-2 font-bold w-[19%]">
-                                                <span style={{ background: "linear-gradient(90deg,#4f46e5,#06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Plus</span>
+                                        <tr style={{ background: PT.ink, borderBottom: `2.5px solid ${PT.ink}` }}>
+                                            <th
+                                                className="text-left py-3.5 px-4 sm:px-5 font-mono font-black uppercase w-[44%]"
+                                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.gold }}
+                                            >
+                                                Funcionalidade
                                             </th>
-                                            <th className="text-center py-3.5 px-2 font-bold w-[19%]">
-                                                <span style={{ background: "linear-gradient(90deg,#f43f5e,#f59e0b)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Aura</span>
+                                            <th
+                                                className="text-center py-3.5 px-2 font-mono font-black uppercase w-[18%]"
+                                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "rgba(255,255,255,0.65)" }}
+                                            >
+                                                Grátis
+                                            </th>
+                                            <th className="text-center py-3 px-2 w-[19%]">
+                                                <span
+                                                    className="inline-block font-black uppercase"
+                                                    style={{
+                                                        background: PT.azul,
+                                                        color: "#fff",
+                                                        border: `2px solid ${PT.ink}`,
+                                                        boxShadow: `2px 2px 0 ${PT.gold}`,
+                                                        padding: "3px 10px",
+                                                        borderRadius: 6,
+                                                        fontSize: 11,
+                                                        letterSpacing: "0.12em",
+                                                        transform: "rotate(-2deg)",
+                                                    }}
+                                                >
+                                                    Plus
+                                                </span>
+                                            </th>
+                                            <th className="text-center py-3 px-2 w-[19%]">
+                                                <span
+                                                    className="inline-block font-black uppercase"
+                                                    style={{
+                                                        background: PT.gold,
+                                                        color: PT.ink,
+                                                        border: `2px solid ${PT.ink}`,
+                                                        boxShadow: `2px 2px 0 ${PT.red}`,
+                                                        padding: "3px 10px",
+                                                        borderRadius: 6,
+                                                        fontSize: 11,
+                                                        letterSpacing: "0.12em",
+                                                        transform: "rotate(2deg)",
+                                                    }}
+                                                >
+                                                    Aura
+                                                </span>
                                             </th>
                                         </tr>
                                     </thead>
@@ -693,16 +881,28 @@ export default function Premium() {
                                             if (r.group) return <GroupRow key={`g-${i}`} label={r.group} />;
                                             const Icon = r.icon;
                                             return (
-                                                <tr key={i} className="border-b border-black/[0.04] hover:bg-black/[0.015] transition-colors duration-100">
+                                                <tr
+                                                    key={i}
+                                                    style={{ borderBottom: `1px dashed rgba(10,10,10,0.14)` }}
+                                                >
                                                     <td className="py-3 px-4 sm:px-5">
                                                         <div className="flex items-center gap-2.5">
-                                                            <Icon size={14} className="text-black/25 flex-shrink-0 hidden sm:block" strokeWidth={2} />
-                                                            <span className="text-black/65">{r.label}</span>
+                                                            <span
+                                                                className="w-7 h-7 grid place-items-center flex-shrink-0 hidden sm:grid"
+                                                                style={{
+                                                                    background: PT.cream,
+                                                                    border: `2px solid ${PT.ink}`,
+                                                                    borderRadius: 6,
+                                                                }}
+                                                            >
+                                                                <Icon size={13} style={{ color: PT.ink }} strokeWidth={2.4} />
+                                                            </span>
+                                                            <span className="font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>{r.label}</span>
                                                         </div>
                                                     </td>
                                                     <CCell value={r.free} />
-                                                    <CCell value={r.plus} hl accent="text-indigo-700" />
-                                                    <CCell value={r.aura} hl accent="text-rose-600" />
+                                                    <CCell value={r.plus} hl tone="plus" accent={PT.azul} />
+                                                    <CCell value={r.aura} hl tone="aura" accent={PT.red} />
                                                 </tr>
                                             );
                                         })}
@@ -717,34 +917,73 @@ export default function Premium() {
             {/* ──────────────────────────────────────────
                 NÍVEL 4 — PRINCÍPIOS (camada emocional)
                 ────────────────────────────────────────── */}
-            <section className="bg-black/[0.018]">
+            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}`, borderBottom: `2.5px solid ${PT.ink}` }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-12 max-w-2xl">
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-black/30 font-mono font-semibold mb-3">
-                            Princípios
+                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                            // PRINCÍPIOS
                         </p>
-                        <h2 className="font-display text-[26px] sm:text-[34px] lg:text-[40px] tracking-tight text-black leading-tight mb-3">
-                            O que torna este premium diferente
+                        <h2
+                            className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
+                            style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
+                        >
+                            O que torna este{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.green,
+                                color: "#fff",
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                transform: "rotate(-1.5deg)",
+                            }}>
+                                premium diferente
+                            </span>
                         </h2>
-                        <p className="text-[14px] sm:text-[15px] text-black/40 max-w-lg leading-relaxed">
+                        <p className="text-[14px] sm:text-[15.5px] max-w-lg leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Não vendemos atenção, alcance ou prioridade. O premium existe para te dar mais conforto — nunca mais poder.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                         {[
-                            { icon: Heart,  title: "Pertença real",     desc: "O premium não cria classes. A comunidade é uma só. As ferramentas premium aprofundam a tua experiência sem afetar a dos outros.", g: "from-indigo-50/80 to-cyan-50/80", ic: "text-indigo-600" },
-                            { icon: Shield, title: "Sem distrações",    desc: "Controlo total sobre o que vês e quando. Feed calmo, filtros sociais e de energia, presença ao teu ritmo. Sem dark patterns.", g: "from-violet-50/80 to-fuchsia-50/80", ic: "text-violet-600" },
-                            { icon: Star,   title: "Identidade única",  desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.", g: "from-amber-50/80 to-orange-50/80", ic: "text-amber-600" },
+                            { icon: Heart,  title: "Pertença real",     desc: "O premium não cria classes. A comunidade é uma só. As ferramentas premium aprofundam a tua experiência sem afetar a dos outros.", c: PT.azul,  iconWhite: true },
+                            { icon: Shield, title: "Sem distrações",    desc: "Controlo total sobre o que vês e quando. Feed calmo, filtros sociais e de energia, presença ao teu ritmo. Sem dark patterns.", c: PT.red,   iconWhite: true },
+                            { icon: Star,   title: "Identidade única",  desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.", c: PT.gold,  iconWhite: false },
                         ].map((item, idx) => {
                             const Icon = item.icon;
+                            const rot = idx === 1 ? 0 : idx === 0 ? -1.2 : 1.2;
                             return (
-                                <div key={idx} className={`group rounded-2xl p-5 sm:p-6 bg-gradient-to-br ${item.g} border border-black/[0.04] hover:shadow-md transition-shadow duration-200 h-full`}>
-                                    <div className="w-10 h-10 rounded-xl bg-white/90 grid place-items-center mb-4 shadow-sm">
-                                        <Icon size={18} className={item.ic} strokeWidth={2} />
+                                <div
+                                    key={idx}
+                                    className="p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1"
+                                    style={{
+                                        background: "#fff",
+                                        border: `3px solid ${PT.ink}`,
+                                        boxShadow: `5px 5px 0 ${item.c}`,
+                                        borderRadius: 18,
+                                        transform: `rotate(${rot}deg)`,
+                                    }}
+                                >
+                                    <div
+                                        className="w-11 h-11 grid place-items-center mb-4"
+                                        style={{
+                                            background: item.c,
+                                            color: item.iconWhite ? "#fff" : PT.ink,
+                                            border: `2.5px solid ${PT.ink}`,
+                                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                                            borderRadius: 10,
+                                            transform: "rotate(-4deg)",
+                                        }}
+                                    >
+                                        <Icon size={18} strokeWidth={2.4} />
                                     </div>
-                                    <h3 className="font-bold text-[15px] sm:text-[16px] text-black mb-2 tracking-tight">{item.title}</h3>
-                                    <p className="text-[13px] text-black/55 leading-relaxed">{item.desc}</p>
+                                    <h3 className="font-black text-[16px] sm:text-[17px] mb-2 tracking-tight leading-tight" style={{ color: PT.ink }}>
+                                        {item.title}
+                                    </h3>
+                                    <p className="text-[13px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
+                                        {item.desc}
+                                    </p>
                                 </div>
                             );
                         })}
@@ -757,49 +996,127 @@ export default function Premium() {
                 ────────────────────────────────────────── */}
             <section>
                 <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 max-w-3xl mx-auto">
-                    <div className="relative overflow-hidden rounded-2xl p-[1.5px]"
-                         style={{ background: "linear-gradient(135deg, #4f46e5, #06b6d4, #f43f5e, #f59e0b, #4f46e5)", backgroundSize: "300% 300%", animation: "premGradientFlow 10s ease infinite" }}>
-                        <div className="relative bg-white rounded-[calc(1rem-1px)] p-5 sm:p-8">
-                            <div className="flex items-start gap-3 mb-5">
-                                <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0"
-                                     style={{ background: "linear-gradient(135deg, rgba(79,70,229,0.08), rgba(244,63,94,0.08))" }}>
-                                    <Info size={18} className="text-indigo-600" strokeWidth={2} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-black/30 font-mono mb-1 font-semibold">Transparência</p>
-                                    <h2 className="font-display text-[22px] sm:text-[28px] lg:text-[32px] leading-tight tracking-tight text-black">
-                                        O que o premium <span className="underline decoration-2 decoration-red-400/40 underline-offset-4">não faz</span>
-                                    </h2>
-                                </div>
+                    <div
+                        className="relative p-5 sm:p-8"
+                        style={{
+                            background: "#fff",
+                            border: `3.5px solid ${PT.ink}`,
+                            boxShadow: `8px 8px 0 ${PT.red}`,
+                            borderRadius: 22,
+                        }}
+                    >
+                        {/* corner stamp */}
+                        <div
+                            className="absolute -top-4 -right-3 px-3 py-1 font-mono font-black uppercase"
+                            style={{
+                                background: PT.red,
+                                color: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                fontSize: 10,
+                                letterSpacing: "0.14em",
+                                transform: "rotate(4deg)",
+                                borderRadius: 6,
+                                zIndex: 2,
+                            }}
+                        >
+                            // TRANSPARÊNCIA
+                        </div>
+
+                        <div className="flex items-start gap-3 mb-5">
+                            <div
+                                className="w-11 h-11 grid place-items-center flex-shrink-0"
+                                style={{
+                                    background: PT.azul,
+                                    color: "#fff",
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    borderRadius: 10,
+                                    transform: "rotate(-4deg)",
+                                }}
+                            >
+                                <Info size={19} strokeWidth={2.4} />
                             </div>
+                            <div>
+                                <h2
+                                    className="font-black tracking-[-0.025em] leading-[1.05] mt-1"
+                                    style={{ fontSize: "clamp(22px, 3.5vw, 34px)", color: PT.ink }}
+                                >
+                                    O que o premium{" "}
+                                    <span style={{
+                                        display: "inline-block",
+                                        background: PT.gold,
+                                        padding: "0 0.10em",
+                                        border: `3px solid ${PT.ink}`,
+                                        boxShadow: `3px 3px 0 ${PT.ink}`,
+                                        transform: "rotate(-1.5deg)",
+                                    }}>
+                                        não faz
+                                    </span>
+                                </h2>
+                            </div>
+                        </div>
 
-                            <p className="text-[13.5px] text-black/45 leading-relaxed mb-5 max-w-xl">
-                                Dizemos-te exactamente o que o premium nunca vai fazer — para que saibas exactamente o que estás a pagar.
-                            </p>
+                        <p className="text-[13.5px] sm:text-[14.5px] leading-relaxed mb-5 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                            Dizemos-te exactamente o que o premium nunca vai fazer — para que saibas exactamente o que estás a pagar.
+                        </p>
 
-                            <div className="space-y-3 mb-5">
-                                {[
-                                    { bold: "Sem alcance extra", rest: " — não te dá mais visibilidade, prioridade no feed ou destaque nas tendências." },
-                                    { bold: "Sem algoritmo diferente", rest: " — o teu conteúdo é tratado exactamente como o de qualquer outro utilizador." },
-                                    { bold: "Sem remoção de anúncios", rest: " — porque o Lusorae não tem anúncios. Ponto." },
-                                    { bold: "Sem hierarquia social", rest: " — não te torna melhor, mais importante ou mais visível que os outros." },
-                                    { bold: "Sem badges de prestígio", rest: " — o único distintivo é o de Early Supporter, e é discreto. Não há troféus, leaderboards ou classes." },
-                                ].map((t, i) => (
-                                    <div key={i} className="flex items-start gap-2.5">
-                                        <div className="w-5 h-5 rounded-full bg-green-500/10 grid place-items-center flex-shrink-0 mt-0.5">
-                                            <Check size={11} className="text-green-600" strokeWidth={3} />
-                                        </div>
-                                        <p className="text-[13.5px] text-black/65 leading-relaxed">
-                                            <strong className="text-black/85 font-semibold">{t.bold}</strong>{t.rest}
-                                        </p>
+                        <div className="space-y-2.5 mb-5">
+                            {[
+                                { bold: "Sem alcance extra", rest: " — não te dá mais visibilidade, prioridade no feed ou destaque nas tendências." },
+                                { bold: "Sem algoritmo diferente", rest: " — o teu conteúdo é tratado exactamente como o de qualquer outro utilizador." },
+                                { bold: "Sem remoção de anúncios", rest: " — porque o Lusorae não tem anúncios. Ponto." },
+                                { bold: "Sem hierarquia social", rest: " — não te torna melhor, mais importante ou mais visível que os outros." },
+                                { bold: "Sem badges de prestígio", rest: " — o único distintivo é o de Early Supporter, e é discreto. Não há troféus, leaderboards ou classes." },
+                            ].map((t, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-start gap-2.5 p-2.5"
+                                    style={{
+                                        background: PT.cream,
+                                        border: `2px solid ${PT.ink}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        borderRadius: 10,
+                                    }}
+                                >
+                                    <div
+                                        className="w-6 h-6 grid place-items-center flex-shrink-0 mt-0.5"
+                                        style={{
+                                            background: PT.green,
+                                            color: "#fff",
+                                            border: `2px solid ${PT.ink}`,
+                                            borderRadius: 6,
+                                        }}
+                                    >
+                                        <Check size={12} strokeWidth={3.2} />
                                     </div>
-                                ))}
-                            </div>
+                                    <p className="text-[13.5px] sm:text-[14px] leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
+                                        <strong className="font-black" style={{ color: PT.ink }}>{t.bold}</strong>{t.rest}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
 
-                            <div className="h-px mb-4" style={{ background: "linear-gradient(90deg, transparent, rgba(0,0,0,0.05), transparent)" }} />
-                            <p className="text-[12.5px] text-black/45 leading-relaxed">
+                        <div style={{ borderTop: `2.5px dashed ${PT.ink}`, paddingTop: 14 }}>
+                            <p className="text-[13px] sm:text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                                 O premium é conforto, identidade e ferramentas. Nunca é vantagem social.
-                                <strong className="block mt-1.5 text-black/75 font-semibold text-[13.5px]">O tempo que passas aqui é teu. Não nosso.</strong>
+                            </p>
+                            <p
+                                className="mt-2 font-black tracking-tight"
+                                style={{ fontSize: "clamp(15px, 2vw, 17px)", color: PT.ink }}
+                            >
+                                O tempo que passas aqui é{" "}
+                                <span style={{
+                                    display: "inline-block",
+                                    background: PT.gold,
+                                    padding: "0 0.18em",
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                                    transform: "rotate(-1deg)",
+                                }}>
+                                    teu
+                                </span>
+                                . Não nosso.
                             </p>
                         </div>
                     </div>
@@ -809,31 +1126,65 @@ export default function Premium() {
             {/* ──────────────────────────────────────────
                 NÍVEL 6 — FAQ (utilitário)
                 ────────────────────────────────────────── */}
-            <section className="bg-black/[0.018]">
+            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}` }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 max-w-2xl mx-auto prem-faq">
                     <div className="mb-7 sm:mb-9">
-                        <p className="text-[10px] uppercase tracking-[0.2em] text-black/30 font-mono font-semibold mb-2">
-                            Dúvidas
+                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
+                            // DÚVIDAS
                         </p>
-                        <h2 className="font-display text-[22px] sm:text-[28px] lg:text-[32px] tracking-tight text-black mb-1.5 leading-tight">
-                            Perguntas frequentes
+                        <h2
+                            className="font-black tracking-[-0.025em] leading-[1.0] mb-2"
+                            style={{ fontSize: "clamp(24px, 3.8vw, 38px)", color: PT.ink }}
+                        >
+                            Perguntas{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.azul,
+                                color: "#fff",
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.ink}`,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                transform: "rotate(-1.5deg)",
+                            }}>
+                                frequentes
+                            </span>
                         </h2>
-                        <p className="text-[13px] sm:text-[13.5px] text-black/40 leading-relaxed">
+                        <p className="text-[13.5px] sm:text-[14.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Respostas directas, sem rodeios.
                         </p>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         {FAQS.map((faq, idx) => (
-                            <details key={idx} className="group bg-white border border-black/[0.05] p-4 sm:p-4.5 rounded-xl cursor-pointer hover:border-black/[0.10] transition-colors duration-100">
-                                <summary className="flex items-center justify-between font-semibold text-[13.5px] sm:text-[14.5px] text-black/85">
+                            <details
+                                key={idx}
+                                className="group p-4 sm:p-4.5 cursor-pointer"
+                                style={{
+                                    background: "#fff",
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    borderRadius: 12,
+                                }}
+                            >
+                                <summary className="flex items-center justify-between font-black text-[14px] sm:text-[15px] list-none" style={{ color: PT.ink }}>
                                     <span className="pr-3">{faq.q}</span>
-                                    <span className="w-6 h-6 rounded-full bg-black/[0.04] grid place-items-center flex-shrink-0 group-open:bg-black/[0.06] transition-colors duration-150">
-                                        <ChevronDown size={13} className="text-black/45 group-open:rotate-180 transition-transform duration-200" strokeWidth={2.5} />
+                                    <span
+                                        className="w-7 h-7 grid place-items-center flex-shrink-0"
+                                        style={{
+                                            background: PT.gold,
+                                            color: PT.ink,
+                                            border: `2px solid ${PT.ink}`,
+                                            borderRadius: 999,
+                                            boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                        }}
+                                    >
+                                        <ChevronDown size={13} className="group-open:rotate-180 transition-transform duration-200" strokeWidth={3} />
                                     </span>
                                 </summary>
                                 <div className="prem-faq-answer">
-                                    <p className="mt-3 text-[13px] sm:text-[13.5px] text-black/55 leading-relaxed">{faq.a}</p>
+                                    <div className="mt-3 pt-3" style={{ borderTop: `1.5px dashed ${PT.ink}` }}>
+                                        <p className="text-[13.5px] sm:text-[14px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.66)" }}>{faq.a}</p>
+                                    </div>
                                 </div>
                             </details>
                         ))}
@@ -845,28 +1196,68 @@ export default function Premium() {
                 CTA FINAL — re-engajamento discreto
                 ────────────────────────────────────────── */}
             {plan === "free" && billing_available && (
-                <section>
-                    <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 max-w-3xl mx-auto text-center">
-                        <h3 className="font-display text-[24px] sm:text-[32px] lg:text-[38px] tracking-tight text-black leading-tight mb-3">
-                            Pronto para uma camada mais profunda?
+                <section style={{ background: PT.ink }}>
+                    <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-3xl mx-auto text-center">
+                        <p className="font-mono font-black uppercase mb-4" style={{ fontSize: 10.5, letterSpacing: "0.18em", color: PT.gold }}>
+                            // PRÓXIMO PASSO
+                        </p>
+                        <h3
+                            className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
+                            style={{ fontSize: "clamp(26px, 4.5vw, 46px)", color: "#fff" }}
+                        >
+                            Pronto para uma{" "}
+                            <span style={{
+                                display: "inline-block",
+                                background: PT.gold,
+                                color: PT.ink,
+                                padding: "0 0.10em",
+                                border: `3px solid ${PT.gold}`,
+                                boxShadow: `4px 4px 0 ${PT.red}`,
+                                transform: "rotate(-1.5deg)",
+                            }}>
+                                camada mais profunda?
+                            </span>
                         </h3>
-                        <p className="text-[14px] sm:text-[15px] text-black/45 leading-relaxed max-w-lg mx-auto mb-7">
+                        <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-lg mx-auto mb-8 font-medium" style={{ color: "rgba(255,244,220,0.75)" }}>
                             Começa pelo Plus e sobe quando quiseres. Cancelas a qualquer momento — sem perguntas.
                         </p>
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                            <button onClick={() => subscribe("plus", interval)} data-testid="premium-cta-bottom-plus"
-                                className="w-full sm:w-auto px-7 h-12 rounded-2xl bg-black text-white text-[14px] font-bold hover:shadow-lg active:scale-[0.97] transition-all duration-150 inline-flex items-center justify-center gap-2">
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <button
+                                onClick={() => subscribe("plus", interval)}
+                                data-testid="premium-cta-bottom-plus"
+                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition-transform duration-150 hover:-translate-y-0.5"
+                                style={{
+                                    background: PT.azul,
+                                    color: "#fff",
+                                    border: `2.5px solid #fff`,
+                                    boxShadow: `4px 4px 0 ${PT.gold}`,
+                                    borderRadius: 999,
+                                    fontSize: 13,
+                                    letterSpacing: "0.06em",
+                                }}
+                            >
                                 Começar com Plus
-                                <ArrowRight size={16} strokeWidth={2.5} />
+                                <ArrowRight size={15} strokeWidth={2.6} />
                             </button>
-                            <button onClick={() => subscribe("aura", interval)} data-testid="premium-cta-bottom-aura"
-                                className="w-full sm:w-auto px-7 h-12 rounded-2xl text-white text-[14px] font-bold hover:shadow-lg active:scale-[0.97] transition-all duration-150 inline-flex items-center justify-center gap-2"
-                                style={{ background: "linear-gradient(135deg, #f43f5e 0%, #f59e0b 100%)" }}>
-                                <Crown size={15} strokeWidth={2.5} />
+                            <button
+                                onClick={() => subscribe("aura", interval)}
+                                data-testid="premium-cta-bottom-aura"
+                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition-transform duration-150 hover:-translate-y-0.5"
+                                style={{
+                                    background: PT.gold,
+                                    color: PT.ink,
+                                    border: `2.5px solid #fff`,
+                                    boxShadow: `4px 4px 0 ${PT.red}`,
+                                    borderRadius: 999,
+                                    fontSize: 13,
+                                    letterSpacing: "0.06em",
+                                }}
+                            >
+                                <Crown size={15} strokeWidth={2.6} />
                                 Saltar para Aura
                             </button>
                         </div>
-                        <p className="text-[11.5px] text-black/30 mt-5 font-medium">
+                        <p className="text-[11.5px] mt-6 font-mono font-bold uppercase" style={{ color: "rgba(255,244,220,0.5)", letterSpacing: "0.06em" }}>
                             14 dias de garantia &middot; Cancelas quando quiseres &middot; Sem letras pequenas
                         </p>
                     </div>
@@ -874,8 +1265,10 @@ export default function Premium() {
             )}
 
             {!billing_available && (
-                <div className="px-4 py-8 text-center border-t border-black/[0.04]">
-                    <p className="text-[11px] text-black/20 font-mono">Sistema de pagamentos a ser ativado em breve</p>
+                <div className="px-4 py-8 text-center" style={{ background: PT.cream, borderTop: `2.5px dashed ${PT.ink}` }}>
+                    <p className="text-[11px] font-mono font-black uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.12em" }}>
+                        // Sistema de pagamentos a ser ativado em breve
+                    </p>
                 </div>
             )}
         </PtPageShell>
