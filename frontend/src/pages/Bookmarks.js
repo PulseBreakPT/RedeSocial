@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useEscapeKey } from "../hooks/useClickOutside";
@@ -88,7 +89,7 @@ export default function Bookmarks() {
     };
 
     return (
-        <div data-testid="bookmarks-page">
+        <PtPageShell testid="bookmarks-page">
             <PageHeader
                 title="Guardados"
                 subtitle={`${posts.length} ${posts.length === 1 ? "item" : "itens"} · ${collections.length} coleções`}
@@ -210,6 +211,6 @@ export default function Bookmarks() {
                     />
                 ))
             )}
-        </div>
+        </PtPageShell>
     );
 }

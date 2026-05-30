@@ -7,6 +7,7 @@ import {
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { Avatar } from "../components/Avatar";
 import { Spinner } from "../components/Spinner";
 import { CommentItem } from "../components/CommentItem";
@@ -461,8 +462,8 @@ export default function PostDetail() {
     };
 
     return (
+        <PtPageShell testid="post-detail-page" doodles="minimal">
         <div
-            data-testid="post-detail-page"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -744,5 +745,6 @@ export default function PostDetail() {
                 </div>
             )}
         </div>
+        </PtPageShell>
     );
 }

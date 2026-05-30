@@ -90,3 +90,12 @@ Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
   - CTA conversão em vermelho PT com GiantAsterisk de fundo
   - Doodles dispersos (Star, Sparkles, Scribble, Spiral, Zigzag, Cross, Heart, Exclamation) com responsividade mobile
   - SiteFooter integrado no fim
+
+- **2026-02-30 (parte 4)**: Estilo fanzine PT alargado a ~18 páginas pós-login:
+  - Reescritos `components/PageHeader.js` (fanzine: kicker `//`, headline em PT.ink, back-btn fanzine) e `components/PageShell.js` (PageShell/PageHero/PageSection/Grid/Chip/FilterBar/Empty todos em PT colors)
+  - Novo `components/PtPageShell.js` reutilizável: cream bg + GiantAsterisk + 5 doodles dispersos
+  - Feed.js: novo header com tape "LUSORAE // FEED // AO VIVO", greeting "Bom dia, [Nome]" com highlight gold, kicker, sticker verde "✓ NOTÍCIAS REAIS", tabs com underline vermelho, empty state PT
+  - Profile.js: banner com cor sólida PT por região, doodles no banner, tape pattern, locked-state com red shadow
+  - Wrap em PtPageShell aplicado a: Explore, Notifications, Mesas, Bookmarks, Topologia, TagPage, Settings, Trending, Premium, SeriesPage, StoryArchive, Community, PostDetail, Messages
+  - Communities/Drafts/Scheduled/Visitors herdam automaticamente do PageShell redesenhado
+  - Smoke test: 13 rotas validadas em desktop 1280px com login real (user `reskin@test.pt`)

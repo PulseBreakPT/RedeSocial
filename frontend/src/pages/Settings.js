@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
@@ -285,7 +286,7 @@ export default function Settings() {
     const ActiveIcon = activeGroup.icon;
 
     return (
-        <div data-testid="settings-page" className="pb-32">
+        <PtPageShell testid="settings-page" className="pb-32" doodles="minimal">
             <PageHeader title="Definições" subtitle="Conta, segurança, dados e mais" back testid="settings-header">
                 {/* Mobile-only chip tabs */}
                 <div className="lg:hidden px-3 pb-2 flex gap-1 overflow-x-auto scrollbar-hide hairline-t pt-2">
@@ -531,6 +532,6 @@ export default function Settings() {
                     </div>
                 </div>
             )}
-        </div>
+        </PtPageShell>
     );
 }

@@ -5,6 +5,7 @@ import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { NotificationReplyPreview } from "../components/NotificationReplyPreview";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
@@ -170,7 +171,7 @@ export default function Notifications() {
     const unreadCount = items.filter((n) => !n.read).length;
 
     return (
-        <div data-testid="notifications-page">
+        <PtPageShell testid="notifications-page">
             <PageHeader
                 title="Notificações"
                 subtitle={`${items.length} no total · ${unreadCount} por ler`}
@@ -351,6 +352,6 @@ export default function Notifications() {
                     </div>
                 ))
             )}
-        </div>
+        </PtPageShell>
     );
 }

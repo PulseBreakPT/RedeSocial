@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Coffee, Plus, Clock, Users, Send, ArrowLeft, X as XIcon } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { Avatar } from "../components/Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useWsMessages } from "../components/WebSocketProvider";
@@ -63,7 +64,7 @@ export default function Mesas() {
     }
 
     return (
-        <div data-testid="mesas-page">
+        <PtPageShell testid="mesas-page">
             <PageHeader
                 title="Mesas"
                 subtitle="Conversas efémeras. Nascem, vivem enquanto há gente, e fecham sozinhas."
@@ -123,7 +124,7 @@ export default function Mesas() {
                     ))
                 )}
             </div>
-        </div>
+        </PtPageShell>
     );
 }
 

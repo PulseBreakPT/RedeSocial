@@ -16,6 +16,11 @@ import { PulseBar } from "../components/pulse/PulseBar";
 import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { FeedContextLine } from "../components/pulse/FeedContextLine";
 import { haptic } from "../lib/haptics";
+import {
+    PT, Kicker, Sticker, AuthStyles,
+    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
+    DoodleZigzag, DoodleCross, GiantAsterisk,
+} from "./auth/AuthDecor";
 
 // Frases curadas pt-PT mostradas no pull-to-refresh.
 // Rotativas para dar sensação humana e mexer com o utilizador.
@@ -144,7 +149,26 @@ export default function Feed() {
     }, [ptrRefreshing]);
 
     return (
-        <div data-testid="feed-page">
+        <div data-testid="feed-page" className="relative" style={{ background: PT.cream, minHeight: "100vh" }}>
+            {/* ═══ DOODLES DE FUNDO ═══ */}
+            <div className="absolute -top-10 -right-10 pointer-events-none opacity-[0.05] z-0 hidden lg:block" aria-hidden>
+                <GiantAsterisk color={PT.red} size={280} rotate={-12} />
+            </div>
+            <div className="absolute top-32 -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-top-right z-0 hidden md:block" aria-hidden>
+                <DoodleStar color={PT.gold} size={42} rotate={14} />
+            </div>
+            <div className="absolute top-[420px] -left-3 sm:left-2 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-left z-0 hidden lg:block" aria-hidden>
+                <DoodleScribble color={PT.azul} w={120} h={48} style={{ transform: "rotate(-6deg)" }} />
+            </div>
+            <div className="absolute top-[760px] -right-2 sm:right-3 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-right z-0 hidden lg:block" aria-hidden>
+                <DoodleSpiral color={PT.gold} size={56} rotate={12} />
+            </div>
+            <div className="absolute top-[1200px] -left-2 sm:left-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-left z-0 hidden lg:block" aria-hidden>
+                <DoodleSparkles color={PT.red} size={40} rotate={-8} />
+            </div>
+            <div className="absolute bottom-40 -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-bottom-right z-0 hidden lg:block" aria-hidden>
+                <DoodleCross color={PT.green} size={28} rotate={18} />
+            </div>
             <LiveActivityBeacon />
             <div
                 className="ptr-indicator lg:hidden"
@@ -172,49 +196,105 @@ export default function Feed() {
                 )}
             </div>
 
-            <div className="hidden lg:block sticky top-0 z-30 glass border-b border-black/[0.06]">
-                <div className="px-6 pt-5 pb-3 flex items-end justify-between gap-4">
+            <div
+                className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
+                style={{
+                    background: "rgba(255,244,220,0.94)",
+                    borderBottom: `3px solid ${PT.ink}`,
+                }}
+            >
+                {/* Faixa "jornal" topo */}
+                <div className="flex items-center justify-between px-6 py-1.5" style={{ background: PT.ink, color: PT.bone }}>
+                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: PT.gold }}>
+                        LUSORAE // FEED // AO VIVO
+                    </span>
+                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(255,244,220,0.55)" }}>
+                        EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}
+                    </span>
+                </div>
+                <div className="px-6 pt-4 pb-3 flex items-end justify-between gap-4 relative z-10">
                     <div className="min-w-0">
-                        <p className="type-overline mb-1 inline-flex items-center gap-1.5 text-black/50">
-                            <span className="live-dot" /> ao vivo
-                        </p>
-                        <h1 className="font-display text-[26px] font-bold tracking-tight leading-[1.05] text-black">
-                            {greeting}{firstName ? `, ${firstName}` : ""}.
+                        <Kicker color={PT.red} className="mb-1.5 inline-flex items-center gap-1.5">
+                            <span className="live-dot" style={{ background: PT.green }} />
+                            <span>// AO VIVO · O QUE SE PASSA</span>
+                        </Kicker>
+                        <h1
+                            className="font-black tracking-[-0.03em] leading-[0.98]"
+                            style={{ fontSize: 30, color: PT.ink }}
+                            data-testid="feed-greeting"
+                        >
+                            {greeting}{firstName ? (
+                                <>, <span style={{
+                                    display: "inline-block",
+                                    background: PT.gold,
+                                    padding: "0 0.10em",
+                                    border: `2.5px solid ${PT.ink}`,
+                                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    transform: "rotate(-1deg)",
+                                }}>{firstName}</span></>
+                            ) : ""}.
                         </h1>
-                        <p className="text-[13px] text-black/55 mt-1 font-medium tracking-tight">
-                            O que se passa em Portugal agora.
+                        <p className="text-[13px] mt-2 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
+                            O que se passa em Portugal{" "}
+                            <strong style={{ color: PT.red, fontWeight: 900 }}>agora</strong>.
                         </p>
-                        <FeedContextLine className="mt-0.5 block" />
+                        <FeedContextLine className="mt-1 block" />
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                        <Sticker bg={PT.green} color="#fff" rotate={-3} style={{ fontSize: 9.5, padding: "4px 8px" }}>
+                            ✓ NOTÍCIAS REAIS
+                        </Sticker>
                         <button
                             onClick={refresh}
                             data-testid="feed-refresh"
-                            className="w-9 h-9 rounded-full grid place-items-center text-black/70 hover:text-black hover:bg-black/[0.05] tap-shrink transition border border-black/[0.06]"
+                            className="w-10 h-10 grid place-items-center tap-shrink transition"
                             title="Atualizar"
+                            style={{
+                                background: "#fff",
+                                border: `2.5px solid ${PT.ink}`,
+                                borderRadius: 999,
+                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                color: PT.ink,
+                            }}
                         >
-                            <RefreshCw size={15} strokeWidth={1.8} className={refreshing ? "animate-spin" : ""} />
+                            <RefreshCw size={16} strokeWidth={2.2} className={refreshing ? "animate-spin" : ""} />
                         </button>
                     </div>
                 </div>
 
-                {/* Tabs — gradient underline */}
-                <div className="grid grid-cols-2 px-3">
+                {/* Tabs — estilo fanzine PT */}
+                <div className="grid grid-cols-2 px-3 relative">
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following"
-                        className={`py-3 font-heading text-[14px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black/65 hover:text-black hover:bg-black/[0.03] rounded-lg"}`}
+                        className={`py-3 font-black uppercase text-[12.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
+                        style={{
+                            color: tab === "following" ? PT.red : "rgba(10,10,10,0.55)",
+                        }}
                     >
                         Seguindo
-                        {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[2px] rounded-full grad-bar" />)}
+                        {tab === "following" && (
+                            <span
+                                className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full"
+                                style={{ background: PT.red, width: 56 }}
+                            />
+                        )}
                     </button>
                     <button
                         onClick={() => setTab("foryou")}
                         data-testid="tab-foryou"
-                        className={`py-3 font-heading text-[14px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black/65 hover:text-black hover:bg-black/[0.03] rounded-lg"}`}
+                        className={`py-3 font-black uppercase text-[12.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
+                        style={{
+                            color: tab === "foryou" ? PT.red : "rgba(10,10,10,0.55)",
+                        }}
                     >
                         Para ti
-                        {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[2px] rounded-full grad-bar" />)}
+                        {tab === "foryou" && (
+                            <span
+                                className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full"
+                                style={{ background: PT.red, width: 56 }}
+                            />
+                        )}
                     </button>
                 </div>
             </div>
@@ -230,25 +310,35 @@ export default function Feed() {
 
             {/* Mobile-only tabs — sticky under MobileTopBar */}
             <div
-                className="lg:hidden sticky z-20 glass border-b border-black/[0.06]"
-                style={{ top: "calc(var(--mobile-topbar-h) + var(--safe-top))" }}
+                className="lg:hidden sticky z-20 backdrop-blur relative"
+                style={{
+                    top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
+                    background: "rgba(255,244,220,0.94)",
+                    borderBottom: `3px solid ${PT.ink}`,
+                }}
             >
-                <div className="grid grid-cols-2">
+                <div className="grid grid-cols-2 relative">
                     <button
                         onClick={() => setTab("following")}
                         data-testid="tab-following-mobile"
-                        className={`py-3 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "following" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
+                        className={`py-3 font-black uppercase text-[11.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
+                        style={{ color: tab === "following" ? PT.red : "rgba(10,10,10,0.55)" }}
                     >
                         Seguindo
-                        {tab === "following" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
+                        {tab === "following" && (
+                            <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full" style={{ background: PT.red, width: 48 }} />
+                        )}
                     </button>
                     <button
                         onClick={() => setTab("foryou")}
                         data-testid="tab-foryou-mobile"
-                        className={`py-3 font-heading text-[13px] tracking-tight transition relative active:scale-[0.98] ${tab === "foryou" ? "text-grad-active font-semibold" : "text-black hover:bg-black/[0.04]"}`}
+                        className={`py-3 font-black uppercase text-[11.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
+                        style={{ color: tab === "foryou" ? PT.red : "rgba(10,10,10,0.55)" }}
                     >
                         Para ti
-                        {tab === "foryou" && (<span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-[2px] rounded-full grad-bar" />)}
+                        {tab === "foryou" && (
+                            <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full" style={{ background: PT.red, width: 48 }} />
+                        )}
                     </button>
                 </div>
             </div>
@@ -256,13 +346,21 @@ export default function Feed() {
             {/* Mood chips removed — discovery filters live only on /explore now */}
 
             {newCount > 0 && (
-                <div className="flex justify-center pt-3">
+                <div className="flex justify-center pt-3 relative z-10">
                     <button
                         onClick={refresh}
                         data-testid="new-posts-pill"
-                        className="btn-obsidian text-[12px] py-2 px-4 active:scale-95 flex items-center gap-1.5 anim-fade-up"
+                        className="text-[12px] py-2 px-4 active:scale-95 flex items-center gap-1.5 font-black uppercase"
+                        style={{
+                            background: PT.red,
+                            color: "#fff",
+                            border: `2.5px solid ${PT.ink}`,
+                            borderRadius: 999,
+                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            letterSpacing: "0.05em",
+                        }}
                     >
-                        <Sparkles size={12} strokeWidth={1.8} />
+                        <Sparkles size={12} strokeWidth={2.4} />
                         {newCount === 1 ? "1 nova publicação" : `${newCount} novas publicações`}
                     </button>
                 </div>
@@ -282,28 +380,40 @@ export default function Feed() {
             {loading ? (
                 <PostSkeletonList count={5} />
             ) : posts.length === 0 ? (
-                <div className="px-6 py-20 text-center anim-fade-up">
-                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                        <Sparkles size={26} strokeWidth={1.4} className="text-black/70" />
+                <div className="px-6 py-20 text-center anim-fade-up relative z-10" data-testid="feed-empty">
+                    <div
+                        className="w-20 h-20 grid place-items-center mx-auto mb-6"
+                        style={{
+                            background: PT.gold,
+                            border: `3px solid ${PT.ink}`,
+                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            borderRadius: 999,
+                            transform: "rotate(-3deg)",
+                        }}
+                    >
+                        <Sparkles size={26} strokeWidth={2.2} style={{ color: PT.ink }} />
                     </div>
-                    <p className="type-overline mb-2">Sem novidades</p>
-                    <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">
+                    <Kicker color={PT.red} className="mb-2">// SEM · NOVIDADES</Kicker>
+                    <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 22, color: PT.ink }}>
                         {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
                     </h3>
-                    <p className="text-black/55 text-[14px] mt-3 max-w-xs mx-auto leading-relaxed">
+                    <p className="text-[14px] mt-3 max-w-xs mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                         {tab === "following" ? "Segue pessoas ou passa para Para ti e descobre novidades." : "Nenhuma publicação ainda — começa a conversa."}
                     </p>
                 </div>
             ) : (
-                posts.map((p) => (
-                    <PostCard
-                        key={p.id}
-                        post={p}
-                        onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
-                        onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
-                    />
-                ))
+                <div className="relative z-10">
+                    {posts.map((p) => (
+                        <PostCard
+                            key={p.id}
+                            post={p}
+                            onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                            onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
+                        />
+                    ))}
+                </div>
             )}
+            <AuthStyles />
         </div>
     );
 }

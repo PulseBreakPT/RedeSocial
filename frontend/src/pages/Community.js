@@ -9,6 +9,7 @@ import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
 import { Composer } from "../components/Composer";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { Avatar } from "../components/Avatar";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { useWsMessages } from "../components/WebSocketProvider";
@@ -342,7 +343,7 @@ export default function Community() {
     if (loading || !community) return <div className="p-12 text-center type-overline">a carregar…</div>;
 
     return (
-        <div data-testid="community-page">
+        <PtPageShell testid="community-page" doodles="minimal">
             <PageHeader title={community.name} subtitle={`${community.members_count} membros · ${categoryLabel(COMMUNITY_CATEGORIES, community.category)}`} back testid="community-header" />
 
             <div className="relative h-32 lg:h-44 overflow-hidden grid place-items-center">
@@ -498,7 +499,7 @@ export default function Community() {
                     <div className="text-[12px] text-black/55 font-mono">criada em {new Date(community.created_at).toLocaleDateString("pt-PT")}</div>
                 </div>
             )}
-        </div>
+        </PtPageShell>
     );
 }
 

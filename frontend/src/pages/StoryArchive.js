@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { StoryViewer } from "../components/stories/StoryViewer";
 import { bgCss } from "../components/stories/storyConstants";
 import { useAuth } from "../context/AuthContext";
+import { PtPageShell } from "../components/PtPageShell";
 
 function relativeShort(iso) {
     const t = new Date(iso).getTime();
@@ -53,7 +54,8 @@ export default function StoryArchive() {
     const expired = (items || []).filter(s => !s.expires_at || new Date(s.expires_at).getTime() <= Date.now());
 
     return (
-        <div className="max-w-2xl mx-auto pb-20" data-testid="story-archive-page">
+        <PtPageShell testid="story-archive-page">
+            <div className="max-w-2xl mx-auto pb-20">
             <header className="hairline-b sticky top-0 z-30 bg-white/85 backdrop-blur px-4 lg:px-6 py-3 flex items-center gap-2">
                 <Link to={`/u/${user?.username}`} className="p-1 -ml-1 rounded-full hover:bg-black/[0.06]" aria-label="voltar">
                     <ChevronLeft size={18} />
@@ -100,7 +102,8 @@ export default function StoryArchive() {
                     onChange={load}
                 />
             )}
-        </div>
+            </div>
+        </PtPageShell>
     );
 }
 

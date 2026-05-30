@@ -6,6 +6,7 @@ import {
     Radio, Compass, Clock, Award, Activity, Flame, Feather, MapPin
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { usePremium } from "../context/PremiumContext";
 import { toast } from "sonner";
 
@@ -405,7 +406,7 @@ export default function Premium() {
     };
 
     return (
-        <div data-testid="premium-page" className="min-h-screen bg-white">
+        <PtPageShell testid="premium-page">
             <PageHeader title="Plus & Aura" subtitle="Uma camada mais profunda do teu Lusorae" back />
 
             {/* ──────────────────────────────────────────
@@ -752,6 +753,6 @@ export default function Premium() {
                     <p className="text-[11px] text-black/20 font-mono">Sistema de pagamentos a ser ativado em breve</p>
                 </div>
             )}
-        </div>
+        </PtPageShell>
     );
 }

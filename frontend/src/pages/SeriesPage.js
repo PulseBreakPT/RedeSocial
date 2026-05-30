@@ -4,6 +4,7 @@ import { Loader2, BookOpen, Plus, X, Search } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { PostCard } from "../components/PostCard";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
@@ -39,40 +40,42 @@ export default function SeriesPage() {
     const isOwner = user?.id === series.owner?.id;
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-6">
-            <PageHeader
-                title={`${series.cover_emoji || "📚"} ${series.title}`}
-                subtitle={`por @${series.owner?.username} · ${series.posts_count || posts.length} posts`}
-                action={
-                    isOwner && (
-                        <button
-                            onClick={() => setAdder(true)}
-                            className="px-3 py-1.5 rounded-full bg-black text-white text-xs font-mono hover:bg-black/85 flex items-center gap-1.5"
-                            data-testid="series-add-post-btn"
-                        >
-                            <Plus size={12} /> Adicionar
-                        </button>
-                    )
-                }
-            />
-            {series.description && <p className="text-sm font-mono text-black/65 my-4">{series.description}</p>}
-            {posts.length === 0 ? (
-                <div className="rounded-2xl border border-black/[0.08] bg-white p-8 text-center mt-4" data-testid="series-empty">
-                    <BookOpen className="mx-auto text-black/30 mb-2" size={28} />
-                    <h3 className="font-heading font-semibold mb-1">Série vazia</h3>
-                    <p className="text-sm font-mono text-black/55">
-                        {isOwner ? "Adiciona posts para começar." : "Esta série ainda não tem posts."}
-                    </p>
-                </div>
-            ) : (
-                <div className="space-y-2 mt-3">
-                    {posts.map((p) => (
-                        <PostCard key={p.id} post={p} onChange={load} clickable />
-                    ))}
-                </div>
-            )}
-            {adder && <AddPostModal seriesId={seriesId} ownerId={series.owner?.id} onClose={() => setAdder(false)} onAdded={load} />}
-        </div>
+        <PtPageShell testid="series-page">
+            <div className="max-w-2xl mx-auto px-4 py-6">
+                <PageHeader
+                    title={`${series.cover_emoji || "📚"} ${series.title}`}
+                    subtitle={`por @${series.owner?.username} · ${series.posts_count || posts.length} posts`}
+                    action={
+                        isOwner && (
+                            <button
+                                onClick={() => setAdder(true)}
+                                className="px-3 py-1.5 rounded-full bg-black text-white text-xs font-mono hover:bg-black/85 flex items-center gap-1.5"
+                                data-testid="series-add-post-btn"
+                            >
+                                <Plus size={12} /> Adicionar
+                            </button>
+                        )
+                    }
+                />
+                {series.description && <p className="text-sm font-mono text-black/65 my-4">{series.description}</p>}
+                {posts.length === 0 ? (
+                    <div className="rounded-2xl border border-black/[0.08] bg-white p-8 text-center mt-4" data-testid="series-empty">
+                        <BookOpen className="mx-auto text-black/30 mb-2" size={28} />
+                        <h3 className="font-heading font-semibold mb-1">Série vazia</h3>
+                        <p className="text-sm font-mono text-black/55">
+                            {isOwner ? "Adiciona posts para começar." : "Esta série ainda não tem posts."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-2 mt-3">
+                        {posts.map((p) => (
+                            <PostCard key={p.id} post={p} onChange={load} clickable />
+                        ))}
+                    </div>
+                )}
+                {adder && <AddPostModal seriesId={seriesId} ownerId={series.owner?.id} onClose={() => setAdder(false)} onAdded={load} />}
+            </div>
+        </PtPageShell>
     );
 }
 

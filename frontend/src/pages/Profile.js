@@ -11,6 +11,11 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
+import {
+    PT, Kicker, Sticker, AuthStyles,
+    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
+    DoodleZigzag, DoodleCross, DoodleHeart, GiantAsterisk,
+} from "./auth/AuthDecor";
 
 import { IdentityCard } from "./profile/IdentityCard";
 import { ShareModal } from "./profile/ShareModal";
@@ -26,21 +31,18 @@ import {
     PostsFilterBar, applyPostsFilter, computePostCounts,
 } from "./profile/ProfileTabContent";
 
-/* Region → gradient palette for the banner (place-graph visual identity) */
-const REGION_PALETTE = {
-    norte:     ["#3a6a4a", "#7da38a"],
-    centro:    ["#5a7d3e", "#a8c47e"],
-    lisboa:    ["#2c6fd1", "#6a91cc"],
-    alentejo:  ["#b18f3e", "#e0c97f"],
-    algarve:   ["#1e88a4", "#7cc4d2"],
-    madeira:   ["#a04f7c", "#dca0c0"],
-    acores:    ["#2a4a5e", "#7392a8"],
-    emigrante: ["#3a3f6b", "#aab2d6"],
+/* Region → fanzine PT color (solid + ink border, não mais gradiente) */
+const REGION_PT_COLOR = {
+    norte:     PT.green,
+    centro:    PT.gold,
+    lisboa:    PT.azul,
+    alentejo:  PT.gold,
+    algarve:   PT.azul,
+    madeira:   PT.red,
+    acores:    PT.azul,
+    emigrante: PT.red,
 };
-const regionGradient = (region) => {
-    const [a, b] = REGION_PALETTE[region] || ["#0a0a0a", "#2a2a30"];
-    return `linear-gradient(135deg, ${a} 0%, ${b} 100%)`;
-};
+const regionPtBg = (region) => REGION_PT_COLOR[region] || PT.gold;
 
 export default function Profile() {
     const { username } = useParams();
@@ -149,7 +151,24 @@ export default function Profile() {
     }
 
     return (
-        <div data-testid="profile-page" className="pb-32 sm:pb-12">
+        <div data-testid="profile-page" className="pb-32 sm:pb-12 relative" style={{ background: PT.cream, minHeight: "100vh" }}>
+            {/* ═══ DOODLES DE FUNDO ═══ */}
+            <div className="absolute -top-10 -right-10 pointer-events-none opacity-[0.06] z-0 hidden lg:block" aria-hidden>
+                <GiantAsterisk color={PT.red} size={280} rotate={-12} />
+            </div>
+            <div className="absolute top-[360px] -left-2 sm:left-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-left z-0 hidden lg:block" aria-hidden>
+                <DoodleScribble color={PT.azul} w={120} h={48} style={{ transform: "rotate(-6deg)" }} />
+            </div>
+            <div className="absolute top-[640px] -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-right z-0 hidden lg:block" aria-hidden>
+                <DoodleSpiral color={PT.gold} size={56} rotate={12} />
+            </div>
+            <div className="absolute top-[1000px] -left-2 sm:left-3 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-left z-0 hidden lg:block" aria-hidden>
+                <DoodleSparkles color={PT.red} size={40} rotate={-8} />
+            </div>
+            <div className="absolute bottom-40 -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-bottom-right z-0 hidden lg:block" aria-hidden>
+                <DoodleCross color={PT.green} size={28} rotate={18} />
+            </div>
+
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-1.5">
@@ -162,27 +181,38 @@ export default function Profile() {
                 testid="profile-header"
             />
 
-            {/* ---------- HERO BANNER ---------- */}
+            {/* ---------- HERO BANNER — estilo fanzine PT ---------- */}
             <div
                 className="relative h-36 lg:h-52 overflow-hidden"
                 data-testid="profile-banner"
-                style={{ background: regionGradient(profile.region) }}
+                style={{
+                    background: regionPtBg(profile.region),
+                    borderBottom: `4px solid ${PT.ink}`,
+                }}
             >
-                <div
-                    className="absolute inset-0 opacity-30 mix-blend-screen pointer-events-none"
-                    style={{
-                        background:
-                            "radial-gradient(circle at 25% 25%, rgba(255,255,255,0.18), transparent 55%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.10), transparent 55%)",
-                    }}
-                />
-                <div className="absolute inset-0 grain pointer-events-none" />
+                {/* Tape em cima e em baixo do banner */}
+                <div className="pt-tape h-2 w-full absolute top-0 left-0 z-10" />
+                {/* Padrão grão + asterisco esbatido */}
+                <div className="absolute inset-0 grain pointer-events-none opacity-50" />
+                <div className="absolute -top-8 -right-12 pointer-events-none opacity-25" aria-hidden>
+                    <GiantAsterisk color={PT.ink} size={220} rotate={-14} />
+                </div>
+                {/* Doodles no banner */}
+                <div className="absolute top-3 right-4 sm:top-5 sm:right-8 pointer-events-none opacity-90 z-[2]" aria-hidden>
+                    <DoodleStar color={PT.ink} size={36} rotate={14} />
+                </div>
+                <div className="absolute bottom-3 left-4 sm:bottom-5 sm:left-8 pointer-events-none opacity-90 z-[2]" aria-hidden>
+                    <DoodleHeart color={PT.ink} size={28} rotate={-12} />
+                </div>
                 {profile.banner && (
                     <img src={profile.banner} alt="" className="relative w-full h-full object-cover" />
                 )}
                 {!profile.banner && regionMeta && (
-                    <div className="absolute right-4 bottom-3 text-right text-white/80 font-mono text-[10.5px] uppercase tracking-[0.18em]">
-                        <span className="mr-1.5" aria-hidden>{regionMeta.emoji}</span>
-                        {regionMeta.label}
+                    <div className="absolute right-4 bottom-5 text-right z-[2]">
+                        <Sticker bg={PT.ink} color={PT.gold} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
+                            <span className="mr-1.5" aria-hidden>{regionMeta.emoji}</span>
+                            {regionMeta.label}
+                        </Sticker>
                     </div>
                 )}
             </div>
@@ -221,16 +251,32 @@ export default function Profile() {
             )}
 
             {profile.can_view === false ? (
-                <div className="mt-12 p-12 text-center hairline-t" data-testid="private-locked">
-                    <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                        <Lock size={26} className="text-black/70" />
+                <div className="mt-12 mx-4 lg:mx-8 p-8 lg:p-12 text-center relative z-10" data-testid="private-locked"
+                    style={{
+                        background: "#fff",
+                        border: `3.5px solid ${PT.ink}`,
+                        boxShadow: `6px 6px 0 ${PT.red}`,
+                        borderRadius: 24,
+                    }}
+                >
+                    <div
+                        className="w-20 h-20 grid place-items-center mx-auto mb-6"
+                        style={{
+                            background: PT.red, color: "#fff",
+                            border: `3px solid ${PT.ink}`, boxShadow: `4px 4px 0 ${PT.ink}`,
+                            borderRadius: 999, transform: "rotate(-3deg)",
+                        }}
+                    >
+                        <Lock size={26} strokeWidth={2.2} />
                     </div>
-                    <p className="type-overline mb-2">Perfil privado</p>
-                    <h3 className="font-display text-[26px] tracking-tight">Perfil privado</h3>
-                    <p className="font-mono text-[11px] text-black/45 mt-2">Segue para ver as publicações</p>
+                    <Kicker color={PT.red} className="mb-2">// PERFIL · PRIVADO</Kicker>
+                    <h3 className="font-black tracking-tight" style={{ fontSize: 26, color: PT.ink }}>Perfil privado</h3>
+                    <p className="font-mono text-[11px] mt-3" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}>
+                        SEGUE · PARA · VER · PUBLICAÇÕES
+                    </p>
                 </div>
             ) : (
-                <>
+                <div className="relative z-10">
                     {/* Affinity ribbon only for visitors */}
                     {!profile.is_self && (
                         <AffinityRibbon profile={profile} viewer={viewer} mutual={mutual} fingerprint={fingerprint} />
@@ -287,7 +333,7 @@ export default function Profile() {
                             onOpenFollowing={() => setModal("following")}
                         />
                     )}
-                </>
+                </div>
             )}
 
             {modal && <FollowsModal username={username} type={modal} onClose={() => setModal(null)} />}
@@ -302,6 +348,7 @@ export default function Profile() {
                 onEditProfile={onEditProfile}
                 onProfileUpdate={(patch) => setProfile((p) => ({ ...p, ...patch }))}
             />
+            <AuthStyles />
         </div>
     );
 }

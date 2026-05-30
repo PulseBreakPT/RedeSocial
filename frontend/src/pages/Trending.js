@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { TrendingUp, Hash, MapPin, Users, Layers, Sparkles, Flame } from "lucide-react";
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { Avatar } from "../components/Avatar";
 import { RowSkeletonList } from "../components/Skeleton";
 
@@ -81,7 +82,7 @@ export default function Trending() {
     );
 
     return (
-        <div data-testid="trending-page">
+        <PtPageShell testid="trending-page">
             <PageHeader
                 title={
                     <span className="inline-flex items-center gap-2">
@@ -143,7 +144,7 @@ export default function Trending() {
             ) : (
                 <CidadesList items={data.cidades} />
             )}
-        </div>
+        </PtPageShell>
     );
 }
 

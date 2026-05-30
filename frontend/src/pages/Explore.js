@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { Compass, Search, Users, Hash, Layers, MapPin, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
@@ -103,7 +104,7 @@ export default function Explore() {
     };
 
     return (
-        <div data-testid="explore-page">
+        <PtPageShell testid="explore-page">
             <PageHeader sticky={false} title="Explorar" subtitle="Descobre o que se passa em Portugal" testid="explore-header">
                 <div className="px-3 lg:px-4 pb-2.5 flex items-center gap-2">
                     <div className="flex-1 relative">
@@ -253,7 +254,7 @@ export default function Explore() {
                     </div>
                 )
             )}
-        </div>
+        </PtPageShell>
     );
 }
 

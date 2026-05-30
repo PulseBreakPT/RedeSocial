@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { MapPin, Activity } from "lucide-react";
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { useWsMessages } from "../components/WebSocketProvider";
 
 // Layout esquemático de Portugal (não geográfico ao pixel — honesto e
@@ -70,7 +71,7 @@ export default function Topologia() {
     const anySignal = regions.some((r) => (r.score || 0) > 0);
 
     return (
-        <div data-testid="topologia-page">
+        <PtPageShell testid="topologia-page">
             <PageHeader
                 title="Topologia"
                 subtitle="O mapa social a respirar — onde Portugal está mais aceso agora. Só sinal real, granularidade cidade."
@@ -133,6 +134,6 @@ export default function Topologia() {
                     </div>
                 )}
             </div>
-        </div>
+        </PtPageShell>
     );
 }

@@ -10,6 +10,7 @@ import { api, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { ConvSkeleton } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
+import { PtPageShell } from "../components/PtPageShell";
 import { Spinner } from "../components/Spinner";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
@@ -1392,7 +1393,7 @@ export default function Messages() {
     };
 
     return (
-        <div data-testid="messages-page">
+        <PtPageShell testid="messages-page" doodles="minimal">
             {!active ? (
                 <>
                     <PageHeader title="Mensagens" subtitle="As tuas conversas privadas" testid="messages-header" />
@@ -1402,6 +1403,6 @@ export default function Messages() {
                 <ChatView other={active} onBack={() => { setActive(null); navigate("/messages"); }} />
             )}
             <NewConversationModal open={newOpen} onClose={() => setNewOpen(false)} onPick={open} />
-        </div>
+        </PtPageShell>
     );
 }
