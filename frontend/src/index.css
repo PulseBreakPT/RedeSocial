@@ -200,7 +200,6 @@
         color: #C8261E;
         margin: 0;
     }
-    .type-overline::before { content: "// "; }
     .ink-link {
         position: relative;
         background-image: linear-gradient(currentColor, currentColor);
@@ -781,7 +780,7 @@
         display: inline-flex; align-items: baseline; gap: 0.4em;
     }
     .prose-legal h3::before {
-        content: "//";
+        content: "";
         font-family: "JetBrains Mono", monospace;
         font-weight: 900;
         font-size: 14px;
@@ -911,7 +910,7 @@
         transform: rotate(-1.5deg);
     }
     .prose-legal .legal-callout > strong:first-child::before {
-        content: "//"; color: #C8102E; font-weight: 900;
+        content: ""; color: #C8102E; font-weight: 900;
     }
     .prose-legal .legal-callout.is-key {
         background: #F4F4F4;
@@ -977,7 +976,7 @@
         text-transform: uppercase;
         letter-spacing: 0.06em;
     }
-    .prose-legal dt::before { content: "// "; color: #C8102E; }
+    .prose-legal dt::before { content: ""; color: #C8102E; }
     .prose-legal dd { margin-left: 0; font-size: 14px; color: rgba(10,10,10,0.78); margin-bottom: 0.6rem; padding-left: 1.5rem; }
 
     /* Inline legal reference chip */
@@ -1011,7 +1010,7 @@
         font-family: "JetBrains Mono", monospace;
         font-weight: 900;
     }
-    .prose-legal .legal-seealso strong::before { content: "// "; }
+    .prose-legal .legal-seealso strong::before { content: ""; }
 
     /* FAQ disclosures */
     .prose-legal details {
@@ -2411,7 +2410,7 @@
         margin: 0 0 6px;
         font-weight: 900;
     }
-    .legal-viz-block-eyebrow::before { content: "// "; color: #C8102E; }
+    .legal-viz-block-eyebrow::before { content: ""; color: #C8102E; }
     .legal-viz-block-title {
         font-size: 15.5px;
         font-weight: 900;
@@ -2479,7 +2478,7 @@
         font-family: "JetBrains Mono", monospace;
         font-weight: 600;
     }
-    .legal-viz-flow-caption::before { content: "// "; color: #C8102E; font-weight: 900; }
+    .legal-viz-flow-caption::before { content: ""; color: #C8102E; font-weight: 900; }
 
     /* — Ladder (proporcionalidade) — */
     .legal-viz-ladder {
@@ -2545,7 +2544,7 @@
         font-weight: 700;
         letter-spacing: 0.04em;
     }
-    .legal-viz-ladder-caption::before { content: "// "; color: #C8102E; }
+    .legal-viz-ladder-caption::before { content: ""; color: #C8102E; }
 
     /* — Rights grid (RGPD) — */
     .legal-viz-rights {
@@ -2597,7 +2596,7 @@
         font-weight: 700;
         letter-spacing: 0.04em;
     }
-    .legal-viz-right-ref::before { content: "// "; }
+    .legal-viz-right-ref::before { content: ""; }
 
     /* — Data map (categorias de dados) — */
     .legal-viz-datamap {
@@ -2713,7 +2712,7 @@
         font-family: "JetBrains Mono", monospace;
         font-weight: 700;
     }
-    .legal-viz-timeline-caption::before { content: "// "; }
+    .legal-viz-timeline-caption::before { content: ""; }
 
     /* — Icon grid (proibições / condutas) — */
     .legal-viz-icongrid {
@@ -2769,7 +2768,7 @@
         letter-spacing: 0.04em;
         font-weight: 700;
     }
-    .legal-viz-icongrid-ref::before { content: "// "; }
+    .legal-viz-icongrid-ref::before { content: ""; }
 
     /* — Cookie stack — */
     .legal-viz-cookiestack {
@@ -2859,7 +2858,7 @@
         letter-spacing: 0.08em;
         font-size: 10.5px;
     }
-    .legal-viz-cookie-examples strong::before { content: "// "; }
+    .legal-viz-cookie-examples strong::before { content: ""; }
 
     /* — Report flow (vertical) — */
     .legal-viz-reportflow {
@@ -2929,7 +2928,7 @@
         letter-spacing: 0.04em;
         font-weight: 700;
     }
-    .legal-viz-reportflow-meta::before { content: "// "; }
+    .legal-viz-reportflow-meta::before { content: ""; }
 
     /* — Compliance board — */
     .legal-viz-compliance {

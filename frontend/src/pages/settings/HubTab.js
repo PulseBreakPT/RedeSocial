@@ -109,7 +109,7 @@ function StatCard({ icon: Icon, value, label, sub, tintBg, tintFg }) {
                 <Icon size={15} strokeWidth={2.2} />
             </div>
             <div className="font-black tabular-nums leading-none mt-3.5" style={{ fontSize: 26, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
-            <div className="font-mono font-black uppercase mt-2 truncate" style={{ fontSize: 10, letterSpacing: "0.14em", color: "#C8261E" }}>// {label}</div>
+            <div className="font-mono font-black uppercase mt-2 truncate" style={{ fontSize: 10, letterSpacing: "0.14em", color: "#C8261E" }}>{label}</div>
             {sub && <div className="text-[11.5px] mt-1 leading-snug truncate font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
         </div>
     );
@@ -449,7 +449,7 @@ function MicroStat({ icon: Icon, label, value }) {
             </div>
             <div className="min-w-0">
                 <div className="font-black tabular-nums leading-none" style={{ fontSize: 17, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
-                <div className="font-mono font-black uppercase mt-1 truncate" style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#C8261E" }}>// {label}</div>
+                <div className="font-mono font-black uppercase mt-1 truncate" style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#C8261E" }}>{label}</div>
             </div>
         </div>
     );

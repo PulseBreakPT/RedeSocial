@@ -219,7 +219,7 @@ export function MobileBottomNav({ onCompose }) {
                                                 </span>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Publicação</div>
-                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// Escreve algo</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>Escreve algo</div>
                                                 </div>
                                             </button>
                                             <button
@@ -243,7 +243,7 @@ export function MobileBottomNav({ onCompose }) {
                                                 </span>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Foto</div>
-                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// Mostra-nos</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>Mostra-nos</div>
                                                 </div>
                                             </button>
                                             <button
@@ -267,7 +267,7 @@ export function MobileBottomNav({ onCompose }) {
                                                 </span>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-[14px] font-black tracking-tight" style={{ color: PT.ink }}>Story</div>
-                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>// 24 horas</div>
+                                                    <div className="text-[11px] font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>24 horas</div>
                                                 </div>
                                             </button>
                                         </div>

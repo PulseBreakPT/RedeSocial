@@ -310,7 +310,7 @@ export function DataTab({ user }) {
                             }}
                         >03</span>
                         <div>
-                            <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: "#C8261E" }}>// ZONA PERIGOSA</p>
+                            <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: "#C8261E" }}>ZONA PERIGOSA</p>
                             <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 19, color: "#C8261E" }}>Apagar conta permanentemente</h3>
                             <p className="text-[13px] leading-relaxed mt-1.5 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                                 Esta acção é irreversível. Todos os teus dados são apagados e removidos do sistema.
@@ -438,7 +438,7 @@ function ExportTile({ icon: Icon, title, sub, onClick, loading, dataTestid, tint
             </div>
             <div className="text-[12px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>
             <div className="font-mono font-black uppercase inline-flex items-center gap-1 mt-3" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8261E" }}>
-                <Download size={11} strokeWidth={2.4} /> // EXPORTAR
+                <Download size={11} strokeWidth={2.4} /> EXPORTAR
             </div>
         </button>
     );

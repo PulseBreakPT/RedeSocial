@@ -206,7 +206,7 @@ export default function Feed() {
                 {/* Faixa "jornal" topo */}
                 <div className="flex items-center justify-between px-6 py-1.5" style={{ background: PT.ink, color: PT.bone }}>
                     <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: PT.gold }}>
-                        LUSORAE // FEED // AO VIVO
+                        LUSORAE · FEED · AO VIVO
                     </span>
                     <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(255,244,220,0.55)" }}>
                         EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}

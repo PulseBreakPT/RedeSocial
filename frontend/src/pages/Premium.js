@@ -620,7 +620,7 @@ export default function Premium() {
                         }}
                     >
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        <span className="text-[10.5px] uppercase tracking-[0.14em] font-black">// DISPONÍVEL AGORA</span>
+                        <span className="text-[10.5px] uppercase tracking-[0.14em] font-black">DISPONÍVEL AGORA</span>
                     </div>
                     <h1
                         className="font-black tracking-[-0.035em] leading-[1.0] mb-5"
@@ -752,7 +752,7 @@ export default function Premium() {
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-14 max-w-2xl">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            // O QUE RECEBES
+                            O QUE RECEBES
                         </p>
                         <h2
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
@@ -788,7 +788,7 @@ export default function Premium() {
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-4xl mx-auto">
                     <div className="mb-8 sm:mb-10 max-w-2xl">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            // COMPARAÇÃO RÁPIDA
+                            COMPARAÇÃO RÁPIDA
                         </p>
                         <h2
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
@@ -921,7 +921,7 @@ export default function Premium() {
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-12 max-w-2xl">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            // PRINCÍPIOS
+                            PRINCÍPIOS
                         </p>
                         <h2
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
@@ -1020,7 +1020,7 @@ export default function Premium() {
                                 zIndex: 2,
                             }}
                         >
-                            // TRANSPARÊNCIA
+                            TRANSPARÊNCIA
                         </div>
 
                         <div className="flex items-start gap-3 mb-5">
@@ -1130,7 +1130,7 @@ export default function Premium() {
                 <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 max-w-2xl mx-auto prem-faq">
                     <div className="mb-7 sm:mb-9">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            // DÚVIDAS
+                            DÚVIDAS
                         </p>
                         <h2
                             className="font-black tracking-[-0.025em] leading-[1.0] mb-2"
@@ -1199,7 +1199,7 @@ export default function Premium() {
                 <section style={{ background: PT.ink }}>
                     <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-3xl mx-auto text-center">
                         <p className="font-mono font-black uppercase mb-4" style={{ fontSize: 10.5, letterSpacing: "0.18em", color: PT.gold }}>
-                            // PRÓXIMO PASSO
+                            PRÓXIMO PASSO
                         </p>
                         <h3
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
@@ -1267,7 +1267,7 @@ export default function Premium() {
             {!billing_available && (
                 <div className="px-4 py-8 text-center" style={{ background: PT.cream, borderTop: `2.5px dashed ${PT.ink}` }}>
                     <p className="text-[11px] font-mono font-black uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.12em" }}>
-                        // Sistema de pagamentos a ser ativado em breve
+                        Sistema de pagamentos a ser ativado em breve
                     </p>
                 </div>
             )}

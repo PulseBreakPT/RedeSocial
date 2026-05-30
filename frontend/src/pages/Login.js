@@ -121,7 +121,7 @@ export default function Login() {
 
                         {/* KICKER */}
                         <div className="flex items-center gap-3 mb-3">
-                            <Kicker color={PT.red}>// ÁREA &nbsp;·&nbsp; LOGIN</Kicker>
+                            <Kicker color={PT.red}>ÁREA &nbsp;·&nbsp; LOGIN</Kicker>
                             <DoodleArrow color={PT.red} w={60} h={28} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
@@ -361,7 +361,7 @@ function PosterLeft() {
             <div className="relative z-10 p-5 sm:p-8 lg:p-10 xl:p-14 flex flex-col gap-5 flex-1">
                 {/* MANCHETE — sem "Lusorae" (reservado para header/footer) */}
                 <div className="relative">
-                    <Kicker color={PT.ink} className="mb-2">// COMUNIDADE · PORTUGAL</Kicker>
+                    <Kicker color={PT.ink} className="mb-2">COMUNIDADE · PORTUGAL</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
@@ -429,7 +429,7 @@ function PosterLeft() {
                     {/* Cartão "citação" */}
                     <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
-                            <Kicker color={PT.gold} className="mb-1.5">// POST · DESTACADO</Kicker>
+                            <Kicker color={PT.gold} className="mb-1.5">POST · DESTACADO</Kicker>
                             <p className="font-black tracking-tight text-[17px] leading-[1.15]">
                                 “não é sobre quantos seguem.<br/>
                                 é sobre <span style={{ color: PT.gold }}>quem está à mesa</span>.”
@@ -466,7 +466,7 @@ function PosterLeft() {
                 {/* RODAPÉ poster — manifesto sem mencionar a marca (reservada para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
                     <div className="max-w-[260px]">
-                        <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 01</Kicker>
+                        <Kicker color={PT.gold} className="mb-1">PRINCÍPIO · 01</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem algoritmo a empurrar.{" "}
                             <span style={{

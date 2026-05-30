@@ -269,7 +269,7 @@ export default function Profile() {
                     >
                         <Lock size={26} strokeWidth={2.2} />
                     </div>
-                    <Kicker color={PT.red} className="mb-2">// PERFIL · PRIVADO</Kicker>
+                    <Kicker color={PT.red} className="mb-2">PERFIL · PRIVADO</Kicker>
                     <h3 className="font-black tracking-tight" style={{ fontSize: 26, color: PT.ink }}>Perfil privado</h3>
                     <p className="font-mono text-[11px] mt-3" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}>
                         SEGUE · PARA · VER · PUBLICAÇÕES
@@ -447,7 +447,7 @@ function BlockedWallView({ profile }) {
                         className="font-mono font-black uppercase mb-2"
                         style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}
                     >
-                        // PERFIL · COM · MURO
+                        PERFIL · COM · MURO
                     </p>
                     <h1
                         className="font-black tracking-tight leading-tight"

@@ -603,7 +603,7 @@ export function Ticket({ title, place, date, color = PT.red, rotate = -3, w = 24
                 {/* corpo */}
                 <div className="flex-1 px-3 py-2.5 min-w-0">
                     <p className="text-[9px] font-mono font-black uppercase mb-0.5" style={{ color: color, letterSpacing: "0.16em" }}>
-                        // EVENTO
+                        EVENTO
                     </p>
                     <p className="font-black text-[13.5px] leading-tight mb-1 truncate">{title}</p>
                     <p className="text-[11px] font-mono uppercase" style={{ letterSpacing: "0.06em", color: "rgba(10,10,10,0.70)" }}>

@@ -191,7 +191,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 style={{ background: PT.ink, color: PT.bone }}
             >
                 <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    LUSORAE // CENTRO LEGAL // EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
+                    LUSORAE · CENTRO LEGAL · EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
                 </span>
                 <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
                     RGPD · DSA · LEI Nº 58/2019
@@ -230,7 +230,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         className="ml-2 hidden sm:inline text-[11px] uppercase font-mono font-bold"
                         style={{ letterSpacing: "0.16em", color: PT.red }}
                     >
-                        // CENTRO LEGAL
+                        CENTRO LEGAL
                     </span>
                     <div className="ml-auto flex items-center gap-2">
                         <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
@@ -271,7 +271,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 <aside className="legal-shell-sidebar col-span-12 lg:col-span-3 order-1">
                     <div className="lg:sticky lg:top-[80px]">
                         <Kicker color={PT.red} className="hidden lg:block mb-3 px-1">
-                            // DOCUMENTOS
+                            DOCUMENTOS
                         </Kicker>
                         <nav
                             data-testid="legal-doc-nav"
@@ -319,7 +319,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             <DoodleStar color={PT.red} size={38} rotate={18} />
                         </div>
                         <div className="flex items-center gap-3 mb-3">
-                            <Kicker color={PT.red}>// {eyebrow}</Kicker>
+                            <Kicker color={PT.red}>{eyebrow}</Kicker>
                             <span aria-hidden style={{ flex: 1, height: 2, background: PT.ink }} />
                         </div>
                         <h1
@@ -428,7 +428,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             <div className="absolute -top-3 -right-3 pointer-events-none block opacity-80 scale-[0.7] sm:scale-100 origin-top-right" aria-hidden>
                                 <DoodleSparkles color={PT.green} size={36} rotate={-14} />
                             </div>
-                            <Kicker color={PT.green} className="mb-2">// VÊ TAMBÉM</Kicker>
+                            <Kicker color={PT.green} className="mb-2">VÊ TAMBÉM</Kicker>
                             <div className="flex flex-wrap gap-2">
                                 {NAV.filter((n) => n.key !== active && n.key !== "index").slice(0, 4).map((n) => (
                                     <Link
@@ -470,7 +470,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     <div className="sticky top-[80px]">
                         <div className="flex items-center gap-2 px-2 mb-3">
                             <ListTree size={13} strokeWidth={2.4} style={{ color: PT.red }} />
-                            <Kicker color={PT.red}>// NESTA PÁGINA</Kicker>
+                            <Kicker color={PT.red}>NESTA PÁGINA</Kicker>
                         </div>
                         <nav data-testid="legal-toc" style={{ borderLeft: `3px solid ${PT.ink}` }}>
                             {toc.length === 0 && (

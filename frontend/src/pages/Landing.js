@@ -492,7 +492,7 @@ function WhatYouFind() {
             </div>
             <div className="max-w-7xl mx-auto relative z-10">
                 <div className="text-center mb-10 sm:mb-12 relative inline-block left-1/2 -translate-x-1/2">
-                    <Kicker color={PT.red} className="mb-2 block">// O QUE VAIS ENCONTRAR</Kicker>
+                    <Kicker color={PT.red} className="mb-2 block">O QUE VAIS ENCONTRAR</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em]"
                         style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
@@ -575,7 +575,7 @@ function ExploreCities() {
                 <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-7 sm:gap-8 lg:gap-10 p-6 sm:p-8 lg:p-10 items-center">
                     {/* Texto */}
                     <div className="order-2 lg:order-1">
-                        <Kicker color={PT.green} className="mb-2">// PORTUGAL · LOCAL</Kicker>
+                        <Kicker color={PT.green} className="mb-2">PORTUGAL · LOCAL</Kicker>
                         <h2
                             className="font-black tracking-[-0.03em] mb-4"
                             style={{ fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 0.98, color: PT.ink }}
@@ -706,7 +706,7 @@ function HowItWorks() {
             </div>
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8 sm:mb-10">
-                    <Kicker color={PT.azul} className="mb-2">// COMO FUNCIONA</Kicker>
+                    <Kicker color={PT.azul} className="mb-2">COMO FUNCIONA</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em]"
                         style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
@@ -798,7 +798,7 @@ function PortugalMap() {
             <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.1fr_1fr] gap-8 sm:gap-10 items-center relative z-10">
                 {/* COLUNA ESQ — título */}
                 <div className="order-1">
-                    <Kicker color={PT.red} className="mb-2">// PORTUGAL · CONECTADO</Kicker>
+                    <Kicker color={PT.red} className="mb-2">PORTUGAL · CONECTADO</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em] mb-3 sm:mb-4"
                         style={{ fontSize: "clamp(28px, 3.8vw, 44px)", lineHeight: 0.98, color: PT.ink }}
@@ -916,7 +916,7 @@ function FeitoParaPessoas() {
                 </div>
 
                 <div className="relative z-10">
-                    <Kicker color={PT.red} className="mb-2">// PRINCÍPIO · CORE</Kicker>
+                    <Kicker color={PT.red} className="mb-2">PRINCÍPIO · CORE</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em] mb-7 sm:mb-8"
                         style={{ fontSize: "clamp(28px, 5.5vw, 60px)", lineHeight: 1.05, color: PT.ink }}
@@ -1026,7 +1026,7 @@ function Faq({ openFaq, setOpenFaq }) {
             </div>
             <div className="max-w-4xl mx-auto relative z-10">
                 <div className="text-center mb-8 sm:mb-10">
-                    <Kicker color={PT.green} className="mb-2 inline-block">// PERGUNTAS · FREQUENTES</Kicker>
+                    <Kicker color={PT.green} className="mb-2 inline-block">PERGUNTAS · FREQUENTES</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em]"
                         style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
@@ -1139,7 +1139,7 @@ function FinalCta() {
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
                     <div className="max-w-2xl">
-                        <Kicker color={PT.gold} className="mb-2">// PRONTO?</Kicker>
+                        <Kicker color={PT.gold} className="mb-2">PRONTO?</Kicker>
                         <h2
                             className="font-black tracking-[-0.03em]"
                             style={{ fontSize: "clamp(26px, 4.5vw, 52px)", lineHeight: 1.0 }}

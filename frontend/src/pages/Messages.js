@@ -453,7 +453,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     >
                         <MessageCircle size={24} strokeWidth={2.2} />
                     </div>
-                    <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 11, color: PT.red, letterSpacing: "0.10em" }}>// SEM · CONVERSAS</p>
+                    <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 11, color: PT.red, letterSpacing: "0.10em" }}>SEM · CONVERSAS</p>
                     <h3 className="font-black tracking-tight" style={{ fontSize: 18, color: PT.ink }}>
                         {filter === "all" ? "Sem mensagens ainda" : "Vazio neste filtro"}
                     </h3>

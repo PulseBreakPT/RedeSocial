@@ -290,7 +290,7 @@ export default function Manifesto() {
                 style={{ background: PT.ink, color: PT.bone }}
             >
                 <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    LUSORAE // MANIFESTO // EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
+                    LUSORAE · MANIFESTO · EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
                 </span>
                 <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
                     6 PROMESSAS · ANTI-DARK-PATTERN
@@ -329,7 +329,7 @@ export default function Manifesto() {
                         className="ml-2 hidden sm:inline text-[11px] uppercase font-mono font-bold"
                         style={{ letterSpacing: "0.16em", color: PT.red }}
                     >
-                        // MANIFESTO
+                        MANIFESTO
                     </span>
                     <div className="ml-auto">
                         <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
@@ -344,7 +344,7 @@ export default function Manifesto() {
                 <Reveal>
                     <Kicker color={PT.red} className="mb-3 inline-flex items-center gap-2">
                         <Shield size={12} strokeWidth={2.5} />
-                        <span>// COMPROMISSO · PÚBLICO</span>
+                        <span>COMPROMISSO · PÚBLICO</span>
                     </Kicker>
                 </Reveal>
 
@@ -419,7 +419,7 @@ export default function Manifesto() {
             <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-8 max-w-[1100px] mx-auto">
                 <Reveal>
                     <div className="mb-7 sm:mb-8 relative">
-                        <Kicker color={PT.azul} className="mb-2">// REGRAS · DE · ENGENHARIA</Kicker>
+                        <Kicker color={PT.azul} className="mb-2">REGRAS · DE · ENGENHARIA</Kicker>
                         <h2
                             className="font-black tracking-[-0.03em]"
                             style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
@@ -484,7 +484,7 @@ export default function Manifesto() {
                         />
 
                         <figcaption className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-                            <Kicker color={PT.gold} className="mb-3">// REGRA · SILENCIOSA</Kicker>
+                            <Kicker color={PT.gold} className="mb-3">REGRA · SILENCIOSA</Kicker>
                             <h2
                                 className="font-black tracking-[-0.03em]"
                                 style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
@@ -546,7 +546,7 @@ export default function Manifesto() {
                                 >
                                     <Quote size={18} strokeWidth={2.2} style={{ color: PT.ink }} />
                                 </span>
-                                <Kicker color={PT.red}>// REGRA · INTERNA</Kicker>
+                                <Kicker color={PT.red}>REGRA · INTERNA</Kicker>
                             </div>
 
                             <blockquote
@@ -595,7 +595,7 @@ export default function Manifesto() {
             {/* ═══ POR QUE SOMOS DIFERENTES ═══ */}
             <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <Kicker color={PT.green} className="mb-3">// POR QUE · DIFERENTES</Kicker>
+                    <Kicker color={PT.green} className="mb-3">POR QUE · DIFERENTES</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em] mb-7"
                         style={{ fontSize: "clamp(26px, 4vw, 44px)", lineHeight: 1.0, color: PT.ink }}
@@ -703,7 +703,7 @@ export default function Manifesto() {
                         </div>
 
                         <div className="relative z-10">
-                            <Kicker color={PT.gold} className="mb-3">// SE CHEGASTE AQUI</Kicker>
+                            <Kicker color={PT.gold} className="mb-3">SE CHEGASTE AQUI</Kicker>
                             <h3
                                 className="font-black tracking-[-0.03em] max-w-[22ch] mb-5"
                                 style={{ fontSize: "clamp(24px, 4.2vw, 44px)", lineHeight: 1.04 }}

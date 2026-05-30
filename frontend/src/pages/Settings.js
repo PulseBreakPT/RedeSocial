@@ -342,7 +342,7 @@ export default function Settings() {
                         </div>
                         <div className="min-w-0">
                             <p className="font-mono font-black uppercase mb-0.5" style={{ fontSize: 10, letterSpacing: "0.16em", color: PT.red }}>
-                                // DEFINIÇÕES
+                                DEFINIÇÕES
                             </p>
                             <p className="font-black tracking-tight leading-none truncate" style={{ fontSize: 16, color: PT.ink }}>
                                 {user?.name?.split(" ")[0] || user?.username || "Utilizador"}
@@ -443,7 +443,7 @@ export default function Settings() {
                     {/* Footer mini help */}
                     <div className="mt-auto px-3 pt-4 mx-1 mt-4" style={{ borderTop: `2.5px dashed ${PT.ink}` }}>
                         <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 10, letterSpacing: "0.14em", color: PT.red }}>
-                            // ATALHOS
+                            ATALHOS
                         </p>
                         <ul className="text-[11.5px] space-y-1.5 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                             <li className="flex items-center justify-between gap-2">
@@ -478,7 +478,7 @@ export default function Settings() {
                             </div>
                             <div className="min-w-0">
                                 <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                                    // DEFINIÇÕES
+                                    DEFINIÇÕES
                                 </p>
                                 <h1
                                     className="font-black tracking-[-0.025em] leading-tight"
@@ -635,7 +635,7 @@ export default function Settings() {
                         >
                             <Check size={14} strokeWidth={2.8} />
                         </div>
-                        <span className="text-[13px] font-black tracking-tight uppercase" style={{ letterSpacing: "0.04em" }}>// Alterações por guardar</span>
+                        <span className="text-[13px] font-black tracking-tight uppercase" style={{ letterSpacing: "0.04em" }}>Alterações por guardar</span>
                         <div className="flex items-center gap-2 ml-2">
                             <button
                                 onClick={discard}

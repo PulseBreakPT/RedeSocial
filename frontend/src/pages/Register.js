@@ -263,7 +263,7 @@ export default function Register() {
                         </div>
 
                         <div className="flex items-center gap-3 mb-2">
-                            <Kicker color={PT.green}>// PASSO {String(step).padStart(2, "0")} DE 03</Kicker>
+                            <Kicker color={PT.green}>PASSO {String(step).padStart(2, "0")} DE 03</Kicker>
                             <DoodleArrow color={PT.green} w={60} h={26} style={{ transform: "rotate(-4deg)" }} />
                         </div>
 
@@ -540,7 +540,7 @@ export default function Register() {
                             {step === 3 && (
                                 <div className="space-y-3 pt-1">
                                     <PosterCard bg={PT.azul} color="#fff" rotate={-1.5} shadow={PT.gold} style={{ padding: "16px 18px" }}>
-                                        <Kicker color={PT.gold} className="mb-2">// VOZ · COMUNIDADE</Kicker>
+                                        <Kicker color={PT.gold} className="mb-2">VOZ · COMUNIDADE</Kicker>
                                         <blockquote className="font-black text-[19px] leading-[1.18] tracking-tight max-w-[34ch]">
                                             “Finalmente uma rede que não me{" "}
                                             <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.16em" }}>trata</span>{" "}
@@ -734,7 +734,7 @@ function PosterRight({ step }) {
 
                 {/* MANCHETE — controlada */}
                 <div className="relative">
-                    <Kicker color={PT.gold} className="mb-2">// JUNTA-TE</Kicker>
+                    <Kicker color={PT.gold} className="mb-2">JUNTA-TE</Kicker>
                     <h2
                         className="font-black tracking-[-0.04em]"
                         style={{
@@ -807,7 +807,7 @@ function PosterRight({ step }) {
                     {/* Cartão "3 passos" */}
                     <div className="relative flex-1 min-w-[240px] max-w-[340px] pt-2 mt-6 sm:mt-0">
                         <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "14px 16px" }}>
-                            <Kicker color={PT.gold} className="mb-2">// 3 PASSOS</Kicker>
+                            <Kicker color={PT.gold} className="mb-2">3 PASSOS</Kicker>
                             <ul className="space-y-1.5 text-[13.5px] font-bold leading-tight">
                                 <PassoItem n={1} done={step > 1} label="Cria conta" color={PT.red} />
                                 <PassoItem n={2} done={step > 2} label="Escolhe cidade" color={PT.gold} />
@@ -840,7 +840,7 @@ function PosterRight({ step }) {
                 {/* RODAPÉ — sem nome da marca (reservado para header/SiteFooter) */}
                 <div className="mt-auto relative pt-8">
                     <div className="max-w-[260px]">
-                        <Kicker color={PT.gold} className="mb-1">// PRINCÍPIO · 02</Kicker>
+                        <Kicker color={PT.gold} className="mb-1">PRINCÍPIO · 02</Kicker>
                         <p className="font-black text-[14px] leading-snug tracking-tight" style={{ color: "#fff" }}>
                             Sem trial.{" "}
                             <span style={{
