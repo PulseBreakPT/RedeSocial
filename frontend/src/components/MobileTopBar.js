@@ -32,10 +32,10 @@ export function MobileTopBar({ onOpenChat }) {
     }, []);
 
     const iconBtnStyle = (active) => ({
-        background: active ? PT.ink : "rgba(255,255,255,0.6)",
-        color: active ? PT.gold : PT.ink,
-        border: `2px solid ${PT.ink}`,
-        boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+        background: active ? PT.gold : "transparent",
+        color: active ? PT.ink : "#fff",
+        border: `2px solid ${active ? PT.ink : "#fff"}`,
+        boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.gold}`,
         borderRadius: 999,
     });
 
@@ -44,9 +44,9 @@ export function MobileTopBar({ onOpenChat }) {
             className="lg:hidden sticky top-0 z-40 pt-safe"
             data-testid="mobile-topbar"
             style={{
-                background: "rgba(244,244,244,0.95)",
+                background: "rgba(10,10,10,0.95)",
                 backdropFilter: "blur(8px)",
-                borderBottom: `2.5px solid ${PT.ink}`,
+                borderBottom: `2.5px solid ${PT.gold}`,
             }}
         >
             <div className="flex items-center gap-2.5 px-3.5 h-[var(--mobile-topbar-h)]">
@@ -67,8 +67,8 @@ export function MobileTopBar({ onOpenChat }) {
                     <span
                         className="block"
                         style={{
-                            border: `2px solid ${PT.ink}`,
-                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                            border: `2px solid #fff`,
+                            boxShadow: `2px 2px 0 ${PT.gold}`,
                             borderRadius: 999,
                             padding: 0,
                         }}
@@ -79,7 +79,7 @@ export function MobileTopBar({ onOpenChat }) {
 
                 <Link to="/feed" className="flex items-baseline gap-1 mr-auto tap-shrink" data-testid="mobile-topbar-logo">
                     <span aria-hidden style={{ color: PT.red, fontSize: 18, fontWeight: 900, lineHeight: 1 }}>✱</span>
-                    <span className="font-black tracking-tight" style={{ fontSize: 19, color: PT.ink, lineHeight: 1 }}>
+                    <span className="font-black tracking-tight" style={{ fontSize: 19, color: "#fff", lineHeight: 1 }}>
                         lusorae
                     </span>
                     <HeaderLiveDot className="ml-1" />
@@ -117,7 +117,7 @@ export function MobileTopBar({ onOpenChat }) {
                             style={{
                                 background: PT.red,
                                 color: "#fff",
-                                border: `1.5px solid ${PT.ink}`,
+                                border: `1.5px solid #fff`,
                                 borderRadius: 999,
                                 fontSize: 9,
                                 letterSpacing: "0.02em",

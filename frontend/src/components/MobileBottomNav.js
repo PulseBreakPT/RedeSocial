@@ -168,9 +168,9 @@ export function MobileBottomNav({ onCompose }) {
             className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe"
             data-testid="mobile-bottom-nav"
             style={{
-                background: "rgba(244,244,244,0.96)",
+                background: "rgba(10,10,10,0.96)",
                 backdropFilter: "blur(8px)",
-                borderTop: `2.5px solid ${PT.ink}`,
+                borderTop: `2.5px solid ${PT.gold}`,
             }}
         >
             <div className="grid grid-cols-5 items-center h-[68px] px-1.5">
@@ -292,8 +292,8 @@ export function MobileBottomNav({ onCompose }) {
                                     style={{
                                         background: PT.red,
                                         color: "#fff",
-                                        border: `3px solid ${PT.ink}`,
-                                        boxShadow: `4px 4px 0 ${PT.ink}`,
+                                        border: `3px solid #fff`,
+                                        boxShadow: `4px 4px 0 ${PT.gold}`,
                                         borderRadius: 999,
                                         transform: pressed ? "scale(0.94) rotate(-3deg)" : "none",
                                         transition: "transform 180ms cubic-bezier(.22,1,.36,1)",
@@ -307,7 +307,7 @@ export function MobileBottomNav({ onCompose }) {
                                             className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 grid place-items-center font-black"
                                             style={{
                                                 background: PT.gold, color: PT.ink,
-                                                border: `2px solid ${PT.ink}`,
+                                                border: `2px solid #fff`,
                                                 borderRadius: 999,
                                                 fontSize: 10,
                                             }}
@@ -324,7 +324,8 @@ export function MobileBottomNav({ onCompose }) {
                             <button
                                 key={idx}
                                 onClick={() => navigate("/login")}
-                                className="flex flex-col items-center justify-center gap-0.5 h-full text-black active:scale-95 transition"
+                                className="flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition"
+                                style={{ color: "#fff" }}
                             >
                                 <Icon size={22} strokeWidth={1.9} />
                                 <span className="text-[10px] tracking-tight font-medium">{it.label}</span>
@@ -345,7 +346,7 @@ export function MobileBottomNav({ onCompose }) {
                                 `relative flex flex-col items-center justify-center gap-0.5 h-full active:scale-95 transition`
                             }
                             style={({ isActive }) => ({
-                                color: isActive ? PT.red : PT.ink,
+                                color: isActive ? PT.gold : "#fff",
                             })}
                         >
                             {({ isActive }) => (
@@ -354,14 +355,14 @@ export function MobileBottomNav({ onCompose }) {
                                         <span
                                             aria-hidden
                                             className="absolute top-1 w-7 h-[3px] rounded-full"
-                                            style={{ background: PT.red }}
+                                            style={{ background: PT.gold }}
                                         />
                                     )}
                                     <span className="relative">
                                         <Icon
                                             size={21}
                                             strokeWidth={isActive ? 2.4 : 1.9}
-                                            style={{ color: isActive ? PT.red : PT.ink }}
+                                            style={{ color: isActive ? PT.gold : "#fff" }}
                                         />
                                         {isMsg && msgCount > 0 && (
                                             <span
@@ -369,7 +370,7 @@ export function MobileBottomNav({ onCompose }) {
                                                 className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 grid place-items-center font-black font-mono"
                                                 style={{
                                                     background: PT.red, color: "#fff",
-                                                    border: `1.5px solid ${PT.ink}`,
+                                                    border: `1.5px solid #fff`,
                                                     borderRadius: 999,
                                                     fontSize: 9,
                                                     letterSpacing: "0.02em",
@@ -382,9 +383,9 @@ export function MobileBottomNav({ onCompose }) {
                                     <span
                                         className={`text-[10px] font-black uppercase`}
                                         style={{
-                                            color: isActive ? PT.red : PT.ink,
+                                            color: isActive ? PT.gold : "#fff",
                                             letterSpacing: "0.04em",
-                                            opacity: isActive ? 1 : 0.75,
+                                            opacity: isActive ? 1 : 0.85,
                                         }}
                                     >
                                         {it.label}
