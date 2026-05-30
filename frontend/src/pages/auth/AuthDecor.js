@@ -477,6 +477,396 @@ export function Kicker({ children, color = PT.red, className = "" }) {
     );
 }
 
+// =============================================================================
+// FANZINE EXTRAS — post-it, recibo, bilhete, selo PT, azulejo, highlight,
+// recorte de jornal, balão de fala, coordenadas, assinatura, rota pontilhada
+// =============================================================================
+
+// ============ POST-IT ============
+export function PostIt({ children, color = "#FFE066", rotate = -3, w = 160, style = {} }) {
+    return (
+        <div
+            aria-hidden
+            className="select-none"
+            style={{
+                width: w,
+                background: color,
+                color: PT.ink,
+                padding: "12px 14px",
+                fontFamily: "'Patrick Hand', cursive",
+                fontSize: 15,
+                lineHeight: 1.18,
+                transform: `rotate(${rotate}deg)`,
+                boxShadow: `0 8px 14px rgba(10,10,10,0.18), 0 2px 4px rgba(10,10,10,0.10)`,
+                position: "relative",
+                ...style,
+            }}
+        >
+            {/* fita transparente no topo */}
+            <span
+                className="absolute pointer-events-none"
+                style={{
+                    top: -8, left: "40%", width: 36, height: 14,
+                    background: "rgba(255,255,255,0.55)",
+                    borderLeft: "1px dashed rgba(10,10,10,0.25)",
+                    borderRight: "1px dashed rgba(10,10,10,0.25)",
+                    boxShadow: "0 2px 3px rgba(10,10,10,0.10)",
+                }}
+            />
+            {children}
+        </div>
+    );
+}
+
+// ============ RECIBO (recibo vertical estreito monoespaçado) ============
+export function Receipt({ lines = [], total = null, rotate = 2, w = 180, style = {} }) {
+    return (
+        <div
+            aria-hidden
+            className="font-mono select-none"
+            style={{
+                width: w,
+                background: "#FAF6E8",
+                color: PT.ink,
+                padding: "12px 12px 16px",
+                transform: `rotate(${rotate}deg)`,
+                boxShadow: `0 8px 14px rgba(10,10,10,0.20)`,
+                border: `1px solid rgba(10,10,10,0.10)`,
+                position: "relative",
+                ...style,
+            }}
+        >
+            {/* zig-zag bottom edge */}
+            <span
+                className="absolute left-0 right-0 pointer-events-none"
+                style={{
+                    bottom: -6,
+                    height: 8,
+                    background: "linear-gradient(135deg, transparent 33%, #FAF6E8 33% 66%, transparent 66%) 0 0 / 12px 8px",
+                }}
+            />
+            <p className="text-[10px] font-black uppercase tracking-wider text-center mb-2" style={{ letterSpacing: "0.18em" }}>
+                LUSORAE · RECIBO
+            </p>
+            <div className="text-[10.5px] leading-snug space-y-1">
+                {lines.map((l, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{l.label}</span>
+                        <span className="font-black tabular-nums">{l.value}</span>
+                    </div>
+                ))}
+            </div>
+            {total && (
+                <>
+                    <div className="border-t border-dashed mt-2 pt-1.5" style={{ borderColor: PT.ink }} />
+                    <div className="flex items-center justify-between text-[11px] font-black">
+                        <span>TOTAL</span><span className="tabular-nums">{total}</span>
+                    </div>
+                </>
+            )}
+            <p className="text-[9px] mt-2 text-center" style={{ color: "rgba(10,10,10,0.50)" }}>
+                · obrigado · 2026 ·
+            </p>
+        </div>
+    );
+}
+
+// ============ BILHETE DE EVENTO (com edge perfurada) ============
+export function Ticket({ title, place, date, color = PT.red, rotate = -3, w = 240, style = {} }) {
+    return (
+        <div
+            aria-hidden
+            className="relative select-none"
+            style={{
+                width: w,
+                background: "#FFF8E2",
+                color: PT.ink,
+                border: `2.5px solid ${PT.ink}`,
+                borderRadius: 6,
+                transform: `rotate(${rotate}deg)`,
+                boxShadow: `4px 4px 0 ${PT.ink}`,
+                overflow: "hidden",
+                ...style,
+            }}
+        >
+            <div className="flex">
+                {/* stub esq */}
+                <div
+                    className="flex flex-col items-center justify-center px-2.5 py-2.5 shrink-0"
+                    style={{ background: color, color: "#fff", borderRight: `2px dashed ${PT.ink}`, minWidth: 56 }}
+                >
+                    <p className="text-[10px] font-mono font-black uppercase leading-none mb-1" style={{ letterSpacing: "0.10em" }}>
+                        ADMIT
+                    </p>
+                    <p className="text-[24px] font-black leading-none">1</p>
+                </div>
+                {/* corpo */}
+                <div className="flex-1 px-3 py-2.5 min-w-0">
+                    <p className="text-[9px] font-mono font-black uppercase mb-0.5" style={{ color: color, letterSpacing: "0.16em" }}>
+                        // EVENTO
+                    </p>
+                    <p className="font-black text-[13.5px] leading-tight mb-1 truncate">{title}</p>
+                    <p className="text-[11px] font-mono uppercase" style={{ letterSpacing: "0.06em", color: "rgba(10,10,10,0.70)" }}>
+                        📍 {place} · {date}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ============ SELO PORTUGUÊS MODERNO (postage stamp) ============
+export function PostStamp({ city, code, value = "0.85€", color = PT.red, rotate = -4, size = 90, style = {} }) {
+    // perforation: dashed border
+    return (
+        <div
+            aria-hidden
+            className="select-none relative"
+            style={{
+                width: size,
+                height: size * 1.18,
+                background: "#FFF4DC",
+                color: PT.ink,
+                border: `2px dashed ${PT.ink}`,
+                outline: `4px solid #FFF4DC`,
+                transform: `rotate(${rotate}deg)`,
+                boxShadow: `3px 3px 0 rgba(10,10,10,0.18)`,
+                padding: 6,
+                display: "flex",
+                flexDirection: "column",
+                ...style,
+            }}
+        >
+            <div className="flex-1 flex items-center justify-center" style={{ background: color }}>
+                <span className="font-black text-white text-[26px] leading-none" style={{ textShadow: `1.5px 1.5px 0 ${PT.ink}` }}>
+                    {code}
+                </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between">
+                <span className="text-[8.5px] font-mono font-black uppercase truncate" style={{ letterSpacing: "0.08em" }}>
+                    {city}
+                </span>
+                <span className="text-[9px] font-black tabular-nums">{value}</span>
+            </div>
+            <p className="text-[7px] font-mono uppercase text-center mt-0.5" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}>
+                CTT · PT
+            </p>
+        </div>
+    );
+}
+
+// ============ AZULEJO REINTERPRETADO (4x4 grid) ============
+export function AzulejoTile({ size = 56, rotate = 0, style = {} }) {
+    return (
+        <svg
+            aria-hidden
+            width={size} height={size}
+            viewBox="0 0 40 40"
+            style={{ transform: `rotate(${rotate}deg)`, ...style }}
+        >
+            <rect width="40" height="40" fill="#FFF4DC" stroke={PT.ink} strokeWidth="0.6" />
+            {/* corners */}
+            <path d="M0 0 L10 0 L0 10 Z" fill={PT.azul} />
+            <path d="M40 0 L30 0 L40 10 Z" fill={PT.azul} />
+            <path d="M0 40 L10 40 L0 30 Z" fill={PT.azul} />
+            <path d="M40 40 L30 40 L40 30 Z" fill={PT.azul} />
+            {/* centro */}
+            <circle cx="20" cy="20" r="6" fill="none" stroke={PT.azul} strokeWidth="1.2" />
+            <circle cx="20" cy="20" r="2" fill={PT.azul} />
+            {/* asteriscos pequenos */}
+            <text x="6" y="22" fontSize="6" fill={PT.azul} fontWeight="900">✱</text>
+            <text x="30" y="22" fontSize="6" fill={PT.azul} fontWeight="900">✱</text>
+            <text x="18" y="9" fontSize="6" fill={PT.azul} fontWeight="900">✱</text>
+            <text x="18" y="37" fontSize="6" fill={PT.azul} fontWeight="900">✱</text>
+        </svg>
+    );
+}
+
+// linha de azulejos (border decorativo)
+export function AzulejoBorder({ count = 6, size = 44, style = {} }) {
+    return (
+        <div className="flex" style={style} aria-hidden>
+            {Array.from({ length: count }).map((_, i) => (
+                <AzulejoTile key={i} size={size} rotate={i % 2 === 0 ? 0 : 90} />
+            ))}
+        </div>
+    );
+}
+
+// ============ HIGHLIGHT MARKER (marcador fluorescente) ============
+export function Highlight({ children, color = "#FFEB3B", rotate = -1, style = {} }) {
+    return (
+        <span
+            className="relative inline-block px-1"
+            style={{ ...style }}
+        >
+            <span
+                className="absolute pointer-events-none"
+                aria-hidden
+                style={{
+                    inset: "20% -2% 5% -2%",
+                    background: color,
+                    transform: `rotate(${rotate}deg) skewX(-6deg)`,
+                    zIndex: 0,
+                    opacity: 0.85,
+                    mixBlendMode: "multiply",
+                }}
+            />
+            <span className="relative z-10">{children}</span>
+        </span>
+    );
+}
+
+// ============ COORDENADAS ============
+export function Coords({ lat, lon, rotate = 0, color = PT.ink, style = {} }) {
+    return (
+        <span
+            aria-hidden
+            className="font-mono font-bold uppercase select-none"
+            style={{
+                color,
+                fontSize: 9.5,
+                letterSpacing: "0.10em",
+                background: "rgba(255,244,220,0.85)",
+                padding: "2px 6px",
+                border: `1.2px solid ${color}`,
+                transform: `rotate(${rotate}deg)`,
+                display: "inline-block",
+                ...style,
+            }}
+        >
+            {lat}° N · {lon}° W
+        </span>
+    );
+}
+
+// ============ BALÃO DE FALA ============
+export function SpeechBubble({ children, color = PT.gold, ink = PT.ink, rotate = -2, w = 200, tailSide = "left", style = {} }) {
+    return (
+        <div
+            aria-hidden
+            className="relative font-black"
+            style={{
+                width: w,
+                background: color,
+                color: ink,
+                padding: "12px 14px",
+                borderRadius: 18,
+                border: `2.5px solid ${ink}`,
+                boxShadow: `3px 3px 0 ${ink}`,
+                transform: `rotate(${rotate}deg)`,
+                fontSize: 13.5,
+                lineHeight: 1.2,
+                ...style,
+            }}
+        >
+            {children}
+            {/* tail */}
+            <span
+                className="absolute pointer-events-none"
+                style={{
+                    bottom: -14,
+                    [tailSide]: 24,
+                    width: 0, height: 0,
+                    borderLeft: tailSide === "left" ? `0 solid transparent` : `14px solid transparent`,
+                    borderRight: tailSide === "left" ? `14px solid transparent` : `0 solid transparent`,
+                    borderTop: `14px solid ${ink}`,
+                }}
+            />
+            <span
+                className="absolute pointer-events-none"
+                style={{
+                    bottom: -10,
+                    [tailSide]: 28,
+                    width: 0, height: 0,
+                    borderLeft: tailSide === "left" ? `0 solid transparent` : `10px solid transparent`,
+                    borderRight: tailSide === "left" ? `10px solid transparent` : `0 solid transparent`,
+                    borderTop: `10px solid ${color}`,
+                }}
+            />
+        </div>
+    );
+}
+
+// ============ NEWSPAPER CLIP (recorte com bordas rasgadas) ============
+export function NewspaperClip({ children, rotate = -1, w = 280, style = {} }) {
+    return (
+        <div
+            aria-hidden
+            className="relative select-none"
+            style={{
+                width: w,
+                background: "#FAF6E8",
+                color: PT.ink,
+                padding: "12px 14px 14px",
+                transform: `rotate(${rotate}deg)`,
+                boxShadow: `3px 3px 0 rgba(10,10,10,0.20)`,
+                clipPath: "polygon(0 4%, 6% 0, 14% 3%, 28% 0, 42% 4%, 58% 0, 72% 3%, 88% 0, 100% 4%, 100% 96%, 92% 100%, 78% 97%, 64% 100%, 48% 96%, 32% 100%, 18% 97%, 6% 100%, 0 96%)",
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: 13.5,
+                lineHeight: 1.3,
+                ...style,
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
+// ============ ASSINATURA MANUSCRITA ============
+export function Signature({ children = "lusorae 2026", color = PT.ink, rotate = -4, size = 26, style = {} }) {
+    return (
+        <span
+            aria-hidden
+            className="select-none"
+            style={{
+                fontFamily: "'Caveat', cursive",
+                fontSize: size,
+                fontWeight: 700,
+                color,
+                transform: `rotate(${rotate}deg)`,
+                display: "inline-block",
+                lineHeight: 1,
+                ...style,
+            }}
+        >
+            {children}
+        </span>
+    );
+}
+
+// ============ ROTA PONTILHADA (curva) ============
+export function RouteDots({ d, color = PT.red, w = 200, h = 80, strokeWidth = 2, style = {} }) {
+    return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden style={style}>
+            <path d={d} fill="none" stroke={color} strokeWidth={strokeWidth} strokeDasharray="4 5" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+// ============ CANTO DOBRADO (paper fold corner) ============
+export function PaperFoldCorner({ size = 22, color = "rgba(10,10,10,0.10)", corner = "top-right", style = {} }) {
+    const map = {
+        "top-right": { top: 0, right: 0, transform: "rotate(0deg)" },
+        "top-left": { top: 0, left: 0, transform: "rotate(-90deg)" },
+        "bottom-right": { bottom: 0, right: 0, transform: "rotate(90deg)" },
+        "bottom-left": { bottom: 0, left: 0, transform: "rotate(180deg)" },
+    };
+    return (
+        <span
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{
+                width: size, height: size,
+                ...map[corner],
+                background: `linear-gradient(135deg, transparent 50%, ${color} 50%)`,
+                boxShadow: `inset -1px 1px 1px rgba(10,10,10,0.08)`,
+                ...style,
+            }}
+        />
+    );
+}
+
 // ============ ESTILOS partilhados (inputs + botões neo-brutalist) ============
 export function AuthStyles() {
     return (
@@ -568,6 +958,27 @@ export function AuthStyles() {
                     ${PT.ink} 0 8px,
                     ${PT.gold} 8px 16px
                 );
+            }
+
+            /* Paper texture: fibras subtis + grão muito leve */
+            .pt-paper {
+                position: relative;
+                background-color: ${PT.cream};
+                background-image:
+                    radial-gradient(rgba(10,10,10,0.05) 0.6px, transparent 0.7px),
+                    radial-gradient(rgba(10,10,10,0.04) 0.5px, transparent 0.6px),
+                    repeating-linear-gradient(95deg, rgba(10,10,10,0.020) 0 1px, transparent 1px 5px);
+                background-size: 4px 4px, 11px 11px, 100% 100%;
+                background-position: 0 0, 2px 2px, 0 0;
+            }
+
+            /* Linha pontilhada manuscrita (sublinhado) */
+            .pt-handline {
+                background-image: radial-gradient(${PT.gold} 1.2px, transparent 1.4px);
+                background-size: 6px 6px;
+                background-repeat: repeat-x;
+                background-position: 0 100%;
+                padding-bottom: 6px;
             }
         `}</style>
     );

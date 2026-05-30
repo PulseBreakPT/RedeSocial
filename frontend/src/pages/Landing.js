@@ -10,6 +10,8 @@ import {
     DoodleArrow, DoodleStar, DoodleSparkles, DoodleHeart, DoodleScribble,
     DoodleZigzag, DoodleUnderline, DoodleSpiral, DoodleCross, DoodleExclamation,
     DoodleLongArrow, HandNote, GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
+    PostIt, Receipt, Ticket, PostStamp, AzulejoBorder, Highlight, Coords,
+    SpeechBubble, NewspaperClip, Signature, RouteDots, PaperFoldCorner,
 } from "./auth/AuthDecor";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
@@ -47,7 +49,7 @@ export default function Landing() {
     if (!checking && user) return <Navigate to="/feed" replace />;
 
     return (
-        <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream }} data-testid="landing-page">
+        <div className="min-h-screen relative overflow-hidden pt-paper" style={{ background: PT.cream }} data-testid="landing-page">
             <div className="pt-tape h-3 w-full" />
 
             <TopNav />
@@ -331,6 +333,22 @@ function Hero({ stats }) {
                                 100%<br/>HUMANO
                             </StampCircle>
                         </div>
+                        {/* Coordenadas — só desktop, ligadas ao stamp */}
+                        <div className="absolute -top-1 right-12 z-30 pointer-events-none hidden lg:block">
+                            <Coords lat="41.1579" lon="8.6291" rotate={-8} color={PT.ink} />
+                        </div>
+                        {/* Balão de fala flutuante — só desktop */}
+                        <div className="absolute -left-10 top-1/3 z-30 pointer-events-none hidden xl:block">
+                            <SpeechBubble color={PT.gold} ink={PT.ink} rotate={-6} w={140}>
+                                Junta-te! ✱
+                            </SpeechBubble>
+                        </div>
+                        {/* Assinatura manuscrita — bottom right */}
+                        <div className="absolute -bottom-10 right-4 z-20 pointer-events-none hidden sm:block">
+                            <Signature size={28} rotate={-4} color={PT.red}>
+                                vive · partilha
+                            </Signature>
+                        </div>
                         <div className="absolute -bottom-2 -right-6 z-20 pointer-events-none hidden sm:block">
                             <DoodleHeart color={PT.red} size={36} rotate={-12} />
                         </div>
@@ -478,9 +496,17 @@ function WhatYouFind() {
 // EXPLORE CITIES — 3 fotos lado a lado + texto
 // =============================================================================
 function ExploreCities() {
+    const cities = [
+        { src: HERO_CITY_1, name: "Porto", code: "PRT", coords: { lat: "41.15", lon: "8.61" }, stampBg: PT.gold, sBg: PT.gold, sCol: PT.ink, color: PT.red, rotate: -2 },
+        { src: HERO_CITY_2, name: "Lisboa", code: "LIS", coords: { lat: "38.71", lon: "9.13" }, stampBg: PT.green, sBg: PT.green, sCol: "#fff", color: PT.green, rotate: 1.5 },
+        { src: HERO_CITY_3, name: "Algarve", code: "ALG", coords: { lat: "37.01", lon: "7.93" }, stampBg: PT.red, sBg: PT.red, sCol: "#fff", color: PT.azul, rotate: -1 },
+    ];
     return (
         <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20" data-testid="explore-cities">
             <div className="max-w-7xl mx-auto rounded-3xl relative" style={{ background: "#fff", border: `3.5px solid ${PT.ink}`, boxShadow: `6px 6px 0 ${PT.ink}` }}>
+                {/* Canto dobrado decorativo */}
+                <PaperFoldCorner size={26} color="rgba(10,10,10,0.10)" corner="top-right" style={{ borderRadius: "0 24px 0 0" }} />
+
                 <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-7 sm:gap-8 lg:gap-10 p-6 sm:p-8 lg:p-10 items-center">
                     {/* Texto */}
                     <div className="order-2 lg:order-1">
@@ -490,14 +516,9 @@ function ExploreCities() {
                             style={{ fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 0.98, color: PT.ink }}
                         >
                             Explora a tua{" "}
-                            <span style={{
-                                display: "inline-block",
-                                color: PT.red,
-                                textShadow: `3px 3px 0 ${PT.gold}`,
-                                WebkitTextStroke: `1px ${PT.ink}`,
-                            }}>
-                                cidade.
-                            </span>
+                            <Highlight color="#FFEB3B" rotate={-2}>
+                                <span style={{ color: PT.ink }}>cidade.</span>
+                            </Highlight>
                         </h2>
                         <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed mb-5" style={{ color: "rgba(10,10,10,0.72)" }}>
                             Descobre pessoas, eventos e lugares incríveis perto de ti — de Braga ao Algarve, da Madeira aos Açores.
@@ -518,13 +539,34 @@ function ExploreCities() {
                         >
                             Explorar cidades <ArrowRight size={16} />
                         </Link>
+
+                        {/* Rota pontilhada decorativa — só desktop */}
+                        <div className="absolute -bottom-3 left-1/3 z-10 pointer-events-none hidden lg:block">
+                            <RouteDots
+                                d="M 0 30 Q 60 0 120 30 T 240 30"
+                                color={PT.red}
+                                w={260} h={50}
+                            />
+                        </div>
                     </div>
 
-                    {/* Mosaico de fotos */}
+                    {/* Mosaico de fotos com identidade de cidade */}
                     <div className="grid grid-cols-3 gap-3 lg:gap-4 relative order-1 lg:order-2">
-                        <CityPhoto src={HERO_CITY_1} city="Porto" rotate={-2} stickerBg={PT.gold} />
-                        <CityPhoto src={HERO_CITY_2} city="Lisboa" rotate={1.5} stickerBg={PT.green} stickerColor="#fff" />
-                        <CityPhoto src={HERO_CITY_3} city="Algarve" rotate={-1} stickerBg={PT.red} stickerColor="#fff" />
+                        {cities.map((c, i) => (
+                            <CityPhoto
+                                key={c.name}
+                                src={c.src}
+                                city={c.name}
+                                code={c.code}
+                                coords={c.coords}
+                                rotate={c.rotate}
+                                stampBg={c.stampBg}
+                                stickerBg={c.sBg}
+                                stickerColor={c.sCol}
+                                postColor={c.color}
+                                index={i}
+                            />
+                        ))}
                         <div className="absolute -top-5 -right-5 pointer-events-none hidden sm:block">
                             <DoodleStar color={PT.red} size={40} rotate={12} />
                         </div>
@@ -535,7 +577,7 @@ function ExploreCities() {
     );
 }
 
-function CityPhoto({ src, city, rotate, stickerBg, stickerColor = PT.ink }) {
+function CityPhoto({ src, city, code, coords, rotate, stickerBg, stickerColor = PT.ink, postColor = PT.red, index = 0 }) {
     return (
         <div className="relative">
             <div
@@ -549,11 +591,28 @@ function CityPhoto({ src, city, rotate, stickerBg, stickerColor = PT.ink }) {
                 }}
             >
                 <img src={src} alt={city} className="w-full h-full object-cover" loading="lazy" />
+                {/* Canto dobrado */}
+                <PaperFoldCorner size={16} corner="bottom-right" color="rgba(255,255,255,0.30)" />
             </div>
+            {/* Selo postal moderno PT — só desktop nos cantos opostos */}
+            <div
+                className="absolute z-20 pointer-events-none hidden sm:block"
+                style={{
+                    top: -14,
+                    [index % 2 === 0 ? "left" : "right"]: -10,
+                }}
+            >
+                <PostStamp city={city} code={code} value="0.85€" color={postColor} rotate={index % 2 === 0 ? -6 : 6} size={62} />
+            </div>
+            {/* Sticker base com nome (mobile + desktop) */}
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
                 <Sticker bg={stickerBg} color={stickerColor} rotate={-4} style={{ fontSize: 10, padding: "5px 10px" }}>
                     📍 {city}
                 </Sticker>
+            </div>
+            {/* Coords — só desktop */}
+            <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 z-10 pointer-events-none hidden lg:block">
+                <Coords lat={coords.lat} lon={coords.lon} color={PT.ink} rotate={0} />
             </div>
         </div>
     );
@@ -611,6 +670,7 @@ function HowItWorks() {
                                 transform: i % 2 === 0 ? "rotate(-0.8deg)" : "rotate(0.8deg)",
                             }}
                         >
+                            <PaperFoldCorner size={18} corner="top-right" color="rgba(10,10,10,0.10)" style={{ borderRadius: "0 18px 0 0" }} />
                             <div className="flex items-center gap-3 mb-3">
                                 <span
                                     className="inline-flex items-center justify-center font-black text-[18px]"
@@ -633,6 +693,18 @@ function HowItWorks() {
                             </p>
                         </div>
                     ))}
+
+                    {/* Post-it sobre o passo 3 — só desktop */}
+                    <div className="absolute z-20 pointer-events-none hidden lg:block" style={{ top: -22, right: "23%" }}>
+                        <PostIt color="#FFE066" rotate={-6} w={150}>
+                            ✨ aqui é onde<br/>começa a magia
+                        </PostIt>
+                    </div>
+                </div>
+
+                {/* Faixa de azulejos — separador decorativo */}
+                <div className="mt-12 sm:mt-14 flex justify-center overflow-hidden">
+                    <AzulejoBorder count={8} size={32} />
                 </div>
             </div>
         </section>
@@ -691,21 +763,36 @@ function PortugalMap() {
                     <div className="absolute -top-4 -right-3 z-10 pointer-events-none hidden sm:block">
                         <DoodleStar color={PT.red} size={42} rotate={14} />
                     </div>
+                    {/* Bilhete de evento sobreposto — só desktop */}
+                    <div className="absolute -bottom-4 -left-8 z-20 pointer-events-none hidden lg:block">
+                        <Ticket
+                            title="Festa do Bairro"
+                            place="Lisboa"
+                            date="24 jun"
+                            color={PT.green}
+                            rotate={-6}
+                            w={210}
+                        />
+                    </div>
+                    {/* Coords no canto */}
+                    <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
+                        <Coords lat="39.69" lon="8.13" rotate={2} color={PT.ink} />
+                    </div>
                 </div>
 
                 {/* COLUNA DIR — quote */}
                 <div className="relative order-3">
-                    <PosterCard bg={PT.ink} color="#fff" rotate={-2} shadow={PT.gold} style={{ padding: "20px 22px" }}>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5">
+                    <PosterCard bg="#fff" color={PT.ink} rotate={-2} shadow={PT.ink} style={{ padding: "20px 22px", border: `3px solid ${PT.ink}` }}>
+                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.ink }}>
                             Bairro a bairro.
                         </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.gold }}>
+                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.red }}>
                             Mesa a mesa.
                         </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight" style={{ color: PT.red }}>
+                        <p className="font-black text-[20px] leading-tight tracking-tight" style={{ color: PT.green }}>
                             Conversa a conversa.
                         </p>
-                        <p className="mt-3 text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.14em", opacity: 0.65 }}>
+                        <p className="mt-3 text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(10,10,10,0.55)" }}>
                             — manifesto · linha 03
                         </p>
                     </PosterCard>
@@ -732,37 +819,41 @@ function FeitoParaPessoas() {
             <div
                 className="max-w-7xl mx-auto p-6 sm:p-8 lg:p-12 relative overflow-hidden"
                 style={{
-                    background: PT.ink,
-                    color: "#fff",
-                    border: `4px solid ${PT.gold}`,
+                    background: "#fff",
+                    color: PT.ink,
+                    border: `4px solid ${PT.ink}`,
                     boxShadow: `6px 6px 0 ${PT.red}`,
                     borderRadius: 24,
                 }}
             >
-                <div className="absolute -top-10 -right-10 z-0 pointer-events-none opacity-30">
-                    <GiantAsterisk color={PT.gold} size={220} rotate={12} />
+                <div className="absolute -top-10 -right-10 z-0 pointer-events-none opacity-15">
+                    <GiantAsterisk color={PT.red} size={220} rotate={12} />
                 </div>
 
                 <div className="relative z-10">
-                    <Kicker color={PT.gold} className="mb-2">// PRINCÍPIO · CORE</Kicker>
+                    <Kicker color={PT.red} className="mb-2">// PRINCÍPIO · CORE</Kicker>
                     <h2
                         className="font-black tracking-[-0.03em] mb-7 sm:mb-8"
-                        style={{ fontSize: "clamp(28px, 5.5vw, 60px)", lineHeight: 1.05 }}
+                        style={{ fontSize: "clamp(28px, 5.5vw, 60px)", lineHeight: 1.05, color: PT.ink }}
                     >
                         <span style={{
                             display: "inline-block",
                             transform: "rotate(-1deg)",
                             textShadow: `3px 3px 0 ${PT.gold}`,
-                        }}>FEITO PARA PESSOAS.</span><br/>
+                        }}>FEITO PARA{" "}
+                            <Highlight color="#FFEB3B" rotate={-1}>
+                                <span style={{ color: PT.ink }}>PESSOAS.</span>
+                            </Highlight>
+                        </span><br/>
                         <span style={{
                             display: "inline-block",
-                            color: PT.gold,
+                            color: PT.red,
                             transform: "rotate(1deg)",
-                            textShadow: `3px 3px 0 ${PT.red}`,
+                            textShadow: `3px 3px 0 ${PT.gold}`,
                             marginTop: 6,
                         }}>NÃO PARA ALGORITMOS.</span>
                     </h2>
-                    <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-2xl mb-8 sm:mb-9" style={{ color: "rgba(255,255,255,0.78)" }}>
+                    <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-2xl mb-8 sm:mb-9" style={{ color: "rgba(10,10,10,0.72)" }}>
                         Acreditamos numa rede social diferente. Sem truques, sem manipulação, sem pressa.
                     </p>
 
@@ -779,20 +870,46 @@ function FeitoParaPessoas() {
                                         width: 32, height: 32, borderRadius: "50%",
                                         background: f.color, color: PT.ink,
                                         border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.cream}`,
+                                        boxShadow: `2px 2px 0 ${PT.ink}`,
                                     }}
                                 >
                                     ✓
                                 </span>
                                 <div>
-                                    <p className="font-black text-[14.5px] sm:text-[15px] leading-tight" style={{ color: "#fff" }}>{f.label}</p>
-                                    <p className="text-[12px] sm:text-[12.5px] font-mono font-bold uppercase mt-0.5" style={{ color: f.color, letterSpacing: "0.08em" }}>
+                                    <p className="font-black text-[14.5px] sm:text-[15px] leading-tight" style={{ color: PT.ink }}>{f.label}</p>
+                                    <p className="text-[12px] sm:text-[12.5px] font-mono font-bold uppercase mt-0.5" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.08em" }}>
                                         {f.sub}
                                     </p>
                                 </div>
                             </div>
                         ))}
                     </div>
+
+                    {/* Assinatura manuscrita inferior */}
+                    <div className="mt-9 sm:mt-10 flex items-end justify-between gap-4 flex-wrap">
+                        <Signature size={32} rotate={-3} color={PT.red}>
+                            — a comunidade Lusorae
+                        </Signature>
+                        <span className="text-[10px] font-mono font-black uppercase" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}>
+                            EST. 2026 · LISBOA
+                        </span>
+                    </div>
+                </div>
+
+                {/* Recibo flutuante — só desktop */}
+                <div className="absolute z-20 pointer-events-none hidden xl:block" style={{ top: 32, right: -10 }}>
+                    <Receipt
+                        rotate={6}
+                        w={170}
+                        lines={[
+                            { label: "Truques", value: "0,00€" },
+                            { label: "Anúncios", value: "0,00€" },
+                            { label: "Algoritmo", value: "0,00€" },
+                            { label: "Ruído", value: "0,00€" },
+                            { label: "Comunidade", value: "∞" },
+                        ]}
+                        total="GRÁTIS"
+                    />
                 </div>
             </div>
         </section>
@@ -831,6 +948,10 @@ function Faq({ openFaq, setOpenFaq }) {
                             perguntas?
                         </span>
                     </h2>
+                    {/* Linha de azulejos sob o título */}
+                    <div className="mt-6 sm:mt-8 flex justify-center overflow-hidden">
+                        <AzulejoBorder count={5} size={28} />
+                    </div>
                 </div>
 
                 <div className="space-y-3">
@@ -945,6 +1066,12 @@ function FinalCta() {
                         <p className="mt-3 sm:mt-4 text-[14.5px] sm:text-[15px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
                             Junta-te à rede social portuguesa feita para pessoas. <strong className="font-black">30 segundos. Grátis. Para sempre.</strong>
                         </p>
+                        {/* Assinatura */}
+                        <div className="mt-4 hidden sm:block">
+                            <Signature size={30} rotate={-4} color="#fff">
+                                ✱ vemo-nos lá dentro
+                            </Signature>
+                        </div>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 w-full lg:w-auto">
                         <Link
@@ -952,8 +1079,8 @@ function FinalCta() {
                             data-testid="final-cta-register"
                             className="inline-flex items-center justify-center gap-2 font-black text-[14px] sm:text-[15px] uppercase"
                             style={{
-                                background: PT.ink,
-                                color: PT.gold,
+                                background: "#fff",
+                                color: PT.red,
                                 padding: "16px 24px",
                                 border: `3px solid ${PT.ink}`,
                                 boxShadow: `5px 5px 0 ${PT.gold}`,
