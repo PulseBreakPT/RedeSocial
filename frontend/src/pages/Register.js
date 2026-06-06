@@ -578,9 +578,6 @@ export default function Register() {
                                         testid="consent-marketing"
                                     >
                                         <span style={{ color: "rgba(10,10,10,0.70)" }}>Opcional</span> — quero novidades por e-mail.
-                                        <span className="block text-[11.5px] mt-0.5 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
-                                            Revogável a qualquer momento nas Definições.
-                                        </span>
                                     </ConsentCheckbox>
                                 </div>
                             )}
@@ -631,31 +628,6 @@ export default function Register() {
                                 </div>
                             </div>
 
-                            {/* Disclaimer legal — criação de conta (só step 3) */}
-                            {step === 3 && (
-                                <p
-                                    data-testid="register-legal-disclaimer"
-                                    className="mt-4 text-[11.5px] leading-relaxed font-medium text-center"
-                                    style={{ color: "rgba(10,10,10,0.55)" }}
-                                >
-                                    Ao criar conta, aceitas os{" "}
-                                    <Link
-                                        to="/legal/terms"
-                                        className="font-black underline underline-offset-2"
-                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
-                                    >
-                                        Termos
-                                    </Link>{" "}
-                                    e a{" "}
-                                    <Link
-                                        to="/legal/privacy"
-                                        className="font-black underline underline-offset-2"
-                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
-                                    >
-                                        Política de Privacidade
-                                    </Link>.
-                                </p>
-                            )}
                         </form>
 
                         <div className="mt-8 flex items-center justify-between flex-wrap gap-3">

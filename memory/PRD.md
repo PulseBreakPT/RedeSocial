@@ -1,122 +1,32 @@
-# Lusorae — PRD (rede social portuguesa)
+# Lusorae — Product Requirements
 
-## Original problem statement
-Rede social portuguesa focada em conversas reais, presença local (cidades), comunidades e identidade lusófona. Sem doomscroll, sem manipulação de atenção.
+## Original Problem Statement
+- "Mostra a preview do meu site" — restaurar e mostrar preview da app
+- "Remove textos relacionados a leis ou algoritmos, existem muitos na landingpage, login e registo sobre o usuário não ser tratado como algoritmo etc..." — Limpar a UI de jargão legal/algorítmico
 
-## Personas
-- **Cidadão local** que quer ligar-se à comunidade da sua cidade
-- **Diáspora** PT que quer manter ligação cultural e local
-- **Criador independente** que rejeita métricas vazias
+## User Language
+- Portuguese (PT-PT). Responder sempre em português.
 
-## Arquitetura
-- React (CRA, Tailwind, shadcn/ui) + lazy routes
-- FastAPI + MongoDB (motor)
-- WebSocket para atualizações em tempo real
-- Lazy hero images, code-splitting por rota
+## Architecture
+- Frontend: React + Tailwind (Yarn, craco)
+- Backend: FastAPI (uvicorn via supervisor)
+- DB: MongoDB
+- Pages relevantes: `Landing.js`, `Login.js`, `Register.js`
+- Componente global: `components/CookieBanner.js`
 
-## Rotas públicas
-- `/` — **Landing** (nova; antes /landing)
-- `/login`, `/register`, `/forgot`
-- `/manifesto`, `/legal/*`
+## Implemented (Feb 2026)
+- ✅ Ambiente restaurado (.env, deps, supervisor)
+- ✅ `Landing.js` — removidos textos sobre RGPD/algoritmos/leis
+- ✅ `Login.js` — removidos textos sobre RGPD/algoritmos/leis
+- ✅ `Register.js` — removido disclaimer redundante no rodapé do form e jargão "Revogável a qualquer momento nas Definições" no consent marketing
+- ✅ `CookieBanner.js` — texto humanizado, mantendo conformidade RGPD ("Os teus dados, à tua maneira" + redação simplificada)
 
-## Rotas protegidas (ProtectedRoute → Layout)
-- `/feed` (antes era `/`), `/explore`, `/trending`, `/notifications`, `/messages`, `/bookmarks`, `/drafts`, `/scheduled`, `/communities`, `/mesas`, `/topologia`, `/c/:slug`, `/u/:username`, `/post/:postId`, `/tag/:tag`, `/settings`, `/premium`, `/visitors`, `/series/:seriesId`, `/stories/archive`
-- `/admin` (AdminLayout)
+## Backlog (Possible Next)
+- P1: Auditar páginas internas (feed, perfil, definições) para o mesmo tom humano
+- P1: Verificar `quem está à mesa` (linha sobreposta na Landing — pode ser intencional de design)
+- P2: Confirmar copy do botão `Crjar conta` no Login (parece typo "Criar")
+- P2: Microcopy unificada (kicker, stickers) entre as 3 páginas auth
 
-## Landing — secções (top → bottom)
-1. **TopNav** (desktop nav completo / mobile só logo + Entrar)
-2. **Hero** — `Vive. Partilha. Lusorae.` + CTAs + avatares + live counter (online ou membros total) + foto colada com stamp "100% HUMANO" + quote "pessoas, não perfis"
-3. **Trust badges** — Feito em Portugal · Privacidade primeiro · Conversas reais
-4. **StatsBand** — `membros · total / conversas · 1h / posts · hoje / cidades · ativas` (endpoint `/api/stats/landing`)
-5. **WhatYouFind** — 5 categorias (Conversas, Pessoas, Eventos, Cidades, Comunidades)
-6. **ExploreCities** — mosaico 3 fotos (Porto/Lisboa/Algarve)
-7. **HowItWorks** — 4 passos em cartões coloridos
-8. **PortugalMap** — SVG simplificado + cidades + quote `Bairro a bairro. Mesa a mesa. Conversa a conversa.`
-9. **FeitoParaPessoas** — secção preta com 6 princípios
-10. **FAQ** — accordion
-11. **FinalCta** — CTA vermelho com criar conta grátis
-12. **SiteFooter**
-
-## Endpoints novos
-- `GET /api/stats/landing` — público, devolve `online_now`, `total_users`, `active_conversations`, `posts_today`, `cities_active`, `communities_total`, `avatars[]`
-
-## Changelog
-- **2026-02-XX** — Página `/` agora é Landing pública; Feed move-se para `/feed`. Brand links em LeftSidebar/MobileTopBar/MobileBottomNav apontam para `/feed`. Login/Register redirecionam para `/feed`. Landing redireciona logged-in para `/feed`. UI auth: Lusorae só no header form + SiteFooter; foto única (TapedPhoto); painel marca escondido em mobile; vocabulário social (POST · DESTACADO, COMUNIDADE · PORTUGAL); textShadow/border duplos em títulos. Landing: header desktop com indicador LIVE + EST. 2026, profundidade visual (border 3-4px + dual boxShadow + WebkitTextStroke).
-- **2026-02-XX** — Removidas duplicações na Landing: stamp `FEITO EM PT` → `100% HUMANO`; stats "pessoas · online" → "membros · total"; quote map "A tua cidade. A tua comunidade. A tua voz." → "Bairro a bairro. Mesa a mesa. Conversa a conversa."; principles "Conversas locais e reais" → "Foco no local"; "Identidade portuguesa" → "Apagar conta num clique".
-
-## Prioritized backlog
-### P0 — Em curso
-- (concluído) Landing + new home
-### P1 — Próximas rotas
-- `/mesa` (feed exclusivo — backend já existe)
-- `/charms` (galeria pública)
-- `/search` (pesquisa dedicada)
-### P2 — Profundidade
-- Polls v2 (sentiment + scale + ranking)
-- Realtime DM delivery states
-- RGPD consent tracking no registo
-- Refactor `server.py` (~16.7k linhas) em módulos
-### P3 — Backlog longo
-- Lusorae+ (Stripe)
-- Sub-comunidades (Mesas dentro de comunidades)
-- Cosmetics drops sazonais
-- Public Identity Card SVG/PNG
-
-## Endpoints / Coleções
-Ver `/app/docs/FEATURES.md` para inventário exaustivo (130+ endpoints).
-
-## Changelog
-- **2026-02-30**: Doodles/rabiscos decorativos agora **visíveis em mobile** com escala responsiva (`scale-[0.5-0.75]` + `opacity-60-70`) em todas as secções:
-  - `Login.js`: 5 doodles ativados (Star, Scribble azul, 2 Sparkles, Zigzag, Underline)
-  - `Register.js`: 5 doodles ativados (Scribble, Star, Sparkles, GeoCircle, Zigzag)
-  - `Landing.js`: doodles de fundo adicionados em StatsBand, WhatYouFind, ExploreCities, HowItWorks, PortugalMap, FeitoParaPessoas e Faq; existentes ativados (Sparkles, Scribble, Spiral, Star, Underline, Cross, Zigzag)
-  - `SiteFooter.js`: bloco decorativo "acontece aqui." agora também em mobile
-
-
-- **2026-02-30 (parte 2)**: Estilo decorativo "fanzine PT" aplicado às páginas legais via `LegalShell.js`:
-  - GiantAsterisk faded como mancha de fundo
-  - Cluster topo: DoodleStar (gold), DoodleSparkles (red), DoodleStar (red) junto ao título
-  - Cluster meio (apenas desktop ≥md): DoodleScribble (azul) + DoodleSpiral (gold)
-  - Cluster fundo: DoodleZigzag (red), DoodleUnderline (gold), DoodleSparkles (green) na caixa "Vê Também"
-  - Propaga automaticamente para `/legal`, `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/legal/community`
-
-- **2026-02-30 (parte 3)**: `Manifesto.js` completamente redesenhado para estilo fanzine PT (era violet/indigo minimal). Mantém conteúdo (6 promessas anti-dark-pattern, stats animadas, regra interna, 3 razões, CTAs). Novo:
-  - Tape preto-dourado topo/fundo + faixa jornal INK
-  - Hero com highlight vermelho ("viciado.") + highlight dourado ("bem.")
-  - Cards de stats em 4 cores PT (red/azul/gold/green) com rotação
-  - 6 promessas em cards coloridos PT com número grande estilo revista
-  - Golden Rule com highlights verde/vermelho e signature manuscrita
-  - 3 cards "Por que diferentes" com sombras coloridas PT
-  - CTA conversão em vermelho PT com GiantAsterisk de fundo
-  - Doodles dispersos (Star, Sparkles, Scribble, Spiral, Zigzag, Cross, Heart, Exclamation) com responsividade mobile
-  - SiteFooter integrado no fim
-
-- **2026-02-30 (parte 4)**: Estilo fanzine PT alargado a ~18 páginas pós-login:
-  - Reescritos `components/PageHeader.js` (fanzine: kicker `//`, headline em PT.ink, back-btn fanzine) e `components/PageShell.js` (PageShell/PageHero/PageSection/Grid/Chip/FilterBar/Empty todos em PT colors)
-  - Novo `components/PtPageShell.js` reutilizável: cream bg + GiantAsterisk + 5 doodles dispersos
-  - Feed.js: novo header com tape "LUSORAE // FEED // AO VIVO", greeting "Bom dia, [Nome]" com highlight gold, kicker, sticker verde "✓ NOTÍCIAS REAIS", tabs com underline vermelho, empty state PT
-  - Profile.js: banner com cor sólida PT por região, doodles no banner, tape pattern, locked-state com red shadow
-  - Wrap em PtPageShell aplicado a: Explore, Notifications, Mesas, Bookmarks, Topologia, TagPage, Settings, Trending, Premium, SeriesPage, StoryArchive, Community, PostDetail, Messages
-  - Communities/Drafts/Scheduled/Visitors herdam automaticamente do PageShell redesenhado
-  - Smoke test: 13 rotas validadas em desktop 1280px com login real (user `reskin@test.pt`)
-
-- **2026-02-30 (parte 5)** — Continuação fanzine PT em Premium, Notifications, Explore, Feed, Centro Legal (CSS prose-legal + legal-viz-*); remoção de eyebrows não usados (// AO VIVO, // SEM · NOVIDADES…).
-
-- **2026-02-31** — **P0 Settings + Profile · Fanzine PT completo**:
-  - **CSS foundation** (`/app/frontend/src/index.css`): redefinido `.card-lux`, `.btn-obsidian`, `.btn-silver`, `.vm-input`, `.type-overline`, `.hairline-t/b` para vocabulário Fanzine (bordas 2.5px ink, sombras offset 3px ink/red, paleta PT, cantos 10-12px, eyebrow mono `//` automático em `.type-overline`). Removido bloco CSS duplicado corrompido (linhas 3002-3013).
-  - **`/app/frontend/src/pages/settings/_shared.js`**: reescrito SectionHeader (idx em sticker rotated com offset), ToggleRow, SwitchPill (chunky), LinkRow, StatusPill (5 tons PT: success/warning/danger/neutral/accent).
-  - **HubTab.js**: hero com fundo cream + tape gold + border 3px + offset 5px; StatCard/ActionTile/MicroStat agora com tints PT (azul/red/gold/green) em ícones rotated -4deg.
-  - **ContaTab.js**: cover azul sólida + tape; avatar com border 3px + offset 4px; textarea cream + ink + offset; Conta Privada com sticker verde "Ativo".
-  - **AppearanceTab.js**: OptionCard fanzine (gold quando ativo + offset red); seletor de idiomas com active black/gold + offset red.
-  - **NotifTab.js**: tints PT em todos NOTIF_TYPES; Boa Noite (azul), Cafezinho (gold), Som (verde), Vibração (red); manifesto link cream + offset red.
-  - **PrivacyTab.js**: 4 toggles com tints PT (verde/gold/azul/red).
-  - **SecurityTab.js**: TwoFA setup modal e disable modal totalmente fanzine; sessões com tint verde (atual) ou cream (outras); recovery email (gold) + login alerts (azul) com tints PT; botões regenerate/disable em pill mono uppercase.
-  - **DataTab.js**: ExportTile JSON (azul) / CSV (verde); DataRow cache (gold) / pesquisas (azul) / imagens (red); Danger Zone com border red 3px + offset ink + número sticker "03" rotated; delete confirm form fanzine.
-  - **LegalTab.js**: DPO card (ink + gold) e CNPD card (red + white) com chunky borders.
-  - **Profile.js**: BlockedWallView reescrita em fanzine (banner listrado dashed cream/ink, avatar placeholder com border 3px + offset, wall card border red 3px + offset ink, botões pill fanzine).
-  - **profile/IdentityCard.js**: avatar com border 3px + offset 4px; botões fav (gold)/selo (red)/share/quick-msg em pill chunky com offset; popover quick-msg fanzine; textarea cream + ink.
-  - **profile/ProfileTabBar.js**: rewrite completo — pills com gold-on-ink-active e offset red; bordas dashed top/bottom.
-  - **profile/MobileActionBar.js**: barra mobile com border-top 3px ink; botões selo/share/message em pills chunky com offset.
-  - **profile/ProfileActionRow.js**: blocked view com border 3px red + offset ink; normal view (Seguir black-gold-red / A seguir verde / Levantar muro cream-red).
-  - **profile/ProfileMoreMenu.js**: kebab trigger em pill chunky; dropdown com border 2.5px + offset 5px; MenuRow fanzine (active black/gold); ReportModal totalmente fanzine com 2-col grid de reasons.
-  - **Testing**: criado utilizador de teste `tester01@lusorae.pt` / `Test1234!` (em `/app/memory/test_credentials.md`); validado visualmente via screenshot em /settings e /u/tester01 — ambos renderizam Fanzine PT consistente.
+## Notes
+- Textos legais completos vivem em páginas dedicadas: `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/manifesto`, `/diretrizes` — NÃO devem aparecer em landing/auth.
+- Compliance mínima mantida: checkbox de Termos + idade (RGPD obrigatório para registo).
