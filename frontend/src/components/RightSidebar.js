@@ -320,6 +320,18 @@ function CalendarItem({ item, highlight = false }) {
         days != null ? `em ${days} dias` :
         "";
 
+    // Format ISO date → "10 jun" (PT, lowercase month, no dot)
+    let pretty = "";
+    try {
+        if (item.iso_date) {
+            const d = new Date(item.iso_date + "T00:00:00");
+            pretty = d
+                .toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })
+                .replace(/\./g, "")
+                .toLowerCase();
+        }
+    } catch { /* noop */ }
+
     return (
         <li
             className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-1.5 transition hover:bg-black/[0.025]"
@@ -344,6 +356,24 @@ function CalendarItem({ item, highlight = false }) {
                     {when}
                 </div>
             </div>
+            {pretty && (
+                <div
+                    className="shrink-0 text-right font-mono font-black text-[10.5px] tabular-nums leading-tight"
+                    style={{ color: PT.ink, letterSpacing: "0.06em" }}
+                >
+                    <span
+                        className="inline-block px-1.5 py-1 rounded"
+                        style={{
+                            background: PT.bone,
+                            border: `1.5px solid ${PT.ink}`,
+                            lineHeight: 1.05,
+                            minWidth: 44,
+                        }}
+                    >
+                        {pretty}
+                    </span>
+                </div>
+            )}
         </li>
     );
 }
