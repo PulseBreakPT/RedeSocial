@@ -33,8 +33,18 @@ export function getWsState() { return wsState; }
 
 export function setupWebSocket(token) {
     if (globalWs && (globalWs.readyState === 0 || globalWs.readyState === 1)) return;
-    const backend = process.env.REACT_APP_BACKEND_URL || "";
-    const wsUrl = backend.replace(/^http/, "ws") + "/ws" + (token ? `?token=${encodeURIComponent(token)}` : "");
+    // Always derive WS URL from the current browser origin — same rationale as
+    // in lib/api.js: every Emergent ingress proxies /ws on the same host as the
+    // SPA, so hardcoding REACT_APP_BACKEND_URL breaks when the user is on a
+    // different preview domain.
+    let wsUrl;
+    if (typeof window !== "undefined" && window.location) {
+        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${proto}//${window.location.host}/ws` + (token ? `?token=${encodeURIComponent(token)}` : "");
+    } else {
+        const backend = process.env.REACT_APP_BACKEND_URL || "";
+        wsUrl = backend.replace(/^http/, "ws") + "/ws" + (token ? `?token=${encodeURIComponent(token)}` : "");
+    }
     wsState = "reconnecting";
     notifyListeners();
     try {

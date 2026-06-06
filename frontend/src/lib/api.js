@@ -2,25 +2,16 @@ import axios from "axios";
 import { toast } from "sonner";
 import { readCookie } from "./safe";
 
-// Use a relative base URL when the backend is on the same origin as the SPA.
-// This eliminates an entire class of CORS issues (preflight + credentials mode
-// conflicts with wildcard origins) and means the request travels through the
-// same ingress that already serves the page — no extra network leg.
-const RAW_BACKEND = process.env.REACT_APP_BACKEND_URL || "";
-function _sameOriginAsPage(url) {
-    try {
-        if (!url) return true;
-        const u = new URL(url);
-        return (
-            typeof window !== "undefined" &&
-            window.location &&
-            u.origin === window.location.origin
-        );
-    } catch {
-        return false;
-    }
-}
-const BACKEND_URL = _sameOriginAsPage(RAW_BACKEND) ? "" : RAW_BACKEND;
+// Always use a relative base URL in the browser. Every Emergent preview / prod
+// deploy routes `/api/*` to the backend through the same ingress that serves
+// the SPA — so a relative path always reaches the right backend, regardless of
+// which preview domain the user is on. This also eliminates an entire class of
+// CORS issues (preflight + withCredentials clashing with wildcard origins).
+// Server-side rendering / non-browser contexts fall back to the absolute URL.
+const BACKEND_URL =
+    typeof window !== "undefined" && window.location
+        ? ""
+        : (process.env.REACT_APP_BACKEND_URL || "");
 export const API = `${BACKEND_URL}/api`;
 
 const TOKEN_KEY = "vm_token";

@@ -19,15 +19,9 @@ import axios from "axios";
  */
 
 const _RAW_BASE = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
-// Same-origin fallback eliminates an entire class of CORS issues (see lib/api.js).
-const API_BASE = (() => {
-    try {
-        if (!_RAW_BASE) return "";
-        const u = new URL(_RAW_BASE);
-        if (typeof window !== "undefined" && u.origin === window.location.origin) return "";
-        return _RAW_BASE;
-    } catch { return _RAW_BASE; }
-})();
+// Always use a relative URL in the browser — same reason as in lib/api.js
+// (every Emergent preview/prod ingress serves /api on the same host as the SPA).
+const API_BASE = typeof window !== "undefined" && window.location ? "" : _RAW_BASE;
 const POLL_INTERVAL_MS = 60_000;
 
 const DEFAULTS = {
