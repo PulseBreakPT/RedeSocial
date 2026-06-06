@@ -277,9 +277,20 @@ app.state.limiter = limiter
 async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
     # Don't leak rate-limit internals; return a clean 429.
     logger.info(f"⏱️  Rate limit hit on {request.method} {request.url.path} from {_real_ip(request)}")
+    # Explicit CORS headers so the browser doesn't swallow the response as a
+    # generic "Network error" — the frontend must be able to *read* the 429
+    # body to show a useful PT-language message to the user.
+    origin = request.headers.get("origin") or "*"
+    headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin",
+        "Retry-After": "60",
+    }
     return JSONResponse(
         status_code=429,
-        content={"detail": "Demasiados pedidos. Tenta novamente daqui a pouco."},
+        content={"detail": "Demasiadas tentativas. Aguarda um minuto e tenta novamente."},
+        headers=headers,
     )
 
 
@@ -297,11 +308,21 @@ async def _unhandled_exception_handler(request: Request, exc: Exception):
     except Exception:
         path, method = "?", "?"
     logger.exception(f"💥 Unhandled error on {method} {path}: {type(exc).__name__}: {exc}")
+    # Explicit CORS headers — same reason as in the rate-limit handler above:
+    # without these, the browser may surface a generic "Network error" instead
+    # of letting the SPA read the 500 body and show a real message.
+    origin = request.headers.get("origin") or "*"
+    cors = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin",
+    }
     if IS_PRODUCTION:
-        return JSONResponse(status_code=500, content={"detail": "Erro interno do servidor"})
+        return JSONResponse(status_code=500, content={"detail": "Erro interno do servidor"}, headers=cors)
     return JSONResponse(
         status_code=500,
         content={"detail": str(exc), "type": type(exc).__name__},
+        headers=cors,
     )
 
 
@@ -2181,7 +2202,7 @@ async def check_email(request: Request, response: Response, e: str = ""):
 
 
 @api.post("/auth/register")
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 async def register(payload: RegisterIn, request: Request, response: Response):
     # Grupo A: signup_open feature flag (admins não passam aqui por isto ser registo).
     if not await is_feature_enabled("signup_open"):
