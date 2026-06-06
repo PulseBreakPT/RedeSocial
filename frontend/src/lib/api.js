@@ -89,7 +89,21 @@ api.interceptors.response.use(
 export function formatApiError(err) {
     if (err?._isAuth) return ""; // auth handled globally — never raw
     const detail = err?.response?.data?.detail;
-    if (detail == null) return err?.message || "Algo deu errado";
+    if (detail == null) {
+        // No response from server — translate axios' "Network Error" / generic
+        // browser failures into something a Portuguese user can actually act on.
+        const code = err?.code;
+        const msg = err?.message || "";
+        const isNetwork =
+            code === "ERR_NETWORK" ||
+            code === "ECONNABORTED" ||
+            code === "ERR_CANCELED" ||
+            /network error|failed to fetch|load failed/i.test(msg);
+        if (isNetwork) {
+            return "Sem ligação ao servidor. Verifica a tua internet ou desativa bloqueadores (AdBlock/Brave) e tenta novamente.";
+        }
+        return msg || "Algo deu errado";
+    }
     if (typeof detail === "string") {
         // Defensive: even if interceptor missed it (e.g. third-party SDK),
         // never let the raw backend auth string reach a user.
