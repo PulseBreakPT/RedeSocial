@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import axios from "axios";
 import {
     ArrowRight, Users, MessageCircle, Calendar, Building2,
     MapPin, Compass, Sparkles, Lock, ChevronDown, Heart,
@@ -17,7 +16,7 @@ import {
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
+import { api } from "../lib/api";
 const HERO_MAIN = "/hero/hero.webp";
 const HERO_CITY_1 = "/hero/city-porto.webp";
 const HERO_CITY_2 = "/hero/city-lisboa.webp";
@@ -37,7 +36,7 @@ export default function Landing() {
         let mounted = true;
         (async () => {
             try {
-                const { data } = await axios.get(`${BACKEND}/api/stats/landing`);
+                const { data } = await api.get(`/stats/landing`);
                 if (mounted) setStats(data);
             } catch {
                 /* fail silently — secção esconde-se sozinha */

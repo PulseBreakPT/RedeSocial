@@ -18,7 +18,16 @@ import axios from "axios";
  *       - Footer / login pages read social links + legal info
  */
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+const _RAW_BASE = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+// Same-origin fallback eliminates an entire class of CORS issues (see lib/api.js).
+const API_BASE = (() => {
+    try {
+        if (!_RAW_BASE) return "";
+        const u = new URL(_RAW_BASE);
+        if (typeof window !== "undefined" && u.origin === window.location.origin) return "";
+        return _RAW_BASE;
+    } catch { return _RAW_BASE; }
+})();
 const POLL_INTERVAL_MS = 60_000;
 
 const DEFAULTS = {

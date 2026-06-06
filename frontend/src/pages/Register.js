@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ArrowRight, Check, Loader2, X, Eye, EyeOff, AlertCircle, CheckCircle2, MapPin } from "lucide-react";
-import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
 import { CitySelect } from "../components/CitySelect";
 import SiteFooter from "../components/SiteFooter";
 import {
@@ -14,7 +14,6 @@ import {
 } from "./auth/AuthDecor";
 
 const REGISTER_HERO = "/hero/register.webp";
-const BACKEND = process.env.REACT_APP_BACKEND_URL || "";
 
 // =====================================================================
 // Password strength (paleta PT)
@@ -49,7 +48,7 @@ function useAvailabilityCheck({ value, endpoint, paramName, localValidate }) {
         abortRef.current = ctrl;
         const t = setTimeout(async () => {
             try {
-                const { data } = await axios.get(`${BACKEND}${endpoint}`, { params: { [paramName]: v }, signal: ctrl.signal });
+                const { data } = await api.get(endpoint, { params: { [paramName]: v }, signal: ctrl.signal });
                 if (data.available) setState({ status: "available", message: data.message || "Disponível" });
                 else {
                     let status = "invalid";
