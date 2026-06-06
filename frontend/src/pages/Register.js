@@ -338,7 +338,7 @@ export default function Register() {
                             <p className="text-[15px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
                                 {step === 1 && "Nome, email e palavra-passe. Mais nada para já."}
                                 {step === 2 && "Escolhe a tua cidade — ajuda-nos a mostrar-te o que importa perto. Podes saltar."}
-                                {step === 3 && "Consentimento obrigatório por lei. Não há letra pequena."}
+                                {step === 3 && "Quase lá. Aceita os termos para começar."}
                             </p>
                         </div>
 
@@ -542,9 +542,9 @@ export default function Register() {
                                     <PosterCard bg={PT.azul} color="#fff" rotate={-1.5} shadow={PT.gold} style={{ padding: "16px 18px" }}>
                                         <Kicker color={PT.gold} className="mb-2">VOZ · COMUNIDADE</Kicker>
                                         <blockquote className="font-black text-[19px] leading-[1.18] tracking-tight max-w-[34ch]">
-                                            “Finalmente uma rede que não me{" "}
-                                            <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.16em" }}>trata</span>{" "}
-                                            como produto.”
+                                            “Aqui sinto-me em{" "}
+                                            <span style={{ background: PT.gold, color: PT.ink, padding: "0 0.16em" }}>casa</span>
+                                            . Pessoas reais, à mesa.”
                                         </blockquote>
                                         <p className="mt-2 text-[11px] font-mono uppercase font-bold" style={{ letterSpacing: "0.14em", opacity: 0.80 }}>
                                             — Ana, Lisboa
@@ -557,9 +557,6 @@ export default function Register() {
                                         testid="consent-age" required
                                     >
                                         Confirmo que tenho <strong>16 anos ou mais</strong>.
-                                        <span className="block text-[11.5px] mt-0.5 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
-                                            Exigido pela Lei n.º 58/2019, art. 16.º.
-                                        </span>
                                     </ConsentCheckbox>
                                     <ConsentCheckbox
                                         id="consent-terms" checked={consent.terms}
@@ -641,31 +638,22 @@ export default function Register() {
                                     className="mt-4 text-[11.5px] leading-relaxed font-medium text-center"
                                     style={{ color: "rgba(10,10,10,0.55)" }}
                                 >
-                                    Ao criar conta, comprometes-te com os{" "}
+                                    Ao criar conta, aceitas os{" "}
                                     <Link
                                         to="/legal/terms"
                                         className="font-black underline underline-offset-2"
                                         style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
                                     >
                                         Termos
-                                    </Link>
-                                    , a{" "}
+                                    </Link>{" "}
+                                    e a{" "}
                                     <Link
                                         to="/legal/privacy"
                                         className="font-black underline underline-offset-2"
                                         style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
                                     >
                                         Política de Privacidade
-                                    </Link>{" "}
-                                    e as{" "}
-                                    <Link
-                                        to="/legal/community"
-                                        className="font-black underline underline-offset-2"
-                                        style={{ color: PT.ink, textDecorationColor: PT.gold, textDecorationThickness: 2 }}
-                                    >
-                                        Diretrizes da Comunidade
-                                    </Link>
-                                    . Os teus dados são protegidos pelo RGPD e podes apagar a conta a qualquer momento.
+                                    </Link>.
                                 </p>
                             )}
                         </form>
@@ -682,7 +670,7 @@ export default function Register() {
                                     Entrar
                                 </Link>
                             </p>
-                            <Sticker bg={PT.red} color="#fff" rotate={5}>RGPD ✓</Sticker>
+                            <Sticker bg={PT.red} color="#fff" rotate={5}>GRÁTIS ✓</Sticker>
                         </div>
                     </div>
                 </div>

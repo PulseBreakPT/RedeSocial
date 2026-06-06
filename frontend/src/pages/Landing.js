@@ -60,7 +60,6 @@ export default function Landing() {
             <ExploreCities />
             <HowItWorks />
             <PortugalMap />
-            <FeitoParaPessoas />
             <Faq openFaq={openFaq} setOpenFaq={setOpenFaq} />
             <FinalCta />
 
@@ -368,23 +367,13 @@ function Hero({ stats }) {
                 </div>
             </div>
 
-            {/* Trust badges */}
-            <div className="mt-10 sm:mt-12 lg:mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-9 max-w-3xl mx-auto relative" data-testid="trust-badges">
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none block opacity-70 scale-75 sm:scale-100 sm:opacity-100">
-                    <DoodleStar color={PT.gold} size={22} rotate={8} />
-                </div>
-                <TrustBadge icon={<Heart size={16} />} color={PT.red}>Feito em Portugal</TrustBadge>
-                <TrustBadge icon={<Lock size={16} />} color={PT.azul}>Privacidade primeiro</TrustBadge>
-                <TrustBadge icon={<MessageCircle size={16} />} color={PT.green}>Conversas reais</TrustBadge>
-                <div className="absolute -bottom-3 left-0 right-0 flex justify-center pointer-events-none opacity-70 sm:opacity-100">
-                    <DoodleUnderline color={PT.gold} w={280} h={10} className="scale-[0.6] sm:scale-100" />
-                </div>
-            </div>
+            {/* Trust badges removidos — sem mensagens forçadas. O produto fala por si. */}
         </section>
     );
 }
 
 function TrustBadge({ icon, color, children }) {
+    // kept (unused) — legacy component
     return (
         <div className="flex items-center gap-2.5">
             <span
@@ -475,11 +464,11 @@ function StatsBand({ stats }) {
 // =============================================================================
 function WhatYouFind() {
     const cats = [
-        { icon: <MessageCircle size={28} />, label: "Conversas", sub: "sem filtros.", color: PT.red, testid: "cat-conversas" },
-        { icon: <Users size={28} />, label: "Pessoas", sub: "que importam.", color: PT.gold, ink: true, testid: "cat-pessoas" },
-        { icon: <Compass size={28} />, label: "Eventos", sub: "perto de ti.", color: PT.azul, testid: "cat-eventos" },
-        { icon: <MapPin size={28} />, label: "Cidades", sub: "que conectam.", color: PT.green, testid: "cat-cidades" },
-        { icon: <Sparkles size={28} />, label: "Comunidades", sub: "para todos.", color: PT.red, testid: "cat-comunidades" },
+        { icon: <MessageCircle size={28} />, label: "Conversas", sub: "do dia-a-dia.", color: PT.red, testid: "cat-conversas" },
+        { icon: <Users size={28} />, label: "Pessoas", sub: "novas.", color: PT.gold, ink: true, testid: "cat-pessoas" },
+        { icon: <Compass size={28} />, label: "Eventos", sub: "perto.", color: PT.azul, testid: "cat-eventos" },
+        { icon: <MapPin size={28} />, label: "Cidades", sub: "~300.", color: PT.green, testid: "cat-cidades" },
+        { icon: <Sparkles size={28} />, label: "Comunidades", sub: "ativas.", color: PT.red, testid: "cat-comunidades" },
     ];
     return (
         <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="what-you-find">
@@ -886,10 +875,10 @@ function PortugalMap() {
 function FeitoParaPessoas() {
     const features = [
         { label: "Sem doomscroll", sub: "infinito.", color: PT.gold },
-        { label: "Sem algoritmos", sub: "agressivos.", color: PT.red },
-        { label: "Sem manipulação", sub: "de atenção.", color: PT.green },
+        { label: "Sem ruído", sub: "constante.", color: PT.red },
         { label: "Sem números", sub: "para vaidade.", color: PT.azul },
         { label: "Foco no local", sub: "primeiro.", color: PT.gold },
+        { label: "Conversas reais", sub: "à mesa.", color: PT.green },
         { label: "Apagar conta", sub: "num clique.", color: PT.red },
     ];
     return (
@@ -936,10 +925,10 @@ function FeitoParaPessoas() {
                             transform: "rotate(1deg)",
                             textShadow: `3px 3px 0 ${PT.gold}`,
                             marginTop: 6,
-                        }}>NÃO PARA ALGORITMOS.</span>
+                        }}>FEITO EM PORTUGAL.</span>
                     </h2>
                     <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-2xl mb-8 sm:mb-9" style={{ color: "rgba(10,10,10,0.72)" }}>
-                        Acreditamos numa rede social diferente. Sem truques, sem manipulação, sem pressa.
+                        Uma rede social diferente — focada na presença local, na comunidade e nas conversas que importam.
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -989,7 +978,7 @@ function FeitoParaPessoas() {
                         lines={[
                             { label: "Truques", value: "0,00€" },
                             { label: "Anúncios", value: "0,00€" },
-                            { label: "Algoritmo", value: "0,00€" },
+                            { label: "Letra pequena", value: "0,00€" },
                             { label: "Ruído", value: "0,00€" },
                             { label: "Comunidade", value: "∞" },
                         ]}
@@ -1006,9 +995,9 @@ function FeitoParaPessoas() {
 // =============================================================================
 function Faq({ openFaq, setOpenFaq }) {
     const items = [
-        { q: "O que é o Lusorae?", a: "Uma rede social portuguesa feita para conversas reais entre pessoas reais — focada na presença local, comunidade e cidades. Sem algoritmo agressivo, sem doomscroll, sem ruído." },
+        { q: "O que é o Lusorae?", a: "Uma rede social portuguesa feita para conversas reais entre pessoas reais — focada na presença local, na comunidade e nas cidades. Sem ruído, sem doomscroll." },
         { q: "O Lusorae é gratuito?", a: "Sim, completamente. Criar conta, participar, conversar e descobrir é grátis para sempre. Existe também o Lusorae+ para quem quer mais personalização — mas é opcional." },
-        { q: "Os meus dados estão seguros?", a: "Sim. Cumprimos integralmente o RGPD (Regulamento Geral de Proteção de Dados) e a Lei n.º 58/2019. Os teus dados são teus — podes exportá-los ou apagar a conta a qualquer momento." },
+        { q: "Os meus dados estão seguros?", a: "Sim. Os teus dados são teus — podes exportá-los ou apagar a conta a qualquer momento." },
         { q: "Como funciona o sistema de cidades?", a: "Cada utilizador associa-se à sua cidade portuguesa (~300 cidades disponíveis). O conteúdo, eventos e pessoas perto de ti aparecem com prioridade — para fomentar conexões locais reais." },
         { q: "Existe aplicação móvel?", a: "Por agora estamos focados na web responsiva (mobile + desktop). Uma app nativa iOS/Android está no roadmap para 2026." },
     ];

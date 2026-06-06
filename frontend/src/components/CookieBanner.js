@@ -221,7 +221,7 @@ export function CookieBanner() {
                         <p className="mt-3 text-[11px] text-black/55 leading-relaxed flex items-start gap-1.5">
                             <ShieldCheck size={12} className="mt-[2px] shrink-0 text-black/55" />
                             <span>
-                                Tratamento conforme RGPD e Lei n.º 41/2004. Podes alterar estas escolhas a qualquer momento
+                                Podes alterar estas escolhas a qualquer momento
                                 em <Link to="/legal/cookies" className="underline underline-offset-2">Política de Cookies</Link>.
                             </span>
                         </p>

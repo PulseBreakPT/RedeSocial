@@ -124,13 +124,11 @@ export default function SiteFooter() {
                         className="text-[13px] leading-relaxed font-medium mb-5 text-center"
                         style={{ color: "rgba(255,255,255,0.78)" }}
                     >
-                        Os teus dados são tratados conforme o{" "}
-                        <span style={{ color: "#fff", fontWeight: 700 }}>RGPD</span> e a{" "}
-                        <span style={{ color: "#fff", fontWeight: 700 }}>Lei n.º 58/2019</span>.
-                        Não há letra pequena — declaramos publicamente o que não fazemos no{" "}
+                        Consulta os termos, privacidade e diretrizes nos links abaixo. O{" "}
                         <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.gold }}>
                             manifesto
-                        </Link>.
+                        </Link>{" "}
+                        explica em detalhe o nosso compromisso.
                     </p>
 
                     {/* Links legais como pills (centrados) */}
