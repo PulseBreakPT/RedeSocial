@@ -14,7 +14,7 @@ from typing import Dict, Any
 # Configuration — credentials come from env (never hardcoded).
 # Required: ADMIN_EMAIL, ADMIN_PASSWORD. Optional: BASE_URL.
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://visual-structure-cal.preview.emergentagent.com/api"
+    "BASE_URL", "https://multi-pro-fanzine.preview.emergentagent.com/api"
 )
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip()
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
