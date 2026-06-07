@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, MapPin, ExternalLink, Filter, ChevronRight } from "lucide-react";
+import { CalendarDays, MapPin, ExternalLink, Filter, ChevronRight, X } from "lucide-react";
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
@@ -12,13 +12,7 @@ const MONTH_PT = [
 const MONTH_PT_SHORT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const ALL_CATS = { key: "all", label: "Tudo", emoji: "✦" };
-
-// Esconde scrollbar visual mantendo a funcionalidade — usado nas faixas
-// horizontais (filtros e nav de meses) no mobile.
-const HIDE_SCROLLBAR = {
-    scrollbarWidth: "none",
-    msOverflowStyle: "none",
-};
+const HIDE_SCROLLBAR = { scrollbarWidth: "none", msOverflowStyle: "none" };
 
 function fmtDate(iso) {
     const d = new Date(iso + "T00:00:00");
@@ -32,17 +26,30 @@ function dateRangeLabel(start, end) {
     }
     const a = new Date(start + "T00:00:00");
     const b = new Date(end + "T00:00:00");
-    if (a.getMonth() === b.getMonth()) {
-        return `${a.getDate()}–${b.getDate()} de ${MONTH_PT[a.getMonth()]}`;
-    }
+    if (a.getMonth() === b.getMonth()) return `${a.getDate()}–${b.getDate()} de ${MONTH_PT[a.getMonth()]}`;
     return `${a.getDate()} ${MONTH_PT[a.getMonth()].slice(0, 3)} → ${b.getDate()} ${MONTH_PT[b.getMonth()].slice(0, 3)}`;
 }
 
-function StatusPill({ status, days }) {
+// Sub-component — pequenas "réguas" editoriais
+const Overline = ({ children, color = "rgba(10,10,10,0.50)", className = "" }) => (
+    <span
+        className={`font-mono font-bold uppercase tracking-[0.20em] text-[10px] sm:text-[11px] ${className}`}
+        style={{ color }}
+    >
+        {children}
+    </span>
+);
+
+function StatusPill({ status, days, compact = false }) {
+    const baseClass = compact
+        ? "inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px]"
+        : "inline-flex items-center gap-1 px-2 py-0.5 text-[10px]";
+    const fontClass = "font-mono font-bold uppercase tracking-[0.12em]";
+
     if (status === "now") {
         return (
             <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.14em]"
+                className={`${baseClass} ${fontClass} animate-pulse`}
                 style={{
                     background: PT.red,
                     color: "#fff",
@@ -50,14 +57,14 @@ function StatusPill({ status, days }) {
                     boxShadow: `2px 2px 0 ${PT.ink}`,
                 }}
             >
-                ● A decorrer
+                ● a decorrer
             </span>
         );
     }
     if (status === "past") {
         return (
             <span
-                className="inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.14em]"
+                className={`${baseClass} ${fontClass}`}
                 style={{
                     background: "transparent",
                     color: "rgba(10,10,10,0.40)",
@@ -69,10 +76,10 @@ function StatusPill({ status, days }) {
         );
     }
     if (typeof days === "number") {
-        const label = days === 0 ? "Hoje" : days === 1 ? "Amanhã" : `daqui a ${days}d`;
+        const label = days === 0 ? "Hoje" : days === 1 ? "Amanhã" : days <= 7 ? `em ${days} dias` : `daqui a ${days}d`;
         return (
             <span
-                className="inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.14em]"
+                className={`${baseClass} ${fontClass}`}
                 style={{
                     background: PT.gold,
                     color: PT.ink,
@@ -121,23 +128,34 @@ function EventCard({ ev, catMeta }) {
     const { day, month } = fmtDate(ev.iso_date);
     const rangeLabel = dateRangeLabel(ev.iso_date, ev.iso_end);
     const isMulti = ev.iso_end && ev.iso_end !== ev.iso_date;
+    const isFeatured = ev.status === "now" || (ev.days_until !== null && ev.days_until !== undefined && ev.days_until <= 3 && ev.status !== "past");
+    const accentColor = catMeta?.color || PT.ink;
+    const isLightAccent = accentColor === "#FFCC00";
+
     return (
         <article
             id={`cal-event-${ev.key}`}
             data-testid={`cal-event-${ev.key}`}
-            className="relative grid grid-cols-[56px_1fr] sm:grid-cols-[88px_1fr] gap-3 sm:gap-5 p-3 sm:p-5"
+            className="group relative grid grid-cols-[56px_1fr] sm:grid-cols-[92px_1fr] gap-3 sm:gap-5 p-3 sm:p-5 transition-all duration-150"
             style={{
-                background: "#fff",
+                background: isFeatured ? "#FFFCF5" : "#fff",
                 border: `2.5px solid ${PT.ink}`,
-                boxShadow: `4px 4px 0 ${PT.ink}`,
+                boxShadow: isFeatured ? `5px 5px 0 ${PT.red}` : `4px 4px 0 ${PT.ink}`,
             }}
         >
+            {/* Faixa cromática à esquerda — código de cor de categoria */}
+            <span
+                aria-hidden="true"
+                className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5"
+                style={{ background: accentColor }}
+            />
+
             {/* Bloco de data */}
             <div
                 className="flex flex-col items-center justify-center py-2 px-1"
                 style={{
-                    background: catMeta?.color || PT.ink,
-                    color: catMeta?.color === "#FFCC00" ? PT.ink : "#fff",
+                    background: accentColor,
+                    color: isLightAccent ? PT.ink : "#fff",
                     border: `2px solid ${PT.ink}`,
                 }}
             >
@@ -147,10 +165,10 @@ function EventCard({ ev, catMeta }) {
                 >
                     {month}
                 </span>
-                <span className="font-black leading-none text-2xl sm:text-4xl mt-0.5">{day}</span>
+                <span className="font-black leading-none text-2xl sm:text-[2.6rem] mt-0.5">{day}</span>
                 {isMulti && (
                     <span
-                        className="font-mono text-[8px] sm:text-[9px] mt-1 uppercase tracking-[0.08em] sm:tracking-[0.10em] text-center"
+                        className="font-mono text-[8px] sm:text-[9px] mt-1 uppercase tracking-[0.08em] text-center leading-none"
                         style={{ opacity: 0.85 }}
                     >
                         → {fmtDate(ev.iso_end).day} {fmtDate(ev.iso_end).month}
@@ -160,64 +178,64 @@ function EventCard({ ev, catMeta }) {
 
             {/* Conteúdo */}
             <div className="min-w-0">
+                {/* Pequena linha de overline com categoria + cidade */}
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9.5px] font-mono font-bold uppercase tracking-[0.10em]"
+                        style={{
+                            background: accentColor,
+                            color: isLightAccent ? PT.ink : "#fff",
+                            border: `1.5px solid ${PT.ink}`,
+                        }}
+                    >
+                        {catMeta?.label || ev.category}
+                    </span>
+                    {ev.city && (
+                        <Overline color="rgba(10,10,10,0.55)" className="inline-flex items-center gap-1">
+                            <MapPin size={10} strokeWidth={2.4} />
+                            {ev.city}
+                        </Overline>
+                    )}
+                    <StatusPill status={ev.status} days={ev.days_until} compact />
+                </div>
+
                 <h3
-                    className="font-black leading-tight tracking-[-0.01em] mb-1.5 break-words"
-                    style={{ color: PT.ink, fontSize: "clamp(15px, 4.4vw, 21px)" }}
+                    className="font-black leading-[1.1] tracking-[-0.015em] break-words"
+                    style={{
+                        color: PT.ink,
+                        fontSize: isFeatured ? "clamp(17px, 5vw, 24px)" : "clamp(15px, 4.4vw, 21px)",
+                    }}
                 >
                     {ev.emoji && <span className="mr-1">{ev.emoji}</span>}
                     {ev.title}
                 </h3>
 
-                {/* Status pill — abaixo do título em mobile, mais espaço */}
-                <div className="mb-2">
-                    <StatusPill status={ev.status} days={ev.days_until} />
-                </div>
-
                 {ev.subtitle && (
                     <p
-                        className="text-[12.5px] sm:text-sm leading-snug"
+                        className="text-[12.5px] sm:text-sm leading-snug mt-1.5"
                         style={{ color: "rgba(10,10,10,0.78)" }}
                     >
                         {ev.subtitle}
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 mt-2.5 sm:mt-3">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-2.5">
                     <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.10em]"
-                        style={{
-                            background: catMeta?.color || PT.ink,
-                            color: catMeta?.color === "#FFCC00" ? PT.ink : "#fff",
-                            border: `2px solid ${PT.ink}`,
-                        }}
+                        className="text-[10.5px] font-mono uppercase tracking-[0.10em]"
+                        style={{ color: "rgba(10,10,10,0.55)" }}
                     >
-                        {catMeta?.label || ev.category}
-                    </span>
-
-                    {ev.city && (
-                        <span
-                            className="inline-flex items-center gap-1 text-[10.5px] font-mono font-bold uppercase tracking-[0.10em]"
-                            style={{ color: "rgba(10,10,10,0.70)" }}
-                        >
-                            <MapPin size={11} strokeWidth={2.4} />
-                            {ev.city}
-                        </span>
-                    )}
-
-                    <span className="text-[10.5px] font-mono uppercase tracking-[0.10em] opacity-60 w-full sm:w-auto">
                         {rangeLabel}
                     </span>
-
                     {ev.url && (
                         <a
                             href={ev.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             data-testid={`cal-link-${ev.key}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-[0.10em] underline-offset-4 hover:underline"
+                            className="inline-flex items-center gap-1 text-[10.5px] font-mono font-bold uppercase tracking-[0.10em] underline-offset-4 hover:underline ml-auto"
                             style={{ color: PT.azul }}
                         >
-                            site oficial <ExternalLink size={11} strokeWidth={2.4} />
+                            site oficial <ExternalLink size={10} strokeWidth={2.4} />
                         </a>
                     )}
                 </div>
@@ -226,26 +244,104 @@ function EventCard({ ev, catMeta }) {
     );
 }
 
-function MonthSection({ monthKey, events, catMetaMap }) {
+function MonthSection({ monthKey, events, catMetaMap, isCurrent }) {
     const [y, m] = monthKey.split("-");
-    const monthName = MONTH_PT[parseInt(m, 10) - 1];
+    const idx = parseInt(m, 10) - 1;
+    const monthName = MONTH_PT[idx];
+    const monthNum = String(parseInt(m, 10)).padStart(2, "0");
+
+    // Breakdown — top 3 categorias com contagem
+    const breakdown = useMemo(() => {
+        const counts = {};
+        for (const ev of events) counts[ev.category] = (counts[ev.category] || 0) + 1;
+        return Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 4);
+    }, [events]);
+
     return (
-        <section className="mb-8 sm:mb-10" id={`cal-month-${monthKey}`} data-testid={`cal-month-${monthKey}`}>
-            <div className="flex items-baseline gap-2 sm:gap-3 mb-3 sm:mb-4 pl-0.5 sm:pl-1">
-                <h2
-                    className="font-black tracking-[-0.02em] leading-none"
-                    style={{ color: PT.ink, fontSize: "clamp(26px, 8vw, 44px)" }}
-                >
-                    {monthName}
-                </h2>
-                <span
-                    className="font-mono font-bold uppercase tracking-[0.14em] text-[10px] sm:text-[11px]"
-                    style={{ color: "rgba(10,10,10,0.55)" }}
-                >
-                    · {y} · {events.length} {events.length === 1 ? "evento" : "eventos"}
-                </span>
-            </div>
-            <div className="space-y-2.5 sm:space-y-4">
+        <section
+            className="mb-12 sm:mb-16 first:mt-0 mt-10 sm:mt-14"
+            id={`cal-month-${monthKey}`}
+            data-testid={`cal-month-${monthKey}`}
+        >
+            {/* HEADER do mês — magazine-style: numeral gigante sobreposto */}
+            <header className="relative mb-5 sm:mb-7 pb-4 sm:pb-5" style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
+                <div className="flex items-end gap-3 sm:gap-5">
+                    {/* Numeral gigante */}
+                    <span
+                        className="font-black leading-none tracking-[-0.05em] select-none flex-shrink-0"
+                        style={{
+                            color: isCurrent ? PT.red : "rgba(10,10,10,0.10)",
+                            fontSize: "clamp(78px, 22vw, 180px)",
+                            lineHeight: "0.78",
+                        }}
+                    >
+                        {monthNum}
+                    </span>
+                    {/* Tipografia do mês */}
+                    <div className="min-w-0 flex-1 pb-1 sm:pb-2">
+                        <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                            <Overline color="rgba(10,10,10,0.50)">/ folha&nbsp;n.º&nbsp;{monthNum}</Overline>
+                            {isCurrent && (
+                                <span
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-[0.14em]"
+                                    style={{
+                                        background: PT.red,
+                                        color: "#fff",
+                                        border: `1.5px solid ${PT.ink}`,
+                                    }}
+                                >
+                                    agora
+                                </span>
+                            )}
+                        </div>
+                        <h2
+                            className="font-black tracking-[-0.025em] leading-[0.92]"
+                            style={{
+                                color: PT.ink,
+                                fontSize: "clamp(28px, 8.5vw, 52px)",
+                            }}
+                        >
+                            {monthName}
+                        </h2>
+                        <p
+                            className="font-mono text-[11px] sm:text-xs mt-1.5 sm:mt-2 uppercase tracking-[0.10em]"
+                            style={{ color: "rgba(10,10,10,0.55)" }}
+                        >
+                            {events.length} {events.length === 1 ? "evento" : "eventos"} · {y}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Breakdown por categoria — pequenos chips no rodapé do header */}
+                {breakdown.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3 sm:mt-4 pt-3 sm:pt-0">
+                        {breakdown.map(([catKey, n]) => {
+                            const cm = catMetaMap[catKey];
+                            return (
+                                <span
+                                    key={catKey}
+                                    className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.08em]"
+                                    style={{ color: "rgba(10,10,10,0.65)" }}
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="inline-block w-2 h-2"
+                                        style={{
+                                            background: cm?.color || PT.ink,
+                                            border: `1.5px solid ${PT.ink}`,
+                                        }}
+                                    />
+                                    {cm?.label || catKey} · {n}
+                                </span>
+                            );
+                        })}
+                    </div>
+                )}
+            </header>
+
+            <div className="space-y-2.5 sm:space-y-3.5">
                 {events.map((ev) => (
                     <EventCard key={ev.key} ev={ev} catMeta={catMetaMap[ev.category]} />
                 ))}
@@ -254,7 +350,6 @@ function MonthSection({ monthKey, events, catMetaMap }) {
     );
 }
 
-// Highlight card usado no carrossel "A seguir" — versão compacta e horizontal-snap em mobile
 function Highlight({ ev, catMetaMap }) {
     if (!ev) return null;
     const meta = catMetaMap[ev.category];
@@ -279,9 +374,7 @@ function Highlight({ ev, catMetaMap }) {
                         border: `2px solid ${PT.ink}`,
                     }}
                 >
-                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] opacity-85">
-                        {month}
-                    </span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] opacity-85">{month}</span>
                     <span className="font-black text-lg sm:text-xl leading-none">{day}</span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -295,10 +388,7 @@ function Highlight({ ev, catMetaMap }) {
                             ? "amanhã"
                             : `daqui a ${ev.days_until} dias`}
                     </p>
-                    <p
-                        className="font-black leading-tight truncate"
-                        style={{ color: PT.ink, fontSize: 15 }}
-                    >
+                    <p className="font-black leading-tight truncate" style={{ color: PT.ink, fontSize: 15 }}>
                         {ev.emoji} {ev.title}
                     </p>
                     {ev.city && (
@@ -315,7 +405,6 @@ function Highlight({ ev, catMetaMap }) {
     );
 }
 
-// Pill de jump por mês — usada na barra horizontal sticky
 function MonthJumpPill({ monthKey, count, onClick, isCurrent }) {
     const [, m] = monthKey.split("-");
     const idx = parseInt(m, 10) - 1;
@@ -329,7 +418,7 @@ function MonthJumpPill({ monthKey, count, onClick, isCurrent }) {
                 background: isCurrent ? PT.red : "#fff",
                 color: isCurrent ? "#fff" : PT.ink,
                 border: `2px solid ${PT.ink}`,
-                boxShadow: isCurrent ? `2px 2px 0 ${PT.ink}` : `2px 2px 0 ${PT.ink}`,
+                boxShadow: `2px 2px 0 ${PT.ink}`,
             }}
         >
             <span className="font-mono font-bold uppercase tracking-[0.10em] text-[9px] leading-none">
@@ -348,8 +437,6 @@ export default function Calendario() {
     const [region, setRegion] = useState("all");
     const [showPast, setShowPast] = useState(false);
 
-    // Tracks qual mês está actualmente visível no viewport — para destacar
-    // o pill correspondente no nav de jump.
     const [currentMonth, setCurrentMonth] = useState(null);
     const monthRefs = useRef({});
 
@@ -372,7 +459,6 @@ export default function Calendario() {
     const catMetaMap = data?.categories || {};
     const regionMetaMap = data?.regions || {};
 
-    // Counts por categoria (independente da categoria atual)
     const catCounts = useMemo(() => {
         if (!data) return {};
         const c = { all: 0 };
@@ -385,7 +471,6 @@ export default function Calendario() {
         return c;
     }, [data, showPast, region]);
 
-    // Filtra eventos
     const filtered = useMemo(() => {
         if (!data) return [];
         return data.events.filter((ev) => {
@@ -396,7 +481,6 @@ export default function Calendario() {
         });
     }, [data, cat, region, showPast]);
 
-    // Agrupa por mês depois de filtrar
     const byMonth = useMemo(() => {
         const map = {};
         for (const ev of filtered) {
@@ -408,7 +492,7 @@ export default function Calendario() {
 
     const monthKeys = useMemo(() => Object.keys(byMonth).sort(), [byMonth]);
 
-    // Observa qual mês está visível para destacar o pill correspondente.
+    // Atualiza o mês "corrente" no nav consoante o scroll
     useEffect(() => {
         if (monthKeys.length === 0) return;
         const observer = new IntersectionObserver(
@@ -421,7 +505,7 @@ export default function Calendario() {
                     setCurrentMonth(id.replace("cal-month-", ""));
                 }
             },
-            { rootMargin: "-120px 0px -60% 0px", threshold: 0 }
+            { rootMargin: "-130px 0px -60% 0px", threshold: 0 }
         );
         monthKeys.forEach((mk) => {
             const el = document.getElementById(`cal-month-${mk}`);
@@ -436,7 +520,7 @@ export default function Calendario() {
     const scrollToMonth = (mk) => {
         const el = document.getElementById(`cal-month-${mk}`);
         if (el) {
-            const y = el.getBoundingClientRect().top + window.scrollY - 90;
+            const y = el.getBoundingClientRect().top + window.scrollY - 100;
             window.scrollTo({ top: y, behavior: "smooth" });
         }
     };
@@ -449,52 +533,79 @@ export default function Calendario() {
         return out;
     }, [catMetaMap]);
 
+    // Estatísticas para o hero
+    const stats = useMemo(() => {
+        if (!data) return null;
+        const upcoming = data.events.filter((e) => e.status !== "past");
+        const nowCount = data.events.filter((e) => e.status === "now").length;
+        const regions = new Set(upcoming.map((e) => e.region).filter((r) => r && r !== "all"));
+        return {
+            total: upcoming.length,
+            regions: regions.size,
+            now: nowCount,
+            categories: Object.keys(catMetaMap).length,
+        };
+    }, [data, catMetaMap]);
+
+    const hasActiveFilters = cat !== "all" || region !== "all" || showPast;
+    const clearFilters = () => {
+        setCat("all");
+        setRegion("all");
+        setShowPast(false);
+    };
+
+    const currentMonthLabel = useMemo(() => {
+        if (!currentMonth) return null;
+        const [, m] = currentMonth.split("-");
+        return MONTH_PT[parseInt(m, 10) - 1];
+    }, [currentMonth]);
+
     return (
         <PtPageShell testid="page-calendario">
-            <PageHeader
-                title="Calendário · Portugal"
-                subtitle="curadoria 2026"
-                testid="calendar-header"
-            />
+            <PageHeader title="Calendário · Portugal" subtitle="curadoria 2026" testid="calendar-header" />
 
-            {/* MONTH JUMP NAV — sticky, sempre visível abaixo do header.
-                Indispensável em 150+ eventos: salta para qualquer mês com um toque. */}
+            {/* MONTH JUMP NAV — sticky */}
             {data && monthKeys.length > 1 && (
                 <div
                     className="sticky z-20 backdrop-blur"
                     style={{
                         top: "calc(var(--mobile-topbar-h) + 56px)",
-                        background: "rgba(244,244,244,0.96)",
+                        background: "rgba(244,244,244,0.94)",
                         borderBottom: `2px solid ${PT.ink}`,
                     }}
                     data-testid="cal-monthnav"
                 >
-                    <div
-                        className="flex items-center gap-2 px-3 sm:px-5 py-2 overflow-x-auto snap-x snap-mandatory lg:max-w-[1080px] lg:mx-auto"
-                        style={HIDE_SCROLLBAR}
-                    >
-                        <span
-                            className="font-mono font-bold uppercase tracking-[0.18em] text-[10px] flex-shrink-0 pr-1"
-                            style={{ color: "rgba(10,10,10,0.55)" }}
+                    <div className="lg:max-w-[1120px] lg:mx-auto px-3 sm:px-5">
+                        <div
+                            className="flex items-center gap-2 py-2 overflow-x-auto snap-x snap-mandatory"
+                            style={HIDE_SCROLLBAR}
                         >
-                            saltar →
-                        </span>
-                        {monthKeys.map((mk) => (
-                            <MonthJumpPill
-                                key={mk}
-                                monthKey={mk}
-                                count={byMonth[mk].length}
-                                isCurrent={currentMonth === mk}
-                                onClick={() => scrollToMonth(mk)}
-                            />
-                        ))}
+                            <div className="flex items-center gap-1 flex-shrink-0 pr-1.5 border-r-2 border-black/15">
+                                <Overline color="rgba(10,10,10,0.55)">
+                                    {currentMonthLabel ? (
+                                        <>a ler · <span style={{ color: PT.red }}>{currentMonthLabel}</span></>
+                                    ) : (
+                                        <>saltar →</>
+                                    )}
+                                </Overline>
+                            </div>
+                            {monthKeys.map((mk) => (
+                                <MonthJumpPill
+                                    key={mk}
+                                    monthKey={mk}
+                                    count={byMonth[mk].length}
+                                    isCurrent={currentMonth === mk}
+                                    onClick={() => scrollToMonth(mk)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
 
-            <div className="px-3 sm:px-4 lg:px-8 pt-5 sm:pt-6 pb-24 max-w-[1080px] mx-auto">
-                {/* HERO editorial */}
-                <header className="relative mb-7 sm:mb-12">
+            <div className="px-3 sm:px-5 lg:px-8 pt-5 sm:pt-7 pb-24 max-w-[1120px] mx-auto">
+                {/* HERO */}
+                <header className="relative mb-8 sm:mb-12">
                     <div className="flex items-start gap-2.5 mb-3">
                         <StampCircle size={56} bg={PT.red} rotate={-10}>
                             <div className="text-center leading-tight">
@@ -510,11 +621,8 @@ export default function Calendario() {
                     </div>
 
                     <h1
-                        className="font-black tracking-[-0.03em] leading-[0.92]"
-                        style={{
-                            color: PT.ink,
-                            fontSize: "clamp(34px, 10.5vw, 78px)",
-                        }}
+                        className="font-black tracking-[-0.035em] leading-[0.90]"
+                        style={{ color: PT.ink, fontSize: "clamp(38px, 11vw, 88px)" }}
                     >
                         Um ano <span style={{ color: PT.red }}>a</span>{" "}
                         <span
@@ -535,23 +643,69 @@ export default function Calendario() {
                         className="mt-4 sm:mt-5 max-w-[640px] text-[14.5px] sm:text-base lg:text-lg leading-relaxed"
                         style={{ color: "rgba(10,10,10,0.72)" }}
                     >
-                        Feriados, festas das cidades, festivais, romarias, feiras e dias para
-                        marcar a tinta. Da Brejeira ao Pico, do Carnaval ao Magusto — um mapa
-                        afetivo dos próximos meses, com datas confirmadas e palcos por descobrir.
+                        Feriados, festas das cidades, festivais, romarias, feiras e dias para marcar a tinta. Da
+                        Brejeira ao Pico, do Carnaval ao Magusto — um mapa afetivo dos próximos meses, com datas
+                        confirmadas e palcos por descobrir.
                     </p>
+
+                    {/* STAT STRIP */}
+                    {stats && (
+                        <div
+                            className="mt-6 sm:mt-7 grid grid-cols-3 sm:grid-cols-4 gap-0"
+                            style={{
+                                border: `2.5px solid ${PT.ink}`,
+                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                background: "#fff",
+                            }}
+                            data-testid="cal-stats"
+                        >
+                            <div className="p-3 sm:p-4 border-r-2 border-black">
+                                <Overline>eventos</Overline>
+                                <p className="font-black leading-none mt-1.5" style={{ color: PT.ink, fontSize: "clamp(22px, 5vw, 32px)" }}>
+                                    {stats.total}
+                                </p>
+                            </div>
+                            <div className="p-3 sm:p-4 border-r-2 border-black">
+                                <Overline>regiões</Overline>
+                                <p className="font-black leading-none mt-1.5" style={{ color: PT.ink, fontSize: "clamp(22px, 5vw, 32px)" }}>
+                                    {stats.regions}
+                                </p>
+                            </div>
+                            <div className="p-3 sm:p-4 sm:border-r-2 border-black">
+                                <Overline>categorias</Overline>
+                                <p className="font-black leading-none mt-1.5" style={{ color: PT.ink, fontSize: "clamp(22px, 5vw, 32px)" }}>
+                                    {stats.categories}
+                                </p>
+                            </div>
+                            <div
+                                className="p-3 sm:p-4 col-span-3 sm:col-span-1 border-t-2 sm:border-t-0 border-black"
+                                style={{ background: stats.now > 0 ? PT.red : "transparent" }}
+                            >
+                                <Overline color={stats.now > 0 ? "rgba(255,255,255,0.80)" : "rgba(10,10,10,0.50)"}>
+                                    agora a decorrer
+                                </Overline>
+                                <p
+                                    className="font-black leading-none mt-1.5"
+                                    style={{
+                                        color: stats.now > 0 ? "#fff" : PT.ink,
+                                        fontSize: "clamp(22px, 5vw, 32px)",
+                                    }}
+                                >
+                                    {stats.now}{" "}
+                                    <span className="font-mono font-bold text-[10px] sm:text-xs uppercase tracking-[0.14em] align-middle opacity-80">
+                                        {stats.now === 1 ? "evento" : "eventos"}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </header>
 
-                {/* HIGHLIGHTS — próximos 3 · carrossel horizontal em mobile, grid em desktop */}
+                {/* HIGHLIGHTS — A seguir */}
                 {data && data.next3?.length > 0 && (
-                    <section className="mb-8 sm:mb-10">
-                        <div className="flex items-center justify-between mb-2.5 sm:mb-3 pl-0.5">
-                            <h2
-                                className="font-mono font-bold uppercase tracking-[0.18em] text-[11px] sm:text-xs"
-                                style={{ color: "rgba(10,10,10,0.55)" }}
-                                data-testid="cal-next3-heading"
-                            >
-                                // a seguir
-                            </h2>
+                    <section className="mb-9 sm:mb-11">
+                        <div className="flex items-center justify-between mb-3 pl-0.5">
+                            <Overline data-testid="cal-next3-heading">// a seguir</Overline>
                             <span
                                 className="sm:hidden inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em]"
                                 style={{ color: "rgba(10,10,10,0.40)" }}
@@ -559,7 +713,6 @@ export default function Calendario() {
                                 desliza <ChevronRight size={11} strokeWidth={2.4} />
                             </span>
                         </div>
-                        {/* Mobile: carrossel horizontal com snap */}
                         <div
                             className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-3 px-3 pb-2 sm:hidden"
                             style={HIDE_SCROLLBAR}
@@ -569,7 +722,6 @@ export default function Calendario() {
                                 <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
                             ))}
                         </div>
-                        {/* Desktop: grid de 3 */}
                         <div className="hidden sm:grid sm:grid-cols-3 gap-4">
                             {data.next3.map((ev) => (
                                 <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
@@ -578,65 +730,97 @@ export default function Calendario() {
                     </section>
                 )}
 
-                {/* FILTROS — sem wrap em mobile, scroll horizontal com snap */}
-                <section className="mb-7 sm:mb-8" data-testid="cal-filters">
-                    <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
-                        <Filter size={13} strokeWidth={2.4} style={{ color: PT.ink }} />
+                {/* FILTROS — painel editorial */}
+                <section
+                    className="mb-10 sm:mb-12"
+                    data-testid="cal-filters"
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <Filter size={13} strokeWidth={2.4} style={{ color: PT.ink }} />
+                            <Overline>filtros</Overline>
+                            {hasActiveFilters && (
+                                <span
+                                    className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-[0.12em]"
+                                    style={{
+                                        background: PT.ink,
+                                        color: PT.cream,
+                                    }}
+                                    data-testid="cal-active-count"
+                                >
+                                    {(cat !== "all" ? 1 : 0) + (region !== "all" ? 1 : 0) + (showPast ? 1 : 0)} ativos
+                                </span>
+                            )}
+                        </div>
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                data-testid="cal-clear-filters"
+                                className="inline-flex items-center gap-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] underline-offset-4 hover:underline"
+                                style={{ color: PT.red }}
+                            >
+                                <X size={11} strokeWidth={2.6} />
+                                limpar
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="mb-2.5">
                         <span
-                            className="font-mono font-bold uppercase tracking-[0.18em] text-[10.5px] sm:text-[11px]"
-                            style={{ color: "rgba(10,10,10,0.55)" }}
+                            className="font-mono text-[10px] uppercase tracking-[0.14em] block mb-1.5"
+                            style={{ color: "rgba(10,10,10,0.45)" }}
                         >
                             categoria
                         </span>
-                    </div>
-                    {/* Mobile: scroll horizontal; Desktop: wrap */}
-                    <div
-                        className="flex sm:flex-wrap gap-2 mb-4 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0"
-                        style={HIDE_SCROLLBAR}
-                    >
-                        {catChips.map((c) => (
-                            <CategoryChip
-                                key={c.key}
-                                meta={c}
-                                active={cat === c.key}
-                                count={catCounts[c.key] || 0}
-                                onClick={() => setCat(c.key)}
-                            />
-                        ))}
+                        <div
+                            className="flex sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0"
+                            style={HIDE_SCROLLBAR}
+                        >
+                            {catChips.map((c) => (
+                                <CategoryChip
+                                    key={c.key}
+                                    meta={c}
+                                    active={cat === c.key}
+                                    count={catCounts[c.key] || 0}
+                                    onClick={() => setCat(c.key)}
+                                />
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-2.5">
+                    <div className="mt-4">
                         <span
-                            className="font-mono font-bold uppercase tracking-[0.18em] text-[10.5px] sm:text-[11px]"
-                            style={{ color: "rgba(10,10,10,0.55)" }}
+                            className="font-mono text-[10px] uppercase tracking-[0.14em] block mb-1.5"
+                            style={{ color: "rgba(10,10,10,0.45)" }}
                         >
                             região
                         </span>
-                    </div>
-                    <div
-                        className="flex sm:flex-wrap items-center gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0"
-                        style={HIDE_SCROLLBAR}
-                    >
-                        {Object.keys(regionMetaMap).map((rk) => (
-                            <button
-                                key={rk}
-                                type="button"
-                                data-testid={`cal-reg-${rk}`}
-                                onClick={() => setRegion(rk)}
-                                className="tap-shrink px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.10em] whitespace-nowrap flex-shrink-0 snap-start"
-                                style={{
-                                    background: region === rk ? PT.ink : "transparent",
-                                    color: region === rk ? PT.cream : PT.ink,
-                                    border: `2px solid ${PT.ink}`,
-                                }}
-                            >
-                                {regionMetaMap[rk].label}
-                            </button>
-                        ))}
+                        <div
+                            className="flex sm:flex-wrap items-center gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0"
+                            style={HIDE_SCROLLBAR}
+                        >
+                            {Object.keys(regionMetaMap).map((rk) => (
+                                <button
+                                    key={rk}
+                                    type="button"
+                                    data-testid={`cal-reg-${rk}`}
+                                    onClick={() => setRegion(rk)}
+                                    className="tap-shrink px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.10em] whitespace-nowrap flex-shrink-0 snap-start"
+                                    style={{
+                                        background: region === rk ? PT.ink : "transparent",
+                                        color: region === rk ? PT.cream : PT.ink,
+                                        border: `2px solid ${PT.ink}`,
+                                    }}
+                                >
+                                    {regionMetaMap[rk].label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <label
-                        className="mt-3 inline-flex items-center gap-2 cursor-pointer select-none"
+                        className="mt-4 inline-flex items-center gap-2 cursor-pointer select-none"
                         data-testid="cal-toggle-past"
                     >
                         <input
@@ -654,15 +838,10 @@ export default function Calendario() {
                     </label>
                 </section>
 
-                {/* ESTADO: loading / erro / vazio / lista */}
+                {/* ESTADO */}
                 {loading && (
                     <div className="py-20 text-center">
-                        <p
-                            className="font-mono uppercase tracking-[0.18em] text-xs"
-                            style={{ color: "rgba(10,10,10,0.5)" }}
-                        >
-                            a carregar agenda…
-                        </p>
+                        <Overline color="rgba(10,10,10,0.45)">a carregar agenda…</Overline>
                     </div>
                 )}
 
@@ -685,10 +864,7 @@ export default function Calendario() {
                 {!loading && !error && monthKeys.length === 0 && (
                     <div
                         className="p-8 text-center"
-                        style={{
-                            background: "#fff",
-                            border: `2.5px dashed ${PT.ink}`,
-                        }}
+                        style={{ background: "#fff", border: `2.5px dashed ${PT.ink}` }}
                         data-testid="cal-empty"
                     >
                         <CalendarDays
@@ -700,6 +876,22 @@ export default function Calendario() {
                         <p className="text-sm font-mono mt-1" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Tenta outra categoria ou região.
                         </p>
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-bold uppercase tracking-[0.14em]"
+                                style={{
+                                    background: PT.ink,
+                                    color: PT.cream,
+                                    padding: "6px 12px",
+                                    border: `2px solid ${PT.ink}`,
+                                    boxShadow: `3px 3px 0 ${PT.red}`,
+                                }}
+                            >
+                                limpar filtros
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -711,24 +903,19 @@ export default function Calendario() {
                             monthKey={mk}
                             events={byMonth[mk]}
                             catMetaMap={catMetaMap}
+                            isCurrent={currentMonth === mk}
                         />
                     ))}
 
-                {/* RODAPÉ EDITORIAL */}
+                {/* RODAPÉ */}
                 {!loading && data && (
                     <footer
                         className="mt-12 p-5 text-center"
-                        style={{
-                            background: "transparent",
-                            border: `2.5px dashed ${PT.ink}`,
-                        }}
+                        style={{ background: "transparent", border: `2.5px dashed ${PT.ink}` }}
                     >
-                        <p
-                            className="font-mono uppercase tracking-[0.18em] text-[10px] sm:text-[11px]"
-                            style={{ color: "rgba(10,10,10,0.55)" }}
-                        >
+                        <Overline color="rgba(10,10,10,0.55)">
                             // {data.total} eventos curados · datas confirmadas para {data.year}
-                        </p>
+                        </Overline>
                         <p
                             className="font-mono text-[9.5px] sm:text-[10px] mt-1"
                             style={{ color: "rgba(10,10,10,0.40)" }}
