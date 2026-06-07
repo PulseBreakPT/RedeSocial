@@ -257,7 +257,7 @@ export default function Manifesto() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream, color: PT.ink }} data-testid="manifesto-page">
+        <div className="min-h-screen relative overflow-hidden" style={{ background: "#FFFFFF", color: PT.ink }} data-testid="manifesto-page">
             {/* ============ DOODLES DECORATIVOS DE FUNDO ============ */}
             <div className="absolute -top-16 -right-20 pointer-events-none opacity-[0.07] z-0 hidden sm:block" aria-hidden>
                 <GiantAsterisk color={PT.red} size={320} rotate={-12} />
@@ -301,7 +301,7 @@ export default function Manifesto() {
             <header
                 className="sticky top-0 z-30 backdrop-blur"
                 style={{
-                    background: "rgba(244,244,244,0.92)",
+                    background: "rgba(255,255,255,0.92)",
                     borderBottom: `3px solid ${PT.ink}`,
                 }}
             >

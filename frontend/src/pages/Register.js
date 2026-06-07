@@ -156,12 +156,12 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen relative overflow-hidden" style={{ background: PT.cream }}>
+        <div className="min-h-screen relative overflow-hidden" style={{ background: "#FFFFFF" }}>
             <div className="pt-tape h-3 w-full" />
 
             <div className="grid lg:grid-cols-[1fr_1.05fr] relative">
                 {/* ============ ESQUERDA · FORMULÁRIO ============ */}
-                <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: PT.cream }}>
+                <div className="relative px-5 sm:px-10 lg:px-14 pt-8 lg:pt-12 pb-16 order-2 lg:order-1" style={{ background: "#FFFFFF" }}>
                     {/* Decorações secundárias — algumas visíveis em mobile (escaladas) */}
                     <div className="absolute top-3 right-3 sm:top-6 sm:right-6 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
                         <DoodleScribble color={PT.green} w={120} h={42} style={{ transform: "rotate(-8deg)" }} />

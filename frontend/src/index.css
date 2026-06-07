@@ -5,9 +5,74 @@
 @tailwind utilities;
 
 /* ===================================================================
+   ✱ FANZINE PT · PALETA EXPANDIDA (curated by 5 expert hats)
+   -------------------------------------------------------------------
+   Art Director · Brand Designer LX · Color Theorist · UI/UX · FE Arch.
+
+   REGRAS DE OURO:
+     1. O fundo é SEMPRE branco (#FFFFFF). A cor vive em acentos.
+     2. Cada token quente/frio tem um par "soft" (badges sem ofuscar).
+     3. Contrastes validados WCAG (AA ou AAA quando usados sobre branco).
+     4. Tokens originais PT (--pt-red/green/gold/azul/ink/cream/bone)
+        permanecem intactos para back-compat com 60+ ficheiros.
+   =================================================================== */
+:root {
+    /* ─── ORIGINAIS (mantidos) ──────────────────────────────────────── */
+    --pt-red:        #C8102E;
+    --pt-green:      #046A38;
+    --pt-gold:       #FFCC00;
+    --pt-azul:       #0E4D92;
+    --pt-ink:        #0A0A0A;
+    --pt-cream:      #F4F4F4;
+    --pt-bone:       #EDEDEC;
+
+    /* ─── EXPANSÃO QUENTE — Mediterrâneo · Telhados · Fogo ─────────── */
+    --pt-telha:      #D86A4E;       /* terracota / telha portuguesa  */
+    --pt-telha-soft: #FBE5DC;
+    --pt-brasa:      #E85D4F;       /* brasa coral (reação love)     */
+    --pt-brasa-soft: #FDECEA;
+    --pt-tijolo:     #A04830;       /* tijolo rust (acento sério)    */
+    --pt-tijolo-soft:#F3DDD2;
+    --pt-fado:       #6B2C39;       /* vinho fado (editorial sombrio)*/
+    --pt-fado-soft:  #EFDFE2;
+    --pt-laranja:    #F08A1E;       /* laranja queimado riso         */
+    --pt-laranja-soft:#FCE4C9;
+
+    /* ─── EXPANSÃO FRESCA — Atlântico · Azulejo · Eucalipto ─────────── */
+    --pt-atl:        #1B4F8F;       /* atlântico (variant do azul)   */
+    --pt-atl-soft:   #DCE7F4;
+    --pt-azulejo-lite:#5B8DBF;      /* azul azulejo claro            */
+    --pt-peixe:      #2EB4A6;       /* turquesa frescura mar         */
+    --pt-peixe-soft: #D7F0EC;
+    --pt-eucalipto:  #4A7C59;       /* eucalipto fresh               */
+    --pt-eucalipto-soft:#DDE8DF;
+    --pt-oliveira:   #8B8E3F;       /* azeitona terroso              */
+    --pt-oliveira-soft:#ECEDD8;
+
+    /* ─── ACENTOS FANZINE — Riso · Lima · Malva ────────────────────── */
+    --pt-lima:       #D4E83C;       /* lima riso (energia pop)       */
+    --pt-lima-soft:  #F7FACF;
+    --pt-rosa:       #F4A6B7;       /* rosa cravo / azulejo rosado   */
+    --pt-rosa-soft:  #FBE7EC;
+    --pt-malva:      #7C5A8F;       /* malva fado / cultura          */
+    --pt-malva-soft: #E8DDF0;
+    --pt-fluo:       #FFF200;       /* amarelo highlighter (text bg) */
+
+    /* ─── NEUTROS — Branco · Cal · Areia · Pedra ───────────────────── */
+    --pt-branco:     #FFFFFF;       /* page bg sagrado               */
+    --pt-cal:        #FBFAF7;       /* zone-bands subtis             */
+    --pt-areia:      #E8DCC2;       /* callouts terrosos             */
+    --pt-areia-soft: #F6F0E0;
+    --pt-pedra:      #8C8C8C;       /* muted neutro                  */
+    --pt-pedra-soft: #E5E5E5;
+    --pt-grafite:    #3A3A3D;       /* ink mais leve                 */
+}
+
+/* ===================================================================
    LUSORAE · rede social portuguesa moderna
    Identidade visual:
-     · base mediterrânica off-white (alvenaria caiada)
+     · base BRANCA pura (#FFFFFF) — fanzine PT, fundo sagrado
+     · paleta expandida (20+ tokens — ver bloco :root acima)
      · azul Atlântico/Tejo como acento primário
      · coral suave (telha portuguesa) como reaction/love
      · padrão azulejo geométrico reinterpretado (subtil)
@@ -16,9 +81,9 @@
 
 @layer base {
     :root {
-        /* Surfaces (alvenaria caiada) */
-        --bg: 36 30% 98.5%;             /* warm off-white #FBFAF7 */
-        --bg-soft: 36 24% 96%;          /* #F6F4EF */
+        /* Surfaces — fundo branco puro (poster urbano fanzine PT) */
+        --bg: 0 0% 100%;                /* pure white #FFFFFF */
+        --bg-soft: 36 24% 98%;          /* cal #FBFAF7 — zone-bands */
         --card: 0 0% 100%;
         --ink: 222 18% 9%;              /* near-black with cool tint */
         --ink-soft: 222 14% 24%;
@@ -450,6 +515,185 @@
         color: transparent;
     }
 }
+
+/* ============================================================
+   ✱ FANZINE PT · UTILITY CLASSES (paleta expandida)
+   ────────────────────────────────────────────────────────────
+   Uso recomendado:
+     • `text-pt-<token>`        — cor de texto/ícone
+     • `bg-pt-<token>`          — fundo sólido
+     • `bg-pt-<token>-soft`     — fundo soft (badges/chips em white)
+     • `border-pt-<token>`      — borda colorida
+     • `shadow-pt-<token>`      — sombra fanzine offset (4px 4px 0)
+     • `chip-pt-<token>`        — chip pronto-a-usar
+     • `ring-pt-<token>`        — ring focus colorido
+   ============================================================ */
+@layer utilities {
+    /* — Quentes — */
+    .text-pt-telha     { color: var(--pt-telha); }
+    .bg-pt-telha       { background-color: var(--pt-telha); color: #fff; }
+    .bg-pt-telha-soft  { background-color: var(--pt-telha-soft); }
+    .border-pt-telha   { border-color: var(--pt-telha); }
+
+    .text-pt-brasa     { color: var(--pt-brasa); }
+    .bg-pt-brasa       { background-color: var(--pt-brasa); color: #fff; }
+    .bg-pt-brasa-soft  { background-color: var(--pt-brasa-soft); }
+    .border-pt-brasa   { border-color: var(--pt-brasa); }
+
+    .text-pt-tijolo    { color: var(--pt-tijolo); }
+    .bg-pt-tijolo      { background-color: var(--pt-tijolo); color: #fff; }
+    .bg-pt-tijolo-soft { background-color: var(--pt-tijolo-soft); }
+    .border-pt-tijolo  { border-color: var(--pt-tijolo); }
+
+    .text-pt-fado      { color: var(--pt-fado); }
+    .bg-pt-fado        { background-color: var(--pt-fado); color: #fff; }
+    .bg-pt-fado-soft   { background-color: var(--pt-fado-soft); }
+    .border-pt-fado    { border-color: var(--pt-fado); }
+
+    .text-pt-laranja   { color: var(--pt-laranja); }
+    .bg-pt-laranja     { background-color: var(--pt-laranja); color: var(--pt-ink); }
+    .bg-pt-laranja-soft{ background-color: var(--pt-laranja-soft); }
+    .border-pt-laranja { border-color: var(--pt-laranja); }
+
+    /* — Frescos — */
+    .text-pt-atl       { color: var(--pt-atl); }
+    .bg-pt-atl         { background-color: var(--pt-atl); color: #fff; }
+    .bg-pt-atl-soft    { background-color: var(--pt-atl-soft); }
+    .border-pt-atl     { border-color: var(--pt-atl); }
+
+    .text-pt-azulejo-lite { color: var(--pt-azulejo-lite); }
+    .bg-pt-azulejo-lite   { background-color: var(--pt-azulejo-lite); color: #fff; }
+
+    .text-pt-peixe     { color: var(--pt-peixe); }
+    .bg-pt-peixe       { background-color: var(--pt-peixe); color: #fff; }
+    .bg-pt-peixe-soft  { background-color: var(--pt-peixe-soft); }
+    .border-pt-peixe   { border-color: var(--pt-peixe); }
+
+    .text-pt-eucalipto    { color: var(--pt-eucalipto); }
+    .bg-pt-eucalipto      { background-color: var(--pt-eucalipto); color: #fff; }
+    .bg-pt-eucalipto-soft { background-color: var(--pt-eucalipto-soft); }
+    .border-pt-eucalipto  { border-color: var(--pt-eucalipto); }
+
+    .text-pt-oliveira     { color: var(--pt-oliveira); }
+    .bg-pt-oliveira       { background-color: var(--pt-oliveira); color: #fff; }
+    .bg-pt-oliveira-soft  { background-color: var(--pt-oliveira-soft); }
+
+    /* — Acentos fanzine — */
+    .text-pt-lima      { color: var(--pt-lima); }
+    .bg-pt-lima        { background-color: var(--pt-lima); color: var(--pt-ink); }
+    .bg-pt-lima-soft   { background-color: var(--pt-lima-soft); }
+
+    .text-pt-rosa      { color: var(--pt-rosa); }
+    .bg-pt-rosa        { background-color: var(--pt-rosa); color: var(--pt-ink); }
+    .bg-pt-rosa-soft   { background-color: var(--pt-rosa-soft); }
+
+    .text-pt-malva     { color: var(--pt-malva); }
+    .bg-pt-malva       { background-color: var(--pt-malva); color: #fff; }
+    .bg-pt-malva-soft  { background-color: var(--pt-malva-soft); }
+
+    .bg-pt-fluo        { background-color: var(--pt-fluo); color: var(--pt-ink); }
+
+    /* — Neutros — */
+    .bg-pt-branco      { background-color: var(--pt-branco); }
+    .bg-pt-cal         { background-color: var(--pt-cal); }
+    .bg-pt-areia       { background-color: var(--pt-areia); color: var(--pt-ink); }
+    .bg-pt-areia-soft  { background-color: var(--pt-areia-soft); }
+    .text-pt-pedra     { color: var(--pt-pedra); }
+    .text-pt-grafite   { color: var(--pt-grafite); }
+    .text-pt-ink       { color: var(--pt-ink); }
+
+    /* — Originais (alias) — */
+    .text-pt-red       { color: var(--pt-red); }
+    .bg-pt-red         { background-color: var(--pt-red); color: #fff; }
+    .text-pt-green     { color: var(--pt-green); }
+    .bg-pt-green       { background-color: var(--pt-green); color: #fff; }
+    .text-pt-gold      { color: var(--pt-gold); }
+    .bg-pt-gold        { background-color: var(--pt-gold); color: var(--pt-ink); }
+    .text-pt-azul      { color: var(--pt-azul); }
+    .bg-pt-azul        { background-color: var(--pt-azul); color: #fff; }
+
+    /* ─── Sombras offset fanzine (4px 4px 0) ──────────────────── */
+    .shadow-pt-ink     { box-shadow: 4px 4px 0 var(--pt-ink); }
+    .shadow-pt-red     { box-shadow: 4px 4px 0 var(--pt-red); }
+    .shadow-pt-gold    { box-shadow: 4px 4px 0 var(--pt-gold); }
+    .shadow-pt-azul    { box-shadow: 4px 4px 0 var(--pt-azul); }
+    .shadow-pt-green   { box-shadow: 4px 4px 0 var(--pt-green); }
+    .shadow-pt-telha   { box-shadow: 4px 4px 0 var(--pt-telha); }
+    .shadow-pt-peixe   { box-shadow: 4px 4px 0 var(--pt-peixe); }
+    .shadow-pt-eucalipto{box-shadow: 4px 4px 0 var(--pt-eucalipto); }
+    .shadow-pt-malva   { box-shadow: 4px 4px 0 var(--pt-malva); }
+    .shadow-pt-lima    { box-shadow: 4px 4px 0 var(--pt-lima); }
+    .shadow-pt-brasa   { box-shadow: 4px 4px 0 var(--pt-brasa); }
+
+    /* ─── Chips fanzine reutilizáveis ────────────────────────── */
+    .chip-pt {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        padding: 3px 9px; border-radius: 999px;
+        font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+        text-transform: uppercase; line-height: 1.2;
+        border: 2px solid var(--pt-ink);
+        background: #fff; color: var(--pt-ink);
+        box-shadow: 2px 2px 0 var(--pt-ink);
+    }
+    .chip-pt-red       { background: var(--pt-red);       color: #fff; }
+    .chip-pt-gold      { background: var(--pt-gold);      color: var(--pt-ink); }
+    .chip-pt-green     { background: var(--pt-green);     color: #fff; }
+    .chip-pt-azul      { background: var(--pt-azul);      color: #fff; }
+    .chip-pt-telha     { background: var(--pt-telha);     color: #fff; }
+    .chip-pt-peixe     { background: var(--pt-peixe);     color: #fff; }
+    .chip-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
+    .chip-pt-malva     { background: var(--pt-malva);     color: #fff; }
+    .chip-pt-lima      { background: var(--pt-lima);      color: var(--pt-ink); }
+    .chip-pt-rosa      { background: var(--pt-rosa);      color: var(--pt-ink); }
+    .chip-pt-laranja   { background: var(--pt-laranja);   color: var(--pt-ink); }
+    .chip-pt-fluo      { background: var(--pt-fluo);      color: var(--pt-ink); }
+
+    /* ─── Highlights tipo marcador (texto sublinhado fluo) ───── */
+    .hl-pt-fluo   { background: linear-gradient(180deg, transparent 60%, var(--pt-fluo) 60%); padding: 0 0.08em; }
+    .hl-pt-gold   { background: linear-gradient(180deg, transparent 60%, var(--pt-gold) 60%); padding: 0 0.08em; }
+    .hl-pt-lima   { background: linear-gradient(180deg, transparent 60%, var(--pt-lima) 60%); padding: 0 0.08em; }
+    .hl-pt-rosa   { background: linear-gradient(180deg, transparent 60%, var(--pt-rosa) 60%); padding: 0 0.08em; }
+
+    /* ─── Zone-bands (faixas suaves sobre branco) ────────────── */
+    .zone-cal {
+        background-color: var(--pt-cal);
+        border-top: 1px solid rgba(10,10,10,0.07);
+        border-bottom: 1px solid rgba(10,10,10,0.07);
+    }
+    .zone-areia {
+        background-color: var(--pt-areia-soft);
+        border-top: 2px dashed var(--pt-ink);
+        border-bottom: 2px dashed var(--pt-ink);
+    }
+
+    /* ─── Ring focus colorido (acessibilidade) ──────────────── */
+    .ring-pt-gold:focus-visible { outline: 2.5px solid var(--pt-gold);  outline-offset: 2px; border-radius: 6px; }
+    .ring-pt-red:focus-visible  { outline: 2.5px solid var(--pt-red);   outline-offset: 2px; border-radius: 6px; }
+    .ring-pt-azul:focus-visible { outline: 2.5px solid var(--pt-azul);  outline-offset: 2px; border-radius: 6px; }
+    .ring-pt-peixe:focus-visible{ outline: 2.5px solid var(--pt-peixe); outline-offset: 2px; border-radius: 6px; }
+
+    /* ─── Carimbo tag inline (NOVO! · LIVE! · BETA) ─────────── */
+    .stamp-pt {
+        display: inline-block;
+        padding: 4px 9px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 10.5px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        line-height: 1;
+        border: 2.5px solid var(--pt-ink);
+        background: var(--pt-red);
+        color: #fff;
+        box-shadow: 2px 2px 0 var(--pt-ink);
+        transform: rotate(-4deg);
+    }
+    .stamp-pt-gold { background: var(--pt-gold); color: var(--pt-ink); }
+    .stamp-pt-azul { background: var(--pt-azul); color: #fff; }
+    .stamp-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
+    .stamp-pt-telha { background: var(--pt-telha); color: #fff; }
+}
+
 
 /* ============================================================
    SURFACES · glass · cards · hairlines

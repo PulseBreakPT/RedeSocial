@@ -3,7 +3,11 @@
 // Stickers, doodles, fotos coladas, formas — paleta portuguesa pesada.
 // =============================================================================
 
+// Paleta original (mantida por compat — 60+ ficheiros importam PT).
+// Para novos componentes, prefere `FANZINE` em `/src/theme/fanzinePalette.js`,
+// que tem 20+ tokens curados, pares "soft" e validação WCAG.
 export const PT = {
+    // originais
     red: "#C8102E",
     green: "#046A38",
     gold: "#FFCC00",
@@ -11,6 +15,26 @@ export const PT = {
     cream: "#F4F4F4",
     ink: "#0A0A0A",
     bone: "#EDEDEC",
+    // expansão (acessível também via PT.<token> para conveniência)
+    telha: "#D86A4E",
+    brasa: "#E85D4F",
+    tijolo: "#A04830",
+    fado: "#6B2C39",
+    laranja: "#F08A1E",
+    atl: "#1B4F8F",
+    azulejoLite: "#5B8DBF",
+    peixe: "#2EB4A6",
+    eucalipto: "#4A7C59",
+    oliveira: "#8B8E3F",
+    lima: "#D4E83C",
+    rosa: "#F4A6B7",
+    malva: "#7C5A8F",
+    fluo: "#FFF200",
+    branco: "#FFFFFF",
+    cal: "#FBFAF7",
+    areia: "#E8DCC2",
+    pedra: "#8C8C8C",
+    grafite: "#3A3A3D",
 };
 
 // ============ STICKER OVAL ROTADO ============

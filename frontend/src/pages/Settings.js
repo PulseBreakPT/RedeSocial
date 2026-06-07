@@ -322,7 +322,7 @@ export default function Settings() {
                     className="hidden lg:flex flex-col min-h-[calc(100vh-80px)] sticky top-0 self-start py-6 px-3"
                     style={{
                         borderRight: `2.5px solid ${PT.ink}`,
-                        background: PT.cream,
+                        background: "#FBFAF7",
                     }}
                 >
                     {/* Brand row */}

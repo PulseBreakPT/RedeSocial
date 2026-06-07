@@ -13,7 +13,7 @@ export function PageHeader({ title, subtitle, action, back = false, children, st
             data-testid={testid}
             className={`${sticky ? "sticky" : ""} top-[var(--mobile-topbar-h)] lg:top-0 z-30 backdrop-blur`}
             style={{
-                background: "rgba(244,244,244,0.94)",
+                background: "rgba(255,255,255,0.94)",
                 borderBottom: `3px solid ${PT.ink}`,
             }}
         >

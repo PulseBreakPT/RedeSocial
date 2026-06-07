@@ -14,7 +14,7 @@ export function PageShell({ children, max = "max-w-5xl" }) {
     return (
         <div
             className="relative"
-            style={{ background: PT.cream, minHeight: "100vh" }}
+            style={{ background: "#FFFFFF", minHeight: "100vh" }}
             data-testid="page-shell"
         >
             {/* Doodles decorativos */}
@@ -146,7 +146,7 @@ export function FilterBar({ children, className = "" }) {
         <div
             className={`sticky top-[calc(var(--mobile-topbar-h,64px))] lg:top-2 z-10 -mx-4 lg:-mx-6 px-4 lg:px-6 py-2.5 backdrop-blur mb-5 flex items-center gap-2 overflow-x-auto scrollbar-hide ${className}`}
             style={{
-                background: "rgba(244,244,244,0.94)",
+                background: "rgba(255,255,255,0.94)",
                 borderTop: `2px solid ${PT.ink}`,
                 borderBottom: `2px solid ${PT.ink}`,
             }}

@@ -22,7 +22,7 @@ export function PtPageShell({ children, testid, doodles = "all", className = "" 
         <div
             data-testid={testid}
             className={`relative ${className}`}
-            style={{ background: PT.cream, minHeight: "100vh" }}
+            style={{ background: "#FFFFFF", minHeight: "100vh" }}
         >
             {doodles !== "none" && (
                 <>
