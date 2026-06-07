@@ -1,0 +1,56 @@
+{
+  "summary": "Comprehensive test of the Lusorae landing pivot (Fev 2026): 4 new backend endpoints (/api/landing/pulse, /api/landing/cities, /api/waitlist/check, /api/waitlist/reserve) + frontend Landing.js. Backend: 17/17 pytest passing including CSRF-exempt POST, idempotency, conflict, reserved usernames, invalid email validation, and curated non-zero stats. Frontend: 9/10 critical flows passing — hero title, CTA label, SVG map, stats strip, no vanity-zeros, section ordering, FAQ accordion, full reserve flow (username typed → green availability check → submit → reserve-success with position #), and mobile responsiveness (no horizontal overflow, map+form stack correctly at 375px). One UX bug found: real mouse clicks on city dots in the SVG map often fall through to the Portugal outline <path> instead of the city <g>, so the active city does not change for the user — only programmatic clicks update state.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PortugalMap city dots",
+        "issue": "Real mouse clicks on map-city-{slug} <g> often hit the underlying Portugal <path> (elementFromPoint at the bbox center returns the path, not the <g>). The <g> bbox is ~50px wide because it includes both the small circle (r=5-7) and the label <text>; only clicks landing precisely on the small dot circle change the active city. Programmatic click dispatch DOES work — confirms onClick handler is correct, but pointer-events routing is broken. Fix: add `pointer-events: none` to the Portugal outline <path> (and inner decorative paths) OR set `pointer-events: all` on the city <g>/<circle> elements, OR move city dots to a sibling SVG layer rendered after the path.",
+        "selector": "[data-testid^=\"map-city-\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Hero on desktop",
+        "issues": [
+          "Hero subtitle 'O mapa social vivo das cidades portuguesas' contains a stray bullet character (•) shown alone on its own line between the title and the body paragraph — appears to be an empty list item or decorative marker that renders as an orphaned dot.",
+          "Stats-strip values render with no space between the 'Real' label and the number (e.g., 'Real43Cidades suportadas') because they are stacked but the text concatenation in innerText collapses; visually fine in the screenshot but the testid text content reads concatenated.",
+          "WhyNotFacebook (id='missao') headline uses bright yellow on the highlighted words on a black background — the user brief asked for 'sóbrio, sem amarelo gratuito'. Verify the yellow accent here is intentional."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_landing_waitlist.py",
+    "/app/test_reports/pytest/landing_waitlist.xml"
+  ],
+  "action_items": [
+    "Fix SVG map click routing: add `pointer-events: none` to the Portugal outline <path> so clicks fall through to the city <g> dots underneath, OR ensure city dots are rendered with `pointer-events: all` AND on top of the path z-order. Without this fix, no real user can change the selected city by clicking dots.",
+    "Remove the orphan bullet character in the hero subtitle (appears as a lone '•' between title and paragraph).",
+    "Review the yellow accent in WhyNotFacebook headline against the 'sem amarelo gratuito' brief — possibly switch to red or gold for consistency.",
+    "(Optional/minor) Consider adding aria-pressed to active city dot for screen reader announcements when selection changes."
+  ],
+  "critical_code_review_comments": [
+    "Landing.js is 1073 lines — exceeds the 700-line guideline. Should be split into /pages/landing/{Hero,PortugalMap,ReserveForm,StatsStrip,ProductSnapshots,WhyNotFacebook,HowItWorks,PremiumCompact,Faq,FinalCta}.jsx for maintainability.",
+    "server.py is now 17,265 lines — way over any reasonable limit; landing routes (16968-17264) and many other feature areas should be split into routers and included via APIRouter. This is a long-standing debt but worth flagging.",
+    "PortugalMap onClick is on a <g> wrapping both the circle and the label, but the SVG path of Portugal mainland is drawn earlier in the same <svg>. Z-order in SVG is render-order, so dots ARE drawn after the path — yet `elementFromPoint` returns the path. Inspect whether the path has a `fill` (not `none`) without `pointer-events:none`; this is the precise root cause.",
+    "/api/waitlist/reserve uses @limiter.limit('6/minute') — fine — but the IP captured is request.client.host which behind k8s ingress may collapse to the load-balancer IP. Consider trusting X-Forwarded-For for accurate per-user rate limiting.",
+    "waitlist_reserve cooldown check uses ISO string comparison ($gte: sixty_s_ago as string). Works because timestamps are formatted with timezone offset suffix +00:00 and lexicographic order matches chronological order, but a UTC z suffix change would silently break it. Consider storing datetime objects instead of strings.",
+    "GET /api/waitlist/check always returns 200 even for invalid input (correct UX), but the @limiter.limit('30/minute') on a public unauthenticated endpoint keyed by IP could be probed by an attacker to enumerate registered usernames (taken_user vs taken_waitlist responses leak info). Consider collapsing all taken reasons to a single generic 'unavailable'."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_landing_waitlist.py (created)"
+  ],
+  "success_rate": {"backend": "100% (17/17 pytest)", "frontend": "90% (9/10 critical flows; map dot real-click broken)"},
+  "test_credentials": "admin@lusorae.pt / Admin12345! (read from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created and then deleted 2 waitlist documents with usernames starting with `lus_test_` and `luz` during testing; DB cleaned up at the end of the run.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints all confirmed working at https://e87019ba-56a4-4e35-b762-5f091eeed122.preview.emergentagent.com/api — pulse returns cities_supported=43, events_indexed=201, bairros_indexed=112, regions_covered=8, events_next_7d=8 (live values at time of test). Cities list returns 14 cities including funchal+ponta-delgada islands. CSRF is correctly exempted for /api/waitlist/*. The known issue is in /app/frontend/src/pages/Landing.js — the SVG <path> for Portugal mainland (search for 'mainland' or the d= attribute around lines 470-495) absorbs pointer events because it does not have pointer-events:none. Once fixed, retest with playwright clicking on map-city-porto and asserting city-detail-porto appears.",
+  "rca of the issue": "RCA — map dot real-click bug: elementFromPoint at the center of [data-testid='map-city-porto'] returned a <path> element (Portugal outline), not the <g> dot. The <g> bbox is ~50px wide because it includes the label <text> next to the small ~5px circle. Even when the user clicks within the bbox but outside the visible dot, the click lands on the country path which sits at the same SVG layer. Programmatic click dispatch on the <g> works (state updates to Porto) — confirming the handler is wired correctly. Fix: in /app/frontend/src/pages/Landing.js around the Portugal mainland <path d=...> add `style={{ pointerEvents: 'none' }}` (and same for any decorative inner paths). The city dot <g> elements (with role=button, onClick) will then receive all clicks landing anywhere in their bbox, including on the label text."
+}

@@ -1,68 +1,65 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
-    ArrowRight, Users, MessageCircle, Calendar, Building2,
-    MapPin, Compass, Sparkles, Lock, ChevronDown, Heart,
+    ArrowRight, MapPin, Lock, ChevronDown, Check, Loader2,
+    MessageCircle, Calendar as CalendarIcon, Users as UsersIcon,
+    Building2, Search, Hash, Bell, Heart, Send, Bookmark, Shield,
 } from "lucide-react";
-import {
-    PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
-    DoodleArrow, DoodleStar, DoodleSparkles, DoodleHeart, DoodleScribble,
-    DoodleZigzag, DoodleUnderline, DoodleSpiral, DoodleCross, DoodleExclamation,
-    DoodleLongArrow, HandNote, GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
-    PostIt, Receipt, Ticket, PostStamp, AzulejoBorder, Highlight, Coords,
-    SpeechBubble, NewspaperClip, Signature, RouteDots, PaperFoldCorner,
-    QuickStroke, HandArrow, StampTag,
-} from "./auth/AuthDecor";
+import { PT, Kicker, AuthStyles } from "./auth/AuthDecor";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
-
 import { api } from "../lib/api";
-const HERO_MAIN = "/hero/hero.webp";
-const HERO_CITY_1 = "/hero/city-porto.webp";
-const HERO_CITY_2 = "/hero/city-lisboa.webp";
-const HERO_CITY_3 = "/hero/city-algarve.webp";
-const PORTUGAL_MAP = "/hero/portugal-map.webp";
-const CTA_BG = "/hero/cta-community.webp";
 
 // =============================================================================
-// LUSORAE — Landing pública (fanzine PT · vermelho/dourado/verde/azul)
+// LUSORAE — Landing pública  (Fev 2026 · pivot "mapa social vivo")
+// Curadoria: mapa interactivo de cidades como protagonista do produto;
+// CTA primário muda de "Criar conta" para "Reservar username" (waitlist).
+// Visual deliberadamente mais sóbrio: paleta PT mantida, mas sem amarelo
+// gratuito, sem doodles, sem stamp shadows pesadas. Foco no produto.
 // =============================================================================
+
 export default function Landing() {
     const { user, checking } = useAuth();
-    const [stats, setStats] = useState(null);
+    const [pulse, setPulse] = useState(null);
+    const [cities, setCities] = useState([]);
+    const [activeCity, setActiveCity] = useState(null);
     const [openFaq, setOpenFaq] = useState(null);
 
+    // Carrega stats curadas + cidades-âncora em paralelo
     useEffect(() => {
         let mounted = true;
         (async () => {
             try {
-                const { data } = await api.get(`/stats/landing`);
-                if (mounted) setStats(data);
-            } catch {
-                /* fail silently — secção esconde-se sozinha */
-            }
+                const [pulseRes, citiesRes] = await Promise.all([
+                    api.get(`/landing/pulse`).then((r) => r.data).catch(() => null),
+                    api.get(`/landing/cities`).then((r) => r.data).catch(() => null),
+                ]);
+                if (!mounted) return;
+                if (pulseRes) setPulse(pulseRes);
+                if (citiesRes?.cities) {
+                    setCities(citiesRes.cities);
+                    // Lisboa em destaque por defeito (capital social)
+                    const lx = citiesRes.cities.find((c) => c.slug === "lisboa");
+                    setActiveCity(lx || citiesRes.cities[0] || null);
+                }
+            } catch {/* silencioso */ }
         })();
         return () => { mounted = false; };
     }, []);
 
-    // Logged-in users go straight to the feed
     if (!checking && user) return <Navigate to="/feed" replace />;
 
     return (
-        <div className="min-h-screen relative overflow-hidden pt-paper" style={{ background: PT.cream }} data-testid="landing-page">
-            <div className="pt-tape h-3 w-full" />
-
+        <div className="min-h-screen relative pt-paper" style={{ background: PT.cream, color: PT.ink }} data-testid="landing-page">
             <TopNav />
-            <Hero stats={stats} />
-            <StatsBand stats={stats} />
-            <WhatYouFind />
-            <ExploreCities />
+            <Hero pulse={pulse} cities={cities} activeCity={activeCity} setActiveCity={setActiveCity} />
+            <StatsStrip pulse={pulse} />
+            <ProductSnapshots />
+            <WhyNotFacebook />
             <HowItWorks />
-            <PortugalMap />
+            <PremiumCompact />
             <Faq openFaq={openFaq} setOpenFaq={setOpenFaq} />
-            <FinalCta />
-
-            <div className="pt-tape h-3 w-full" />
+            <FinalCta pulse={pulse} />
             <SiteFooter />
             <AuthStyles />
         </div>
@@ -70,798 +67,155 @@ export default function Landing() {
 }
 
 // =============================================================================
-// TOP NAV — só desktop (lg+); mobile usa o footer + CTAs do hero
+// TOP NAV — minimalista, sem amarelo
 // =============================================================================
-function TopNav() {
-    const NavLink = ({ to, children, testid }) => (
+function NavLink({ to, children, testid }) {
+    return (
         <Link
             to={to}
             data-testid={testid}
-            className="text-[13.5px] font-black uppercase tracking-wider hover:opacity-70 transition-opacity"
-            style={{ color: PT.ink, letterSpacing: "0.08em" }}
+            className="text-[12.5px] font-bold uppercase tracking-[0.08em] hover:opacity-60 transition-opacity"
+            style={{ color: PT.ink }}
         >
             {children}
         </Link>
     );
+}
+
+function TopNav() {
     return (
-        <header className="relative z-30">
-            {/* DESKTOP NAV */}
-            <div className="hidden lg:flex items-center justify-between px-10 xl:px-16 py-6 relative">
+        <header className="relative z-30 border-b" style={{ borderColor: "rgba(10,10,10,0.08)" }}>
+            <div className="hidden lg:flex items-center justify-between px-10 xl:px-14 py-5 max-w-[1400px] mx-auto">
                 <div className="flex items-baseline gap-2">
-                    <span style={{ color: PT.red, fontSize: 36, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
-                    <span
-                        className="text-[28px] font-black tracking-tight"
-                        style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}
-                        data-testid="brand-logo"
-                    >
+                    <span style={{ color: PT.red, fontSize: 28 }} className="font-black leading-none">✱</span>
+                    <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }} data-testid="brand-logo">
                         lusorae
                     </span>
+                    <span className="ml-3 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded"
+                          style={{ letterSpacing: "0.12em", background: PT.ink, color: PT.cream }}>
+                        em pré-lançamento
+                    </span>
                 </div>
-                <nav className="flex items-center gap-9">
+                <nav className="flex items-center gap-8">
                     <NavLink to="/manifesto" testid="nav-manifesto">Manifesto</NavLink>
-                    <NavLink to="/legal/community" testid="nav-community">Diretrizes</NavLink>
-                    <NavLink to="/legal/privacy" testid="nav-privacy">Privacidade</NavLink>
-                    <NavLink to="/legal" testid="nav-legal">Legal</NavLink>
+                    <NavLink to="#mapa" testid="nav-mapa">Mapa</NavLink>
+                    <NavLink to="#produto" testid="nav-produto">Produto</NavLink>
+                    <NavLink to="#missao" testid="nav-missao">Missão</NavLink>
                 </nav>
                 <div className="flex items-center gap-3">
-                    <Link
-                        to="/login"
-                        data-testid="nav-login"
-                        className="text-[13.5px] font-black uppercase px-5 py-2.5 rounded-full transition"
-                        style={{
-                            color: PT.ink,
-                            border: `2.5px solid ${PT.ink}`,
-                            letterSpacing: "0.08em",
-                            background: "transparent",
-                        }}
-                    >
+                    <Link to="/login" data-testid="nav-login"
+                          className="text-[12.5px] font-bold uppercase px-4 py-2 tracking-[0.08em] hover:underline"
+                          style={{ color: PT.ink }}>
                         Entrar
                     </Link>
-                    <Link
-                        to="/register"
-                        data-testid="nav-register"
-                        className="pt-btn-primary text-[13.5px] px-5 py-3"
-                    >
-                        Criar conta →
-                    </Link>
+                    <a href="#reservar" data-testid="nav-reservar"
+                       className="text-[12.5px] font-black uppercase px-4 py-2.5 tracking-[0.08em] rounded-full transition"
+                       style={{ background: PT.ink, color: PT.cream }}>
+                        Reservar username
+                    </a>
                 </div>
             </div>
-
-            {/* MOBILE NAV — só marca + Entrar/Criar */}
-            <div className="lg:hidden flex items-center justify-between px-5 py-4">
+            <div className="lg:hidden flex items-center justify-between px-5 py-3.5">
                 <div className="flex items-baseline gap-1.5">
-                    <span style={{ color: PT.red, fontSize: 28, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
-                    <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}>
-                        lusorae
-                    </span>
+                    <span style={{ color: PT.red, fontSize: 22 }} className="font-black leading-none">✱</span>
+                    <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Link to="/login" data-testid="nav-login-mobile" className="text-[12px] font-black uppercase px-3.5 py-2 rounded-full" style={{ color: PT.ink, border: `2px solid ${PT.ink}`, letterSpacing: "0.06em" }}>
-                        Entrar
-                    </Link>
-                </div>
+                <a href="#reservar" data-testid="nav-reservar-mobile"
+                   className="text-[11px] font-black uppercase px-3 py-2 tracking-[0.06em] rounded-full"
+                   style={{ background: PT.ink, color: PT.cream }}>
+                    Reservar
+                </a>
             </div>
         </header>
     );
 }
 
 // =============================================================================
-// HERO — Vive. Partilha. Lusorae.
+// HERO — Headline + Reserva (esquerda) · Mapa interactivo (direita)
 // =============================================================================
-function Hero({ stats }) {
-    const online = stats?.online_now ?? 0;
-    const total = stats?.total_users ?? 0;
-    const showOnlineCount = online > 0;
-    const avatars = (stats?.avatars || []).slice(0, 5);
-
+function Hero({ pulse, cities, activeCity, setActiveCity }) {
     return (
-        <section className="relative px-5 sm:px-8 lg:px-16 pt-2 lg:pt-4 pb-12 sm:pb-16 lg:pb-20" data-testid="hero">
-            {/* Doodles dispersos */}
-            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                <DoodleSparkles color={PT.gold} size={64} rotate={14} />
-            </div>
-            <div className="absolute bottom-12 left-2 lg:bottom-20 lg:left-6 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
-                <DoodleScribble color={PT.azul} w={140} h={48} style={{ transform: "rotate(-8deg)" }} />
-            </div>
-
-            <div className="grid lg:grid-cols-[1.05fr_1fr] gap-8 sm:gap-10 lg:gap-14 items-center max-w-7xl mx-auto">
-                {/* COLUNA TEXTO */}
-                <div className="relative order-2 lg:order-1">
-                    {/* Kicker amarelo */}
-                    <div className="inline-block mb-4 sm:mb-5">
+        <section id="reservar" className="px-5 sm:px-8 lg:px-14 pt-8 sm:pt-12 lg:pt-16 pb-12 lg:pb-20" data-testid="hero">
+            <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1.05fr_1.1fr] gap-10 lg:gap-14 items-start">
+                {/* COLUNA TEXTO + RESERVA */}
+                <div className="order-2 lg:order-1">
+                    <div className="inline-block mb-5">
                         <span
-                            className="text-[10px] sm:text-[11px] font-mono font-black uppercase"
-                            style={{
-                                letterSpacing: "0.18em",
-                                background: PT.gold,
-                                color: PT.ink,
-                                padding: "6px 12px",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
-                                display: "inline-block",
-                                transform: "rotate(-1deg)",
-                            }}
+                            data-testid="hero-kicker"
+                            className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] px-2.5 py-1 rounded"
+                            style={{ background: "rgba(10,10,10,0.06)", color: PT.ink }}
                         >
-                            A tua cidade · a tua voz
+                            ✱ rede social portuguesa · pré-lançamento
                         </span>
                     </div>
 
-                    {/* TÍTULO grande */}
                     <h1
-                        className="font-black tracking-[-0.04em] mb-5 sm:mb-6"
-                        style={{ fontSize: "clamp(42px, 7vw, 84px)", lineHeight: 1.0, color: PT.ink }}
+                        className="font-black tracking-[-0.035em] mb-5"
+                        style={{ fontSize: "clamp(38px, 6.4vw, 76px)", lineHeight: 1.02, color: PT.ink }}
+                        data-testid="hero-title"
                     >
-                        <span className="inline-block sm:inline-block" style={{
+                        O <span style={{ color: PT.red }}>mapa social vivo</span>
+                        <br />
+                        das <span style={{
                             display: "inline-block",
-                            transform: "rotate(-1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                            WebkitTextStroke: `1px ${PT.ink}`,
-                            marginBottom: "0.05em",
-                        }}>Vive.</span>
-                        <br className="sm:hidden"/>{" "}
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            transform: "rotate(1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}, 6px 6px 0 ${PT.ink}`,
-                            WebkitTextStroke: `1.5px ${PT.ink}`,
-                            marginTop: "0.10em",
-                        }}>Partilha.</span>
-                        <br/>
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            color: PT.ink,
-                            padding: "0 0.12em",
-                            border: `4px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.ink}, 12px 12px 0 ${PT.red}`,
-                            transform: "rotate(-1deg)",
-                            marginTop: "0.22em",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>Lusorae.</span>
+                            borderBottom: `5px solid ${PT.gold}`,
+                            paddingBottom: 2,
+                        }}>cidades portuguesas</span>.
                     </h1>
 
-                    {/* Descrição */}
-                    <p className="text-[15.5px] sm:text-[16.5px] lg:text-[18px] font-medium leading-relaxed mb-6 sm:mb-7 max-w-[540px]" style={{ color: "rgba(10,10,10,0.78)" }}>
-                        A rede social portuguesa feita para{" "}
-                        <span style={{ background: PT.azul, color: "#fff", padding: "2px 8px", fontWeight: 800, border: `2px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(-1deg)" }}>
-                            conversas reais
-                        </span>
-                        , pessoas reais e{" "}
-                        <span style={{ background: PT.green, color: "#fff", padding: "2px 8px", fontWeight: 800, border: `2px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
-                            presença social viva
-                        </span>
-                        .
+                    <p className="text-[16px] sm:text-[17px] leading-relaxed mb-6 max-w-[560px]" style={{ color: "rgba(10,10,10,0.74)" }}>
+                        Não vendemos Portugal inteiro. Vendemos <strong style={{ color: PT.ink }}>a tua cidade</strong> — bairro a bairro, mesa a mesa, conversa a conversa. Reserva o teu username antes do lançamento.
                     </p>
 
-                    {/* CTAs */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-7 relative">
-                        <Link
-                            to="/register"
-                            data-testid="hero-cta-register"
-                            className="pt-btn-primary text-[15px] sm:text-[16px] py-4 px-7 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                        >
-                            CRIAR CONTA <ArrowRight size={18} />
-                        </Link>
-                        <Link
-                            to="/login"
-                            data-testid="hero-cta-login"
-                            className="pt-btn-ghost text-[14px] sm:text-[15px] py-4 px-7 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                        >
-                            EXPLORAR <ArrowRight size={16} />
-                        </Link>
-                        <div className="absolute -top-5 right-2 sm:-top-6 sm:right-12 pointer-events-none">
-                            <Sticker bg={PT.green} color="#fff" rotate={12} style={{ fontSize: 9.5, padding: "5px 9px" }}>
-                                GRÁTIS ✱
-                            </Sticker>
-                        </div>
-                        {/* Seta manuscrita a apontar para o CTA — só desktop */}
-                        <div className="absolute -top-12 left-12 pointer-events-none hidden lg:block">
-                            <HandArrow color={PT.red} w={76} h={62} rotate={155} dir="right" />
-                        </div>
-                        <div className="absolute -top-14 left-32 pointer-events-none hidden lg:block">
-                            <Signature size={20} rotate={-8} color={PT.red}>começa aqui!</Signature>
-                        </div>
-                        {/* Traço rápido sob os botões */}
-                        <div className="absolute -bottom-5 left-0 pointer-events-none hidden sm:block">
-                            <QuickStroke color={PT.gold} w={120} h={18} rotate={-3} strokeWidth={5} />
-                        </div>
-                    </div>
+                    {/* WAITLIST FORM */}
+                    <ReserveForm />
 
-                    {/* Avatares + live dot */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        {avatars.length > 0 && (
-                            <div className="flex -space-x-3" data-testid="hero-avatars">
-                                {avatars.map((a, i) => (
-                                    a.avatar_url ? (
-                                        <img
-                                            key={a.id || i}
-                                            src={a.avatar_url}
-                                            alt={a.name || ""}
-                                            className="w-10 h-10 rounded-full object-cover"
-                                            style={{ border: `3px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, background: PT.bone }}
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div
-                                            key={a.id || i}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center font-black text-[12px]"
-                                            style={{
-                                                background: [PT.red, PT.gold, PT.green, PT.azul, PT.ink][i % 5],
-                                                color: i % 5 === 1 ? PT.ink : "#fff",
-                                                border: `3px solid ${PT.ink}`,
-                                                boxShadow: `2px 2px 0 ${PT.ink}`,
-                                            }}
-                                        >
-                                            {(a.name || "?").charAt(0).toUpperCase()}
-                                        </div>
-                                    )
-                                ))}
-                            </div>
-                        )}
-                        <div className="flex items-center gap-2.5" data-testid="hero-live-counter">
-                            <span className="relative flex h-3 w-3" aria-hidden>
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.green }} />
-                                <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: PT.green, border: `2px solid ${PT.ink}` }} />
-                            </span>
-                            <div>
-                                <p className="text-[15px] font-black leading-tight" style={{ color: PT.ink }}>
-                                    {showOnlineCount ? `+${online.toLocaleString("pt-PT")}` : `+${total.toLocaleString("pt-PT")}`}
-                                </p>
-                                <p className="text-[11px] font-mono font-bold uppercase" style={{ letterSpacing: "0.10em", color: "rgba(10,10,10,0.60)" }}>
-                                    {showOnlineCount ? "online agora" : "membros · à tua espera"}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* COLUNA IMAGEM */}
-                <div className="relative order-1 lg:order-2 mb-2 lg:mb-0">
-                    <div className="relative mx-auto" style={{ maxWidth: 460 }}>
-                        <TapedPhoto
-                            src={HERO_MAIN}
-                            alt="Comunidade Lusorae"
-                            rotate={-2}
-                            w={460}
-                            h={420}
-                            style={{ width: "100%", maxWidth: 460, height: "auto", aspectRatio: "11/10" }}
-                        />
-                        {/* Sticker quote */}
-                        <div className="absolute -bottom-4 sm:-bottom-6 -left-2 sm:-left-4 z-20 pointer-events-none">
-                            <PosterCard bg={PT.green} color="#fff" rotate={-4} shadow={PT.ink} style={{ padding: "10px 14px", maxWidth: 200 }}>
-                                <p className="font-black text-[12.5px] sm:text-[13.5px] leading-tight">
-                                    “o sítio certo para seres tu, <span style={{ background: PT.gold, color: PT.ink, padding: "0 4px" }}>sem pedir desculpa</span>.”
-                                </p>
-                                <p className="mt-1 text-[9.5px] sm:text-[10px] font-mono uppercase font-bold" style={{ letterSpacing: "0.14em", opacity: 0.8 }}>
-                                    — pessoas, não perfis
-                                </p>
-                            </PosterCard>
-                        </div>
-                        <div className="absolute -top-3 sm:-top-4 -right-3 sm:-right-4 z-20 pointer-events-none">
-                            <StampCircle bg={PT.red} color="#fff" rotate={14} size={64}>
-                                100%<br/>HUMANO
-                            </StampCircle>
-                        </div>
-                        {/* Coordenadas — só desktop, ligadas ao stamp */}
-                        <div className="absolute -top-1 right-12 z-30 pointer-events-none hidden lg:block">
-                            <Coords lat="41.1579" lon="8.6291" rotate={-8} color={PT.ink} />
-                        </div>
-                        {/* Balão de fala flutuante — só desktop */}
-                        <div className="absolute -left-10 top-1/3 z-30 pointer-events-none hidden xl:block">
-                            <SpeechBubble color={PT.gold} ink={PT.ink} rotate={-6} w={140}>
-                                Junta-te! ✱
-                            </SpeechBubble>
-                        </div>
-                        {/* Assinatura manuscrita — bottom right */}
-                        <div className="absolute -bottom-10 right-4 z-20 pointer-events-none hidden sm:block">
-                            <Signature size={28} rotate={-4} color={PT.red}>
-                                vive · partilha
-                            </Signature>
-                        </div>
-                        <div className="absolute -bottom-2 -right-6 z-20 pointer-events-none hidden sm:block">
-                            <DoodleHeart color={PT.red} size={36} rotate={-12} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Trust badges removidos — sem mensagens forçadas. O produto fala por si. */}
-        </section>
-    );
-}
-
-function TrustBadge({ icon, color, children }) {
-    // kept (unused) — legacy component
-    return (
-        <div className="flex items-center gap-2.5">
-            <span
-                className="inline-flex items-center justify-center"
-                style={{
-                    width: 32, height: 32, borderRadius: "50%",
-                    background: color, color: "#fff",
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `2px 2px 0 ${PT.ink}`,
-                }}
-            >
-                {icon}
-            </span>
-            <span className="text-[13px] font-black uppercase" style={{ letterSpacing: "0.06em", color: PT.ink }}>
-                {children}
-            </span>
-        </div>
-    );
-}
-
-// =============================================================================
-// STATS BAND — 4 cartões com contagens reais
-// =============================================================================
-function StatsBand({ stats }) {
-    const items = [
-        { value: stats?.total_users, fallback: 0, label: "membros · total", icon: <Users size={26} />, bg: PT.green, color: "#fff", testid: "stat-online" },
-        { value: stats?.active_conversations, fallback: 0, label: "conversas · 1h", icon: <MessageCircle size={26} />, bg: PT.gold, color: PT.ink, testid: "stat-conversations" },
-        { value: stats?.posts_today, fallback: 0, label: "posts · hoje", icon: <Calendar size={26} />, bg: PT.azul, color: "#fff", testid: "stat-posts" },
-        { value: stats?.cities_active, fallback: stats?.communities_total, label: "cidades · ativas", icon: <Building2 size={26} />, bg: PT.red, color: "#fff", testid: "stat-cities" },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-10 sm:py-14 lg:py-16 relative" data-testid="stats-band">
-            {/* Doodles decorativos de fundo */}
-            <div className="absolute top-2 left-4 sm:top-6 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSparkles color={PT.red} size={44} rotate={-12} />
-            </div>
-            <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleSpiral color={PT.azul} size={48} rotate={14} />
-            </div>
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 relative z-10">
-                {items.map((it, i) => {
-                    const v = (it.value != null && it.value > 0) ? it.value : (it.fallback ?? 0);
-                    return (
-                        <div
-                            key={i}
-                            data-testid={it.testid}
-                            className="relative p-4 sm:p-5 lg:p-6"
-                            style={{
-                                background: it.bg, color: it.color,
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.ink}`,
-                                transform: i % 2 === 0 ? "rotate(-0.6deg)" : "rotate(0.6deg)",
-                                borderRadius: 16,
-                            }}
-                        >
-                            <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                <span className="opacity-90">{it.icon}</span>
-                                <DoodleZigzag color={it.color === "#fff" ? PT.gold : PT.ink} w={40} h={12} />
-                            </div>
-                            <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: it.color === "#fff" ? `2px 2px 0 ${PT.ink}` : "none" }}>
-                                {Number(v).toLocaleString("pt-PT")}
-                            </p>
-                            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.08em", opacity: 0.92 }}>
-                                {it.label}
-                            </p>
-                            {/* Mini carimbo "LIVE!" só na primeira card */}
-                            {i === 0 && (
-                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
-                                    <StampTag bg={PT.red} color="#fff" rotate={-12} size={10}>LIVE!</StampTag>
-                                </div>
-                            )}
-                            {/* Mini carimbo "HOJE!" na terceira (posts hoje) */}
-                            {i === 2 && (
-                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
-                                    <StampTag bg={PT.gold} color={PT.ink} rotate={10} size={10}>HOJE!</StampTag>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// WHAT YOU'LL FIND — 5 categorias com círculos coloridos
-// =============================================================================
-function WhatYouFind() {
-    const cats = [
-        { icon: <MessageCircle size={28} />, label: "Conversas", sub: "do dia-a-dia.", color: PT.red, testid: "cat-conversas" },
-        { icon: <Users size={28} />, label: "Pessoas", sub: "novas.", color: PT.gold, ink: true, testid: "cat-pessoas" },
-        { icon: <Compass size={28} />, label: "Eventos", sub: "perto.", color: PT.azul, testid: "cat-eventos" },
-        { icon: <MapPin size={28} />, label: "Cidades", sub: "~300.", color: PT.green, testid: "cat-cidades" },
-        { icon: <Sparkles size={28} />, label: "Comunidades", sub: "ativas.", color: PT.red, testid: "cat-comunidades" },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="what-you-find">
-            {/* Doodles de fundo de secção */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleStar color={PT.gold} size={42} rotate={-14} />
-            </div>
-            <div className="absolute bottom-8 right-4 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleZigzag color={PT.red} w={120} h={28} style={{ transform: "rotate(8deg)" }} />
-            </div>
-            <div className="max-w-7xl mx-auto relative z-10">
-                <div className="text-center mb-10 sm:mb-12 relative inline-block left-1/2 -translate-x-1/2">
-                    <Kicker color={PT.red} className="mb-2 block">O QUE VAIS ENCONTRAR</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        O que vais encontrar por{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                        }}>
-                            aqui.
+                    {/* Linha de prova social */}
+                    <div className="mt-6 flex flex-wrap items-center gap-5 text-[12px] font-mono font-bold uppercase tracking-[0.08em]" style={{ color: "rgba(10,10,10,0.55)" }}>
+                        <span className="flex items-center gap-1.5">
+                            <Lock size={13} /> sem ads · sem doomscroll
                         </span>
-                    </h2>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-7 lg:gap-4 relative">
-                    {/* Seta a apontar para "Conversas" */}
-                    <div className="absolute -top-10 left-2 pointer-events-none hidden lg:block">
-                        <HandArrow color={PT.red} w={66} h={56} rotate={-15} dir="down" />
-                    </div>
-                    <div className="absolute -top-8 left-16 pointer-events-none hidden lg:block">
-                        <Signature size={20} rotate={-6} color={PT.red}>começa por aqui</Signature>
-                    </div>
-                    {/* Sparkles entre categorias */}
-                    <div className="absolute top-2 left-[39%] lg:top-6 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
-                        <DoodleSparkles color={PT.gold} size={30} rotate={20} />
-                    </div>
-                    <div className="absolute top-1 left-[78%] lg:top-2 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
-                        <DoodleCross color={PT.red} size={20} rotate={12} />
-                    </div>
-                    {cats.map((c, i) => (
-                        <div key={i} className="text-center" data-testid={c.testid}>
-                            <div
-                                className="mx-auto mb-3 inline-flex items-center justify-center"
-                                style={{
-                                    width: 68, height: 68, borderRadius: "50%",
-                                    background: c.color, color: c.ink ? PT.ink : "#fff",
-                                    border: `3.5px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                                    transform: `rotate(${i % 2 === 0 ? -3 : 3}deg)`,
-                                }}
-                            >
-                                {c.icon}
-                            </div>
-                            <p className="font-black text-[15px] sm:text-[16px] mb-0.5" style={{ color: PT.ink }}>{c.label}</p>
-                            <p className="text-[12px] sm:text-[12.5px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.60)" }}>{c.sub}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// EXPLORE CITIES — 3 fotos lado a lado + texto
-// =============================================================================
-function ExploreCities() {
-    const cities = [
-        { src: HERO_CITY_1, name: "Porto", code: "PRT", coords: { lat: "41.15", lon: "8.61" }, stampBg: PT.gold, sBg: PT.gold, sCol: PT.ink, color: PT.red, rotate: -2 },
-        { src: HERO_CITY_2, name: "Lisboa", code: "LIS", coords: { lat: "38.71", lon: "9.13" }, stampBg: PT.green, sBg: PT.green, sCol: "#fff", color: PT.green, rotate: 1.5 },
-        { src: HERO_CITY_3, name: "Algarve", code: "ALG", coords: { lat: "37.01", lon: "7.93" }, stampBg: PT.red, sBg: PT.red, sCol: "#fff", color: PT.azul, rotate: -1 },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="explore-cities">
-            {/* Doodles de fundo */}
-            <div className="absolute top-4 right-6 sm:top-8 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
-                <DoodleSparkles color={PT.green} size={40} rotate={10} />
-            </div>
-            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
-                <DoodleScribble color={PT.gold} w={120} h={36} style={{ transform: "rotate(-6deg)" }} />
-            </div>
-            <div className="max-w-7xl mx-auto rounded-3xl relative z-10" style={{ background: "#fff", border: `3.5px solid ${PT.ink}`, boxShadow: `6px 6px 0 ${PT.ink}` }}>
-                {/* Canto dobrado decorativo */}
-                <PaperFoldCorner size={26} color="rgba(10,10,10,0.10)" corner="top-right" style={{ borderRadius: "0 24px 0 0" }} />
-
-                <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-7 sm:gap-8 lg:gap-10 p-6 sm:p-8 lg:p-10 items-center">
-                    {/* Texto */}
-                    <div className="order-2 lg:order-1">
-                        <Kicker color={PT.green} className="mb-2">PORTUGAL · LOCAL</Kicker>
-                        <h2
-                            className="font-black tracking-[-0.03em] mb-4"
-                            style={{ fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 0.98, color: PT.ink }}
-                        >
-                            Explora a tua{" "}
-                            <Highlight color="#FFEB3B" rotate={-2}>
-                                <span style={{ color: PT.ink }}>cidade.</span>
-                            </Highlight>
-                        </h2>
-                        <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed mb-5" style={{ color: "rgba(10,10,10,0.72)" }}>
-                            Descobre pessoas, eventos e lugares incríveis perto de ti — de Braga ao Algarve, da Madeira aos Açores.
-                        </p>
-                        <Link
-                            to="/register"
-                            data-testid="explore-cities-cta"
-                            className="inline-flex items-center gap-2 font-black text-[13px] sm:text-[13.5px] uppercase"
-                            style={{
-                                color: PT.ink,
-                                background: PT.gold,
-                                padding: "10px 18px",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Explorar cidades <ArrowRight size={16} />
-                        </Link>
-
-                        {/* Rota pontilhada decorativa — só desktop */}
-                        <div className="absolute -bottom-3 left-1/3 z-10 pointer-events-none hidden lg:block">
-                            <RouteDots
-                                d="M 0 30 Q 60 0 120 30 T 240 30"
-                                color={PT.red}
-                                w={260} h={50}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Mosaico de fotos com identidade de cidade */}
-                    <div className="grid grid-cols-3 gap-3 lg:gap-4 relative order-1 lg:order-2">
-                        {cities.map((c, i) => (
-                            <CityPhoto
-                                key={c.name}
-                                src={c.src}
-                                city={c.name}
-                                code={c.code}
-                                coords={c.coords}
-                                rotate={c.rotate}
-                                stampBg={c.stampBg}
-                                stickerBg={c.sBg}
-                                stickerColor={c.sCol}
-                                postColor={c.color}
-                                index={i}
-                            />
-                        ))}
-                        <div className="absolute -top-4 -right-3 sm:-top-5 sm:-right-5 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
-                            <DoodleStar color={PT.red} size={40} rotate={12} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function CityPhoto({ src, city, code, coords, rotate, stickerBg, stickerColor = PT.ink, postColor = PT.red, index = 0 }) {
-    return (
-        <div className="relative">
-            <div
-                className="relative overflow-hidden"
-                style={{
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                    transform: `rotate(${rotate}deg)`,
-                    borderRadius: 8,
-                    aspectRatio: "3/4",
-                }}
-            >
-                <img src={src} alt={city} className="w-full h-full object-cover" loading="lazy" />
-                {/* Canto dobrado */}
-                <PaperFoldCorner size={16} corner="bottom-right" color="rgba(255,255,255,0.30)" />
-            </div>
-            {/* Selo postal moderno PT — só desktop nos cantos opostos */}
-            <div
-                className="absolute z-20 pointer-events-none hidden sm:block"
-                style={{
-                    top: -14,
-                    [index % 2 === 0 ? "left" : "right"]: -10,
-                }}
-            >
-                <PostStamp city={city} code={code} value="0.85€" color={postColor} rotate={index % 2 === 0 ? -6 : 6} size={62} />
-            </div>
-            {/* Sticker base com nome (mobile + desktop) */}
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <Sticker bg={stickerBg} color={stickerColor} rotate={-4} style={{ fontSize: 10, padding: "5px 10px" }}>
-                    📍 {city}
-                </Sticker>
-            </div>
-            {/* Coords — só desktop */}
-            <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 z-10 pointer-events-none hidden lg:block">
-                <Coords lat={coords.lat} lon={coords.lon} color={PT.ink} rotate={0} />
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// HOW IT WORKS — 4 passos timeline
-// =============================================================================
-function HowItWorks() {
-    const steps = [
-        { n: 1, title: "Escolhe a tua cidade.", sub: "Conecta-te com o que está perto.", color: PT.red, icon: <MapPin size={22} /> },
-        { n: 2, title: "Descobre pessoas e eventos.", sub: "Explora a tua comunidade.", color: PT.gold, ink: true, icon: <Users size={22} /> },
-        { n: 3, title: "Participa na conversa.", sub: "Partilha ideias, opiniões, experiências reais.", color: PT.azul, icon: <MessageCircle size={22} /> },
-        { n: 4, title: "Cria presença local.", sub: "Faz parte da tua cidade. De verdade.", color: PT.green, icon: <Heart size={22} /> },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="how-it-works">
-            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                <DoodleSpiral color={PT.gold} size={64} rotate={-12} />
-            </div>
-            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
-                <DoodleCross color={PT.azul} size={28} rotate={20} />
-            </div>
-            <div className="absolute top-1/2 left-2 sm:left-6 pointer-events-none block opacity-50 scale-[0.5] lg:scale-100 lg:opacity-100 origin-left">
-                <DoodleStar color={PT.red} size={36} rotate={-8} />
-            </div>
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-8 sm:mb-10">
-                    <Kicker color={PT.azul} className="mb-2">COMO FUNCIONA</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        4 passos.{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.red,
-                            color: "#fff",
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>
-                            Sem mistério.
+                        <span className="hidden sm:flex items-center gap-1.5">
+                            <Shield size={13} /> dados em PT · RGPD friendly
                         </span>
-                    </h2>
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 relative">
-                    {steps.map((s, i) => (
-                        <div
-                            key={s.n}
-                            className="relative p-5 lg:p-6"
-                            data-testid={`step-${s.n}`}
-                            style={{
-                                background: "#fff",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.ink}`,
-                                borderRadius: 18,
-                                transform: i % 2 === 0 ? "rotate(-0.8deg)" : "rotate(0.8deg)",
-                            }}
-                        >
-                            <PaperFoldCorner size={18} corner="top-right" color="rgba(10,10,10,0.10)" style={{ borderRadius: "0 18px 0 0" }} />
-                            <div className="flex items-center gap-3 mb-3">
-                                <span
-                                    className="inline-flex items-center justify-center font-black text-[18px]"
-                                    style={{
-                                        width: 42, height: 42, borderRadius: "50%",
-                                        background: s.color, color: s.ink ? PT.ink : "#fff",
-                                        border: `3px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
-                                    }}
-                                >
-                                    {s.n}
-                                </span>
-                                <span style={{ color: s.color }}>{s.icon}</span>
-                            </div>
-                            <p className="font-black text-[16.5px] leading-tight mb-1" style={{ color: PT.ink }}>
-                                {s.title}
-                            </p>
-                            <p className="text-[13.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                {s.sub}
-                            </p>
-                        </div>
-                    ))}
-
-                    {/* Post-it sobre o passo 3 — só desktop */}
-                    <div className="absolute z-20 pointer-events-none hidden lg:block" style={{ top: -22, right: "23%" }}>
-                        <PostIt color="#FFE066" rotate={-6} w={150}>
-                            ✨ aqui é onde<br/>começa a magia
-                        </PostIt>
                     </div>
                 </div>
 
-                {/* Faixa de azulejos — separador decorativo */}
-                <div className="mt-12 sm:mt-14 flex justify-center overflow-hidden">
-                    <AzulejoBorder count={8} size={32} />
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// PORTUGAL MAP — imagem ilustrada (Nano Banana · estilo fanzine PT)
-// =============================================================================
-function PortugalMap() {
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" style={{ background: PT.bone }} data-testid="portugal-map">
-            {/* Doodles de fundo */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSparkles color={PT.gold} size={44} rotate={-10} />
-            </div>
-            <div className="absolute bottom-8 right-3 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.5] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleExclamation color={PT.green} size={42} rotate={12} />
-            </div>
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.1fr_1fr] gap-8 sm:gap-10 items-center relative z-10">
-                {/* COLUNA ESQ — título */}
-                <div className="order-1">
-                    <Kicker color={PT.red} className="mb-2">PORTUGAL · CONECTADO</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em] mb-3 sm:mb-4"
-                        style={{ fontSize: "clamp(28px, 3.8vw, 44px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        De norte a sul,<br/>cada cidade tem{" "}
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            textShadow: `2px 2px 0 ${PT.gold}`,
-                            WebkitTextStroke: `0.8px ${PT.ink}`,
-                        }}>
-                            voz.
-                        </span>
-                    </h2>
-                    <p className="text-[14px] sm:text-[14.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.72)" }}>
-                        Continente, ilhas e diáspora. Onde houver portugueses, há Lusorae.
-                    </p>
-                </div>
-
-                {/* MAPA — imagem gerada com cidades já marcadas */}
-                <div className="relative mx-auto order-2 w-full" style={{ maxWidth: 380 }}>
+                {/* COLUNA MAPA */}
+                <div className="order-1 lg:order-2 relative" id="mapa">
                     <div
-                        className="relative overflow-hidden"
+                        className="relative p-4 sm:p-5 lg:p-6"
                         style={{
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.ink}`,
-                            borderRadius: 12,
-                            background: PT.cream,
-                            transform: "rotate(-1deg)",
+                            background: "#fff",
+                            border: `2px solid ${PT.ink}`,
+                            borderRadius: 18,
+                            boxShadow: `4px 4px 0 ${PT.ink}`,
                         }}
+                        data-testid="hero-map-card"
                     >
-                        <img
-                            src={PORTUGAL_MAP}
-                            alt="Mapa de Portugal — Braga, Porto, Coimbra, Lisboa, Évora, Faro, Funchal, Ponta Delgada"
-                            className="block w-full h-auto"
-                            loading="lazy"
-                        />
-                    </div>
-                    {/* Doodle decorativo */}
-                    <div className="absolute -top-3 -right-2 sm:-top-4 sm:-right-3 z-10 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
-                        <DoodleStar color={PT.red} size={42} rotate={14} />
-                    </div>
-                    {/* Bilhete de evento sobreposto — só desktop */}
-                    <div className="absolute -bottom-4 -left-8 z-20 pointer-events-none hidden lg:block">
-                        <Ticket
-                            title="Festa do Bairro"
-                            place="Lisboa"
-                            date="24 jun"
-                            color={PT.green}
-                            rotate={-6}
-                            w={210}
-                        />
-                    </div>
-                    {/* Coords no canto */}
-                    <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
-                        <Coords lat="39.69" lon="8.13" rotate={2} color={PT.ink} />
-                    </div>
-                </div>
+                        <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: "rgba(10,10,10,0.10)" }}>
+                            <div>
+                                <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: PT.red }}>
+                                    Mapa · ao vivo
+                                </p>
+                                <p className="text-[13.5px] font-black mt-0.5" style={{ color: PT.ink }}>
+                                    {cities.length > 0 ? `${cities.length} cidades-âncora` : "A carregar cidades…"}
+                                </p>
+                            </div>
+                            <span className="flex items-center gap-1.5 text-[10.5px] font-mono font-bold uppercase tracking-[0.10em]" style={{ color: "rgba(10,10,10,0.6)" }}>
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.red }} />
+                                    <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.red }} />
+                                </span>
+                                pulso
+                            </span>
+                        </div>
 
-                {/* COLUNA DIR — quote */}
-                <div className="relative order-3">
-                    <PosterCard bg="#fff" color={PT.ink} rotate={-2} shadow={PT.ink} style={{ padding: "20px 22px", border: `3px solid ${PT.ink}` }}>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.ink }}>
-                            Bairro a bairro.
-                        </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.red }}>
-                            Mesa a mesa.
-                        </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight" style={{ color: PT.green }}>
-                            Conversa a conversa.
-                        </p>
-                        <p className="mt-3 text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(10,10,10,0.55)" }}>
-                            — manifesto · linha 03
-                        </p>
-                    </PosterCard>
+                        <PortugalMap cities={cities} activeCity={activeCity} onSelect={setActiveCity} />
+
+                        {/* CITY DETAIL PANEL */}
+                        <CityDetail city={activeCity} />
+                    </div>
                 </div>
             </div>
         </section>
@@ -869,119 +223,485 @@ function PortugalMap() {
 }
 
 // =============================================================================
-// FEITO PARA PESSOAS — secção preta com 6 features
+// RESERVE FORM — username + email → POST /api/waitlist/reserve
 // =============================================================================
-function FeitoParaPessoas() {
-    const features = [
-        { label: "Sem doomscroll", sub: "infinito.", color: PT.gold },
-        { label: "Sem ruído", sub: "constante.", color: PT.red },
-        { label: "Sem números", sub: "para vaidade.", color: PT.azul },
-        { label: "Foco no local", sub: "primeiro.", color: PT.gold },
-        { label: "Conversas reais", sub: "à mesa.", color: PT.green },
-        { label: "Apagar conta", sub: "num clique.", color: PT.red },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20" data-testid="feito-para-pessoas">
+function ReserveForm() {
+    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
+    const [availability, setAvailability] = useState(null); // {available, message}
+    const [checking, setChecking] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [result, setResult] = useState(null); // {position, username, already_reserved}
+    const [error, setError] = useState("");
+
+    // Debounced username availability
+    useEffect(() => {
+        const handle = setTimeout(async () => {
+            if (!username || username.length < 2) {
+                setAvailability(null);
+                return;
+            }
+            setChecking(true);
+            try {
+                const { data } = await api.get(`/waitlist/check`, { params: { u: username.toLowerCase().trim() } });
+                setAvailability(data);
+            } catch {
+                setAvailability(null);
+            } finally {
+                setChecking(false);
+            }
+        }, 320);
+        return () => clearTimeout(handle);
+    }, [username]);
+
+    const canSubmit = useMemo(() => {
+        return availability?.available && /\S+@\S+\.\S+/.test(email) && !submitting;
+    }, [availability, email, submitting]);
+
+    async function onSubmit(e) {
+        e.preventDefault();
+        if (!canSubmit) return;
+        setSubmitting(true);
+        setError("");
+        try {
+            const { data } = await api.post(`/waitlist/reserve`, {
+                username: username.toLowerCase().trim(),
+                email: email.trim().toLowerCase(),
+            });
+            setResult(data);
+        } catch (err) {
+            const msg = err?.response?.data?.detail || "Não foi possível reservar. Tenta novamente.";
+            setError(msg);
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    if (result) {
+        return (
             <div
-                className="max-w-7xl mx-auto p-6 sm:p-8 lg:p-12 relative overflow-hidden"
+                data-testid="reserve-success"
+                className="p-5 sm:p-6 rounded-2xl"
+                style={{
+                    background: PT.green,
+                    color: "#fff",
+                    border: `2px solid ${PT.ink}`,
+                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                }}
+            >
+                <div className="flex items-start gap-3">
+                    <span
+                        className="inline-flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: PT.green }}
+                    >
+                        <Check size={18} strokeWidth={3} />
+                    </span>
+                    <div className="flex-1">
+                        <p className="text-[10.5px] font-mono font-black uppercase tracking-[0.18em] opacity-90">
+                            {result.already_reserved ? "Já tinhas reservado" : "Username reservado ✱"}
+                        </p>
+                        <p className="font-black text-[18px] sm:text-[20px] mt-1 leading-tight">
+                            @{result.username}
+                        </p>
+                        <p className="text-[13.5px] mt-2 leading-relaxed opacity-95">
+                            Estás na <strong>posição #{result.position}</strong> da waitlist. Vamos avisar-te por email quando abrirmos a tua cidade.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => { setResult(null); setUsername(""); setEmail(""); setAvailability(null); }}
+                            data-testid="reserve-another"
+                            className="mt-3 text-[12px] font-bold uppercase tracking-[0.08em] underline opacity-90 hover:opacity-100"
+                        >
+                            Reservar outro
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const statusColor = availability == null ? "rgba(10,10,10,0.45)"
+        : availability.available ? PT.green : PT.red;
+
+    return (
+        <form onSubmit={onSubmit} className="flex flex-col gap-3" data-testid="reserve-form">
+            <div
+                className="flex items-center gap-0 overflow-hidden"
                 style={{
                     background: "#fff",
-                    color: PT.ink,
-                    border: `4px solid ${PT.ink}`,
-                    boxShadow: `6px 6px 0 ${PT.red}`,
-                    borderRadius: 24,
+                    border: `2px solid ${PT.ink}`,
+                    borderRadius: 14,
+                    boxShadow: `3px 3px 0 ${PT.ink}`,
                 }}
             >
-                <div className="absolute -top-10 -right-10 z-0 pointer-events-none opacity-15">
-                    <GiantAsterisk color={PT.red} size={220} rotate={12} />
-                </div>
-                {/* Doodles decorativos */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-0 pointer-events-none block opacity-70 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right">
-                    <DoodleStar color={PT.gold} size={42} rotate={-12} />
-                </div>
-                <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-10 z-0 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left">
-                    <DoodleZigzag color={PT.azul} w={120} h={28} style={{ transform: "rotate(-6deg)" }} />
-                </div>
+                <span className="pl-4 pr-1 text-[18px] font-black select-none" style={{ color: PT.ink }}>@</span>
+                <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 24))}
+                    placeholder="o-teu-username"
+                    data-testid="reserve-username-input"
+                    autoComplete="off"
+                    className="flex-1 py-3.5 text-[16px] font-bold outline-none bg-transparent"
+                    style={{ color: PT.ink }}
+                />
+                <span className="pr-3 text-[11px] font-mono font-bold uppercase tracking-[0.08em]" style={{ color: statusColor }}>
+                    {checking ? (
+                        <Loader2 size={14} className="animate-spin" />
+                    ) : availability == null ? (
+                        username.length >= 2 ? "" : ""
+                    ) : availability.available ? (
+                        <span className="flex items-center gap-1"><Check size={14} /> livre</span>
+                    ) : (
+                        availability.reason === "taken_user" || availability.reason === "taken_waitlist" ? "ocupado" : (availability.reason || "x")
+                    )}
+                </span>
+            </div>
 
-                <div className="relative z-10">
-                    <Kicker color={PT.red} className="mb-2">PRINCÍPIO · CORE</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em] mb-7 sm:mb-8"
-                        style={{ fontSize: "clamp(28px, 5.5vw, 60px)", lineHeight: 1.05, color: PT.ink }}
-                    >
-                        <span style={{
-                            display: "inline-block",
-                            transform: "rotate(-1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                        }}>FEITO PARA{" "}
-                            <Highlight color="#FFEB3B" rotate={-1}>
-                                <span style={{ color: PT.ink }}>PESSOAS.</span>
-                            </Highlight>
-                        </span><br/>
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            transform: "rotate(1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                            marginTop: 6,
-                        }}>FEITO EM PORTUGAL.</span>
-                    </h2>
-                    <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-2xl mb-8 sm:mb-9" style={{ color: "rgba(10,10,10,0.72)" }}>
-                        Uma rede social diferente — focada na presença local, na comunidade e nas conversas que importam.
-                    </p>
+            <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="o-teu-email@cidade.pt"
+                data-testid="reserve-email-input"
+                autoComplete="email"
+                className="py-3.5 px-4 text-[16px] font-bold outline-none"
+                style={{
+                    background: "#fff",
+                    border: `2px solid ${PT.ink}`,
+                    borderRadius: 14,
+                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                    color: PT.ink,
+                }}
+            />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                        {features.map((f, i) => (
-                            <div
-                                key={i}
-                                className="flex items-start gap-3"
-                                data-testid={`principle-${i}`}
-                            >
-                                <span
-                                    className="inline-flex items-center justify-center text-[14px] font-black shrink-0"
-                                    style={{
-                                        width: 32, height: 32, borderRadius: "50%",
-                                        background: f.color, color: PT.ink,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
-                                    }}
-                                >
-                                    ✓
-                                </span>
-                                <div>
-                                    <p className="font-black text-[14.5px] sm:text-[15px] leading-tight" style={{ color: PT.ink }}>{f.label}</p>
-                                    <p className="text-[12px] sm:text-[12.5px] font-mono font-bold uppercase mt-0.5" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.08em" }}>
-                                        {f.sub}
-                                    </p>
-                                </div>
-                            </div>
+            <button
+                type="submit"
+                disabled={!canSubmit}
+                data-testid="reserve-submit-btn"
+                className="inline-flex items-center justify-center gap-2 py-4 px-6 text-[14px] font-black uppercase tracking-[0.08em] rounded-2xl transition disabled:cursor-not-allowed"
+                style={{
+                    background: canSubmit ? PT.red : "rgba(10,10,10,0.30)",
+                    color: "#fff",
+                    border: `2px solid ${PT.ink}`,
+                    boxShadow: canSubmit ? `4px 4px 0 ${PT.ink}` : "none",
+                    opacity: submitting ? 0.7 : 1,
+                }}
+            >
+                {submitting ? (<><Loader2 size={16} className="animate-spin" /> A reservar…</>)
+                            : (<>Reservar o meu username <ArrowRight size={16} /></>)}
+            </button>
+
+            {error && (
+                <p data-testid="reserve-error" className="text-[13px] font-bold" style={{ color: PT.red }}>
+                    {error}
+                </p>
+            )}
+
+            <p className="text-[11.5px] font-mono leading-relaxed" style={{ color: "rgba(10,10,10,0.55)" }}>
+                Sem spam. Avisamos-te quando a tua cidade abrir. Cancela quando quiseres.
+            </p>
+        </form>
+    );
+}
+
+// =============================================================================
+// PORTUGAL MAP — SVG estilizado (continente + ilhas) + pontos de cidade
+// Clicáveis. Pulse animado no ponto activo.
+// =============================================================================
+function PortugalMap({ cities, activeCity, onSelect }) {
+    const mainland = cities.filter((c) => !c.island);
+    const islands = cities.filter((c) => c.island);
+
+    const colorFor = (accent) => ({
+        red: PT.red, gold: PT.gold, green: PT.green, azul: PT.azul,
+    }[accent] || PT.red);
+
+    return (
+        <div className="relative w-full" style={{ aspectRatio: "5/7", maxWidth: 500, margin: "0 auto" }}>
+            <svg
+                viewBox="0 0 280 560"
+                className="w-full h-full"
+                role="img"
+                aria-label="Mapa interactivo de Portugal — clica numa cidade"
+                data-testid="portugal-svg-map"
+            >
+                {/* Fundo papel */}
+                <rect x="0" y="0" width="280" height="560" fill={PT.cream} />
+
+                {/* Linhas de coordenadas decorativas (cartografia) */}
+                <g opacity="0.06" stroke={PT.ink} strokeWidth="0.5">
+                    {[100, 200, 300, 400, 500].map((y) => (
+                        <line key={`h${y}`} x1="0" y1={y} x2="280" y2={y} strokeDasharray="2,4" />
+                    ))}
+                    {[70, 140, 210].map((x) => (
+                        <line key={`v${x}`} x1={x} y1="0" x2={x} y2="560" strokeDasharray="2,4" />
+                    ))}
+                </g>
+
+                {/* Continente — silhueta estilizada (hand-drawn fanzine) */}
+                <path
+                    d="M 95 28
+                       Q 110 22, 130 28
+                       L 152 38
+                       Q 162 60, 158 90
+                       L 172 130
+                       Q 178 165, 168 200
+                       L 178 240
+                       Q 182 275, 170 305
+                       L 178 345
+                       Q 186 380, 176 415
+                       L 188 445
+                       Q 195 470, 178 488
+                       L 145 502
+                       L 110 503
+                       Q 75 495, 65 475
+                       L 65 445
+                       Q 72 420, 62 395
+                       L 65 360
+                       Q 58 330, 65 300
+                       L 56 268
+                       Q 50 235, 62 205
+                       L 55 168
+                       Q 50 135, 64 100
+                       L 60 70
+                       Q 68 45, 95 28 Z"
+                    fill="#fff"
+                    stroke={PT.ink}
+                    strokeWidth="2.2"
+                    strokeLinejoin="round"
+                />
+
+                {/* Rio Tejo (decorativo) */}
+                <path
+                    d="M 50 300 Q 90 318, 130 322 T 200 340"
+                    fill="none"
+                    stroke={PT.azul}
+                    strokeWidth="1.4"
+                    strokeDasharray="3,3"
+                    opacity="0.55"
+                />
+
+                {/* Madeira & Açores — caixas inset */}
+                {islands.length > 0 && (
+                    <g>
+                        {islands.map((isl) => (
+                            <g key={isl.slug} transform={`translate(${isl.x - 18}, ${isl.y - 18})`}>
+                                <rect width="36" height="36" rx="4"
+                                      fill="#fff" stroke={PT.ink} strokeWidth="1.5"
+                                      strokeDasharray="3,3" />
+                            </g>
                         ))}
-                    </div>
+                    </g>
+                )}
 
-                    {/* Assinatura manuscrita inferior */}
-                    <div className="mt-9 sm:mt-10 flex items-end justify-between gap-4 flex-wrap">
-                        <Signature size={32} rotate={-3} color={PT.red}>
-                            — a comunidade Lusorae
-                        </Signature>
-                        <span className="text-[10px] font-mono font-black uppercase" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}>
-                            EST. 2026 · LISBOA
-                        </span>
-                    </div>
+                {/* Cidades — pontos clicáveis */}
+                {[...mainland, ...islands].map((c) => {
+                    const isActive = activeCity?.slug === c.slug;
+                    const fill = colorFor(c.accent);
+                    return (
+                        <g
+                            key={c.slug}
+                            onClick={() => onSelect(c)}
+                            style={{ cursor: "pointer" }}
+                            data-testid={`map-city-${c.slug}`}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`Ver ${c.name}`}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(c); } }}
+                        >
+                            {/* Ping ring (só na activa) */}
+                            {isActive && (
+                                <circle cx={c.x} cy={c.y} r="14" fill={fill} opacity="0.18">
+                                    <animate attributeName="r" from="6" to="20" dur="1.6s" repeatCount="indefinite" />
+                                    <animate attributeName="opacity" from="0.45" to="0" dur="1.6s" repeatCount="indefinite" />
+                                </circle>
+                            )}
+                            {/* Dot */}
+                            <circle
+                                cx={c.x}
+                                cy={c.y}
+                                r={isActive ? 7 : 5}
+                                fill={fill}
+                                stroke={PT.ink}
+                                strokeWidth="1.6"
+                            />
+                            {/* Label */}
+                            <text
+                                x={c.x + 11}
+                                y={c.y + 4}
+                                fontSize={isActive ? 12 : 10.5}
+                                fontWeight={isActive ? 900 : 700}
+                                fill={PT.ink}
+                                style={{ fontFamily: "system-ui, -apple-system, sans-serif", pointerEvents: "none" }}
+                            >
+                                {c.name}
+                            </text>
+                        </g>
+                    );
+                })}
+
+                {/* Legenda mini */}
+                <g transform="translate(8, 540)" opacity="0.65">
+                    <text fontSize="8" fontWeight="700" fill={PT.ink} fontFamily="monospace" letterSpacing="1">
+                        PT · continente · madeira · açores
+                    </text>
+                </g>
+            </svg>
+        </div>
+    );
+}
+
+// =============================================================================
+// CITY DETAIL — painel sob o mapa com informação da cidade activa
+// =============================================================================
+function CityDetail({ city }) {
+    if (!city) return null;
+    return (
+        <div
+            className="mt-3 sm:mt-4 p-4 sm:p-5"
+            data-testid={`city-detail-${city.slug}`}
+            style={{
+                background: PT.bone,
+                border: `2px solid ${PT.ink}`,
+                borderRadius: 14,
+            }}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <p className="text-[9.5px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: "rgba(10,10,10,0.55)" }}>
+                        {city.region}
+                    </p>
+                    <p className="font-black text-[20px] sm:text-[22px] mt-0.5" style={{ color: PT.ink }}>
+                        {city.name}
+                    </p>
+                    <p className="text-[13px] mt-1 italic" style={{ color: "rgba(10,10,10,0.65)" }}>
+                        {city.tag}
+                    </p>
+                </div>
+                <span
+                    className="text-[10px] font-mono font-black uppercase tracking-[0.10em] px-2 py-1 rounded shrink-0"
+                    style={{ background: PT.ink, color: PT.cream }}
+                >
+                    A reservar
+                </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+                <Stat label="Eventos indexados" value={city.events_count} icon={<CalendarIcon size={14} />} />
+                <Stat label="Comunidades" value={city.communities_count} icon={<Building2 size={14} />} />
+            </div>
+
+            <p className="text-[12px] mt-3" style={{ color: "rgba(10,10,10,0.62)" }}>
+                Quando o <strong>{city.name}</strong> abrir, recebes uma notificação por email se reservares o teu username em cima.
+            </p>
+        </div>
+    );
+}
+
+function Stat({ label, value, icon }) {
+    return (
+        <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center justify-center shrink-0"
+                  style={{ width: 28, height: 28, borderRadius: 8, background: "#fff", border: `1.5px solid ${PT.ink}`, color: PT.ink }}>
+                {icon}
+            </span>
+            <div className="min-w-0">
+                <p className="font-black text-[16px] leading-none tabular-nums" style={{ color: PT.ink }}>
+                    {Number(value || 0).toLocaleString("pt-PT")}
+                </p>
+                <p className="text-[10px] font-mono font-bold uppercase tracking-[0.08em] mt-1" style={{ color: "rgba(10,10,10,0.55)" }}>
+                    {label}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// STATS STRIP — métricas curadas (sem zeros)
+// =============================================================================
+function StatsStrip({ pulse }) {
+    const items = [
+        { value: pulse?.cities_supported, suffix: "", label: "Cidades suportadas",   accent: PT.red,   testid: "stat-cities" },
+        { value: pulse?.events_indexed,   suffix: "", label: "Eventos indexados",     accent: PT.azul,  testid: "stat-events" },
+        { value: pulse?.bairros_indexed,  suffix: "", label: "Bairros mapeados",      accent: PT.green, testid: "stat-bairros" },
+        { value: pulse?.regions_covered,  suffix: "", label: "Regiões cobertas",      accent: PT.gold,  testid: "stat-regions" },
+    ];
+    return (
+        <section className="px-5 sm:px-8 lg:px-14 py-10 sm:py-14" data-testid="stats-strip">
+            <div className="max-w-[1400px] mx-auto">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px"
+                     style={{ background: "rgba(10,10,10,0.10)", border: `1.5px solid rgba(10,10,10,0.10)` }}>
+                    {items.map((it, i) => (
+                        <div key={i} className="px-5 sm:px-7 py-7 sm:py-9" style={{ background: PT.cream }} data-testid={it.testid}>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="block" style={{ width: 18, height: 3, background: it.accent }} />
+                                <span className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                    Real
+                                </span>
+                            </div>
+                            <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(36px, 5vw, 56px)", color: PT.ink }}>
+                                {pulse ? Number(it.value || 0).toLocaleString("pt-PT") : "…"}
+                                {it.suffix && <span className="text-[20px] ml-1 opacity-60">{it.suffix}</span>}
+                            </p>
+                            <p className="mt-2 text-[12.5px] font-bold" style={{ color: "rgba(10,10,10,0.72)" }}>
+                                {it.label}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                <p className="mt-4 text-[12px] font-mono" style={{ color: "rgba(10,10,10,0.50)" }}>
+                    Atualizado em tempo real · sem números inventados · sem metricas de vaidade.
+                </p>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// PRODUCT SNAPSHOTS — mockups limpos: Feed, DMs, Eventos, Comunidades
+// =============================================================================
+function ProductSnapshots() {
+    return (
+        <section id="produto" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-18" data-testid="product-snapshots">
+            <div className="max-w-[1400px] mx-auto">
+                <div className="max-w-2xl mb-10 sm:mb-12">
+                    <Kicker color={PT.red} className="mb-2">Produto · em pré-lançamento</Kicker>
+                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
+                        Não é uma rede social genérica.<br />
+                        É <span style={{ color: PT.red }}>infraestrutura social</span> para a tua cidade.
+                    </h2>
                 </div>
 
-                {/* Recibo flutuante — só desktop */}
-                <div className="absolute z-20 pointer-events-none hidden xl:block" style={{ top: 32, right: -10 }}>
-                    <Receipt
-                        rotate={6}
-                        w={170}
-                        lines={[
-                            { label: "Truques", value: "0,00€" },
-                            { label: "Anúncios", value: "0,00€" },
-                            { label: "Letra pequena", value: "0,00€" },
-                            { label: "Ruído", value: "0,00€" },
-                            { label: "Comunidade", value: "∞" },
-                        ]}
-                        total="GRÁTIS"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                    <SnapshotCard
+                        kicker="Feed · curadoria local"
+                        title="Vê o que se passa hoje no teu bairro."
+                        sub="Posts ordenados por proximidade, não por algoritmo. Sem doomscroll."
+                        testid="snap-feed"
+                        mockup={<FeedMockup />}
+                    />
+                    <SnapshotCard
+                        kicker="Mensagens · conversas reais"
+                        title="DMs limpas. Sem ads. Sem leituras forçadas."
+                        sub="Tu controlas quem te escreve. E quando."
+                        testid="snap-dms"
+                        mockup={<DMsMockup />}
+                    />
+                    <SnapshotCard
+                        kicker="Eventos · 200+ curados"
+                        title="Cada festa, festival e feira em Portugal."
+                        sub="Do São João ao Andanças. Do magusto à passagem de ano."
+                        testid="snap-events"
+                        mockup={<EventsMockup />}
+                    />
+                    <SnapshotCard
+                        kicker="Comunidades · bairro a bairro"
+                        title="Encontra a tua mesa. Mesmo quando estás longe."
+                        sub="Comunidades por cidade, freguesia, interesse."
+                        testid="snap-communities"
+                        mockup={<CommunitiesMockup />}
                     />
                 </div>
             </div>
@@ -989,55 +709,300 @@ function FeitoParaPessoas() {
     );
 }
 
+function SnapshotCard({ kicker, title, sub, mockup, testid }) {
+    return (
+        <article
+            data-testid={testid}
+            className="relative p-5 sm:p-6 lg:p-7"
+            style={{
+                background: "#fff",
+                border: `2px solid ${PT.ink}`,
+                borderRadius: 18,
+                boxShadow: `3px 3px 0 ${PT.ink}`,
+            }}
+        >
+            <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: PT.red }}>
+                {kicker}
+            </p>
+            <h3 className="font-black mt-2 mb-2" style={{ fontSize: "clamp(20px, 2.2vw, 26px)", lineHeight: 1.1, color: PT.ink }}>
+                {title}
+            </h3>
+            <p className="text-[14px] leading-relaxed mb-4" style={{ color: "rgba(10,10,10,0.68)" }}>
+                {sub}
+            </p>
+            <div className="rounded-xl overflow-hidden" style={{ border: `1.5px solid rgba(10,10,10,0.10)`, background: PT.cream }}>
+                {mockup}
+            </div>
+        </article>
+    );
+}
+
+// ── Mockup limpos (Feed, DMs, Eventos, Comunidades) ─────────────────────────
+function FeedMockup() {
+    const posts = [
+        { author: "Inês · Bairro Alto", avatar: PT.red,   text: "Quem alinha num bitoque rápido às 13h no Cervejaria Trindade?", time: "agora", likes: 12, comments: 4 },
+        { author: "Tiago · Boavista",   avatar: PT.gold,  text: "Concerto surpresa amanhã no Hard Club. Avisem o pessoal do Porto ✱", time: "12m", likes: 38, comments: 9 },
+        { author: "Maria · Coimbra",    avatar: PT.green, text: "Queima das fitas começa hoje. Vamos beber ginjinha na Praça da República?", time: "1h", likes: 21, comments: 6 },
+    ];
+    return (
+        <div className="p-3 sm:p-4 space-y-3">
+            {posts.map((p, i) => (
+                <div key={i} className="flex gap-2.5 items-start">
+                    <span className="shrink-0" style={{ width: 30, height: 30, borderRadius: "50%", background: p.avatar, border: `1.5px solid ${PT.ink}` }} />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[11.5px] font-black" style={{ color: PT.ink }}>{p.author} <span className="font-mono font-normal opacity-50">· {p.time}</span></p>
+                        <p className="text-[12.5px] mt-0.5 leading-snug" style={{ color: "rgba(10,10,10,0.85)" }}>{p.text}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10.5px] font-mono" style={{ color: "rgba(10,10,10,0.45)" }}>
+                            <span className="flex items-center gap-1"><Heart size={11} /> {p.likes}</span>
+                            <span className="flex items-center gap-1"><MessageCircle size={11} /> {p.comments}</span>
+                            <span className="flex items-center gap-1"><Bookmark size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function DMsMockup() {
+    return (
+        <div className="p-3 sm:p-4 flex gap-2.5">
+            <div className="w-24 sm:w-28 shrink-0 space-y-2">
+                {[
+                    { name: "Inês", color: PT.red,   on: true },
+                    { name: "Tasca Mãe", color: PT.gold,  on: true },
+                    { name: "Sérgio", color: PT.azul,  on: false },
+                    { name: "Bairro LX", color: PT.green, on: false },
+                ].map((c, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                        <span className="block shrink-0" style={{ width: 22, height: 22, borderRadius: "50%", background: c.color, border: `1.2px solid ${PT.ink}` }} />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[10.5px] font-black truncate" style={{ color: PT.ink }}>{c.name}</p>
+                            <p className="text-[8.5px] font-mono truncate" style={{ color: c.on ? PT.green : "rgba(10,10,10,0.40)" }}>
+                                {c.on ? "online" : "ontem"}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+                <Bubble side="left"  text="vamos beber café às 5 na Brasileira?" color={PT.bone} />
+                <Bubble side="right" text="bora. levo o livro do Saramago" color={PT.azul} fg="#fff" />
+                <Bubble side="left"  text="✓ até já" color={PT.bone} />
+                <div className="flex items-center gap-1 mt-2 px-2 py-1.5 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.15)` }}>
+                    <span className="text-[10px] font-mono flex-1" style={{ color: "rgba(10,10,10,0.40)" }}>Escrever…</span>
+                    <Send size={11} style={{ color: PT.red }} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Bubble({ side, text, color, fg = PT.ink }) {
+    return (
+        <div className={`flex ${side === "right" ? "justify-end" : "justify-start"}`}>
+            <span
+                className="text-[10.5px] px-2.5 py-1.5 rounded-2xl max-w-[85%]"
+                style={{ background: color, color: fg, border: `1px solid rgba(10,10,10,0.10)` }}
+            >
+                {text}
+            </span>
+        </div>
+    );
+}
+
+function EventsMockup() {
+    const evs = [
+        { date: "24 jun", title: "Santo António · Alfama", subtitle: "Lisboa · arraial", color: PT.red },
+        { date: "29 jun", title: "São Pedro · Sintra",      subtitle: "Sintra · sardinhas", color: PT.gold },
+        { date: "11 jul", title: "NOS Alive",               subtitle: "Algés · festival", color: PT.azul },
+    ];
+    return (
+        <div className="p-3 sm:p-4 space-y-2.5">
+            {evs.map((e, i) => (
+                <div key={i} className="flex gap-3 items-center p-2 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.10)` }}>
+                    <span className="text-center shrink-0" style={{
+                        width: 44, height: 44, borderRadius: 8,
+                        background: e.color, color: "#fff",
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <span className="text-[8.5px] font-mono font-bold uppercase tracking-[0.05em] opacity-80">
+                            {e.date.split(" ")[1]}
+                        </span>
+                        <span className="text-[14px] font-black leading-none">{e.date.split(" ")[0]}</span>
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-black truncate" style={{ color: PT.ink }}>{e.title}</p>
+                        <p className="text-[10.5px] font-mono truncate" style={{ color: "rgba(10,10,10,0.55)" }}>{e.subtitle}</p>
+                    </div>
+                    <Bell size={12} style={{ color: "rgba(10,10,10,0.40)" }} />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function CommunitiesMockup() {
+    const coms = [
+        { name: "Alfama · vizinhos", members: "1.2k", color: PT.red },
+        { name: "Tasqueiros do Porto", members: "856", color: PT.gold },
+        { name: "Coimbra · estudantes", members: "2.1k", color: PT.green },
+        { name: "Diáspora · Londres", members: "412", color: PT.azul },
+    ];
+    return (
+        <div className="p-3 sm:p-4 grid grid-cols-2 gap-2">
+            {coms.map((c, i) => (
+                <div key={i} className="p-2.5 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.10)` }}>
+                    <span className="block" style={{ width: 22, height: 22, borderRadius: 6, background: c.color, border: `1.2px solid ${PT.ink}` }} />
+                    <p className="text-[11px] font-black mt-1.5 leading-tight" style={{ color: PT.ink }}>{c.name}</p>
+                    <p className="text-[9.5px] font-mono mt-0.5" style={{ color: "rgba(10,10,10,0.50)" }}>{c.members} membros</p>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // =============================================================================
-// FAQ — accordion simples
+// WHY NOT FACEBOOK — secção missão / posicionamento
+// =============================================================================
+function WhyNotFacebook() {
+    const pillars = [
+        { kicker: "Algoritmo", title: "Vês o que está perto.", body: "Não vês o que dá engagement. Vês o que se passa na tua rua, no teu bairro, na tua cidade." },
+        { kicker: "Ads", title: "Zero anúncios.", body: "O produto és tu — não o produto à venda. Vivemos de Lusorae+ opcional, não de leilões de atenção." },
+        { kicker: "Dados", title: "Servidores em Portugal.", body: "RGPD-friendly por defeito. Exportas tudo. Apagas a conta num clique." },
+        { kicker: "Tempo", title: "Sem doomscroll.", body: "O feed acaba. Quando vês tudo do dia, fecha. Não há \"mais um\" infinito." },
+    ];
+    return (
+        <section id="missao" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" style={{ background: PT.ink, color: PT.cream }} data-testid="why-not-facebook">
+            <div className="max-w-[1400px] mx-auto">
+                <div className="max-w-2xl mb-10 sm:mb-12">
+                    <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] mb-3" style={{ color: PT.gold }}>
+                        Por que não somos o Facebook
+                    </p>
+                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98 }}>
+                        Construímos uma rede social que <span style={{ color: PT.gold }}>não te quer agarrar</span> ao ecrã.
+                    </h2>
+                    <p className="text-[15px] leading-relaxed mt-4 max-w-[640px]" style={{ color: "rgba(255,255,255,0.72)" }}>
+                        Lusorae é infraestrutura. Não é um aspirador de atenção. É uma forma de saberes o que se passa na cidade onde vives e nas pessoas com quem te cruzas.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+                    {pillars.map((p, i) => (
+                        <div key={i} data-testid={`pillar-${i}`} className="border-t pt-5" style={{ borderColor: "rgba(255,255,255,0.18)" }}>
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: PT.red }}>
+                                {p.kicker}
+                            </p>
+                            <h3 className="font-black text-[20px] sm:text-[22px] mt-2 mb-2" style={{ color: "#fff" }}>
+                                {p.title}
+                            </h3>
+                            <p className="text-[13.5px] leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
+                                {p.body}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// HOW IT WORKS — 3 passos clean
+// =============================================================================
+function HowItWorks() {
+    const steps = [
+        { n: "01", title: "Reserva o teu username", sub: "30 segundos. Email + handle. Travas o nome antes que outra pessoa o leve.", accent: PT.red },
+        { n: "02", title: "Avisamos-te quando abrirmos a tua cidade", sub: "Vamos abrindo cidade a cidade — Lisboa, Porto, Coimbra primeiro. Recebes notificação por email.", accent: PT.gold },
+        { n: "03", title: "Entras no mapa social do teu bairro", sub: "Conversas, eventos, comunidades — tudo geolocalizado. Sem ads. Sem doomscroll.", accent: PT.green },
+    ];
+    return (
+        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" data-testid="how-it-works">
+            <div className="max-w-[1400px] mx-auto">
+                <div className="max-w-2xl mb-10">
+                    <Kicker color={PT.red} className="mb-2">Como funciona</Kicker>
+                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
+                        Três passos. Sem mistério.
+                    </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-px"
+                     style={{ background: "rgba(10,10,10,0.10)", border: `1.5px solid rgba(10,10,10,0.10)` }}>
+                    {steps.map((s, i) => (
+                        <div key={i} data-testid={`step-${i + 1}`} className="p-6 sm:p-7" style={{ background: PT.cream }}>
+                            <p className="text-[36px] font-black leading-none tabular-nums" style={{ color: s.accent }}>
+                                {s.n}
+                            </p>
+                            <h3 className="font-black text-[18px] sm:text-[20px] mt-3 leading-tight" style={{ color: PT.ink }}>
+                                {s.title}
+                            </h3>
+                            <p className="text-[13.5px] leading-relaxed mt-2" style={{ color: "rgba(10,10,10,0.68)" }}>
+                                {s.sub}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// PREMIUM COMPACT — secção pequena, não invasiva, no fundo
+// =============================================================================
+function PremiumCompact() {
+    return (
+        <section className="px-5 sm:px-8 lg:px-14 py-10 sm:py-14" data-testid="premium-compact">
+            <div className="max-w-[1400px] mx-auto p-5 sm:p-6 lg:p-7 grid sm:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-center"
+                 style={{ background: "#fff", border: `2px solid ${PT.ink}`, borderRadius: 18 }}>
+                <div>
+                    <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.20em]" style={{ color: PT.gold }}>
+                        Lusorae+ · opcional
+                    </p>
+                    <h3 className="font-black mt-1" style={{ fontSize: "clamp(20px, 2.5vw, 26px)", color: PT.ink, lineHeight: 1.15 }}>
+                        Apoia o projecto. Mantém-no sem ads.
+                    </h3>
+                    <p className="text-[13.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(10,10,10,0.68)" }}>
+                        4€/mês. Badges de early supporter, frames de avatar, prioridade no map roll-out. Não é pay-to-win — é pay-to-keep-it-clean.
+                    </p>
+                </div>
+                <Link to="/premium" data-testid="premium-cta"
+                      className="inline-flex items-center justify-center gap-2 py-3 px-5 text-[12.5px] font-black uppercase tracking-[0.08em] rounded-full"
+                      style={{ background: PT.gold, color: PT.ink, border: `2px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}` }}>
+                    Saber mais <ArrowRight size={14} />
+                </Link>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// FAQ — accordion limpo, no fundo
 // =============================================================================
 function Faq({ openFaq, setOpenFaq }) {
     const items = [
-        { q: "O que é o Lusorae?", a: "Uma rede social portuguesa feita para conversas reais entre pessoas reais — focada na presença local, na comunidade e nas cidades. Sem ruído, sem doomscroll." },
-        { q: "O Lusorae é gratuito?", a: "Sim, completamente. Criar conta, participar, conversar e descobrir é grátis para sempre. Existe também o Lusorae+ para quem quer mais personalização — mas é opcional." },
-        { q: "Os meus dados estão seguros?", a: "Sim. Os teus dados são teus — podes exportá-los ou apagar a conta a qualquer momento." },
-        { q: "Como funciona o sistema de cidades?", a: "Cada utilizador associa-se à sua cidade portuguesa (~300 cidades disponíveis). O conteúdo, eventos e pessoas perto de ti aparecem com prioridade — para fomentar conexões locais reais." },
-        { q: "Existe aplicação móvel?", a: "Por agora estamos focados na web responsiva (mobile + desktop). Uma app nativa iOS/Android está no roadmap para 2026." },
+        { q: "Porquê reservar um username agora?",
+          a: "Estamos a abrir Lusorae cidade a cidade. Reservar agora trava o teu handle para sempre + entras na fila quando a tua cidade abrir. É grátis e leva 30 segundos." },
+        { q: "Quando é que abre a minha cidade?",
+          a: "Lisboa, Porto e Coimbra primeiro (Q2 2026). Depois Braga, Aveiro, Évora, Faro, Funchal, Ponta Delgada e as restantes cidades-âncora ao longo de 2026. Quando reservas o teu username, avisamos-te por email." },
+        { q: "É grátis?",
+          a: "Sim. Criar conta, conversar, descobrir eventos, entrar em comunidades — tudo grátis para sempre. Existe um Lusorae+ opcional (4€/mês) para quem quer apoiar o projecto." },
+        { q: "Os meus dados ficam onde?",
+          a: "Servidores em Portugal (UE). RGPD-friendly por defeito. Exportas tudo num clique. Apagas a conta num clique." },
+        { q: "Que diferença há entre Lusorae e Facebook/Instagram?",
+          a: "Não há algoritmo de engagement. Não há ads. Não há doomscroll. Vês o que está perto de ti — não o que prende mais retina. É infraestrutura social, não captura de atenção." },
+        { q: "Posso usar fora de Portugal?",
+          a: "Sim. A diáspora portuguesa tem comunidades dedicadas (Londres, Paris, Luxemburgo, Genebra, São Paulo, etc.). Estamos a desenhar uma camada \"Diáspora\" específica para 2026." },
     ];
     return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="faq">
-            {/* Doodles de fundo */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSpiral color={PT.green} size={48} rotate={-10} />
-            </div>
-            <div className="absolute top-12 right-4 sm:top-16 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
-                <DoodleSparkles color={PT.red} size={40} rotate={14} />
-            </div>
-            <div className="absolute bottom-8 left-4 sm:bottom-12 sm:left-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
-                <DoodleCross color={PT.gold} size={28} rotate={-12} />
-            </div>
-            <div className="max-w-4xl mx-auto relative z-10">
-                <div className="text-center mb-8 sm:mb-10">
-                    <Kicker color={PT.green} className="mb-2 inline-block">PERGUNTAS · FREQUENTES</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        Boas{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                        }}>
-                            perguntas?
-                        </span>
+        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" data-testid="faq">
+            <div className="max-w-3xl mx-auto">
+                <div className="mb-8">
+                    <Kicker color={PT.red} className="mb-2">FAQ</Kicker>
+                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 44px)", lineHeight: 1.0, color: PT.ink }}>
+                        Perguntas que valem a pena.
                     </h2>
-                    {/* Linha de azulejos sob o título */}
-                    <div className="mt-6 sm:mt-8 flex justify-center overflow-hidden">
-                        <AzulejoBorder count={5} size={28} />
-                    </div>
                 </div>
-
-                <div className="space-y-3">
+                <div className="divide-y" style={{ borderColor: "rgba(10,10,10,0.10)" }}>
                     {items.map((it, i) => {
                         const open = openFaq === i;
                         return (
@@ -1046,32 +1011,20 @@ function Faq({ openFaq, setOpenFaq }) {
                                 type="button"
                                 onClick={() => setOpenFaq(open ? null : i)}
                                 data-testid={`faq-item-${i}`}
-                                className="w-full text-left"
-                                style={{
-                                    background: open ? PT.gold : "#fff",
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: open ? `5px 5px 0 ${PT.red}` : `4px 4px 0 ${PT.ink}`,
-                                    borderRadius: 14,
-                                    padding: "16px 20px",
-                                    transition: "all 0.2s",
-                                }}
+                                className="w-full text-left py-5"
+                                style={{ borderTop: i === 0 ? `1.5px solid rgba(10,10,10,0.10)` : "none", borderBottom: `1.5px solid rgba(10,10,10,0.10)` }}
                             >
                                 <div className="flex items-center justify-between gap-4">
-                                    <span className="font-black text-[15.5px] leading-tight" style={{ color: PT.ink }}>
+                                    <span className="font-black text-[15.5px] sm:text-[17px] leading-tight" style={{ color: PT.ink }}>
                                         {it.q}
                                     </span>
                                     <ChevronDown
                                         size={20}
-                                        style={{
-                                            color: PT.ink,
-                                            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-                                            transition: "transform 0.2s",
-                                            flexShrink: 0,
-                                        }}
+                                        style={{ color: PT.ink, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", flexShrink: 0 }}
                                     />
                                 </div>
                                 {open && (
-                                    <p className="mt-3 text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
+                                    <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(10,10,10,0.72)" }}>
                                         {it.a}
                                     </p>
                                 )}
@@ -1085,110 +1038,33 @@ function Faq({ openFaq, setOpenFaq }) {
 }
 
 // =============================================================================
-// FINAL CTA — barra de chamada à ação
+// FINAL CTA — barra de chamada final
 // =============================================================================
-function FinalCta() {
+function FinalCta({ pulse }) {
+    const reservations = pulse?.reservations_total || 0;
     return (
-        <section className="px-5 sm:px-8 lg:px-16 pb-14 sm:pb-16 lg:pb-24" data-testid="final-cta">
-            <div
-                className="max-w-7xl mx-auto p-6 sm:p-8 lg:p-12 relative overflow-hidden"
-                style={{
-                    background: PT.red,
-                    color: "#fff",
-                    border: `4px solid ${PT.ink}`,
-                    boxShadow: `6px 6px 0 ${PT.gold}`,
-                    borderRadius: 24,
-                }}
-            >
-                {/* Fundo ilustrado — mesa comunitária PT */}
-                <img
-                    src={CTA_BG}
-                    alt=""
-                    aria-hidden
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                    style={{ opacity: 0.62, mixBlendMode: "multiply" }}
-                    loading="lazy"
-                />
-                {/* Overlay vermelho mais leve — deixa ver mais a ilustração */}
-                <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        background: `linear-gradient(105deg, ${PT.red}E6 0%, ${PT.red}B3 45%, ${PT.red}80 100%)`,
-                    }}
-                    aria-hidden
-                />
-
-                <div className="absolute -top-12 -right-12 z-0 pointer-events-none opacity-30">
-                    <GiantAsterisk color={PT.gold} size={240} rotate={-14} />
-                </div>
-                <div className="absolute top-3 right-1/4 lg:top-6 lg:right-1/3 z-0 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                    <DoodleSparkles color={PT.gold} size={56} rotate={18} />
-                </div>
-
-                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
+        <section className="px-5 sm:px-8 lg:px-14 pb-14 sm:pb-20" data-testid="final-cta">
+            <div className="max-w-[1400px] mx-auto p-7 sm:p-10 lg:p-14 relative overflow-hidden"
+                 style={{ background: PT.red, color: "#fff", border: `2px solid ${PT.ink}`, borderRadius: 22, boxShadow: `5px 5px 0 ${PT.ink}` }}>
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                     <div className="max-w-2xl">
-                        <Kicker color={PT.gold} className="mb-2">PRONTO?</Kicker>
-                        <h2
-                            className="font-black tracking-[-0.03em]"
-                            style={{ fontSize: "clamp(26px, 4.5vw, 52px)", lineHeight: 1.0 }}
-                        >
-                            Pronto para fazer parte da{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.gold,
-                                color: PT.ink,
-                                padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1deg)",
-                                WebkitTextStroke: `0.5px ${PT.ink}`,
-                            }}>
-                                comunidade?
-                            </span>
-                        </h2>
-                        <p className="mt-3 sm:mt-4 text-[14.5px] sm:text-[15px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
-                            Junta-te à rede social portuguesa feita para pessoas. <strong className="font-black">30 segundos. Grátis. Para sempre.</strong>
+                        <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em]" style={{ color: PT.gold }}>
+                            Última chamada antes do lançamento
                         </p>
-                        {/* Assinatura */}
-                        <div className="mt-4 hidden sm:block">
-                            <Signature size={30} rotate={-4} color="#fff">
-                                ✱ vemo-nos lá dentro
-                            </Signature>
-                        </div>
+                        <h2 className="font-black tracking-[-0.03em] mt-2" style={{ fontSize: "clamp(28px, 5vw, 52px)", lineHeight: 1.0 }}>
+                            Reserva agora. Antes que o teu username seja levado.
+                        </h2>
+                        {reservations > 0 && (
+                            <p className="text-[14px] mt-3 opacity-90">
+                                Já há <strong>{reservations.toLocaleString("pt-PT")}</strong> {reservations === 1 ? "pessoa" : "pessoas"} na waitlist.
+                            </p>
+                        )}
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 w-full lg:w-auto">
-                        <Link
-                            to="/register"
-                            data-testid="final-cta-register"
-                            className="inline-flex items-center justify-center gap-2 font-black text-[14px] sm:text-[15px] uppercase"
-                            style={{
-                                background: "#fff",
-                                color: PT.red,
-                                padding: "16px 24px",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.gold}`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Criar conta grátis <ArrowRight size={18} />
-                        </Link>
-                        <Link
-                            to="/login"
-                            data-testid="final-cta-login"
-                            className="inline-flex items-center justify-center gap-2 font-black text-[13.5px] sm:text-[14px] uppercase"
-                            style={{
-                                background: "transparent",
-                                color: "#fff",
-                                padding: "14px 22px",
-                                border: `2.5px solid #fff`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Entrar <ArrowRight size={16} />
-                        </Link>
-                    </div>
+                    <a href="#reservar" data-testid="final-cta-reservar"
+                       className="inline-flex items-center justify-center gap-2 py-4 px-7 text-[14px] font-black uppercase tracking-[0.08em] rounded-full shrink-0"
+                       style={{ background: "#fff", color: PT.red, border: `2px solid ${PT.ink}`, boxShadow: `4px 4px 0 ${PT.ink}` }}>
+                        Reservar o meu username <ArrowRight size={16} />
+                    </a>
                 </div>
             </div>
         </section>

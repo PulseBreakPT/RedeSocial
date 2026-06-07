@@ -10698,6 +10698,7 @@ CSRF_EXEMPT_PREFIXES = (
     "/api/auth/2fa",  # 2fa setup/verify flows
     "/api/webhooks/",
     "/api/csp-report",
+    "/api/waitlist/",  # Pre-auth public waitlist endpoints (Fev 2026 pivot)
 )
 
 
@@ -16965,6 +16966,299 @@ async def landing_stats():
         "avatars": avatars,
         "generated_at": now_iso(),
     }
+
+
+# =============================================================================
+# Landing · CITY MAP — pivot estratégico (Fev 2026)
+# Curadoria das cidades-âncora com "personalidade" + coordenadas para o
+# mapa SVG interactivo da landing. Eventos/comunidades/pulso por cidade
+# são derivados do dataset existente (pt_events_data + PT_CITIES + db).
+# =============================================================================
+
+# 12 cidades-âncora · ordem editorial (norte → sul + ilhas)
+# x/y são coordenadas no viewBox 0..280 × 0..560 do mapa SVG.
+# Calibradas à mão para o stencil estilizado de Portugal.
+LANDING_CITIES = [
+    {"slug": "braga",         "name": "Braga",         "region": "Minho",      "tag": "berço · oração · romaria",   "x": 105, "y": 60,  "accent": "red"},
+    {"slug": "guimaraes",     "name": "Guimarães",     "region": "Minho",      "tag": "castelo · raízes",            "x": 124, "y": 75,  "accent": "green"},
+    {"slug": "porto",         "name": "Porto",         "region": "Norte",      "tag": "ribeira · vinho · ponte",     "x": 90,  "y": 110, "accent": "red"},
+    {"slug": "aveiro",        "name": "Aveiro",        "region": "Centro",     "tag": "ria · ovos moles",            "x": 80,  "y": 160, "accent": "azul"},
+    {"slug": "viseu",         "name": "Viseu",         "region": "Beira Alta", "tag": "beira · jardim · vinho",      "x": 140, "y": 165, "accent": "gold"},
+    {"slug": "coimbra",       "name": "Coimbra",       "region": "Centro",     "tag": "universidade · queima",       "x": 100, "y": 195, "accent": "gold"},
+    {"slug": "leiria",        "name": "Leiria",        "region": "Centro",     "tag": "castelo · pinhal",            "x": 95,  "y": 245, "accent": "green"},
+    {"slug": "lisboa",        "name": "Lisboa",        "region": "Lisboa",     "tag": "azulejo · tejo · 7 colinas",  "x": 80,  "y": 320, "accent": "red"},
+    {"slug": "setubal",       "name": "Setúbal",       "region": "Setúbal",    "tag": "tróia · sado · golfinhos",    "x": 90,  "y": 365, "accent": "azul"},
+    {"slug": "evora",         "name": "Évora",         "region": "Alentejo",   "tag": "alentejo · cante · planura",  "x": 145, "y": 360, "accent": "gold"},
+    {"slug": "faro",          "name": "Faro",          "region": "Algarve",    "tag": "ria formosa · sul · sal",     "x": 145, "y": 470, "accent": "azul"},
+    {"slug": "lagos",         "name": "Lagos",         "region": "Algarve",    "tag": "ponta · falésia · barlavento", "x": 115, "y": 475, "accent": "gold"},
+    # Ilhas — inseridas como caixas off-coast
+    {"slug": "funchal",       "name": "Funchal",       "region": "Madeira",    "tag": "vulcão · atlântico",          "x": 30,  "y": 470, "accent": "green", "island": True},
+    {"slug": "ponta-delgada", "name": "Ponta Delgada", "region": "Açores",     "tag": "9 ilhas · vento · vulcão",    "x": 30,  "y": 405, "accent": "azul",  "island": True},
+]
+
+
+@api2.get("/landing/cities")
+async def landing_cities():
+    """Retorna as 14 cidades-âncora com personalidade + coordenadas SVG +
+    sinais derivados (eventos próximos, comunidades existentes). Servido
+    sem autenticação para alimentar o mapa interactivo da landing."""
+    try:
+        # Pre-compute por cidade: nº de eventos no dataset curado + nº de
+        # comunidades reais com tag city == nome.
+        events = pt_events_data.all_events()
+        events_by_city: dict = {}
+        for e in events:
+            c = (e.get("city") or "").strip()
+            if not c:
+                continue
+            events_by_city[c] = events_by_city.get(c, 0) + 1
+
+        # Comunidades (best-effort, sem bloquear)
+        communities_by_city: dict = {}
+        try:
+            async for c in db.communities.find(
+                {"city": {"$nin": [None, ""]}},
+                {"_id": 0, "city": 1},
+            ):
+                name = (c.get("city") or "").strip()
+                if name:
+                    communities_by_city[name] = communities_by_city.get(name, 0) + 1
+        except Exception:
+            communities_by_city = {}
+
+        out = []
+        for c in LANDING_CITIES:
+            name = c["name"]
+            out.append({
+                **c,
+                "events_count": int(events_by_city.get(name, 0)),
+                "communities_count": int(communities_by_city.get(name, 0)),
+            })
+        return {"cities": out, "generated_at": now_iso()}
+    except Exception as e:
+        logger.warning(f"landing_cities: {e}")
+        # Fail soft — landing nunca deve quebrar
+        return {"cities": LANDING_CITIES, "generated_at": now_iso()}
+
+
+@api2.get("/landing/pulse")
+async def landing_pulse():
+    """Stats curadas para a landing — *substitui* `/stats/landing` para o novo
+    pivot "mapa social vivo". Reporta sempre valores >0 (números curados
+    quando os reais ainda são baixos) para que a landing pareça viva no dia 1."""
+    now = datetime.now(timezone.utc)
+
+    # Eventos indexados no calendário PT 2026 (curado, real)
+    try:
+        events_total = len(pt_events_data.all_events())
+    except Exception:
+        events_total = 0
+
+    # Cidades suportadas — união entre LANDING_CITIES e PT_CITIES master list
+    cities_supported = len({c["name"] for c in LANDING_CITIES} | set(PT_CITIES.values()))
+
+    # Bairros / Freguesias indexadas — em PT existem ~3.092 freguesias;
+    # mostramos progresso real do que está coberto + roadmap.
+    # Quando o número real ainda for muito baixo, mostramos o objectivo
+    # editorial (cidades-âncora × 8 freguesias core ≈ 100+).
+    try:
+        bairros_real = await db.communities.count_documents({"kind": "bairro"})
+    except Exception:
+        bairros_real = 0
+    bairros_indexed = max(bairros_real, len(LANDING_CITIES) * 8)
+
+    # Próximos 7 dias — eventos a chegar (real, do calendário)
+    try:
+        next_week_end = (now + timedelta(days=7))
+        events_next7 = 0
+        for e in pt_events_data.all_events():
+            try:
+                d = datetime.fromisoformat(e.get("date_iso") + "T00:00:00+00:00")
+                if now.date() <= d.date() <= next_week_end.date():
+                    events_next7 += 1
+            except Exception:
+                continue
+    except Exception:
+        events_next7 = 0
+
+    # Reservas de username — número de waitlist (cria sentido de urgência)
+    try:
+        reservations_total = await db.waitlist.count_documents({})
+    except Exception:
+        reservations_total = 0
+
+    # Categorias do calendário (para chips na landing)
+    try:
+        categories_total = len(pt_events_data.CATEGORY_META)
+    except Exception:
+        categories_total = 0
+
+    # Regiões cobertas (continente + ilhas)
+    regions_covered = len(pt_events_data.REGION_META) - 1  # -1 porque "all" é meta
+
+    return {
+        "cities_supported": int(cities_supported),
+        "events_indexed": int(events_total),
+        "events_next_7d": int(events_next7),
+        "bairros_indexed": int(bairros_indexed),
+        "categories_total": int(categories_total),
+        "regions_covered": int(regions_covered),
+        "reservations_total": int(reservations_total),
+        "generated_at": now_iso(),
+    }
+
+
+# Reserved-username waitlist ---------------------------------------------------
+# Cria sentido de escassez: o utilizador "trava" o handle antes do lançamento.
+# Anti-abuso: rate-limit por IP, validação de email + username, cooldown
+# de 30s entre reservas do mesmo email.
+
+class WaitlistReserveIn(BaseModel):
+    username: str = Field(..., min_length=2, max_length=24)
+    email: EmailStr
+    city: Optional[str] = Field(None, max_length=60)
+
+
+_WAITLIST_RESERVED = {
+    "admin", "root", "support", "lusorae", "moderator", "mod", "help",
+    "official", "api", "anon", "anonymous", "null", "undefined", "system",
+    "team", "staff", "bot",
+}
+
+
+@api2.post("/waitlist/reserve")
+@limiter.limit("6/minute")
+async def waitlist_reserve(request: Request, response: Response, payload: WaitlistReserveIn):
+    """Reserva um username + email na waitlist pública. Disponível sem auth.
+    Idempotente quando o mesmo email tenta reservar o mesmo username de novo
+    (devolve a reserva existente)."""
+    raw_username = (payload.username or "").strip().lower()
+    raw_email = (payload.email or "").strip().lower()
+    raw_city = (payload.city or "").strip()[:60] if payload.city else None
+
+    # Validação username
+    if len(raw_username) < 2:
+        raise HTTPException(400, "Username demasiado curto (mínimo 2 caracteres).")
+    if len(raw_username) > 24:
+        raise HTTPException(400, "Username demasiado longo (máximo 24 caracteres).")
+    if not re.fullmatch(r"[a-z0-9_]+", raw_username):
+        raise HTTPException(400, "Username só pode ter letras minúsculas, números e _.")
+    if raw_username in _WAITLIST_RESERVED:
+        raise HTTPException(400, "Esse username está reservado pelo sistema.")
+
+    # Já existe utilizador registado com esse username?
+    try:
+        existing_user = await db.users.find_one({"username": raw_username}, {"_id": 0, "id": 1})
+        if existing_user:
+            raise HTTPException(409, "Esse username já está em uso por uma conta existente.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"waitlist_reserve user check: {e}")
+
+    # Já reservado por outro email?
+    try:
+        existing_res = await db.waitlist.find_one(
+            {"username": raw_username},
+            {"_id": 0, "email": 1, "id": 1, "created_at": 1, "city": 1},
+        )
+    except Exception:
+        existing_res = None
+
+    if existing_res:
+        if existing_res.get("email") == raw_email:
+            # Idempotente
+            return {
+                "ok": True,
+                "id": existing_res.get("id"),
+                "username": raw_username,
+                "email": raw_email,
+                "city": existing_res.get("city"),
+                "created_at": existing_res.get("created_at"),
+                "already_reserved": True,
+                "position": await _waitlist_position(existing_res.get("created_at")),
+            }
+        raise HTTPException(409, "Esse username já foi reservado por outra pessoa.")
+
+    # Cooldown — o mesmo email só pode reservar 1 username a cada 60s
+    sixty_s_ago = (datetime.now(timezone.utc) - timedelta(seconds=60)).isoformat()
+    try:
+        recent = await db.waitlist.find_one(
+            {"email": raw_email, "created_at": {"$gte": sixty_s_ago}},
+            {"_id": 0, "id": 1, "username": 1},
+        )
+        if recent:
+            raise HTTPException(429, "Aguarda 1 minuto antes de reservar outro username.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    # Persistir
+    rid = str(uuid.uuid4())
+    ts = now_iso()
+    doc = {
+        "id": rid,
+        "username": raw_username,
+        "email": raw_email,
+        "city": raw_city,
+        "ip": request.client.host if request and request.client else "",
+        "ua": (request.headers.get("user-agent") or "")[:300] if request else "",
+        "created_at": ts,
+    }
+    try:
+        await db.waitlist.insert_one(doc)
+    except Exception as e:
+        logger.error(f"waitlist insert failed: {e}")
+        raise HTTPException(500, "Não foi possível guardar a reserva. Tenta novamente.")
+
+    return {
+        "ok": True,
+        "id": rid,
+        "username": raw_username,
+        "email": raw_email,
+        "city": raw_city,
+        "created_at": ts,
+        "already_reserved": False,
+        "position": await _waitlist_position(ts),
+    }
+
+
+async def _waitlist_position(created_at: Optional[str]) -> int:
+    """Returns the 1-based position in the waitlist for a given created_at."""
+    if not created_at:
+        return 0
+    try:
+        n = await db.waitlist.count_documents({"created_at": {"$lte": created_at}})
+        return max(1, int(n))
+    except Exception:
+        return 0
+
+
+@api2.get("/waitlist/check")
+@limiter.limit("30/minute")
+async def waitlist_check(request: Request, response: Response, u: str = ""):
+    """Verifica em tempo real se um username está disponível para reserva.
+    Combina users + waitlist. Pública (sem auth)."""
+    raw = (u or "").strip().lower()
+    if not raw:
+        return {"available": False, "reason": "empty", "message": "Escolhe um username."}
+    if len(raw) < 2:
+        return {"available": False, "reason": "too_short", "message": "Mínimo 2 caracteres."}
+    if len(raw) > 24:
+        return {"available": False, "reason": "too_long", "message": "Máximo 24 caracteres."}
+    if not re.fullmatch(r"[a-z0-9_]+", raw):
+        return {"available": False, "reason": "invalid_chars", "message": "Só minúsculas, números e _."}
+    if raw in _WAITLIST_RESERVED:
+        return {"available": False, "reason": "reserved", "message": "Username reservado pelo sistema."}
+    try:
+        if await db.users.find_one({"username": raw}, {"_id": 0, "id": 1}):
+            return {"available": False, "reason": "taken_user", "message": "Já é uma conta existente."}
+        if await db.waitlist.find_one({"username": raw}, {"_id": 0, "id": 1}):
+            return {"available": False, "reason": "taken_waitlist", "message": "Já reservado por outra pessoa."}
+    except Exception:
+        pass
+    return {"available": True, "message": "Disponível para reservar."}
 
 
 app.include_router(api2)
