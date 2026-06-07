@@ -56,6 +56,26 @@
   - `/app/backend/.env` & `/app/frontend/.env` recriados (estavam em falta após fork) com `JWT_SECRET`, `MONGO_URL`, `DB_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` + `REACT_APP_BACKEND_URL`. Admin seeded a `admin@lusorae.pt / Admin12345!` (ver `/app/memory/test_credentials.md`).
 
 
+## Implemented (Feb 2026 · v2.1) — Doodles + Imagens Nano Banana
+
+Em cima do pivot "Mapa Social Vivo" (v2), o utilizador pediu **mais personalidade fanzine** + **imagens reais geradas via Nano Banana**:
+
+- ✅ **EMERGENT_LLM_KEY** adicionada ao `/app/backend/.env` (chave universal — não foi pedida ao user).
+- ✅ **Nano Banana (gemini-3.1-flash-image-preview) integrado** via `emergentintegrations`:
+  - Script one-shot CLI em `/app/scripts/generate_pivot_images.py` (asyncio.gather paralelo).
+  - 2 imagens novas geradas: `lusorae-mapa-poster.webp` (poster fanzine vertical com mapa estilizado + dots + setas + azulejos) e `lusorae-bairro.webp` (cena de bairro PT com varandas, padaria, gato preto, calçada).
+  - Reutilizadas as 9 imagens existentes em `/app/frontend/public/hero/` (hero.webp, city-{lisboa,porto,algarve}.webp, cta-community.webp, manifesto.webp) — todas geradas com nano banana em sessões anteriores.
+- ✅ **Doodles fanzine reintroduzidos com restrição** (~6 acentos estratégicos em toda a landing — não doodle-fest):
+  - Hero: `DoodleStar` gold (canto sup esq), `DoodleSparkles` red (canto sup dir), `DoodleArrow` red apontando para o mapa, `HandNote` "clica numa cidade ↗" (bottom-left do mapa), `TapedPhoto` com `hero.webp` rotated colado sobre canto sup dir do card-mapa.
+  - Product header: `DoodleZigzag` gold + `DoodleUnderline` gold debaixo do título.
+  - Mission: `DoodleHeart` red top-right + bairro illustration confinada ao right-half com mask gradient.
+  - HowItWorks: `TapedPhoto` com `mapaPoster` (mapa fanzine ilustrado) rotated, azul/verde tapes.
+  - FinalCta: `DoodleSparkles` gold top-right + `DoodleStar` gold bottom-left dentro do banner vermelho.
+- ✅ **Imagens contextuais nos product snapshots** (4 cards): Porto.webp no Feed, Lisboa.webp em DMs, Algarve.webp em Eventos, CtaCommunity em Comunidades — cada card tem agora um header visual fanzine de 140px + badge categoria.
+- ✅ **WhyNotFacebook readability fix**: imagem `bairro.webp` confinada ao right-half da secção com mask gradient (transparent→dark), texto à esquerda 100% legível.
+- ✅ **Mantidos todos os data-testid** existentes — zero quebras.
+
+
 ## Implemented (Feb 2026 · v2) — Landing PIVOT estratégico "Mapa Social Vivo"
 - ✅ **Reposicionamento 70-point audit completo**: deixar de vender "rede social portuguesa genérica" e passar a vender **"O mapa social vivo das cidades portuguesas"** (cidade como protagonista).
 - ✅ **Landing.js reescrita** (1197 → 1085 linhas, ~960 conteúdo + 120 helpers): tirado todo o conteúdo de stats vazios (0 membros/0 posts), doodles excessivos, stamp shadows pesadas, amarelo gratuito.

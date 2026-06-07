@@ -1,14 +1,30 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
     ArrowRight, MapPin, Lock, ChevronDown, Check, Loader2,
     MessageCircle, Calendar as CalendarIcon, Users as UsersIcon,
     Building2, Search, Hash, Bell, Heart, Send, Bookmark, Shield,
 } from "lucide-react";
-import { PT, Kicker, AuthStyles } from "./auth/AuthDecor";
+import {
+    PT, Kicker, AuthStyles,
+    DoodleArrow, DoodleStar, DoodleSparkles, DoodleScribble,
+    DoodleHeart, DoodleZigzag, DoodleUnderline, TapedPhoto, HandNote,
+} from "./auth/AuthDecor";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+
+// Static landing illustrations (Nano Banana · Fev 2026 pivot)
+const IMG = {
+    hero:          `${process.env.PUBLIC_URL || ""}/hero/hero.webp`,
+    mapaPoster:    `${process.env.PUBLIC_URL || ""}/hero/lusorae-mapa-poster.webp`,
+    bairro:        `${process.env.PUBLIC_URL || ""}/hero/lusorae-bairro.webp`,
+    cityLisboa:    `${process.env.PUBLIC_URL || ""}/hero/city-lisboa.webp`,
+    cityPorto:     `${process.env.PUBLIC_URL || ""}/hero/city-porto.webp`,
+    cityAlgarve:   `${process.env.PUBLIC_URL || ""}/hero/city-algarve.webp`,
+    ctaCommunity:  `${process.env.PUBLIC_URL || ""}/hero/cta-community.webp`,
+    manifesto:     `${process.env.PUBLIC_URL || ""}/hero/manifesto.webp`,
+};
 
 // =============================================================================
 // LUSORAE — Landing pública  (Fev 2026 · pivot "mapa social vivo")
@@ -135,10 +151,18 @@ function TopNav() {
 // =============================================================================
 function Hero({ pulse, cities, activeCity, setActiveCity }) {
     return (
-        <section id="reservar" className="px-5 sm:px-8 lg:px-14 pt-8 sm:pt-12 lg:pt-16 pb-12 lg:pb-20" data-testid="hero">
-            <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1.05fr_1.1fr] gap-10 lg:gap-14 items-start">
+        <section id="reservar" className="px-5 sm:px-8 lg:px-14 pt-8 sm:pt-12 lg:pt-16 pb-12 lg:pb-20 relative" data-testid="hero">
+            {/* Doodle accents — desktop only */}
+            <div className="hidden lg:block absolute top-12 left-[6%] opacity-90 pointer-events-none" aria-hidden="true">
+                <DoodleStar color={PT.gold} size={48} rotate={-14} />
+            </div>
+            <div className="hidden lg:block absolute top-24 right-[4%] opacity-85 pointer-events-none" aria-hidden="true">
+                <DoodleSparkles color={PT.red} size={52} rotate={12} />
+            </div>
+
+            <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1.05fr_1.1fr] gap-10 lg:gap-14 items-start relative">
                 {/* COLUNA TEXTO + RESERVA */}
-                <div className="order-2 lg:order-1">
+                <div className="order-2 lg:order-1 relative">
                     <div className="inline-block mb-5">
                         <span
                             data-testid="hero-kicker"
@@ -184,6 +208,24 @@ function Hero({ pulse, cities, activeCity, setActiveCity }) {
 
                 {/* COLUNA MAPA */}
                 <div className="order-1 lg:order-2 relative" id="mapa">
+                    {/* TapedPhoto fanzine collage — top-right overlap, desktop only */}
+                    <div className="hidden lg:block absolute -top-6 -right-2 z-20 pointer-events-none" aria-hidden="true">
+                        <TapedPhoto
+                            src={IMG.hero}
+                            alt=""
+                            rotate={7}
+                            w={150}
+                            h={170}
+                            tapeColor="rgba(255,204,0,0.85)"
+                            tapeColor2="rgba(200,16,46,0.55)"
+                        />
+                    </div>
+
+                    {/* DoodleArrow apontando para o mapa — desktop */}
+                    <div className="hidden lg:block absolute -top-2 -left-14 z-10 pointer-events-none" aria-hidden="true">
+                        <DoodleArrow color={PT.red} w={84} h={56} />
+                    </div>
+
                     <div
                         className="relative p-4 sm:p-5 lg:p-6"
                         style={{
@@ -216,6 +258,13 @@ function Hero({ pulse, cities, activeCity, setActiveCity }) {
 
                         {/* CITY DETAIL PANEL */}
                         <CityDetail city={activeCity} />
+                    </div>
+
+                    {/* HandNote por baixo do mapa */}
+                    <div className="hidden lg:block absolute -bottom-6 -left-4 pointer-events-none" aria-hidden="true">
+                        <HandNote color={PT.ink} rotate={-3} size={14}>
+                            clica numa cidade ↗
+                        </HandNote>
                     </div>
                 </div>
             </div>
@@ -677,14 +726,22 @@ function StatsStrip({ pulse }) {
 // =============================================================================
 function ProductSnapshots() {
     return (
-        <section id="produto" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-18" data-testid="product-snapshots">
+        <section id="produto" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-18 relative" data-testid="product-snapshots">
+            {/* Doodle accent */}
+            <div className="hidden lg:block absolute top-20 right-[6%] opacity-90 pointer-events-none" aria-hidden="true">
+                <DoodleZigzag color={PT.gold} w={140} h={32} />
+            </div>
+
             <div className="max-w-[1400px] mx-auto">
-                <div className="max-w-2xl mb-10 sm:mb-12">
+                <div className="max-w-2xl mb-10 sm:mb-12 relative">
                     <Kicker color={PT.red} className="mb-2">Produto · em pré-lançamento</Kicker>
                     <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
                         Não é uma rede social genérica.<br />
                         É <span style={{ color: PT.red }}>infraestrutura social</span> para a tua cidade.
                     </h2>
+                    <div className="mt-3">
+                        <DoodleUnderline color={PT.gold} w={180} h={12} />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
@@ -693,6 +750,7 @@ function ProductSnapshots() {
                         title="Vê o que se passa hoje no teu bairro."
                         sub="Posts ordenados por proximidade, não por algoritmo. Sem doomscroll."
                         testid="snap-feed"
+                        image={IMG.cityPorto}
                         mockup={<FeedMockup />}
                     />
                     <SnapshotCard
@@ -700,6 +758,7 @@ function ProductSnapshots() {
                         title="DMs limpas. Sem ads. Sem leituras forçadas."
                         sub="Tu controlas quem te escreve. E quando."
                         testid="snap-dms"
+                        image={IMG.cityLisboa}
                         mockup={<DMsMockup />}
                     />
                     <SnapshotCard
@@ -707,6 +766,7 @@ function ProductSnapshots() {
                         title="Cada festa, festival e feira em Portugal."
                         sub="Do São João ao Andanças. Do magusto à passagem de ano."
                         testid="snap-events"
+                        image={IMG.cityAlgarve}
                         mockup={<EventsMockup />}
                     />
                     <SnapshotCard
@@ -714,6 +774,7 @@ function ProductSnapshots() {
                         title="Encontra a tua mesa. Mesmo quando estás longe."
                         sub="Comunidades por cidade, freguesia, interesse."
                         testid="snap-communities"
+                        image={IMG.ctaCommunity}
                         mockup={<CommunitiesMockup />}
                     />
                 </div>
@@ -722,7 +783,7 @@ function ProductSnapshots() {
     );
 }
 
-function SnapshotCard({ kicker, title, sub, mockup, testid }) {
+function SnapshotCard({ kicker, title, sub, mockup, image, testid }) {
     return (
         <article
             data-testid={testid}
@@ -734,6 +795,26 @@ function SnapshotCard({ kicker, title, sub, mockup, testid }) {
                 boxShadow: `3px 3px 0 ${PT.ink}`,
             }}
         >
+            {image && (
+                <div
+                    className="mb-4 -mt-2 -mx-2 sm:-mx-3 lg:-mx-4 overflow-hidden rounded-xl relative"
+                    style={{ height: 140, border: `1.5px solid ${PT.ink}` }}
+                >
+                    <img
+                        src={image}
+                        alt=""
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        style={{ filter: "contrast(1.02) saturate(0.94)" }}
+                    />
+                    <span
+                        className="absolute top-2 right-2 text-[9px] font-mono font-black uppercase tracking-[0.15em] px-2 py-1 rounded"
+                        style={{ background: PT.ink, color: PT.cream, letterSpacing: "0.12em" }}
+                    >
+                        {kicker.split("·")[0].trim()}
+                    </span>
+                </div>
+            )}
             <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: PT.red }}>
                 {kicker}
             </p>
@@ -886,23 +967,50 @@ function WhyNotFacebook() {
         { kicker: "Tempo", title: "Sem doomscroll.", body: "O feed acaba. Quando vês tudo do dia, fecha. Não há \"mais um\" infinito." },
     ];
     return (
-        <section id="missao" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" style={{ background: PT.ink, color: PT.cream }} data-testid="why-not-facebook">
-            <div className="max-w-[1400px] mx-auto">
+        <section id="missao" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20 relative overflow-hidden" style={{ background: PT.ink, color: PT.cream }} data-testid="why-not-facebook">
+            {/* Background image (bairro) — confinada à direita, overlay forte para legibilidade */}
+            <div
+                className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
+                aria-hidden="true"
+                style={{
+                    backgroundImage: `url(${IMG.bairro})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    opacity: 0.32,
+                    filter: "grayscale(0.4) contrast(1.05)",
+                    maskImage: "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.85) 100%)",
+                    WebkitMaskImage: "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.85) 100%)",
+                }}
+            />
+            <div
+                className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
+                aria-hidden="true"
+                style={{
+                    background: `linear-gradient(90deg, ${PT.ink} 0%, rgba(10,10,10,0.82) 35%, rgba(10,10,10,0.45) 100%)`,
+                }}
+            />
+
+            {/* DoodleHeart accent */}
+            <div className="hidden lg:block absolute top-12 right-[8%] z-10 pointer-events-none" aria-hidden="true">
+                <DoodleHeart color={PT.red} size={56} rotate={-8} />
+            </div>
+
+            <div className="max-w-[1400px] mx-auto relative z-10">
                 <div className="max-w-2xl mb-10 sm:mb-12">
                     <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] mb-3" style={{ color: PT.red }}>
                         Por que não somos o Facebook
                     </p>
-                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98 }}>
+                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 1.02, color: "#fff" }}>
                         Construímos uma rede social que{" "}
                         <span style={{
                             display: "inline",
-                            backgroundImage: `linear-gradient(transparent 72%, ${PT.red} 72%, ${PT.red} 92%, transparent 92%)`,
+                            backgroundImage: `linear-gradient(transparent 78%, ${PT.red} 78%, ${PT.red} 94%, transparent 94%)`,
                         }}>
                             não te quer agarrar
                         </span>{" "}
                         ao ecrã.
                     </h2>
-                    <p className="text-[15px] leading-relaxed mt-4 max-w-[640px]" style={{ color: "rgba(255,255,255,0.72)" }}>
+                    <p className="text-[15px] leading-relaxed mt-4 max-w-[640px]" style={{ color: "rgba(255,255,255,0.78)" }}>
                         Lusorae é infraestrutura. Não é um aspirador de atenção. É uma forma de saberes o que se passa na cidade onde vives e nas pessoas com quem te cruzas.
                     </p>
                 </div>
@@ -937,8 +1045,21 @@ function HowItWorks() {
         { n: "03", title: "Entras no mapa social do teu bairro", sub: "Conversas, eventos, comunidades — tudo geolocalizado. Sem ads. Sem doomscroll.", accent: PT.green },
     ];
     return (
-        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" data-testid="how-it-works">
-            <div className="max-w-[1400px] mx-auto">
+        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20 relative" data-testid="how-it-works">
+            {/* Mapa poster fanzine como acento — desktop only */}
+            <div className="hidden xl:block absolute top-20 right-[2%] z-0 pointer-events-none opacity-90" aria-hidden="true">
+                <TapedPhoto
+                    src={IMG.mapaPoster}
+                    alt=""
+                    rotate={-5}
+                    w={170}
+                    h={210}
+                    tapeColor="rgba(14,77,146,0.78)"
+                    tapeColor2="rgba(4,106,56,0.55)"
+                />
+            </div>
+
+            <div className="max-w-[1400px] mx-auto relative z-10">
                 <div className="max-w-2xl mb-10">
                     <Kicker color={PT.red} className="mb-2">Como funciona</Kicker>
                     <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
@@ -1066,6 +1187,14 @@ function FinalCta({ pulse }) {
         <section className="px-5 sm:px-8 lg:px-14 pb-14 sm:pb-20" data-testid="final-cta">
             <div className="max-w-[1400px] mx-auto p-7 sm:p-10 lg:p-14 relative overflow-hidden"
                  style={{ background: PT.red, color: "#fff", border: `2px solid ${PT.ink}`, borderRadius: 22, boxShadow: `5px 5px 0 ${PT.ink}` }}>
+                {/* Doodle sparkles */}
+                <div className="absolute top-4 right-6 opacity-95 pointer-events-none" aria-hidden="true">
+                    <DoodleSparkles color={PT.gold} size={64} rotate={-10} />
+                </div>
+                <div className="hidden sm:block absolute bottom-3 left-8 opacity-90 pointer-events-none" aria-hidden="true">
+                    <DoodleStar color={PT.gold} size={42} rotate={18} />
+                </div>
+
                 <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                     <div className="max-w-2xl">
                         <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em]" style={{ color: PT.gold }}>
