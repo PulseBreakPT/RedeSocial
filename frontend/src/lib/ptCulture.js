@@ -15,15 +15,29 @@ export const PT_REGIONS = [
     { key: "emigrante", label: "Emigrante", emoji: "✈️" },
 ];
 
+/**
+ * PT_MOODS — moods culturais com cores fanzine PT semânticas.
+ * `color`: hex da paleta expandida (uso direto em styles inline).
+ * `colorSoft`: par soft (#XXX-soft) para badges/chips em fundo branco.
+ * Mapping foi curado culturalmente:
+ *   • saudade  → atlântico azul (distância/mar)
+ *   • festa    → laranja queimado (energia/calor)
+ *   • tasca    → telha terracota (mediterrâneo/vinho)
+ *   • fado     → vinho profundo (tradição sombria)
+ *   • bola     → vermelho clássico (paixão)
+ *   • café     → tijolo rust (espresso terroso)
+ *   • praia    → peixe turquesa (mar/algarve)
+ *   • cultura  → malva (livros/livrarias)
+ */
 export const PT_MOODS = [
-    { key: "saudade",  label: "Saudade",  emoji: "🫶" },
-    { key: "festa",    label: "Festa",    emoji: "🎉" },
-    { key: "tasca",    label: "Tasca",    emoji: "🍷" },
-    { key: "fado",     label: "Fado",     emoji: "🎶" },
-    { key: "bola",     label: "Bola",     emoji: "⚽" },
-    { key: "cafe",     label: "Café",     emoji: "☕" },
-    { key: "praia",    label: "Praia",    emoji: "🏖️" },
-    { key: "cultura",  label: "Cultura",  emoji: "📚" },
+    { key: "saudade",  label: "Saudade",  emoji: "🫶", color: "#1B4F8F", colorSoft: "#DCE7F4" },
+    { key: "festa",    label: "Festa",    emoji: "🎉", color: "#F08A1E", colorSoft: "#FCE4C9" },
+    { key: "tasca",    label: "Tasca",    emoji: "🍷", color: "#D86A4E", colorSoft: "#FBE5DC" },
+    { key: "fado",     label: "Fado",     emoji: "🎶", color: "#6B2C39", colorSoft: "#EFDFE2" },
+    { key: "bola",     label: "Bola",     emoji: "⚽", color: "#C8102E", colorSoft: "#FDECEA" },
+    { key: "cafe",     label: "Café",     emoji: "☕", color: "#A04830", colorSoft: "#F3DDD2" },
+    { key: "praia",    label: "Praia",    emoji: "🏖️", color: "#2EB4A6", colorSoft: "#D7F0EC" },
+    { key: "cultura",  label: "Cultura",  emoji: "📚", color: "#7C5A8F", colorSoft: "#E8DDF0" },
 ];
 
 export const PT_TEAMS = [

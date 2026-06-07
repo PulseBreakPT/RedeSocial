@@ -144,6 +144,9 @@ export default function Scheduled() {
                     body="Programa publicações futuras a partir do compositor."
                     cta={!q ? "Agendar publicação" : null}
                     ctaOnClick={() => (openCompose ? openCompose() : navigate("/"))}
+                    shadowColor="#7C5A8F"
+                    iconBg="#F4A6B7"
+                    ctaBg="#4A7C59"
                 />
             ) : (
                 <>

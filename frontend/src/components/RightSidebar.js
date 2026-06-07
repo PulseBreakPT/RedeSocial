@@ -152,7 +152,7 @@ export function RightSidebar() {
 
             {/* ────────────── 2. TENDÊNCIAS ────────────── */}
             {isHome && (
-                <Widget testid="widget-trending" kicker="Em alta · Portugal" kickerColor={PT.green} title="Tendências" Icon={TrendingUp}>
+                <Widget testid="widget-trending" kicker="Em alta · Portugal" kickerColor={PT.peixe} title="Tendências" Icon={TrendingUp}>
                     {trending.length === 0 ? (
                         <EmptyMini text="Ainda sem tendências. Publica e participa." />
                     ) : (
@@ -182,7 +182,7 @@ export function RightSidebar() {
 
             {/* ────────────── 3. SUGESTÕES PARA SEGUIR ────────────── */}
             {suggestions.length > 0 && (
-                <Widget testid="widget-suggestions" kicker="Pessoas reais" kickerColor={PT.azul} title="Para seguir" Icon={UserPlus}>
+                <Widget testid="widget-suggestions" kicker="Pessoas reais" kickerColor={PT.atl} title="Para seguir" Icon={UserPlus}>
                     <ul className="space-y-3">
                         {suggestions.slice(0, 4).map((u) => {
                             const st = followingMap[u.id];
@@ -222,7 +222,7 @@ export function RightSidebar() {
 
             {/* ────────────── 4. COMUNIDADES POPULARES ────────────── */}
             {communities.length > 0 && (
-                <Widget testid="widget-communities" kicker="Vai à mesa" kickerColor={PT.gold} title="Comunidades" Icon={Users}>
+                <Widget testid="widget-communities" kicker="Vai à mesa" kickerColor={PT.telha} title="Comunidades" Icon={Users}>
                     <ul className="space-y-2.5">
                         {communities.map((c) => (
                             <li key={c.slug}>
@@ -253,10 +253,12 @@ export function RightSidebar() {
 // Widget — card fanzine: header com fundo colorido + body branco
 // =============================================================================
 function Widget({ children, kicker, kickerColor = PT.ink, title, Icon, testid }) {
-    // Light backgrounds (gold) need dark ink text; dark backgrounds need white text.
-    const isLight = kickerColor === PT.gold;
+    // Light backgrounds need dark ink text for WCAG AA contrast on UI.
+    // gold/lima/fluo/peixe-soft are below 3:1 with white → use ink instead.
+    const LIGHT_BGS = new Set([PT.gold, PT.lima, PT.fluo, PT.rosa]);
+    const isLight = LIGHT_BGS.has(kickerColor);
     const fg = isLight ? PT.ink : "#fff";
-    const subFg = isLight ? "rgba(10,10,10,0.62)" : "rgba(255,255,255,0.78)";
+    const subFg = isLight ? "rgba(10,10,10,0.62)" : "rgba(255,255,255,0.82)";
     return (
         <div className="card-lux p-0 overflow-hidden" data-testid={testid}>
             {/* Header pill — fanzine masthead */}
@@ -306,11 +308,16 @@ function FooterLink({ to, label = "ver tudo →" }) {
 }
 
 function CalendarItem({ item, highlight = false }) {
+    // Cada tipo de evento tem identidade própria — paleta fanzine
+    // expandida diferencia melhor que 4 cores clássicas.
     const themeColor = {
-        festa: PT.red,
-        orgulho: PT.green,
-        praia: PT.azul,
-        tradicao: PT.gold,
+        festa:    PT.laranja,    // festa = laranja queimado (energia/calor)
+        orgulho:  PT.eucalipto,  // orgulho = eucalipto (raízes/verde subtil)
+        praia:    PT.peixe,      // praia = turquesa mar
+        tradicao: PT.fado,       // tradição = vinho fado (profundo)
+        cultura:  PT.malva,      // cultura = malva
+        santo:    PT.red,        // santo / religioso = vermelho clássico
+        feriado:  PT.gold,       // feriado nacional = dourado
     }[item.theme] || PT.ink;
 
     const days = item.days_until;

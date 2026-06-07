@@ -1,9 +1,11 @@
 // Deterministic color palette for users without avatars.
-// 10 PT-themed gradient pairs. Used by Avatar + name backgrounds.
+// 16 PT-themed gradient pairs (expanded fanzine palette).
+// Used by Avatar + name backgrounds. Order MATTERS — hash modulo
+// uses indices, so prepending shifts color assignments globally.
 
 export const AVATAR_PALETTES = [
     // [name, gradient-from, gradient-to, soft-bg, soft-text]
-    { name: "coral",     from: "#ff6f59", to: "#c2410c", soft: "#fff1ec", softText: "#9a3412" }, // Tasca
+    { name: "coral",     from: "#ff6f59", to: "#c2410c", soft: "#fff1ec", softText: "#9a3412" }, // Tasca / brasa
     { name: "tejo",      from: "#4a90e2", to: "#1e3a8a", soft: "#eef4fc", softText: "#1e3a8a" }, // Lisboa river blue
     { name: "pinhal",    from: "#4ade80", to: "#15803d", soft: "#ecfdf5", softText: "#14532d" }, // Norte forest
     { name: "ouro",      from: "#fbbf24", to: "#b45309", soft: "#fef7e6", softText: "#78350f" }, // Alentejo gold
@@ -13,6 +15,13 @@ export const AVATAR_PALETTES = [
     { name: "granito",   from: "#71717a", to: "#27272a", soft: "#f4f4f5", softText: "#27272a" }, // Norte stone
     { name: "mar",       from: "#22d3ee", to: "#0891b2", soft: "#ecfeff", softText: "#0e7490" }, // Algarve
     { name: "sardinha",  from: "#f472b6", to: "#9d174d", soft: "#fdf2f8", softText: "#831843" }, // Silver pink
+    // ─── NOVOS — paleta fanzine expandida ─────────────────────────────
+    { name: "telha",     from: "#E89274", to: "#A04830", soft: "#FBE5DC", softText: "#7a3520" }, // Telha portuguesa
+    { name: "eucalipto", from: "#6FA37D", to: "#2F5A3B", soft: "#DDE8DF", softText: "#234029" }, // Eucalipto fresco
+    { name: "peixe",     from: "#5FCEC0", to: "#1B7F75", soft: "#D7F0EC", softText: "#0F5A52" }, // Turquesa peixe-mar
+    { name: "fado",      from: "#9A4555", to: "#4A1E26", soft: "#EFDFE2", softText: "#3a1820" }, // Vinho fado
+    { name: "malva",     from: "#A58AB8", to: "#5A3F6E", soft: "#E8DDF0", softText: "#3F2D4F" }, // Malva cultura
+    { name: "oliveira",  from: "#B5B66A", to: "#5C5F23", soft: "#ECEDD8", softText: "#3F411A" }, // Azeitona terroso
 ];
 
 // Hash a string to a 0..palette.length-1 index deterministically.

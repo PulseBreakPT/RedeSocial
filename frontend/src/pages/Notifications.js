@@ -15,14 +15,16 @@ import { NotifSkeletonList } from "../components/Skeleton";
 import { PT } from "./auth/AuthDecor";
 
 /* ── Tokens fanzine PT por tipo de notificação ───────────────── */
+/* Diversificado com a paleta expandida (5+ cores distintas em
+   vez de 4 cores repetidas). Cada tipo tem semântica visual única. */
 const TYPE_TOKENS = {
-    like:    { bg: PT.red,   fg: "#fff",   Icon: Heart,       fill: true  },
-    comment: { bg: PT.azul,  fg: "#fff",   Icon: MessageCircle },
-    follow:  { bg: PT.green, fg: "#fff",   Icon: UserPlus     },
-    repost:  { bg: PT.green, fg: "#fff",   Icon: Repeat2      },
-    quote:   { bg: PT.azul,  fg: "#fff",   Icon: Quote        },
-    mention: { bg: PT.gold,  fg: PT.ink,   Icon: AtSign       },
-    default: { bg: PT.ink,   fg: PT.gold,  Icon: Bell         },
+    like:    { bg: PT.brasa,      fg: "#fff",   Icon: Heart,       fill: true  }, // brasa coral — love
+    comment: { bg: PT.atl,        fg: "#fff",   Icon: MessageCircle },              // atlântico — conversa
+    follow:  { bg: PT.peixe,      fg: "#fff",   Icon: UserPlus     },              // peixe turquesa — frescura/novo
+    repost:  { bg: PT.eucalipto,  fg: "#fff",   Icon: Repeat2      },              // eucalipto — crescimento
+    quote:   { bg: PT.malva,      fg: "#fff",   Icon: Quote        },              // malva — cultura/cita
+    mention: { bg: PT.laranja,    fg: PT.ink,   Icon: AtSign       },              // laranja queimado — atenção
+    default: { bg: PT.ink,        fg: PT.gold,  Icon: Bell         },
 };
 
 function TypeStamp({ type, size = 36 }) {

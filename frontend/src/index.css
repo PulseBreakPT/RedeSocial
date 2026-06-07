@@ -519,6 +519,11 @@
 /* ============================================================
    ✱ FANZINE PT · UTILITY CLASSES (paleta expandida)
    ────────────────────────────────────────────────────────────
+   ⚠️ DELIBERATELY NOT inside `@layer utilities` to bypass
+   Tailwind JIT purging — these classes are ALWAYS shipped,
+   regardless of whether they appear in source files. This is
+   safe because the rules don't compete with Tailwind ordering.
+
    Uso recomendado:
      • `text-pt-<token>`        — cor de texto/ícone
      • `bg-pt-<token>`          — fundo sólido
@@ -528,171 +533,170 @@
      • `chip-pt-<token>`        — chip pronto-a-usar
      • `ring-pt-<token>`        — ring focus colorido
    ============================================================ */
-@layer utilities {
-    /* — Quentes — */
-    .text-pt-telha     { color: var(--pt-telha); }
-    .bg-pt-telha       { background-color: var(--pt-telha); color: #fff; }
-    .bg-pt-telha-soft  { background-color: var(--pt-telha-soft); }
-    .border-pt-telha   { border-color: var(--pt-telha); }
+/* — Quentes — */
+.text-pt-telha     { color: var(--pt-telha); }
+.bg-pt-telha       { background-color: var(--pt-telha); color: #fff; }
+.bg-pt-telha-soft  { background-color: var(--pt-telha-soft); }
+.border-pt-telha   { border-color: var(--pt-telha); }
 
-    .text-pt-brasa     { color: var(--pt-brasa); }
-    .bg-pt-brasa       { background-color: var(--pt-brasa); color: #fff; }
-    .bg-pt-brasa-soft  { background-color: var(--pt-brasa-soft); }
-    .border-pt-brasa   { border-color: var(--pt-brasa); }
+.text-pt-brasa     { color: var(--pt-brasa); }
+.bg-pt-brasa       { background-color: var(--pt-brasa); color: #fff; }
+.bg-pt-brasa-soft  { background-color: var(--pt-brasa-soft); }
+.border-pt-brasa   { border-color: var(--pt-brasa); }
 
-    .text-pt-tijolo    { color: var(--pt-tijolo); }
-    .bg-pt-tijolo      { background-color: var(--pt-tijolo); color: #fff; }
-    .bg-pt-tijolo-soft { background-color: var(--pt-tijolo-soft); }
-    .border-pt-tijolo  { border-color: var(--pt-tijolo); }
+.text-pt-tijolo    { color: var(--pt-tijolo); }
+.bg-pt-tijolo      { background-color: var(--pt-tijolo); color: #fff; }
+.bg-pt-tijolo-soft { background-color: var(--pt-tijolo-soft); }
+.border-pt-tijolo  { border-color: var(--pt-tijolo); }
 
-    .text-pt-fado      { color: var(--pt-fado); }
-    .bg-pt-fado        { background-color: var(--pt-fado); color: #fff; }
-    .bg-pt-fado-soft   { background-color: var(--pt-fado-soft); }
-    .border-pt-fado    { border-color: var(--pt-fado); }
+.text-pt-fado      { color: var(--pt-fado); }
+.bg-pt-fado        { background-color: var(--pt-fado); color: #fff; }
+.bg-pt-fado-soft   { background-color: var(--pt-fado-soft); }
+.border-pt-fado    { border-color: var(--pt-fado); }
 
-    .text-pt-laranja   { color: var(--pt-laranja); }
-    .bg-pt-laranja     { background-color: var(--pt-laranja); color: var(--pt-ink); }
-    .bg-pt-laranja-soft{ background-color: var(--pt-laranja-soft); }
-    .border-pt-laranja { border-color: var(--pt-laranja); }
+.text-pt-laranja   { color: var(--pt-laranja); }
+.bg-pt-laranja     { background-color: var(--pt-laranja); color: var(--pt-ink); }
+.bg-pt-laranja-soft{ background-color: var(--pt-laranja-soft); }
+.border-pt-laranja { border-color: var(--pt-laranja); }
 
-    /* — Frescos — */
-    .text-pt-atl       { color: var(--pt-atl); }
-    .bg-pt-atl         { background-color: var(--pt-atl); color: #fff; }
-    .bg-pt-atl-soft    { background-color: var(--pt-atl-soft); }
-    .border-pt-atl     { border-color: var(--pt-atl); }
+/* — Frescos — */
+.text-pt-atl       { color: var(--pt-atl); }
+.bg-pt-atl         { background-color: var(--pt-atl); color: #fff; }
+.bg-pt-atl-soft    { background-color: var(--pt-atl-soft); }
+.border-pt-atl     { border-color: var(--pt-atl); }
 
-    .text-pt-azulejo-lite { color: var(--pt-azulejo-lite); }
-    .bg-pt-azulejo-lite   { background-color: var(--pt-azulejo-lite); color: #fff; }
+.text-pt-azulejo-lite { color: var(--pt-azulejo-lite); }
+.bg-pt-azulejo-lite   { background-color: var(--pt-azulejo-lite); color: #fff; }
 
-    .text-pt-peixe     { color: var(--pt-peixe); }
-    .bg-pt-peixe       { background-color: var(--pt-peixe); color: #fff; }
-    .bg-pt-peixe-soft  { background-color: var(--pt-peixe-soft); }
-    .border-pt-peixe   { border-color: var(--pt-peixe); }
+.text-pt-peixe     { color: var(--pt-peixe); }
+.bg-pt-peixe       { background-color: var(--pt-peixe); color: #fff; }
+.bg-pt-peixe-soft  { background-color: var(--pt-peixe-soft); }
+.border-pt-peixe   { border-color: var(--pt-peixe); }
 
-    .text-pt-eucalipto    { color: var(--pt-eucalipto); }
-    .bg-pt-eucalipto      { background-color: var(--pt-eucalipto); color: #fff; }
-    .bg-pt-eucalipto-soft { background-color: var(--pt-eucalipto-soft); }
-    .border-pt-eucalipto  { border-color: var(--pt-eucalipto); }
+.text-pt-eucalipto    { color: var(--pt-eucalipto); }
+.bg-pt-eucalipto      { background-color: var(--pt-eucalipto); color: #fff; }
+.bg-pt-eucalipto-soft { background-color: var(--pt-eucalipto-soft); }
+.border-pt-eucalipto  { border-color: var(--pt-eucalipto); }
 
-    .text-pt-oliveira     { color: var(--pt-oliveira); }
-    .bg-pt-oliveira       { background-color: var(--pt-oliveira); color: #fff; }
-    .bg-pt-oliveira-soft  { background-color: var(--pt-oliveira-soft); }
+.text-pt-oliveira     { color: var(--pt-oliveira); }
+.bg-pt-oliveira       { background-color: var(--pt-oliveira); color: #fff; }
+.bg-pt-oliveira-soft  { background-color: var(--pt-oliveira-soft); }
 
-    /* — Acentos fanzine — */
-    .text-pt-lima      { color: var(--pt-lima); }
-    .bg-pt-lima        { background-color: var(--pt-lima); color: var(--pt-ink); }
-    .bg-pt-lima-soft   { background-color: var(--pt-lima-soft); }
+/* — Acentos fanzine — */
+.text-pt-lima      { color: var(--pt-lima); }
+.bg-pt-lima        { background-color: var(--pt-lima); color: var(--pt-ink); }
+.bg-pt-lima-soft   { background-color: var(--pt-lima-soft); }
 
-    .text-pt-rosa      { color: var(--pt-rosa); }
-    .bg-pt-rosa        { background-color: var(--pt-rosa); color: var(--pt-ink); }
-    .bg-pt-rosa-soft   { background-color: var(--pt-rosa-soft); }
+.text-pt-rosa      { color: var(--pt-rosa); }
+.bg-pt-rosa        { background-color: var(--pt-rosa); color: var(--pt-ink); }
+.bg-pt-rosa-soft   { background-color: var(--pt-rosa-soft); }
 
-    .text-pt-malva     { color: var(--pt-malva); }
-    .bg-pt-malva       { background-color: var(--pt-malva); color: #fff; }
-    .bg-pt-malva-soft  { background-color: var(--pt-malva-soft); }
+.text-pt-malva     { color: var(--pt-malva); }
+.bg-pt-malva       { background-color: var(--pt-malva); color: #fff; }
+.bg-pt-malva-soft  { background-color: var(--pt-malva-soft); }
 
-    .bg-pt-fluo        { background-color: var(--pt-fluo); color: var(--pt-ink); }
+.bg-pt-fluo        { background-color: var(--pt-fluo); color: var(--pt-ink); }
 
-    /* — Neutros — */
-    .bg-pt-branco      { background-color: var(--pt-branco); }
-    .bg-pt-cal         { background-color: var(--pt-cal); }
-    .bg-pt-areia       { background-color: var(--pt-areia); color: var(--pt-ink); }
-    .bg-pt-areia-soft  { background-color: var(--pt-areia-soft); }
-    .text-pt-pedra     { color: var(--pt-pedra); }
-    .text-pt-grafite   { color: var(--pt-grafite); }
-    .text-pt-ink       { color: var(--pt-ink); }
+/* — Neutros — */
+.bg-pt-branco      { background-color: var(--pt-branco); }
+.bg-pt-cal         { background-color: var(--pt-cal); }
+.bg-pt-areia       { background-color: var(--pt-areia); color: var(--pt-ink); }
+.bg-pt-areia-soft  { background-color: var(--pt-areia-soft); }
+.text-pt-pedra     { color: var(--pt-pedra); }
+.text-pt-grafite   { color: var(--pt-grafite); }
+.text-pt-ink       { color: var(--pt-ink); }
 
-    /* — Originais (alias) — */
-    .text-pt-red       { color: var(--pt-red); }
-    .bg-pt-red         { background-color: var(--pt-red); color: #fff; }
-    .text-pt-green     { color: var(--pt-green); }
-    .bg-pt-green       { background-color: var(--pt-green); color: #fff; }
-    .text-pt-gold      { color: var(--pt-gold); }
-    .bg-pt-gold        { background-color: var(--pt-gold); color: var(--pt-ink); }
-    .text-pt-azul      { color: var(--pt-azul); }
-    .bg-pt-azul        { background-color: var(--pt-azul); color: #fff; }
+/* — Originais (alias) — */
+.text-pt-red       { color: var(--pt-red); }
+.bg-pt-red         { background-color: var(--pt-red); color: #fff; }
+.text-pt-green     { color: var(--pt-green); }
+.bg-pt-green       { background-color: var(--pt-green); color: #fff; }
+.text-pt-gold      { color: var(--pt-gold); }
+.bg-pt-gold        { background-color: var(--pt-gold); color: var(--pt-ink); }
+.text-pt-azul      { color: var(--pt-azul); }
+.bg-pt-azul        { background-color: var(--pt-azul); color: #fff; }
 
-    /* ─── Sombras offset fanzine (4px 4px 0) ──────────────────── */
-    .shadow-pt-ink     { box-shadow: 4px 4px 0 var(--pt-ink); }
-    .shadow-pt-red     { box-shadow: 4px 4px 0 var(--pt-red); }
-    .shadow-pt-gold    { box-shadow: 4px 4px 0 var(--pt-gold); }
-    .shadow-pt-azul    { box-shadow: 4px 4px 0 var(--pt-azul); }
-    .shadow-pt-green   { box-shadow: 4px 4px 0 var(--pt-green); }
-    .shadow-pt-telha   { box-shadow: 4px 4px 0 var(--pt-telha); }
-    .shadow-pt-peixe   { box-shadow: 4px 4px 0 var(--pt-peixe); }
-    .shadow-pt-eucalipto{box-shadow: 4px 4px 0 var(--pt-eucalipto); }
-    .shadow-pt-malva   { box-shadow: 4px 4px 0 var(--pt-malva); }
-    .shadow-pt-lima    { box-shadow: 4px 4px 0 var(--pt-lima); }
-    .shadow-pt-brasa   { box-shadow: 4px 4px 0 var(--pt-brasa); }
+/* ─── Sombras offset fanzine (4px 4px 0) ──────────────────── */
+.shadow-pt-ink     { box-shadow: 4px 4px 0 var(--pt-ink); }
+.shadow-pt-red     { box-shadow: 4px 4px 0 var(--pt-red); }
+.shadow-pt-gold    { box-shadow: 4px 4px 0 var(--pt-gold); }
+.shadow-pt-azul    { box-shadow: 4px 4px 0 var(--pt-azul); }
+.shadow-pt-green   { box-shadow: 4px 4px 0 var(--pt-green); }
+.shadow-pt-telha   { box-shadow: 4px 4px 0 var(--pt-telha); }
+.shadow-pt-peixe   { box-shadow: 4px 4px 0 var(--pt-peixe); }
+.shadow-pt-eucalipto{box-shadow: 4px 4px 0 var(--pt-eucalipto); }
+.shadow-pt-malva   { box-shadow: 4px 4px 0 var(--pt-malva); }
+.shadow-pt-lima    { box-shadow: 4px 4px 0 var(--pt-lima); }
+.shadow-pt-brasa   { box-shadow: 4px 4px 0 var(--pt-brasa); }
 
-    /* ─── Chips fanzine reutilizáveis ────────────────────────── */
-    .chip-pt {
-        display: inline-flex; align-items: center; gap: 0.375rem;
-        padding: 3px 9px; border-radius: 999px;
-        font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
-        text-transform: uppercase; line-height: 1.2;
-        border: 2px solid var(--pt-ink);
-        background: #fff; color: var(--pt-ink);
-        box-shadow: 2px 2px 0 var(--pt-ink);
-    }
-    .chip-pt-red       { background: var(--pt-red);       color: #fff; }
-    .chip-pt-gold      { background: var(--pt-gold);      color: var(--pt-ink); }
-    .chip-pt-green     { background: var(--pt-green);     color: #fff; }
-    .chip-pt-azul      { background: var(--pt-azul);      color: #fff; }
-    .chip-pt-telha     { background: var(--pt-telha);     color: #fff; }
-    .chip-pt-peixe     { background: var(--pt-peixe);     color: #fff; }
-    .chip-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
-    .chip-pt-malva     { background: var(--pt-malva);     color: #fff; }
-    .chip-pt-lima      { background: var(--pt-lima);      color: var(--pt-ink); }
-    .chip-pt-rosa      { background: var(--pt-rosa);      color: var(--pt-ink); }
-    .chip-pt-laranja   { background: var(--pt-laranja);   color: var(--pt-ink); }
-    .chip-pt-fluo      { background: var(--pt-fluo);      color: var(--pt-ink); }
-
-    /* ─── Highlights tipo marcador (texto sublinhado fluo) ───── */
-    .hl-pt-fluo   { background: linear-gradient(180deg, transparent 60%, var(--pt-fluo) 60%); padding: 0 0.08em; }
-    .hl-pt-gold   { background: linear-gradient(180deg, transparent 60%, var(--pt-gold) 60%); padding: 0 0.08em; }
-    .hl-pt-lima   { background: linear-gradient(180deg, transparent 60%, var(--pt-lima) 60%); padding: 0 0.08em; }
-    .hl-pt-rosa   { background: linear-gradient(180deg, transparent 60%, var(--pt-rosa) 60%); padding: 0 0.08em; }
-
-    /* ─── Zone-bands (faixas suaves sobre branco) ────────────── */
-    .zone-cal {
-        background-color: var(--pt-cal);
-        border-top: 1px solid rgba(10,10,10,0.07);
-        border-bottom: 1px solid rgba(10,10,10,0.07);
-    }
-    .zone-areia {
-        background-color: var(--pt-areia-soft);
-        border-top: 2px dashed var(--pt-ink);
-        border-bottom: 2px dashed var(--pt-ink);
-    }
-
-    /* ─── Ring focus colorido (acessibilidade) ──────────────── */
-    .ring-pt-gold:focus-visible { outline: 2.5px solid var(--pt-gold);  outline-offset: 2px; border-radius: 6px; }
-    .ring-pt-red:focus-visible  { outline: 2.5px solid var(--pt-red);   outline-offset: 2px; border-radius: 6px; }
-    .ring-pt-azul:focus-visible { outline: 2.5px solid var(--pt-azul);  outline-offset: 2px; border-radius: 6px; }
-    .ring-pt-peixe:focus-visible{ outline: 2.5px solid var(--pt-peixe); outline-offset: 2px; border-radius: 6px; }
-
-    /* ─── Carimbo tag inline (NOVO! · LIVE! · BETA) ─────────── */
-    .stamp-pt {
-        display: inline-block;
-        padding: 4px 9px;
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: 10.5px;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        line-height: 1;
-        border: 2.5px solid var(--pt-ink);
-        background: var(--pt-red);
-        color: #fff;
-        box-shadow: 2px 2px 0 var(--pt-ink);
-        transform: rotate(-4deg);
-    }
-    .stamp-pt-gold { background: var(--pt-gold); color: var(--pt-ink); }
-    .stamp-pt-azul { background: var(--pt-azul); color: #fff; }
-    .stamp-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
-    .stamp-pt-telha { background: var(--pt-telha); color: #fff; }
+/* ─── Chips fanzine reutilizáveis ────────────────────────── */
+.chip-pt {
+    display: inline-flex; align-items: center; gap: 0.375rem;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase; line-height: 1.2;
+    border: 2px solid var(--pt-ink);
+    background: #fff; color: var(--pt-ink);
+    box-shadow: 2px 2px 0 var(--pt-ink);
 }
+.chip-pt-red       { background: var(--pt-red);       color: #fff; }
+.chip-pt-gold      { background: var(--pt-gold);      color: var(--pt-ink); }
+.chip-pt-green     { background: var(--pt-green);     color: #fff; }
+.chip-pt-azul      { background: var(--pt-azul);      color: #fff; }
+.chip-pt-telha     { background: var(--pt-telha);     color: #fff; }
+.chip-pt-peixe     { background: var(--pt-peixe);     color: #fff; }
+.chip-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
+.chip-pt-malva     { background: var(--pt-malva);     color: #fff; }
+.chip-pt-lima      { background: var(--pt-lima);      color: var(--pt-ink); }
+.chip-pt-rosa      { background: var(--pt-rosa);      color: var(--pt-ink); }
+.chip-pt-laranja   { background: var(--pt-laranja);   color: var(--pt-ink); }
+.chip-pt-fluo      { background: var(--pt-fluo);      color: var(--pt-ink); }
+
+/* ─── Highlights tipo marcador (texto sublinhado fluo) ───── */
+.hl-pt-fluo   { background: linear-gradient(180deg, transparent 60%, var(--pt-fluo) 60%); padding: 0 0.08em; }
+.hl-pt-gold   { background: linear-gradient(180deg, transparent 60%, var(--pt-gold) 60%); padding: 0 0.08em; }
+.hl-pt-lima   { background: linear-gradient(180deg, transparent 60%, var(--pt-lima) 60%); padding: 0 0.08em; }
+.hl-pt-rosa   { background: linear-gradient(180deg, transparent 60%, var(--pt-rosa) 60%); padding: 0 0.08em; }
+
+/* ─── Zone-bands (faixas suaves sobre branco) ────────────── */
+.zone-cal {
+    background-color: var(--pt-cal);
+    border-top: 1px solid rgba(10,10,10,0.07);
+    border-bottom: 1px solid rgba(10,10,10,0.07);
+}
+.zone-areia {
+    background-color: var(--pt-areia-soft);
+    border-top: 2px dashed var(--pt-ink);
+    border-bottom: 2px dashed var(--pt-ink);
+}
+
+/* ─── Ring focus colorido (acessibilidade) ──────────────── */
+.ring-pt-gold:focus-visible { outline: 2.5px solid var(--pt-gold);  outline-offset: 2px; border-radius: 6px; }
+.ring-pt-red:focus-visible  { outline: 2.5px solid var(--pt-red);   outline-offset: 2px; border-radius: 6px; }
+.ring-pt-azul:focus-visible { outline: 2.5px solid var(--pt-azul);  outline-offset: 2px; border-radius: 6px; }
+.ring-pt-peixe:focus-visible{ outline: 2.5px solid var(--pt-peixe); outline-offset: 2px; border-radius: 6px; }
+
+/* ─── Carimbo tag inline (NOVO! · LIVE! · BETA) ─────────── */
+.stamp-pt {
+    display: inline-block;
+    padding: 4px 9px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1;
+    border: 2.5px solid var(--pt-ink);
+    background: var(--pt-red);
+    color: #fff;
+    box-shadow: 2px 2px 0 var(--pt-ink);
+    transform: rotate(-4deg);
+}
+.stamp-pt-gold { background: var(--pt-gold); color: var(--pt-ink); }
+.stamp-pt-azul { background: var(--pt-azul); color: #fff; }
+.stamp-pt-eucalipto { background: var(--pt-eucalipto); color: #fff; }
+.stamp-pt-telha { background: var(--pt-telha); color: #fff; }
+
 
 
 /* ============================================================

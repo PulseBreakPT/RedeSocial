@@ -74,12 +74,16 @@ export default function Visitors() {
                     icon={Lock}
                     title="Visitas desativadas"
                     body="Ativa para começares a ver quem espreita o teu perfil."
+                    shadowColor="#6B2C39"
+                    iconBg="#8C8C8C"
                 />
             ) : data.visitors.length === 0 ? (
                 <Empty
                     icon={Eye}
                     title="Ninguém ainda"
                     body="Publica algo, partilha o teu perfil — vais começar a aparecer aqui."
+                    shadowColor="#2EB4A6"
+                    iconBg="#F4A6B7"
                 />
             ) : (
                 <Grid cols={3} gap={3} data-testid="visitors-list">

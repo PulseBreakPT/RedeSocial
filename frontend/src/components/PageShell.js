@@ -182,8 +182,10 @@ export function Chip({ active, onClick, icon: Icon, children, testid, count }) {
     );
 }
 
-/** Empty state — fanzine PT styling. */
-export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
+/** Empty state — fanzine PT styling.
+ *  shadowColor (opcional): cor da shadow offset — default PT.gold.
+ *  Aceita PT.peixe / PT.telha / PT.eucalipto / PT.malva para variação. */
+export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick, shadowColor = PT.gold, iconBg = PT.gold, ctaBg = PT.red }) {
     return (
         <div
             className="py-14 px-6 text-center"
@@ -191,7 +193,7 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
             style={{
                 background: "#fff",
                 border: `3px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${PT.gold}`,
+                boxShadow: `5px 5px 0 ${shadowColor}`,
                 borderRadius: 24,
             }}
         >
@@ -199,7 +201,7 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
                 <div
                     className="w-16 h-16 mx-auto mb-4 grid place-items-center"
                     style={{
-                        background: PT.gold,
+                        background: iconBg,
                         color: PT.ink,
                         border: `2.5px solid ${PT.ink}`,
                         boxShadow: `3px 3px 0 ${PT.ink}`,
@@ -217,7 +219,7 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
                     to={ctaTo}
                     className="inline-block mt-5 px-4 py-2.5 text-[12px] font-black uppercase"
                     style={{
-                        background: PT.red,
+                        background: ctaBg,
                         color: "#fff",
                         border: `2.5px solid ${PT.ink}`,
                         borderRadius: 999,
@@ -233,7 +235,7 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
                     onClick={ctaOnClick}
                     className="mt-5 px-4 py-2.5 text-[12px] font-black uppercase"
                     style={{
-                        background: PT.red,
+                        background: ctaBg,
                         color: "#fff",
                         border: `2.5px solid ${PT.ink}`,
                         borderRadius: 999,

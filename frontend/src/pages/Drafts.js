@@ -127,6 +127,9 @@ export default function Drafts() {
                     body="Guarda uma publicação para a continuares depois."
                     cta={!q ? "Criar publicação" : null}
                     ctaOnClick={() => (openCompose ? openCompose() : navigate("/"))}
+                    shadowColor="#2EB4A6"
+                    iconBg="#D4E83C"
+                    ctaBg="#1B4F8F"
                 />
             ) : (
                 <>

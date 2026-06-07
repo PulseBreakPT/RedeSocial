@@ -178,6 +178,9 @@ export default function Communities() {
                     body={q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}
                     cta={q || cat ? null : "Criar comunidade"}
                     ctaOnClick={() => setCreating(true)}
+                    shadowColor="#D86A4E"
+                    iconBg="#2EB4A6"
+                    ctaBg="#1B4F8F"
                 />
             ) : (
                 <Grid cols={2} gap={4} data-testid="communities-grid">
