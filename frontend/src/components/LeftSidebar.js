@@ -3,7 +3,7 @@ import { NavLink, Link } from "react-router-dom";
 import {
     Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
     FileText, Clock, PenSquare, MoreHorizontal, Shield, Coffee, Map as MapIcon,
-    Sparkles,
+    Sparkles, CalendarDays,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
     { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "nav-communities" },
     { to: "/mesas", label: "Mesas", icon: Coffee, testid: "nav-mesas" },
     { to: "/topologia", label: "Topologia", icon: MapIcon, testid: "nav-topologia" },
+    { to: "/calendario", label: "Calendário", icon: CalendarDays, testid: "nav-calendario" },
     { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "nav-drafts" },
     { to: "/scheduled", label: "Agendados", icon: Clock, testid: "nav-scheduled" },
     { to: "/premium", label: "Plus & Aura", icon: Sparkles, testid: "nav-premium" },

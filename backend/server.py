@@ -58,6 +58,8 @@ import community_graph
 # Premium — motor de direitos (server-side) + billing real (Stripe).
 import entitlements
 import billing
+# Calendário PT — dataset curado de feriados, festas, festivais, cultura.
+import pt_events_data
 
 JWT_ALGORITHM = "HS256"
 
@@ -7246,6 +7248,102 @@ async def calendar_pt(viewer: Optional[dict] = Depends(maybe_user)):
         if len(upcoming) >= 3:
             break
     return {"today": current, "upcoming": upcoming}
+
+
+def _resolve_event_year(ev: dict, ref: datetime) -> dict:
+    """Para cada evento, devolve uma cópia com `iso_date` e `iso_end` no ano
+    de referência. Eventos recorrentes (`recurring=True`) são "projetados"
+    para o ano corrente. Eventos pontuais (`recurring=False`) mantêm o ano
+    original do dataset (já contém YYYY-MM-DD).
+    """
+    out = {**ev}
+    date_iso = ev.get("date_iso", "")
+    end_iso = ev.get("end_iso")
+    if ev.get("recurring") and len(date_iso) == 10:
+        # Reprojeta para o ano de ref (ou +1 se já passou)
+        try:
+            mm_dd = date_iso[5:]
+            candidate = datetime.fromisoformat(f"{ref.year}-{mm_dd}").replace(tzinfo=timezone.utc)
+            if (candidate.date() - ref.date()).days < -30:
+                candidate = candidate.replace(year=ref.year + 1)
+            out["iso_date"] = candidate.strftime("%Y-%m-%d")
+        except Exception:
+            out["iso_date"] = date_iso
+    else:
+        out["iso_date"] = date_iso
+    if end_iso:
+        out["iso_end"] = end_iso
+    return out
+
+
+@api.get("/calendar/all")
+async def calendar_all(
+    category: Optional[str] = None,
+    region: Optional[str] = None,
+    upcoming_only: bool = False,
+    viewer: Optional[dict] = Depends(maybe_user),
+):
+    """Calendário PT completo — feriados, festas, festivais, cultura.
+    Devolve a lista ordenada cronologicamente + agrupamento por mês +
+    metadados de categoria e região para construir filtros no frontend.
+
+    Query params:
+      • category — filtra por uma categoria (feriado, festival_musica, etc.)
+      • region   — filtra por uma região (lisboa, porto, all, ...)
+      • upcoming_only — se true, só devolve eventos a partir de hoje
+    """
+    ref = datetime.now(timezone.utc)
+    raw = pt_events_data.all_events()
+    resolved = [_resolve_event_year(ev, ref) for ev in raw]
+    # Ordena cronologicamente pela data resolvida
+    resolved.sort(key=lambda e: e.get("iso_date", "9999-12-31"))
+
+    if category:
+        resolved = [e for e in resolved if e.get("category") == category]
+    if region and region != "all":
+        resolved = [e for e in resolved if e.get("region") in (region, "all")]
+
+    today_str = ref.strftime("%Y-%m-%d")
+    if upcoming_only:
+        resolved = [e for e in resolved if e.get("iso_end", e["iso_date"]) >= today_str]
+
+    # Anota days_until + estado (passado / hoje / próximo)
+    for e in resolved:
+        try:
+            d = datetime.fromisoformat(e["iso_date"]).replace(tzinfo=timezone.utc)
+            end_d = datetime.fromisoformat(e.get("iso_end", e["iso_date"])).replace(tzinfo=timezone.utc)
+            days = (d.date() - ref.date()).days
+            end_days = (end_d.date() - ref.date()).days
+            e["days_until"] = days
+            if end_days < 0:
+                e["status"] = "past"
+            elif days <= 0 <= end_days:
+                e["status"] = "now"
+            else:
+                e["status"] = "upcoming"
+        except Exception:
+            e["days_until"] = None
+            e["status"] = "upcoming"
+
+    # Agrupa por mês (chave YYYY-MM, no ano em que ocorre)
+    by_month: dict = {}
+    for e in resolved:
+        month_key = e["iso_date"][:7]
+        by_month.setdefault(month_key, []).append(e)
+
+    # Destaque: próximos 3 a contar de hoje
+    next3 = [e for e in resolved if e.get("status") in ("now", "upcoming")][:3]
+
+    return {
+        "year": ref.year,
+        "today": today_str,
+        "total": len(resolved),
+        "events": resolved,
+        "by_month": by_month,
+        "next3": next3,
+        "categories": pt_events_data.CATEGORY_META,
+        "regions": pt_events_data.REGION_META,
+    }
 
 
 @api.get("/daily/digest")

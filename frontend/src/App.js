@@ -47,6 +47,7 @@ const SeriesPage = lazy(() => import("./pages/SeriesPage"));
 const StoryArchive = lazy(() => import("./pages/StoryArchive"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Premium = lazy(() => import("./pages/Premium"));
+const Calendario = lazy(() => import("./pages/Calendario"));
 
 function RouteFallback() {
     return (
@@ -129,6 +130,7 @@ function App() {
                             <Route path="/tag/:tag" element={<TagPage />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/premium" element={<Premium />} />
+                            <Route path="/calendario" element={<Calendario />} />
                             <Route path="/visitors" element={<Visitors />} />
                             <Route path="/series/:seriesId" element={<SeriesPage />} />
                             <Route path="/stories/archive" element={<StoryArchive />} />
