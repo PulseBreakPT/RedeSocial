@@ -20,48 +20,6 @@ const ALL_CATS = { key: "all", label: "Tudo", emoji: "✦" };
 const HIDE_SCROLLBAR = { scrollbarWidth: "none", msOverflowStyle: "none" };
 const LS_DENSITY_KEY = "lusorae.cal.density";
 
-/* Paleta fanzine PT estendida — 10 cores derivadas dos pigmentos
-   históricos (azulejo, terracota, oliveira, vinho do Porto, etc.).
-   Mantemos `PT.*` como núcleo (red/green/gold/azul/cream/ink) e
-   adicionamos cinco accents semânticos para dar respiração editorial. */
-const EXT = {
-    red: "#C8102E",        // bandeira
-    vermilion: "#A8324A",  // tinto / gastronomia
-    terracotta: "#C78D2E", // barro / feira
-    gold: "#FFCC00",       // raiar / sol
-    olive: "#7E8D85",      // pedra & oliveira / sazonal
-    forest: "#0B6E4F",     // pinhal & cultura
-    azul: "#0E4D92",       // azulejo
-    sky: "#1F6FB2",        // céu atlântico / desporto
-    lilac: "#5C4A8A",      // estola religiosa
-    ink: "#0A0A0A",
-};
-
-/* Ordem do "spine" multicolor — paleta canónica de papel fanzine. */
-const SPINE_COLORS = [
-    EXT.red, EXT.terracotta, EXT.gold, EXT.olive,
-    EXT.forest, EXT.sky, EXT.azul, EXT.lilac, EXT.vermilion,
-];
-
-/* Accent por índice de mês (Jan=0 … Dez=11) — rotação determinística
-   para que cada folha mensal tenha a sua própria assinatura cromática. */
-const MONTH_ACCENTS = [
-    EXT.red,        // Jan — Ano Novo
-    EXT.lilac,      // Fev — Carnaval
-    EXT.forest,     // Mar — Primavera
-    EXT.gold,       // Abr — 25 Abril
-    EXT.vermilion,  // Mai — Santos/Maias
-    EXT.red,        // Jun — Santos Populares
-    EXT.terracotta, // Jul — calor
-    EXT.olive,      // Ago — sequeiro
-    EXT.azul,       // Set — vindima
-    EXT.lilac,      // Out — outono
-    EXT.forest,     // Nov — magusto
-    EXT.red,        // Dez — Natal
-];
-
-const accentTextOn = (bg) => (bg === EXT.gold ? EXT.ink : "#fff");
-
 const fmtDate = (iso) => {
     const d = new Date(iso + "T00:00:00");
     return { day: d.getDate(), month: MONTH_PT[d.getMonth()].slice(0, 3).toUpperCase(), monthIdx: d.getMonth() };
@@ -477,7 +435,6 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
     const idx = parseInt(m, 10) - 1;
     const monthName = MONTH_PT[idx];
     const monthNum = String(parseInt(m, 10)).padStart(2, "0");
-    const monthAccent = MONTH_ACCENTS[idx] || EXT.ink;
 
     const breakdown = useMemo(() => {
         const counts = {};
@@ -491,19 +448,13 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
             id={`cal-month-${monthKey}`}
             data-testid={`cal-month-${monthKey}`}
         >
-            {/* HEADER do mês — magazine-style: numeral gigante + faixa de accent */}
+            {/* HEADER do mês — magazine-style: numeral gigante watermark */}
             <header className="relative mb-5 sm:mb-7 pb-4 sm:pb-5" style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
-                {/* Faixa cromática do mês (fita superior) */}
-                <span
-                    aria-hidden
-                    className="absolute left-0 right-0 top-0"
-                    style={{ height: 4, background: monthAccent }}
-                />
-                <div className="flex items-end gap-3 sm:gap-5 pt-3">
+                <div className="flex items-end gap-3 sm:gap-5">
                     <span
                         className="font-black leading-none tracking-[-0.05em] select-none flex-shrink-0"
                         style={{
-                            color: isCurrent ? PT.red : `${monthAccent}3D`,
+                            color: isCurrent ? PT.red : "rgba(10,10,10,0.08)",
                             fontSize: "clamp(72px, 18vw, 156px)",
                             lineHeight: "0.78",
                         }}
@@ -513,12 +464,7 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
                     </span>
                     <div className="min-w-0 flex-1 pb-1 sm:pb-2">
                         <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
-                            <span
-                                className="font-mono font-bold uppercase tracking-[0.20em] text-[10px] sm:text-[11px]"
-                                style={{ color: monthAccent }}
-                            >
-                                / folha&nbsp;n.º&nbsp;{monthNum}
-                            </span>
+                            <Overline color="rgba(10,10,10,0.50)">/ folha&nbsp;n.º&nbsp;{monthNum}</Overline>
                             {isCurrent && (
                                 <span
                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-[0.14em]"
@@ -683,61 +629,6 @@ function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
                     </button>
                 );
             })}
-        </div>
-    );
-}
-
-/* ════════════════════════════════════════════════════════════════
-   CategoryLegend — chave cromática editorial (palette key)
-   ════════════════════════════════════════════════════════════════ */
-function CategoryLegend({ catMetaMap, catCounts, activeCat, onPick }) {
-    const entries = Object.entries(catMetaMap);
-    return (
-        <div className="mt-6 sm:mt-7" data-testid="cal-legend">
-            <div className="flex items-center gap-2 mb-2 pl-0.5">
-                <span aria-hidden className="inline-block w-3 h-3" style={{ background: EXT.gold, border: `1.5px solid ${PT.ink}` }} />
-                <Overline>// chave cromática · cores das categorias</Overline>
-            </div>
-            <div
-                className="cal-legend-grid grid grid-cols-2 sm:grid-cols-5 gap-0"
-                style={{
-                    background: "#fff",
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                }}
-            >
-                {entries.map(([key, meta], i) => {
-                    const active = activeCat === key;
-                    return (
-                        <button
-                            key={key}
-                            type="button"
-                            data-testid={`cal-legend-${key}`}
-                            onClick={() => onPick(active ? "all" : key)}
-                            aria-pressed={active}
-                            className="cal-legend-cell tap-shrink relative px-2.5 py-2 text-left transition-colors"
-                            style={{
-                                background: active ? meta.color : "transparent",
-                                color: active ? accentTextOn(meta.color) : PT.ink,
-                            }}
-                        >
-                            <span
-                                aria-hidden
-                                className="absolute left-0 top-0 bottom-0"
-                                style={{ width: 4, background: meta.color }}
-                            />
-                            <span className="pl-2 flex flex-col gap-0.5 min-w-0">
-                                <span className="font-mono font-bold uppercase tracking-[0.08em] text-[9px] sm:text-[9.5px] leading-tight truncate">
-                                    {meta.label}
-                                </span>
-                                <span className="font-black text-[14px] leading-none">
-                                    {catCounts[key] || 0}
-                                </span>
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
         </div>
     );
 }
@@ -973,27 +864,9 @@ export default function Calendario() {
                     MASTHEAD — editorial header (assimétrico no desktop)
                 ═══════════════════════════════════════════════════ */}
                 <header className="relative mb-8 sm:mb-12" data-testid="cal-masthead">
-                    {/* Spine multicolor — papel fanzine PT */}
-                    <div
-                        aria-hidden
-                        className="flex items-stretch mb-3"
-                        style={{ height: 8, border: `2px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}` }}
-                    >
-                        {SPINE_COLORS.map((c, i) => (
-                            <span
-                                key={i}
-                                className="flex-1"
-                                style={{
-                                    background: c,
-                                    borderRight: i < SPINE_COLORS.length - 1 ? `2px solid ${PT.ink}` : "none",
-                                }}
-                            />
-                        ))}
-                    </div>
-
                     {/* edition strip */}
                     <div
-                        className="flex items-center justify-between gap-3 mb-4 sm:mb-5 pb-2"
+                        className="flex items-center justify-between gap-3 mb-4 pb-2"
                         style={{ borderBottom: `1.5px dashed ${PT.ink}` }}
                     >
                         <div className="inline-flex items-center gap-2 sm:gap-3 min-w-0">
@@ -1012,7 +885,7 @@ export default function Calendario() {
                     </div>
 
                     <div className="min-w-0">
-                        <div className="flex items-start gap-2.5 mb-4 flex-wrap">
+                        <div className="flex items-start gap-2.5 mb-4">
                             <StampCircle size={52} bg={PT.red} rotate={-10}>
                                 <div className="text-center leading-tight">
                                     <div className="text-[7px] font-mono tracking-[0.18em]">ANO</div>
@@ -1024,29 +897,18 @@ export default function Calendario() {
                                     curadoria editorial
                                 </span>
                             </Sticker>
-                            <Sticker bg={EXT.forest} rotate={-4}>
-                                <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.14em]" style={{ color: "#fff" }}>
-                                    Portugal · 2026
-                                </span>
-                            </Sticker>
                         </div>
 
                         <p
-                            className="max-w-[640px] text-[15px] sm:text-[17px] leading-[1.55] sm:leading-[1.5]"
-                            style={{ color: "rgba(10,10,10,0.78)" }}
+                            className="max-w-[640px] text-[14.5px] sm:text-base leading-relaxed"
+                            style={{ color: "rgba(10,10,10,0.72)" }}
                         >
-                            Feriados, festas das cidades, festivais, romarias, feiras e dias para marcar a tinta. Da
-                            <span style={{ background: `${EXT.terracotta}30`, padding: "0 4px", margin: "0 2px" }}>Brejeira</span>
-                            ao
-                            <span style={{ background: `${EXT.azul}30`, padding: "0 4px", margin: "0 2px" }}>Pico</span>,
-                            do
-                            <span style={{ background: `${EXT.lilac}30`, padding: "0 4px", margin: "0 2px" }}>Carnaval</span>
-                            ao
-                            <span style={{ background: `${EXT.forest}30`, padding: "0 4px", margin: "0 2px" }}>Magusto</span>
-                            — um mapa afetivo dos próximos meses.
+                            Feriados, festas das cidades, festivais, romarias, feiras e dias para marcar a tinta —
+                            da Brejeira ao Pico, do Carnaval ao Magusto. Um mapa afetivo dos próximos meses, com
+                            datas confirmadas e palcos por descobrir.
                         </p>
 
-                        {/* STAT STRIP — cada célula com accent cromático */}
+                        {/* STAT STRIP — sem decoração extra */}
                         {stats && (
                             <div
                                 className="mt-5 sm:mt-6 grid grid-cols-3 sm:grid-cols-4 gap-0"
@@ -1057,22 +919,21 @@ export default function Calendario() {
                                 }}
                                 data-testid="cal-stats"
                             >
-                                <StatCell label="eventos" value={stats.total} accentTop={EXT.azul} />
-                                <StatCell label="regiões" value={stats.regions} accentTop={EXT.forest} />
-                                <StatCell label="categorias" value={stats.categories} accentTop={EXT.terracotta} hideBorderRightOnMobile />
+                                <StatCell label="eventos" value={stats.total} />
+                                <StatCell label="regiões" value={stats.regions} />
+                                <StatCell label="categorias" value={stats.categories} hideBorderRightOnMobile />
                                 <StatCell
                                     label="agora"
                                     value={stats.now}
                                     valueSuffix={stats.now === 1 ? "evento" : "eventos"}
                                     accent={stats.now > 0}
-                                    accentTop={EXT.gold}
                                     spanFull
                                 />
                             </div>
                         )}
                     </div>
 
-                    {/* Year Compass — bloco horizontal a seguir ao masthead */}
+                    {/* Year Compass — único elemento de wayfinding macro */}
                     {data && (
                         <div className="mt-6 sm:mt-7">
                             <YearCompass
@@ -1085,11 +946,6 @@ export default function Calendario() {
                                 totalFiltered={filtered.length}
                             />
                         </div>
-                    )}
-
-                    {/* CATEGORY LEGEND — palette key (chave cromática) */}
-                    {data && Object.keys(catMetaMap).length > 0 && (
-                        <CategoryLegend catMetaMap={catMetaMap} catCounts={catCounts} activeCat={cat} onPick={setCat} />
                     )}
                 </header>
 
@@ -1336,19 +1192,12 @@ export default function Calendario() {
 /* ════════════════════════════════════════════════════════════════
    StatCell — célula da stat strip
    ════════════════════════════════════════════════════════════════ */
-function StatCell({ label, value, valueSuffix, accent = false, spanFull = false, hideBorderRightOnMobile = false, accentTop }) {
+function StatCell({ label, value, valueSuffix, accent = false, spanFull = false, hideBorderRightOnMobile = false }) {
     return (
         <div
-            className={`relative p-3 sm:p-4 ${spanFull ? "col-span-3 sm:col-span-1 border-t-2 sm:border-t-0 border-black" : (hideBorderRightOnMobile ? "sm:border-r-2 border-black" : "border-r-2 border-black")}`}
+            className={`p-3 sm:p-4 ${spanFull ? "col-span-3 sm:col-span-1 border-t-2 sm:border-t-0 border-black" : (hideBorderRightOnMobile ? "sm:border-r-2 border-black" : "border-r-2 border-black")}`}
             style={{ background: accent ? PT.red : "transparent" }}
         >
-            {accentTop && !accent && (
-                <span
-                    aria-hidden
-                    className="absolute left-0 right-0 top-0"
-                    style={{ height: 3, background: accentTop }}
-                />
-            )}
             <Overline color={accent ? "rgba(255,255,255,0.80)" : "rgba(10,10,10,0.50)"}>{label}</Overline>
             <p
                 className="font-black leading-none mt-1.5"
@@ -1392,25 +1241,6 @@ function CalendarioStyles() {
                 .cal-compass-cell { border-bottom: none; border-right: 1.5px solid #0A0A0A; }
                 .cal-compass-cell:nth-child(6n) { border-right: 1.5px solid #0A0A0A; }
                 .cal-compass-cell:nth-child(12) { border-right: none; }
-            }
-            /* Legenda cromática — grid 2×5 (mobile) / 5×2 (sm+) */
-            .cal-legend-cell {
-                border-right: 1.5px solid #0A0A0A;
-                border-bottom: 1.5px solid #0A0A0A;
-            }
-            .cal-legend-cell:nth-child(2n) { border-right: none; }
-            .cal-legend-cell:nth-last-child(-n+2) { border-bottom: none; }
-            .cal-legend-cell:hover { filter: brightness(0.97); }
-            .cal-legend-cell[aria-pressed="true"]:hover { filter: brightness(1.05); }
-            @media (min-width: 640px) {
-                .cal-legend-cell {
-                    border-right: 1.5px solid #0A0A0A;
-                    border-bottom: 1.5px solid #0A0A0A;
-                }
-                .cal-legend-cell:nth-child(2n) { border-right: 1.5px solid #0A0A0A; }
-                .cal-legend-cell:nth-child(5n) { border-right: none; }
-                .cal-legend-cell:nth-last-child(-n+2) { border-bottom: 1.5px solid #0A0A0A; }
-                .cal-legend-cell:nth-last-child(-n+5) { border-bottom: none; }
             }
         `}</style>
     );
