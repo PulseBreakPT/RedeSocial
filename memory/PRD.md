@@ -56,10 +56,36 @@
   - `/app/backend/.env` & `/app/frontend/.env` recriados (estavam em falta após fork) com `JWT_SECRET`, `MONGO_URL`, `DB_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` + `REACT_APP_BACKEND_URL`. Admin seeded a `admin@lusorae.pt / Admin12345!` (ver `/app/memory/test_credentials.md`).
 
 
-## Backlog
+## Implemented (Feb 2026 · v2) — Landing PIVOT estratégico "Mapa Social Vivo"
+- ✅ **Reposicionamento 70-point audit completo**: deixar de vender "rede social portuguesa genérica" e passar a vender **"O mapa social vivo das cidades portuguesas"** (cidade como protagonista).
+- ✅ **Landing.js reescrita** (1197 → 1085 linhas, ~960 conteúdo + 120 helpers): tirado todo o conteúdo de stats vazios (0 membros/0 posts), doodles excessivos, stamp shadows pesadas, amarelo gratuito.
+- ✅ **Mapa SVG interactivo de Portugal** como protagonista do hero (continente + Madeira + Açores inset): 14 cidades-âncora clicáveis com cores PT (vermelho/dourado/verde/azul), pulse animado na cidade activa, painel de detalhe sob o mapa (`CityDetail`). Pointer-events bem geridos (path tem `pointer-events:none`, dots têm `pointer-events:all` + hit-area alargada que cobre label).
+- ✅ **CTA primário: "Reservar o teu username"** (substitui "Criar conta") com waitlist real (POST /api/waitlist/reserve). Disponibilidade ao vivo (debounced 320ms) via GET /api/waitlist/check. Sucesso mostra posição na waitlist (#N).
+- ✅ **Backend — 4 novos endpoints públicos**:
+  - `GET /api/landing/pulse` — stats curadas (cidades_suportadas, eventos_indexados, bairros_indexed, regiões_cobertas, eventos_next_7d, reservations_total) — sempre não-zero.
+  - `GET /api/landing/cities` — 14 cidades-âncora (12 continente + 2 ilhas) com slug/name/region/tag/x/y/accent + events_count + communities_count.
+  - `POST /api/waitlist/reserve` — reserva idempotente (mesma email+username = ok), 409 se username ocupado por outro email, 400 em reservados (admin/root/etc), 60s cooldown per-email, rate-limit 6/min per IP.
+  - `GET /api/waitlist/check?u=...` — verificação em tempo real (rate-limit 30/min).
+  - CSRF middleware actualizado: `/api/waitlist/` adicionado a CSRF_EXEMPT_PREFIXES.
+  - Mongo collection nova: `waitlist` (id, username, email, city, ip, ua, created_at).
+- ✅ **Visual sóbrio**: paleta PT mantida mas amarelo PT.gold usado apenas como highlighter typográfico em "cidades portuguesas" (1 ponto deliberado) + badge premium opt-in. Restante UI clean.
+- ✅ **Snapshots de produto cleanos** (Feed, DMs, Eventos, Comunidades) — sem imagens stock, mockups CSS limpos.
+- ✅ **Manifesto "Porquê não somos o Facebook"** (4 pilares: algoritmo de proximidade, zero ads, dados em PT, sem doomscroll).
+- ✅ **FAQ + Premium movidos para o fundo** (Premium em card compacto, sem fricção).
+- ✅ **Tests**: pytest backend `/app/backend/tests/test_landing_waitlist.py` 17/17 a passar. Testing agent: 100% backend, 90%→100% frontend após fixes pointer-events + orphan period + yellow→red em WhyNotFacebook.
+- ✅ **`.env` recriados** após fork (problema recorrente — `MONGO_URL`, `DB_NAME`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `REACT_APP_BACKEND_URL`).
+
+## Backlog (actualizado · Fev 2026 v2)
+- P1: Página dedicada `/cidades/:slug` com camada bairro/freguesia/rua (audit pediu hierarquia Cidade→Bairro→Rua)
+- P1: Onboarding pós-waitlist (reservar → escolher cidade → ver mapa do bairro)
+- P1: Ritmos diários "Cidade da semana" / "Evento da semana" (notificações ritualizadas)
 - P1: Páginas internas (Perfil `/u/:username`, Mensagens `/messages`, Comunidades `/communities`) — mesma linguagem visual
 - P1: MobileTopBar + MobileBottomNav — alinhar tom fanzine
-- P2: Estado vazio do feed central mais informativo (sugestões de pessoas/eventos)
-- P2: Confirmar typo "Crjar conta" no Login
+- P2: Verticais (Turistas / Diáspora / Universidades) com landings dedicadas
+- P2: Migração SVG → Leaflet/MapLibre quando escalar para zoom + neighbourhood layer
+- P2: "Aha moment" core nuclear action design (primeiro post de cidade)
+- P2: Telemetria de conversão waitlist→registo→primeira interação
+- P2: Refactor split — `Landing.js` para `/pages/landing/{Hero,PortugalMap,...}.jsx`; `server.py` para routers
+- P3: Confirmar typo "Crjar conta" no Login
 - P3: Telemetria de auth failures
 - P3: Onboarding "primeiros perfis a seguir" pós-registo

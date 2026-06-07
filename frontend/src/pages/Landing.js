@@ -156,11 +156,12 @@ function Hero({ pulse, cities, activeCity, setActiveCity }) {
                     >
                         O <span style={{ color: PT.red }}>mapa social vivo</span>
                         <br />
-                        das <span style={{
-                            display: "inline-block",
-                            borderBottom: `5px solid ${PT.gold}`,
+                        das{" "}
+                        <span style={{
+                            display: "inline",
+                            backgroundImage: `linear-gradient(transparent 70%, ${PT.gold} 70%, ${PT.gold} 92%, transparent 92%)`,
                             paddingBottom: 2,
-                        }}>cidades portuguesas</span>.
+                        }}>cidades portuguesas.</span>
                     </h1>
 
                     <p className="text-[16px] sm:text-[17px] leading-relaxed mb-6 max-w-[560px]" style={{ color: "rgba(10,10,10,0.74)" }}>
@@ -430,7 +431,7 @@ function PortugalMap({ cities, activeCity, onSelect }) {
                 <rect x="0" y="0" width="280" height="560" fill={PT.cream} />
 
                 {/* Linhas de coordenadas decorativas (cartografia) */}
-                <g opacity="0.06" stroke={PT.ink} strokeWidth="0.5">
+                <g opacity="0.06" stroke={PT.ink} strokeWidth="0.5" style={{ pointerEvents: "none" }}>
                     {[100, 200, 300, 400, 500].map((y) => (
                         <line key={`h${y}`} x1="0" y1={y} x2="280" y2={y} strokeDasharray="2,4" />
                     ))}
@@ -470,6 +471,7 @@ function PortugalMap({ cities, activeCity, onSelect }) {
                     stroke={PT.ink}
                     strokeWidth="2.2"
                     strokeLinejoin="round"
+                    style={{ pointerEvents: "none" }}
                 />
 
                 {/* Rio Tejo (decorativo) */}
@@ -480,11 +482,12 @@ function PortugalMap({ cities, activeCity, onSelect }) {
                     strokeWidth="1.4"
                     strokeDasharray="3,3"
                     opacity="0.55"
+                    style={{ pointerEvents: "none" }}
                 />
 
                 {/* Madeira & Açores — caixas inset */}
                 {islands.length > 0 && (
-                    <g>
+                    <g style={{ pointerEvents: "none" }}>
                         {islands.map((isl) => (
                             <g key={isl.slug} transform={`translate(${isl.x - 18}, ${isl.y - 18})`}>
                                 <rect width="36" height="36" rx="4"
@@ -503,16 +506,25 @@ function PortugalMap({ cities, activeCity, onSelect }) {
                         <g
                             key={c.slug}
                             onClick={() => onSelect(c)}
-                            style={{ cursor: "pointer" }}
+                            style={{ cursor: "pointer", pointerEvents: "all" }}
                             data-testid={`map-city-${c.slug}`}
                             tabIndex={0}
                             role="button"
                             aria-label={`Ver ${c.name}`}
+                            aria-pressed={isActive}
                             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(c); } }}
                         >
+                            {/* Hit area transparente, alargada (para clique fácil incluindo no label) */}
+                            <rect
+                                x={c.x - 6}
+                                y={c.y - 10}
+                                width={Math.max(60, (c.name.length * 7) + 18)}
+                                height={20}
+                                fill="transparent"
+                            />
                             {/* Ping ring (só na activa) */}
                             {isActive && (
-                                <circle cx={c.x} cy={c.y} r="14" fill={fill} opacity="0.18">
+                                <circle cx={c.x} cy={c.y} r="14" fill={fill} opacity="0.18" style={{ pointerEvents: "none" }}>
                                     <animate attributeName="r" from="6" to="20" dur="1.6s" repeatCount="indefinite" />
                                     <animate attributeName="opacity" from="0.45" to="0" dur="1.6s" repeatCount="indefinite" />
                                 </circle>
@@ -525,6 +537,7 @@ function PortugalMap({ cities, activeCity, onSelect }) {
                                 fill={fill}
                                 stroke={PT.ink}
                                 strokeWidth="1.6"
+                                style={{ pointerEvents: "none" }}
                             />
                             {/* Label */}
                             <text
@@ -876,11 +889,18 @@ function WhyNotFacebook() {
         <section id="missao" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" style={{ background: PT.ink, color: PT.cream }} data-testid="why-not-facebook">
             <div className="max-w-[1400px] mx-auto">
                 <div className="max-w-2xl mb-10 sm:mb-12">
-                    <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] mb-3" style={{ color: PT.gold }}>
+                    <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] mb-3" style={{ color: PT.red }}>
                         Por que não somos o Facebook
                     </p>
                     <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98 }}>
-                        Construímos uma rede social que <span style={{ color: PT.gold }}>não te quer agarrar</span> ao ecrã.
+                        Construímos uma rede social que{" "}
+                        <span style={{
+                            display: "inline",
+                            backgroundImage: `linear-gradient(transparent 72%, ${PT.red} 72%, ${PT.red} 92%, transparent 92%)`,
+                        }}>
+                            não te quer agarrar
+                        </span>{" "}
+                        ao ecrã.
                     </h2>
                     <p className="text-[15px] leading-relaxed mt-4 max-w-[640px]" style={{ color: "rgba(255,255,255,0.72)" }}>
                         Lusorae é infraestrutura. Não é um aspirador de atenção. É uma forma de saberes o que se passa na cidade onde vives e nas pessoas com quem te cruzas.
