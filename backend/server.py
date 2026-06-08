@@ -17261,4 +17261,112 @@ async def waitlist_check(request: Request, response: Response, u: str = ""):
     return {"available": True, "message": "Disponível para reservar."}
 
 
+@api2.get("/landing/feed")
+async def landing_feed():
+    """Live feed para a landing — dados REAIS do calendário PT + agregados
+    de utilizadores/comunidades. Alimenta a secção "Hoje em Portugal" sem
+    qualquer mock."""
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    horizon = today + timedelta(days=60)
+
+    # 1) Próximos eventos do calendário curado — ordenados por data
+    upcoming = []
+    try:
+        for e in pt_events_data.all_events():
+            try:
+                d_iso = e.get("date_iso") or ""
+                d = datetime.fromisoformat(d_iso + "T00:00:00+00:00").date()
+                # Para eventos recorrentes anuais, recolocar no ano corrente
+                if e.get("recurring") and d.year != today.year:
+                    d = d.replace(year=today.year)
+                if today <= d <= horizon:
+                    cat = e.get("category", "cultura")
+                    meta = pt_events_data.CATEGORY_META.get(cat, {})
+                    upcoming.append({
+                        "key": e.get("key"),
+                        "title": e.get("title"),
+                        "subtitle": e.get("subtitle"),
+                        "city": e.get("city") or pt_events_data.REGION_META.get(e.get("region", "all"), {}).get("label", "Nacional"),
+                        "region": e.get("region"),
+                        "category": cat,
+                        "category_label": meta.get("label", cat.title()),
+                        "category_color": meta.get("color", "#475569"),
+                        "emoji": e.get("emoji", "✱"),
+                        "date_iso": d.isoformat(),
+                        "theme": e.get("theme"),
+                    })
+            except Exception:
+                continue
+    except Exception as exc:
+        logger.warning(f"landing_feed upcoming: {exc}")
+
+    upcoming.sort(key=lambda x: x["date_iso"])
+    upcoming = upcoming[:8]
+
+    # 2) Breakdown por categoria (do dataset COMPLETO, não só futuro)
+    categories = []
+    try:
+        counter: dict = {}
+        for e in pt_events_data.all_events():
+            c = e.get("category", "outros")
+            counter[c] = counter.get(c, 0) + 1
+        for slug, count in sorted(counter.items(), key=lambda kv: -kv[1]):
+            meta = pt_events_data.CATEGORY_META.get(slug, {})
+            categories.append({
+                "slug": slug,
+                "label": meta.get("label", slug.title()),
+                "emoji": meta.get("emoji", "✱"),
+                "color": meta.get("color", "#475569"),
+                "count": int(count),
+            })
+    except Exception as exc:
+        logger.warning(f"landing_feed categories: {exc}")
+
+    # 3) Cidades em destaque (top 5 por número de eventos no dataset)
+    featured_cities = []
+    try:
+        # Construir o mesmo dicionário do landing_cities mas inline para evitar duplicar
+        events_by_city: dict = {}
+        for e in pt_events_data.all_events():
+            c = (e.get("city") or "").strip()
+            if c:
+                events_by_city[c] = events_by_city.get(c, 0) + 1
+
+        # Intersectar com LANDING_CITIES (curadas) e ordenar por eventos
+        ranked = []
+        for city in LANDING_CITIES:
+            n = events_by_city.get(city["name"], 0)
+            ranked.append({**city, "events_count": n})
+        ranked.sort(key=lambda c: -c["events_count"])
+        featured_cities = ranked[:5]
+    except Exception as exc:
+        logger.warning(f"landing_feed featured: {exc}")
+
+    # 4) Próximos 7 dias — agregado por dia
+    week_buckets = []
+    try:
+        for i in range(7):
+            d = today + timedelta(days=i)
+            day_events = [e for e in upcoming if e["date_iso"] == d.isoformat()]
+            week_buckets.append({
+                "date_iso": d.isoformat(),
+                "weekday": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][d.weekday()],
+                "day_num": d.day,
+                "month": ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][d.month - 1],
+                "events_count": int(len(day_events)),
+                "highlight": day_events[0]["title"] if day_events else None,
+            })
+    except Exception as exc:
+        logger.warning(f"landing_feed week_buckets: {exc}")
+
+    return {
+        "upcoming_events": upcoming,
+        "categories": categories,
+        "featured_cities": featured_cities,
+        "week": week_buckets,
+        "generated_at": now_iso(),
+    }
+
+
 app.include_router(api2)

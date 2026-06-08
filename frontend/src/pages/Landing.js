@@ -1,270 +1,235 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
-    ArrowRight, MapPin, Lock, ChevronDown, Check, Loader2,
-    MessageCircle, Calendar as CalendarIcon, Users as UsersIcon,
-    Building2, Search, Hash, Bell, Heart, Send, Bookmark, Shield,
+    ArrowRight, MapPin, Calendar as CalendarIcon, Users as UsersIcon,
+    MessageCircle, Compass, Heart, Shield, Globe2, Sparkles,
+    Loader2, Check, ChevronDown, Lock, Sunrise, Coffee, Moon, Sun,
+    Instagram, Twitter,
 } from "lucide-react";
-import {
-    PT, Kicker, AuthStyles,
-    DoodleArrow, DoodleStar, DoodleSparkles, DoodleScribble,
-    DoodleHeart, DoodleZigzag, DoodleUnderline, TapedPhoto, HandNote,
-} from "./auth/AuthDecor";
-import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 
-// Static landing illustrations (Nano Banana · Fev 2026 pivot)
-const IMG = {
-    hero:          `${process.env.PUBLIC_URL || ""}/hero/hero.webp`,
-    mapaPoster:    `${process.env.PUBLIC_URL || ""}/hero/lusorae-mapa-poster.webp`,
-    bairro:        `${process.env.PUBLIC_URL || ""}/hero/lusorae-bairro.webp`,
-    cityLisboa:    `${process.env.PUBLIC_URL || ""}/hero/city-lisboa.webp`,
-    cityPorto:     `${process.env.PUBLIC_URL || ""}/hero/city-porto.webp`,
-    cityAlgarve:   `${process.env.PUBLIC_URL || ""}/hero/city-algarve.webp`,
-    ctaCommunity:  `${process.env.PUBLIC_URL || ""}/hero/cta-community.webp`,
-    manifesto:     `${process.env.PUBLIC_URL || ""}/hero/manifesto.webp`,
+// =============================================================================
+// LUSORAE · Landing — "a tua cidade vive aqui · todos os dias"
+// 100% data-driven · zero mocks · zero hardcoded counts.
+// Real numbers from /api/landing/pulse + /api/landing/cities + /api/landing/feed
+// =============================================================================
+
+const C = {
+    ink:     "#0F172A",
+    body:    "#475569",
+    muted:   "#94A3B8",
+    line:    "rgba(15,23,42,0.08)",
+    bg:      "#FFFFFF",
+    bgAlt:   "#FAFAF7",
+    bgDark:  "#0F172A",
+    gold:    "#FFCC00",
+    goldSoft:"#FFE26B",
+    goldDeep:"#B45309",
+    green:   "#10B981",
+    red:     "#EF4444",
+    blue:    "#2563EB",
+    purple:  "#8B5CF6",
+    amber:   "#F59E0B",
+    teal:    "#0EA5A5",
+};
+
+const ACCENT_FOR_CITY = {
+    lisboa: C.red, porto: C.blue, coimbra: C.purple, braga: C.teal,
+    aveiro: C.blue, viseu: C.gold, leiria: C.green, setubal: C.blue,
+    evora: C.gold, faro: C.amber, lagos: C.gold, guimaraes: C.green,
+    funchal: C.green, "ponta-delgada": C.blue,
 };
 
 // =============================================================================
-// LUSORAE — Landing pública  (Fev 2026 · pivot "mapa social vivo")
-// Curadoria: mapa interactivo de cidades como protagonista do produto;
-// CTA primário muda de "Criar conta" para "Reservar username" (waitlist).
-// Visual deliberadamente mais sóbrio: paleta PT mantida, mas sem amarelo
-// gratuito, sem doodles, sem stamp shadows pesadas. Foco no produto.
+// MAIN
 // =============================================================================
-
 export default function Landing() {
     const { user, checking } = useAuth();
-    const [pulse, setPulse] = useState(null);
-    const [cities, setCities] = useState([]);
-    const [activeCity, setActiveCity] = useState(null);
-    const [openFaq, setOpenFaq] = useState(null);
+    const [data, setData] = useState({ pulse: null, cities: [], feed: null });
+    const [loading, setLoading] = useState(true);
 
-    // Carrega stats curadas + cidades-âncora em paralelo
     useEffect(() => {
-        let mounted = true;
+        let alive = true;
         (async () => {
             try {
-                const [pulseRes, citiesRes] = await Promise.all([
-                    api.get(`/landing/pulse`).then((r) => r.data).catch(() => null),
-                    api.get(`/landing/cities`).then((r) => r.data).catch(() => null),
+                const [pulse, cities, feed] = await Promise.all([
+                    api.get("/landing/pulse").then((r) => r.data).catch(() => null),
+                    api.get("/landing/cities").then((r) => r.data?.cities || []).catch(() => []),
+                    api.get("/landing/feed").then((r) => r.data).catch(() => null),
                 ]);
-                if (!mounted) return;
-                if (pulseRes) setPulse(pulseRes);
-                if (citiesRes?.cities) {
-                    setCities(citiesRes.cities);
-                    // Lisboa em destaque por defeito (capital social)
-                    const lx = citiesRes.cities.find((c) => c.slug === "lisboa");
-                    setActiveCity(lx || citiesRes.cities[0] || null);
-                }
-            } catch {/* silencioso */ }
+                if (!alive) return;
+                setData({ pulse, cities, feed });
+            } finally {
+                if (alive) setLoading(false);
+            }
         })();
-        return () => { mounted = false; };
+        return () => { alive = false; };
     }, []);
 
     if (!checking && user) return <Navigate to="/feed" replace />;
 
     return (
-        <div className="min-h-screen relative pt-paper" style={{ background: PT.cream, color: PT.ink }} data-testid="landing-page">
+        <div className="min-h-screen" style={{ background: C.bg, color: C.ink }} data-testid="landing-page">
             <TopNav />
-            <Hero pulse={pulse} cities={cities} activeCity={activeCity} setActiveCity={setActiveCity} />
-            <StatsStrip pulse={pulse} />
-            <ProductSnapshots />
-            <WhyNotFacebook />
-            <HowItWorks />
-            <PremiumCompact />
-            <Faq openFaq={openFaq} setOpenFaq={setOpenFaq} />
-            <FinalCta pulse={pulse} />
-            <SiteFooter />
-            <AuthStyles />
+            <Hero pulse={data.pulse} cities={data.cities} loading={loading} />
+            <WeekStrip week={data.feed?.week} loading={loading} />
+            <UpcomingFeed events={data.feed?.upcoming_events} loading={loading} />
+            <CategoriesGrid categories={data.feed?.categories} loading={loading} />
+            <CitiesGrid cities={data.cities} loading={loading} />
+            <DailyHabits />
+            <ProductPreview pulse={data.pulse} events={data.feed?.upcoming_events} />
+            <ValuesSection />
+            <Roadmap />
+            <FinalCta pulse={data.pulse} />
+            <Faq />
+            <Footer />
+            <LandingStyles />
         </div>
     );
 }
 
 // =============================================================================
-// TOP NAV — minimalista, sem amarelo
+// TOP NAV
 // =============================================================================
-function NavLink({ to, children, testid }) {
-    return (
-        <Link
-            to={to}
-            data-testid={testid}
-            className="text-[12.5px] font-bold uppercase tracking-[0.08em] hover:opacity-60 transition-opacity"
-            style={{ color: PT.ink }}
-        >
-            {children}
-        </Link>
-    );
-}
-
 function TopNav() {
+    const [open, setOpen] = useState(false);
+    const sections = [
+        { href: "#hoje",       label: "Hoje" },
+        { href: "#cidades",    label: "Cidades" },
+        { href: "#produto",    label: "Produto" },
+        { href: "#valores",    label: "Valores" },
+        { href: "#roadmap",    label: "Roadmap" },
+    ];
     return (
-        <header className="relative z-30 border-b" style={{ borderColor: "rgba(10,10,10,0.08)" }}>
-            <div className="hidden lg:flex items-center justify-between px-10 xl:px-14 py-5 max-w-[1400px] mx-auto">
-                <div className="flex items-baseline gap-2">
-                    <span style={{ color: PT.red, fontSize: 28 }} className="font-black leading-none">✱</span>
-                    <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink }} data-testid="brand-logo">
-                        lusorae
-                    </span>
-                    <span className="ml-3 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded"
-                          style={{ letterSpacing: "0.12em", background: PT.ink, color: PT.cream }}>
-                        em pré-lançamento
-                    </span>
-                </div>
-                <nav className="flex items-center gap-8">
-                    <NavLink to="/manifesto" testid="nav-manifesto">Manifesto</NavLink>
-                    <NavLink to="#mapa" testid="nav-mapa">Mapa</NavLink>
-                    <NavLink to="#produto" testid="nav-produto">Produto</NavLink>
-                    <NavLink to="#missao" testid="nav-missao">Missão</NavLink>
+        <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: "rgba(255,255,255,0.85)", borderBottom: `1px solid ${C.line}` }}>
+            <div className="max-w-[1320px] mx-auto px-5 lg:px-8 h-16 lg:h-[72px] flex items-center justify-between gap-6">
+                <BrandMark />
+                <nav className="hidden lg:flex items-center gap-7" aria-label="Primary">
+                    {sections.map((s) => (
+                        <a key={s.href} href={s.href} data-testid={`nav-${s.label.toLowerCase()}`}
+                           className="text-[13.5px] font-semibold transition" style={{ color: C.body }}
+                           onMouseEnter={(e) => (e.currentTarget.style.color = C.ink)}
+                           onMouseLeave={(e) => (e.currentTarget.style.color = C.body)}>
+                            {s.label}
+                        </a>
+                    ))}
                 </nav>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Link to="/login" data-testid="nav-login"
-                          className="text-[12.5px] font-bold uppercase px-4 py-2 tracking-[0.08em] hover:underline"
-                          style={{ color: PT.ink }}>
+                          className="hidden sm:inline-flex items-center px-4 py-2.5 text-[13px] font-bold rounded-full hover:bg-slate-100 transition"
+                          style={{ color: C.ink }}>
                         Entrar
                     </Link>
                     <a href="#reservar" data-testid="nav-reservar"
-                       className="text-[12.5px] font-black uppercase px-4 py-2.5 tracking-[0.08em] rounded-full transition"
-                       style={{ background: PT.ink, color: PT.cream }}>
+                       className="inline-flex items-center px-4 sm:px-5 py-2.5 text-[13px] font-bold rounded-full transition hover:brightness-95"
+                       style={{ background: C.ink, color: "#fff" }}>
                         Reservar username
                     </a>
+                    <button type="button" className="lg:hidden p-2" aria-label="Menu" onClick={() => setOpen((v) => !v)}>
+                        <span className="block w-5 h-[2px] mb-1" style={{ background: C.ink }} />
+                        <span className="block w-5 h-[2px] mb-1" style={{ background: C.ink }} />
+                        <span className="block w-5 h-[2px]"      style={{ background: C.ink }} />
+                    </button>
                 </div>
             </div>
-            <div className="lg:hidden flex items-center justify-between px-5 py-3.5">
-                <div className="flex items-baseline gap-1.5">
-                    <span style={{ color: PT.red, fontSize: 22 }} className="font-black leading-none">✱</span>
-                    <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
+            {open && (
+                <div className="lg:hidden border-t" style={{ borderColor: C.line, background: "#fff" }}>
+                    <nav className="px-5 py-3 flex flex-col gap-1">
+                        {sections.map((s) => (
+                            <a key={s.href} href={s.href} onClick={() => setOpen(false)}
+                               className="py-2.5 text-[15px] font-semibold" style={{ color: C.ink }}>
+                                {s.label}
+                            </a>
+                        ))}
+                        <Link to="/login" onClick={() => setOpen(false)}
+                              className="py-2.5 text-[15px] font-semibold border-t mt-1 pt-3" style={{ color: C.ink, borderColor: C.line }}>
+                            Entrar
+                        </Link>
+                    </nav>
                 </div>
-                <a href="#reservar" data-testid="nav-reservar-mobile"
-                   className="text-[11px] font-black uppercase px-3 py-2 tracking-[0.06em] rounded-full"
-                   style={{ background: PT.ink, color: PT.cream }}>
-                    Reservar
-                </a>
-            </div>
+            )}
         </header>
     );
 }
 
-// =============================================================================
-// HERO — Headline + Reserva (esquerda) · Mapa interactivo (direita)
-// =============================================================================
-function Hero({ pulse, cities, activeCity, setActiveCity }) {
+function BrandMark() {
     return (
-        <section id="reservar" className="px-5 sm:px-8 lg:px-14 pt-8 sm:pt-12 lg:pt-16 pb-12 lg:pb-20 relative" data-testid="hero">
-            {/* Doodle accents — desktop only */}
-            <div className="hidden lg:block absolute top-12 left-[6%] opacity-90 pointer-events-none" aria-hidden="true">
-                <DoodleStar color={PT.gold} size={48} rotate={-14} />
-            </div>
-            <div className="hidden lg:block absolute top-24 right-[4%] opacity-85 pointer-events-none" aria-hidden="true">
-                <DoodleSparkles color={PT.red} size={52} rotate={12} />
-            </div>
+        <Link to="/" className="flex items-center gap-2 group" data-testid="brand-logo" aria-label="Lusorae">
+            <span
+                className="inline-flex items-center justify-center transition-transform group-hover:rotate-[8deg]"
+                style={{
+                    width: 36, height: 36, borderRadius: 12,
+                    background: `linear-gradient(135deg, ${C.gold} 0%, #FFB300 100%)`,
+                    boxShadow: "0 4px 14px rgba(255,204,0,0.40)",
+                }}
+            >
+                <Heart size={18} fill={C.ink} stroke={C.ink} strokeWidth={2.2} />
+            </span>
+            <span className="text-[20px] font-black tracking-tight" style={{ color: C.ink, letterSpacing: "-0.025em" }}>
+                Lusorae
+            </span>
+        </Link>
+    );
+}
 
-            <div className="max-w-[1400px] mx-auto grid lg:grid-cols-[1.05fr_1.1fr] gap-10 lg:gap-14 items-start relative">
-                {/* COLUNA TEXTO + RESERVA */}
-                <div className="order-2 lg:order-1 relative">
-                    <div className="inline-block mb-5">
-                        <span
-                            data-testid="hero-kicker"
-                            className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] px-2.5 py-1 rounded"
-                            style={{ background: "rgba(10,10,10,0.06)", color: PT.ink }}
-                        >
-                            ✱ rede social portuguesa · pré-lançamento
-                        </span>
-                    </div>
-
-                    <h1
-                        className="font-black tracking-[-0.035em] mb-5"
-                        style={{ fontSize: "clamp(38px, 6.4vw, 76px)", lineHeight: 1.02, color: PT.ink }}
-                        data-testid="hero-title"
-                    >
-                        O <span style={{ color: PT.red }}>mapa social vivo</span>
-                        <br />
-                        das{" "}
-                        <span style={{
-                            display: "inline",
-                            backgroundImage: `linear-gradient(transparent 70%, ${PT.gold} 70%, ${PT.gold} 92%, transparent 92%)`,
-                            paddingBottom: 2,
-                        }}>cidades portuguesas.</span>
-                    </h1>
-
-                    <p className="text-[16px] sm:text-[17px] leading-relaxed mb-6 max-w-[560px]" style={{ color: "rgba(10,10,10,0.74)" }}>
-                        Não vendemos Portugal inteiro. Vendemos <strong style={{ color: PT.ink }}>a tua cidade</strong> — bairro a bairro, mesa a mesa, conversa a conversa. Reserva o teu username antes do lançamento.
-                    </p>
-
-                    {/* WAITLIST FORM */}
-                    <ReserveForm />
-
-                    {/* Linha de prova social */}
-                    <div className="mt-6 flex flex-wrap items-center gap-5 text-[12px] font-mono font-bold uppercase tracking-[0.08em]" style={{ color: "rgba(10,10,10,0.55)" }}>
-                        <span className="flex items-center gap-1.5">
-                            <Lock size={13} /> sem ads · sem doomscroll
-                        </span>
-                        <span className="hidden sm:flex items-center gap-1.5">
-                            <Shield size={13} /> dados em PT · RGPD friendly
-                        </span>
-                    </div>
-                </div>
-
-                {/* COLUNA MAPA */}
-                <div className="order-1 lg:order-2 relative" id="mapa">
-                    {/* TapedPhoto fanzine collage — top-right overlap, desktop only */}
-                    <div className="hidden lg:block absolute -top-6 -right-2 z-20 pointer-events-none" aria-hidden="true">
-                        <TapedPhoto
-                            src={IMG.hero}
-                            alt=""
-                            rotate={7}
-                            w={150}
-                            h={170}
-                            tapeColor="rgba(255,204,0,0.85)"
-                            tapeColor2="rgba(200,16,46,0.55)"
-                        />
-                    </div>
-
-                    {/* DoodleArrow apontando para o mapa — desktop */}
-                    <div className="hidden lg:block absolute -top-2 -left-14 z-10 pointer-events-none" aria-hidden="true">
-                        <DoodleArrow color={PT.red} w={84} h={56} />
-                    </div>
-
-                    <div
-                        className="relative p-4 sm:p-5 lg:p-6"
-                        style={{
-                            background: "#fff",
-                            border: `2px solid ${PT.ink}`,
-                            borderRadius: 18,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                        }}
-                        data-testid="hero-map-card"
-                    >
-                        <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: "rgba(10,10,10,0.10)" }}>
-                            <div>
-                                <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: PT.red }}>
-                                    Mapa · ao vivo
-                                </p>
-                                <p className="text-[13.5px] font-black mt-0.5" style={{ color: PT.ink }}>
-                                    {cities.length > 0 ? `${cities.length} cidades-âncora` : "A carregar cidades…"}
-                                </p>
-                            </div>
-                            <span className="flex items-center gap-1.5 text-[10.5px] font-mono font-bold uppercase tracking-[0.10em]" style={{ color: "rgba(10,10,10,0.6)" }}>
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.red }} />
-                                    <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.red }} />
-                                </span>
-                                pulso
+// =============================================================================
+// HERO — real data only
+// =============================================================================
+function Hero({ pulse, cities, loading }) {
+    return (
+        <section id="reservar" className="relative overflow-hidden" data-testid="hero">
+            <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
+                background: `radial-gradient(900px 480px at 80% -10%, rgba(255,204,0,0.18), transparent 60%), radial-gradient(700px 400px at -10% 30%, rgba(37,99,235,0.10), transparent 60%)`,
+            }} />
+            <div className="relative max-w-[1320px] mx-auto px-5 lg:px-8 pt-10 lg:pt-20 pb-12 lg:pb-20">
+                <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-center">
+                    {/* LEFT */}
+                    <div>
+                        <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full" style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 2px 8px rgba(15,23,42,0.04)" }}>
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ background: C.green }} />
+                                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
+                            </span>
+                            <span className="text-[11.5px] font-mono font-bold uppercase tracking-[0.15em]" style={{ color: C.ink }}>
+                                em construção · entra cedo
                             </span>
                         </div>
 
-                        <PortugalMap cities={cities} activeCity={activeCity} onSelect={setActiveCity} />
+                        <h1 className="font-black tracking-tight" style={{ fontSize: "clamp(40px, 6vw, 78px)", lineHeight: 1.02, color: C.ink, letterSpacing: "-0.035em" }} data-testid="hero-title">
+                            A tua cidade<br />
+                            <span style={{ background: `linear-gradient(transparent 68%, ${C.gold} 68%, ${C.gold} 92%, transparent 92%)`, padding: "0 6px" }}>
+                                vive aqui.
+                            </span>
+                        </h1>
 
-                        {/* CITY DETAIL PANEL */}
-                        <CityDetail city={activeCity} />
+                        <p className="mt-6 text-[17px] sm:text-[18px] leading-relaxed max-w-[540px]" style={{ color: C.body }}>
+                            A rede social das pessoas, eventos e comunidades de Portugal — desenhada para abrires todos os dias e sair com algo na agenda. Sem ads. Sem doomscroll.
+                        </p>
+
+                        <div className="mt-8 flex flex-wrap items-center gap-3">
+                            <a href="#reservar-form" data-testid="hero-cta-primary"
+                               className="inline-flex items-center gap-2 px-6 py-4 text-[15px] font-bold rounded-full transition hover:brightness-95"
+                               style={{ background: C.ink, color: "#fff", boxShadow: "0 10px 26px rgba(15,23,42,0.18)" }}>
+                                Reservar o teu username <ArrowRight size={16} strokeWidth={2.4} />
+                            </a>
+                            <a href="#hoje" data-testid="hero-cta-secondary"
+                               className="inline-flex items-center gap-2 px-6 py-4 text-[15px] font-bold rounded-full transition hover:bg-slate-50"
+                               style={{ color: C.ink, border: `1.5px solid ${C.line}`, background: "#fff" }}>
+                                <Compass size={16} /> Ver o que se passa
+                            </a>
+                        </div>
+
+                        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] font-medium" style={{ color: C.body }}>
+                            <span className="flex items-center gap-1.5"><Lock size={14} style={{ color: C.muted }} /> Servidores em Portugal</span>
+                            <span className="flex items-center gap-1.5"><Shield size={14} style={{ color: C.muted }} /> Zero ads</span>
+                            <span className="flex items-center gap-1.5"><Globe2 size={14} style={{ color: C.muted }} /> RGPD-friendly</span>
+                        </div>
                     </div>
 
-                    {/* HandNote por baixo do mapa */}
-                    <div className="hidden lg:block absolute -bottom-6 -left-4 pointer-events-none" aria-hidden="true">
-                        <HandNote color={PT.ink} rotate={-3} size={14}>
-                            clica numa cidade ↗
-                        </HandNote>
+                    {/* RIGHT — Pulse card with REAL numbers */}
+                    <div className="relative" data-testid="hero-pulse-card">
+                        <PulseCard pulse={pulse} cities={cities} loading={loading} />
                     </div>
                 </div>
             </div>
@@ -272,96 +237,746 @@ function Hero({ pulse, cities, activeCity, setActiveCity }) {
     );
 }
 
+function PulseCard({ pulse, cities, loading }) {
+    const items = [
+        { label: "Cidades preparadas",     value: pulse?.cities_supported,  icon: MapPin,         accent: C.blue },
+        { label: "Eventos no calendário",  value: pulse?.events_indexed,    icon: CalendarIcon,   accent: C.purple,  suffix: "+" },
+        { label: "Categorias",             value: pulse?.categories_total,  icon: Sparkles,       accent: C.amber },
+        { label: "Regiões cobertas",       value: pulse?.regions_covered,   icon: Globe2,         accent: C.teal },
+        { label: "Usernames reservados",   value: pulse?.reservations_total,icon: UsersIcon,      accent: C.green,   primary: true },
+    ];
+    return (
+        <div className="rounded-3xl p-6 sm:p-7" style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 24px 60px -20px rgba(15,23,42,0.18), 0 2px 4px rgba(15,23,42,0.04)" }}>
+            <div className="flex items-center justify-between mb-5">
+                <div>
+                    <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: C.muted }}>
+                        em tempo real
+                    </p>
+                    <h3 className="font-black text-[17px] mt-0.5" style={{ color: C.ink }}>
+                        Portugal vivo
+                    </h3>
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono font-bold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.10)", color: C.green }}>
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: C.green }} />
+                        <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: C.green }} />
+                    </span>
+                    ao vivo
+                </span>
+            </div>
+
+            <ul className="space-y-3">
+                {items.map((it, i) => (
+                    <li key={i} data-testid={`pulse-${i}`}
+                        className={`flex items-center justify-between gap-3 py-2 px-3 rounded-xl ${it.primary ? "" : ""}`}
+                        style={it.primary ? { background: "rgba(16,185,129,0.06)", border: `1px solid rgba(16,185,129,0.18)` } : {}}>
+                        <span className="flex items-center gap-3 min-w-0">
+                            <span className="inline-flex shrink-0 items-center justify-center" style={{ width: 32, height: 32, borderRadius: 10, background: `${it.accent}14`, color: it.accent }}>
+                                <it.icon size={15} strokeWidth={2.2} />
+                            </span>
+                            <span className="text-[13.5px] font-medium" style={{ color: C.body }}>{it.label}</span>
+                        </span>
+                        <span className="font-black text-[18px] tabular-nums" style={{ color: C.ink }}>
+                            {loading ? <span className="inline-block w-8 h-3 rounded animate-pulse" style={{ background: C.line }} />
+                                     : (it.value != null ? Number(it.value).toLocaleString("pt-PT") : "—")}
+                            {it.suffix && it.value > 0 ? <span className="text-[13px] opacity-60 ml-0.5">{it.suffix}</span> : null}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: C.line }}>
+                <p className="text-[11.5px] font-medium leading-relaxed" style={{ color: C.muted }}>
+                    Cidades-âncora a abrir primeiro:
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {cities.slice(0, 8).map((c) => (
+                        <span key={c.slug} className="text-[11px] font-bold px-2 py-1 rounded-md" style={{ background: `${ACCENT_FOR_CITY[c.slug] || C.muted}14`, color: ACCENT_FOR_CITY[c.slug] || C.body }}>
+                            {c.name}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // =============================================================================
-// RESERVE FORM — username + email → POST /api/waitlist/reserve
+// WEEK STRIP — 7-day calendar buckets from real /api/landing/feed
 // =============================================================================
-function ReserveForm() {
+function WeekStrip({ week, loading }) {
+    if (!week || week.length === 0) return null;
+    return (
+        <section className="px-5 lg:px-8 -mt-2 pb-6 lg:pb-10" data-testid="week-strip">
+            <div className="max-w-[1320px] mx-auto rounded-2xl p-4 sm:p-5" style={{ background: C.bgAlt, border: `1px solid ${C.line}` }}>
+                <div className="flex items-center justify-between mb-3">
+                    <p className="text-[11px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: C.muted }}>
+                        próximos 7 dias
+                    </p>
+                    <a href="#hoje" data-testid="week-explore"
+                       className="text-[12px] font-bold inline-flex items-center gap-1" style={{ color: C.goldDeep }}>
+                        Ver tudo <ArrowRight size={12} />
+                    </a>
+                </div>
+                <ul className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                    {week.map((d, i) => (
+                        <li key={d.date_iso} data-testid={`week-day-${i}`}
+                            className="rounded-xl px-2 py-3 text-center transition hover:-translate-y-0.5"
+                            style={{
+                                background: i === 0 ? C.ink : "#fff",
+                                color: i === 0 ? "#fff" : C.ink,
+                                border: `1px solid ${i === 0 ? C.ink : C.line}`,
+                                boxShadow: i === 0 ? "0 6px 16px rgba(15,23,42,0.20)" : "0 1px 2px rgba(15,23,42,0.03)",
+                            }}>
+                            <p className="text-[9.5px] font-mono font-bold uppercase tracking-[0.10em]" style={{ opacity: i === 0 ? 0.7 : 0.5 }}>
+                                {d.weekday}
+                            </p>
+                            <p className="font-black text-[18px] sm:text-[22px] mt-0.5 tabular-nums leading-none">
+                                {d.day_num}
+                            </p>
+                            <p className="text-[9px] font-mono mt-0.5 uppercase tracking-[0.10em]" style={{ opacity: i === 0 ? 0.7 : 0.4 }}>
+                                {d.month}
+                            </p>
+                            <div className="mt-1.5 h-[18px] flex items-center justify-center">
+                                {loading ? (
+                                    <span className="inline-block w-6 h-2 rounded animate-pulse" style={{ background: i === 0 ? "rgba(255,255,255,0.2)" : C.line }} />
+                                ) : d.events_count > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                          style={{ background: i === 0 ? "rgba(255,204,0,0.20)" : `${C.gold}22`, color: i === 0 ? C.gold : C.goldDeep }}>
+                                        <span className="w-1 h-1 rounded-full" style={{ background: i === 0 ? C.gold : C.goldDeep }} />
+                                        {d.events_count}
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px]" style={{ opacity: 0.35 }}>—</span>
+                                )}
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// UPCOMING FEED — list of real upcoming events from calendar
+// =============================================================================
+function UpcomingFeed({ events, loading }) {
+    return (
+        <section id="hoje" className="px-5 lg:px-8 py-12 lg:py-20" data-testid="upcoming-feed">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="flex items-end justify-between gap-6 mb-8 lg:mb-10">
+                    <div>
+                        <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                            o que aí vem
+                        </p>
+                        <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                            Hoje em Portugal
+                        </h2>
+                        <p className="mt-2 text-[14.5px] max-w-md" style={{ color: C.body }}>
+                            Calendário curado · feriados, festas, festivais. Sem mocks: o que estás a ver vai mesmo acontecer.
+                        </p>
+                    </div>
+                    <Link to="/eventos" data-testid="feed-see-all"
+                          className="hidden sm:inline-flex items-center gap-1 text-[13px] font-bold whitespace-nowrap" style={{ color: C.ink }}>
+                        Ver calendário completo <ArrowRight size={14} />
+                    </Link>
+                </div>
+
+                <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                    {loading && Array.from({ length: 4 }).map((_, i) => (
+                        <li key={i} className="rounded-2xl p-5 animate-pulse" style={{ background: C.bgAlt, border: `1px solid ${C.line}`, minHeight: 156 }} />
+                    ))}
+                    {!loading && (events || []).slice(0, 8).map((e) => <EventCard key={e.key} e={e} />)}
+                    {!loading && (!events || events.length === 0) && (
+                        <li className="col-span-full rounded-2xl p-6 text-center" style={{ background: C.bgAlt, color: C.muted }}>
+                            Sem eventos próximos no calendário.
+                        </li>
+                    )}
+                </ul>
+            </div>
+        </section>
+    );
+}
+
+function EventCard({ e }) {
+    const d = new Date(e.date_iso + "T00:00:00");
+    const day = d.getDate();
+    const month = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"][d.getMonth()];
+    const weekday = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"][d.getDay()];
+    return (
+        <li
+            data-testid={`event-${e.key}`}
+            className="group rounded-2xl p-4 sm:p-5 transition hover:-translate-y-1"
+            style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 2px 8px rgba(15,23,42,0.03)" }}
+        >
+            <div className="flex items-start gap-3">
+                <div className="text-center shrink-0" style={{
+                    width: 56, padding: "6px 4px",
+                    borderRadius: 12, background: `${e.category_color}10`,
+                    border: `1px solid ${e.category_color}28`,
+                }}>
+                    <p className="text-[9px] font-mono font-bold uppercase tracking-[0.10em]" style={{ color: e.category_color, opacity: 0.85 }}>
+                        {month}
+                    </p>
+                    <p className="font-black text-[22px] tabular-nums leading-none" style={{ color: e.category_color }}>
+                        {day}
+                    </p>
+                    <p className="text-[8.5px] font-mono font-bold uppercase tracking-[0.10em] mt-0.5" style={{ color: e.category_color, opacity: 0.65 }}>
+                        {weekday}
+                    </p>
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-[14px] leading-none">{e.emoji}</span>
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-[0.10em] px-1.5 py-0.5 rounded" style={{ background: `${e.category_color}14`, color: e.category_color }}>
+                            {e.category_label}
+                        </span>
+                    </div>
+                    <h3 className="font-black text-[15px] leading-tight" style={{ color: C.ink }}>
+                        {e.title}
+                    </h3>
+                    {e.subtitle && (
+                        <p className="text-[12px] mt-1 leading-snug line-clamp-2" style={{ color: C.body }}>
+                            {e.subtitle}
+                        </p>
+                    )}
+                    <p className="mt-2 flex items-center gap-1 text-[11.5px] font-medium" style={{ color: C.muted }}>
+                        <MapPin size={11} /> {e.city}
+                    </p>
+                </div>
+            </div>
+        </li>
+    );
+}
+
+// =============================================================================
+// CATEGORIES — real category breakdown
+// =============================================================================
+function CategoriesGrid({ categories, loading }) {
+    if (loading || !categories) {
+        return (
+            <section className="px-5 lg:px-8 pb-8 lg:pb-14" data-testid="categories">
+                <div className="max-w-[1320px] mx-auto h-24 rounded-2xl animate-pulse" style={{ background: C.bgAlt }} />
+            </section>
+        );
+    }
+    return (
+        <section className="px-5 lg:px-8 pb-12 lg:pb-20" data-testid="categories">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="mb-5 lg:mb-6">
+                    <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: C.muted }}>
+                        explora por categoria
+                    </p>
+                </div>
+                <ul className="flex flex-wrap gap-2">
+                    {categories.map((c) => (
+                        <li key={c.slug} data-testid={`cat-${c.slug}`}>
+                            <span
+                                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full text-[13px] font-bold transition hover:-translate-y-0.5 cursor-default"
+                                style={{
+                                    background: "#fff",
+                                    border: `1px solid ${c.color}30`,
+                                    color: C.ink,
+                                    boxShadow: "0 2px 6px rgba(15,23,42,0.03)",
+                                }}
+                            >
+                                <span style={{ fontSize: 16 }}>{c.emoji}</span>
+                                {c.label}
+                                <span className="ml-1 text-[11px] font-mono font-bold px-1.5 py-0.5 rounded tabular-nums" style={{ background: `${c.color}14`, color: c.color }}>
+                                    {c.count}
+                                </span>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// CITIES GRID — real cities from /api/landing/cities
+// =============================================================================
+function CitiesGrid({ cities, loading }) {
+    return (
+        <section id="cidades" className="px-5 lg:px-8 py-14 lg:py-20" style={{ background: C.bgAlt }} data-testid="cities-grid">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="flex items-end justify-between gap-6 mb-8 lg:mb-10">
+                    <div>
+                        <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                            cidades-âncora
+                        </p>
+                        <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                            A começar por estas {cities.length || ""} cidades
+                        </h2>
+                        <p className="mt-2 text-[14.5px] max-w-xl" style={{ color: C.body }}>
+                            Cada cidade tem a sua personalidade. Reserva o teu username e ficamos a saber por onde abrimos primeiro.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 lg:gap-4">
+                    {loading && Array.from({ length: 14 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl animate-pulse" style={{ background: "#fff", border: `1px solid ${C.line}`, aspectRatio: "1 / 1.05" }} />
+                    ))}
+                    {!loading && cities.map((c) => <CityCard key={c.slug} c={c} />)}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function CityCard({ c }) {
+    const accent = ACCENT_FOR_CITY[c.slug] || C.muted;
+    return (
+        <article
+            data-testid={`city-card-${c.slug}`}
+            className="group relative rounded-2xl p-4 flex flex-col transition hover:-translate-y-1"
+            style={{
+                background: "#fff",
+                border: `1px solid ${C.line}`,
+                boxShadow: "0 1px 3px rgba(15,23,42,0.03)",
+                aspectRatio: "1 / 1.05",
+            }}
+        >
+            <div className="flex items-start justify-between">
+                <span className="inline-flex items-center justify-center" style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: `${accent}14`, color: accent,
+                }}>
+                    <MapPin size={16} strokeWidth={2.2} />
+                </span>
+                {c.events_count > 0 && (
+                    <span className="text-[10px] font-mono font-bold tabular-nums px-1.5 py-0.5 rounded" style={{ background: C.bgAlt, color: C.body }}>
+                        {c.events_count} ev.
+                    </span>
+                )}
+            </div>
+            <div className="mt-auto pt-4">
+                <p className="font-black text-[16px] leading-tight" style={{ color: C.ink }}>{c.name}</p>
+                <p className="text-[10px] font-mono font-bold uppercase tracking-[0.10em] mt-0.5" style={{ color: accent }}>
+                    {c.region}
+                </p>
+                <p className="text-[11px] mt-1.5 line-clamp-2" style={{ color: C.body }}>
+                    {c.tag}
+                </p>
+            </div>
+        </article>
+    );
+}
+
+// =============================================================================
+// DAILY HABITS — why open Lusorae every day
+// =============================================================================
+function DailyHabits() {
+    const moments = [
+        { icon: Sunrise, time: "manhã",  title: "Vê o que aí vem.",        sub: "Eventos do dia + posts do bairro. Em 30 segundos." },
+        { icon: Coffee,  time: "almoço", title: "Encontra a tua mesa.",    sub: "Tascas, esplanadas, novidades perto de ti." },
+        { icon: Sun,     time: "tarde",  title: "Diz olá a quem te cruza.", sub: "DMs limpas. Comunidades por bairro." },
+        { icon: Moon,    time: "noite",  title: "Junta-te ao que acontece.",sub: "Concertos, festas, encontros. Marca presença." },
+    ];
+    return (
+        <section className="px-5 lg:px-8 py-14 lg:py-20" data-testid="daily-habits">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="max-w-3xl mb-10 lg:mb-12">
+                    <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                        feito para o dia-a-dia
+                    </p>
+                    <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                        Quatro momentos. Um sítio.
+                    </h2>
+                    <p className="mt-3 text-[15px] max-w-2xl leading-relaxed" style={{ color: C.body }}>
+                        Lusorae foi pensado para entrares de manhã, ao almoço, à tarde e à noite — e saíres com algo útil, não com mais 20 minutos a esfregar o ecrã.
+                    </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+                    {moments.map((m, i) => (
+                        <article key={i} data-testid={`habit-${i}`}
+                                 className="rounded-3xl p-6 lg:p-7 transition hover:-translate-y-1"
+                                 style={{ background: i === 0 ? C.ink : "#fff", color: i === 0 ? "#fff" : C.ink,
+                                          border: `1px solid ${i === 0 ? C.ink : C.line}`,
+                                          boxShadow: i === 0 ? "0 12px 28px -8px rgba(15,23,42,0.25)" : "0 1px 3px rgba(15,23,42,0.03)" }}>
+                            <span className="inline-flex items-center justify-center mb-5" style={{
+                                width: 44, height: 44, borderRadius: 12,
+                                background: i === 0 ? "rgba(255,204,0,0.18)" : C.bgAlt,
+                                color: i === 0 ? C.gold : C.ink,
+                            }}>
+                                <m.icon size={20} strokeWidth={2} />
+                            </span>
+                            <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: i === 0 ? C.gold : C.goldDeep }}>
+                                {m.time}
+                            </p>
+                            <h3 className="font-black text-[18px] mt-1 leading-tight">{m.title}</h3>
+                            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: i === 0 ? "rgba(255,255,255,0.72)" : C.body }}>
+                                {m.sub}
+                            </p>
+                        </article>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// PRODUCT PREVIEW — 2 phone mockups using REAL data from the calendar
+// =============================================================================
+function ProductPreview({ pulse, events }) {
+    const realEvents = (events || []).slice(0, 4);
+    return (
+        <section id="produto" className="px-5 lg:px-8 py-14 lg:py-20" style={{ background: C.bgDark, color: "#fff" }} data-testid="product-preview">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="grid lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16 items-center">
+                    <div>
+                        <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.gold }}>
+                            produto · em pré-lançamento
+                        </p>
+                        <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(30px, 4.5vw, 52px)", lineHeight: 1.02, color: "#fff", letterSpacing: "-0.03em" }}>
+                            O calendário, o mapa<br />e as conversas — <br />
+                            <span style={{ color: C.gold }}>num só sítio.</span>
+                        </h2>
+                        <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed max-w-[520px]" style={{ color: "rgba(255,255,255,0.72)" }}>
+                            Os {pulse?.events_indexed ? `${pulse.events_indexed}+ ` : ""}eventos do calendário PT, as {pulse?.cities_supported || "—"} cidades-âncora e as comunidades que vão nascer, todos acessíveis a partir do feed.
+                        </p>
+                        <ul className="mt-6 space-y-2.5">
+                            {[
+                                "Feed cronológico — sem algoritmo a esconder coisas.",
+                                "DMs limpas — sem ads, sem leituras forçadas.",
+                                "Mapa interactivo da tua cidade e bairro.",
+                                "Comunidades por interesse, freguesia, cidade.",
+                            ].map((line, i) => (
+                                <li key={i} className="flex items-start gap-2.5 text-[14px]" style={{ color: "rgba(255,255,255,0.85)" }}>
+                                    <Check size={16} strokeWidth={3} style={{ color: C.gold, marginTop: 2 }} />
+                                    {line}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="relative flex items-end justify-center gap-3 lg:gap-5">
+                        <PhoneFrame label="Calendário" testid="phone-eventos">
+                            <PhoneCalendar events={realEvents} />
+                        </PhoneFrame>
+                        <PhoneFrame label="Mapa" testid="phone-mapa" elevated>
+                            <PhoneMap />
+                        </PhoneFrame>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function PhoneFrame({ label, children, elevated, testid }) {
+    return (
+        <div className="flex flex-col items-center" data-testid={testid}>
+            <div className="relative" style={{
+                width: "100%", maxWidth: 230,
+                aspectRatio: "1 / 2.05",
+                borderRadius: 38,
+                padding: 7,
+                background: "linear-gradient(180deg, #1F2937 0%, #0B1220 100%)",
+                boxShadow: elevated
+                    ? "0 40px 80px -20px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.3)"
+                    : "0 24px 50px -20px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.2)",
+                transform: elevated ? "translateY(-12px)" : "none",
+            }}>
+                <div className="relative w-full h-full overflow-hidden" style={{ borderRadius: 30, background: "#fff" }}>
+                    {/* notch */}
+                    <div className="absolute left-1/2 -translate-x-1/2 z-30" style={{
+                        top: 7, width: 78, height: 18, borderRadius: 10, background: "#0B1220",
+                    }} />
+                    {/* status bar */}
+                    <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-20" style={{ height: 28 }}>
+                        <span className="text-[9.5px] font-bold tabular-nums" style={{ color: C.ink }}>9:41</span>
+                        <span className="text-[9px]" style={{ color: C.ink }}>● ●● ▮▮▮</span>
+                    </div>
+                    <div className="absolute inset-0 pt-8 px-3 pb-3 overflow-hidden">
+                        {children}
+                    </div>
+                </div>
+            </div>
+            <p className="mt-3 text-[12px] font-bold" style={{ color: "rgba(255,255,255,0.55)" }}>{label}</p>
+        </div>
+    );
+}
+
+function PhoneCalendar({ events }) {
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-2.5">
+                <h4 className="font-black text-[14px]" style={{ color: C.ink }}>Eventos</h4>
+                <span className="text-[9px] font-mono uppercase tracking-wider" style={{ color: C.muted }}>próximos</span>
+            </div>
+            <ul className="space-y-2 overflow-hidden">
+                {events.length === 0 && (
+                    <li className="text-[10px] py-4 text-center" style={{ color: C.muted }}>
+                        A carregar calendário…
+                    </li>
+                )}
+                {events.map((e) => {
+                    const d = new Date(e.date_iso + "T00:00:00");
+                    const day = d.getDate();
+                    const mon = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"][d.getMonth()];
+                    return (
+                        <li key={e.key} className="flex items-start gap-2 p-2 rounded-lg" style={{ background: C.bgAlt }}>
+                            <div className="text-center shrink-0" style={{
+                                width: 30, padding: "3px 2px", borderRadius: 6,
+                                background: `${e.category_color}18`, color: e.category_color,
+                            }}>
+                                <p className="text-[6.5px] font-mono font-bold uppercase tracking-wider opacity-80">{mon}</p>
+                                <p className="font-black text-[12px] tabular-nums leading-none">{day}</p>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-black text-[10px] leading-tight truncate" style={{ color: C.ink }}>
+                                    {e.emoji} {e.title}
+                                </p>
+                                <p className="text-[8.5px] mt-0.5 truncate" style={{ color: C.muted }}>
+                                    <MapPin size={7} className="inline mr-0.5" />{e.city}
+                                </p>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+
+function PhoneMap() {
+    const pins = [
+        { x: 30, y: 12, c: C.teal,   r: 3.5 }, // Braga
+        { x: 56, y: 22, c: C.blue,   r: 5 },   // Porto
+        { x: 33, y: 36, c: C.purple, r: 3.5 }, // Coimbra
+        { x: 50, y: 56, c: C.red,    r: 6 },   // Lisboa (bigger)
+        { x: 50, y: 85, c: C.amber,  r: 4 },   // Faro
+    ];
+    return (
+        <div className="relative h-full overflow-hidden rounded-xl">
+            <div className="absolute inset-0" style={{
+                background: "linear-gradient(135deg, #EFF6FF 0%, #FEFCE8 100%)",
+            }} />
+            <svg viewBox="0 0 100 180" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                    <linearGradient id="ph_land" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FFF7DC" />
+                        <stop offset="100%" stopColor="#F8EEC7" />
+                    </linearGradient>
+                </defs>
+                <path d="M 32 5 Q 56 12, 58 50 L 62 95 Q 58 140, 50 175 L 42 174 Q 28 138, 32 95 L 26 50 Q 28 22, 32 5 Z"
+                      fill="url(#ph_land)" stroke="#E5D6A8" strokeWidth="0.6" />
+                <g opacity="0.25" stroke="#D4C588" strokeWidth="0.4" fill="none">
+                    <path d="M 28 30 Q 45 38, 56 32" />
+                    <path d="M 28 75 Q 46 84, 58 80" />
+                    <path d="M 28 120 Q 46 130, 58 125" />
+                </g>
+            </svg>
+            {pins.map((p, i) => (
+                <span key={i} className="absolute rounded-full" style={{
+                    left: `${p.x}%`, top: `${p.y}%`, transform: "translate(-50%, -50%)",
+                    width: p.r * 2, height: p.r * 2,
+                    background: p.c, border: "1.5px solid #fff",
+                    boxShadow: `0 2px 6px ${p.c}55`,
+                }} />
+            ))}
+            <div className="absolute bottom-2 left-2 right-2 rounded-lg p-2" style={{
+                background: "rgba(255,255,255,0.95)", boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
+                border: `1px solid ${C.line}`,
+            }}>
+                <p className="font-black text-[8.5px] leading-tight" style={{ color: C.ink }}>5 cidades activas</p>
+                <p className="text-[7px] mt-0.5" style={{ color: C.muted }}>toca para explorar</p>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// VALUES — three pillars
+// =============================================================================
+function ValuesSection() {
+    const values = [
+        { icon: Shield, title: "Servidores em Portugal.",  body: "Dados em jurisdição PT. RGPD por desenho. Exportas tudo. Apagas a conta num clique." },
+        { icon: Lock,   title: "Zero anúncios.",            body: "O produto és tu — não o produto à venda. Lusorae+ opcional financia o serviço." },
+        { icon: Heart,  title: "Sem doomscroll.",           body: "Feed cronológico, com fim. Sem auto-play, sem rage-bait, sem algoritmo viciante." },
+    ];
+    return (
+        <section id="valores" className="px-5 lg:px-8 py-14 lg:py-20" data-testid="values">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="max-w-2xl mb-10 lg:mb-12">
+                    <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                        o que defendemos
+                    </p>
+                    <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                        Uma rede social que não te quer agarrar ao ecrã.
+                    </h2>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+                    {values.map((v, i) => (
+                        <article key={i} data-testid={`value-${i}`}
+                                 className="rounded-3xl p-6 lg:p-7 transition hover:-translate-y-1"
+                                 style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 1px 3px rgba(15,23,42,0.03)" }}>
+                            <span className="inline-flex items-center justify-center mb-5" style={{
+                                width: 44, height: 44, borderRadius: 12, background: C.bgAlt, color: C.ink,
+                            }}>
+                                <v.icon size={20} strokeWidth={2} />
+                            </span>
+                            <h3 className="font-black text-[19px] leading-tight" style={{ color: C.ink }}>{v.title}</h3>
+                            <p className="mt-2 text-[14px] leading-relaxed" style={{ color: C.body }}>{v.body}</p>
+                        </article>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// ROADMAP — honest transparency about what's done / coming
+// =============================================================================
+function Roadmap() {
+    const phases = [
+        { tag: "agora",   color: C.green,    title: "Waitlist + Calendário PT",  body: "Reserva de username, calendário curado de 200+ eventos, mapa interactivo das cidades-âncora. Tens isso aqui hoje." },
+        { tag: "Q2 2026", color: C.gold,     title: "Lisboa · Porto · Coimbra",  body: "Primeiras 3 cidades a abrir o feed, DMs e comunidades reais. Convites a sair primeiro para quem reservou cedo." },
+        { tag: "Q3 2026", color: C.purple,   title: "Restantes cidades-âncora",  body: "Braga, Aveiro, Évora, Faro, Funchal, Ponta Delgada e mais. Camada bairro/freguesia." },
+        { tag: "Q4 2026", color: C.blue,     title: "App nativa + Diáspora",     body: "Aplicação iOS/Android. Layer dedicada às comunidades portuguesas no estrangeiro." },
+    ];
+    return (
+        <section id="roadmap" className="px-5 lg:px-8 py-14 lg:py-20" style={{ background: C.bgAlt }} data-testid="roadmap">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="max-w-2xl mb-10 lg:mb-12">
+                    <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                        roadmap público
+                    </p>
+                    <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                        Vamos a passo certo. À frente do barulho.
+                    </h2>
+                    <p className="mt-3 text-[15px] leading-relaxed max-w-2xl" style={{ color: C.body }}>
+                        Estamos em desenvolvimento e somos transparentes sobre onde estamos. Sem promessas vagas — eis o que está pronto e o que aí vem.
+                    </p>
+                </div>
+                <ol className="relative grid lg:grid-cols-4 gap-4 lg:gap-5">
+                    {phases.map((p, i) => (
+                        <li key={i} data-testid={`roadmap-${i}`}
+                            className="rounded-3xl p-5 lg:p-6 relative"
+                            style={{ background: "#fff", border: `1px solid ${C.line}` }}>
+                            <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono font-black uppercase tracking-[0.15em] px-2.5 py-1 rounded-full"
+                                  style={{ background: `${p.color}14`, color: p.color }}>
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+                                {p.tag}
+                            </span>
+                            <h3 className="font-black text-[17px] mt-3 leading-tight" style={{ color: C.ink }}>{p.title}</h3>
+                            <p className="mt-2 text-[13.5px] leading-relaxed" style={{ color: C.body }}>{p.body}</p>
+                        </li>
+                    ))}
+                </ol>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// FINAL CTA — reserve form using real backend
+// =============================================================================
+function FinalCta({ pulse }) {
+    return (
+        <section id="reservar-form" className="px-5 lg:px-8 py-16 lg:py-24 relative overflow-hidden" data-testid="final-cta">
+            <div aria-hidden className="absolute inset-0 pointer-events-none" style={{
+                background: `radial-gradient(700px 360px at 50% 100%, rgba(255,204,0,0.20), transparent 60%)`,
+            }} />
+            <div className="relative max-w-[920px] mx-auto text-center">
+                <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-3" style={{ color: C.goldDeep }}>
+                    última chamada antes do lançamento
+                </p>
+                <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(32px, 5vw, 60px)", lineHeight: 1.0, color: C.ink, letterSpacing: "-0.03em" }}>
+                    Reserva agora.<br />
+                    <span style={{ background: `linear-gradient(transparent 70%, ${C.gold} 70%, ${C.gold} 92%, transparent 92%)`, padding: "0 8px" }}>
+                        Antes que o teu username seja levado.
+                    </span>
+                </h2>
+                <p className="mt-4 text-[15.5px] leading-relaxed max-w-xl mx-auto" style={{ color: C.body }}>
+                    Travas o nome, recebes convite quando a tua cidade abrir, e ganhas badge de early supporter.
+                </p>
+
+                <div className="mt-8 max-w-md mx-auto">
+                    <ReserveBlock />
+                </div>
+
+                {pulse?.reservations_total > 0 && (
+                    <p className="mt-5 text-[13px]" style={{ color: C.body }}>
+                        Já{" "}
+                        <strong style={{ color: C.ink }}>{Number(pulse.reservations_total).toLocaleString("pt-PT")}</strong>
+                        {" "}{pulse.reservations_total === 1 ? "pessoa" : "pessoas"} na waitlist.
+                    </p>
+                )}
+            </div>
+        </section>
+    );
+}
+
+function ReserveBlock() {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
-    const [availability, setAvailability] = useState(null); // {available, message}
+    const [availability, setAvailability] = useState(null);
     const [checking, setChecking] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [result, setResult] = useState(null); // {position, username, already_reserved}
+    const [result, setResult] = useState(null);
     const [error, setError] = useState("");
 
-    // Debounced username availability
     useEffect(() => {
-        const handle = setTimeout(async () => {
-            if (!username || username.length < 2) {
-                setAvailability(null);
-                return;
-            }
+        const t = setTimeout(async () => {
+            if (!username || username.length < 2) { setAvailability(null); return; }
             setChecking(true);
             try {
-                const { data } = await api.get(`/waitlist/check`, { params: { u: username.toLowerCase().trim() } });
+                const { data } = await api.get("/waitlist/check", { params: { u: username.toLowerCase().trim() } });
                 setAvailability(data);
-            } catch {
-                setAvailability(null);
-            } finally {
-                setChecking(false);
-            }
+            } catch { setAvailability(null); }
+            finally { setChecking(false); }
         }, 320);
-        return () => clearTimeout(handle);
+        return () => clearTimeout(t);
     }, [username]);
 
-    const canSubmit = useMemo(() => {
-        return availability?.available && /\S+@\S+\.\S+/.test(email) && !submitting;
-    }, [availability, email, submitting]);
+    const canSubmit = useMemo(
+        () => availability?.available && /\S+@\S+\.\S+/.test(email) && !submitting,
+        [availability, email, submitting],
+    );
 
     async function onSubmit(e) {
         e.preventDefault();
         if (!canSubmit) return;
-        setSubmitting(true);
-        setError("");
+        setSubmitting(true); setError("");
         try {
-            const { data } = await api.post(`/waitlist/reserve`, {
+            const { data } = await api.post("/waitlist/reserve", {
                 username: username.toLowerCase().trim(),
                 email: email.trim().toLowerCase(),
             });
             setResult(data);
         } catch (err) {
-            const msg = err?.response?.data?.detail || "Não foi possível reservar. Tenta novamente.";
-            setError(msg);
-        } finally {
-            setSubmitting(false);
-        }
+            setError(err?.response?.data?.detail || "Não foi possível reservar. Tenta de novo.");
+        } finally { setSubmitting(false); }
     }
 
     if (result) {
         return (
-            <div
-                data-testid="reserve-success"
-                className="p-5 sm:p-6 rounded-2xl"
-                style={{
-                    background: PT.green,
-                    color: "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                }}
-            >
+            <div data-testid="reserve-success" className="rounded-2xl p-5 text-left" style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 12px 30px -8px rgba(15,23,42,0.15)" }}>
                 <div className="flex items-start gap-3">
-                    <span
-                        className="inline-flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: PT.green }}
-                    >
+                    <span className="inline-flex shrink-0 items-center justify-center mt-0.5" style={{
+                        width: 38, height: 38, borderRadius: "50%", background: C.green, color: "#fff",
+                    }}>
                         <Check size={18} strokeWidth={3} />
                     </span>
                     <div className="flex-1">
-                        <p className="text-[10.5px] font-mono font-black uppercase tracking-[0.18em] opacity-90">
-                            {result.already_reserved ? "Já tinhas reservado" : "Username reservado ✱"}
+                        <p className="text-[10.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: C.green }}>
+                            {result.already_reserved ? "Já tinhas reservado" : "Username reservado"}
                         </p>
-                        <p className="font-black text-[18px] sm:text-[20px] mt-1 leading-tight">
-                            @{result.username}
+                        <p className="font-black text-[22px] mt-1" style={{ color: C.ink }}>@{result.username}</p>
+                        <p className="text-[13.5px] mt-1.5" style={{ color: C.body }}>
+                            Posição <strong style={{ color: C.ink }}>#{result.position}</strong> da lista. Avisamos-te por email.
                         </p>
-                        <p className="text-[13.5px] mt-2 leading-relaxed opacity-95">
-                            Estás na <strong>posição #{result.position}</strong> da waitlist. Vamos avisar-te por email quando abrirmos a tua cidade.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => { setResult(null); setUsername(""); setEmail(""); setAvailability(null); }}
-                            data-testid="reserve-another"
-                            className="mt-3 text-[12px] font-bold uppercase tracking-[0.08em] underline opacity-90 hover:opacity-100"
-                        >
+                        <button type="button" data-testid="reserve-another"
+                                onClick={() => { setResult(null); setUsername(""); setEmail(""); setAvailability(null); }}
+                                className="mt-2 text-[12.5px] font-bold underline" style={{ color: C.goldDeep }}>
                             Reservar outro
                         </button>
                     </div>
@@ -370,21 +985,18 @@ function ReserveForm() {
         );
     }
 
-    const statusColor = availability == null ? "rgba(10,10,10,0.45)"
-        : availability.available ? PT.green : PT.red;
+    const statusText = checking ? "a verificar…"
+        : !availability ? "Mínimo 2 caracteres · letras, números, _"
+        : availability.available ? "✓ disponível · pronto a reservar"
+        : (availability.reason === "taken_user" || availability.reason === "taken_waitlist") ? "ocupado · tenta outro"
+        : availability.message || "indisponível";
+    const statusColor = !availability ? C.muted
+        : availability.available ? C.green : C.red;
 
     return (
         <form onSubmit={onSubmit} className="flex flex-col gap-3" data-testid="reserve-form">
-            <div
-                className="flex items-center gap-0 overflow-hidden"
-                style={{
-                    background: "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    borderRadius: 14,
-                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                }}
-            >
-                <span className="pl-4 pr-1 text-[18px] font-black select-none" style={{ color: PT.ink }}>@</span>
+            <div className="rounded-2xl p-2 flex items-center gap-1" style={{ background: "#fff", border: `1px solid ${C.line}`, boxShadow: "0 8px 24px rgba(15,23,42,0.08)" }}>
+                <span className="text-[17px] font-black pl-3 pr-1 select-none" style={{ color: C.muted }}>@</span>
                 <input
                     type="text"
                     value={username}
@@ -392,22 +1004,11 @@ function ReserveForm() {
                     placeholder="o-teu-username"
                     data-testid="reserve-username-input"
                     autoComplete="off"
-                    className="flex-1 py-3.5 text-[16px] font-bold outline-none bg-transparent"
-                    style={{ color: PT.ink }}
+                    className="flex-1 py-3 text-[15px] font-bold bg-transparent outline-none"
+                    style={{ color: C.ink }}
                 />
-                <span className="pr-3 text-[11px] font-mono font-bold uppercase tracking-[0.08em]" style={{ color: statusColor }}>
-                    {checking ? (
-                        <Loader2 size={14} className="animate-spin" />
-                    ) : availability == null ? (
-                        username.length >= 2 ? "" : ""
-                    ) : availability.available ? (
-                        <span className="flex items-center gap-1"><Check size={14} /> livre</span>
-                    ) : (
-                        availability.reason === "taken_user" || availability.reason === "taken_waitlist" ? "ocupado" : (availability.reason || "x")
-                    )}
-                </span>
+                {checking && <Loader2 size={15} className="animate-spin mr-3" style={{ color: C.muted }} />}
             </div>
-
             <input
                 type="email"
                 value={email}
@@ -415,807 +1016,222 @@ function ReserveForm() {
                 placeholder="o-teu-email@cidade.pt"
                 data-testid="reserve-email-input"
                 autoComplete="email"
-                className="py-3.5 px-4 text-[16px] font-bold outline-none"
-                style={{
-                    background: "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    borderRadius: 14,
-                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                    color: PT.ink,
-                }}
+                required
+                className="rounded-2xl py-3.5 px-5 text-[15px] font-semibold bg-white outline-none"
+                style={{ color: C.ink, border: `1px solid ${C.line}`, boxShadow: "0 8px 24px rgba(15,23,42,0.06)" }}
             />
-
             <button
                 type="submit"
                 disabled={!canSubmit}
                 data-testid="reserve-submit-btn"
-                className="inline-flex items-center justify-center gap-2 py-4 px-6 text-[14px] font-black uppercase tracking-[0.08em] rounded-2xl transition disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 py-4 text-[14.5px] font-black rounded-full transition disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
-                    background: canSubmit ? PT.red : "rgba(10,10,10,0.30)",
-                    color: "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: canSubmit ? `4px 4px 0 ${PT.ink}` : "none",
-                    opacity: submitting ? 0.7 : 1,
+                    background: canSubmit ? C.ink : "#E2E8F0",
+                    color: canSubmit ? "#fff" : C.muted,
+                    boxShadow: canSubmit ? "0 12px 28px rgba(15,23,42,0.25)" : "none",
                 }}
             >
-                {submitting ? (<><Loader2 size={16} className="animate-spin" /> A reservar…</>)
-                            : (<>Reservar o meu username <ArrowRight size={16} /></>)}
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                Reservar o meu username <ArrowRight size={15} />
             </button>
-
-            {error && (
-                <p data-testid="reserve-error" className="text-[13px] font-bold" style={{ color: PT.red }}>
-                    {error}
-                </p>
-            )}
-
-            <p className="text-[11.5px] font-mono leading-relaxed" style={{ color: "rgba(10,10,10,0.55)" }}>
-                Sem spam. Avisamos-te quando a tua cidade abrir. Cancela quando quiseres.
+            <p className="text-[11.5px] font-mono text-left px-1" style={{ color: statusColor }}>
+                {statusText}
             </p>
+            {error && <p data-testid="reserve-error" className="text-[12.5px] font-bold" style={{ color: C.red }}>{error}</p>}
         </form>
     );
 }
 
 // =============================================================================
-// PORTUGAL MAP — SVG estilizado (continente + ilhas) + pontos de cidade
-// Clicáveis. Pulse animado no ponto activo.
+// FAQ
 // =============================================================================
-function PortugalMap({ cities, activeCity, onSelect }) {
-    const mainland = cities.filter((c) => !c.island);
-    const islands = cities.filter((c) => c.island);
-
-    const colorFor = (accent) => ({
-        red: PT.red, gold: PT.gold, green: PT.green, azul: PT.azul,
-    }[accent] || PT.red);
-
-    return (
-        <div className="relative w-full" style={{ aspectRatio: "5/7", maxWidth: 500, margin: "0 auto" }}>
-            <svg
-                viewBox="0 0 280 560"
-                className="w-full h-full"
-                role="img"
-                aria-label="Mapa interactivo de Portugal — clica numa cidade"
-                data-testid="portugal-svg-map"
-            >
-                {/* Fundo papel */}
-                <rect x="0" y="0" width="280" height="560" fill={PT.cream} />
-
-                {/* Linhas de coordenadas decorativas (cartografia) */}
-                <g opacity="0.06" stroke={PT.ink} strokeWidth="0.5" style={{ pointerEvents: "none" }}>
-                    {[100, 200, 300, 400, 500].map((y) => (
-                        <line key={`h${y}`} x1="0" y1={y} x2="280" y2={y} strokeDasharray="2,4" />
-                    ))}
-                    {[70, 140, 210].map((x) => (
-                        <line key={`v${x}`} x1={x} y1="0" x2={x} y2="560" strokeDasharray="2,4" />
-                    ))}
-                </g>
-
-                {/* Continente — silhueta estilizada (hand-drawn fanzine) */}
-                <path
-                    d="M 95 28
-                       Q 110 22, 130 28
-                       L 152 38
-                       Q 162 60, 158 90
-                       L 172 130
-                       Q 178 165, 168 200
-                       L 178 240
-                       Q 182 275, 170 305
-                       L 178 345
-                       Q 186 380, 176 415
-                       L 188 445
-                       Q 195 470, 178 488
-                       L 145 502
-                       L 110 503
-                       Q 75 495, 65 475
-                       L 65 445
-                       Q 72 420, 62 395
-                       L 65 360
-                       Q 58 330, 65 300
-                       L 56 268
-                       Q 50 235, 62 205
-                       L 55 168
-                       Q 50 135, 64 100
-                       L 60 70
-                       Q 68 45, 95 28 Z"
-                    fill="#fff"
-                    stroke={PT.ink}
-                    strokeWidth="2.2"
-                    strokeLinejoin="round"
-                    style={{ pointerEvents: "none" }}
-                />
-
-                {/* Rio Tejo (decorativo) */}
-                <path
-                    d="M 50 300 Q 90 318, 130 322 T 200 340"
-                    fill="none"
-                    stroke={PT.azul}
-                    strokeWidth="1.4"
-                    strokeDasharray="3,3"
-                    opacity="0.55"
-                    style={{ pointerEvents: "none" }}
-                />
-
-                {/* Madeira & Açores — caixas inset */}
-                {islands.length > 0 && (
-                    <g style={{ pointerEvents: "none" }}>
-                        {islands.map((isl) => (
-                            <g key={isl.slug} transform={`translate(${isl.x - 18}, ${isl.y - 18})`}>
-                                <rect width="36" height="36" rx="4"
-                                      fill="#fff" stroke={PT.ink} strokeWidth="1.5"
-                                      strokeDasharray="3,3" />
-                            </g>
-                        ))}
-                    </g>
-                )}
-
-                {/* Cidades — pontos clicáveis */}
-                {[...mainland, ...islands].map((c) => {
-                    const isActive = activeCity?.slug === c.slug;
-                    const fill = colorFor(c.accent);
-                    return (
-                        <g
-                            key={c.slug}
-                            onClick={() => onSelect(c)}
-                            style={{ cursor: "pointer", pointerEvents: "all" }}
-                            data-testid={`map-city-${c.slug}`}
-                            tabIndex={0}
-                            role="button"
-                            aria-label={`Ver ${c.name}`}
-                            aria-pressed={isActive}
-                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(c); } }}
-                        >
-                            {/* Hit area transparente, alargada (para clique fácil incluindo no label) */}
-                            <rect
-                                x={c.x - 6}
-                                y={c.y - 10}
-                                width={Math.max(60, (c.name.length * 7) + 18)}
-                                height={20}
-                                fill="transparent"
-                            />
-                            {/* Ping ring (só na activa) */}
-                            {isActive && (
-                                <circle cx={c.x} cy={c.y} r="14" fill={fill} opacity="0.18" style={{ pointerEvents: "none" }}>
-                                    <animate attributeName="r" from="6" to="20" dur="1.6s" repeatCount="indefinite" />
-                                    <animate attributeName="opacity" from="0.45" to="0" dur="1.6s" repeatCount="indefinite" />
-                                </circle>
-                            )}
-                            {/* Dot */}
-                            <circle
-                                cx={c.x}
-                                cy={c.y}
-                                r={isActive ? 7 : 5}
-                                fill={fill}
-                                stroke={PT.ink}
-                                strokeWidth="1.6"
-                                style={{ pointerEvents: "none" }}
-                            />
-                            {/* Label */}
-                            <text
-                                x={c.x + 11}
-                                y={c.y + 4}
-                                fontSize={isActive ? 12 : 10.5}
-                                fontWeight={isActive ? 900 : 700}
-                                fill={PT.ink}
-                                style={{ fontFamily: "system-ui, -apple-system, sans-serif", pointerEvents: "none" }}
-                            >
-                                {c.name}
-                            </text>
-                        </g>
-                    );
-                })}
-
-                {/* Legenda mini */}
-                <g transform="translate(8, 540)" opacity="0.65">
-                    <text fontSize="8" fontWeight="700" fill={PT.ink} fontFamily="monospace" letterSpacing="1">
-                        PT · continente · madeira · açores
-                    </text>
-                </g>
-            </svg>
-        </div>
-    );
-}
-
-// =============================================================================
-// CITY DETAIL — painel sob o mapa com informação da cidade activa
-// =============================================================================
-function CityDetail({ city }) {
-    if (!city) return null;
-    return (
-        <div
-            className="mt-3 sm:mt-4 p-4 sm:p-5"
-            data-testid={`city-detail-${city.slug}`}
-            style={{
-                background: PT.bone,
-                border: `2px solid ${PT.ink}`,
-                borderRadius: 14,
-            }}
-        >
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                    <p className="text-[9.5px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: "rgba(10,10,10,0.55)" }}>
-                        {city.region}
-                    </p>
-                    <p className="font-black text-[20px] sm:text-[22px] mt-0.5" style={{ color: PT.ink }}>
-                        {city.name}
-                    </p>
-                    <p className="text-[13px] mt-1 italic" style={{ color: "rgba(10,10,10,0.65)" }}>
-                        {city.tag}
-                    </p>
-                </div>
-                <span
-                    className="text-[10px] font-mono font-black uppercase tracking-[0.10em] px-2 py-1 rounded shrink-0"
-                    style={{ background: PT.ink, color: PT.cream }}
-                >
-                    A reservar
-                </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mt-4">
-                <Stat label="Eventos indexados" value={city.events_count} icon={<CalendarIcon size={14} />} />
-                <Stat label="Comunidades" value={city.communities_count} icon={<Building2 size={14} />} />
-            </div>
-
-            <p className="text-[12px] mt-3" style={{ color: "rgba(10,10,10,0.62)" }}>
-                Quando o <strong>{city.name}</strong> abrir, recebes uma notificação por email se reservares o teu username em cima.
-            </p>
-        </div>
-    );
-}
-
-function Stat({ label, value, icon }) {
-    return (
-        <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center justify-center shrink-0"
-                  style={{ width: 28, height: 28, borderRadius: 8, background: "#fff", border: `1.5px solid ${PT.ink}`, color: PT.ink }}>
-                {icon}
-            </span>
-            <div className="min-w-0">
-                <p className="font-black text-[16px] leading-none tabular-nums" style={{ color: PT.ink }}>
-                    {Number(value || 0).toLocaleString("pt-PT")}
-                </p>
-                <p className="text-[10px] font-mono font-bold uppercase tracking-[0.08em] mt-1" style={{ color: "rgba(10,10,10,0.55)" }}>
-                    {label}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// STATS STRIP — métricas curadas (sem zeros)
-// =============================================================================
-function StatsStrip({ pulse }) {
+function Faq() {
     const items = [
-        { value: pulse?.cities_supported, suffix: "", label: "Cidades suportadas",   accent: PT.red,   testid: "stat-cities" },
-        { value: pulse?.events_indexed,   suffix: "", label: "Eventos indexados",     accent: PT.azul,  testid: "stat-events" },
-        { value: pulse?.bairros_indexed,  suffix: "", label: "Bairros mapeados",      accent: PT.green, testid: "stat-bairros" },
-        { value: pulse?.regions_covered,  suffix: "", label: "Regiões cobertas",      accent: PT.gold,  testid: "stat-regions" },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-14 py-10 sm:py-14" data-testid="stats-strip">
-            <div className="max-w-[1400px] mx-auto">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px"
-                     style={{ background: "rgba(10,10,10,0.10)", border: `1.5px solid rgba(10,10,10,0.10)` }}>
-                    {items.map((it, i) => (
-                        <div key={i} className="px-5 sm:px-7 py-7 sm:py-9" style={{ background: PT.cream }} data-testid={it.testid}>
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="block" style={{ width: 18, height: 3, background: it.accent }} />
-                                <span className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: "rgba(10,10,10,0.55)" }}>
-                                    Real
-                                </span>
-                            </div>
-                            <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(36px, 5vw, 56px)", color: PT.ink }}>
-                                {pulse ? Number(it.value || 0).toLocaleString("pt-PT") : "…"}
-                                {it.suffix && <span className="text-[20px] ml-1 opacity-60">{it.suffix}</span>}
-                            </p>
-                            <p className="mt-2 text-[12.5px] font-bold" style={{ color: "rgba(10,10,10,0.72)" }}>
-                                {it.label}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-                <p className="mt-4 text-[12px] font-mono" style={{ color: "rgba(10,10,10,0.50)" }}>
-                    Atualizado em tempo real · sem números inventados · sem metricas de vaidade.
-                </p>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// PRODUCT SNAPSHOTS — mockups limpos: Feed, DMs, Eventos, Comunidades
-// =============================================================================
-function ProductSnapshots() {
-    return (
-        <section id="produto" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-18 relative" data-testid="product-snapshots">
-            {/* Doodle accent */}
-            <div className="hidden lg:block absolute top-20 right-[6%] opacity-90 pointer-events-none" aria-hidden="true">
-                <DoodleZigzag color={PT.gold} w={140} h={32} />
-            </div>
-
-            <div className="max-w-[1400px] mx-auto">
-                <div className="max-w-2xl mb-10 sm:mb-12 relative">
-                    <Kicker color={PT.red} className="mb-2">Produto · em pré-lançamento</Kicker>
-                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
-                        Não é uma rede social genérica.<br />
-                        É <span style={{ color: PT.red }}>infraestrutura social</span> para a tua cidade.
-                    </h2>
-                    <div className="mt-3">
-                        <DoodleUnderline color={PT.gold} w={180} h={12} />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                    <SnapshotCard
-                        kicker="Feed · curadoria local"
-                        title="Vê o que se passa hoje no teu bairro."
-                        sub="Posts ordenados por proximidade, não por algoritmo. Sem doomscroll."
-                        testid="snap-feed"
-                        image={IMG.cityPorto}
-                        mockup={<FeedMockup />}
-                    />
-                    <SnapshotCard
-                        kicker="Mensagens · conversas reais"
-                        title="DMs limpas. Sem ads. Sem leituras forçadas."
-                        sub="Tu controlas quem te escreve. E quando."
-                        testid="snap-dms"
-                        image={IMG.cityLisboa}
-                        mockup={<DMsMockup />}
-                    />
-                    <SnapshotCard
-                        kicker="Eventos · 200+ curados"
-                        title="Cada festa, festival e feira em Portugal."
-                        sub="Do São João ao Andanças. Do magusto à passagem de ano."
-                        testid="snap-events"
-                        image={IMG.cityAlgarve}
-                        mockup={<EventsMockup />}
-                    />
-                    <SnapshotCard
-                        kicker="Comunidades · bairro a bairro"
-                        title="Encontra a tua mesa. Mesmo quando estás longe."
-                        sub="Comunidades por cidade, freguesia, interesse."
-                        testid="snap-communities"
-                        image={IMG.ctaCommunity}
-                        mockup={<CommunitiesMockup />}
-                    />
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function SnapshotCard({ kicker, title, sub, mockup, image, testid }) {
-    return (
-        <article
-            data-testid={testid}
-            className="relative p-5 sm:p-6 lg:p-7"
-            style={{
-                background: "#fff",
-                border: `2px solid ${PT.ink}`,
-                borderRadius: 18,
-                boxShadow: `3px 3px 0 ${PT.ink}`,
-            }}
-        >
-            {image && (
-                <div
-                    className="mb-4 -mt-2 -mx-2 sm:-mx-3 lg:-mx-4 overflow-hidden rounded-xl relative"
-                    style={{ height: 140, border: `1.5px solid ${PT.ink}` }}
-                >
-                    <img
-                        src={image}
-                        alt=""
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                        style={{ filter: "contrast(1.02) saturate(0.94)" }}
-                    />
-                    <span
-                        className="absolute top-2 right-2 text-[9px] font-mono font-black uppercase tracking-[0.15em] px-2 py-1 rounded"
-                        style={{ background: PT.ink, color: PT.cream, letterSpacing: "0.12em" }}
-                    >
-                        {kicker.split("·")[0].trim()}
-                    </span>
-                </div>
-            )}
-            <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.18em]" style={{ color: PT.red }}>
-                {kicker}
-            </p>
-            <h3 className="font-black mt-2 mb-2" style={{ fontSize: "clamp(20px, 2.2vw, 26px)", lineHeight: 1.1, color: PT.ink }}>
-                {title}
-            </h3>
-            <p className="text-[14px] leading-relaxed mb-4" style={{ color: "rgba(10,10,10,0.68)" }}>
-                {sub}
-            </p>
-            <div className="rounded-xl overflow-hidden" style={{ border: `1.5px solid rgba(10,10,10,0.10)`, background: PT.cream }}>
-                {mockup}
-            </div>
-        </article>
-    );
-}
-
-// ── Mockup limpos (Feed, DMs, Eventos, Comunidades) ─────────────────────────
-function FeedMockup() {
-    const posts = [
-        { author: "Inês · Bairro Alto", avatar: PT.red,   text: "Quem alinha num bitoque rápido às 13h no Cervejaria Trindade?", time: "agora", likes: 12, comments: 4 },
-        { author: "Tiago · Boavista",   avatar: PT.gold,  text: "Concerto surpresa amanhã no Hard Club. Avisem o pessoal do Porto ✱", time: "12m", likes: 38, comments: 9 },
-        { author: "Maria · Coimbra",    avatar: PT.green, text: "Queima das fitas começa hoje. Vamos beber ginjinha na Praça da República?", time: "1h", likes: 21, comments: 6 },
-    ];
-    return (
-        <div className="p-3 sm:p-4 space-y-3">
-            {posts.map((p, i) => (
-                <div key={i} className="flex gap-2.5 items-start">
-                    <span className="shrink-0" style={{ width: 30, height: 30, borderRadius: "50%", background: p.avatar, border: `1.5px solid ${PT.ink}` }} />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[11.5px] font-black" style={{ color: PT.ink }}>{p.author} <span className="font-mono font-normal opacity-50">· {p.time}</span></p>
-                        <p className="text-[12.5px] mt-0.5 leading-snug" style={{ color: "rgba(10,10,10,0.85)" }}>{p.text}</p>
-                        <div className="flex items-center gap-3 mt-1.5 text-[10.5px] font-mono" style={{ color: "rgba(10,10,10,0.45)" }}>
-                            <span className="flex items-center gap-1"><Heart size={11} /> {p.likes}</span>
-                            <span className="flex items-center gap-1"><MessageCircle size={11} /> {p.comments}</span>
-                            <span className="flex items-center gap-1"><Bookmark size={11} /></span>
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function DMsMockup() {
-    return (
-        <div className="p-3 sm:p-4 flex gap-2.5">
-            <div className="w-24 sm:w-28 shrink-0 space-y-2">
-                {[
-                    { name: "Inês", color: PT.red,   on: true },
-                    { name: "Tasca Mãe", color: PT.gold,  on: true },
-                    { name: "Sérgio", color: PT.azul,  on: false },
-                    { name: "Bairro LX", color: PT.green, on: false },
-                ].map((c, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                        <span className="block shrink-0" style={{ width: 22, height: 22, borderRadius: "50%", background: c.color, border: `1.2px solid ${PT.ink}` }} />
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[10.5px] font-black truncate" style={{ color: PT.ink }}>{c.name}</p>
-                            <p className="text-[8.5px] font-mono truncate" style={{ color: c.on ? PT.green : "rgba(10,10,10,0.40)" }}>
-                                {c.on ? "online" : "ontem"}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            <div className="flex-1 min-w-0 space-y-1.5">
-                <Bubble side="left"  text="vamos beber café às 5 na Brasileira?" color={PT.bone} />
-                <Bubble side="right" text="bora. levo o livro do Saramago" color={PT.azul} fg="#fff" />
-                <Bubble side="left"  text="✓ até já" color={PT.bone} />
-                <div className="flex items-center gap-1 mt-2 px-2 py-1.5 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.15)` }}>
-                    <span className="text-[10px] font-mono flex-1" style={{ color: "rgba(10,10,10,0.40)" }}>Escrever…</span>
-                    <Send size={11} style={{ color: PT.red }} />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function Bubble({ side, text, color, fg = PT.ink }) {
-    return (
-        <div className={`flex ${side === "right" ? "justify-end" : "justify-start"}`}>
-            <span
-                className="text-[10.5px] px-2.5 py-1.5 rounded-2xl max-w-[85%]"
-                style={{ background: color, color: fg, border: `1px solid rgba(10,10,10,0.10)` }}
-            >
-                {text}
-            </span>
-        </div>
-    );
-}
-
-function EventsMockup() {
-    const evs = [
-        { date: "24 jun", title: "Santo António · Alfama", subtitle: "Lisboa · arraial", color: PT.red },
-        { date: "29 jun", title: "São Pedro · Sintra",      subtitle: "Sintra · sardinhas", color: PT.gold },
-        { date: "11 jul", title: "NOS Alive",               subtitle: "Algés · festival", color: PT.azul },
-    ];
-    return (
-        <div className="p-3 sm:p-4 space-y-2.5">
-            {evs.map((e, i) => (
-                <div key={i} className="flex gap-3 items-center p-2 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.10)` }}>
-                    <span className="text-center shrink-0" style={{
-                        width: 44, height: 44, borderRadius: 8,
-                        background: e.color, color: "#fff",
-                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <span className="text-[8.5px] font-mono font-bold uppercase tracking-[0.05em] opacity-80">
-                            {e.date.split(" ")[1]}
-                        </span>
-                        <span className="text-[14px] font-black leading-none">{e.date.split(" ")[0]}</span>
-                    </span>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-black truncate" style={{ color: PT.ink }}>{e.title}</p>
-                        <p className="text-[10.5px] font-mono truncate" style={{ color: "rgba(10,10,10,0.55)" }}>{e.subtitle}</p>
-                    </div>
-                    <Bell size={12} style={{ color: "rgba(10,10,10,0.40)" }} />
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function CommunitiesMockup() {
-    const coms = [
-        { name: "Alfama · vizinhos", members: "1.2k", color: PT.red },
-        { name: "Tasqueiros do Porto", members: "856", color: PT.gold },
-        { name: "Coimbra · estudantes", members: "2.1k", color: PT.green },
-        { name: "Diáspora · Londres", members: "412", color: PT.azul },
-    ];
-    return (
-        <div className="p-3 sm:p-4 grid grid-cols-2 gap-2">
-            {coms.map((c, i) => (
-                <div key={i} className="p-2.5 rounded" style={{ background: "#fff", border: `1px solid rgba(10,10,10,0.10)` }}>
-                    <span className="block" style={{ width: 22, height: 22, borderRadius: 6, background: c.color, border: `1.2px solid ${PT.ink}` }} />
-                    <p className="text-[11px] font-black mt-1.5 leading-tight" style={{ color: PT.ink }}>{c.name}</p>
-                    <p className="text-[9.5px] font-mono mt-0.5" style={{ color: "rgba(10,10,10,0.50)" }}>{c.members} membros</p>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-// =============================================================================
-// WHY NOT FACEBOOK — secção missão / posicionamento
-// =============================================================================
-function WhyNotFacebook() {
-    const pillars = [
-        { kicker: "Algoritmo", title: "Vês o que está perto.", body: "Não vês o que dá engagement. Vês o que se passa na tua rua, no teu bairro, na tua cidade." },
-        { kicker: "Ads", title: "Zero anúncios.", body: "O produto és tu — não o produto à venda. Vivemos de Lusorae+ opcional, não de leilões de atenção." },
-        { kicker: "Dados", title: "Servidores em Portugal.", body: "RGPD-friendly por defeito. Exportas tudo. Apagas a conta num clique." },
-        { kicker: "Tempo", title: "Sem doomscroll.", body: "O feed acaba. Quando vês tudo do dia, fecha. Não há \"mais um\" infinito." },
-    ];
-    return (
-        <section id="missao" className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20 relative overflow-hidden" style={{ background: PT.ink, color: PT.cream }} data-testid="why-not-facebook">
-            {/* Background image (bairro) — confinada à direita, overlay forte para legibilidade */}
-            <div
-                className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
-                aria-hidden="true"
-                style={{
-                    backgroundImage: `url(${IMG.bairro})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    opacity: 0.32,
-                    filter: "grayscale(0.4) contrast(1.05)",
-                    maskImage: "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.85) 100%)",
-                    WebkitMaskImage: "linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.85) 100%)",
-                }}
-            />
-            <div
-                className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 pointer-events-none"
-                aria-hidden="true"
-                style={{
-                    background: `linear-gradient(90deg, ${PT.ink} 0%, rgba(10,10,10,0.82) 35%, rgba(10,10,10,0.45) 100%)`,
-                }}
-            />
-
-            {/* DoodleHeart accent */}
-            <div className="hidden lg:block absolute top-12 right-[8%] z-10 pointer-events-none" aria-hidden="true">
-                <DoodleHeart color={PT.red} size={56} rotate={-8} />
-            </div>
-
-            <div className="max-w-[1400px] mx-auto relative z-10">
-                <div className="max-w-2xl mb-10 sm:mb-12">
-                    <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em] mb-3" style={{ color: PT.red }}>
-                        Por que não somos o Facebook
-                    </p>
-                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 1.02, color: "#fff" }}>
-                        Construímos uma rede social que{" "}
-                        <span style={{
-                            display: "inline",
-                            backgroundImage: `linear-gradient(transparent 78%, ${PT.red} 78%, ${PT.red} 94%, transparent 94%)`,
-                        }}>
-                            não te quer agarrar
-                        </span>{" "}
-                        ao ecrã.
-                    </h2>
-                    <p className="text-[15px] leading-relaxed mt-4 max-w-[640px]" style={{ color: "rgba(255,255,255,0.78)" }}>
-                        Lusorae é infraestrutura. Não é um aspirador de atenção. É uma forma de saberes o que se passa na cidade onde vives e nas pessoas com quem te cruzas.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-                    {pillars.map((p, i) => (
-                        <div key={i} data-testid={`pillar-${i}`} className="border-t pt-5" style={{ borderColor: "rgba(255,255,255,0.18)" }}>
-                            <p className="text-[10px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: PT.red }}>
-                                {p.kicker}
-                            </p>
-                            <h3 className="font-black text-[20px] sm:text-[22px] mt-2 mb-2" style={{ color: "#fff" }}>
-                                {p.title}
-                            </h3>
-                            <p className="text-[13.5px] leading-relaxed" style={{ color: "rgba(255,255,255,0.72)" }}>
-                                {p.body}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// HOW IT WORKS — 3 passos clean
-// =============================================================================
-function HowItWorks() {
-    const steps = [
-        { n: "01", title: "Reserva o teu username", sub: "30 segundos. Email + handle. Travas o nome antes que outra pessoa o leve.", accent: PT.red },
-        { n: "02", title: "Avisamos-te quando abrirmos a tua cidade", sub: "Vamos abrindo cidade a cidade — Lisboa, Porto, Coimbra primeiro. Recebes notificação por email.", accent: PT.gold },
-        { n: "03", title: "Entras no mapa social do teu bairro", sub: "Conversas, eventos, comunidades — tudo geolocalizado. Sem ads. Sem doomscroll.", accent: PT.green },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20 relative" data-testid="how-it-works">
-            {/* Mapa poster fanzine como acento — desktop only */}
-            <div className="hidden xl:block absolute top-20 right-[2%] z-0 pointer-events-none opacity-90" aria-hidden="true">
-                <TapedPhoto
-                    src={IMG.mapaPoster}
-                    alt=""
-                    rotate={-5}
-                    w={170}
-                    h={210}
-                    tapeColor="rgba(14,77,146,0.78)"
-                    tapeColor2="rgba(4,106,56,0.55)"
-                />
-            </div>
-
-            <div className="max-w-[1400px] mx-auto relative z-10">
-                <div className="max-w-2xl mb-10">
-                    <Kicker color={PT.red} className="mb-2">Como funciona</Kicker>
-                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 48px)", lineHeight: 1.0, color: PT.ink }}>
-                        Três passos. Sem mistério.
-                    </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-px"
-                     style={{ background: "rgba(10,10,10,0.10)", border: `1.5px solid rgba(10,10,10,0.10)` }}>
-                    {steps.map((s, i) => (
-                        <div key={i} data-testid={`step-${i + 1}`} className="p-6 sm:p-7" style={{ background: PT.cream }}>
-                            <p className="text-[36px] font-black leading-none tabular-nums" style={{ color: s.accent }}>
-                                {s.n}
-                            </p>
-                            <h3 className="font-black text-[18px] sm:text-[20px] mt-3 leading-tight" style={{ color: PT.ink }}>
-                                {s.title}
-                            </h3>
-                            <p className="text-[13.5px] leading-relaxed mt-2" style={{ color: "rgba(10,10,10,0.68)" }}>
-                                {s.sub}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// PREMIUM COMPACT — secção pequena, não invasiva, no fundo
-// =============================================================================
-function PremiumCompact() {
-    return (
-        <section className="px-5 sm:px-8 lg:px-14 py-10 sm:py-14" data-testid="premium-compact">
-            <div className="max-w-[1400px] mx-auto p-5 sm:p-6 lg:p-7 grid sm:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-center"
-                 style={{ background: "#fff", border: `2px solid ${PT.ink}`, borderRadius: 18 }}>
-                <div>
-                    <p className="text-[9.5px] font-mono font-black uppercase tracking-[0.20em]" style={{ color: PT.gold }}>
-                        Lusorae+ · opcional
-                    </p>
-                    <h3 className="font-black mt-1" style={{ fontSize: "clamp(20px, 2.5vw, 26px)", color: PT.ink, lineHeight: 1.15 }}>
-                        Apoia o projecto. Mantém-no sem ads.
-                    </h3>
-                    <p className="text-[13.5px] mt-1.5 leading-relaxed" style={{ color: "rgba(10,10,10,0.68)" }}>
-                        4€/mês. Badges de early supporter, frames de avatar, prioridade no map roll-out. Não é pay-to-win — é pay-to-keep-it-clean.
-                    </p>
-                </div>
-                <Link to="/premium" data-testid="premium-cta"
-                      className="inline-flex items-center justify-center gap-2 py-3 px-5 text-[12.5px] font-black uppercase tracking-[0.08em] rounded-full"
-                      style={{ background: PT.gold, color: PT.ink, border: `2px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}` }}>
-                    Saber mais <ArrowRight size={14} />
-                </Link>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// FAQ — accordion limpo, no fundo
-// =============================================================================
-function Faq({ openFaq, setOpenFaq }) {
-    const items = [
-        { q: "Porquê reservar um username agora?",
-          a: "Estamos a abrir Lusorae cidade a cidade. Reservar agora trava o teu handle para sempre + entras na fila quando a tua cidade abrir. É grátis e leva 30 segundos." },
-        { q: "Quando é que abre a minha cidade?",
-          a: "Lisboa, Porto e Coimbra primeiro (Q2 2026). Depois Braga, Aveiro, Évora, Faro, Funchal, Ponta Delgada e as restantes cidades-âncora ao longo de 2026. Quando reservas o teu username, avisamos-te por email." },
         { q: "É grátis?",
-          a: "Sim. Criar conta, conversar, descobrir eventos, entrar em comunidades — tudo grátis para sempre. Existe um Lusorae+ opcional (4€/mês) para quem quer apoiar o projecto." },
+          a: "Sim. Criar conta, conversar, descobrir eventos, entrar em comunidades — tudo grátis para sempre. Existe um Lusorae+ opcional (4€/mês) para quem quiser apoiar o projecto." },
+        { q: "Quando abre a minha cidade?",
+          a: "Lisboa, Porto e Coimbra são as primeiras (Q2 2026). Depois Braga, Aveiro, Évora, Faro, Funchal, Ponta Delgada e as restantes cidades-âncora ao longo de 2026. Quando reservas username, avisamos-te por email." },
+        { q: "Porquê reservar um username agora?",
+          a: "Trava o handle para sempre + entras na fila quando a tua cidade abrir. É grátis e leva 30 segundos." },
         { q: "Os meus dados ficam onde?",
-          a: "Servidores em Portugal (UE). RGPD-friendly por defeito. Exportas tudo num clique. Apagas a conta num clique." },
-        { q: "Que diferença há entre Lusorae e Facebook/Instagram?",
-          a: "Não há algoritmo de engagement. Não há ads. Não há doomscroll. Vês o que está perto de ti — não o que prende mais retina. É infraestrutura social, não captura de atenção." },
-        { q: "Posso usar fora de Portugal?",
-          a: "Sim. A diáspora portuguesa tem comunidades dedicadas (Londres, Paris, Luxemburgo, Genebra, São Paulo, etc.). Estamos a desenhar uma camada \"Diáspora\" específica para 2026." },
+          a: "Servidores em Portugal (UE), RGPD-friendly por desenho. Exportas tudo num clique, apagas a conta num clique." },
+        { q: "Que diferença há entre Lusorae e Instagram/TikTok?",
+          a: "Não há algoritmo de engagement. Não há ads. Não há doomscroll. Vês o que está perto de ti — não o que prende mais retina." },
+        { q: "Funciona fora de Portugal?",
+          a: "Sim. A diáspora terá uma camada dedicada (Londres, Paris, Luxemburgo, Genebra, São Paulo…) na fase Q4 2026." },
     ];
+    const [open, setOpen] = useState(null);
     return (
-        <section className="px-5 sm:px-8 lg:px-14 py-14 sm:py-20" data-testid="faq">
+        <section className="px-5 lg:px-8 py-14 lg:py-20" data-testid="faq">
             <div className="max-w-3xl mx-auto">
-                <div className="mb-8">
-                    <Kicker color={PT.red} className="mb-2">FAQ</Kicker>
-                    <h2 className="font-black tracking-[-0.03em]" style={{ fontSize: "clamp(28px, 4.5vw, 44px)", lineHeight: 1.0, color: PT.ink }}>
-                        Perguntas que valem a pena.
+                <div className="mb-8 lg:mb-10">
+                    <p className="text-[11.5px] font-mono font-bold uppercase tracking-[0.18em] mb-2" style={{ color: C.goldDeep }}>
+                        perguntas frequentes
+                    </p>
+                    <h2 className="font-black tracking-tight" style={{ fontSize: "clamp(28px, 4vw, 40px)", lineHeight: 1.05, color: C.ink, letterSpacing: "-0.025em" }}>
+                        Tudo o que vale a pena perguntar.
                     </h2>
                 </div>
-                <div className="divide-y" style={{ borderColor: "rgba(10,10,10,0.10)" }}>
+                <ul className="space-y-2">
                     {items.map((it, i) => {
-                        const open = openFaq === i;
+                        const isOpen = open === i;
                         return (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => setOpenFaq(open ? null : i)}
-                                data-testid={`faq-item-${i}`}
-                                className="w-full text-left py-5"
-                                style={{ borderTop: i === 0 ? `1.5px solid rgba(10,10,10,0.10)` : "none", borderBottom: `1.5px solid rgba(10,10,10,0.10)` }}
-                            >
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="font-black text-[15.5px] sm:text-[17px] leading-tight" style={{ color: PT.ink }}>
-                                        {it.q}
-                                    </span>
-                                    <ChevronDown
-                                        size={20}
-                                        style={{ color: PT.ink, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s", flexShrink: 0 }}
-                                    />
-                                </div>
-                                {open && (
-                                    <p className="mt-3 text-[14px] leading-relaxed" style={{ color: "rgba(10,10,10,0.72)" }}>
-                                        {it.a}
-                                    </p>
-                                )}
-                            </button>
+                            <li key={i}>
+                                <button
+                                    type="button"
+                                    onClick={() => setOpen(isOpen ? null : i)}
+                                    data-testid={`faq-${i}`}
+                                    className="w-full text-left rounded-2xl px-5 py-4 transition hover:bg-slate-50"
+                                    style={{ background: isOpen ? C.bgAlt : "#fff", border: `1px solid ${C.line}` }}
+                                >
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ color: C.ink }}>{it.q}</span>
+                                        <ChevronDown size={18} className="shrink-0 transition" style={{ color: C.muted, transform: isOpen ? "rotate(180deg)" : "none" }} />
+                                    </div>
+                                    {isOpen && (
+                                        <p className="mt-3 text-[14px] leading-relaxed" style={{ color: C.body }}>{it.a}</p>
+                                    )}
+                                </button>
+                            </li>
                         );
                     })}
-                </div>
+                </ul>
             </div>
         </section>
     );
 }
 
 // =============================================================================
-// FINAL CTA — barra de chamada final
+// FOOTER
 // =============================================================================
-function FinalCta({ pulse }) {
-    const reservations = pulse?.reservations_total || 0;
+function Footer() {
     return (
-        <section className="px-5 sm:px-8 lg:px-14 pb-14 sm:pb-20" data-testid="final-cta">
-            <div className="max-w-[1400px] mx-auto p-7 sm:p-10 lg:p-14 relative overflow-hidden"
-                 style={{ background: PT.red, color: "#fff", border: `2px solid ${PT.ink}`, borderRadius: 22, boxShadow: `5px 5px 0 ${PT.ink}` }}>
-                {/* Doodle sparkles */}
-                <div className="absolute top-4 right-6 opacity-95 pointer-events-none" aria-hidden="true">
-                    <DoodleSparkles color={PT.gold} size={64} rotate={-10} />
-                </div>
-                <div className="hidden sm:block absolute bottom-3 left-8 opacity-90 pointer-events-none" aria-hidden="true">
-                    <DoodleStar color={PT.gold} size={42} rotate={18} />
-                </div>
-
-                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                    <div className="max-w-2xl">
-                        <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.20em]" style={{ color: PT.gold }}>
-                            Última chamada antes do lançamento
+        <footer className="px-5 lg:px-8 py-12 lg:py-16" style={{ background: C.ink, color: "#fff" }} data-testid="footer">
+            <div className="max-w-[1320px] mx-auto">
+                <div className="grid lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-10 lg:gap-12 mb-12">
+                    <div>
+                        <BrandMarkDark />
+                        <p className="mt-4 text-[13.5px] leading-relaxed max-w-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                            A rede social das pessoas, eventos e comunidades de Portugal. Sem ads. Sem doomscroll.
                         </p>
-                        <h2 className="font-black tracking-[-0.03em] mt-2" style={{ fontSize: "clamp(28px, 5vw, 52px)", lineHeight: 1.0 }}>
-                            Reserva agora. Antes que o teu username seja levado.
-                        </h2>
-                        {reservations > 0 && (
-                            <p className="text-[14px] mt-3 opacity-90">
-                                Já há <strong>{reservations.toLocaleString("pt-PT")}</strong> {reservations === 1 ? "pessoa" : "pessoas"} na waitlist.
-                            </p>
-                        )}
+                        <div className="mt-5 flex items-center gap-2">
+                            <SocialDark Icon={Instagram} href="https://instagram.com/lusorae" testid="social-instagram" />
+                            <SocialDark Icon={Twitter}   href="https://x.com/lusorae"        testid="social-x" />
+                            <SocialDark Icon={TikTokIcon} href="https://tiktok.com/@lusorae" testid="social-tiktok" />
+                            <SocialDark Icon={ThreadsIcon} href="https://threads.net/lusorae" testid="social-threads" />
+                        </div>
                     </div>
-                    <a href="#reservar" data-testid="final-cta-reservar"
-                       className="inline-flex items-center justify-center gap-2 py-4 px-7 text-[14px] font-black uppercase tracking-[0.08em] rounded-full shrink-0"
-                       style={{ background: "#fff", color: PT.red, border: `2px solid ${PT.ink}`, boxShadow: `4px 4px 0 ${PT.ink}` }}>
-                        Reservar o meu username <ArrowRight size={16} />
-                    </a>
+                    <FooterCol title="Produto" links={[
+                        ["Roadmap", "#roadmap"], ["Cidades", "#cidades"],
+                        ["Eventos", "#hoje"], ["Valores", "#valores"],
+                    ]} />
+                    <FooterCol title="Empresa" links={[
+                        ["Sobre nós", "/sobre"], ["Carreiras", "/carreiras"],
+                        ["Imprensa", "/imprensa"], ["Contacto", "/contacto"],
+                    ]} />
+                    <FooterCol title="Legal" links={[
+                        ["Privacidade", "/privacidade"], ["Termos", "/termos"],
+                        ["Cookies", "/cookies"], ["RGPD", "/rgpd"],
+                    ]} />
+                </div>
+                <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.10)" }}>
+                    <p className="text-[12.5px]" style={{ color: "rgba(255,255,255,0.50)" }}>
+                        © {new Date().getFullYear()} Lusorae. Construído em Portugal.
+                    </p>
+                    <p className="text-[12.5px] flex items-center gap-2" style={{ color: "rgba(255,255,255,0.50)" }}>
+                        <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: C.green }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: C.green }} />
+                        </span>
+                        Em desenvolvimento activo
+                    </p>
                 </div>
             </div>
-        </section>
+        </footer>
+    );
+}
+
+function BrandMarkDark() {
+    return (
+        <Link to="/" className="flex items-center gap-2" aria-label="Lusorae">
+            <span className="inline-flex items-center justify-center" style={{
+                width: 36, height: 36, borderRadius: 12,
+                background: `linear-gradient(135deg, ${C.gold} 0%, #FFB300 100%)`,
+            }}>
+                <Heart size={18} fill={C.ink} stroke={C.ink} strokeWidth={2.2} />
+            </span>
+            <span className="text-[20px] font-black tracking-tight" style={{ color: "#fff", letterSpacing: "-0.025em" }}>Lusorae</span>
+        </Link>
+    );
+}
+
+function FooterCol({ title, links }) {
+    return (
+        <div>
+            <p className="text-[10.5px] font-mono font-bold uppercase tracking-[0.18em] mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {title}
+            </p>
+            <ul className="space-y-2">
+                {links.map(([label, to]) => (
+                    <li key={label}>
+                        {to.startsWith("#") ? (
+                            <a href={to} className="text-[13.5px] font-medium transition hover:text-white" style={{ color: "rgba(255,255,255,0.72)" }}>
+                                {label}
+                            </a>
+                        ) : (
+                            <Link to={to} className="text-[13.5px] font-medium transition hover:text-white" style={{ color: "rgba(255,255,255,0.72)" }}>
+                                {label}
+                            </Link>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+function SocialDark({ Icon, href, testid }) {
+    return (
+        <a href={href} target="_blank" rel="noopener noreferrer" data-testid={testid}
+           className="inline-flex items-center justify-center transition hover:bg-white/10"
+           style={{ width: 36, height: 36, borderRadius: 10, color: "rgba(255,255,255,0.75)" }}>
+            <Icon size={16} />
+        </a>
+    );
+}
+
+function TikTokIcon({ size = 16 }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.07A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.61a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.04Z"/>
+        </svg>
+    );
+}
+function ThreadsIcon({ size = 16 }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18.5 11c-.2-.1-.4-.2-.6-.3-.4-3.6-2.4-5.6-5.7-5.6h-.1c-2 0-3.7.9-4.7 2.5l1.8 1.2c.7-1.1 1.9-1.4 2.9-1.4 1.7 0 3 .9 3.3 2.7-1-.2-2-.3-3-.2-3 .2-4.9 2-4.8 4.4.1 1.2.7 2.2 1.7 2.8.8.5 1.9.8 3 .8 1.5-.1 2.7-.6 3.6-1.6.7-.7 1.1-1.7 1.4-2.9.5.3.9.7 1.1 1.2.4.7.4 1.9-.6 3.1l1.6 1.1c.7-.9 1.7-2.6.9-4.4-.5-1-1.3-1.7-2.4-2.2-.3-.1-.6-.2-.9-.3l-.5-.9Zm-3.5 1.7c-.2 1.2-.7 1.9-1.4 2.3-.6.4-1.3.5-2 .5-.6 0-1.1-.1-1.5-.3-.5-.3-.7-.7-.7-1.3-.1-1 .8-2.1 2.9-2.3.3 0 .6 0 .9 0 .6 0 1.2.1 1.8.2v.9Z"/>
+        </svg>
+    );
+}
+
+// =============================================================================
+// STYLES
+// =============================================================================
+function LandingStyles() {
+    return (
+        <style>{`
+            html { scroll-behavior: smooth; }
+            [data-testid="landing-page"] *::selection {
+                background: ${C.gold};
+                color: ${C.ink};
+            }
+            .line-clamp-2 {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+        `}</style>
     );
 }
