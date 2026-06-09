@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 
 # Base URL — overridable via env
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://multi-pro-fanzine.preview.emergentagent.com/api"
+    "BASE_URL", "https://smart-branding-3.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment.
