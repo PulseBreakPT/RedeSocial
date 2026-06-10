@@ -1,36 +1,1303 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import {
-    ArrowRight, Users, MessageCircle, Calendar, Building2,
-    MapPin, Compass, Sparkles, Lock, ChevronDown, Heart,
-} from "lucide-react";
-import {
-    PT, Sticker, StampCircle, TapedPhoto, PosterCard, Kicker, AuthStyles,
-    DoodleArrow, DoodleStar, DoodleSparkles, DoodleHeart, DoodleScribble,
-    DoodleZigzag, DoodleUnderline, DoodleSpiral, DoodleCross, DoodleExclamation,
-    DoodleLongArrow, HandNote, GeoTriangle, GeoSquare, GeoCircle, GiantAsterisk,
-    PostIt, Receipt, Ticket, PostStamp, AzulejoBorder, Highlight, Coords,
-    SpeechBubble, NewspaperClip, Signature, RouteDots, PaperFoldCorner,
-    QuickStroke, HandArrow, StampTag,
-} from "./auth/AuthDecor";
+import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
-
 import { api } from "../lib/api";
-const HERO_MAIN = "/hero/hero.webp";
-const HERO_CITY_1 = "/hero/city-porto.webp";
-const HERO_CITY_2 = "/hero/city-lisboa.webp";
-const HERO_CITY_3 = "/hero/city-algarve.webp";
-const PORTUGAL_MAP = "/hero/portugal-map.webp";
-const CTA_BG = "/hero/cta-community.webp";
 
 // =============================================================================
-// LUSORAE — Landing pública (fanzine PT · vermelho/dourado/verde/azul)
+// LUSORAE — Landing pública SSS-tier · ONE-SCREEN
+// Inspiração: refs premium (Linear, Threads, Substack) × paleta PT × tipografia massiva
+// =============================================================================
+
+const PT = {
+    ink:    "#0A0A0A",
+    paper:  "#F7F5EF",
+    cream:  "#FBFAF6",
+    red:    "#C8102E",
+    gold:   "#FFCC29",
+    green:  "#046A38",
+    azul:   "#003F87",
+};
+
+// Imagens de Portugal — feed + cards
+const IMG_PHONE_FEED   = "https://images.unsplash.com/photo-1608649944716-228404a0a8bb?auto=format&fit=crop&w=900&q=80";  // Algarve sunset
+const IMG_EVENT_1      = "https://images.unsplash.com/photo-1693944844665-ce10f83a775b?auto=format&fit=crop&w=600&q=80"; // Porto aerial
+const IMG_EVENT_2      = "https://images.pexels.com/photos/34440892/pexels-photo-34440892.jpeg?auto=compress&w=600";    // Lisbon golden
+const IMG_COMM_1       = "https://images.unsplash.com/photo-1555881400-89d5a9c86668?auto=format&fit=crop&w=600&q=80";   // Porto boats
+const IMG_COMM_2       = "https://images.unsplash.com/photo-1605641532626-5ab1dab56350?auto=format&fit=crop&w=600&q=80";// Lisbon
+const IMG_COMM_3       = "https://images.unsplash.com/photo-1660583494731-57fa5d954377?auto=format&fit=crop&w=600&q=80";// Porto street
+
+// City strip
+const CITY_LISBOA  = "https://images.pexels.com/photos/34440892/pexels-photo-34440892.jpeg?auto=compress&w=900";
+const CITY_PORTO   = "https://images.unsplash.com/photo-1693944844665-ce10f83a775b?auto=format&fit=crop&w=900&q=80";
+const CITY_ALGARVE = "https://images.unsplash.com/photo-1608649944716-228404a0a8bb?auto=format&fit=crop&w=900&q=80";
+const CITY_OUTRA   = "https://images.unsplash.com/photo-1580836618629-7fc7ff649765?auto=format&fit=crop&w=900&q=80";
+
+// =============================================================================
+// STAMP SEAL — circular "Made in Portugal" badge (premium detail)
+// =============================================================================
+function StampSeal({ size = 110, color = PT.ink, rotate = -8, label = "MADE IN PORTUGAL", year = "2026", motto = "VIVE · PARTILHA · LUSORAE" }) {
+    const id = `circle-${label.replace(/\s+/g, "")}`;
+    const r = size / 2 - 14;
+    return (
+        <div
+            className="relative pointer-events-none select-none"
+            style={{ width: size, height: size, transform: `rotate(${rotate}deg)` }}
+            aria-hidden
+        >
+            <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} style={{ display: "block" }}>
+                <defs>
+                    <path id={id} d={`M ${size / 2},${size / 2} m -${r},0 a ${r},${r} 0 1,1 ${r * 2},0 a ${r},${r} 0 1,1 -${r * 2},0`} />
+                </defs>
+                <circle cx={size / 2} cy={size / 2} r={size / 2 - 4} fill="none" stroke={color} strokeWidth={1.5} />
+                <circle cx={size / 2} cy={size / 2} r={size / 2 - 10} fill="none" stroke={color} strokeWidth={1} />
+                <text fontSize={size * 0.105} fontWeight={800} fill={color} letterSpacing={size * 0.018} style={{ fontFamily: '"Inter", system-ui' }}>
+                    <textPath href={`#${id}`} startOffset="0">{`★ ${label} ★ ${motto} `}</textPath>
+                </text>
+            </svg>
+            <div
+                className="absolute inset-0 flex flex-col items-center justify-center"
+                style={{ transform: "rotate(0deg)" }}
+            >
+                <span style={{ color, fontSize: size * 0.20, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.02em" }}>✱</span>
+                <span style={{ color, fontSize: size * 0.085, fontWeight: 700, marginTop: size * 0.025, letterSpacing: "0.12em" }}>EST. {year}</span>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// CITY TICKER MARQUEE — slim premium band of Portuguese cities
+// =============================================================================
+const CITY_MARQUEE = [
+    "Lisboa", "Porto", "Coimbra", "Braga", "Faro", "Aveiro",
+    "Funchal", "Ponta Delgada", "Évora", "Guimarães", "Setúbal",
+    "Viseu", "Leiria", "Viana do Castelo", "Cascais", "Sintra",
+];
+
+function CityTicker() {
+    const items = [...CITY_MARQUEE, ...CITY_MARQUEE]; // duplicate for seamless loop
+    return (
+        <div
+            className="relative overflow-hidden border-y"
+            style={{
+                background: PT.ink,
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.06)",
+            }}
+            data-testid="city-ticker"
+            aria-hidden
+        >
+            <div className="lusorae-marquee-wrap py-4 sm:py-5">
+                <div className="lusorae-marquee">
+                    {items.map((city, i) => (
+                        <span key={i} className="inline-flex items-center gap-5 mx-5 whitespace-nowrap">
+                            <span
+                                style={{
+                                    fontFamily: '"Inter", system-ui',
+                                    fontSize: "clamp(20px, 2.6vw, 32px)",
+                                    fontWeight: 900,
+                                    letterSpacing: "-0.025em",
+                                    color: "#fff",
+                                }}
+                            >
+                                {city}
+                            </span>
+                            <span style={{
+                                width: 8, height: 8, borderRadius: "50%",
+                                background: [PT.red, PT.gold, PT.green, PT.azul][i % 4],
+                                display: "inline-block",
+                            }} />
+                        </span>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// HAND-DRAWN UNDERLINE (SVG) — coloured ink strokes under words
+// =============================================================================
+function UnderlineStroke({ color, w = 220, h = 18, variant = "wave", style = {} }) {
+    const paths = {
+        wave:   "M 6 14 C 40 4, 90 22, 130 10 S 200 6, 218 14",
+        slash:  "M 8 16 C 60 6, 130 4, 218 12",
+        thick:  "M 6 12 C 55 16, 130 6, 220 12",
+        dash:   "M 6 12 Q 60 4 120 12 T 220 12",
+    };
+    return (
+        <svg
+            viewBox={`0 0 ${w} ${h}`}
+            width={w}
+            height={h}
+            style={{ display: "block", overflow: "visible", ...style }}
+            aria-hidden
+        >
+            <path
+                d={paths[variant] || paths.wave}
+                stroke={color}
+                strokeWidth={variant === "thick" ? 7 : 5.5}
+                strokeLinecap="round"
+                fill="none"
+                style={{ filter: "url(#roughInk)" }}
+            />
+        </svg>
+    );
+}
+
+// Hand-drawn squiggle decorative element
+function HandSquiggle({ color, w = 90, h = 70, style = {}, variant = "loop" }) {
+    const paths = {
+        loop:   "M 10 35 C 10 10, 50 10, 50 35 S 80 60, 80 35",
+        arrow:  "M 6 50 C 30 20, 60 40, 86 18 M 76 8 L 86 18 L 76 28",
+        star:   "M 40 5 L 47 30 L 75 30 L 53 45 L 61 70 L 40 55 L 19 70 L 27 45 L 5 30 L 33 30 Z",
+        check:  "M 8 35 L 30 55 L 80 8",
+    };
+    return (
+        <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: "block", ...style }} aria-hidden>
+            <path
+                d={paths[variant]}
+                stroke={color}
+                strokeWidth={4.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill={variant === "star" ? color : "none"}
+            />
+        </svg>
+    );
+}
+
+// =============================================================================
+// TRUST STRIP — anti-features: "what we don't do" diferenciação imediata
+// =============================================================================
+function TrustStrip() {
+    const items = [
+        { label: "Sem ads", sub: "zero publicidade", color: PT.red },
+        { label: "Sem algoritmo de vaidade", sub: "nada de doomscroll", color: PT.azul },
+        { label: "Sem trolls", sub: "moderação humana", color: PT.green },
+        { label: "Sem ego", sub: "pessoas, não perfis", color: PT.gold },
+    ];
+    return (
+        <section
+            data-testid="trust-strip"
+            className="px-5 sm:px-8 lg:px-12 py-7 sm:py-9 lg:py-10"
+            style={{ background: PT.paper, borderTop: `1px solid rgba(10,10,10,0.08)`, borderBottom: `1px solid rgba(10,10,10,0.08)` }}
+        >
+            <div className="max-w-[1400px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6 sm:gap-x-8 lg:gap-x-12">
+                {items.map((it, i) => (
+                    <div key={i} className="flex items-start gap-3" data-testid={`trust-${i}`}>
+                        <span
+                            className="inline-flex items-center justify-center shrink-0 mt-0.5"
+                            style={{
+                                width: 24, height: 24, borderRadius: "50%",
+                                background: it.color, color: it.color === PT.gold ? PT.ink : "#fff",
+                                fontWeight: 900, fontSize: 14, lineHeight: 1,
+                            }}
+                            aria-hidden
+                        >
+                            ✕
+                        </span>
+                        <div className="min-w-0">
+                            <p className="font-black text-[15px] sm:text-[17px] leading-tight" style={{ color: PT.ink, letterSpacing: "-0.015em" }}>
+                                {it.label}
+                            </p>
+                            <p className="text-[12px] sm:text-[13px] font-medium mt-1" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                {it.sub}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// MOBILE STICKY CTA — floating thumb-zone CTA pill
+// =============================================================================
+function MobileStickyCta() {
+    const [show, setShow] = useState(false);
+    useEffect(() => {
+        const onScroll = () => setShow(window.scrollY > 320);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+    return (
+        <div
+            className="lg:hidden fixed left-3 right-3 z-40 pointer-events-none"
+            style={{
+                bottom: 14,
+                transform: show ? "translateY(0)" : "translateY(120%)",
+                opacity: show ? 1 : 0,
+                transition: "transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s",
+            }}
+            data-testid="mobile-sticky-cta"
+        >
+            <div
+                className="pointer-events-auto flex items-center gap-3 px-3 py-2.5"
+                style={{
+                    background: "rgba(255,255,255,0.96)",
+                    backdropFilter: "blur(16px) saturate(140%)",
+                    WebkitBackdropFilter: "blur(16px) saturate(140%)",
+                    borderRadius: 999,
+                    boxShadow: "0 18px 40px -12px rgba(10,10,10,0.32), 0 4px 10px rgba(10,10,10,0.08)",
+                    border: "1px solid rgba(10,10,10,0.08)",
+                }}
+            >
+                <div className="flex -space-x-2 shrink-0 pl-1">
+                    {[PT.red, PT.azul, PT.green].map((c, i) => (
+                        <span
+                            key={i}
+                            className="rounded-full"
+                            style={{
+                                width: 26, height: 26, background: c,
+                                border: "2.5px solid #fff",
+                            }}
+                        />
+                    ))}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold leading-tight truncate" style={{ color: PT.ink }}>
+                        Junta-te à BETA
+                    </p>
+                    <p className="text-[10.5px] font-medium leading-tight" style={{ color: "rgba(10,10,10,0.55)" }}>
+                        30 segundos · grátis
+                    </p>
+                </div>
+                <Link
+                    to="/register"
+                    data-testid="mobile-sticky-register"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[12.5px] font-bold shrink-0"
+                    style={{
+                        background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
+                        color: "#fff",
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12)`,
+                    }}
+                >
+                    Criar conta <ArrowRight size={13} />
+                </Link>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// TOP NAV — slim, premium
+// =============================================================================
+function TopNav() {
+    const [scrolled, setScrolled] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
+    const navItems = [
+        { label: "Manifesto", to: "/manifesto" },
+        { label: "Diretrizes", to: "/legal/community" },
+        { label: "Privacidade", to: "/legal/privacy" },
+        { label: "Legal", to: "/legal" },
+    ];
+
+    return (
+        <header
+            data-testid="top-nav"
+            style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 50,
+                background: scrolled ? "rgba(247,245,239,0.85)" : "transparent",
+                backdropFilter: scrolled ? "blur(16px) saturate(140%)" : "none",
+                WebkitBackdropFilter: scrolled ? "blur(16px) saturate(140%)" : "none",
+                borderBottom: scrolled ? `1px solid rgba(10,10,10,0.08)` : "1px solid transparent",
+                transition: "all 0.3s",
+            }}
+        >
+            <div className="max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 flex items-center justify-between h-[68px] lg:h-[76px]">
+                <Link to="/" data-testid="brand-logo" className="flex items-center gap-1.5" aria-label="Lusorae homepage">
+                    <Wordmark size={28} />
+                </Link>
+
+                <nav className="hidden lg:flex items-center gap-9">
+                    {navItems.map((it) => (
+                        <Link
+                            key={it.to}
+                            to={it.to}
+                            data-testid={`nav-${it.label.toLowerCase()}`}
+                            className="text-[14px] font-semibold transition-opacity hover:opacity-60"
+                            style={{ color: PT.ink, letterSpacing: "-0.005em" }}
+                        >
+                            {it.label}
+                        </Link>
+                    ))}
+                </nav>
+
+                <div className="hidden lg:flex items-center gap-3">
+                    <Link
+                        to="/login"
+                        data-testid="nav-login"
+                        className="text-[14px] font-semibold transition-opacity hover:opacity-60"
+                        style={{ color: PT.ink }}
+                    >
+                        Entrar
+                    </Link>
+                    <Link
+                        to="/register"
+                        data-testid="nav-register"
+                        className="inline-flex items-center gap-1.5 text-[13.5px] font-bold px-5 py-2.5 rounded-full transition-all hover:scale-[1.03]"
+                        style={{ background: PT.ink, color: "#fff", boxShadow: `0 4px 16px -4px rgba(10,10,10,0.35)` }}
+                    >
+                        Criar conta <ArrowRight size={15} />
+                    </Link>
+                </div>
+
+                {/* Mobile button */}
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen((s) => !s)}
+                    className="lg:hidden inline-flex items-center justify-center rounded-full"
+                    style={{ width: 42, height: 42, background: PT.ink, color: "#fff" }}
+                    data-testid="mobile-menu-toggle"
+                    aria-label="Menu"
+                >
+                    {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+            </div>
+
+            {/* Mobile drawer */}
+            {mobileOpen && (
+                <div
+                    className="lg:hidden border-t"
+                    style={{ borderColor: "rgba(10,10,10,0.08)", background: PT.paper }}
+                    data-testid="mobile-menu"
+                >
+                    <nav className="px-5 py-4 flex flex-col gap-1">
+                        {navItems.map((it) => (
+                            <Link
+                                key={it.to}
+                                to={it.to}
+                                onClick={() => setMobileOpen(false)}
+                                className="block py-2.5 text-[15.5px] font-semibold"
+                                style={{ color: PT.ink }}
+                            >
+                                {it.label}
+                            </Link>
+                        ))}
+                        <div className="pt-3 mt-2 grid grid-cols-2 gap-2.5" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
+                            <Link
+                                to="/login"
+                                onClick={() => setMobileOpen(false)}
+                                className="text-center py-3 text-[14px] font-bold rounded-full"
+                                style={{ border: `1.5px solid ${PT.ink}`, color: PT.ink }}
+                            >
+                                Entrar
+                            </Link>
+                            <Link
+                                to="/register"
+                                onClick={() => setMobileOpen(false)}
+                                className="text-center py-3 text-[14px] font-bold rounded-full"
+                                style={{ background: PT.ink, color: "#fff" }}
+                            >
+                                Criar conta
+                            </Link>
+                        </div>
+                    </nav>
+                </div>
+            )}
+        </header>
+    );
+}
+
+// =============================================================================
+// WORDMARK — custom "LUSORAE" letterforms, bold premium feel
+// =============================================================================
+function Wordmark({ size = 32, color = PT.ink, dot = PT.red }) {
+    return (
+        <div
+            className="font-black select-none"
+            style={{
+                fontFamily: '"Inter", system-ui, sans-serif',
+                fontWeight: 900,
+                fontSize: size,
+                color,
+                lineHeight: 1,
+                letterSpacing: "-0.04em",
+                fontStretch: "condensed",
+                display: "inline-flex",
+                alignItems: "baseline",
+                position: "relative",
+            }}
+        >
+            <span style={{ display: "inline-block", transform: "scaleY(1.05)", transformOrigin: "bottom" }}>
+                LUSORAE
+            </span>
+            <span
+                aria-hidden
+                style={{
+                    width: size * 0.13,
+                    height: size * 0.13,
+                    background: dot,
+                    borderRadius: "50%",
+                    marginLeft: size * 0.06,
+                    alignSelf: "flex-end",
+                    marginBottom: size * 0.02,
+                }}
+            />
+        </div>
+    );
+}
+
+// =============================================================================
+// HERO — the one-screen moment
+// =============================================================================
+function Hero({ stats }) {
+    const total = stats?.total_users ?? 0;
+    const showCount = total > 0;
+    const avatars = (stats?.avatars || []).slice(0, 5);
+    const fallbackAvatars = [
+        { name: "Sara", bg: PT.red },
+        { name: "Tiago", bg: PT.azul },
+        { name: "Inês", bg: PT.green },
+        { name: "Miguel", bg: PT.gold },
+        { name: "Joana", bg: PT.ink },
+    ];
+    const avatarList = avatars.length > 0 ? avatars : fallbackAvatars;
+
+    return (
+        <section
+            data-testid="hero"
+            className="relative overflow-hidden lusorae-grain"
+            style={{ background: PT.paper, minHeight: "calc(100vh - 76px)" }}
+        >
+            {/* SVG filter for ink texture */}
+            <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+                <filter id="roughInk">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" />
+                    <feDisplacementMap in="SourceGraphic" scale="1.4" />
+                </filter>
+            </svg>
+
+            <div className="max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-14 grid lg:grid-cols-[1.05fr_1fr] gap-8 lg:gap-10 items-center relative">
+
+                {/* ============ LEFT: TYPE + CTAs ============ */}
+                <div className="relative z-10">
+                    {/* Section number tag — premium kicker w/ live pulse */}
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8 lusorae-reveal-up">
+                        <span className="relative flex h-2 w-2" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                            <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.green }} />
+                        </span>
+                        <span
+                            className="font-mono text-[11px] sm:text-[11.5px] font-bold uppercase"
+                            style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.62)" }}
+                        >
+                            BETA · A REDE SOCIAL PORTUGUESA
+                        </span>
+                        <span className="hidden sm:inline-block" style={{ width: 24, height: 1, background: "rgba(10,10,10,0.2)" }} />
+                        <span className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(10,10,10,0.40)" }}>
+                            EST. 2026 · LISBOA
+                        </span>
+                    </div>
+
+                    {/* MASSIVE HEADLINE — 4 linhas, com itálico cinematográfico em "TUA" */}
+                    <h1
+                        className="font-black tracking-[-0.045em] leading-[0.86] lg:whitespace-nowrap lusorae-reveal-up"
+                        style={{
+                            fontSize: "clamp(48px, 8.8vw, 132px)",
+                            color: PT.ink,
+                            fontFamily: '"Inter", system-ui, sans-serif',
+                            fontWeight: 900,
+                            animationDelay: "0.05s",
+                        }}
+                    >
+                        {/* Line 1: A TUA (red under TUA, itálico para rhythm cinematográfico) */}
+                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                            A{" "}
+                            <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>
+                                TUA
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: "-4%", right: "-4%", bottom: "-0.10em", height: 20 }}
+                                >
+                                    <UnderlineStroke color={PT.red} w={260} h={20} variant="thick" style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                        </span>
+                        {/* Line 2: CIDADE. (blue under CIDADE) */}
+                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                            <span className="relative inline-block">
+                                CIDADE
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: "-2.5%", right: "-2.5%", bottom: "-0.09em", height: 22 }}
+                                >
+                                    <UnderlineStroke color={PT.azul} w={420} h={22} variant="wave" style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                            <span style={{ color: PT.red }}>.</span>
+                        </span>
+                        {/* Line 3: A TUA (itálico mais uma vez — rhythm) */}
+                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                            A{" "}
+                            <span style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>TUA</span>
+                        </span>
+                        {/* Line 4: REDE. (green under REDE — wave para não cruzar letras) */}
+                        <span className="block relative">
+                            <span className="relative inline-block">
+                                REDE
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: "-3%", right: "-3%", bottom: "-0.16em", height: 22 }}
+                                >
+                                    <UnderlineStroke color={PT.green} w={320} h={22} variant="thick" style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                            <span style={{ color: PT.red }}>.</span>
+                        </span>
+                    </h1>
+
+                    {/* Subhead — keywords com highlight underlines coloridos */}
+                    <p
+                        className="mt-7 sm:mt-9 text-[15.5px] sm:text-[17px] lg:text-[18px] font-medium leading-relaxed max-w-[540px] lusorae-reveal-up"
+                        style={{ color: "rgba(10,10,10,0.72)", animationDelay: "0.15s" }}
+                    >
+                        Aproxima-te de{" "}
+                        <span className="relative inline-block font-bold" style={{ color: PT.ink }}>
+                            pessoas reais
+                            <span
+                                className="absolute pointer-events-none"
+                                style={{ left: 0, right: 0, bottom: -2, height: 8, background: `${PT.red}33`, zIndex: -1, borderRadius: 2 }}
+                            />
+                        </span>
+                        , descobre{" "}
+                        <span className="relative inline-block font-bold" style={{ color: PT.ink }}>
+                            eventos perto de ti
+                            <span
+                                className="absolute pointer-events-none"
+                                style={{ left: 0, right: 0, bottom: -2, height: 8, background: `${PT.azul}33`, zIndex: -1, borderRadius: 2 }}
+                            />
+                        </span>
+                        {" "}e faz parte de{" "}
+                        <span className="relative inline-block font-bold" style={{ color: PT.ink }}>
+                            comunidades que importam
+                            <span
+                                className="absolute pointer-events-none"
+                                style={{ left: 0, right: 0, bottom: -2, height: 8, background: `${PT.green}33`, zIndex: -1, borderRadius: 2 }}
+                            />
+                        </span>
+                        . De Braga a Faro, do Funchal aos Açores.
+                    </p>
+
+                    {/* CTAs — black pill com gradient + magnetic arrow */}
+                    <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-4 sm:gap-5 lusorae-reveal-up" style={{ animationDelay: "0.22s" }}>
+                        <Link
+                            to="/register"
+                            data-testid="hero-cta-register"
+                            className="group inline-flex items-center gap-2 px-7 py-4 sm:px-8 sm:py-[18px] rounded-full text-[14.5px] sm:text-[15.5px] font-bold transition-all hover:scale-[1.04] hover:-translate-y-0.5"
+                            style={{
+                                background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
+                                color: "#fff",
+                                boxShadow: `0 12px 32px -10px rgba(10,10,10,0.55), 0 2px 6px rgba(10,10,10,0.18), inset 0 1px 0 rgba(255,255,255,0.12)`,
+                                border: "1px solid rgba(255,255,255,0.06)",
+                            }}
+                        >
+                            Criar conta{" "}
+                            <ArrowRight
+                                size={17}
+                                className="transition-transform duration-300 group-hover:translate-x-1"
+                            />
+                        </Link>
+                        <Link
+                            to="/login"
+                            data-testid="hero-cta-explore"
+                            className="group inline-flex items-center gap-1.5 text-[14.5px] sm:text-[15.5px] font-bold py-2 transition-all"
+                            style={{ color: PT.ink, borderBottom: `2px solid ${PT.ink}`, paddingBottom: 4 }}
+                        >
+                            Explorar agora{" "}
+                            <ArrowUpRight
+                                size={17}
+                                className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                            />
+                        </Link>
+                    </div>
+
+                    {/* Social proof — beta honest framing */}
+                    <div className="mt-8 sm:mt-10 flex items-center gap-4 lusorae-reveal-up" style={{ animationDelay: "0.30s" }}>
+                        <div className="flex -space-x-2.5" data-testid="hero-avatars">
+                            {avatarList.slice(0, 5).map((a, i) => (
+                                a.avatar_url ? (
+                                    <img
+                                        key={a.id || i}
+                                        src={a.avatar_url}
+                                        alt=""
+                                        className="rounded-full object-cover"
+                                        style={{
+                                            width: 42, height: 42,
+                                            border: `3px solid ${PT.paper}`,
+                                            boxShadow: `0 3px 10px rgba(10,10,10,0.15)`,
+                                        }}
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div
+                                        key={i}
+                                        className="rounded-full flex items-center justify-center font-bold text-[14px]"
+                                        style={{
+                                            width: 42, height: 42,
+                                            background: a.bg || PT.azul,
+                                            color: a.bg === PT.gold ? PT.ink : "#fff",
+                                            border: `3px solid ${PT.paper}`,
+                                            boxShadow: `0 3px 10px rgba(10,10,10,0.15)`,
+                                        }}
+                                    >
+                                        {(a.name || "?").charAt(0)}
+                                    </div>
+                                )
+                            ))}
+                            <span
+                                className="rounded-full flex items-center justify-center font-bold text-[11px]"
+                                style={{
+                                    width: 42, height: 42,
+                                    background: "#fff",
+                                    color: PT.ink,
+                                    border: `3px solid ${PT.paper}`,
+                                    boxShadow: `0 3px 10px rgba(10,10,10,0.12)`,
+                                }}
+                            >
+                                +
+                            </span>
+                        </div>
+                        <div className="border-l pl-4" style={{ borderColor: "rgba(10,10,10,0.12)" }}>
+                            <p className="text-[14.5px] font-bold leading-tight" style={{ color: PT.ink, letterSpacing: "-0.005em" }}>
+                                {showCount && total >= 50
+                                    ? <>+{total.toLocaleString("pt-PT")} <span style={{ color: "rgba(10,10,10,0.55)", fontWeight: 600 }}>portugueses</span></>
+                                    : <>Primeiros membros</>}
+                            </p>
+                            <p className="text-[12px] font-medium mt-0.5" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                {showCount && total >= 50 ? "já se juntaram à beta" : "a construir o Lusorae · entra agora"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Floating MADE IN PORTUGAL stamp — desktop top-right entre colunas */}
+                <div
+                    className="absolute hidden lg:block z-30 pointer-events-none lusorae-float-soft"
+                    style={{ top: 18, right: "44%", "--rot": "-10deg" }}
+                >
+                    <div className="lusorae-spin-slow" style={{ opacity: 0.85 }}>
+                        <StampSeal size={118} color={PT.ink} rotate={0} />
+                    </div>
+                </div>
+
+                {/* Mobile-only stamp seal — top-right corner discrete */}
+                <div className="lg:hidden absolute z-30 pointer-events-none" style={{ top: 12, right: 18 }}>
+                    <div className="lusorae-spin-slow" style={{ opacity: 0.75 }}>
+                        <StampSeal size={72} color={PT.ink} rotate={-8} />
+                    </div>
+                </div>
+
+                {/* ============ RIGHT: PHONE + CARDS ============ */}
+                <div className="relative flex justify-center items-center lg:justify-center min-h-[440px] sm:min-h-[560px] lg:min-h-[680px] mt-4 lg:mt-0" data-testid="hero-visual">
+                    {/* Background colour blocks (PT flag energy) */}
+                    <ColourBlocks />
+
+                    {/* Event cards stack — back layer (interactive, hover lift) */}
+                    <div className="hidden sm:block absolute z-10" style={{ right: "-2%", top: "5%" }}>
+                        <EventStack />
+                    </div>
+
+                    {/* Community cards stack — back layer (interactive, hover lift) */}
+                    <div className="hidden sm:block absolute z-10" style={{ right: "-4%", bottom: "5%" }}>
+                        <CommunityStack />
+                    </div>
+
+                    {/* Floating reaction bubble — premium detail (md+) */}
+                    <div
+                        className="hidden md:flex absolute z-30 items-center gap-1.5 lusorae-float-soft"
+                        style={{
+                            left: "8%", bottom: "26%",
+                            background: "#fff",
+                            border: `1.5px solid rgba(10,10,10,0.08)`,
+                            borderRadius: 999,
+                            padding: "9px 14px 9px 11px",
+                            boxShadow: "0 12px 24px -8px rgba(10,10,10,0.25)",
+                            "--rot": "-6deg",
+                            animationDelay: "0.4s",
+                        }}
+                        aria-hidden
+                    >
+                        <span style={{ color: PT.red, fontSize: 18 }}>♥</span>
+                        <span className="text-[12.5px] font-bold" style={{ color: PT.ink }}>+12 reações</span>
+                    </div>
+
+                    {/* Mobile-only floating reaction (smaller) */}
+                    <div
+                        className="md:hidden absolute z-30 flex items-center gap-1 lusorae-float-soft"
+                        style={{
+                            left: "4%", top: "6%",
+                            background: "#fff",
+                            border: `1.5px solid rgba(10,10,10,0.08)`,
+                            borderRadius: 999,
+                            padding: "6px 10px 6px 8px",
+                            boxShadow: "0 10px 20px -8px rgba(10,10,10,0.22)",
+                            "--rot": "-6deg",
+                        }}
+                        aria-hidden
+                    >
+                        <span style={{ color: PT.red, fontSize: 14 }}>♥</span>
+                        <span className="text-[10.5px] font-bold" style={{ color: PT.ink }}>+12</span>
+                    </div>
+
+                    {/* Phone mockup — front (responsive) */}
+                    <div className="relative z-20" style={{ transform: "translateX(-2%)" }}>
+                        <PhoneMockup />
+                    </div>
+
+                    {/* Hand-drawn sparkles around phone */}
+                    <div className="absolute pointer-events-none hidden lg:block lusorae-float-soft" style={{ left: "8%", top: "8%", "--rot": "12deg" }}>
+                        <HandSquiggle color={PT.green} variant="star" w={42} h={42} style={{ transform: "rotate(12deg)" }} />
+                    </div>
+                    <div className="absolute pointer-events-none hidden lg:block" style={{ right: "32%", bottom: "0%" }}>
+                        <HandSquiggle color={PT.green} variant="arrow" w={90} h={70} style={{ transform: "rotate(20deg)" }} />
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// Coloured geometric blocks behind phone (PT flag energy — peek out as in ref print)
+function ColourBlocks() {
+    const baseShadow = "0 30px 60px -20px rgba(10,10,10,0.32), 0 6px 14px -4px rgba(10,10,10,0.10)";
+    return (
+        <>
+            {/* Red — top right behind phone */}
+            <div className="absolute hidden md:block pointer-events-none lusorae-float" style={{
+                right: "10%", top: "0%", width: "min(28%, 240px)", aspectRatio: "1/1",
+                background: `linear-gradient(135deg, #E11A38 0%, ${PT.red} 100%)`,
+                borderRadius: 28,
+                "--rot": "10deg",
+                boxShadow: baseShadow,
+            }} />
+            {/* Blue — middle/back of phone */}
+            <div className="absolute hidden md:block pointer-events-none lusorae-float-soft" style={{
+                left: "8%", top: "22%", width: "min(20%, 150px)", aspectRatio: "1/1",
+                background: `linear-gradient(135deg, #0050B0 0%, ${PT.azul} 100%)`,
+                borderRadius: 22,
+                "--rot": "-14deg",
+                boxShadow: baseShadow,
+                animationDelay: "0.6s",
+            }} />
+            {/* Gold — bottom right */}
+            <div className="absolute hidden md:block pointer-events-none lusorae-float" style={{
+                right: "4%", bottom: "8%", width: "min(26%, 200px)", aspectRatio: "1/1",
+                background: `linear-gradient(135deg, #FFD45C 0%, ${PT.gold} 100%)`,
+                borderRadius: 26,
+                "--rot": "-8deg",
+                boxShadow: baseShadow,
+                animationDelay: "1.2s",
+            }} />
+            {/* Green — bottom left */}
+            <div className="absolute hidden md:block pointer-events-none lusorae-float-soft" style={{
+                left: "4%", bottom: "8%", width: "min(22%, 170px)", aspectRatio: "1/1",
+                background: `linear-gradient(135deg, #058845 0%, ${PT.green} 100%)`,
+                borderRadius: 22,
+                "--rot": "14deg",
+                boxShadow: baseShadow,
+                animationDelay: "1.8s",
+            }} />
+        </>
+    );
+}
+
+// Stack of event cards (top-right behind phone) — interactive
+function EventStack() {
+    const events = [
+        { title: "Sunset Party", place: "Faro · Praia · 19:30", img: IMG_EVENT_1, live: true },
+        { title: "Mercado Criativo", place: "Lisboa · Alvalade · 15:00", img: IMG_EVENT_2 },
+    ];
+    return (
+        <div
+            className="relative bg-white lusorae-card-hover"
+            style={{
+                width: 240,
+                borderRadius: 22,
+                boxShadow: "0 24px 60px -20px rgba(10,10,10,0.28), 0 2px 8px rgba(10,10,10,0.08)",
+                transform: "rotate(4deg)",
+                padding: 14,
+                border: `1px solid rgba(10,10,10,0.06)`,
+                "--hover-rot": "4deg",
+            }}
+        >
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                    <span className="inline-block" style={{ width: 6, height: 6, borderRadius: "50%", background: PT.red }} />
+                    <p className="font-bold text-[12.5px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Eventos</p>
+                </div>
+                <ArrowRight size={13} style={{ color: "rgba(10,10,10,0.4)" }} />
+            </div>
+            <div className="space-y-2.5">
+                {events.map((e, i) => (
+                    <div key={i} className="flex items-center gap-2.5 relative">
+                        <div className="relative shrink-0">
+                            <img
+                                src={e.img} alt=""
+                                className="object-cover"
+                                style={{ width: 44, height: 44, borderRadius: 10 }}
+                                loading="lazy"
+                            />
+                            {e.live && (
+                                <span
+                                    className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5"
+                                    aria-hidden
+                                >
+                                    <span className="absolute inset-0 rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                                    <span className="relative rounded-full h-2.5 w-2.5" style={{ background: PT.red, border: "1.5px solid #fff" }} />
+                                </span>
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="font-bold text-[12px] leading-tight truncate" style={{ color: PT.ink }}>{e.title}</p>
+                            <p className="text-[10.5px] font-medium leading-tight mt-0.5 truncate" style={{ color: "rgba(10,10,10,0.55)" }}>{e.place}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Stack of community cards (bottom-right behind phone) — interactive
+function CommunityStack() {
+    const communities = [
+        { title: "Birdfire Algarve", members: "3.8K", img: IMG_COMM_1, accent: PT.red },
+        { title: "Surfing Portugal", members: "2.1K", img: IMG_COMM_3, accent: PT.azul },
+        { title: "Fotografia Lisboa", members: "1.7K", img: IMG_COMM_2, accent: PT.green },
+    ];
+    return (
+        <div
+            className="relative bg-white lusorae-card-hover"
+            style={{
+                width: 256,
+                borderRadius: 22,
+                boxShadow: "0 24px 60px -20px rgba(10,10,10,0.28), 0 2px 8px rgba(10,10,10,0.08)",
+                transform: "rotate(-3deg)",
+                padding: 14,
+                border: `1px solid rgba(10,10,10,0.06)`,
+                "--hover-rot": "-3deg",
+            }}
+        >
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                    <span className="inline-block" style={{ width: 6, height: 6, borderRadius: "50%", background: PT.azul }} />
+                    <p className="font-bold text-[12.5px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Comunidades</p>
+                </div>
+                <ArrowRight size={13} style={{ color: "rgba(10,10,10,0.4)" }} />
+            </div>
+            <div className="space-y-2.5">
+                {communities.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                        <img
+                            src={c.img} alt=""
+                            className="object-cover shrink-0"
+                            style={{ width: 40, height: 40, borderRadius: 10 }}
+                            loading="lazy"
+                        />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-bold text-[12px] leading-tight truncate" style={{ color: PT.ink }}>{c.title}</p>
+                            <p className="text-[10.5px] font-medium leading-tight mt-0.5" style={{ color: "rgba(10,10,10,0.55)" }}>{c.members} membros</p>
+                        </div>
+                        <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                            style={{ background: c.accent, color: c.accent === PT.gold ? PT.ink : "#fff" }}
+                        >
+                            Ver
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// PHONE MOCKUP — clean Apple-style frame
+// =============================================================================
+function PhoneMockup() {
+    return (
+        <div
+            className="relative"
+            style={{
+                width: "clamp(240px, 28vw, 320px)",
+                aspectRatio: "9/19",
+                transform: "rotate(-3deg)",
+            }}
+        >
+            {/* Phone frame */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    background: PT.ink,
+                    borderRadius: 42,
+                    padding: 8,
+                    boxShadow: `0 50px 80px -30px rgba(10,10,10,0.45), 0 20px 40px -10px rgba(10,10,10,0.25)`,
+                }}
+            >
+                {/* Screen */}
+                <div
+                    className="relative w-full h-full overflow-hidden"
+                    style={{
+                        background: "#fff",
+                        borderRadius: 35,
+                    }}
+                >
+                    {/* Status bar */}
+                    <div className="flex items-center justify-between px-6 pt-3 pb-1 text-[10.5px] font-bold" style={{ color: PT.ink }}>
+                        <span>19:24</span>
+                        <span className="flex items-center gap-1">
+                            <span style={{ width: 14, height: 8, background: "#0A0A0A", borderRadius: 2 }} />
+                        </span>
+                    </div>
+
+                    {/* App header */}
+                    <div className="flex items-center justify-between px-4 py-2.5">
+                        <button
+                            className="flex items-center justify-center"
+                            style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(10,10,10,0.06)" }}
+                            aria-hidden
+                        >
+                            <ArrowRight size={14} style={{ color: PT.ink, transform: "rotate(180deg)" }} />
+                        </button>
+                        <div className="flex items-center gap-1.5">
+                            <span className="relative flex h-2 w-2" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.green }} />
+                            </span>
+                            <p className="font-bold text-[14px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Alameda · Faro</p>
+                        </div>
+                        <button
+                            className="flex items-center justify-center"
+                            style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(10,10,10,0.06)" }}
+                            aria-hidden
+                        >
+                            <Sparkles size={14} style={{ color: PT.ink }} />
+                        </button>
+                    </div>
+
+                    {/* Post header */}
+                    <div className="px-4 pt-1 pb-3 flex items-center gap-2.5">
+                        <div
+                            className="rounded-full flex items-center justify-center font-bold text-[12px]"
+                            style={{ width: 36, height: 36, background: PT.red, color: "#fff" }}
+                        >
+                            M
+                        </div>
+                        <div>
+                            <p className="font-bold text-[12.5px] leading-tight" style={{ color: PT.ink }}>Maria Silva</p>
+                            <p className="text-[10.5px] font-medium leading-tight" style={{ color: "rgba(10,10,10,0.50)" }}>Faro · há 2 horas</p>
+                        </div>
+                        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: PT.gold, color: PT.ink }}>
+                            📍 Faro
+                        </span>
+                    </div>
+
+                    {/* Post text */}
+                    <div className="px-4 pb-3">
+                        <p className="text-[12.5px] font-medium leading-snug" style={{ color: PT.ink }}>
+                            Pôr-do-sol na Praia de Faro. Quem é que vem? <span style={{ color: PT.red }}>🌅</span>
+                        </p>
+                    </div>
+
+                    {/* Hero image */}
+                    <div className="px-4">
+                        <img
+                            src={IMG_PHONE_FEED}
+                            alt="Praia de Faro ao pôr-do-sol"
+                            className="w-full object-cover"
+                            style={{ aspectRatio: "1/1", borderRadius: 16 }}
+                            loading="lazy"
+                        />
+                    </div>
+
+                    {/* Reactions */}
+                    <div className="px-4 py-3 flex items-center gap-4">
+                        <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
+                            <span style={{ color: PT.red, fontSize: 14 }}>♥</span> 1.2K
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
+                            <span style={{ color: PT.azul, fontSize: 13 }}>💬</span> 23
+                        </span>
+                    </div>
+
+                    {/* Next post peek */}
+                    <div className="px-4 pt-1 border-t" style={{ borderColor: "rgba(10,10,10,0.06)" }}>
+                        <div className="flex items-center gap-2.5 pt-3">
+                            <div
+                                className="rounded-full flex items-center justify-center font-bold text-[11px]"
+                                style={{ width: 30, height: 30, background: PT.azul, color: "#fff" }}
+                            >
+                                J
+                            </div>
+                            <div>
+                                <p className="font-bold text-[11.5px] leading-tight" style={{ color: PT.ink }}>João Costa</p>
+                                <p className="text-[10px] font-medium leading-tight" style={{ color: "rgba(10,10,10,0.50)" }}>Surf trip sábado em Matosinhos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Notch */}
+            <div
+                className="absolute pointer-events-none"
+                style={{
+                    top: 14, left: "50%", transform: "translateX(-50%)",
+                    width: 100, height: 26,
+                    background: PT.ink, borderRadius: 14,
+                }}
+            />
+        </div>
+    );
+}
+
+// =============================================================================
+// VALUE STRIP — condensed below-fold: 3 promises + city tiles
+// =============================================================================
+function ValueStrip() {
+    const promises = [
+        { icon: <MapPin size={20} />, title: "Cidade primeiro", sub: "Lisboa, Porto, Faro, Funchal — o teu feed começa onde tu estás." },
+        { icon: <Calendar size={20} />, title: "Eventos perto", sub: "Encontros, concertos, tertúlias e festas — descobre o que está a acontecer." },
+        { icon: <Users size={20} />, title: "Comunidades vivas", sub: "Pessoas reais a partilhar conversas reais — sem ruído, sem performance." },
+    ];
+
+    const cities = [
+        { name: "Lisboa", img: CITY_LISBOA, accent: PT.red },
+        { name: "Porto", img: CITY_PORTO, accent: PT.azul },
+        { name: "Algarve", img: CITY_ALGARVE, accent: PT.gold },
+        { name: "Madeira & Açores", img: CITY_OUTRA, accent: PT.green },
+    ];
+
+    return (
+        <section
+            data-testid="value-strip"
+            className="px-5 sm:px-8 lg:px-12 py-14 sm:py-18 lg:py-20"
+            style={{ background: PT.cream }}
+        >
+            <div className="max-w-[1400px] mx-auto">
+                {/* Section header */}
+                <div className="flex items-end justify-between flex-wrap gap-4 mb-10 sm:mb-12">
+                    <div>
+                        <p className="font-mono text-[11px] font-bold uppercase mb-2" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}>
+                            02 — Como funciona
+                        </p>
+                        <h2
+                            className="font-black tracking-[-0.035em] leading-[0.95]"
+                            style={{
+                                fontSize: "clamp(32px, 4.5vw, 56px)",
+                                color: PT.ink,
+                                fontFamily: '"Inter", system-ui, sans-serif',
+                                fontWeight: 900,
+                            }}
+                        >
+                            Feito{" "}
+                            <span className="relative inline-block">
+                                <span style={{ color: PT.red }}>para portugueses</span>
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
+                                >
+                                    <UnderlineStroke color={PT.red} w={400} h={12} variant="dash" style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                            ,<br/>
+                            por portugueses.
+                        </h2>
+                    </div>
+                    <Link
+                        to="/manifesto"
+                        className="inline-flex items-center gap-1.5 text-[14px] font-bold py-2 transition-opacity hover:opacity-60"
+                        style={{ color: PT.ink, borderBottom: `2px solid ${PT.ink}`, paddingBottom: 4 }}
+                        data-testid="value-strip-manifesto"
+                    >
+                        Lê o manifesto <ArrowUpRight size={16} />
+                    </Link>
+                </div>
+
+                {/* 3 promises */}
+                <div className="grid sm:grid-cols-3 gap-5 lg:gap-7 mb-10 sm:mb-12">
+                    {promises.map((p, i) => (
+                        <div
+                            key={i}
+                            className="relative p-6 lg:p-7"
+                            style={{
+                                background: "#fff",
+                                borderRadius: 22,
+                                border: "1px solid rgba(10,10,10,0.06)",
+                                boxShadow: "0 2px 12px -4px rgba(10,10,10,0.06)",
+                            }}
+                            data-testid={`promise-${i}`}
+                        >
+                            <span
+                                className="inline-flex items-center justify-center mb-4"
+                                style={{
+                                    width: 44, height: 44, borderRadius: 14,
+                                    background: PT.ink, color: "#fff",
+                                }}
+                            >
+                                {p.icon}
+                            </span>
+                            <p className="font-bold text-[18px] leading-tight mb-1.5" style={{ color: PT.ink, letterSpacing: "-0.015em" }}>
+                                {p.title}
+                            </p>
+                            <p className="text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
+                                {p.sub}
+                            </p>
+                            <span
+                                className="absolute font-mono text-[10px] font-bold"
+                                style={{ top: 18, right: 22, color: "rgba(10,10,10,0.30)" }}
+                            >
+                                0{i + 1}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* City tiles */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    {cities.map((c) => (
+                        <CityTile key={c.name} city={c} />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function CityTile({ city }) {
+    return (
+        <div
+            className="relative overflow-hidden group cursor-default"
+            style={{
+                aspectRatio: "4/5",
+                borderRadius: 20,
+                border: "1px solid rgba(10,10,10,0.06)",
+            }}
+            data-testid={`city-${city.name.toLowerCase().replace(/\s+/g, "-")}`}
+        >
+            <img
+                src={city.img}
+                alt={city.name}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+            />
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.65) 100%)`,
+                }}
+            />
+            <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                    <span
+                        className="inline-block"
+                        style={{ width: 8, height: 8, borderRadius: "50%", background: city.accent }}
+                    />
+                    <span className="text-[10.5px] font-mono font-bold uppercase text-white/85" style={{ letterSpacing: "0.14em" }}>
+                        Em Portugal
+                    </span>
+                </div>
+                <p
+                    className="font-black text-white tracking-[-0.02em] leading-none"
+                    style={{ fontSize: "clamp(22px, 2.4vw, 30px)" }}
+                >
+                    {city.name}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// FINAL CTA — minimal black strip
+// =============================================================================
+function FinalCta() {
+    return (
+        <section className="px-5 sm:px-8 lg:px-12 pb-12 sm:pb-16" data-testid="final-cta">
+            <div
+                className="max-w-[1400px] mx-auto relative overflow-hidden px-7 sm:px-10 lg:px-14 py-12 sm:py-14 lg:py-16"
+                style={{ background: PT.ink, borderRadius: 28 }}
+            >
+                {/* Floating colour blocks */}
+                <div className="absolute pointer-events-none" style={{ right: -40, top: -40, width: 200, height: 200, background: PT.red, borderRadius: 24, transform: "rotate(14deg)", opacity: 0.85 }} aria-hidden />
+                <div className="absolute pointer-events-none" style={{ right: 80, bottom: -50, width: 140, height: 140, background: PT.gold, borderRadius: 20, transform: "rotate(-8deg)", opacity: 0.85 }} aria-hidden />
+                <div className="absolute pointer-events-none" style={{ right: 180, top: 40, width: 80, height: 80, background: PT.green, borderRadius: 14, transform: "rotate(-22deg)", opacity: 0.7 }} aria-hidden />
+
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-7">
+                    <div className="max-w-2xl">
+                        <p className="font-mono text-[11px] font-bold uppercase mb-3" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.55)" }}>
+                            03 — Junta-te ao Lusorae
+                        </p>
+                        <h2
+                            className="font-black tracking-[-0.035em] leading-[0.95]"
+                            style={{
+                                fontSize: "clamp(30px, 4.5vw, 56px)",
+                                color: "#fff",
+                                fontFamily: '"Inter", system-ui, sans-serif',
+                                fontWeight: 900,
+                            }}
+                        >
+                            Pronto para fazer parte da{" "}
+                            <span className="relative inline-block">
+                                <span style={{ color: PT.gold }}>tua cidade</span>
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
+                                >
+                                    <UnderlineStroke color={PT.gold} w={300} h={12} variant="wave" style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                            ?
+                        </h2>
+                        <p className="mt-4 text-[15px] sm:text-[16px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                            30 segundos. Grátis. Para sempre. <strong style={{ color: "#fff", fontWeight: 700 }}>Sem algoritmos de vaidade.</strong>
+                        </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 shrink-0 w-full lg:w-auto">
+                        <Link
+                            to="/register"
+                            data-testid="final-cta-register"
+                            className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-[14.5px] font-bold transition-all hover:scale-[1.03]"
+                            style={{ background: "#fff", color: PT.ink, boxShadow: `0 10px 28px -10px rgba(0,0,0,0.4)` }}
+                        >
+                            Criar conta grátis <ArrowRight size={17} />
+                        </Link>
+                        <Link
+                            to="/login"
+                            data-testid="final-cta-login"
+                            className="inline-flex items-center justify-center gap-1.5 text-[14px] font-bold py-3.5 px-5 rounded-full"
+                            style={{ border: `1.5px solid rgba(255,255,255,0.5)`, color: "#fff" }}
+                        >
+                            Entrar
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+// =============================================================================
+// MAIN
 // =============================================================================
 export default function Landing() {
     const { user, checking } = useAuth();
     const [stats, setStats] = useState(null);
-    const [openFaq, setOpenFaq] = useState(null);
 
     useEffect(() => {
         let mounted = true;
@@ -39,1158 +1306,93 @@ export default function Landing() {
                 const { data } = await api.get(`/stats/landing`);
                 if (mounted) setStats(data);
             } catch {
-                /* fail silently — secção esconde-se sozinha */
+                /* silent — UI tem fallbacks */
             }
         })();
         return () => { mounted = false; };
     }, []);
 
-    // Logged-in users go straight to the feed
     if (!checking && user) return <Navigate to="/feed" replace />;
 
     return (
-        <div className="min-h-screen relative overflow-hidden pt-paper" style={{ background: PT.cream }} data-testid="landing-page">
-            <div className="pt-tape h-3 w-full" />
-
+        <div className="min-h-screen relative" style={{ background: PT.paper, fontFamily: '"Inter", system-ui, sans-serif' }} data-testid="landing-page">
             <TopNav />
             <Hero stats={stats} />
-            <StatsBand stats={stats} />
-            <WhatYouFind />
-            <ExploreCities />
-            <HowItWorks />
-            <PortugalMap />
-            <Faq openFaq={openFaq} setOpenFaq={setOpenFaq} />
+            <TrustStrip />
+            <CityTicker />
+            <ValueStrip />
             <FinalCta />
-
-            <div className="pt-tape h-3 w-full" />
             <SiteFooter />
-            <AuthStyles />
+            <MobileStickyCta />
+
+            {/* Premium polish: marquee + grain + float keyframes */}
+            <style>{`
+                @keyframes lusorae-marquee {
+                    0%   { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                @keyframes lusorae-float {
+                    0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+                    50%      { transform: translateY(-10px) rotate(var(--rot, 0deg)); }
+                }
+                @keyframes lusorae-float-soft {
+                    0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+                    50%      { transform: translateY(-6px) rotate(var(--rot, 0deg)); }
+                }
+                @keyframes lusorae-spin {
+                    0%   { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes lusorae-pulse {
+                    0%, 100% { transform: scale(1); opacity: 1; }
+                    50%      { transform: scale(1.18); opacity: 0.85; }
+                }
+                @keyframes lusorae-reveal-up {
+                    0%   { opacity: 0; transform: translateY(20px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+
+                .lusorae-marquee-wrap {
+                    overflow: hidden;
+                    mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+                    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+                }
+                .lusorae-marquee {
+                    display: inline-flex;
+                    animation: lusorae-marquee 42s linear infinite;
+                    will-change: transform;
+                }
+                .lusorae-float       { animation: lusorae-float 5s ease-in-out infinite; }
+                .lusorae-float-soft  { animation: lusorae-float-soft 6s ease-in-out infinite; }
+                .lusorae-spin-slow   { animation: lusorae-spin 36s linear infinite; }
+                .lusorae-pulse       { animation: lusorae-pulse 1.8s ease-in-out infinite; }
+                .lusorae-reveal-up   { animation: lusorae-reveal-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+                .lusorae-grain::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    pointer-events: none;
+                    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+                    opacity: 0.7;
+                    mix-blend-mode: multiply;
+                    z-index: 0;
+                }
+
+                .lusorae-card-hover {
+                    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s;
+                }
+                .lusorae-card-hover:hover {
+                    transform: translateY(-4px) rotate(var(--hover-rot, 0deg));
+                    box-shadow: 0 30px 70px -20px rgba(10,10,10,0.32), 0 4px 14px rgba(10,10,10,0.08);
+                }
+
+                @media (prefers-reduced-motion: reduce) {
+                    .lusorae-marquee, .lusorae-float, .lusorae-float-soft, .lusorae-spin-slow, .lusorae-pulse, .lusorae-reveal-up {
+                        animation: none !important;
+                    }
+                }
+            `}</style>
         </div>
-    );
-}
-
-// =============================================================================
-// TOP NAV — só desktop (lg+); mobile usa o footer + CTAs do hero
-// =============================================================================
-function TopNav() {
-    const NavLink = ({ to, children, testid }) => (
-        <Link
-            to={to}
-            data-testid={testid}
-            className="text-[13.5px] font-black uppercase tracking-wider hover:opacity-70 transition-opacity"
-            style={{ color: PT.ink, letterSpacing: "0.08em" }}
-        >
-            {children}
-        </Link>
-    );
-    return (
-        <header className="relative z-30">
-            {/* DESKTOP NAV */}
-            <div className="hidden lg:flex items-center justify-between px-10 xl:px-16 py-6 relative">
-                <div className="flex items-baseline gap-2">
-                    <span style={{ color: PT.red, fontSize: 36, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
-                    <span
-                        className="text-[28px] font-black tracking-tight"
-                        style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}
-                        data-testid="brand-logo"
-                    >
-                        lusorae
-                    </span>
-                </div>
-                <nav className="flex items-center gap-9">
-                    <NavLink to="/manifesto" testid="nav-manifesto">Manifesto</NavLink>
-                    <NavLink to="/legal/community" testid="nav-community">Diretrizes</NavLink>
-                    <NavLink to="/legal/privacy" testid="nav-privacy">Privacidade</NavLink>
-                    <NavLink to="/legal" testid="nav-legal">Legal</NavLink>
-                </nav>
-                <div className="flex items-center gap-3">
-                    <Link
-                        to="/login"
-                        data-testid="nav-login"
-                        className="text-[13.5px] font-black uppercase px-5 py-2.5 rounded-full transition"
-                        style={{
-                            color: PT.ink,
-                            border: `2.5px solid ${PT.ink}`,
-                            letterSpacing: "0.08em",
-                            background: "transparent",
-                        }}
-                    >
-                        Entrar
-                    </Link>
-                    <Link
-                        to="/register"
-                        data-testid="nav-register"
-                        className="pt-btn-primary text-[13.5px] px-5 py-3"
-                    >
-                        Criar conta →
-                    </Link>
-                </div>
-            </div>
-
-            {/* MOBILE NAV — só marca + Entrar/Criar */}
-            <div className="lg:hidden flex items-center justify-between px-5 py-4">
-                <div className="flex items-baseline gap-1.5">
-                    <span style={{ color: PT.red, fontSize: 28, textShadow: `2px 2px 0 ${PT.gold}` }} className="font-black leading-none">✱</span>
-                    <span className="text-[22px] font-black tracking-tight" style={{ color: PT.ink, textShadow: `2px 2px 0 ${PT.gold}` }}>
-                        lusorae
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Link to="/login" data-testid="nav-login-mobile" className="text-[12px] font-black uppercase px-3.5 py-2 rounded-full" style={{ color: PT.ink, border: `2px solid ${PT.ink}`, letterSpacing: "0.06em" }}>
-                        Entrar
-                    </Link>
-                </div>
-            </div>
-        </header>
-    );
-}
-
-// =============================================================================
-// HERO — Vive. Partilha. Lusorae.
-// =============================================================================
-function Hero({ stats }) {
-    const online = stats?.online_now ?? 0;
-    const total = stats?.total_users ?? 0;
-    const showOnlineCount = online > 0;
-    const avatars = (stats?.avatars || []).slice(0, 5);
-
-    return (
-        <section className="relative px-5 sm:px-8 lg:px-16 pt-2 lg:pt-4 pb-12 sm:pb-16 lg:pb-20" data-testid="hero">
-            {/* Doodles dispersos */}
-            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                <DoodleSparkles color={PT.gold} size={64} rotate={14} />
-            </div>
-            <div className="absolute bottom-12 left-2 lg:bottom-20 lg:left-6 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
-                <DoodleScribble color={PT.azul} w={140} h={48} style={{ transform: "rotate(-8deg)" }} />
-            </div>
-
-            <div className="grid lg:grid-cols-[1.05fr_1fr] gap-8 sm:gap-10 lg:gap-14 items-center max-w-7xl mx-auto">
-                {/* COLUNA TEXTO */}
-                <div className="relative order-2 lg:order-1">
-                    {/* Kicker amarelo */}
-                    <div className="inline-block mb-4 sm:mb-5">
-                        <span
-                            className="text-[10px] sm:text-[11px] font-mono font-black uppercase"
-                            style={{
-                                letterSpacing: "0.18em",
-                                background: PT.gold,
-                                color: PT.ink,
-                                padding: "6px 12px",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
-                                display: "inline-block",
-                                transform: "rotate(-1deg)",
-                            }}
-                        >
-                            A tua cidade · a tua voz
-                        </span>
-                    </div>
-
-                    {/* TÍTULO grande */}
-                    <h1
-                        className="font-black tracking-[-0.04em] mb-5 sm:mb-6"
-                        style={{ fontSize: "clamp(42px, 7vw, 84px)", lineHeight: 1.0, color: PT.ink }}
-                    >
-                        <span className="inline-block sm:inline-block" style={{
-                            display: "inline-block",
-                            transform: "rotate(-1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                            WebkitTextStroke: `1px ${PT.ink}`,
-                            marginBottom: "0.05em",
-                        }}>Vive.</span>
-                        <br className="sm:hidden"/>{" "}
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            transform: "rotate(1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}, 6px 6px 0 ${PT.ink}`,
-                            WebkitTextStroke: `1.5px ${PT.ink}`,
-                            marginTop: "0.10em",
-                        }}>Partilha.</span>
-                        <br/>
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            color: PT.ink,
-                            padding: "0 0.12em",
-                            border: `4px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.ink}, 12px 12px 0 ${PT.red}`,
-                            transform: "rotate(-1deg)",
-                            marginTop: "0.22em",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>Lusorae.</span>
-                    </h1>
-
-                    {/* Descrição */}
-                    <p className="text-[15.5px] sm:text-[16.5px] lg:text-[18px] font-medium leading-relaxed mb-6 sm:mb-7 max-w-[540px]" style={{ color: "rgba(10,10,10,0.78)" }}>
-                        A rede social portuguesa feita para{" "}
-                        <span style={{ background: PT.azul, color: "#fff", padding: "2px 8px", fontWeight: 800, border: `2px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(-1deg)" }}>
-                            conversas reais
-                        </span>
-                        , pessoas reais e{" "}
-                        <span style={{ background: PT.green, color: "#fff", padding: "2px 8px", fontWeight: 800, border: `2px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, display: "inline-block", transform: "rotate(1deg)" }}>
-                            presença social viva
-                        </span>
-                        .
-                    </p>
-
-                    {/* CTAs */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-7 relative">
-                        <Link
-                            to="/register"
-                            data-testid="hero-cta-register"
-                            className="pt-btn-primary text-[15px] sm:text-[16px] py-4 px-7 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                        >
-                            CRIAR CONTA <ArrowRight size={18} />
-                        </Link>
-                        <Link
-                            to="/login"
-                            data-testid="hero-cta-login"
-                            className="pt-btn-ghost text-[14px] sm:text-[15px] py-4 px-7 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                        >
-                            EXPLORAR <ArrowRight size={16} />
-                        </Link>
-                        <div className="absolute -top-5 right-2 sm:-top-6 sm:right-12 pointer-events-none">
-                            <Sticker bg={PT.green} color="#fff" rotate={12} style={{ fontSize: 9.5, padding: "5px 9px" }}>
-                                GRÁTIS ✱
-                            </Sticker>
-                        </div>
-                        {/* Seta manuscrita a apontar para o CTA — só desktop */}
-                        <div className="absolute -top-12 left-12 pointer-events-none hidden lg:block">
-                            <HandArrow color={PT.red} w={76} h={62} rotate={155} dir="right" />
-                        </div>
-                        <div className="absolute -top-14 left-32 pointer-events-none hidden lg:block">
-                            <Signature size={20} rotate={-8} color={PT.red}>começa aqui!</Signature>
-                        </div>
-                        {/* Traço rápido sob os botões */}
-                        <div className="absolute -bottom-5 left-0 pointer-events-none hidden sm:block">
-                            <QuickStroke color={PT.gold} w={120} h={18} rotate={-3} strokeWidth={5} />
-                        </div>
-                    </div>
-
-                    {/* Avatares + live dot */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        {avatars.length > 0 && (
-                            <div className="flex -space-x-3" data-testid="hero-avatars">
-                                {avatars.map((a, i) => (
-                                    a.avatar_url ? (
-                                        <img
-                                            key={a.id || i}
-                                            src={a.avatar_url}
-                                            alt={a.name || ""}
-                                            className="w-10 h-10 rounded-full object-cover"
-                                            style={{ border: `3px solid ${PT.ink}`, boxShadow: `2px 2px 0 ${PT.ink}`, background: PT.bone }}
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div
-                                            key={a.id || i}
-                                            className="w-10 h-10 rounded-full flex items-center justify-center font-black text-[12px]"
-                                            style={{
-                                                background: [PT.red, PT.gold, PT.green, PT.azul, PT.ink][i % 5],
-                                                color: i % 5 === 1 ? PT.ink : "#fff",
-                                                border: `3px solid ${PT.ink}`,
-                                                boxShadow: `2px 2px 0 ${PT.ink}`,
-                                            }}
-                                        >
-                                            {(a.name || "?").charAt(0).toUpperCase()}
-                                        </div>
-                                    )
-                                ))}
-                            </div>
-                        )}
-                        <div className="flex items-center gap-2.5" data-testid="hero-live-counter">
-                            <span className="relative flex h-3 w-3" aria-hidden>
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: PT.green }} />
-                                <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: PT.green, border: `2px solid ${PT.ink}` }} />
-                            </span>
-                            <div>
-                                <p className="text-[15px] font-black leading-tight" style={{ color: PT.ink }}>
-                                    {showOnlineCount ? `+${online.toLocaleString("pt-PT")}` : `+${total.toLocaleString("pt-PT")}`}
-                                </p>
-                                <p className="text-[11px] font-mono font-bold uppercase" style={{ letterSpacing: "0.10em", color: "rgba(10,10,10,0.60)" }}>
-                                    {showOnlineCount ? "online agora" : "membros · à tua espera"}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* COLUNA IMAGEM */}
-                <div className="relative order-1 lg:order-2 mb-2 lg:mb-0">
-                    <div className="relative mx-auto" style={{ maxWidth: 460 }}>
-                        <TapedPhoto
-                            src={HERO_MAIN}
-                            alt="Comunidade Lusorae"
-                            rotate={-2}
-                            w={460}
-                            h={420}
-                            style={{ width: "100%", maxWidth: 460, height: "auto", aspectRatio: "11/10" }}
-                        />
-                        {/* Sticker quote */}
-                        <div className="absolute -bottom-4 sm:-bottom-6 -left-2 sm:-left-4 z-20 pointer-events-none">
-                            <PosterCard bg={PT.green} color="#fff" rotate={-4} shadow={PT.ink} style={{ padding: "10px 14px", maxWidth: 200 }}>
-                                <p className="font-black text-[12.5px] sm:text-[13.5px] leading-tight">
-                                    “o sítio certo para seres tu, <span style={{ background: PT.gold, color: PT.ink, padding: "0 4px" }}>sem pedir desculpa</span>.”
-                                </p>
-                                <p className="mt-1 text-[9.5px] sm:text-[10px] font-mono uppercase font-bold" style={{ letterSpacing: "0.14em", opacity: 0.8 }}>
-                                    — pessoas, não perfis
-                                </p>
-                            </PosterCard>
-                        </div>
-                        <div className="absolute -top-3 sm:-top-4 -right-3 sm:-right-4 z-20 pointer-events-none">
-                            <StampCircle bg={PT.red} color="#fff" rotate={14} size={64}>
-                                100%<br/>HUMANO
-                            </StampCircle>
-                        </div>
-                        {/* Coordenadas — só desktop, ligadas ao stamp */}
-                        <div className="absolute -top-1 right-12 z-30 pointer-events-none hidden lg:block">
-                            <Coords lat="41.1579" lon="8.6291" rotate={-8} color={PT.ink} />
-                        </div>
-                        {/* Balão de fala flutuante — só desktop */}
-                        <div className="absolute -left-10 top-1/3 z-30 pointer-events-none hidden xl:block">
-                            <SpeechBubble color={PT.gold} ink={PT.ink} rotate={-6} w={140}>
-                                Junta-te! ✱
-                            </SpeechBubble>
-                        </div>
-                        {/* Assinatura manuscrita — bottom right */}
-                        <div className="absolute -bottom-10 right-4 z-20 pointer-events-none hidden sm:block">
-                            <Signature size={28} rotate={-4} color={PT.red}>
-                                vive · partilha
-                            </Signature>
-                        </div>
-                        <div className="absolute -bottom-2 -right-6 z-20 pointer-events-none hidden sm:block">
-                            <DoodleHeart color={PT.red} size={36} rotate={-12} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Trust badges removidos — sem mensagens forçadas. O produto fala por si. */}
-        </section>
-    );
-}
-
-function TrustBadge({ icon, color, children }) {
-    // kept (unused) — legacy component
-    return (
-        <div className="flex items-center gap-2.5">
-            <span
-                className="inline-flex items-center justify-center"
-                style={{
-                    width: 32, height: 32, borderRadius: "50%",
-                    background: color, color: "#fff",
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `2px 2px 0 ${PT.ink}`,
-                }}
-            >
-                {icon}
-            </span>
-            <span className="text-[13px] font-black uppercase" style={{ letterSpacing: "0.06em", color: PT.ink }}>
-                {children}
-            </span>
-        </div>
-    );
-}
-
-// =============================================================================
-// STATS BAND — 4 cartões com contagens reais
-// =============================================================================
-function StatsBand({ stats }) {
-    const items = [
-        { value: stats?.total_users, fallback: 0, label: "membros · total", icon: <Users size={26} />, bg: PT.green, color: "#fff", testid: "stat-online" },
-        { value: stats?.active_conversations, fallback: 0, label: "conversas · 1h", icon: <MessageCircle size={26} />, bg: PT.gold, color: PT.ink, testid: "stat-conversations" },
-        { value: stats?.posts_today, fallback: 0, label: "posts · hoje", icon: <Calendar size={26} />, bg: PT.azul, color: "#fff", testid: "stat-posts" },
-        { value: stats?.cities_active, fallback: stats?.communities_total, label: "cidades · ativas", icon: <Building2 size={26} />, bg: PT.red, color: "#fff", testid: "stat-cities" },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-10 sm:py-14 lg:py-16 relative" data-testid="stats-band">
-            {/* Doodles decorativos de fundo */}
-            <div className="absolute top-2 left-4 sm:top-6 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSparkles color={PT.red} size={44} rotate={-12} />
-            </div>
-            <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleSpiral color={PT.azul} size={48} rotate={14} />
-            </div>
-            <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 relative z-10">
-                {items.map((it, i) => {
-                    const v = (it.value != null && it.value > 0) ? it.value : (it.fallback ?? 0);
-                    return (
-                        <div
-                            key={i}
-                            data-testid={it.testid}
-                            className="relative p-4 sm:p-5 lg:p-6"
-                            style={{
-                                background: it.bg, color: it.color,
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.ink}`,
-                                transform: i % 2 === 0 ? "rotate(-0.6deg)" : "rotate(0.6deg)",
-                                borderRadius: 16,
-                            }}
-                        >
-                            <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                <span className="opacity-90">{it.icon}</span>
-                                <DoodleZigzag color={it.color === "#fff" ? PT.gold : PT.ink} w={40} h={12} />
-                            </div>
-                            <p className="font-black tabular-nums leading-none" style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: it.color === "#fff" ? `2px 2px 0 ${PT.ink}` : "none" }}>
-                                {Number(v).toLocaleString("pt-PT")}
-                            </p>
-                            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.08em", opacity: 0.92 }}>
-                                {it.label}
-                            </p>
-                            {/* Mini carimbo "LIVE!" só na primeira card */}
-                            {i === 0 && (
-                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
-                                    <StampTag bg={PT.red} color="#fff" rotate={-12} size={10}>LIVE!</StampTag>
-                                </div>
-                            )}
-                            {/* Mini carimbo "HOJE!" na terceira (posts hoje) */}
-                            {i === 2 && (
-                                <div className="absolute -top-3 -right-3 pointer-events-none hidden sm:block">
-                                    <StampTag bg={PT.gold} color={PT.ink} rotate={10} size={10}>HOJE!</StampTag>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// WHAT YOU'LL FIND — 5 categorias com círculos coloridos
-// =============================================================================
-function WhatYouFind() {
-    const cats = [
-        { icon: <MessageCircle size={28} />, label: "Conversas", sub: "do dia-a-dia.", color: PT.red, testid: "cat-conversas" },
-        { icon: <Users size={28} />, label: "Pessoas", sub: "novas.", color: PT.gold, ink: true, testid: "cat-pessoas" },
-        { icon: <Compass size={28} />, label: "Eventos", sub: "perto.", color: PT.azul, testid: "cat-eventos" },
-        { icon: <MapPin size={28} />, label: "Cidades", sub: "~300.", color: PT.green, testid: "cat-cidades" },
-        { icon: <Sparkles size={28} />, label: "Comunidades", sub: "ativas.", color: PT.red, testid: "cat-comunidades" },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="what-you-find">
-            {/* Doodles de fundo de secção */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleStar color={PT.gold} size={42} rotate={-14} />
-            </div>
-            <div className="absolute bottom-8 right-4 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleZigzag color={PT.red} w={120} h={28} style={{ transform: "rotate(8deg)" }} />
-            </div>
-            <div className="max-w-7xl mx-auto relative z-10">
-                <div className="text-center mb-10 sm:mb-12 relative inline-block left-1/2 -translate-x-1/2">
-                    <Kicker color={PT.red} className="mb-2 block">O QUE VAIS ENCONTRAR</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        O que vais encontrar por{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                        }}>
-                            aqui.
-                        </span>
-                    </h2>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 sm:gap-7 lg:gap-4 relative">
-                    {/* Seta a apontar para "Conversas" */}
-                    <div className="absolute -top-10 left-2 pointer-events-none hidden lg:block">
-                        <HandArrow color={PT.red} w={66} h={56} rotate={-15} dir="down" />
-                    </div>
-                    <div className="absolute -top-8 left-16 pointer-events-none hidden lg:block">
-                        <Signature size={20} rotate={-6} color={PT.red}>começa por aqui</Signature>
-                    </div>
-                    {/* Sparkles entre categorias */}
-                    <div className="absolute top-2 left-[39%] lg:top-6 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
-                        <DoodleSparkles color={PT.gold} size={30} rotate={20} />
-                    </div>
-                    <div className="absolute top-1 left-[78%] lg:top-2 pointer-events-none block opacity-70 scale-[0.6] lg:scale-100 lg:opacity-100">
-                        <DoodleCross color={PT.red} size={20} rotate={12} />
-                    </div>
-                    {cats.map((c, i) => (
-                        <div key={i} className="text-center" data-testid={c.testid}>
-                            <div
-                                className="mx-auto mb-3 inline-flex items-center justify-center"
-                                style={{
-                                    width: 68, height: 68, borderRadius: "50%",
-                                    background: c.color, color: c.ink ? PT.ink : "#fff",
-                                    border: `3.5px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                                    transform: `rotate(${i % 2 === 0 ? -3 : 3}deg)`,
-                                }}
-                            >
-                                {c.icon}
-                            </div>
-                            <p className="font-black text-[15px] sm:text-[16px] mb-0.5" style={{ color: PT.ink }}>{c.label}</p>
-                            <p className="text-[12px] sm:text-[12.5px] font-mono font-bold" style={{ color: "rgba(10,10,10,0.60)" }}>{c.sub}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// EXPLORE CITIES — 3 fotos lado a lado + texto
-// =============================================================================
-function ExploreCities() {
-    const cities = [
-        { src: HERO_CITY_1, name: "Porto", code: "PRT", coords: { lat: "41.15", lon: "8.61" }, stampBg: PT.gold, sBg: PT.gold, sCol: PT.ink, color: PT.red, rotate: -2 },
-        { src: HERO_CITY_2, name: "Lisboa", code: "LIS", coords: { lat: "38.71", lon: "9.13" }, stampBg: PT.green, sBg: PT.green, sCol: "#fff", color: PT.green, rotate: 1.5 },
-        { src: HERO_CITY_3, name: "Algarve", code: "ALG", coords: { lat: "37.01", lon: "7.93" }, stampBg: PT.red, sBg: PT.red, sCol: "#fff", color: PT.azul, rotate: -1 },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="explore-cities">
-            {/* Doodles de fundo */}
-            <div className="absolute top-4 right-6 sm:top-8 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
-                <DoodleSparkles color={PT.green} size={40} rotate={10} />
-            </div>
-            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
-                <DoodleScribble color={PT.gold} w={120} h={36} style={{ transform: "rotate(-6deg)" }} />
-            </div>
-            <div className="max-w-7xl mx-auto rounded-3xl relative z-10" style={{ background: "#fff", border: `3.5px solid ${PT.ink}`, boxShadow: `6px 6px 0 ${PT.ink}` }}>
-                {/* Canto dobrado decorativo */}
-                <PaperFoldCorner size={26} color="rgba(10,10,10,0.10)" corner="top-right" style={{ borderRadius: "0 24px 0 0" }} />
-
-                <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-7 sm:gap-8 lg:gap-10 p-6 sm:p-8 lg:p-10 items-center">
-                    {/* Texto */}
-                    <div className="order-2 lg:order-1">
-                        <Kicker color={PT.green} className="mb-2">PORTUGAL · LOCAL</Kicker>
-                        <h2
-                            className="font-black tracking-[-0.03em] mb-4"
-                            style={{ fontSize: "clamp(28px, 4vw, 48px)", lineHeight: 0.98, color: PT.ink }}
-                        >
-                            Explora a tua{" "}
-                            <Highlight color="#FFEB3B" rotate={-2}>
-                                <span style={{ color: PT.ink }}>cidade.</span>
-                            </Highlight>
-                        </h2>
-                        <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed mb-5" style={{ color: "rgba(10,10,10,0.72)" }}>
-                            Descobre pessoas, eventos e lugares incríveis perto de ti — de Braga ao Algarve, da Madeira aos Açores.
-                        </p>
-                        <Link
-                            to="/register"
-                            data-testid="explore-cities-cta"
-                            className="inline-flex items-center gap-2 font-black text-[13px] sm:text-[13.5px] uppercase"
-                            style={{
-                                color: PT.ink,
-                                background: PT.gold,
-                                padding: "10px 18px",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Explorar cidades <ArrowRight size={16} />
-                        </Link>
-
-                        {/* Rota pontilhada decorativa — só desktop */}
-                        <div className="absolute -bottom-3 left-1/3 z-10 pointer-events-none hidden lg:block">
-                            <RouteDots
-                                d="M 0 30 Q 60 0 120 30 T 240 30"
-                                color={PT.red}
-                                w={260} h={50}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Mosaico de fotos com identidade de cidade */}
-                    <div className="grid grid-cols-3 gap-3 lg:gap-4 relative order-1 lg:order-2">
-                        {cities.map((c, i) => (
-                            <CityPhoto
-                                key={c.name}
-                                src={c.src}
-                                city={c.name}
-                                code={c.code}
-                                coords={c.coords}
-                                rotate={c.rotate}
-                                stampBg={c.stampBg}
-                                stickerBg={c.sBg}
-                                stickerColor={c.sCol}
-                                postColor={c.color}
-                                index={i}
-                            />
-                        ))}
-                        <div className="absolute -top-4 -right-3 sm:-top-5 sm:-right-5 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
-                            <DoodleStar color={PT.red} size={40} rotate={12} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function CityPhoto({ src, city, code, coords, rotate, stickerBg, stickerColor = PT.ink, postColor = PT.red, index = 0 }) {
-    return (
-        <div className="relative">
-            <div
-                className="relative overflow-hidden"
-                style={{
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                    transform: `rotate(${rotate}deg)`,
-                    borderRadius: 8,
-                    aspectRatio: "3/4",
-                }}
-            >
-                <img src={src} alt={city} className="w-full h-full object-cover" loading="lazy" />
-                {/* Canto dobrado */}
-                <PaperFoldCorner size={16} corner="bottom-right" color="rgba(255,255,255,0.30)" />
-            </div>
-            {/* Selo postal moderno PT — só desktop nos cantos opostos */}
-            <div
-                className="absolute z-20 pointer-events-none hidden sm:block"
-                style={{
-                    top: -14,
-                    [index % 2 === 0 ? "left" : "right"]: -10,
-                }}
-            >
-                <PostStamp city={city} code={code} value="0.85€" color={postColor} rotate={index % 2 === 0 ? -6 : 6} size={62} />
-            </div>
-            {/* Sticker base com nome (mobile + desktop) */}
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <Sticker bg={stickerBg} color={stickerColor} rotate={-4} style={{ fontSize: 10, padding: "5px 10px" }}>
-                    📍 {city}
-                </Sticker>
-            </div>
-            {/* Coords — só desktop */}
-            <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 z-10 pointer-events-none hidden lg:block">
-                <Coords lat={coords.lat} lon={coords.lon} color={PT.ink} rotate={0} />
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// HOW IT WORKS — 4 passos timeline
-// =============================================================================
-function HowItWorks() {
-    const steps = [
-        { n: 1, title: "Escolhe a tua cidade.", sub: "Conecta-te com o que está perto.", color: PT.red, icon: <MapPin size={22} /> },
-        { n: 2, title: "Descobre pessoas e eventos.", sub: "Explora a tua comunidade.", color: PT.gold, ink: true, icon: <Users size={22} /> },
-        { n: 3, title: "Participa na conversa.", sub: "Partilha ideias, opiniões, experiências reais.", color: PT.azul, icon: <MessageCircle size={22} /> },
-        { n: 4, title: "Cria presença local.", sub: "Faz parte da tua cidade. De verdade.", color: PT.green, icon: <Heart size={22} /> },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="how-it-works">
-            <div className="absolute top-4 right-4 lg:top-10 lg:right-10 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                <DoodleSpiral color={PT.gold} size={64} rotate={-12} />
-            </div>
-            <div className="absolute bottom-6 left-4 sm:bottom-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-left">
-                <DoodleCross color={PT.azul} size={28} rotate={20} />
-            </div>
-            <div className="absolute top-1/2 left-2 sm:left-6 pointer-events-none block opacity-50 scale-[0.5] lg:scale-100 lg:opacity-100 origin-left">
-                <DoodleStar color={PT.red} size={36} rotate={-8} />
-            </div>
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-8 sm:mb-10">
-                    <Kicker color={PT.azul} className="mb-2">COMO FUNCIONA</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(30px, 5vw, 56px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        4 passos.{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.red,
-                            color: "#fff",
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>
-                            Sem mistério.
-                        </span>
-                    </h2>
-                </div>
-
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 relative">
-                    {steps.map((s, i) => (
-                        <div
-                            key={s.n}
-                            className="relative p-5 lg:p-6"
-                            data-testid={`step-${s.n}`}
-                            style={{
-                                background: "#fff",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.ink}`,
-                                borderRadius: 18,
-                                transform: i % 2 === 0 ? "rotate(-0.8deg)" : "rotate(0.8deg)",
-                            }}
-                        >
-                            <PaperFoldCorner size={18} corner="top-right" color="rgba(10,10,10,0.10)" style={{ borderRadius: "0 18px 0 0" }} />
-                            <div className="flex items-center gap-3 mb-3">
-                                <span
-                                    className="inline-flex items-center justify-center font-black text-[18px]"
-                                    style={{
-                                        width: 42, height: 42, borderRadius: "50%",
-                                        background: s.color, color: s.ink ? PT.ink : "#fff",
-                                        border: `3px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
-                                    }}
-                                >
-                                    {s.n}
-                                </span>
-                                <span style={{ color: s.color }}>{s.icon}</span>
-                            </div>
-                            <p className="font-black text-[16.5px] leading-tight mb-1" style={{ color: PT.ink }}>
-                                {s.title}
-                            </p>
-                            <p className="text-[13.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                {s.sub}
-                            </p>
-                        </div>
-                    ))}
-
-                    {/* Post-it sobre o passo 3 — só desktop */}
-                    <div className="absolute z-20 pointer-events-none hidden lg:block" style={{ top: -22, right: "23%" }}>
-                        <PostIt color="#FFE066" rotate={-6} w={150}>
-                            ✨ aqui é onde<br/>começa a magia
-                        </PostIt>
-                    </div>
-                </div>
-
-                {/* Faixa de azulejos — separador decorativo */}
-                <div className="mt-12 sm:mt-14 flex justify-center overflow-hidden">
-                    <AzulejoBorder count={8} size={32} />
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// PORTUGAL MAP — imagem ilustrada (Nano Banana · estilo fanzine PT)
-// =============================================================================
-function PortugalMap() {
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" style={{ background: PT.bone }} data-testid="portugal-map">
-            {/* Doodles de fundo */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSparkles color={PT.gold} size={44} rotate={-10} />
-            </div>
-            <div className="absolute bottom-8 right-3 sm:bottom-12 sm:right-10 pointer-events-none block opacity-60 scale-[0.5] sm:scale-100 sm:opacity-100 origin-bottom-right z-0">
-                <DoodleExclamation color={PT.green} size={42} rotate={12} />
-            </div>
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.1fr_1fr] gap-8 sm:gap-10 items-center relative z-10">
-                {/* COLUNA ESQ — título */}
-                <div className="order-1">
-                    <Kicker color={PT.red} className="mb-2">PORTUGAL · CONECTADO</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em] mb-3 sm:mb-4"
-                        style={{ fontSize: "clamp(28px, 3.8vw, 44px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        De norte a sul,<br/>cada cidade tem{" "}
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            textShadow: `2px 2px 0 ${PT.gold}`,
-                            WebkitTextStroke: `0.8px ${PT.ink}`,
-                        }}>
-                            voz.
-                        </span>
-                    </h2>
-                    <p className="text-[14px] sm:text-[14.5px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.72)" }}>
-                        Continente, ilhas e diáspora. Onde houver portugueses, há Lusorae.
-                    </p>
-                </div>
-
-                {/* MAPA — imagem gerada com cidades já marcadas */}
-                <div className="relative mx-auto order-2 w-full" style={{ maxWidth: 380 }}>
-                    <div
-                        className="relative overflow-hidden"
-                        style={{
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.ink}`,
-                            borderRadius: 12,
-                            background: PT.cream,
-                            transform: "rotate(-1deg)",
-                        }}
-                    >
-                        <img
-                            src={PORTUGAL_MAP}
-                            alt="Mapa de Portugal — Braga, Porto, Coimbra, Lisboa, Évora, Faro, Funchal, Ponta Delgada"
-                            className="block w-full h-auto"
-                            loading="lazy"
-                        />
-                    </div>
-                    {/* Doodle decorativo */}
-                    <div className="absolute -top-3 -right-2 sm:-top-4 sm:-right-3 z-10 pointer-events-none block opacity-70 scale-[0.6] sm:scale-100 sm:opacity-100 origin-top-right">
-                        <DoodleStar color={PT.red} size={42} rotate={14} />
-                    </div>
-                    {/* Bilhete de evento sobreposto — só desktop */}
-                    <div className="absolute -bottom-4 -left-8 z-20 pointer-events-none hidden lg:block">
-                        <Ticket
-                            title="Festa do Bairro"
-                            place="Lisboa"
-                            date="24 jun"
-                            color={PT.green}
-                            rotate={-6}
-                            w={210}
-                        />
-                    </div>
-                    {/* Coords no canto */}
-                    <div className="absolute -bottom-3 right-4 z-20 pointer-events-none hidden sm:block">
-                        <Coords lat="39.69" lon="8.13" rotate={2} color={PT.ink} />
-                    </div>
-                </div>
-
-                {/* COLUNA DIR — quote */}
-                <div className="relative order-3">
-                    <PosterCard bg="#fff" color={PT.ink} rotate={-2} shadow={PT.ink} style={{ padding: "20px 22px", border: `3px solid ${PT.ink}` }}>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.ink }}>
-                            Bairro a bairro.
-                        </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight mb-1.5" style={{ color: PT.red }}>
-                            Mesa a mesa.
-                        </p>
-                        <p className="font-black text-[20px] leading-tight tracking-tight" style={{ color: PT.green }}>
-                            Conversa a conversa.
-                        </p>
-                        <p className="mt-3 text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(10,10,10,0.55)" }}>
-                            — manifesto · linha 03
-                        </p>
-                    </PosterCard>
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// FEITO PARA PESSOAS — secção preta com 6 features
-// =============================================================================
-function FeitoParaPessoas() {
-    const features = [
-        { label: "Sem doomscroll", sub: "infinito.", color: PT.gold },
-        { label: "Sem ruído", sub: "constante.", color: PT.red },
-        { label: "Sem números", sub: "para vaidade.", color: PT.azul },
-        { label: "Foco no local", sub: "primeiro.", color: PT.gold },
-        { label: "Conversas reais", sub: "à mesa.", color: PT.green },
-        { label: "Apagar conta", sub: "num clique.", color: PT.red },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20" data-testid="feito-para-pessoas">
-            <div
-                className="max-w-7xl mx-auto p-6 sm:p-8 lg:p-12 relative overflow-hidden"
-                style={{
-                    background: "#fff",
-                    color: PT.ink,
-                    border: `4px solid ${PT.ink}`,
-                    boxShadow: `6px 6px 0 ${PT.red}`,
-                    borderRadius: 24,
-                }}
-            >
-                <div className="absolute -top-10 -right-10 z-0 pointer-events-none opacity-15">
-                    <GiantAsterisk color={PT.red} size={220} rotate={12} />
-                </div>
-                {/* Doodles decorativos */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-8 z-0 pointer-events-none block opacity-70 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right">
-                    <DoodleStar color={PT.gold} size={42} rotate={-12} />
-                </div>
-                <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-10 z-0 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left">
-                    <DoodleZigzag color={PT.azul} w={120} h={28} style={{ transform: "rotate(-6deg)" }} />
-                </div>
-
-                <div className="relative z-10">
-                    <Kicker color={PT.red} className="mb-2">PRINCÍPIO · CORE</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em] mb-7 sm:mb-8"
-                        style={{ fontSize: "clamp(28px, 5.5vw, 60px)", lineHeight: 1.05, color: PT.ink }}
-                    >
-                        <span style={{
-                            display: "inline-block",
-                            transform: "rotate(-1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                        }}>FEITO PARA{" "}
-                            <Highlight color="#FFEB3B" rotate={-1}>
-                                <span style={{ color: PT.ink }}>PESSOAS.</span>
-                            </Highlight>
-                        </span><br/>
-                        <span style={{
-                            display: "inline-block",
-                            color: PT.red,
-                            transform: "rotate(1deg)",
-                            textShadow: `3px 3px 0 ${PT.gold}`,
-                            marginTop: 6,
-                        }}>FEITO EM PORTUGAL.</span>
-                    </h2>
-                    <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-2xl mb-8 sm:mb-9" style={{ color: "rgba(10,10,10,0.72)" }}>
-                        Uma rede social diferente — focada na presença local, na comunidade e nas conversas que importam.
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                        {features.map((f, i) => (
-                            <div
-                                key={i}
-                                className="flex items-start gap-3"
-                                data-testid={`principle-${i}`}
-                            >
-                                <span
-                                    className="inline-flex items-center justify-center text-[14px] font-black shrink-0"
-                                    style={{
-                                        width: 32, height: 32, borderRadius: "50%",
-                                        background: f.color, color: PT.ink,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
-                                    }}
-                                >
-                                    ✓
-                                </span>
-                                <div>
-                                    <p className="font-black text-[14.5px] sm:text-[15px] leading-tight" style={{ color: PT.ink }}>{f.label}</p>
-                                    <p className="text-[12px] sm:text-[12.5px] font-mono font-bold uppercase mt-0.5" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.08em" }}>
-                                        {f.sub}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Assinatura manuscrita inferior */}
-                    <div className="mt-9 sm:mt-10 flex items-end justify-between gap-4 flex-wrap">
-                        <Signature size={32} rotate={-3} color={PT.red}>
-                            — a comunidade Lusorae
-                        </Signature>
-                        <span className="text-[10px] font-mono font-black uppercase" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}>
-                            EST. 2026 · LISBOA
-                        </span>
-                    </div>
-                </div>
-
-                {/* Recibo flutuante — só desktop */}
-                <div className="absolute z-20 pointer-events-none hidden xl:block" style={{ top: 32, right: -10 }}>
-                    <Receipt
-                        rotate={6}
-                        w={170}
-                        lines={[
-                            { label: "Truques", value: "0,00€" },
-                            { label: "Anúncios", value: "0,00€" },
-                            { label: "Letra pequena", value: "0,00€" },
-                            { label: "Ruído", value: "0,00€" },
-                            { label: "Comunidade", value: "∞" },
-                        ]}
-                        total="GRÁTIS"
-                    />
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// FAQ — accordion simples
-// =============================================================================
-function Faq({ openFaq, setOpenFaq }) {
-    const items = [
-        { q: "O que é o Lusorae?", a: "Uma rede social portuguesa feita para conversas reais entre pessoas reais — focada na presença local, na comunidade e nas cidades. Sem ruído, sem doomscroll." },
-        { q: "O Lusorae é gratuito?", a: "Sim, completamente. Criar conta, participar, conversar e descobrir é grátis para sempre. Existe também o Lusorae+ para quem quer mais personalização — mas é opcional." },
-        { q: "Os meus dados estão seguros?", a: "Sim. Os teus dados são teus — podes exportá-los ou apagar a conta a qualquer momento." },
-        { q: "Como funciona o sistema de cidades?", a: "Cada utilizador associa-se à sua cidade portuguesa (~300 cidades disponíveis). O conteúdo, eventos e pessoas perto de ti aparecem com prioridade — para fomentar conexões locais reais." },
-        { q: "Existe aplicação móvel?", a: "Por agora estamos focados na web responsiva (mobile + desktop). Uma app nativa iOS/Android está no roadmap para 2026." },
-    ];
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 py-12 sm:py-14 lg:py-20 relative" data-testid="faq">
-            {/* Doodles de fundo */}
-            <div className="absolute top-6 left-3 sm:top-10 sm:left-10 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0">
-                <DoodleSpiral color={PT.green} size={48} rotate={-10} />
-            </div>
-            <div className="absolute top-12 right-4 sm:top-16 sm:right-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0">
-                <DoodleSparkles color={PT.red} size={40} rotate={14} />
-            </div>
-            <div className="absolute bottom-8 left-4 sm:bottom-12 sm:left-12 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-bottom-left z-0">
-                <DoodleCross color={PT.gold} size={28} rotate={-12} />
-            </div>
-            <div className="max-w-4xl mx-auto relative z-10">
-                <div className="text-center mb-8 sm:mb-10">
-                    <Kicker color={PT.green} className="mb-2 inline-block">PERGUNTAS · FREQUENTES</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em]"
-                        style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
-                    >
-                        Boas{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1deg)",
-                        }}>
-                            perguntas?
-                        </span>
-                    </h2>
-                    {/* Linha de azulejos sob o título */}
-                    <div className="mt-6 sm:mt-8 flex justify-center overflow-hidden">
-                        <AzulejoBorder count={5} size={28} />
-                    </div>
-                </div>
-
-                <div className="space-y-3">
-                    {items.map((it, i) => {
-                        const open = openFaq === i;
-                        return (
-                            <button
-                                key={i}
-                                type="button"
-                                onClick={() => setOpenFaq(open ? null : i)}
-                                data-testid={`faq-item-${i}`}
-                                className="w-full text-left"
-                                style={{
-                                    background: open ? PT.gold : "#fff",
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: open ? `5px 5px 0 ${PT.red}` : `4px 4px 0 ${PT.ink}`,
-                                    borderRadius: 14,
-                                    padding: "16px 20px",
-                                    transition: "all 0.2s",
-                                }}
-                            >
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="font-black text-[15.5px] leading-tight" style={{ color: PT.ink }}>
-                                        {it.q}
-                                    </span>
-                                    <ChevronDown
-                                        size={20}
-                                        style={{
-                                            color: PT.ink,
-                                            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-                                            transition: "transform 0.2s",
-                                            flexShrink: 0,
-                                        }}
-                                    />
-                                </div>
-                                {open && (
-                                    <p className="mt-3 text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
-                                        {it.a}
-                                    </p>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
-// FINAL CTA — barra de chamada à ação
-// =============================================================================
-function FinalCta() {
-    return (
-        <section className="px-5 sm:px-8 lg:px-16 pb-14 sm:pb-16 lg:pb-24" data-testid="final-cta">
-            <div
-                className="max-w-7xl mx-auto p-6 sm:p-8 lg:p-12 relative overflow-hidden"
-                style={{
-                    background: PT.red,
-                    color: "#fff",
-                    border: `4px solid ${PT.ink}`,
-                    boxShadow: `6px 6px 0 ${PT.gold}`,
-                    borderRadius: 24,
-                }}
-            >
-                {/* Fundo ilustrado — mesa comunitária PT */}
-                <img
-                    src={CTA_BG}
-                    alt=""
-                    aria-hidden
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                    style={{ opacity: 0.62, mixBlendMode: "multiply" }}
-                    loading="lazy"
-                />
-                {/* Overlay vermelho mais leve — deixa ver mais a ilustração */}
-                <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        background: `linear-gradient(105deg, ${PT.red}E6 0%, ${PT.red}B3 45%, ${PT.red}80 100%)`,
-                    }}
-                    aria-hidden
-                />
-
-                <div className="absolute -top-12 -right-12 z-0 pointer-events-none opacity-30">
-                    <GiantAsterisk color={PT.gold} size={240} rotate={-14} />
-                </div>
-                <div className="absolute top-3 right-1/4 lg:top-6 lg:right-1/3 z-0 pointer-events-none block opacity-60 scale-[0.5] lg:scale-100 lg:opacity-100 origin-top-right">
-                    <DoodleSparkles color={PT.gold} size={56} rotate={18} />
-                </div>
-
-                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
-                    <div className="max-w-2xl">
-                        <Kicker color={PT.gold} className="mb-2">PRONTO?</Kicker>
-                        <h2
-                            className="font-black tracking-[-0.03em]"
-                            style={{ fontSize: "clamp(26px, 4.5vw, 52px)", lineHeight: 1.0 }}
-                        >
-                            Pronto para fazer parte da{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.gold,
-                                color: PT.ink,
-                                padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1deg)",
-                                WebkitTextStroke: `0.5px ${PT.ink}`,
-                            }}>
-                                comunidade?
-                            </span>
-                        </h2>
-                        <p className="mt-3 sm:mt-4 text-[14.5px] sm:text-[15px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
-                            Junta-te à rede social portuguesa feita para pessoas. <strong className="font-black">30 segundos. Grátis. Para sempre.</strong>
-                        </p>
-                        {/* Assinatura */}
-                        <div className="mt-4 hidden sm:block">
-                            <Signature size={30} rotate={-4} color="#fff">
-                                ✱ vemo-nos lá dentro
-                            </Signature>
-                        </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 w-full lg:w-auto">
-                        <Link
-                            to="/register"
-                            data-testid="final-cta-register"
-                            className="inline-flex items-center justify-center gap-2 font-black text-[14px] sm:text-[15px] uppercase"
-                            style={{
-                                background: "#fff",
-                                color: PT.red,
-                                padding: "16px 24px",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `5px 5px 0 ${PT.gold}`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Criar conta grátis <ArrowRight size={18} />
-                        </Link>
-                        <Link
-                            to="/login"
-                            data-testid="final-cta-login"
-                            className="inline-flex items-center justify-center gap-2 font-black text-[13.5px] sm:text-[14px] uppercase"
-                            style={{
-                                background: "transparent",
-                                color: "#fff",
-                                padding: "14px 22px",
-                                border: `2.5px solid #fff`,
-                                letterSpacing: "0.08em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Entrar <ArrowRight size={16} />
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        </section>
     );
 }
