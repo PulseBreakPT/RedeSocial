@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
@@ -33,6 +33,114 @@ const CITY_LISBOA  = "https://images.pexels.com/photos/34440892/pexels-photo-344
 const CITY_PORTO   = "https://images.unsplash.com/photo-1693944844665-ce10f83a775b?auto=format&fit=crop&w=900&q=80";
 const CITY_ALGARVE = "https://images.unsplash.com/photo-1608649944716-228404a0a8bb?auto=format&fit=crop&w=900&q=80";
 const CITY_OUTRA   = "https://images.unsplash.com/photo-1580836618629-7fc7ff649765?auto=format&fit=crop&w=900&q=80";
+
+// =============================================================================
+// PREMIUM INTERACTION PRIMITIVES — magnetic CTA, 3D tilt, cursor accent
+// =============================================================================
+function Magnetic({ children, strength = 0.25, className = "" }) {
+    const ref = useRef(null);
+    const onMove = (e) => {
+        const el = ref.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * strength;
+        const y = (e.clientY - r.top - r.height / 2) * strength;
+        el.style.transform = `translate(${x}px, ${y}px)`;
+    };
+    const onLeave = () => {
+        if (ref.current) ref.current.style.transform = "translate(0px, 0px)";
+    };
+    return (
+        <div
+            ref={ref}
+            onMouseMove={onMove}
+            onMouseLeave={onLeave}
+            className={className}
+            style={{ display: "inline-block", transition: "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)", willChange: "transform" }}
+        >
+            {children}
+        </div>
+    );
+}
+
+function Tilt({ children, max = 7 }) {
+    const ref = useRef(null);
+    const onMove = (e) => {
+        const el = ref.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(1100px) rotateY(${(px * max).toFixed(2)}deg) rotateX(${(-py * max).toFixed(2)}deg)`;
+    };
+    const onLeave = () => {
+        if (ref.current) ref.current.style.transform = "perspective(1100px) rotateY(0deg) rotateX(0deg)";
+    };
+    return (
+        <div
+            ref={ref}
+            onMouseMove={onMove}
+            onMouseLeave={onLeave}
+            style={{ transition: "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)", willChange: "transform", transformStyle: "preserve-3d" }}
+        >
+            {children}
+        </div>
+    );
+}
+
+function CursorDot() {
+    const dotRef = useRef(null);
+    const ringRef = useRef(null);
+    useEffect(() => {
+        const fine = window.matchMedia("(pointer: fine)").matches;
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!fine || reduced) return;
+        const dot = dotRef.current;
+        const ring = ringRef.current;
+        let x = -100, y = -100, rx = -100, ry = -100, raf, visible = false;
+        const onMove = (e) => {
+            x = e.clientX; y = e.clientY;
+            if (!visible) { visible = true; dot.style.opacity = "1"; ring.style.opacity = "1"; }
+            dot.style.transform = `translate(${x - 3}px, ${y - 3}px)`;
+            const t = e.target && e.target.closest && e.target.closest("a, button");
+            const s = t ? "46px" : "30px";
+            ring.style.width = s;
+            ring.style.height = s;
+        };
+        const loop = () => {
+            rx += (x - rx) * 0.16;
+            ry += (y - ry) * 0.16;
+            const half = parseFloat(ring.style.width || "30") / 2;
+            ring.style.transform = `translate(${rx - half}px, ${ry - half}px)`;
+            raf = requestAnimationFrame(loop);
+        };
+        window.addEventListener("mousemove", onMove, { passive: true });
+        raf = requestAnimationFrame(loop);
+        return () => { window.removeEventListener("mousemove", onMove); cancelAnimationFrame(raf); };
+    }, []);
+    return (
+        <>
+            <div
+                ref={dotRef}
+                aria-hidden
+                style={{
+                    position: "fixed", top: 0, left: 0, width: 6, height: 6, borderRadius: "50%",
+                    background: "#fff", mixBlendMode: "difference", zIndex: 95,
+                    pointerEvents: "none", opacity: 0, transition: "opacity 0.3s",
+                }}
+            />
+            <div
+                ref={ringRef}
+                aria-hidden
+                style={{
+                    position: "fixed", top: 0, left: 0, width: 30, height: 30, borderRadius: "50%",
+                    border: "1.5px solid rgba(255,255,255,0.9)", mixBlendMode: "difference", zIndex: 95,
+                    pointerEvents: "none", opacity: 0, transition: "opacity 0.3s, width 0.25s, height 0.25s",
+                }}
+            />
+        </>
+    );
+}
 
 // =============================================================================
 // STAMP SEAL — circular "Made in Portugal" badge (premium detail)
@@ -120,7 +228,7 @@ function CityTicker() {
 // =============================================================================
 // HAND-DRAWN UNDERLINE (SVG) — coloured ink strokes under words
 // =============================================================================
-function UnderlineStroke({ color, w = 220, h = 18, variant = "wave", style = {} }) {
+function UnderlineStroke({ color, w = 220, h = 18, variant = "wave", style = {}, delay = 0 }) {
     const paths = {
         wave:   "M 6 14 C 40 4, 90 22, 130 10 S 200 6, 218 14",
         slash:  "M 8 16 C 60 6, 130 4, 218 12",
@@ -141,7 +249,13 @@ function UnderlineStroke({ color, w = 220, h = 18, variant = "wave", style = {} 
                 strokeWidth={variant === "thick" ? 7 : 5.5}
                 strokeLinecap="round"
                 fill="none"
-                style={{ filter: "url(#roughInk)" }}
+                pathLength="1"
+                style={{
+                    filter: "url(#roughInk)",
+                    strokeDasharray: 1,
+                    strokeDashoffset: 1,
+                    animation: `lusorae-draw 0.85s cubic-bezier(0.65, 0, 0.35, 1) ${delay}s forwards`,
+                }}
             />
         </svg>
     );
@@ -187,9 +301,9 @@ function TrustStrip() {
         >
             <div className="max-w-[1400px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6 sm:gap-x-8 lg:gap-x-12">
                 {items.map((it, i) => (
-                    <div key={i} className="flex items-start gap-3" data-testid={`trust-${i}`}>
+                    <div key={i} className="group flex items-start gap-3" data-testid={`trust-${i}`}>
                         <span
-                            className="inline-flex items-center justify-center shrink-0 mt-0.5"
+                            className="inline-flex items-center justify-center shrink-0 mt-0.5 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
                             style={{
                                 width: 24, height: 24, borderRadius: "50%",
                                 background: it.color, color: it.color === PT.gold ? PT.ink : "#fff",
@@ -471,7 +585,7 @@ function Hero({ stats }) {
     return (
         <section
             data-testid="hero"
-            className="relative overflow-hidden lusorae-grain"
+            className="relative overflow-hidden"
             style={{ background: PT.paper, minHeight: "calc(100vh - 76px)" }}
         >
             {/* SVG filter for ink texture */}
@@ -487,7 +601,7 @@ function Hero({ stats }) {
                 {/* ============ LEFT: TYPE + CTAs ============ */}
                 <div className="relative z-10">
                     {/* Section number tag — premium kicker w/ live pulse */}
-                    <div className="flex items-center gap-3 mb-6 sm:mb-8 lusorae-reveal-up">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8 pr-[92px] lg:pr-0 lusorae-reveal-up">
                         <span className="relative flex h-2 w-2" aria-hidden>
                             <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
                             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.green }} />
@@ -516,7 +630,7 @@ function Hero({ stats }) {
                         }}
                     >
                         {/* Line 1: A TUA (red under TUA, itálico para rhythm cinematográfico) */}
-                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                        <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.08s" }}>
                             A{" "}
                             <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>
                                 TUA
@@ -524,37 +638,37 @@ function Hero({ stats }) {
                                     className="absolute pointer-events-none"
                                     style={{ left: "-4%", right: "-4%", bottom: "-0.10em", height: 20 }}
                                 >
-                                    <UnderlineStroke color={PT.red} w={260} h={20} variant="thick" style={{ width: "100%", height: "100%" }} />
+                                    <UnderlineStroke color={PT.red} w={260} h={20} variant="thick" delay={0.75} style={{ width: "100%", height: "100%" }} />
                                 </span>
                             </span>
                         </span>
                         {/* Line 2: CIDADE. (blue under CIDADE) */}
-                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                        <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.16s" }}>
                             <span className="relative inline-block">
                                 CIDADE
                                 <span
                                     className="absolute pointer-events-none"
                                     style={{ left: "-2.5%", right: "-2.5%", bottom: "-0.09em", height: 22 }}
                                 >
-                                    <UnderlineStroke color={PT.azul} w={420} h={22} variant="wave" style={{ width: "100%", height: "100%" }} />
+                                    <UnderlineStroke color={PT.azul} w={420} h={22} variant="wave" delay={0.95} style={{ width: "100%", height: "100%" }} />
                                 </span>
                             </span>
                             <span style={{ color: PT.red }}>.</span>
                         </span>
                         {/* Line 3: A TUA (itálico mais uma vez — rhythm) */}
-                        <span className="block relative" style={{ paddingBottom: "0.04em" }}>
+                        <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.24s" }}>
                             A{" "}
                             <span style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>TUA</span>
                         </span>
                         {/* Line 4: REDE. (green under REDE — wave para não cruzar letras) */}
-                        <span className="block relative">
+                        <span className="block relative lusorae-line" style={{ animationDelay: "0.32s" }}>
                             <span className="relative inline-block">
                                 REDE
                                 <span
                                     className="absolute pointer-events-none"
                                     style={{ left: "-3%", right: "-3%", bottom: "-0.16em", height: 22 }}
                                 >
-                                    <UnderlineStroke color={PT.green} w={320} h={22} variant="thick" style={{ width: "100%", height: "100%" }} />
+                                    <UnderlineStroke color={PT.green} w={320} h={22} variant="thick" delay={1.15} style={{ width: "100%", height: "100%" }} />
                                 </span>
                             </span>
                             <span style={{ color: PT.red }}>.</span>
@@ -564,7 +678,7 @@ function Hero({ stats }) {
                     {/* Subhead — keywords com highlight underlines coloridos */}
                     <p
                         className="mt-7 sm:mt-9 text-[15.5px] sm:text-[17px] lg:text-[18px] font-medium leading-relaxed max-w-[540px] lusorae-reveal-up"
-                        style={{ color: "rgba(10,10,10,0.72)", animationDelay: "0.15s" }}
+                        style={{ color: "rgba(10,10,10,0.72)", animationDelay: "0.40s" }}
                     >
                         Aproxima-te de{" "}
                         <span className="relative inline-block font-bold" style={{ color: PT.ink }}>
@@ -594,24 +708,26 @@ function Hero({ stats }) {
                     </p>
 
                     {/* CTAs — black pill com gradient + magnetic arrow */}
-                    <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-4 sm:gap-5 lusorae-reveal-up" style={{ animationDelay: "0.22s" }}>
-                        <Link
-                            to="/register"
-                            data-testid="hero-cta-register"
-                            className="group inline-flex items-center gap-2 px-7 py-4 sm:px-8 sm:py-[18px] rounded-full text-[14.5px] sm:text-[15.5px] font-bold transition-all hover:scale-[1.04] hover:-translate-y-0.5"
-                            style={{
-                                background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
-                                color: "#fff",
-                                boxShadow: `0 12px 32px -10px rgba(10,10,10,0.55), 0 2px 6px rgba(10,10,10,0.18), inset 0 1px 0 rgba(255,255,255,0.12)`,
-                                border: "1px solid rgba(255,255,255,0.06)",
-                            }}
-                        >
-                            Criar conta{" "}
-                            <ArrowRight
-                                size={17}
-                                className="transition-transform duration-300 group-hover:translate-x-1"
-                            />
-                        </Link>
+                    <div className="mt-7 sm:mt-9 flex flex-wrap items-center gap-4 sm:gap-5 lusorae-reveal-up" style={{ animationDelay: "0.50s" }}>
+                        <Magnetic>
+                            <Link
+                                to="/register"
+                                data-testid="hero-cta-register"
+                                className="group inline-flex items-center gap-2 px-7 py-4 sm:px-8 sm:py-[18px] rounded-full text-[14.5px] sm:text-[15.5px] font-bold transition-all hover:scale-[1.04]"
+                                style={{
+                                    background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
+                                    color: "#fff",
+                                    boxShadow: `0 12px 32px -10px rgba(10,10,10,0.55), 0 2px 6px rgba(10,10,10,0.18), inset 0 1px 0 rgba(255,255,255,0.12)`,
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                }}
+                            >
+                                Criar conta{" "}
+                                <ArrowRight
+                                    size={17}
+                                    className="transition-transform duration-300 group-hover:translate-x-1"
+                                />
+                            </Link>
+                        </Magnetic>
                         <Link
                             to="/login"
                             data-testid="hero-cta-explore"
@@ -627,7 +743,7 @@ function Hero({ stats }) {
                     </div>
 
                     {/* Social proof — beta honest framing */}
-                    <div className="mt-8 sm:mt-10 flex items-center gap-4 lusorae-reveal-up" style={{ animationDelay: "0.30s" }}>
+                    <div className="mt-8 sm:mt-10 flex items-center gap-4 lusorae-reveal-up" style={{ animationDelay: "0.60s" }}>
                         <div className="flex -space-x-2.5" data-testid="hero-avatars">
                             {avatarList.slice(0, 5).map((a, i) => (
                                 a.avatar_url ? (
@@ -732,7 +848,7 @@ function Hero({ stats }) {
                         }}
                         aria-hidden
                     >
-                        <span style={{ color: PT.red, fontSize: 18 }}>♥</span>
+                        <span className="lusorae-heart" style={{ color: PT.red, fontSize: 18 }}>♥</span>
                         <span className="text-[12.5px] font-bold" style={{ color: PT.ink }}>+12 reações</span>
                     </div>
 
@@ -750,13 +866,15 @@ function Hero({ stats }) {
                         }}
                         aria-hidden
                     >
-                        <span style={{ color: PT.red, fontSize: 14 }}>♥</span>
+                        <span className="lusorae-heart" style={{ color: PT.red, fontSize: 14 }}>♥</span>
                         <span className="text-[10.5px] font-bold" style={{ color: PT.ink }}>+12</span>
                     </div>
 
-                    {/* Phone mockup — front (responsive) */}
+                    {/* Phone mockup — front (responsive, 3D tilt no desktop) */}
                     <div className="relative z-20" style={{ transform: "translateX(-2%)" }}>
-                        <PhoneMockup />
+                        <Tilt>
+                            <PhoneMockup />
+                        </Tilt>
                     </div>
 
                     {/* Hand-drawn sparkles around phone */}
@@ -939,6 +1057,16 @@ function PhoneMockup() {
                 transform: "rotate(-3deg)",
             }}
         >
+            {/* Ground shadow — assenta o telefone no chão */}
+            <div
+                aria-hidden
+                className="absolute pointer-events-none"
+                style={{
+                    left: "6%", right: "6%", bottom: -38, height: 56,
+                    background: "radial-gradient(ellipse at center, rgba(10,10,10,0.32) 0%, transparent 68%)",
+                    filter: "blur(8px)",
+                }}
+            />
             {/* Phone frame */}
             <div
                 className="absolute inset-0"
@@ -1028,7 +1156,7 @@ function PhoneMockup() {
                     {/* Reactions */}
                     <div className="px-4 py-3 flex items-center gap-4">
                         <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
-                            <span style={{ color: PT.red, fontSize: 14 }}>♥</span> 1.2K
+                            <span className="lusorae-heart" style={{ color: PT.red, fontSize: 14 }}>♥</span> 1.2K
                         </span>
                         <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
                             <span style={{ color: PT.azul, fontSize: 13 }}>💬</span> 23
@@ -1050,6 +1178,16 @@ function PhoneMockup() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Screen gloss reflection — premium glass detail */}
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                            borderRadius: 35,
+                            background: "linear-gradient(118deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 26%, rgba(255,255,255,0) 42%)",
+                        }}
+                    />
                 </div>
             </div>
 
@@ -1106,16 +1244,19 @@ function ValueStrip() {
                             }}
                         >
                             Feito{" "}
-                            <span className="relative inline-block">
-                                <span style={{ color: PT.red }}>para portugueses</span>
-                                <span
-                                    className="absolute pointer-events-none"
-                                    style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
-                                >
-                                    <UnderlineStroke color={PT.red} w={400} h={12} variant="dash" style={{ width: "100%", height: "100%" }} />
+                            <span style={{ whiteSpace: "nowrap" }}>
+                                <span className="relative inline-block">
+                                    <span style={{ color: PT.red }}>para portugueses</span>
+                                    <span
+                                        className="absolute pointer-events-none"
+                                        style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
+                                    >
+                                        <UnderlineStroke color={PT.red} w={400} h={12} variant="dash" delay={0.3} style={{ width: "100%", height: "100%" }} />
+                                    </span>
                                 </span>
+                                ,
                             </span>
-                            ,<br/>
+                            <br/>
                             por portugueses.
                         </h2>
                     </div>
@@ -1202,6 +1343,17 @@ function CityTile({ city }) {
                     background: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.65) 100%)`,
                 }}
             />
+            <span
+                className="absolute top-3 right-3 z-10 flex items-center justify-center opacity-0 translate-y-2 scale-90 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 transition-all duration-300"
+                style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.94)", color: PT.ink,
+                    boxShadow: "0 6px 16px -4px rgba(0,0,0,0.3)",
+                }}
+                aria-hidden
+            >
+                <ArrowUpRight size={16} />
+            </span>
             <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
                 <div className="flex items-center gap-1.5 mb-1.5">
                     <span
@@ -1234,9 +1386,9 @@ function FinalCta() {
                 style={{ background: PT.ink, borderRadius: 28 }}
             >
                 {/* Floating colour blocks */}
-                <div className="absolute pointer-events-none" style={{ right: -40, top: -40, width: 200, height: 200, background: PT.red, borderRadius: 24, transform: "rotate(14deg)", opacity: 0.85 }} aria-hidden />
-                <div className="absolute pointer-events-none" style={{ right: 80, bottom: -50, width: 140, height: 140, background: PT.gold, borderRadius: 20, transform: "rotate(-8deg)", opacity: 0.85 }} aria-hidden />
-                <div className="absolute pointer-events-none" style={{ right: 180, top: 40, width: 80, height: 80, background: PT.green, borderRadius: 14, transform: "rotate(-22deg)", opacity: 0.7 }} aria-hidden />
+                <div className="absolute pointer-events-none lusorae-float-soft" style={{ right: -40, top: -40, width: 200, height: 200, background: PT.red, borderRadius: 24, "--rot": "14deg", opacity: 0.85 }} aria-hidden />
+                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ right: 80, bottom: -50, width: 140, height: 140, background: PT.gold, borderRadius: 20, "--rot": "-8deg", opacity: 0.85, animationDelay: "0.8s" }} aria-hidden />
+                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ right: 180, top: 40, width: 80, height: 80, background: PT.green, borderRadius: 14, "--rot": "-22deg", opacity: 0.7, animationDelay: "1.6s" }} aria-hidden />
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-7">
                     <div className="max-w-2xl">
@@ -1253,30 +1405,34 @@ function FinalCta() {
                             }}
                         >
                             Pronto para fazer parte da{" "}
-                            <span className="relative inline-block">
-                                <span style={{ color: PT.gold }}>tua cidade</span>
-                                <span
-                                    className="absolute pointer-events-none"
-                                    style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
-                                >
-                                    <UnderlineStroke color={PT.gold} w={300} h={12} variant="wave" style={{ width: "100%", height: "100%" }} />
+                            <span style={{ whiteSpace: "nowrap" }}>
+                                <span className="relative inline-block">
+                                    <span style={{ color: PT.gold }}>tua cidade</span>
+                                    <span
+                                        className="absolute pointer-events-none"
+                                        style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
+                                    >
+                                        <UnderlineStroke color={PT.gold} w={300} h={12} variant="wave" delay={0.3} style={{ width: "100%", height: "100%" }} />
+                                    </span>
                                 </span>
+                                ?
                             </span>
-                            ?
                         </h2>
                         <p className="mt-4 text-[15px] sm:text-[16px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
                             30 segundos. Grátis. Para sempre. <strong style={{ color: "#fff", fontWeight: 700 }}>Sem algoritmos de vaidade.</strong>
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 shrink-0 w-full lg:w-auto">
-                        <Link
-                            to="/register"
-                            data-testid="final-cta-register"
-                            className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-[14.5px] font-bold transition-all hover:scale-[1.03]"
-                            style={{ background: "#fff", color: PT.ink, boxShadow: `0 10px 28px -10px rgba(0,0,0,0.4)` }}
-                        >
-                            Criar conta grátis <ArrowRight size={17} />
-                        </Link>
+                        <Magnetic className="w-full sm:w-auto">
+                            <Link
+                                to="/register"
+                                data-testid="final-cta-register"
+                                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-[14.5px] font-bold transition-all hover:scale-[1.03] w-full sm:w-auto"
+                                style={{ background: "#fff", color: PT.ink, boxShadow: `0 10px 28px -10px rgba(0,0,0,0.4)` }}
+                            >
+                                Criar conta grátis <ArrowRight size={17} />
+                            </Link>
+                        </Magnetic>
                         <Link
                             to="/login"
                             data-testid="final-cta-login"
@@ -1324,6 +1480,8 @@ export default function Landing() {
             <FinalCta />
             <SiteFooter />
             <MobileStickyCta />
+            <div aria-hidden className="lusorae-grain-fixed" />
+            <CursorDot />
 
             {/* Premium polish: marquee + grain + float keyframes */}
             <style>{`
@@ -1351,6 +1509,19 @@ export default function Landing() {
                     0%   { opacity: 0; transform: translateY(20px); }
                     100% { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes lusorae-line-in {
+                    0%   { opacity: 0; transform: translateY(36px); filter: blur(8px); }
+                    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+                }
+                @keyframes lusorae-draw {
+                    to { stroke-dashoffset: 0; }
+                }
+                @keyframes lusorae-heart-pop {
+                    0%, 84%, 100% { transform: scale(1); }
+                    88% { transform: scale(1.35); }
+                    93% { transform: scale(0.92); }
+                    97% { transform: scale(1.12); }
+                }
 
                 .lusorae-marquee-wrap {
                     overflow: hidden;
@@ -1367,16 +1538,34 @@ export default function Landing() {
                 .lusorae-spin-slow   { animation: lusorae-spin 36s linear infinite; }
                 .lusorae-pulse       { animation: lusorae-pulse 1.8s ease-in-out infinite; }
                 .lusorae-reveal-up   { animation: lusorae-reveal-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+                .lusorae-line        { animation: lusorae-line-in 0.95s cubic-bezier(0.22, 1, 0.36, 1) both; will-change: transform, filter; }
+                .lusorae-heart       { display: inline-block; animation: lusorae-heart-pop 3.2s ease-in-out infinite; transform-origin: center; }
+                .lusorae-marquee-wrap:hover .lusorae-marquee { animation-play-state: paused; }
 
-                .lusorae-grain::before {
-                    content: "";
-                    position: absolute;
+                .lusorae-grain-fixed {
+                    position: fixed;
                     inset: 0;
                     pointer-events: none;
+                    z-index: 90;
                     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-                    opacity: 0.7;
+                    opacity: 0.55;
                     mix-blend-mode: multiply;
-                    z-index: 0;
+                }
+
+                [data-testid="landing-page"] ::selection {
+                    background: #FFCC29;
+                    color: #0A0A0A;
+                }
+                html {
+                    scrollbar-width: thin;
+                    scrollbar-color: #0A0A0A #F7F5EF;
+                }
+                ::-webkit-scrollbar { width: 10px; }
+                ::-webkit-scrollbar-track { background: #F7F5EF; }
+                ::-webkit-scrollbar-thumb {
+                    background: #0A0A0A;
+                    border-radius: 999px;
+                    border: 2.5px solid #F7F5EF;
                 }
 
                 .lusorae-card-hover {
@@ -1388,8 +1577,12 @@ export default function Landing() {
                 }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .lusorae-marquee, .lusorae-float, .lusorae-float-soft, .lusorae-spin-slow, .lusorae-pulse, .lusorae-reveal-up {
+                    .lusorae-marquee, .lusorae-float, .lusorae-float-soft, .lusorae-spin-slow, .lusorae-pulse, .lusorae-reveal-up, .lusorae-line, .lusorae-heart {
                         animation: none !important;
+                    }
+                    svg path {
+                        animation: none !important;
+                        stroke-dashoffset: 0 !important;
                     }
                 }
             `}</style>
