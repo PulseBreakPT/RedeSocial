@@ -112,7 +112,7 @@ export function Layout() {
             <MobileTopBar onOpenChat={() => setChatOpen(true)} />
             <div className={`grid grid-cols-1 ${gridCols} ${maxW} mx-auto gap-0 lg:gap-6 px-0 lg:px-6`}>
                 <LeftSidebar onCompose={() => openCompose()} />
-                <main className="lg:border-x lg:border-black/[0.07] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
+                <main className="lg:border-x lg:border-black/[0.06] min-h-screen pb-mobile-nav lg:pb-0 bg-white lg:bg-transparent">
                     <Outlet context={{ openCompose, openChat: () => setChatOpen(true) }} />
                 </main>
                 {!isWide && <RightSidebar />}

@@ -37,21 +37,20 @@ export const PT = {
     grafite: "#3A3A3D",
 };
 
-// ============ STICKER OVAL ROTADO ============
-export function Sticker({ children, bg = PT.gold, color = PT.ink, rotate = -6, className = "", style = {}, ...rest }) {
+// ============ STICKER — pill clean editorial ============
+// (API mantida para back-compat; visualmente limpo: sem rotação, sem
+//  sombras 3D, sem border ink chunky. Cor de fundo + cor de texto.)
+export function Sticker({ children, bg = PT.gold, color = PT.ink, rotate, className = "", style = {}, ...rest }) {
     return (
         <div
-            className={`inline-flex items-center justify-center text-center font-black uppercase ${className}`}
+            className={`inline-flex items-center justify-center text-center font-bold uppercase ${className}`}
             style={{
                 background: bg,
                 color,
-                padding: "10px 18px",
+                padding: "6px 12px",
                 borderRadius: "999px",
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `4px 4px 0 ${PT.ink}`,
-                letterSpacing: "0.06em",
-                transform: `rotate(${rotate}deg)`,
-                fontSize: 12,
+                letterSpacing: "0.14em",
+                fontSize: 11,
                 lineHeight: 1,
                 whiteSpace: "nowrap",
                 ...style,
@@ -63,24 +62,22 @@ export function Sticker({ children, bg = PT.gold, color = PT.ink, rotate = -6, c
     );
 }
 
-// ============ STICKER CIRCULAR (estilo "carimbo") ============
-export function StampCircle({ children, size = 86, bg = PT.red, color = "#fff", rotate = -14, style = {} }) {
+// ============ STAMP CIRCLE — clean (sem rotação) ============
+export function StampCircle({ children, size = 86, bg = PT.red, color = "#fff", rotate, style = {} }) {
     return (
         <div
-            className="flex items-center justify-center text-center font-black uppercase"
+            className="flex items-center justify-center text-center font-bold uppercase"
             style={{
                 width: size,
                 height: size,
                 background: bg,
                 color,
                 borderRadius: "50%",
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${PT.ink}`,
-                letterSpacing: "0.08em",
-                transform: `rotate(${rotate}deg)`,
+                letterSpacing: "0.14em",
                 fontSize: 11,
-                lineHeight: 1.05,
+                lineHeight: 1.1,
                 padding: 8,
+                boxShadow: "0 8px 20px -8px rgba(10,10,10,0.30)",
                 ...style,
             }}
         >
@@ -188,17 +185,17 @@ export function PolaroidStack({ photos = [], style = {} }) {
     );
 }
 
-// ============ POSTER CARD — bloco rodado com sombra dura ============
-export function PosterCard({ children, bg = "#fff", color = PT.ink, rotate = -2, shadow = PT.ink, className = "", style = {}, ...rest }) {
+// ============ POSTER CARD — clean (sem rotação/sombras chunky) ============
+export function PosterCard({ children, bg = "#fff", color = PT.ink, rotate, shadow, className = "", style = {}, ...rest }) {
     return (
         <div
             className={className}
             style={{
                 background: bg,
                 color,
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `6px 6px 0 ${shadow}`,
-                transform: `rotate(${rotate}deg)`,
+                border: "1px solid rgba(10,10,10,0.08)",
+                borderRadius: 16,
+                boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 28px -16px rgba(10,10,10,0.10)",
                 padding: "18px 20px",
                 ...style,
             }}
@@ -209,7 +206,7 @@ export function PosterCard({ children, bg = "#fff", color = PT.ink, rotate = -2,
     );
 }
 
-// ============ NÚMERO de annotation tipo revista ============
+// ============ NÚMERO de annotation (clean) ============
 export function MagNumber({ n, color = PT.red, size = 56 }) {
     return (
         <span
@@ -217,12 +214,10 @@ export function MagNumber({ n, color = PT.red, size = 56 }) {
             style={{
                 width: size,
                 height: size,
-                background: color,
-                color: "#fff",
+                background: "rgba(10,10,10,0.04)",
+                color,
                 borderRadius: "50%",
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `4px 4px 0 ${PT.ink}`,
-                fontSize: size * 0.45,
+                fontSize: size * 0.42,
                 lineHeight: 1,
             }}
         >
@@ -231,167 +226,40 @@ export function MagNumber({ n, color = PT.red, size = 56 }) {
     );
 }
 
-// ============ DOODLES SVG ============
-export function DoodleArrow({ color = PT.ink, w = 90, h = 60, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 90 60" fill="none" style={style} aria-hidden>
-            <path
-                d="M5 35 Q 25 5, 50 30 T 80 25"
-                stroke={color} strokeWidth="3.5" strokeLinecap="round" fill="none"
-            />
-            <path
-                d="M70 18 L82 25 L73 36"
-                stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"
-            />
-        </svg>
-    );
+// ============ DOODLES — todos no-op no novo design clean ============
+// (mantidos exportados para compat com 30+ ficheiros que importam.
+//  Renderem null para não poluírem a UI editorial nova.)
+export function DoodleArrow() { return null; }
+
+export function DoodleScribble() { return null; }
+
+export function DoodleStar() { return null; }
+
+export function DoodleHeart() { return null; }
+
+export function DoodleExclamation() { return null; }
+
+export function DoodleSpiral() { return null; }
+
+export function DoodleZigzag() { return null; }
+
+export function DoodleCircleNote() { return null; }
+
+export function DoodleUnderline() { return null; }
+
+export function DoodleSparkles() {
+    // Manter assinatura inerte para back-compat
+    return null;
 }
 
-export function DoodleScribble({ color = PT.azul, w = 160, h = 60, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 160 60" fill="none" style={style} aria-hidden>
-            <path
-                d="M5 30 Q 20 5, 40 30 T 80 30 T 120 30 T 155 30"
-                stroke={color} strokeWidth="4" strokeLinecap="round" fill="none"
-            />
-        </svg>
-    );
-}
+// ============ DOODLE: smiley — no-op ============
+export function DoodleSmiley() { return null; }
 
-export function DoodleStar({ color = PT.gold, size = 44, rotate = 8, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path
-                d="M22 4 L26 18 L40 22 L26 26 L22 40 L18 26 L4 22 L18 18 Z"
-                fill={color}
-                stroke={PT.ink}
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-            />
-        </svg>
-    );
-}
+// ============ DOODLE: seta longa — no-op ============
+export function DoodleLongArrow() { return null; }
 
-export function DoodleHeart({ color = PT.red, size = 36, rotate = -6, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 36 36" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path
-                d="M18 32 C 4 22, 4 10, 12 8 C 16 7, 18 10, 18 13 C 18 10, 20 7, 24 8 C 32 10, 32 22, 18 32 Z"
-                fill={color}
-                stroke={PT.ink}
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-            />
-        </svg>
-    );
-}
-
-export function DoodleExclamation({ color = PT.gold, size = 60, rotate = 8, style = {} }) {
-    return (
-        <svg width={size * 0.4} height={size} viewBox="0 0 24 60" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path d="M12 6 L9 36 L15 36 Z" fill={color} stroke={PT.ink} strokeWidth="2.5" strokeLinejoin="round" />
-            <circle cx="12" cy="48" r="5" fill={color} stroke={PT.ink} strokeWidth="2.5" />
-        </svg>
-    );
-}
-
-// ============ DOODLE: espiral rabiscado ============
-export function DoodleSpiral({ color = PT.ink, size = 60, rotate = 0, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 60 60" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path
-                d="M30 30 m-3 0 a3 3 0 1 1 6 0 a6 6 0 1 1 -12 0 a9 9 0 1 1 18 0 a12 12 0 1 1 -24 0 a16 16 0 1 1 32 0"
-                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
-            />
-        </svg>
-    );
-}
-
-// ============ DOODLE: zigzag (raio/eclair) ============
-export function DoodleZigzag({ color = PT.red, w = 120, h = 28, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 120 28" fill="none" style={style} aria-hidden>
-            <path
-                d="M3 14 L20 4 L32 22 L50 6 L66 22 L84 4 L100 22 L117 10"
-                stroke={color} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"
-            />
-        </svg>
-    );
-}
-
-// ============ DOODLE: círculo de anotação (à mão) à volta de palavra ============
-export function DoodleCircleNote({ color = PT.red, w = 180, h = 70, rotate = -3, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 180 70" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path
-                d="M30 35 C 20 10, 80 -2, 130 8 C 165 16, 175 38, 155 55 C 130 70, 60 70, 30 58 C 8 48, 5 38, 30 32"
-                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
-                strokeDasharray="0"
-            />
-        </svg>
-    );
-}
-
-// ============ DOODLE: sublinhado ondulado ============
-export function DoodleUnderline({ color = PT.gold, w = 140, h = 14, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 140 14" fill="none" style={style} aria-hidden>
-            <path
-                d="M3 8 Q 18 1, 35 8 T 70 8 T 105 8 T 137 8"
-                stroke={color} strokeWidth="4" strokeLinecap="round" fill="none"
-            />
-        </svg>
-    );
-}
-
-// ============ DOODLE: sparkles (3 estrelinhas mini) ============
-export function DoodleSparkles({ color = PT.gold, size = 60, rotate = 0, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 60 60" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path d="M15 8 L17 14 L23 16 L17 18 L15 24 L13 18 L7 16 L13 14 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
-            <path d="M44 22 L46 28 L52 30 L46 32 L44 38 L42 32 L36 30 L42 28 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
-            <path d="M22 38 L24 44 L30 46 L24 48 L22 54 L20 48 L14 46 L20 44 Z" fill={color} stroke={PT.ink} strokeWidth="1.5" strokeLinejoin="round" />
-        </svg>
-    );
-}
-
-// ============ DOODLE: smiley desenhado à mão ============
-export function DoodleSmiley({ color = PT.ink, size = 44, rotate = -6, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <circle cx="22" cy="22" r="18" stroke={color} strokeWidth="2.8" fill="#fff" />
-            <circle cx="16" cy="19" r="2" fill={color} />
-            <circle cx="28" cy="19" r="2" fill={color} />
-            <path d="M14 27 Q 22 34, 30 27" stroke={color} strokeWidth="2.5" strokeLinecap="round" fill="none" />
-        </svg>
-    );
-}
-
-// ============ DOODLE: seta longa curvada com cauda ============
-export function DoodleLongArrow({ color = PT.ink, w = 160, h = 100, rotate = 0, style = {} }) {
-    return (
-        <svg width={w} height={h} viewBox="0 0 160 100" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path
-                d="M8 20 C 30 5, 70 -5, 100 20 C 120 38, 90 60, 60 60 C 40 60, 30 78, 60 90"
-                stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"
-            />
-            <path
-                d="M50 82 L60 90 L68 80"
-                stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"
-            />
-        </svg>
-    );
-}
-
-// ============ DOODLE: cruzes/X de marcação ============
-export function DoodleCross({ color = PT.red, size = 28, rotate = 12, style = {} }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 28 28" fill="none" style={{ transform: `rotate(${rotate}deg)`, ...style }} aria-hidden>
-            <path d="M5 5 L23 23" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M23 5 L5 23" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
-        </svg>
-    );
-}
+// ============ DOODLE: cruzes/X de marcação — no-op ============
+export function DoodleCross() { return null; }
 
 // ============ NOTA MANUSCRITA — pequeno texto inclinado tipo nota à mão ============
 export function HandNote({ children, color = PT.ink, rotate = -4, size = 18, style = {} }) {
@@ -465,25 +333,8 @@ export function GeoCircle({ color = PT.azul, size = 60, style = {} }) {
     );
 }
 
-// ============ ASTERISCO gigante (logo decorativo) ============
-export function GiantAsterisk({ color = PT.gold, size = 320, rotate = -8, style = {} }) {
-    return (
-        <span
-            aria-hidden
-            className="select-none pointer-events-none font-black leading-none"
-            style={{
-                fontSize: size,
-                color,
-                textShadow: `8px 8px 0 ${PT.ink}`,
-                transform: `rotate(${rotate}deg)`,
-                display: "inline-block",
-                ...style,
-            }}
-        >
-            ✱
-        </span>
-    );
-}
+// ============ ASTERISCO gigante — no-op no novo design ============
+export function GiantAsterisk() { return null; }
 
 // ============ KICKER (rubrica de revista) ============
 export function Kicker({ children, color = PT.red, className = "" }) {
@@ -948,7 +799,7 @@ export function StampTag({ children, bg = PT.red, color = "#fff", rotate = -8, s
     );
 }
 
-// ============ ESTILOS partilhados (inputs + botões neo-brutalist) ============
+// ============ ESTILOS partilhados — clean editorial (inputs + botões) ============
 export function AuthStyles() {
     return (
         <style>{`
@@ -956,49 +807,43 @@ export function AuthStyles() {
             .pt-input {
                 width: 100%;
                 background: #fff;
-                border: 3px solid ${PT.ink};
+                border: 1.5px solid rgba(10,10,10,0.10);
                 border-radius: 14px;
                 padding: 14px 16px;
                 font-size: 15px;
                 color: ${PT.ink};
-                box-shadow: 4px 4px 0 ${PT.ink};
-                transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+                transition: border-color .18s ease, box-shadow .18s ease;
                 outline: none;
                 font-family: inherit;
-                font-weight: 600;
+                font-weight: 500;
             }
-            .pt-input::placeholder { color: rgba(10,10,10,0.40); font-weight: 500; }
-            .pt-input:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 ${PT.ink}; }
+            .pt-input::placeholder { color: rgba(10,10,10,0.32); font-weight: 500; }
+            .pt-input:hover { border-color: rgba(10,10,10,0.20); }
             .pt-input:focus {
-                border-color: ${PT.azul};
-                transform: translate(-2px,-2px);
-                box-shadow: 6px 6px 0 ${PT.azul};
+                border-color: ${PT.ink};
+                box-shadow: 0 0 0 3px rgba(10,10,10,0.08);
             }
             .pt-btn-primary {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
-                background: ${PT.ink};
-                color: ${PT.gold};
-                font-weight: 900;
+                background: linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%);
+                color: #fff;
+                font-weight: 700;
                 border-radius: 999px;
-                border: 3px solid ${PT.ink};
-                box-shadow: 5px 5px 0 ${PT.red};
-                transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+                padding: 12px 22px;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 28px -10px rgba(10,10,10,0.4), 0 3px 8px rgba(10,10,10,0.08);
+                transition: transform .18s ease, box-shadow .22s ease;
                 cursor: pointer;
-                letter-spacing: -0.01em;
-                text-transform: uppercase;
+                letter-spacing: -0.005em;
+                font-size: 14.5px;
             }
             .pt-btn-primary:hover:not(:disabled) {
-                transform: translate(-2px,-2px);
-                box-shadow: 7px 7px 0 ${PT.red};
-                background: ${PT.red};
-                color: #fff;
+                transform: translateY(-1px);
             }
             .pt-btn-primary:active:not(:disabled) {
-                transform: translate(2px,2px);
-                box-shadow: 1px 1px 0 ${PT.red};
+                transform: translateY(0);
             }
             .pt-btn-ghost {
                 display: inline-flex;
@@ -1007,59 +852,40 @@ export function AuthStyles() {
                 gap: 6px;
                 background: #fff;
                 color: ${PT.ink};
-                font-weight: 800;
+                font-weight: 600;
                 border-radius: 999px;
-                border: 3px solid ${PT.ink};
-                box-shadow: 4px 4px 0 ${PT.ink};
-                transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+                padding: 11px 20px;
+                border: 1px solid rgba(10,10,10,0.10);
+                transition: background .18s ease, border-color .18s ease;
                 cursor: pointer;
-                text-transform: uppercase;
+                font-size: 14px;
             }
-            .pt-btn-ghost:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 ${PT.ink}; background: ${PT.cream}; }
-            .pt-btn-ghost:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 ${PT.ink}; }
+            .pt-btn-ghost:hover { background: rgba(10,10,10,0.03); border-color: rgba(10,10,10,0.16); }
+            .pt-btn-ghost:active { background: rgba(10,10,10,0.06); }
 
-            /* Paper grain texture */
-            .pt-grain::before {
-                content: "";
-                position: absolute;
-                inset: 0;
-                background-image:
-                    radial-gradient(rgba(10,10,10,0.06) 1px, transparent 1px),
-                    radial-gradient(rgba(10,10,10,0.04) 1px, transparent 1px);
-                background-size: 3px 3px, 7px 7px;
-                background-position: 0 0, 1px 1px;
-                pointer-events: none;
-                z-index: 0;
-            }
+            /* Paper grain texture — neutralizado */
+            .pt-grain::before { content: none; }
 
-            /* Marquee tape (linha decorativa repetida) */
+            /* Marquee tape — clean ribbon (substituído por linha hairline) */
             .pt-tape {
-                background-image: repeating-linear-gradient(
-                    -45deg,
-                    ${PT.ink} 0 8px,
-                    ${PT.gold} 8px 16px
-                );
+                background: transparent;
+                border-top: 1px solid rgba(10,10,10,0.08);
+                border-bottom: 1px solid rgba(10,10,10,0.08);
             }
 
-            /* Paper texture: fibras subtis + grão muito leve */
+            /* Paper background — clean off-white */
             .pt-paper {
                 position: relative;
-                background-color: ${PT.cream};
-                background-image:
-                    radial-gradient(rgba(10,10,10,0.05) 0.6px, transparent 0.7px),
-                    radial-gradient(rgba(10,10,10,0.04) 0.5px, transparent 0.6px),
-                    repeating-linear-gradient(95deg, rgba(10,10,10,0.020) 0 1px, transparent 1px 5px);
-                background-size: 4px 4px, 11px 11px, 100% 100%;
-                background-position: 0 0, 2px 2px, 0 0;
+                background-color: #F7F5EF;
             }
 
-            /* Linha pontilhada manuscrita (sublinhado) */
+            /* Linha pontilhada — clean underline */
             .pt-handline {
-                background-image: radial-gradient(${PT.gold} 1.2px, transparent 1.4px);
-                background-size: 6px 6px;
+                background-image: linear-gradient(to right, rgba(10,10,10,0.18) 50%, transparent 50%);
+                background-size: 6px 1px;
                 background-repeat: repeat-x;
                 background-position: 0 100%;
-                padding-bottom: 6px;
+                padding-bottom: 4px;
             }
         `}</style>
     );

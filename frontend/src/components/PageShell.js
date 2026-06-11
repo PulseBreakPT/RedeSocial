@@ -1,15 +1,13 @@
-// Shared page primitives — fanzine PT aesthetic.
-// Used by Communities, Drafts, Scheduled, Visitors and any page that wants
-// the consistent vertical rhythm + magazine-style hierarchy.
+// Shared page primitives — clean editorial aesthetic.
+// Substitui o estilo fanzine "magazine" por um sistema editorial sóbrio,
+// alinhado com a Landing e Auth.
 
 import { Link } from "react-router-dom";
-import {
-    PT, Kicker, AuthStyles,
-    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
-    DoodleCross, GiantAsterisk,
-} from "../pages/auth/AuthDecor";
+import { PT } from "../pages/auth/AuthDecor";
 
-/** Outer shell — fanzine PT background + doodles + content wrapper. */
+// =============================================================================
+// PageShell — outer wrapper (clean, sem doodles)
+// =============================================================================
 export function PageShell({ children, max = "max-w-5xl" }) {
     return (
         <div
@@ -17,67 +15,68 @@ export function PageShell({ children, max = "max-w-5xl" }) {
             style={{ background: "#FFFFFF", minHeight: "100vh" }}
             data-testid="page-shell"
         >
-            {/* Doodles decorativos */}
-            <div className="absolute -top-10 -right-10 pointer-events-none opacity-[0.05] z-0 hidden lg:block" aria-hidden>
-                <GiantAsterisk color={PT.red} size={280} rotate={-12} />
-            </div>
-            <div className="absolute top-28 -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-top-right z-0 hidden md:block" aria-hidden>
-                <DoodleStar color={PT.gold} size={42} rotate={14} />
-            </div>
-            <div className="absolute top-[420px] -left-3 sm:left-2 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-left z-0 hidden lg:block" aria-hidden>
-                <DoodleScribble color={PT.azul} w={120} h={48} style={{ transform: "rotate(-6deg)" }} />
-            </div>
-            <div className="absolute top-[760px] -right-2 sm:right-3 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-right z-0 hidden lg:block" aria-hidden>
-                <DoodleSpiral color={PT.gold} size={56} rotate={12} />
-            </div>
-            <div className="absolute bottom-40 -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-80 origin-bottom-right z-0 hidden lg:block" aria-hidden>
-                <DoodleCross color={PT.green} size={28} rotate={18} />
-            </div>
-
             <div className={`${max} mx-auto px-4 lg:px-6 py-5 lg:py-7 relative z-10`}>
                 {children}
             </div>
-            <AuthStyles />
         </div>
     );
 }
 
-/** Hero header — estilo fanzine PT. */
-export function PageHero({ icon: Icon, title, subtitle, badge, actions, children }) {
+// =============================================================================
+// Kicker — micro-label mono uppercase com dot pulse opcional
+// =============================================================================
+export function Kicker({ children, color = PT.red, dot = true, className = "" }) {
     return (
-        <div className="mb-6 lg:mb-8 relative" data-testid="page-hero">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className={`inline-flex items-center gap-1.5 ${className}`}>
+            {dot && (
+                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: color }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: color }} />
+                </span>
+            )}
+            <span
+                className="font-mono text-[10.5px] font-bold uppercase"
+                style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.20em" }}
+            >
+                {children}
+            </span>
+        </div>
+    );
+}
+
+// =============================================================================
+// PageHero — header editorial limpo
+// =============================================================================
+export function PageHero({ icon: Icon, title, subtitle, badge, actions, children, accent = PT.red }) {
+    return (
+        <div className="mb-7 lg:mb-9 relative" data-testid="page-hero">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex-1 min-w-0">
-                    {badge && (
-                        <Kicker color={PT.red} className="mb-2 inline-flex items-center gap-1.5">
-                            // {badge}
-                        </Kicker>
-                    )}
+                    {badge && <Kicker color={accent} className="mb-3">{badge}</Kicker>}
                     <h1
-                        className="font-black tracking-[-0.03em] leading-[0.98] flex items-center gap-3"
-                        style={{ fontSize: "clamp(28px, 4vw, 42px)", color: PT.ink }}
+                        className="font-black tracking-[-0.035em] leading-[0.98] flex items-center gap-3"
+                        style={{ fontSize: "clamp(30px, 4vw, 44px)", color: PT.ink }}
                     >
                         {Icon && (
                             <span
                                 className="inline-flex items-center justify-center shrink-0"
                                 style={{
-                                    width: 44, height: 44,
-                                    background: PT.gold,
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                                    borderRadius: 10,
-                                    transform: "rotate(-3deg)",
+                                    width: 42, height: 42,
+                                    background: "#fff",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    borderRadius: 12,
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 6px 14px -6px rgba(10,10,10,0.08)",
                                 }}
                             >
-                                <Icon size={22} strokeWidth={2.2} style={{ color: PT.ink }} />
+                                <Icon size={22} strokeWidth={2} style={{ color: PT.ink }} />
                             </span>
                         )}
                         <span>{title}</span>
                     </h1>
                     {subtitle && (
                         <p
-                            className="mt-3 text-[14px] lg:text-[15px] max-w-2xl leading-relaxed font-medium"
-                            style={{ color: "rgba(10,10,10,0.65)" }}
+                            className="mt-3 text-[14.5px] lg:text-[15.5px] max-w-2xl leading-relaxed font-medium"
+                            style={{ color: "rgba(10,10,10,0.62)" }}
                         >
                             {subtitle}
                         </p>
@@ -90,29 +89,27 @@ export function PageHero({ icon: Icon, title, subtitle, badge, actions, children
     );
 }
 
-/** Section with kicker + title. */
-export function PageSection({ overline, title, count, cta, ctaTo, children, className = "" }) {
+// =============================================================================
+// PageSection — overline + title + opcional CTA
+// =============================================================================
+export function PageSection({ overline, title, count, cta, ctaTo, children, className = "", accent = PT.azul }) {
     return (
-        <section className={`mb-7 ${className}`} data-testid={`section-${(overline || title || "").toString().toLowerCase().replace(/\s+/g, "-")}`}>
-            <div className="flex items-baseline justify-between mb-3">
+        <section className={`mb-8 ${className}`} data-testid={`section-${(overline || title || "").toString().toLowerCase().replace(/\s+/g, "-")}`}>
+            <div className="flex items-baseline justify-between mb-4">
                 <div>
-                    {overline && (
-                        <Kicker color={PT.azul} className="mb-1 block">
-                            // {overline}
-                        </Kicker>
-                    )}
-                    <h2 className="font-black text-[20px] tracking-tight flex items-baseline gap-2" style={{ color: PT.ink }}>
+                    {overline && <Kicker color={accent} className="mb-1.5 block">{overline}</Kicker>}
+                    <h2 className="font-black text-[20px] tracking-[-0.02em] flex items-baseline gap-2" style={{ color: PT.ink }}>
                         {title}
                         {typeof count === "number" && (
-                            <span className="text-xs font-mono font-bold tabular-nums" style={{ color: "rgba(10,10,10,0.45)" }}>{count}</span>
+                            <span className="text-[12px] font-mono font-bold tabular-nums" style={{ color: "rgba(10,10,10,0.42)" }}>{count}</span>
                         )}
                     </h2>
                 </div>
                 {cta && ctaTo && (
                     <Link
                         to={ctaTo}
-                        className="text-[12px] font-mono font-bold uppercase tracking-[0.06em] underline-offset-2 hover:underline"
-                        style={{ color: PT.red }}
+                        className="font-mono text-[11px] font-bold uppercase opacity-65 hover:opacity-100 transition"
+                        style={{ color: PT.ink, letterSpacing: "0.18em" }}
                     >
                         {cta} →
                     </Link>
@@ -123,7 +120,9 @@ export function PageSection({ overline, title, count, cta, ctaTo, children, clas
     );
 }
 
-/** Responsive grid 1/2/3/4 col. */
+// =============================================================================
+// Grid — responsivo
+// =============================================================================
 export function Grid({ cols = 2, gap = 3, children, className = "" }) {
     const colMap = {
         1: "grid-cols-1",
@@ -140,15 +139,16 @@ export function Grid({ cols = 2, gap = 3, children, className = "" }) {
     );
 }
 
-/** Sticky filter bar — fanzine PT styling. */
+// =============================================================================
+// FilterBar — sticky pill row (clean)
+// =============================================================================
 export function FilterBar({ children, className = "" }) {
     return (
         <div
-            className={`sticky top-[calc(var(--mobile-topbar-h,64px))] lg:top-2 z-10 -mx-4 lg:-mx-6 px-4 lg:px-6 py-2.5 backdrop-blur mb-5 flex items-center gap-2 overflow-x-auto scrollbar-hide ${className}`}
+            className={`sticky top-[calc(var(--mobile-topbar-h,64px))] lg:top-2 z-10 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 backdrop-blur mb-5 flex items-center gap-2 overflow-x-auto scrollbar-hide ${className}`}
             style={{
-                background: "rgba(255,255,255,0.94)",
-                borderTop: `2px solid ${PT.ink}`,
-                borderBottom: `2px solid ${PT.ink}`,
+                background: "rgba(255,255,255,0.92)",
+                borderBottom: "1px solid rgba(10,10,10,0.06)",
             }}
             data-testid="filter-bar"
         >
@@ -157,74 +157,71 @@ export function FilterBar({ children, className = "" }) {
     );
 }
 
-/** Pill chip used inside FilterBar — PT style. */
+// =============================================================================
+// Chip — pill clean
+// =============================================================================
 export function Chip({ active, onClick, icon: Icon, children, testid, count }) {
     return (
         <button
             onClick={onClick}
             data-testid={testid}
-            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase transition"
+            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] font-bold transition-all duration-200"
             style={{
                 background: active ? PT.ink : "#fff",
-                color: active ? PT.gold : PT.ink,
-                border: `2px solid ${PT.ink}`,
+                color: active ? "#fff" : PT.ink,
+                border: active ? `1px solid ${PT.ink}` : "1px solid rgba(10,10,10,0.10)",
                 borderRadius: 999,
-                boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
-                letterSpacing: "0.04em",
+                boxShadow: active ? "0 6px 14px -6px rgba(10,10,10,0.35)" : "none",
+                letterSpacing: "-0.005em",
             }}
         >
-            {Icon && <Icon size={11} strokeWidth={2.2} />}
+            {Icon && <Icon size={12} strokeWidth={2.2} />}
             <span>{children}</span>
             {typeof count === "number" && (
-                <span className="text-[10px] tabular-nums opacity-80">{count}</span>
+                <span className="text-[10.5px] tabular-nums opacity-70 font-mono">{count}</span>
             )}
         </button>
     );
 }
 
-/** Empty state — fanzine PT styling.
- *  shadowColor (opcional): cor da shadow offset — default PT.gold.
- *  Aceita PT.peixe / PT.telha / PT.eucalipto / PT.malva para variação. */
-export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick, shadowColor = PT.gold, iconBg = PT.gold, ctaBg = PT.red }) {
+// =============================================================================
+// Empty — clean editorial empty state
+// =============================================================================
+export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
     return (
         <div
             className="py-14 px-6 text-center"
             data-testid="empty-state"
             style={{
                 background: "#fff",
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${shadowColor}`,
+                border: "1px solid rgba(10,10,10,0.08)",
                 borderRadius: 24,
+                boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 40px -22px rgba(10,10,10,0.10)",
             }}
         >
             {Icon && (
                 <div
-                    className="w-16 h-16 mx-auto mb-4 grid place-items-center"
+                    className="w-16 h-16 mx-auto mb-5 grid place-items-center"
                     style={{
-                        background: iconBg,
+                        background: "rgba(10,10,10,0.04)",
                         color: PT.ink,
-                        border: `2.5px solid ${PT.ink}`,
-                        boxShadow: `3px 3px 0 ${PT.ink}`,
-                        borderRadius: 12,
-                        transform: "rotate(-3deg)",
+                        borderRadius: 16,
                     }}
                 >
-                    <Icon size={24} strokeWidth={2.2} />
+                    <Icon size={26} strokeWidth={1.8} />
                 </div>
             )}
-            <h3 className="font-black text-[18px] mb-2" style={{ color: PT.ink }}>{title}</h3>
-            {body && <p className="text-[13.5px] max-w-sm mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{body}</p>}
+            <h3 className="font-black text-[19px] tracking-[-0.02em] mb-2" style={{ color: PT.ink }}>{title}</h3>
+            {body && <p className="text-[14px] max-w-md mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{body}</p>}
             {cta && (ctaTo ? (
                 <Link
                     to={ctaTo}
-                    className="inline-block mt-5 px-4 py-2.5 text-[12px] font-black uppercase"
+                    className="inline-block mt-6 px-5 py-3 text-[13px] font-bold rounded-full transition-all duration-200 hover:translate-y-[-1px]"
                     style={{
-                        background: ctaBg,
+                        background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
                         color: "#fff",
-                        border: `2.5px solid ${PT.ink}`,
-                        borderRadius: 999,
-                        boxShadow: `3px 3px 0 ${PT.ink}`,
-                        letterSpacing: "0.06em",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px -10px rgba(10,10,10,0.35)",
+                        letterSpacing: "-0.005em",
                     }}
                     data-testid="empty-state-cta"
                 >
@@ -233,14 +230,12 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick, shadowC
             ) : (
                 <button
                     onClick={ctaOnClick}
-                    className="mt-5 px-4 py-2.5 text-[12px] font-black uppercase"
+                    className="mt-6 px-5 py-3 text-[13px] font-bold rounded-full transition-all duration-200 hover:translate-y-[-1px]"
                     style={{
-                        background: ctaBg,
+                        background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
                         color: "#fff",
-                        border: `2.5px solid ${PT.ink}`,
-                        borderRadius: 999,
-                        boxShadow: `3px 3px 0 ${PT.ink}`,
-                        letterSpacing: "0.06em",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px -10px rgba(10,10,10,0.35)",
+                        letterSpacing: "-0.005em",
                     }}
                     data-testid="empty-state-cta"
                 >

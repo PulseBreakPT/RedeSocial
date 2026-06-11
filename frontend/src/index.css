@@ -1007,15 +1007,13 @@
     .prose-legal h2:first-child { margin-top: 0; }
     .prose-legal h2 .sec-n {
         font-family: "JetBrains Mono", monospace;
-        font-size: 11.5px; font-weight: 900;
-        color: #FFCC00;
-        letter-spacing: 0.06em;
-        padding: 3px 9px;
-        background: #0A0A0A;
-        border: 2.5px solid #0A0A0A;
-        box-shadow: 2.5px 2.5px 0 #C8102E;
+        font-size: 11px; font-weight: 700;
+        color: rgba(10,10,10,0.55);
+        letter-spacing: 0.14em;
+        padding: 2px 8px;
+        background: rgba(10,10,10,0.05);
+        border-radius: 6px;
         text-transform: uppercase;
-        transform: rotate(-3deg);
         position: relative; top: -2px;
     }
     .prose-legal h3 {
@@ -1057,46 +1055,43 @@
         content: counter(leg-ol, decimal-leading-zero);
         position: absolute; left: 0; top: 0.05rem;
         font-family: "JetBrains Mono", monospace;
-        font-size: 10.5px; font-weight: 900;
-        color: #0A0A0A;
-        background: #FFCC00;
-        padding: 2px 6px;
-        border: 2px solid #0A0A0A;
-        border-radius: 4px;
-        box-shadow: 1.5px 1.5px 0 #0A0A0A;
-        letter-spacing: 0.04em;
+        font-size: 10.5px; font-weight: 700;
+        color: rgba(10,10,10,0.55);
+        background: rgba(10,10,10,0.05);
+        padding: 2px 7px;
+        border-radius: 6px;
+        letter-spacing: 0.06em;
     }
     .prose-legal a {
-        color: #0E4D92;
+        color: #0A0A0A;
         text-decoration: underline;
-        text-decoration-color: #FFCC00;
-        text-decoration-thickness: 2.5px;
+        text-decoration-color: rgba(200,16,46,0.6);
+        text-decoration-thickness: 1.5px;
         text-underline-offset: 3px;
         font-weight: 600;
         transition: color 180ms ease, text-decoration-color 180ms ease;
     }
-    .prose-legal a:hover { color: #C8102E; text-decoration-color: #0A0A0A; }
+    .prose-legal a:hover { color: #C8102E; text-decoration-color: #C8102E; }
     .prose-legal strong { font-weight: 900; color: #0A0A0A; }
     .prose-legal em { font-style: italic; color: #0A0A0A; }
     .prose-legal code {
         font-family: "JetBrains Mono", monospace; font-size: 0.86em;
-        background: #0A0A0A; padding: 1px 6px;
-        border-radius: 4px; color: #FFCC00;
-        font-weight: 700;
+        background: rgba(10,10,10,0.05); padding: 1px 7px;
+        border-radius: 6px; color: #0A0A0A;
+        font-weight: 600;
     }
     .prose-legal blockquote {
-        border: 3px solid #0A0A0A;
-        border-left-width: 8px;
-        border-left-color: #C8102E;
+        border-left: 3px solid #C8102E;
         padding: 0.85rem 1rem 0.85rem 1.2rem; margin: 1.5rem 0;
         color: #0A0A0A;
-        font-family: "Geist", "Inter", sans-serif;
-        font-size: 16px; line-height: 1.65;
-        background: #F4F4F4;
-        box-shadow: 4px 4px 0 #0A0A0A;
+        font-family: "Fraunces", "Inter", sans-serif;
+        font-style: italic;
+        font-size: 17px; line-height: 1.65;
+        background: rgba(10,10,10,0.025);
+        border-radius: 0 12px 12px 0;
         font-weight: 500;
     }
-    .prose-legal hr { border: 0; border-top: 3px dashed #0A0A0A; margin: 2.5rem 0; }
+    .prose-legal hr { border: 0; border-top: 1px solid rgba(10,10,10,0.10); margin: 2.5rem 0; }
 
     /* Form input — reusable across auth/settings */
     .vm-input {
@@ -1130,13 +1125,13 @@
     .prose-legal .not-prose p { margin-bottom: 0; }
     .prose-legal .not-prose ol > li::before { content: none; padding: 0; background: none; border: 0; box-shadow: none; }
 
-    /* Callout variants — FANZINE */
+    /* Callout variants — clean editorial */
     .prose-legal .legal-callout {
-        border: 3px solid #0A0A0A;
-        border-radius: 0;
-        padding: 14px 16px;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 14px;
+        padding: 16px 18px;
         background: #ffffff;
-        box-shadow: 5px 5px 0 #0A0A0A;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,10,10,0.10);
         margin: 1.6rem 0;
         font-size: 14px;
         line-height: 1.6;
@@ -1145,75 +1140,74 @@
     }
     .prose-legal .legal-callout > strong:first-child {
         display: inline-flex; align-items: center; gap: 8px;
-        margin-bottom: 8px;
-        letter-spacing: 0.12em;
+        margin-bottom: 10px;
+        letter-spacing: 0.18em;
         font-size: 10.5px; text-transform: uppercase;
-        color: #0A0A0A;
-        font-weight: 900;
+        color: rgba(10,10,10,0.55);
+        font-weight: 700;
         font-family: "JetBrains Mono", monospace;
-        background: #FFCC00;
-        padding: 4px 8px;
-        border: 2px solid #0A0A0A;
-        box-shadow: 2px 2px 0 #0A0A0A;
-        transform: rotate(-1.5deg);
+        background: transparent;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
     }
     .prose-legal .legal-callout > strong:first-child::before {
         content: ""; color: #C8102E; font-weight: 900;
     }
     .prose-legal .legal-callout.is-key {
-        background: #F4F4F4;
-        box-shadow: 5px 5px 0 #0E4D92;
+        background: #ffffff;
+        border-left: 3px solid #0E4D92;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(14,77,146,0.18);
     }
     .prose-legal .legal-callout.is-key > strong:first-child {
-        background: #0E4D92; color: #ffffff;
-        box-shadow: 2px 2px 0 #0A0A0A;
+        color: #0E4D92;
     }
-    .prose-legal .legal-callout.is-key > strong:first-child::before { color: #FFCC00; }
     .prose-legal .legal-callout.is-warn {
-        background: #F4F4F4;
-        box-shadow: 5px 5px 0 #C8102E;
+        background: #ffffff;
+        border-left: 3px solid #C8102E;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(200,16,46,0.18);
     }
     .prose-legal .legal-callout.is-warn > strong:first-child {
-        background: #C8102E; color: #ffffff;
-        box-shadow: 2px 2px 0 #0A0A0A;
+        color: #C8102E;
     }
-    .prose-legal .legal-callout.is-warn > strong:first-child::before { color: #FFCC00; }
     .prose-legal .legal-callout.is-tldr {
-        background: #0A0A0A; color: #F4F4F4;
-        border-color: #0A0A0A;
-        box-shadow: 5px 5px 0 #FFCC00;
+        background: #0A0A0A; color: rgba(255,255,255,0.92);
+        border: 1px solid #0A0A0A;
+        border-radius: 16px;
+        box-shadow: 0 12px 32px -14px rgba(10,10,10,0.35);
     }
     .prose-legal .legal-callout.is-tldr > strong:first-child {
-        background: #FFCC00; color: #0A0A0A;
-        box-shadow: 2px 2px 0 #C8102E;
+        color: #FFCC00;
+        background: transparent;
+        box-shadow: none;
     }
-    .prose-legal .legal-callout.is-tldr > strong:first-child::before { color: #C8102E; }
     .prose-legal .legal-callout.is-tldr a { color: #FFCC00; text-decoration-color: #FFCC00; }
-    .prose-legal .legal-callout.is-tldr code { background: #FFCC00; color: #0A0A0A; }
+    .prose-legal .legal-callout.is-tldr code { background: rgba(255,204,0,0.18); color: #FFCC00; }
     .prose-legal .legal-callout.is-tldr strong { color: #FFCC00; }
 
-    /* Tables — responsive FANZINE */
+    /* Tables — clean editorial */
     .prose-legal .legal-table-wrap { overflow-x: auto; margin: 1.4rem -2px; padding: 0 2px; }
     .prose-legal table {
         width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px;
-        border: 3px solid #0A0A0A;
-        box-shadow: 4px 4px 0 #FFCC00;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 12px;
+        overflow: hidden;
         background: #ffffff;
     }
     .prose-legal th, .prose-legal td {
-        padding: 11px 13px;
-        border-bottom: 1.5px dashed rgba(10,10,10,0.22);
+        padding: 11px 14px;
+        border-bottom: 1px solid rgba(10,10,10,0.06);
         text-align: left; vertical-align: top;
     }
     .prose-legal th {
-        font-weight: 900; background: #0A0A0A; color: #FFCC00;
+        font-weight: 700; background: rgba(10,10,10,0.04); color: rgba(10,10,10,0.65);
         font-size: 10.5px; text-transform: uppercase;
-        letter-spacing: 0.12em;
-        border-bottom: 2.5px solid #0A0A0A;
+        letter-spacing: 0.14em;
+        border-bottom: 1px solid rgba(10,10,10,0.10);
         font-family: "JetBrains Mono", monospace;
     }
     .prose-legal tr:last-child td { border-bottom: 0; }
-    .prose-legal tr:hover td { background: rgba(255,204,0,0.10); }
+    .prose-legal tr:hover td { background: rgba(10,10,10,0.02); }
 
     /* Definition list */
     .prose-legal dl { margin: 1rem 0; }
@@ -1227,74 +1221,71 @@
     .prose-legal dt::before { content: ""; color: #C8102E; }
     .prose-legal dd { margin-left: 0; font-size: 14px; color: rgba(10,10,10,0.78); margin-bottom: 0.6rem; padding-left: 1.5rem; }
 
-    /* Inline legal reference chip */
+    /* Inline legal reference chip — clean */
     .prose-legal .legal-ref {
         font-family: "JetBrains Mono", monospace;
         font-size: 10.5px;
         color: #0A0A0A;
-        padding: 2px 7px;
-        background: #FFCC00;
-        border: 1.5px solid #0A0A0A;
-        border-radius: 4px;
+        padding: 2px 8px;
+        background: rgba(10,10,10,0.05);
+        border-radius: 6px;
         white-space: nowrap;
         letter-spacing: 0.04em;
-        font-weight: 700;
-        box-shadow: 1.5px 1.5px 0 #0A0A0A;
+        font-weight: 600;
     }
 
-    /* Cross-references row */
+    /* Cross-references row — clean */
     .prose-legal .legal-seealso {
         margin-top: 1.2rem; padding: 14px 16px;
-        border: 2.5px dashed #0A0A0A;
-        background: #F4F4F4;
+        border: 1px solid rgba(10,10,10,0.08);
+        background: #ffffff;
         font-size: 13px;
         color: #0A0A0A;
+        border-radius: 12px;
         display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center;
-        box-shadow: 3px 3px 0 #2D6E4B;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,10,10,0.08);
     }
     .prose-legal .legal-seealso strong {
-        font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
-        color: #C8102E; margin-right: 4px;
+        font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.18em;
+        color: rgba(10,10,10,0.55); margin-right: 4px;
         font-family: "JetBrains Mono", monospace;
-        font-weight: 900;
+        font-weight: 700;
     }
     .prose-legal .legal-seealso strong::before { content: ""; }
 
-    /* FAQ disclosures */
+    /* FAQ disclosures — clean */
     .prose-legal details {
-        border: 2.5px solid #0A0A0A;
-        border-radius: 0;
-        padding: 14px 16px;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 12px;
+        padding: 14px 18px;
         margin: 10px 0;
         background: #ffffff;
-        box-shadow: 3px 3px 0 #0A0A0A;
-        transition: box-shadow 200ms ease, transform 200ms ease;
+        transition: border-color 200ms ease, box-shadow 220ms ease;
     }
     .prose-legal details[open] {
-        background: #F4F4F4;
-        box-shadow: 4px 4px 0 #C8102E;
+        background: rgba(10,10,10,0.02);
+        border-color: rgba(10,10,10,0.16);
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 22px -14px rgba(10,10,10,0.10);
     }
     .prose-legal details summary {
-        cursor: pointer; font-weight: 900; font-size: 14.5px;
-        color: #0A0A0A; letter-spacing: -0.01em;
+        cursor: pointer; font-weight: 700; font-size: 14.5px;
+        color: #0A0A0A; letter-spacing: -0.012em;
         list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
     .prose-legal details summary::-webkit-details-marker { display: none; }
     .prose-legal details summary::after {
         content: "+";
-        font-family: "JetBrains Mono", monospace; font-weight: 900;
-        color: #0A0A0A;
-        background: #FFCC00;
+        font-family: "JetBrains Mono", monospace; font-weight: 700;
+        color: rgba(10,10,10,0.65);
+        background: rgba(10,10,10,0.06);
         width: 22px; height: 22px;
         display: grid; place-items: center;
-        border: 2px solid #0A0A0A;
         border-radius: 999px;
-        box-shadow: 1.5px 1.5px 0 #0A0A0A;
         font-size: 14px;
-        transition: transform 220ms ease;
+        transition: transform 220ms ease, background 220ms ease, color 220ms ease;
         flex-shrink: 0;
     }
-    .prose-legal details[open] summary::after { content: "−"; background: #C8102E; color: #ffffff; }
+    .prose-legal details[open] summary::after { content: "−"; background: #0A0A0A; color: #ffffff; }
     .prose-legal details > *:not(summary) { margin-top: 12px; font-size: 14px; line-height: 1.65; }
 
     /* Anchor link on hover */
