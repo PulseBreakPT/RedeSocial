@@ -148,16 +148,9 @@ export default function Register() {
     const next = () => {
         setError("");
         if (step === 1) {
-            if (!nameValid) return setError("Diz-nos o teu nome.");
-            if (usernameState.status === "taken") return setError("Esse username já está em uso.");
-            if (usernameState.status === "invalid") return setError(usernameState.message || "Username inválido.");
-            if (usernameState.status !== "available") return setError("Espera pela verificação do username.");
-            if (emailState.status === "taken") return setError("Já existe uma conta com esse email.");
-            if (emailState.status === "invalid") return setError(emailState.message || "Email inválido.");
-            if (emailState.status !== "available") return setError("Espera pela verificação do email.");
-            if (form.password.length < 8) return setError("A palavra-passe tem de ter pelo menos 8 caracteres.");
-            if (pwdEval.score < 2) return setError("A palavra-passe é demasiado fraca. Reforça-a.");
-            if (!pwdMatches) return setError("As palavras-passe não coincidem.");
+            // O hint sob o bot\u00e3o j\u00e1 mostra o que falta em tempo real \u2014
+            // se canStep1 \u00e9 false, apenas n\u00e3o avan\u00e7a (sem duplicar mensagem).
+            if (!canStep1) return;
         }
         setStep((s) => Math.min(3, s + 1));
     };
@@ -573,6 +566,32 @@ export default function Register() {
                                 </PrimaryButton>
                             )}
                         </div>
+
+                        {/* Terms disclaimer (under action bar) */}
+                        <p
+                            className="mt-4 text-[11.5px] font-medium leading-relaxed text-center px-2"
+                            data-testid="register-terms-disclaimer"
+                            style={{ color: "rgba(10,10,10,0.55)" }}
+                        >
+                            Ao continuar, aceitas os nossos{" "}
+                            <Link
+                                to="/legal/terms"
+                                target="_blank"
+                                className="font-bold underline underline-offset-2"
+                                style={{ color: PT.ink, textDecorationColor: PT.red, textDecorationThickness: 1.5 }}
+                            >
+                                Termos
+                            </Link>{" "}
+                            e a{" "}
+                            <Link
+                                to="/legal/privacy"
+                                target="_blank"
+                                className="font-bold underline underline-offset-2"
+                                style={{ color: PT.ink, textDecorationColor: PT.red, textDecorationThickness: 1.5 }}
+                            >
+                                Política de Privacidade
+                            </Link>.
+                        </p>
                     </form>
 
                     {/* Bottom link (mobile) */}

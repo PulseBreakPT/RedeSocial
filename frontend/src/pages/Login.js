@@ -191,6 +191,32 @@ export default function Login() {
                         <PrimaryButton type="submit" busy={busy} dataTestid="login-submit">
                             {busy ? "A entrar…" : (<>Entrar <ArrowRight size={16} strokeWidth={2.5} /></>)}
                         </PrimaryButton>
+
+                        {/* Terms disclaimer (under primary CTA) */}
+                        <p
+                            className="text-[11.5px] font-medium leading-relaxed text-center px-2"
+                            data-testid="login-terms-disclaimer"
+                            style={{ color: "rgba(10,10,10,0.55)" }}
+                        >
+                            Ao continuar, aceitas os nossos{" "}
+                            <Link
+                                to="/legal/terms"
+                                target="_blank"
+                                className="font-bold underline underline-offset-2"
+                                style={{ color: PT.ink, textDecorationColor: PT.azul, textDecorationThickness: 1.5 }}
+                            >
+                                Termos
+                            </Link>{" "}
+                            e a{" "}
+                            <Link
+                                to="/legal/privacy"
+                                target="_blank"
+                                className="font-bold underline underline-offset-2"
+                                style={{ color: PT.ink, textDecorationColor: PT.azul, textDecorationThickness: 1.5 }}
+                            >
+                                Política de Privacidade
+                            </Link>.
+                        </p>
                     </form>
 
                     {/* Divider with social signal */}
