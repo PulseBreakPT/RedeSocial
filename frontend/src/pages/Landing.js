@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
@@ -33,14 +33,6 @@ const CITY_LISBOA  = "https://images.pexels.com/photos/34440892/pexels-photo-344
 const CITY_PORTO   = "https://images.unsplash.com/photo-1693944844665-ce10f83a775b?auto=format&fit=crop&w=900&q=80";
 const CITY_ALGARVE = "https://images.unsplash.com/photo-1608649944716-228404a0a8bb?auto=format&fit=crop&w=900&q=80";
 const CITY_OUTRA   = "https://images.unsplash.com/photo-1580836618629-7fc7ff649765?auto=format&fit=crop&w=900&q=80";
-
-// Premium editorial photos for "Cartas de Portugal" + cinematic divider
-const IMG_PT_ALGARVE_CLIFFS = "https://images.unsplash.com/photo-1727961673785-689cad093cc7?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
-const IMG_PT_LISBOA_TRAM    = "https://images.unsplash.com/photo-1585208798174-6cedd86e019a?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
-const IMG_PT_PORTO_RIBEIRA  = "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
-const IMG_PT_ACORES_LAKE    = "https://images.unsplash.com/photo-1581925865466-ffed044c0c64?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
-const IMG_PT_AZULEJO_WALL   = "https://images.unsplash.com/photo-1541320779116-ec4a3d4692bc?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
-const IMG_PT_COAST_PANO     = "https://images.unsplash.com/photo-1608649944716-228404a0a8bb?crop=entropy&cs=srgb&fm=jpg&q=85&w=2000";
 
 // =============================================================================
 // PREMIUM INTERACTION PRIMITIVES — magnetic CTA, 3D tilt, cursor accent
@@ -609,7 +601,7 @@ function Hero({ stats }) {
                 {/* ============ LEFT: TYPE + CTAs ============ */}
                 <div className="relative z-10">
                     {/* Section number tag — premium kicker w/ live pulse */}
-                    <div className="flex items-center gap-3 mb-6 sm:mb-8 pr-[92px] lg:pr-0 lusorae-reveal-up">
+                    <div className="flex items-center gap-3 mb-6 sm:mb-8 lusorae-reveal-up">
                         <span className="relative flex h-2 w-2" aria-hidden>
                             <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
                             <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.green }} />
@@ -626,17 +618,19 @@ function Hero({ stats }) {
                         </span>
                     </div>
 
-                    {/* MASSIVE HEADLINE — 4 linhas, com itálico cinematográfico em "TUA" */}
-                    <h1
-                        className="font-black tracking-[-0.045em] leading-[0.86] lg:whitespace-nowrap lusorae-reveal-up"
-                        style={{
-                            fontSize: "clamp(48px, 8.8vw, 132px)",
-                            color: PT.ink,
-                            fontFamily: '"Inter", system-ui, sans-serif',
-                            fontWeight: 900,
-                            animationDelay: "0.05s",
-                        }}
-                    >
+                    {/* Headline + mobile phone peek (mobile: flex row · desktop: block) */}
+                    <div className="relative flex items-start gap-2 sm:gap-3 lg:block">
+                        {/* MASSIVE HEADLINE — 4 linhas, com itálico cinematográfico em "TUA" */}
+                        <h1
+                            className="flex-1 min-w-0 font-black tracking-[-0.045em] leading-[0.86] lg:whitespace-nowrap lusorae-reveal-up"
+                            style={{
+                                fontSize: "clamp(38px, 11vw, 132px)",
+                                color: PT.ink,
+                                fontFamily: '"Inter", system-ui, sans-serif',
+                                fontWeight: 900,
+                                animationDelay: "0.05s",
+                            }}
+                        >
                         {/* Line 1: A TUA (TUA em vermelho PT, itálico para rhythm cinematográfico) */}
                         <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.08s" }}>
                             A{" "}
@@ -680,6 +674,10 @@ function Hero({ stats }) {
                             </span>
                         </span>
                     </h1>
+
+                        {/* Mobile-only phone peek (visible alongside headline on mobile) */}
+                        <MobileHeroPeek />
+                    </div>
 
                     {/* Subhead — keywords com highlight underlines coloridos */}
                     <p
@@ -807,8 +805,8 @@ function Hero({ stats }) {
                     </div>
                 </div>
 
-                {/* ============ RIGHT: PHONE + CARDS ============ */}
-                <div className="relative flex justify-center items-center lg:justify-center min-h-[440px] sm:min-h-[560px] lg:min-h-[680px] mt-4 lg:mt-0" data-testid="hero-visual">
+                {/* ============ RIGHT: PHONE + CARDS (desktop only — mobile uses MobileHeroPeek inside left col) ============ */}
+                <div className="hidden lg:flex relative justify-center items-center lg:justify-center lg:min-h-[680px] mt-4 lg:mt-0" data-testid="hero-visual">
                     {/* Background colour blocks (PT flag energy) */}
                     <ColourBlocks />
 
@@ -1028,6 +1026,112 @@ function CommunityStack() {
                         </span>
                     </div>
                 ))}
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// MOBILE HERO PEEK — compact phone alongside headline on mobile
+// (uses PhoneMockup scaled down, with PT colour accents around it)
+// =============================================================================
+function MobileHeroPeek() {
+    // Scale factor + base width (PhoneMockup native min width)
+    const SCALE = 0.62;
+    const BASE = 240;
+    const visW = BASE * SCALE;            // visible width ≈ 149px
+    const visH = (BASE * 19 / 9) * SCALE; // visible height ≈ 314px
+
+    return (
+        <div
+            className="lg:hidden relative shrink-0 self-start lusorae-reveal-up"
+            style={{
+                width: `min(42vw, ${visW}px)`,
+                animationDelay: "0.30s",
+                marginTop: "4px",
+                marginRight: "-6px", // subtle peek off the right edge
+            }}
+            data-testid="hero-mobile-phone"
+            aria-hidden
+        >
+            {/* Inner wrapper with explicit aspect ratio (so layout reserves space) */}
+            <div
+                className="relative"
+                style={{
+                    width: "100%",
+                    aspectRatio: `${visW} / ${visH + 16}`,
+                }}
+            >
+                {/* PT colour accents around the phone — mini ColourBlocks */}
+                <div
+                    className="absolute pointer-events-none lusorae-float"
+                    style={{
+                        top: "-4%", right: "-12%",
+                        width: "30%", aspectRatio: "1/1",
+                        background: `linear-gradient(135deg, #E11A38 0%, ${PT.red} 100%)`,
+                        borderRadius: 12,
+                        transform: "rotate(10deg)",
+                        boxShadow: "0 10px 22px -6px rgba(10,10,10,0.28)",
+                        "--rot": "10deg",
+                    }}
+                />
+                <div
+                    className="absolute pointer-events-none lusorae-float-soft"
+                    style={{
+                        bottom: "-2%", left: "-14%",
+                        width: "26%", aspectRatio: "1/1",
+                        background: `linear-gradient(135deg, #FFD45C 0%, ${PT.gold} 100%)`,
+                        borderRadius: 10,
+                        transform: "rotate(-8deg)",
+                        boxShadow: "0 8px 16px -4px rgba(10,10,10,0.22)",
+                        "--rot": "-8deg",
+                        animationDelay: "0.6s",
+                    }}
+                />
+                <div
+                    className="absolute pointer-events-none lusorae-float-soft"
+                    style={{
+                        top: "42%", left: "-18%",
+                        width: "18%", aspectRatio: "1/1",
+                        background: `linear-gradient(135deg, #058845 0%, ${PT.green} 100%)`,
+                        borderRadius: 8,
+                        transform: "rotate(-14deg)",
+                        boxShadow: "0 6px 14px -3px rgba(10,10,10,0.22)",
+                        "--rot": "-14deg",
+                        animationDelay: "1.1s",
+                    }}
+                />
+
+                {/* Floating mini-reaction bubble */}
+                <div
+                    className="absolute z-30 flex items-center gap-1 lusorae-float-soft"
+                    style={{
+                        right: "-8%", top: "30%",
+                        background: "#fff",
+                        border: `1.5px solid rgba(10,10,10,0.08)`,
+                        borderRadius: 999,
+                        padding: "5px 9px 5px 7px",
+                        boxShadow: "0 10px 18px -6px rgba(10,10,10,0.22)",
+                        "--rot": "8deg",
+                        animationDelay: "0.4s",
+                    }}
+                    aria-hidden
+                >
+                    <span className="lusorae-heart" style={{ color: PT.red, fontSize: 12 }}>♥</span>
+                    <span className="text-[9.5px] font-bold" style={{ color: PT.ink }}>+12</span>
+                </div>
+
+                {/* Scaled PhoneMockup — absolute, scaled via transform */}
+                <div
+                    className="absolute top-0 left-0 z-20"
+                    style={{
+                        width: BASE,
+                        transform: `scale(${SCALE})`,
+                        transformOrigin: "top left",
+                    }}
+                >
+                    <PhoneMockup />
+                </div>
             </div>
         </div>
     );
@@ -2113,532 +2217,6 @@ function FinalCta() {
 }
 
 // =============================================================================
-// SIGNATURE 1: CARTOGRAFIA LUSORAE — fixed scroll-tracking Portugal map widget
-// Only this site has it. Pin viaja pelo país consoante o scroll.
-// =============================================================================
-function PortugalCompass() {
-    const [progress, setProgress] = useState(0);
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const onScroll = () => {
-            const doc = document.documentElement;
-            const max = doc.scrollHeight - window.innerHeight;
-            const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-            setProgress(p);
-            setVisible(window.scrollY > 220);
-        };
-        window.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
-
-    // Estações ao longo de Portugal continental (top → bottom em %)
-    const stations = [
-        { y: 14, name: "Porto",    region: "Norte",   accent: PT.azul },
-        { y: 38, name: "Coimbra",  region: "Centro",  accent: PT.ink },
-        { y: 56, name: "Lisboa",   region: "Capital", accent: PT.red },
-        { y: 82, name: "Algarve",  region: "Sul",     accent: PT.gold },
-    ];
-    const currentY = 10 + progress * 80;
-    const current = stations.reduce(
-        (closest, s) => (Math.abs(s.y - currentY) < Math.abs(closest.y - currentY) ? s : closest),
-        stations[0],
-    );
-
-    return (
-        <div
-            className="hidden lg:block fixed z-40"
-            style={{
-                bottom: 22,
-                left: 22,
-                opacity: visible ? 1 : 0,
-                transform: visible ? "translateY(0)" : "translateY(20px)",
-                transition: "opacity 0.45s, transform 0.45s",
-                pointerEvents: visible ? "auto" : "none",
-            }}
-            data-testid="portugal-compass"
-            aria-label={`Estás em ${current.name} · ${Math.round(progress * 100)}% da página`}
-        >
-            <div
-                className="flex items-center gap-3"
-                style={{
-                    background: "rgba(247,245,239,0.92)",
-                    backdropFilter: "blur(20px) saturate(150%)",
-                    WebkitBackdropFilter: "blur(20px) saturate(150%)",
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    borderRadius: 18,
-                    padding: "10px 13px",
-                    boxShadow: "0 18px 48px -16px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)",
-                }}
-            >
-                {/* Portugal stylized SVG silhouette */}
-                <div className="relative shrink-0" style={{ width: 40, height: 70 }}>
-                    <svg viewBox="0 0 50 100" width="40" height="70" style={{ overflow: "visible", display: "block" }}>
-                        {/* Mainland silhouette — stylized rectangle on western Iberia */}
-                        <path
-                            d="M 20,6 L 28,4 L 33,9 L 36,18 L 38,28 L 36,36 L 39,46 L 40,56 L 41,66 L 39,76 L 35,86 L 30,92 L 24,94 L 18,90 L 14,82 L 12,72 L 14,58 L 12,46 L 10,34 L 12,22 L 16,12 Z"
-                            fill="rgba(10,10,10,0.06)"
-                            stroke={PT.ink}
-                            strokeWidth="1.3"
-                            strokeLinejoin="round"
-                        />
-                        {/* Station dots (faint) */}
-                        {stations.map((s, i) => (
-                            <circle key={i} cx="25" cy={s.y} r="1.4" fill="rgba(10,10,10,0.28)" />
-                        ))}
-                        {/* Live pin — pulses + animates y */}
-                        <circle
-                            cx="25"
-                            cy={currentY}
-                            r="6"
-                            fill={`${current.accent}22`}
-                            style={{ transition: "cy 0.55s cubic-bezier(0.22, 1, 0.36, 1), fill 0.4s" }}
-                        />
-                        <circle
-                            cx="25"
-                            cy={currentY}
-                            r="3.4"
-                            fill={current.accent}
-                            stroke="#fff"
-                            strokeWidth="1.4"
-                            style={{ transition: "cy 0.55s cubic-bezier(0.22, 1, 0.36, 1), fill 0.4s" }}
-                        />
-                    </svg>
-                    {/* Madeira + Açores small dots off-coast */}
-                    <span className="absolute" style={{ bottom: 8, left: -10, width: 5, height: 5, borderRadius: "50%", background: PT.green, opacity: 0.42, border: "1px solid rgba(10,10,10,0.25)" }} aria-hidden />
-                    <span className="absolute" style={{ bottom: 22, left: -16, width: 4, height: 4, borderRadius: "50%", background: PT.green, opacity: 0.42, border: "1px solid rgba(10,10,10,0.25)" }} aria-hidden />
-                </div>
-
-                {/* Live label */}
-                <div>
-                    <p className="font-mono text-[9px] font-bold uppercase mb-0.5" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.5)" }}>
-                        Cartografia
-                    </p>
-                    <p className="font-black text-[14px] leading-none tracking-[-0.01em]" style={{ color: PT.ink }}>
-                        {current.name}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: current.accent }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: current.accent }} />
-                        </span>
-                        <p className="text-[10px] font-bold" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "-0.005em" }}>
-                            {current.region} · {Math.round(progress * 100)}%
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// SIGNATURE 2: AZULEJO BAND — Portuguese ceramic-tile-inspired SVG divider
-// =============================================================================
-function AzulejoBand({ height = 56, accent = "#8FB8E0", bg = PT.ink, dense = false }) {
-    const rawId = useId();
-    const patternId = `azulejo${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
-    const tileSize = dense ? 48 : 60;
-    return (
-        <div
-            aria-hidden
-            className="relative overflow-hidden"
-            style={{ height, background: bg }}
-            data-testid="azulejo-band"
-        >
-            <svg
-                width="100%"
-                height={height}
-                viewBox={`0 0 600 ${height}`}
-                preserveAspectRatio="xMinYMid slice"
-                style={{ display: "block" }}
-            >
-                <defs>
-                    <pattern id={patternId} x="0" y="0" width={tileSize} height={tileSize} patternUnits="userSpaceOnUse">
-                        <rect width={tileSize} height={tileSize} fill={bg} />
-                        <g stroke={accent} strokeWidth="1.1" fill="none" opacity="0.85">
-                            {/* Outer diamond */}
-                            <path d={`M ${tileSize / 2},4 L ${tileSize - 4},${tileSize / 2} L ${tileSize / 2},${tileSize - 4} L 4,${tileSize / 2} Z`} />
-                            {/* Inner diamond */}
-                            <path d={`M ${tileSize / 2},${tileSize * 0.25} L ${tileSize * 0.75},${tileSize / 2} L ${tileSize / 2},${tileSize * 0.75} L ${tileSize * 0.25},${tileSize / 2} Z`} />
-                            {/* Center cross */}
-                            <line x1={tileSize / 2} y1={tileSize * 0.36} x2={tileSize / 2} y2={tileSize * 0.64} />
-                            <line x1={tileSize * 0.36} y1={tileSize / 2} x2={tileSize * 0.64} y2={tileSize / 2} />
-                            {/* Corner arcs (the classic Portuguese azulejo curl) */}
-                            <path d={`M 4,4 Q ${tileSize * 0.20},4 ${tileSize * 0.20},${tileSize * 0.20}`} />
-                            <path d={`M ${tileSize - 4},4 Q ${tileSize * 0.80},4 ${tileSize * 0.80},${tileSize * 0.20}`} />
-                            <path d={`M 4,${tileSize - 4} Q ${tileSize * 0.20},${tileSize - 4} ${tileSize * 0.20},${tileSize * 0.80}`} />
-                            <path d={`M ${tileSize - 4},${tileSize - 4} Q ${tileSize * 0.80},${tileSize - 4} ${tileSize * 0.80},${tileSize * 0.80}`} />
-                        </g>
-                        <circle cx={tileSize / 2} cy={tileSize / 2} r="1.4" fill={accent} opacity="0.9" />
-                    </pattern>
-                </defs>
-                <rect width="600" height={height} fill={`url(#${patternId})`} />
-            </svg>
-            {/* Hand-stamped label */}
-            <div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-                <div
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5"
-                    style={{
-                        background: bg,
-                        borderRadius: 999,
-                        boxShadow: `inset 0 0 0 1px ${accent}55`,
-                    }}
-                >
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: PT.red, display: "inline-block" }} />
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: PT.green, display: "inline-block" }} />
-                    <span className="font-mono text-[10px] font-black uppercase" style={{ letterSpacing: "0.25em", color: "rgba(255,255,255,0.85)" }}>
-                        Feito em Portugal · Azulejo digital
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// =============================================================================
-// SIGNATURE 3: CARTAS DE PORTUGAL — postcard collection
-// =============================================================================
-function Postais() {
-    const cards = [
-        { img: IMG_PT_ALGARVE_CLIFFS, location: "Praia da Marinha · Algarve", coords: "37°05'N · 8°25'W", caption: "Onde o ouro\ntoca o mar", stamp: { color: PT.gold, region: "ALGARVE" }, rotate: -3.0, cls: "lg:col-span-2 lg:row-span-2", lg: true },
-        { img: IMG_PT_LISBOA_TRAM,    location: "Elétrico 28 · Lisboa",    coords: "38°42'N · 9°08'W", caption: "Capital,\nem amarelo",       stamp: { color: PT.red, region: "LISBOA" },   rotate: 2.5,  cls: "lg:col-span-2" },
-        { img: IMG_PT_PORTO_RIBEIRA,  location: "Ribeira · Porto",         coords: "41°08'N · 8°37'W", caption: "Do Douro\npara o mundo",     stamp: { color: PT.azul, region: "PORTO" },   rotate: -1.6, cls: "lg:col-span-2" },
-        { img: IMG_PT_ACORES_LAKE,    location: "Lagoa do Fogo · Açores",  coords: "37°45'N · 25°28'W", caption: "Nove ilhas,\numa só alma",   stamp: { color: PT.green, region: "AÇORES" }, rotate: 3.0,  cls: "lg:col-span-2" },
-        { img: IMG_PT_AZULEJO_WALL,   location: "Azulejo · Património",    coords: "Séc. XVI–XXI",      caption: "Paredes que\ncontam",        stamp: { color: PT.azul, region: "AZULEJO" }, rotate: -2.4, cls: "lg:col-span-2" },
-    ];
-
-    return (
-        <section
-            data-testid="postais"
-            className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24"
-            style={{ background: PT.paper }}
-        >
-            {/* Watermark: giant "Portugal" italic in background */}
-            <div
-                aria-hidden
-                className="absolute pointer-events-none select-none"
-                style={{
-                    top: "50%", left: "50%",
-                    transform: "translate(-50%, -50%) rotate(-4deg)",
-                    fontSize: "clamp(180px, 26vw, 380px)",
-                    fontWeight: 900,
-                    color: "rgba(10,10,10,0.025)",
-                    fontStyle: "italic",
-                    fontFamily: '"Inter", system-ui, sans-serif',
-                    letterSpacing: "-0.05em",
-                    lineHeight: 0.85,
-                    whiteSpace: "nowrap",
-                }}
-            >
-                Portugal
-            </div>
-
-            <div className="relative max-w-[1400px] mx-auto">
-                {/* Section header */}
-                <div className="flex items-end justify-between flex-wrap gap-5 mb-12 sm:mb-16">
-                    <div className="max-w-2xl">
-                        <div className="flex items-center gap-3 mb-3">
-                            <span
-                                className="inline-flex items-center justify-center font-black text-[12px]"
-                                style={{
-                                    width: 26, height: 26, borderRadius: 6,
-                                    background: PT.red, color: "#fff",
-                                    transform: "rotate(-8deg)",
-                                }}
-                            >
-                                ✉
-                            </span>
-                            <p className="font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.62)" }}>
-                                Cartas de Portugal
-                            </p>
-                            <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(10,10,10,0.2)" }} />
-                            <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(10,10,10,0.4)" }}>
-                                5 postais · 5 latitudes
-                            </p>
-                        </div>
-                        <h2
-                            className="font-black tracking-[-0.04em] leading-[0.92]"
-                            style={{
-                                fontSize: "clamp(34px, 5.2vw, 68px)",
-                                color: PT.ink,
-                                fontFamily: '"Inter", system-ui, sans-serif',
-                                fontWeight: 900,
-                            }}
-                        >
-                            Cada cidade,{" "}
-                            <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.045em", color: PT.green }}>
-                                um postal
-                                <span
-                                    className="absolute pointer-events-none"
-                                    style={{ left: "-2%", right: "-2%", bottom: "-0.08em", height: 14 }}
-                                >
-                                    <UnderlineStroke color={PT.green} w={300} h={14} variant="wave" delay={0.3} style={{ width: "100%", height: "100%" }} />
-                                </span>
-                            </span>
-                        </h2>
-                        <p className="mt-5 text-[15.5px] sm:text-[17px] font-medium leading-relaxed max-w-[540px]" style={{ color: "rgba(10,10,10,0.68)" }}>
-                            Não vendemos um produto — convidamos-te para um país. Sai do feed e vem ver isto ao vivo.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Postal cards — asymmetric magazine grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-6 gap-5 sm:gap-7 lg:gap-10">
-                    {cards.map((c, i) => (
-                        <PostalCard key={i} data={c} index={i} className={c.cls || ""} large={!!c.lg} />
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function PostalCard({ data, index, className = "", large = false }) {
-    return (
-        <div className={`relative group ${className}`} data-testid={`postal-${index}`}>
-            <div
-                className="relative transition-all duration-500 group-hover:-translate-y-2 group-hover:rotate-0"
-                style={{
-                    transform: `rotate(${data.rotate}deg)`,
-                    transformOrigin: "center center",
-                }}
-            >
-                <div
-                    className="relative"
-                    style={{
-                        background: "#FCFAF4",
-                        borderRadius: 6,
-                        padding: 10,
-                        paddingBottom: 14,
-                        boxShadow: "0 22px 50px -18px rgba(10,10,10,0.35), 0 4px 12px rgba(10,10,10,0.10)",
-                        border: "1px solid rgba(10,10,10,0.06)",
-                    }}
-                >
-                    {/* Photo */}
-                    <div
-                        className="relative overflow-hidden"
-                        style={{
-                            aspectRatio: large ? "4/5" : "16/11",
-                            borderRadius: 3,
-                            background: "#eee",
-                        }}
-                    >
-                        <img
-                            src={data.img}
-                            alt={data.location}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-110"
-                            loading="lazy"
-                        />
-                        {/* Warm-light overlay */}
-                        <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                                background: "linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.55) 100%)",
-                            }}
-                        />
-                        {/* Location strip bottom */}
-                        <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5">
-                            <MapPin size={11} style={{ color: "#fff" }} />
-                            <span
-                                className="font-mono text-[9.5px] font-bold uppercase text-white truncate"
-                                style={{ letterSpacing: "0.10em", textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}
-                            >
-                                {data.location}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Bottom strip: caption + stamp + coords */}
-                    <div className="relative pt-4 px-1.5 flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            <p
-                                className="font-black leading-[1.05] tracking-[-0.02em] whitespace-pre-line"
-                                style={{
-                                    color: PT.ink,
-                                    fontSize: large ? "clamp(20px, 1.85vw, 28px)" : "clamp(14px, 1.1vw, 16px)",
-                                    fontStyle: "italic",
-                                }}
-                            >
-                                {data.caption}
-                            </p>
-                            <p
-                                className="font-mono font-bold mt-2"
-                                style={{
-                                    color: "rgba(10,10,10,0.42)",
-                                    letterSpacing: "0.10em",
-                                    fontSize: large ? "10.5px" : "9px",
-                                }}
-                            >
-                                {data.coords}
-                            </p>
-                        </div>
-                        <PostalStamp color={data.stamp.color} region={data.stamp.region} large={large} />
-                    </div>
-
-                    {/* Circular postmark (carimbo) over photo top-right */}
-                    <PostalCarimbo />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PostalStamp({ color, region, large = false }) {
-    const w = large ? 58 : 46;
-    const h = large ? 68 : 54;
-    const isLight = color === PT.gold;
-    return (
-        <div
-            className="shrink-0 relative"
-            style={{
-                width: w, height: h,
-                background: color,
-                color: isLight ? PT.ink : "#fff",
-                padding: 3,
-                transform: "rotate(3deg)",
-                boxShadow: "0 3px 8px rgba(10,10,10,0.18)",
-            }}
-        >
-            {/* Perforated edge effect via box-shadow + radial gradients */}
-            <div
-                aria-hidden
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    background: `
-                        radial-gradient(circle at 50% 0, transparent 2.4px, transparent 2.4px),
-                        radial-gradient(circle at 50% 100%, transparent 2.4px, transparent 2.4px)
-                    `,
-                }}
-            />
-            <div
-                className="w-full h-full flex flex-col items-center justify-center"
-                style={{ border: `1px dashed ${isLight ? "rgba(10,10,10,0.30)" : "rgba(255,255,255,0.55)"}` }}
-            >
-                <span className="font-black text-[9px] leading-none">★</span>
-                <span
-                    className="font-black uppercase leading-tight mt-0.5 text-center px-0.5"
-                    style={{ fontSize: large ? "9px" : "7.5px", letterSpacing: "0.05em" }}
-                >
-                    {region}
-                </span>
-                <span className="font-mono text-[6.5px] font-bold mt-0.5" style={{ letterSpacing: "0.08em" }}>
-                    2026
-                </span>
-            </div>
-        </div>
-    );
-}
-
-function PostalCarimbo() {
-    return (
-        <div
-            className="absolute pointer-events-none"
-            style={{
-                top: 16, right: 16,
-                width: 58, height: 58,
-                transform: "rotate(-14deg)",
-                opacity: 0.62,
-            }}
-            aria-hidden
-        >
-            <svg viewBox="0 0 60 60" width="58" height="58">
-                <circle cx="30" cy="30" r="26" fill="none" stroke={PT.red} strokeWidth="1.3" strokeDasharray="2 2" />
-                <circle cx="30" cy="30" r="20" fill="none" stroke={PT.red} strokeWidth="1.1" />
-                <text x="30" y="20" textAnchor="middle" fontSize="5.5" fontWeight="900" fill={PT.red} fontFamily="Inter, system-ui">
-                    LUSORAE
-                </text>
-                <text x="30" y="34" textAnchor="middle" fontSize="13" fontWeight="900" fill={PT.red} fontFamily="Inter, system-ui">
-                    PT
-                </text>
-                <text x="30" y="44" textAnchor="middle" fontSize="5.5" fontWeight="900" fill={PT.red} fontFamily="Inter, system-ui">
-                    VISTO · 2026
-                </text>
-            </svg>
-        </div>
-    );
-}
-
-// =============================================================================
-// SIGNATURE 4: CINEMATIC DIVIDER — full-bleed Portugal coast with editorial typo
-// =============================================================================
-function CinematicDivider() {
-    return (
-        <section
-            className="relative overflow-hidden"
-            style={{ height: "clamp(320px, 42vw, 520px)" }}
-            data-testid="cinematic-divider"
-            aria-hidden
-        >
-            <img
-                src={IMG_PT_COAST_PANO}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-            />
-            {/* Dark gradient for legibility */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: "linear-gradient(180deg, rgba(10,10,10,0.40) 0%, rgba(10,10,10,0.25) 40%, rgba(10,10,10,0.70) 100%)" }}
-            />
-            {/* Coordinate strip — top */}
-            <div className="absolute top-5 left-5 right-5 flex items-center justify-between text-white pointer-events-none">
-                <div className="flex items-center gap-2">
-                    <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
-                    </span>
-                    <p className="font-mono text-[10px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.85)" }}>
-                        Coordenada · Atlântico
-                    </p>
-                </div>
-                <p className="font-mono text-[10px] sm:text-[11px] font-bold uppercase hidden sm:block" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.65)" }}>
-                    Lat. 37°–42°N · Lon. 6°–9°W
-                </p>
-            </div>
-
-            {/* Centre title */}
-            <div className="absolute inset-0 flex items-center justify-center px-5 pointer-events-none">
-                <div className="text-center max-w-3xl">
-                    <p className="font-mono text-[10px] sm:text-[11px] font-bold uppercase mb-3 sm:mb-4" style={{ letterSpacing: "0.28em", color: "rgba(255,255,255,0.7)" }}>
-                        — entre o oceano e o resto —
-                    </p>
-                    <h3
-                        className="font-black tracking-[-0.04em] leading-[0.92] text-white"
-                        style={{
-                            fontSize: "clamp(40px, 7vw, 96px)",
-                            fontFamily: '"Inter", system-ui, sans-serif',
-                            fontWeight: 900,
-                            textShadow: "0 4px 24px rgba(0,0,0,0.4)",
-                        }}
-                    >
-                        Vivemos{" "}
-                        <span style={{ fontStyle: "italic", color: PT.gold, letterSpacing: "-0.045em" }}>aqui</span>.
-                        <br />
-                        E é{" "}
-                        <span style={{ fontStyle: "italic", color: PT.red, letterSpacing: "-0.045em" }}>aqui</span>{" "}
-                        que ficamos.
-                    </h3>
-                </div>
-            </div>
-
-            {/* Bottom coordinate strip */}
-            <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-white pointer-events-none">
-                <p className="font-mono text-[10px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.65)" }}>
-                    Praia · Vicentina
-                </p>
-                <p className="font-mono text-[10px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.85)" }}>
-                    Photo · Portugal {String.fromCharCode(8217)}26
-                </p>
-            </div>
-        </section>
-    );
-}
-
-// =============================================================================
 // MAIN
 // =============================================================================
 export default function Landing() {
@@ -2666,14 +2244,10 @@ export default function Landing() {
             <Hero stats={stats} />
             <TrustStrip />
             <CityTicker />
-            <Postais />
-            <AzulejoBand height={56} accent="#A8C7E8" bg={PT.ink} />
             <ValueStrip />
-            <CinematicDivider />
             <FinalCta />
             <SiteFooter />
             <MobileStickyCta />
-            <PortugalCompass />
             <div aria-hidden className="lusorae-grain-fixed" />
             <CursorDot />
 
