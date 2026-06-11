@@ -1707,56 +1707,118 @@ function StepCard({ step, index, isLast }) {
 // === Mini visual mockups for each step ===
 
 function StepVisualCity() {
-    return (
-        <div className="absolute inset-0 flex items-center justify-center p-4">
-            {/* Simulated map dots */}
-            <div className="relative w-full h-full">
-                {/* Background dots grid */}
-                <svg className="absolute inset-0" width="100%" height="100%" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" aria-hidden>
-                    {Array.from({ length: 8 }).map((_, r) => (
-                        Array.from({ length: 14 }).map((_, c) => (
-                            <circle key={`${r}-${c}`} cx={c * 15 + 8} cy={r * 15 + 8} r={1} fill="rgba(10,10,10,0.10)" />
-                        ))
-                    )).flat()}
-                </svg>
-                {/* Active city pin */}
-                <div className="absolute" style={{ left: "38%", top: "32%" }}>
-                    <span className="relative flex items-center justify-center">
-                        <span className="absolute inline-flex rounded-full lusorae-pulse" style={{ width: 40, height: 40, background: `${PT.red}33` }} />
-                        <span
-                            className="relative inline-flex items-center justify-center rounded-full font-black text-[10px]"
-                            style={{
-                                width: 24, height: 24, background: PT.red, color: "#fff",
-                                border: "2.5px solid #fff",
-                                boxShadow: "0 4px 10px rgba(10,10,10,0.2)",
-                            }}
-                        >
-                            ★
-                        </span>
-                    </span>
-                </div>
-                {/* Other pins (smaller, dim) */}
-                <span className="absolute rounded-full" style={{ left: "62%", top: "55%", width: 10, height: 10, background: PT.azul, opacity: 0.5, border: "2px solid #fff" }} />
-                <span className="absolute rounded-full" style={{ left: "22%", top: "68%", width: 10, height: 10, background: PT.green, opacity: 0.5, border: "2px solid #fff" }} />
-                <span className="absolute rounded-full" style={{ left: "78%", top: "22%", width: 10, height: 10, background: PT.gold, opacity: 0.5, border: "2px solid #fff" }} />
+    // Stylised Portugal mainland silhouette (viewBox 0 0 100 230)
+    const PORTUGAL_PATH = "M 56 8 C 60 7 65 9 68 13 C 70 18 72 24 71 30 C 70 36 74 40 76 46 C 78 52 76 58 78 64 C 80 71 82 78 80 85 C 78 92 80 99 82 106 C 84 113 81 120 80 127 C 79 134 82 141 84 148 C 86 155 83 162 80 168 C 76 175 78 182 76 189 C 74 195 70 200 64 204 C 58 207 50 208 42 207 L 18 208 C 13 208 10 205 10 200 C 11 195 9 190 11 186 C 13 181 10 175 13 170 C 16 165 14 159 16 154 C 18 149 15 143 17 138 C 19 133 16 127 18 122 C 20 117 16 111 16 106 C 16 100 14 95 16 90 C 18 85 14 79 14 74 C 14 68 16 63 18 58 C 20 52 16 47 18 42 C 20 37 24 33 24 28 C 24 23 28 18 32 16 C 38 13 45 14 50 12 C 52 10 54 9 56 8 Z";
+    // Cities (relative % of bounding box)
+    const cities = [
+        { name: "Porto",   x: 25, y: 24,  color: PT.green, dim: true },
+        { name: "Lisboa",  x: 18, y: 64,  color: PT.azul,  dim: true },
+        { name: "Évora",   x: 48, y: 78,  color: PT.gold,  dim: true },
+        { name: "Funchal", x: 8,  y: 12,  color: PT.gold,  dim: true, ext: true },
+        { name: "Faro",    x: 38, y: 90,  color: PT.red,   dim: false, active: true },
+    ];
 
-                {/* City tag */}
+    return (
+        <div className="absolute inset-0 flex items-center justify-center p-3">
+            <div className="relative h-full" style={{ width: "auto", aspectRatio: "0.5" }}>
+                {/* Faint grid behind */}
+                <svg
+                    className="absolute inset-0 w-full h-full"
+                    viewBox="0 0 100 230"
+                    aria-hidden
+                >
+                    <defs>
+                        <pattern id="ptGrid" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <path d="M10 0H0V10" fill="none" stroke="rgba(10,10,10,0.06)" strokeWidth="0.4" />
+                        </pattern>
+                    </defs>
+                    <rect width="100" height="230" fill="url(#ptGrid)" />
+                    {/* Portugal silhouette */}
+                    <path
+                        d={PORTUGAL_PATH}
+                        fill="#fff"
+                        stroke={PT.ink}
+                        strokeWidth="1.4"
+                        strokeLinejoin="round"
+                        style={{ filter: "drop-shadow(0 6px 14px rgba(10,10,10,0.10))" }}
+                    />
+                    {/* Inner accent line on west coast (Atlantic feel) */}
+                    <path
+                        d={PORTUGAL_PATH}
+                        fill="none"
+                        stroke={PT.azul}
+                        strokeWidth="0.6"
+                        strokeDasharray="2 2"
+                        opacity="0.35"
+                        transform="translate(-2,1)"
+                    />
+                    {/* Madeira (decorative small island) */}
+                    <ellipse cx="10" cy="22" rx="6" ry="2.5" fill="#fff" stroke={PT.ink} strokeWidth="1" />
+                    <text x="10" y="30" textAnchor="middle" fontSize="3" fill="rgba(10,10,10,0.45)" fontFamily="monospace">Madeira</text>
+                </svg>
+
+                {/* Pins overlay (HTML so we can use lusorae-pulse + tooltip) */}
+                {cities.map((c) => (
+                    <div
+                        key={c.name}
+                        className="absolute"
+                        style={{ left: `${c.x}%`, top: `${c.y}%`, transform: "translate(-50%, -50%)" }}
+                    >
+                        {c.active ? (
+                            <span className="relative flex items-center justify-center">
+                                <span className="absolute inline-flex rounded-full lusorae-pulse" style={{ width: 36, height: 36, background: `${c.color}33` }} />
+                                <span
+                                    className="relative inline-flex items-center justify-center rounded-full font-black text-[9px]"
+                                    style={{
+                                        width: 22, height: 22, background: c.color, color: "#fff",
+                                        border: "2.5px solid #fff",
+                                        boxShadow: "0 4px 10px rgba(10,10,10,0.25)",
+                                    }}
+                                >
+                                    ★
+                                </span>
+                            </span>
+                        ) : (
+                            <span
+                                className="block rounded-full"
+                                style={{
+                                    width: 9, height: 9,
+                                    background: c.color, opacity: 0.55,
+                                    border: "2px solid #fff",
+                                    boxShadow: "0 2px 5px rgba(10,10,10,0.15)",
+                                }}
+                            />
+                        )}
+                    </div>
+                ))}
+
+                {/* Active city tag — anchored next to the Faro pin */}
                 <div
                     className="absolute"
-                    style={{ left: "44%", top: "10%" }}
+                    style={{ left: "44%", top: "82%", transform: "translate(0, 0)" }}
                 >
                     <div
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
                         style={{
                             background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.08)",
-                            boxShadow: "0 4px 12px -4px rgba(10,10,10,0.2)",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 6px 16px -4px rgba(10,10,10,0.22)",
                         }}
                     >
                         <MapPin size={11} style={{ color: PT.red }} />
                         <span className="font-bold text-[10.5px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Faro</span>
                         <span className="font-mono text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.4)" }}>· ativa</span>
                     </div>
+                </div>
+
+                {/* Tiny "PT" badge top-right */}
+                <div className="absolute top-0 right-0">
+                    <span
+                        className="inline-block font-mono text-[8px] font-black uppercase px-1.5 py-0.5 rounded"
+                        style={{ background: PT.ink, color: "#fff", letterSpacing: "0.16em" }}
+                    >
+                        PT
+                    </span>
                 </div>
             </div>
         </div>
