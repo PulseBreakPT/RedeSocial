@@ -4,7 +4,6 @@ import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } 
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
-import { PORTUGAL_DISTRICTS, PORTUGAL_CITIES } from "../data/portugalMap";
 
 // =============================================================================
 // LUSORAE — Landing pública SSS-tier · ONE-SCREEN
@@ -334,9 +333,9 @@ function TrustStrip() {
 // =============================================================================
 function MobileStickyCta() {
     const [show, setShow] = useState(false);
-    const [dismissed, setDismissed] = useState(() => {
+    const [minimized, setMinimized] = useState(() => {
         try {
-            return sessionStorage.getItem("vm_sticky_cta_dismissed") === "1";
+            return sessionStorage.getItem("vm_sticky_cta_minimized") === "1";
         } catch { return false; }
     });
     useEffect(() => {
@@ -346,12 +345,66 @@ function MobileStickyCta() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const onDismiss = () => {
-        setDismissed(true);
-        try { sessionStorage.setItem("vm_sticky_cta_dismissed", "1"); } catch { /* ignore */ }
+    const onMinimize = () => {
+        setMinimized(true);
+        try { sessionStorage.setItem("vm_sticky_cta_minimized", "1"); } catch { /* ignore */ }
+    };
+    const onExpand = () => {
+        setMinimized(false);
+        try { sessionStorage.removeItem("vm_sticky_cta_minimized"); } catch { /* ignore */ }
     };
 
-    if (dismissed) return null;
+    // MINIMIZED — small floating chip with avatars, tap to re-expand
+    if (minimized) {
+        return (
+            <div
+                className="lg:hidden fixed z-40 pointer-events-none"
+                style={{
+                    right: 14,
+                    bottom: 14,
+                    transform: show ? "translateY(0) scale(1)" : "translateY(140%) scale(0.8)",
+                    opacity: show ? 1 : 0,
+                    transition: "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s",
+                }}
+                data-testid="mobile-sticky-cta-mini"
+            >
+                <button
+                    type="button"
+                    onClick={onExpand}
+                    aria-label="Expandir CTA"
+                    className="pointer-events-auto flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 transition-transform active:scale-95"
+                    style={{
+                        background: "rgba(255,255,255,0.96)",
+                        backdropFilter: "blur(16px) saturate(140%)",
+                        WebkitBackdropFilter: "blur(16px) saturate(140%)",
+                        borderRadius: 999,
+                        boxShadow: "0 14px 30px -10px rgba(10,10,10,0.32), 0 3px 8px rgba(10,10,10,0.08)",
+                        border: "1px solid rgba(10,10,10,0.08)",
+                    }}
+                >
+                    <span className="flex -space-x-1.5 shrink-0">
+                        {[PT.red, PT.azul, PT.green].map((c, i) => (
+                            <span
+                                key={i}
+                                className="rounded-full"
+                                style={{
+                                    width: 18, height: 18, background: c,
+                                    border: "2px solid #fff",
+                                }}
+                            />
+                        ))}
+                    </span>
+                    <span className="text-[11px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.08em" }}>
+                        BETA
+                    </span>
+                    <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                    </span>
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -377,9 +430,9 @@ function MobileStickyCta() {
             >
                 <button
                     type="button"
-                    onClick={onDismiss}
-                    data-testid="mobile-sticky-dismiss"
-                    aria-label="Fechar"
+                    onClick={onMinimize}
+                    data-testid="mobile-sticky-minimize"
+                    aria-label="Minimizar"
                     className="grid place-items-center shrink-0 transition-all hover:scale-110 active:scale-95"
                     style={{
                         width: 28, height: 28, borderRadius: "50%",
@@ -388,7 +441,8 @@ function MobileStickyCta() {
                         border: "1px solid rgba(10,10,10,0.08)",
                     }}
                 >
-                    <X size={14} strokeWidth={2.6} />
+                    {/* minimize icon — horizontal bar */}
+                    <span aria-hidden style={{ width: 12, height: 2.5, background: "currentColor", borderRadius: 2, display: "block" }} />
                 </button>
                 <div className="flex -space-x-2 shrink-0">
                     {[PT.red, PT.azul, PT.green].map((c, i) => (
@@ -1521,7 +1575,7 @@ function ValueStrip() {
                         </p>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
                     {cities.map((c) => (
                         <CityTile key={c.name} city={c} />
                     ))}
@@ -1698,299 +1752,53 @@ function StepCard({ step, index, isLast }) {
 
 // === Mini visual mockups for each step ===
 
+// Mini visual mockup for "Escolhe" — clean city imagery (mobile-friendly)
 function StepVisualCity() {
-    // Cities to mark on the map
-    const PINS = [
-        { key: "Porto",   color: PT.green, active: false },
-        { key: "Coimbra", color: PT.gold,  active: false },
-        { key: "Lisboa",  color: PT.azul,  active: false },
-        { key: "Évora",   color: PT.gold,  active: false },
-        { key: "Faro",    color: PT.red,   active: true  },
-    ];
-    // Crop viewbox tight around the mainland (with breathing room)
-    const VB = "832 22 126 258";
-
-    // Editorial city roster (for the side panel)
-    const ROSTER = [
-        { name: "Faro",     status: "ativa",        color: PT.red,   live: true  },
-        { name: "Lisboa",   status: "onboarding",   color: PT.azul,  live: false },
-        { name: "Porto",    status: "onboarding",   color: PT.green, live: false },
-        { name: "Coimbra",  status: "brevemente",   color: PT.gold,  live: false },
-        { name: "Évora",    status: "brevemente",   color: PT.gold,  live: false },
-        { name: "Funchal",  status: "brevemente",   color: PT.gold,  live: false },
-    ];
-
     return (
-        <div className="absolute inset-0 grid grid-cols-[1fr_1fr] gap-2.5 p-2.5">
-
-            {/* ============== LEFT — BIG EDITORIAL MAP ============== */}
+        <div
+            className="relative w-full h-full overflow-hidden"
+            style={{
+                borderRadius: 12,
+                background: PT.ink,
+            }}
+            aria-hidden
+        >
+            <img
+                src={IMG_EVENT_2}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ filter: "saturate(1.05)" }}
+                loading="lazy"
+            />
+            {/* Bottom shading for label legibility */}
             <div
-                className="relative h-full overflow-hidden"
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: "linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.78) 100%)" }}
+            />
+            {/* Top-left "ativa agora" pill */}
+            <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full"
                 style={{
-                    background: "linear-gradient(180deg, #FBFAF6 0%, #F4F1EA 100%)",
-                    borderRadius: 12,
-                    border: "1px solid rgba(10,10,10,0.06)",
+                    background: "rgba(255,255,255,0.95)",
+                    boxShadow: "0 4px 12px -4px rgba(0,0,0,0.35)",
                 }}
             >
-                <svg
-                    className="absolute inset-0 w-full h-full"
-                    viewBox={VB}
-                    preserveAspectRatio="xMidYMid meet"
-                    aria-hidden
-                >
-                    <defs>
-                        <pattern id="ptMapGrid" width="6" height="6" patternUnits="userSpaceOnUse">
-                            <path d="M6 0H0V6" fill="none" stroke="rgba(10,10,10,0.06)" strokeWidth="0.22" />
-                        </pattern>
-                        <linearGradient id="faroFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={PT.red} stopOpacity="0.40" />
-                            <stop offset="100%" stopColor={PT.red} stopOpacity="0.18" />
-                        </linearGradient>
-                        <filter id="ptDrop" x="-10%" y="-10%" width="120%" height="120%">
-                            <feDropShadow dx="0" dy="2.5" stdDeviation="2.6" floodColor="#000" floodOpacity="0.12" />
-                        </filter>
-                        <radialGradient id="faroGlow" cx="0.5" cy="0.5" r="0.5">
-                            <stop offset="0%" stopColor={PT.red} stopOpacity="0.45" />
-                            <stop offset="60%" stopColor={PT.red} stopOpacity="0.12" />
-                            <stop offset="100%" stopColor={PT.red} stopOpacity="0" />
-                        </radialGradient>
-                    </defs>
-
-                    <rect x="832" y="22" width="126" height="258" fill="url(#ptMapGrid)" />
-
-                    {[
-                        { y: 33,  label: "42°N" },
-                        { y: 95,  label: "40°N" },
-                        { y: 165, label: "38°N" },
-                        { y: 265, label: "37°N" },
-                    ].map((t) => (
-                        <g key={t.label}>
-                            <line x1="954" y1={t.y} x2="958" y2={t.y} stroke="rgba(10,10,10,0.45)" strokeWidth="0.4" />
-                            <text x="952" y={t.y + 1.2} textAnchor="end" fontSize="2.7" fontWeight="700" fill="rgba(10,10,10,0.42)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">
-                                {t.label}
-                            </text>
-                        </g>
-                    ))}
-
-                    <rect x="832" y="22" width="22" height="258" fill={PT.azul} opacity="0.04" />
-
-                    <g filter="url(#ptDrop)">
-                        {PORTUGAL_DISTRICTS.map((d) => {
-                            const isFaro = d.name === "Faro";
-                            return (
-                                <path
-                                    key={d.name}
-                                    d={d.d}
-                                    fill={isFaro ? "url(#faroFill)" : "#FFFFFF"}
-                                    stroke="rgba(10,10,10,0.14)"
-                                    strokeWidth="0.35"
-                                    strokeLinejoin="round"
-                                />
-                            );
-                        })}
-                    </g>
-
-                    {PORTUGAL_DISTRICTS.map((d) => (
-                        <path
-                            key={`outline-${d.name}`}
-                            d={d.d}
-                            fill="none"
-                            stroke={PT.ink}
-                            strokeWidth="0.55"
-                            strokeLinejoin="round"
-                            opacity="0.78"
-                            style={{ mixBlendMode: "multiply" }}
-                        />
-                    ))}
-
-                    {PORTUGAL_DISTRICTS.filter((d) => d.name === "Faro").map((d) => (
-                        <path
-                            key="faro-glow"
-                            d={d.d}
-                            fill="none"
-                            stroke={PT.red}
-                            strokeWidth="1.1"
-                            strokeLinejoin="round"
-                        />
-                    ))}
-
-                    {(() => {
-                        const c = PORTUGAL_CITIES["Faro"];
-                        return (
-                            <circle cx={c.x} cy={c.y} r="22" fill="url(#faroGlow)" />
-                        );
-                    })()}
-
-                    {PINS.map((p) => {
-                        const c = PORTUGAL_CITIES[p.key];
-                        if (!c) return null;
-                        if (p.active) {
-                            return (
-                                <g key={p.key}>
-                                    <circle cx={c.x} cy={c.y} r="3.6" fill={PT.red} opacity="0.55">
-                                        <animate attributeName="r" values="3.6;9;3.6" dur="2.2s" repeatCount="indefinite" />
-                                        <animate attributeName="opacity" values="0.55;0;0.55" dur="2.2s" repeatCount="indefinite" />
-                                    </circle>
-                                    <circle cx={c.x} cy={c.y} r="4.2" fill={PT.red} stroke="#fff" strokeWidth="1.3" />
-                                    <circle cx={c.x} cy={c.y} r="1.4" fill="#fff" />
-                                </g>
-                            );
-                        }
-                        return (
-                            <circle key={p.key} cx={c.x} cy={c.y} r="2.4" fill={p.color} stroke="#fff" strokeWidth="1" opacity="0.85" />
-                        );
-                    })}
-
-                    {PINS.map((p) => {
-                        if (p.active) return null;
-                        const c = PORTUGAL_CITIES[p.key];
-                        if (!c) return null;
-                        const offsetX = c.x > 880 ? -3.6 : 3.6;
-                        const anchor  = c.x > 880 ? "end" : "start";
-                        return (
-                            <text
-                                key={`lbl-${p.key}`}
-                                x={c.x + offsetX}
-                                y={c.y + 1.2}
-                                textAnchor={anchor}
-                                fontSize="4"
-                                fontWeight="800"
-                                fill="rgba(10,10,10,0.68)"
-                                fontFamily="Inter, system-ui, sans-serif"
-                                letterSpacing="-0.04em"
-                            >
-                                {p.key}
-                            </text>
-                        );
-                    })}
-
-                    <g transform="translate(945, 36)">
-                        <circle cx="0" cy="0" r="6" fill="#fff" stroke="rgba(10,10,10,0.22)" strokeWidth="0.4" />
-                        <path d="M0 -4.4 L1.4 0 L0 1.2 L-1.4 0 Z" fill={PT.red} />
-                        <path d="M0 4.4 L-1 0 L0 -1 L1 0 Z" fill="rgba(10,10,10,0.35)" />
-                        <text x="0" y="-7.4" textAnchor="middle" fontSize="3" fontWeight="900" fill={PT.ink} fontFamily="ui-monospace, monospace">N</text>
-                    </g>
-
-                    <g transform="translate(840, 274)">
-                        <rect x="0" y="0" width="20" height="1.5" fill={PT.ink} opacity="0.85" />
-                        <rect x="0" y="0" width="10" height="1.5" fill="rgba(10,10,10,0.2)" />
-                        <text x="0" y="6" fontSize="2.8" fontWeight="800" fill="rgba(10,10,10,0.5)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">0</text>
-                        <text x="20" y="6" textAnchor="end" fontSize="2.8" fontWeight="800" fill="rgba(10,10,10,0.5)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">200 KM</text>
-                    </g>
-                </svg>
-
-                <div className="absolute top-2 left-2">
-                    <span
-                        className="inline-flex items-center gap-1 font-mono text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded"
-                        style={{ background: PT.ink, color: "#fff", letterSpacing: "0.18em" }}
-                    >
-                        <span style={{ width: 4, height: 4, borderRadius: "50%", background: PT.red, display: "inline-block" }} />
-                        PT · Mainland
-                    </span>
-                </div>
+                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                </span>
+                <span className="font-mono text-[8.5px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.14em" }}>
+                    Ativa agora
+                </span>
             </div>
-
-            {/* ============== RIGHT — EDITORIAL CITY ROSTER ============== */}
-            <div className="relative h-full flex flex-col gap-2 overflow-hidden">
-
-                <div
-                    className="relative p-3 overflow-hidden"
-                    style={{
-                        background: PT.ink,
-                        color: "#fff",
-                        borderRadius: 12,
-                    }}
-                >
-                    <div
-                        aria-hidden
-                        className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                        style={{
-                            backgroundImage: `linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)`,
-                            backgroundSize: "10px 10px",
-                        }}
-                    />
-                    <div className="relative">
-                        <div className="flex items-center gap-1.5 mb-1">
-                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
-                            </span>
-                            <span className="font-mono text-[8.5px] font-black uppercase" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.75)" }}>
-                                Ativa agora
-                            </span>
-                        </div>
-                        <p
-                            className="font-black tracking-[-0.03em] leading-none mb-0.5"
-                            style={{ fontSize: 22, color: "#fff", fontWeight: 900 }}
-                        >
-                            Faro
-                        </p>
-                        <p className="font-mono text-[8.5px] font-bold" style={{ color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em" }}>
-                            37.018°N · 7.927°W
-                        </p>
-                        <div className="flex items-baseline gap-3 mt-2 pt-2" style={{ borderTop: "1px dashed rgba(255,255,255,0.18)" }}>
-                            <div>
-                                <p className="font-black text-[11px] leading-none" style={{ color: "#fff" }}>Beta</p>
-                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Estado</p>
-                            </div>
-                            <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)" }} />
-                            <div>
-                                <p className="font-black text-[11px] leading-none" style={{ color: "#fff" }}>Aberta</p>
-                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Inscrições</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
-                    {ROSTER.slice(1, 5).map((r) => (
-                        <div
-                            key={r.name}
-                            className="flex items-center gap-1.5 px-2 py-1"
-                            style={{
-                                background: "#fff",
-                                border: "1px solid rgba(10,10,10,0.05)",
-                                borderRadius: 8,
-                            }}
-                        >
-                            <span className="rounded-full shrink-0" style={{ width: 5, height: 5, background: r.color }} />
-                            <span className="font-bold text-[10px] flex-1 min-w-0 truncate" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>{r.name}</span>
-                            <span className="font-mono text-[7.5px] font-bold uppercase shrink-0" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.10em" }}>
-                                {r.status}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-1.5">
-                    <div
-                        className="flex items-center gap-1 px-1.5 py-1"
-                        style={{
-                            background: "rgba(10,10,10,0.04)",
-                            borderRadius: 6,
-                            border: "1px dashed rgba(10,10,10,0.15)",
-                        }}
-                    >
-                        <svg width="14" height="9" viewBox="0 0 14 9">
-                            <ellipse cx="7" cy="5" rx="5" ry="1.4" fill={PT.ink} opacity="0.35" />
-                        </svg>
-                        <span className="font-mono text-[7.5px] font-black uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.12em" }}>Madeira</span>
-                    </div>
-                    <div
-                        className="flex items-center gap-1 px-1.5 py-1"
-                        style={{
-                            background: "rgba(10,10,10,0.04)",
-                            borderRadius: 6,
-                            border: "1px dashed rgba(10,10,10,0.15)",
-                        }}
-                    >
-                        <svg width="16" height="9" viewBox="0 0 16 9">
-                            <circle cx="3" cy="5" r="1.1" fill={PT.ink} opacity="0.35" />
-                            <circle cx="8" cy="4" r="1" fill={PT.ink} opacity="0.35" />
-                            <circle cx="13" cy="6" r="1.2" fill={PT.ink} opacity="0.35" />
-                        </svg>
-                        <span className="font-mono text-[7.5px] font-black uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.12em" }}>Açores</span>
-                    </div>
+            {/* Bottom city name */}
+            <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-2.5">
+                <div className="flex items-end justify-between gap-2">
+                    <p className="font-black tracking-[-0.025em] leading-none text-white" style={{ fontSize: "clamp(18px, 2.4vw, 24px)" }}>
+                        Lisboa
+                    </p>
+                    <span className="font-mono text-[8.5px] font-bold uppercase text-white/65" style={{ letterSpacing: "0.12em" }}>
+                        a tua cidade
+                    </span>
                 </div>
             </div>
         </div>
@@ -2094,8 +1902,8 @@ function CityTile({ city }) {
         <div
             className="relative overflow-hidden group cursor-default"
             style={{
-                aspectRatio: "4/5",
-                borderRadius: 20,
+                aspectRatio: "3/4",
+                borderRadius: 18,
                 border: "1px solid rgba(10,10,10,0.06)",
                 boxShadow: "0 2px 12px -4px rgba(10,10,10,0.08)",
             }}
@@ -2121,7 +1929,7 @@ function CityTile({ city }) {
             />
 
             {/* TOP-LEFT: Status pill */}
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full"
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full"
                 style={{
                     background: "rgba(255,255,255,0.96)",
                     boxShadow: "0 4px 12px -4px rgba(0,0,0,0.3)",
@@ -2131,13 +1939,13 @@ function CityTile({ city }) {
                     <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: city.statusDot }} />
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: city.statusDot }} />
                 </span>
-                <span className="text-[9.5px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.10em" }}>
+                <span className="text-[8.5px] sm:text-[9.5px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.10em" }}>
                     {city.status}
                 </span>
             </div>
 
-            {/* TOP-RIGHT: Region badge */}
-            <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full"
+            {/* TOP-RIGHT: Region badge (desktop only — too cramped on mobile) */}
+            <div className="hidden sm:block absolute top-3 right-3 z-10 px-2 py-1 rounded-full"
                 style={{
                     background: "rgba(255,255,255,0.14)",
                     backdropFilter: "blur(8px)",
@@ -2164,10 +1972,10 @@ function CityTile({ city }) {
                 <ArrowUpRight size={16} strokeWidth={2.5} />
             </span>
 
-            {/* BOTTOM: City name + tags + stats */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 z-10">
-                {/* Tags */}
-                <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
+            {/* BOTTOM: City name + tags + CTA */}
+            <div className="absolute inset-x-0 bottom-0 p-3 sm:p-5 z-10">
+                {/* Tags — hidden on mobile, shown sm+ */}
+                <div className="hidden sm:flex items-center gap-1.5 mb-2.5 flex-wrap">
                     {city.tags.map((t, i) => (
                         <span
                             key={i}
@@ -2188,21 +1996,26 @@ function CityTile({ city }) {
 
                 {/* City name */}
                 <p
-                    className="font-black text-white tracking-[-0.03em] leading-[0.92] mb-2.5"
-                    style={{ fontSize: "clamp(24px, 2.6vw, 34px)" }}
+                    className="font-black text-white tracking-[-0.03em] leading-[0.95] mb-1.5 sm:mb-2.5"
+                    style={{ fontSize: "clamp(20px, 2.6vw, 34px)" }}
                 >
                     {city.name}
                 </p>
 
+                {/* Mobile region label (below city name on mobile, more compact) */}
+                <p className="sm:hidden text-[9.5px] font-bold uppercase text-white/65 leading-none mb-2" style={{ letterSpacing: "0.10em" }}>
+                    {city.region}
+                </p>
+
                 {/* Bottom strip — "Junta-te" CTA */}
-                <div className="flex items-center justify-between pt-2.5"
+                <div className="flex items-center justify-between gap-2 pt-2 sm:pt-2.5"
                     style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}
                 >
-                    <p className="text-[10.5px] font-bold uppercase text-white/75" style={{ letterSpacing: "0.10em" }}>
-                        A começar agora
+                    <p className="text-[9px] sm:text-[10.5px] font-bold uppercase text-white/75 truncate min-w-0" style={{ letterSpacing: "0.08em" }}>
+                        A começar
                     </p>
-                    <span className="text-[11px] font-black text-white inline-flex items-center gap-1" style={{ letterSpacing: "-0.01em" }}>
-                        Junta-te <ArrowUpRight size={12} strokeWidth={2.5} />
+                    <span className="text-[10px] sm:text-[11px] font-black text-white inline-flex items-center gap-1 shrink-0" style={{ letterSpacing: "-0.01em" }}>
+                        Junta-te <ArrowUpRight size={11} strokeWidth={2.5} />
                     </span>
                 </div>
             </div>
