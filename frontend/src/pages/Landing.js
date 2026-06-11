@@ -1304,29 +1304,26 @@ function ValueStrip() {
     const steps = [
         {
             n: "01",
-            kicker: "ESCOLHE",
-            title: "Diz onde vives",
-            sub: "Faro, Lisboa, Porto, Funchal, Açores — o teu feed começa pela cidade, não por uma trend global.",
+            verb: "Escolhe",
+            tagline: "Diz onde vives.",
+            sub: "Faro, Lisboa, Porto, Funchal, Açores. O teu feed começa pela cidade onde vives — não por uma trend global.",
             accent: PT.red,
-            icon: <MapPin size={18} strokeWidth={2.5} />,
             visual: <StepVisualCity />,
         },
         {
             n: "02",
-            kicker: "SEGUE",
-            title: "Escolhe o sinal",
-            sub: "Comunidades, pessoas, temas. Tu decides o que entra no feed — não há recommended for you.",
+            verb: "Segue",
+            tagline: "Tu mandas no feed.",
+            sub: "Escolhes as comunidades, as pessoas e os temas que te interessam. Sem algoritmo a empurrar-te conteúdo.",
             accent: PT.azul,
-            icon: <Users size={18} strokeWidth={2.5} />,
             visual: <StepVisualFeed />,
         },
         {
             n: "03",
-            kicker: "VIVE",
-            title: "Sai do ecrã",
-            sub: "Eventos, tertúlias, jantares, surf, concertos. A rede acaba onde começa a vida real.",
+            verb: "Vive",
+            tagline: "Sai do ecrã.",
+            sub: "Encontros, tertúlias, jantares, concertos. A rede só faz sentido quando vira vida real.",
             accent: PT.green,
-            icon: <Calendar size={18} strokeWidth={2.5} />,
             visual: <StepVisualEvent />,
         },
     ];
@@ -1582,10 +1579,10 @@ function StepCard({ step, index, isLast }) {
             )}
 
             <div
-                className="relative h-full p-6 lg:p-7 transition-all duration-300 group-hover:-translate-y-1"
+                className="relative h-full p-7 lg:p-8 transition-all duration-300 group-hover:-translate-y-1"
                 style={{
                     background: "#fff",
-                    borderRadius: 24,
+                    borderRadius: 26,
                     border: "1px solid rgba(10,10,10,0.06)",
                     boxShadow: "0 4px 24px -8px rgba(10,10,10,0.08), 0 1px 3px rgba(10,10,10,0.04)",
                 }}
@@ -1593,47 +1590,60 @@ function StepCard({ step, index, isLast }) {
                 {/* Accent bar — top */}
                 <div
                     aria-hidden
-                    className="absolute top-0 left-6 right-6 h-[3px] rounded-b"
+                    className="absolute top-0 left-8 right-8 h-[3px] rounded-b"
                     style={{ background: step.accent, opacity: 0.9 }}
                 />
 
-                {/* Header: big number + kicker */}
-                <div className="flex items-start justify-between mb-5">
-                    <div>
-                        <p
-                            className="font-mono text-[10.5px] font-black uppercase mb-1"
-                            style={{ letterSpacing: "0.22em", color: step.accent }}
-                        >
-                            {step.kicker}
-                        </p>
-                        <div className="flex items-end gap-2">
-                            <span
-                                className="font-black leading-none"
-                                style={{
-                                    fontSize: "clamp(56px, 7vw, 88px)",
-                                    color: PT.ink,
-                                    fontFamily: '"Inter", system-ui, sans-serif',
-                                    fontWeight: 900,
-                                    letterSpacing: "-0.05em",
-                                    fontStyle: "italic",
-                                }}
-                            >
-                                {step.n}
-                            </span>
-                            <span
-                                className="inline-flex items-center justify-center mb-2"
-                                style={{
-                                    width: 32, height: 32, borderRadius: 10,
-                                    background: step.accent, color: step.accent === PT.gold ? PT.ink : "#fff",
-                                }}
-                            >
-                                {step.icon}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                {/* === BIG ITALIC NUMBER — primary visual anchor === */}
+                <span
+                    className="font-black block mb-1"
+                    style={{
+                        fontSize: "clamp(82px, 10vw, 132px)",
+                        fontFamily: '"Inter", system-ui, sans-serif',
+                        fontWeight: 900,
+                        fontStyle: "italic",
+                        letterSpacing: "-0.055em",
+                        lineHeight: 1,
+                        paddingRight: "0.1em", // safety for italic right overflow
+                        paddingBottom: "0.02em",
+                        backgroundImage: `linear-gradient(180deg, ${PT.ink} 0%, ${PT.ink} 58%, ${step.accent} 100%)`,
+                        WebkitBackgroundClip: "text",
+                        backgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        color: PT.ink, // fallback
+                    }}
+                >
+                    {step.n}
+                </span>
 
-                {/* Visual mockup */}
+                {/* === VERB — primary heading === */}
+                <h3
+                    className="font-black leading-[0.95] tracking-[-0.03em] mb-1.5"
+                    style={{
+                        fontSize: "clamp(30px, 3.2vw, 42px)",
+                        color: PT.ink,
+                        fontFamily: '"Inter", system-ui, sans-serif',
+                        fontWeight: 900,
+                    }}
+                >
+                    {step.verb}
+                </h3>
+
+                {/* === TAGLINE — italic poetic statement === */}
+                <p
+                    className="leading-snug mb-5 sm:mb-6"
+                    style={{
+                        fontSize: "clamp(15px, 1.25vw, 17px)",
+                        fontStyle: "italic",
+                        fontWeight: 600,
+                        color: "rgba(10,10,10,0.55)",
+                        letterSpacing: "-0.005em",
+                    }}
+                >
+                    {step.tagline}
+                </p>
+
+                {/* === Visual mockup === */}
                 <div
                     className="relative mb-5 overflow-hidden"
                     style={{
@@ -1646,16 +1656,23 @@ function StepCard({ step, index, isLast }) {
                     {step.visual}
                 </div>
 
-                {/* Title + sub */}
-                <p
-                    className="font-black text-[20px] sm:text-[22px] leading-[1.1] mb-2 tracking-[-0.02em]"
-                    style={{ color: PT.ink }}
-                >
-                    {step.title}
-                </p>
-                <p className="text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                    {step.sub}
-                </p>
+                {/* === Detail description === */}
+                <div className="flex items-start gap-2.5">
+                    <span
+                        aria-hidden
+                        className="inline-block shrink-0 mt-[7px]"
+                        style={{
+                            width: 18, height: 2, borderRadius: 2,
+                            background: step.accent,
+                        }}
+                    />
+                    <p
+                        className="text-[13.5px] sm:text-[14px] font-medium leading-relaxed"
+                        style={{ color: "rgba(10,10,10,0.66)" }}
+                    >
+                        {step.sub}
+                    </p>
+                </div>
             </div>
         </div>
     );

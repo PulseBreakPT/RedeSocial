@@ -1,19 +1,46 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Instagram, Linkedin, Twitter } from "lucide-react";
 import { PT } from "../pages/auth/AuthDecor";
 
 // =============================================================================
-// LUSORAE — Site Footer (centrado · compacto · só links que existem)
+// LUSORAE — Site Footer · Premium redesign matching new landing design system
+// (Grid texture · Glassmorphism · Italic accents · Kicker pattern · PT colour blocks)
 // =============================================================================
 
-const LEGAL_LINKS = [
-    { label: "Centro Legal", to: "/legal" },
-    { label: "Termos", to: "/legal/terms" },
-    { label: "Privacidade", to: "/legal/privacy" },
-    { label: "Cookies", to: "/legal/cookies" },
-    { label: "Diretrizes", to: "/legal/community" },
-    { label: "Manifesto", to: "/manifesto" },
+const NAV_GROUPS = [
+    {
+        label: "Produto",
+        links: [
+            { to: "/register", text: "Criar conta" },
+            { to: "/login",    text: "Entrar" },
+            { to: "/manifesto", text: "Manifesto" },
+        ],
+    },
+    {
+        label: "Comunidade",
+        links: [
+            { to: "/communities", text: "Comunidades" },
+            { to: "/events",      text: "Eventos" },
+            { to: "/explore",     text: "Explorar" },
+        ],
+    },
+    {
+        label: "Legal",
+        links: [
+            { to: "/legal/terms",     text: "Termos" },
+            { to: "/legal/privacy",   text: "Privacidade" },
+            { to: "/legal/cookies",   text: "Cookies" },
+            { to: "/legal/community", text: "Diretrizes" },
+            { to: "/legal",           text: "Centro Legal" },
+        ],
+    },
+];
+
+const SOCIAL_LINKS = [
+    { href: "https://instagram.com/lusorae", label: "Instagram", icon: Instagram },
+    { href: "https://linkedin.com/company/lusorae", label: "Linkedin", icon: Linkedin },
+    { href: "https://x.com/lusorae", label: "X (Twitter)", icon: Twitter },
 ];
 
 export default function SiteFooter() {
@@ -37,186 +64,333 @@ export default function SiteFooter() {
             style={{ background: PT.ink, color: "#fff" }}
             data-testid="site-footer"
         >
-            {/* Decoração: scribble azul + sticker verde "acontece aqui." */}
-            <DecorBlock />
+            {/* === Background grid texture (matches FinalCta) === */}
+            <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none opacity-[0.05]"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)`,
+                    backgroundSize: "44px 44px",
+                }}
+            />
 
-            <div className="relative max-w-[680px] mx-auto px-6 sm:px-8 py-10 lg:py-14 flex flex-col items-center text-center">
+            {/* === Floating PT colour accent blocks === */}
+            <div
+                className="absolute pointer-events-none lusorae-float-soft hidden sm:block"
+                style={{ right: -60, top: -50, width: 200, height: 200, background: PT.red, borderRadius: 26, "--rot": "12deg", opacity: 0.55 }}
+                aria-hidden
+            />
+            <div
+                className="absolute pointer-events-none lusorae-float-soft hidden sm:block"
+                style={{ right: 120, top: 120, width: 90, height: 90, background: PT.gold, borderRadius: 16, "--rot": "-6deg", opacity: 0.5, animationDelay: "0.8s" }}
+                aria-hidden
+            />
+            <div
+                className="absolute pointer-events-none lusorae-float-soft hidden sm:block"
+                style={{ left: -40, bottom: 60, width: 110, height: 110, background: PT.green, borderRadius: 18, "--rot": "-18deg", opacity: 0.45, animationDelay: "1.4s" }}
+                aria-hidden
+            />
 
-                {/* === NEWSLETTER (centrado) === */}
-                <div
-                    className="relative w-full"
-                    style={{
-                        background: PT.cream,
-                        color: PT.ink,
-                        border: `3px solid ${PT.ink}`,
-                        boxShadow: `6px 6px 0 ${PT.red}`,
-                        padding: "20px 22px",
-                        maxWidth: 520,
-                    }}
-                >
-                    <p
-                        className="font-black tracking-tight text-center"
-                        style={{ fontSize: "clamp(18px, 1.8vw, 22px)", lineHeight: 1.15, color: PT.ink }}
+            {/* ===================== MAIN GRID ===================== */}
+            <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20 pb-8">
+
+                {/* Kicker row */}
+                <div className="flex items-center gap-3 mb-10 sm:mb-12">
+                    <span
+                        className="inline-flex items-center justify-center font-mono text-[10.5px] font-black"
+                        style={{
+                            width: 26, height: 26, borderRadius: "50%",
+                            background: "#fff", color: PT.ink, letterSpacing: "0.04em",
+                        }}
                     >
-                        Fica a par do Lusorae.{" "}
-                        <span style={{ color: "rgba(10,10,10,0.65)" }}>O melhor do que acontece perto de ti.</span>
+                        04
+                    </span>
+                    <p
+                        className="font-mono text-[11px] font-bold uppercase"
+                        style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.62)" }}
+                    >
+                        Fecho · até já
                     </p>
-                    <form
-                        onSubmit={onSubmit}
-                        className="mt-4 flex"
-                        data-testid="footer-newsletter-form"
-                        noValidate
-                    >
-                        <label htmlFor="footer-newsletter-email" className="sr-only">O teu email</label>
-                        <input
-                            id="footer-newsletter-email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder={submitted ? "Obrigado!" : "O teu email"}
-                            data-testid="footer-newsletter-input"
-                            className="flex-1 min-w-0 px-4 py-2.5 text-[14px] font-semibold text-center"
-                            style={{
-                                background: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                borderRight: "none",
-                                color: PT.ink,
-                                outline: "none",
-                            }}
-                        />
-                        <button
-                            type="submit"
-                            data-testid="footer-newsletter-submit"
-                            aria-label="Subscrever newsletter"
-                            className="grid place-items-center px-4 transition hover:opacity-90"
-                            style={{
-                                background: PT.ink,
-                                color: PT.gold,
-                                border: `2.5px solid ${PT.ink}`,
-                                minWidth: 50,
-                            }}
-                        >
-                            <ArrowRight size={17} strokeWidth={2.6} />
-                        </button>
-                    </form>
-                    <p
-                        className="mt-2.5 text-[10.5px] font-mono font-bold uppercase text-center"
-                        style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}
-                    >
-                        Sem spam · <span style={{ color: PT.green }}>revogável a qualquer momento</span>
+                    <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(255,255,255,0.2)" }} />
+                    <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(255,255,255,0.4)" }}>
+                        37°–42°N · Atlântico
                     </p>
                 </div>
 
-                {/* === LETRA MIÚDA + LINKS LEGAIS (centrado) === */}
-                <div className="mt-10 w-full max-w-[560px]">
-                    <p
-                        className="font-mono font-bold uppercase mb-3 text-center"
-                        style={{
-                            color: PT.gold,
-                            letterSpacing: "0.20em",
-                            fontSize: 11,
-                        }}
-                        data-testid="footer-letra-miuda-kicker"
-                    >
-                        // LETRA MIÚDA — TERMOS &amp; PRIVACIDADE
-                    </p>
-                    <p
-                        className="text-[13px] leading-relaxed font-medium mb-5 text-center"
-                        style={{ color: "rgba(255,255,255,0.78)" }}
-                    >
-                        Consulta os termos, privacidade e diretrizes nos links abaixo. O{" "}
-                        <Link to="/manifesto" className="underline underline-offset-2 hover:no-underline font-bold" style={{ color: PT.gold }}>
-                            manifesto
-                        </Link>{" "}
-                        explica em detalhe o nosso compromisso.
-                    </p>
+                {/* === TOP ROW: Brand + Newsletter === */}
+                <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 mb-14 sm:mb-16">
 
-                    {/* Links legais como pills (centrados) */}
-                    <ul className="flex flex-wrap gap-2 justify-center" data-testid="footer-legal-links">
-                        {LEGAL_LINKS.map(({ label, to }) => (
-                            <li key={to}>
-                                <Link
-                                    to={to}
-                                    data-testid={`footer-legal-${to.split("/").pop() || "index"}`}
-                                    className="inline-block text-[11.5px] font-black uppercase px-3 py-1.5 transition hover:opacity-100"
+                    {/* --- LEFT: Brand block --- */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-5">
+                            <div
+                                className="flex items-center justify-center font-black text-[20px]"
+                                style={{
+                                    width: 50, height: 50, borderRadius: 14,
+                                    background: "#fff", color: PT.ink,
+                                    fontStyle: "italic", letterSpacing: "-0.05em",
+                                }}
+                                aria-hidden
+                            >
+                                L
+                            </div>
+                            <div>
+                                <p
+                                    className="font-black tracking-[-0.025em] leading-none"
                                     style={{
-                                        background: "transparent",
-                                        color: "rgba(255,255,255,0.85)",
-                                        border: `2px solid rgba(255,255,255,0.30)`,
-                                        borderRadius: 999,
-                                        letterSpacing: "0.08em",
+                                        fontSize: "clamp(28px, 3.2vw, 38px)",
+                                        color: "#fff",
+                                        fontWeight: 900,
                                     }}
                                 >
-                                    {label}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                                    Lusorae
+                                </p>
+                                <p className="font-mono text-[10.5px] font-bold uppercase mt-1.5" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.55)" }}>
+                                    A rede portuguesa · Est. 2026
+                                </p>
+                            </div>
+                        </div>
+
+                        <h3
+                            className="font-black tracking-[-0.035em] leading-[0.95] mb-5 max-w-[480px]"
+                            style={{
+                                fontSize: "clamp(26px, 3vw, 42px)",
+                                color: "#fff",
+                                fontWeight: 900,
+                            }}
+                        >
+                            Não é mais uma rede.{" "}
+                            <span style={{ fontStyle: "italic", color: PT.gold, letterSpacing: "-0.045em" }}>
+                                É a rede.
+                            </span>
+                        </h3>
+                        <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-[460px] mb-7" style={{ color: "rgba(255,255,255,0.65)" }}>
+                            Feita em Portugal, para portugueses. Sem algoritmo de vaidade, sem feed for you. Tu mandas no que vês.
+                        </p>
+
+                        {/* PT flag dots + Made in stamp */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <div
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
+                                style={{
+                                    background: "rgba(255,255,255,0.06)",
+                                    border: "1px solid rgba(255,255,255,0.12)",
+                                }}
+                            >
+                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: PT.red, display: "inline-block" }} />
+                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: PT.green, display: "inline-block" }} />
+                                <span className="font-mono text-[10.5px] font-black uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.85)" }}>
+                                    Made in PT
+                                </span>
+                            </div>
+                            <div className="inline-flex items-center gap-2">
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                                </span>
+                                <span className="font-mono text-[10.5px] font-black uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.75)" }}>
+                                    Beta ativa
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* --- RIGHT: Newsletter glassmorphism card --- */}
+                    <div
+                        className="relative p-6 sm:p-7 lg:p-8"
+                        style={{
+                            background: "rgba(255,255,255,0.05)",
+                            backdropFilter: "blur(20px) saturate(140%)",
+                            WebkitBackdropFilter: "blur(20px) saturate(140%)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            borderRadius: 22,
+                            boxShadow: "0 20px 60px -20px rgba(0,0,0,0.5)",
+                        }}
+                        data-testid="footer-newsletter-card"
+                    >
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="relative flex h-2 w-2" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.gold }} />
+                            </span>
+                            <p className="font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.75)" }}>
+                                Newsletter · sem spam
+                            </p>
+                        </div>
+
+                        <h4
+                            className="font-black tracking-[-0.025em] leading-[1] mb-2"
+                            style={{
+                                fontSize: "clamp(22px, 2.4vw, 28px)",
+                                color: "#fff",
+                                fontWeight: 900,
+                            }}
+                        >
+                            Fica a par do que{" "}
+                            <span style={{ fontStyle: "italic", color: PT.gold, letterSpacing: "-0.035em" }}>
+                                acontece
+                            </span>
+                            .
+                        </h4>
+                        <p className="text-[13.5px] sm:text-[14px] font-medium leading-relaxed mb-5" style={{ color: "rgba(255,255,255,0.62)" }}>
+                            Eventos, comunidades e novidades da rede. Uma vez por mês, no máximo.
+                        </p>
+
+                        <form
+                            onSubmit={onSubmit}
+                            className="flex gap-2"
+                            data-testid="footer-newsletter-form"
+                            noValidate
+                        >
+                            <label htmlFor="footer-newsletter-email" className="sr-only">O teu email</label>
+                            <input
+                                id="footer-newsletter-email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder={submitted ? "Obrigado! · até já" : "o.teu@email.pt"}
+                                data-testid="footer-newsletter-input"
+                                className="flex-1 min-w-0 px-4 py-3 text-[14px] font-semibold rounded-full transition-all focus:outline-none"
+                                style={{
+                                    background: "rgba(255,255,255,0.08)",
+                                    border: "1px solid rgba(255,255,255,0.18)",
+                                    color: "#fff",
+                                }}
+                            />
+                            <button
+                                type="submit"
+                                data-testid="footer-newsletter-submit"
+                                aria-label="Subscrever newsletter"
+                                className="grid place-items-center px-5 rounded-full transition-all hover:scale-[1.05] shrink-0"
+                                style={{
+                                    background: "#fff",
+                                    color: PT.ink,
+                                    minWidth: 50,
+                                    boxShadow: "0 10px 24px -8px rgba(0,0,0,0.4)",
+                                }}
+                            >
+                                <ArrowRight size={17} strokeWidth={2.6} />
+                            </button>
+                        </form>
+                        <p className="mt-3.5 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(255,255,255,0.4)" }}>
+                            <span style={{ color: PT.green }}>●</span>{" "}Sem spam · revogável a qualquer momento
+                        </p>
+                    </div>
                 </div>
 
-                {/* Linha tape decorativa */}
-                <div className="pt-tape h-1.5 w-full mt-10 mb-5" aria-hidden />
+                {/* === DIVIDER === */}
+                <div
+                    className="w-full h-px mb-12 sm:mb-14"
+                    style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.16) 50%, transparent)" }}
+                    aria-hidden
+                />
 
-                {/* Copyright (centrado em coluna) */}
-                <div className="flex flex-col items-center gap-2 text-center">
-                    <p
-                        className="text-[11px] font-mono font-bold uppercase"
-                        style={{ letterSpacing: "0.18em", color: PT.gold }}
-                    >
-                        © LUSORAE · {new Date().getFullYear()}
-                    </p>
-                    <p
-                        className="text-[10.5px] font-mono font-bold uppercase"
-                        style={{ letterSpacing: "0.14em", color: "rgba(255,255,255,0.45)" }}
-                    >
-                        🇵🇹 criado com ❤️ em Portugal
+                {/* === MIDDLE: Nav columns === */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1fr] gap-8 sm:gap-10 mb-14 sm:mb-16">
+
+                    {/* Tagline column (desktop only) */}
+                    <div className="hidden lg:block">
+                        <p className="font-mono text-[10.5px] font-bold uppercase mb-3" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.45)" }}>
+                            Manifesto
+                        </p>
+                        <p
+                            className="font-black leading-tight tracking-[-0.02em]"
+                            style={{ fontSize: "20px", color: "#fff" }}
+                        >
+                            Pessoas reais.{" "}
+                            <span style={{ fontStyle: "italic", color: PT.gold }}>Eventos reais.</span>{" "}
+                            Cidade real.
+                        </p>
+                        <Link
+                            to="/manifesto"
+                            className="inline-flex items-center gap-1.5 mt-4 text-[12.5px] font-bold transition-opacity hover:opacity-70"
+                            style={{ color: PT.gold, borderBottom: `1.5px solid ${PT.gold}`, paddingBottom: 2 }}
+                            data-testid="footer-manifesto-link"
+                        >
+                            Lê o manifesto <ArrowRight size={13} />
+                        </Link>
+                    </div>
+
+                    {NAV_GROUPS.map((group) => (
+                        <div key={group.label}>
+                            <p className="font-mono text-[10.5px] font-bold uppercase mb-3.5" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.45)" }}>
+                                {group.label}
+                            </p>
+                            <ul className="space-y-2.5" data-testid={`footer-group-${group.label.toLowerCase()}`}>
+                                {group.links.map((link) => (
+                                    <li key={link.to}>
+                                        <Link
+                                            to={link.to}
+                                            data-testid={`footer-link-${link.text.toLowerCase().replace(/\s+/g, "-")}`}
+                                            className="inline-block text-[13.5px] font-semibold transition-colors hover:text-white"
+                                            style={{ color: "rgba(255,255,255,0.70)" }}
+                                        >
+                                            {link.text}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
+                </div>
+
+                {/* === DIVIDER === */}
+                <div
+                    className="w-full h-px mb-7"
+                    style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.10) 50%, transparent)" }}
+                    aria-hidden
+                />
+
+                {/* === BOTTOM BAR === */}
+                <div className="flex flex-wrap items-center justify-between gap-5">
+
+                    {/* Left: copyright + status */}
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <p className="font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.55)" }}>
+                            © Lusorae · {new Date().getFullYear()}
+                        </p>
+                        <span className="inline-block" style={{ width: 1, height: 14, background: "rgba(255,255,255,0.15)" }} />
+                        <p className="font-mono text-[10.5px] font-bold uppercase hidden sm:block" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.40)" }}>
+                            Lisboa · Porto · Faro · Funchal
+                        </p>
+                    </div>
+
+                    {/* Right: social icons */}
+                    <div className="flex items-center gap-2.5" data-testid="footer-social">
+                        {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
+                            <a
+                                key={label}
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={label}
+                                data-testid={`footer-social-${label.toLowerCase().split(" ")[0]}`}
+                                className="inline-flex items-center justify-center transition-all hover:scale-110"
+                                style={{
+                                    width: 36, height: 36, borderRadius: "50%",
+                                    background: "rgba(255,255,255,0.06)",
+                                    border: "1px solid rgba(255,255,255,0.12)",
+                                    color: "rgba(255,255,255,0.75)",
+                                }}
+                            >
+                                <Icon size={15} strokeWidth={2} />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Final coordinate strip — editorial flourish */}
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5 pt-5" style={{ borderTop: "1px dashed rgba(255,255,255,0.10)" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: PT.red, display: "inline-block" }} aria-hidden />
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: PT.green, display: "inline-block" }} aria-hidden />
+                    <p className="font-mono text-[10px] font-bold uppercase text-center" style={{ letterSpacing: "0.25em", color: "rgba(255,255,255,0.30)" }}>
+                        Lat. 38°42&apos;N · Lon. 9°08&apos;W ·{" "}
+                        <span style={{ color: "rgba(255,255,255,0.55)" }}>Feito com</span>{" "}
+                        <span style={{ color: PT.red, fontSize: 11 }}>♥</span>{" "}
+                        <span style={{ color: "rgba(255,255,255,0.55)" }}>em Portugal</span>
                     </p>
                 </div>
             </div>
         </footer>
-    );
-}
-
-// =============================================================================
-// DECORAÇÃO: scribble azul + sticker verde "acontece aqui." (canto inf. direito)
-// =============================================================================
-function DecorBlock() {
-    return (
-        <div
-            className="absolute pointer-events-none select-none block opacity-70 scale-[0.55] lg:scale-100 lg:opacity-100 origin-bottom-right"
-            style={{ bottom: 16, right: 16, zIndex: 0 }}
-            aria-hidden
-        >
-            <svg
-                width="160" height="100" viewBox="0 0 160 100" fill="none"
-                style={{ position: "absolute", right: -10, bottom: -5 }}
-            >
-                <path
-                    d="M5 75 Q 30 20, 60 55 T 110 50 T 155 42"
-                    stroke={PT.azul} strokeWidth="8" strokeLinecap="round" fill="none"
-                />
-                <path
-                    d="M15 95 Q 55 65, 95 85 T 155 80"
-                    stroke={PT.azul} strokeWidth="5" strokeLinecap="round" fill="none" opacity="0.75"
-                />
-            </svg>
-            <div
-                style={{
-                    position: "relative",
-                    background: PT.green,
-                    color: "#fff",
-                    padding: "8px 14px",
-                    border: `2.5px solid ${PT.ink}`,
-                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                    transform: "rotate(-6deg)",
-                    fontWeight: 900,
-                    fontSize: 14,
-                    lineHeight: 1.05,
-                    letterSpacing: "-0.01em",
-                }}
-            >
-                acontece<br/>aqui.
-            </div>
-        </div>
     );
 }
