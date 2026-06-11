@@ -1708,166 +1708,298 @@ function StepCard({ step, index, isLast }) {
 // === Mini visual mockups for each step ===
 
 function StepVisualCity() {
-    // Cities to show as pins (subset of the dataset)
+    // Cities to mark on the map
     const PINS = [
         { key: "Porto",   color: PT.green, active: false },
         { key: "Coimbra", color: PT.gold,  active: false },
         { key: "Lisboa",  color: PT.azul,  active: false },
         { key: "Évora",   color: PT.gold,  active: false },
-        { key: "Faro",    color: PT.red,   active: true },
+        { key: "Faro",    color: PT.red,   active: true  },
     ];
-    // viewBox padding (gives breathing room around the silhouette)
-    const VB = "830 22 130 258";
+    // Crop viewbox tight around the mainland (with breathing room)
+    const VB = "832 22 126 258";
+
+    // Editorial city roster (for the side panel)
+    const ROSTER = [
+        { name: "Faro",     status: "ativa",        color: PT.red,   live: true,  members: 375 },
+        { name: "Lisboa",   status: "onboarding",   color: PT.azul,  live: false },
+        { name: "Porto",    status: "onboarding",   color: PT.green, live: false },
+        { name: "Coimbra",  status: "brevemente",   color: PT.gold,  live: false },
+        { name: "Évora",    status: "brevemente",   color: PT.gold,  live: false },
+        { name: "Funchal",  status: "brevemente",   color: PT.gold,  live: false },
+    ];
 
     return (
-        <div className="absolute inset-0 flex items-center justify-center p-3">
-            <div className="relative h-full" style={{ aspectRatio: "0.5" }}>
+        <div className="absolute inset-0 grid grid-cols-[1fr_1fr] gap-2.5 p-2.5">
+
+            {/* ============== LEFT — BIG EDITORIAL MAP ============== */}
+            <div
+                className="relative h-full overflow-hidden"
+                style={{
+                    background: "linear-gradient(180deg, #FBFAF6 0%, #F4F1EA 100%)",
+                    borderRadius: 12,
+                    border: "1px solid rgba(10,10,10,0.06)",
+                }}
+            >
                 <svg
                     className="absolute inset-0 w-full h-full"
                     viewBox={VB}
+                    preserveAspectRatio="xMidYMid meet"
                     aria-hidden
                 >
                     <defs>
-                        <pattern id="ptGrid2" width="8" height="8" patternUnits="userSpaceOnUse">
-                            <path d="M8 0H0V8" fill="none" stroke="rgba(10,10,10,0.06)" strokeWidth="0.3" />
+                        <pattern id="ptMapGrid" width="6" height="6" patternUnits="userSpaceOnUse">
+                            <path d="M6 0H0V6" fill="none" stroke="rgba(10,10,10,0.06)" strokeWidth="0.22" />
                         </pattern>
-                        <filter id="ptShadow" x="-10%" y="-10%" width="120%" height="120%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="2.4" floodColor="#000" floodOpacity="0.10" />
+                        <linearGradient id="faroFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={PT.red} stopOpacity="0.40" />
+                            <stop offset="100%" stopColor={PT.red} stopOpacity="0.18" />
+                        </linearGradient>
+                        <filter id="ptDrop" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="2.5" stdDeviation="2.6" floodColor="#000" floodOpacity="0.12" />
                         </filter>
+                        <radialGradient id="faroGlow" cx="0.5" cy="0.5" r="0.5">
+                            <stop offset="0%" stopColor={PT.red} stopOpacity="0.45" />
+                            <stop offset="60%" stopColor={PT.red} stopOpacity="0.12" />
+                            <stop offset="100%" stopColor={PT.red} stopOpacity="0" />
+                        </radialGradient>
                     </defs>
 
-                    {/* Faint grid backdrop */}
-                    <rect x="830" y="22" width="130" height="258" fill="url(#ptGrid2)" />
+                    <rect x="832" y="22" width="126" height="258" fill="url(#ptMapGrid)" />
 
-                    {/* Portugal mainland — single cohesive silhouette via stroke=fill */}
-                    <g filter="url(#ptShadow)">
+                    {[
+                        { y: 33,  label: "42°N" },
+                        { y: 95,  label: "40°N" },
+                        { y: 165, label: "38°N" },
+                        { y: 265, label: "37°N" },
+                    ].map((t) => (
+                        <g key={t.label}>
+                            <line x1="954" y1={t.y} x2="958" y2={t.y} stroke="rgba(10,10,10,0.45)" strokeWidth="0.4" />
+                            <text x="952" y={t.y + 1.2} textAnchor="end" fontSize="2.7" fontWeight="700" fill="rgba(10,10,10,0.42)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">
+                                {t.label}
+                            </text>
+                        </g>
+                    ))}
+
+                    <rect x="832" y="22" width="22" height="258" fill={PT.azul} opacity="0.04" />
+
+                    <g filter="url(#ptDrop)">
                         {PORTUGAL_DISTRICTS.map((d) => {
                             const isFaro = d.name === "Faro";
                             return (
                                 <path
                                     key={d.name}
                                     d={d.d}
-                                    fill={isFaro ? `${PT.red}1F` : "#fff"}
-                                    stroke={isFaro ? PT.red : "rgba(10,10,10,0.18)"}
-                                    strokeWidth={isFaro ? 0.9 : 0.45}
+                                    fill={isFaro ? "url(#faroFill)" : "#FFFFFF"}
+                                    stroke="rgba(10,10,10,0.14)"
+                                    strokeWidth="0.35"
                                     strokeLinejoin="round"
                                 />
                             );
                         })}
                     </g>
-                    {/* Outer crisp coastline — render a single overlay path to unify the silhouette */}
-                    <g pointerEvents="none">
-                        {PORTUGAL_DISTRICTS.map((d) => (
-                            <path
-                                key={`outer-${d.name}`}
-                                d={d.d}
-                                fill="none"
-                                stroke={PT.ink}
-                                strokeWidth="0.7"
-                                strokeLinejoin="round"
-                                opacity="0.85"
-                                style={{ mixBlendMode: "multiply" }}
-                            />
-                        ))}
-                    </g>
 
-                    {/* City pins (rendered inside SVG, in same coord system) */}
+                    {PORTUGAL_DISTRICTS.map((d) => (
+                        <path
+                            key={`outline-${d.name}`}
+                            d={d.d}
+                            fill="none"
+                            stroke={PT.ink}
+                            strokeWidth="0.55"
+                            strokeLinejoin="round"
+                            opacity="0.78"
+                            style={{ mixBlendMode: "multiply" }}
+                        />
+                    ))}
+
+                    {PORTUGAL_DISTRICTS.filter((d) => d.name === "Faro").map((d) => (
+                        <path
+                            key="faro-glow"
+                            d={d.d}
+                            fill="none"
+                            stroke={PT.red}
+                            strokeWidth="1.1"
+                            strokeLinejoin="round"
+                        />
+                    ))}
+
+                    {(() => {
+                        const c = PORTUGAL_CITIES["Faro"];
+                        return (
+                            <circle cx={c.x} cy={c.y} r="22" fill="url(#faroGlow)" />
+                        );
+                    })()}
+
                     {PINS.map((p) => {
                         const c = PORTUGAL_CITIES[p.key];
                         if (!c) return null;
                         if (p.active) {
                             return (
                                 <g key={p.key}>
-                                    <circle cx={c.x} cy={c.y} r="11" fill={`${p.color}33`}>
-                                        <animate attributeName="r" values="6;14;6" dur="2.2s" repeatCount="indefinite" />
+                                    <circle cx={c.x} cy={c.y} r="3.6" fill={PT.red} opacity="0.55">
+                                        <animate attributeName="r" values="3.6;9;3.6" dur="2.2s" repeatCount="indefinite" />
                                         <animate attributeName="opacity" values="0.55;0;0.55" dur="2.2s" repeatCount="indefinite" />
                                     </circle>
-                                    <circle cx={c.x} cy={c.y} r="4.5" fill={p.color} stroke="#fff" strokeWidth="1.4" />
-                                    <text x={c.x} y={c.y + 1.4} textAnchor="middle" fontSize="3.6" fontWeight="900" fill="#fff" fontFamily="Inter, system-ui, sans-serif">★</text>
+                                    <circle cx={c.x} cy={c.y} r="4.2" fill={PT.red} stroke="#fff" strokeWidth="1.3" />
+                                    <circle cx={c.x} cy={c.y} r="1.4" fill="#fff" />
                                 </g>
                             );
                         }
                         return (
-                            <g key={p.key}>
-                                <circle cx={c.x} cy={c.y} r="2.6" fill={p.color} stroke="#fff" strokeWidth="1.1" opacity="0.85" />
-                            </g>
+                            <circle key={p.key} cx={c.x} cy={c.y} r="2.4" fill={p.color} stroke="#fff" strokeWidth="1" opacity="0.85" />
                         );
                     })}
 
-                    {/* City labels (small, only for the most relevant) */}
-                    {PINS.filter(p => !p.active).map((p) => {
+                    {PINS.map((p) => {
+                        if (p.active) return null;
                         const c = PORTUGAL_CITIES[p.key];
                         if (!c) return null;
-                        // Push label to the side opposite to Spain (i.e. west = left) for east-coast cities
-                        const labelOffset = c.x > 880 ? -4 : 4;
-                        const anchor = c.x > 880 ? "end" : "start";
+                        const offsetX = c.x > 880 ? -3.6 : 3.6;
+                        const anchor  = c.x > 880 ? "end" : "start";
                         return (
                             <text
                                 key={`lbl-${p.key}`}
-                                x={c.x + labelOffset}
+                                x={c.x + offsetX}
                                 y={c.y + 1.2}
                                 textAnchor={anchor}
-                                fontSize="3.6"
-                                fontWeight="700"
-                                fill="rgba(10,10,10,0.62)"
+                                fontSize="4"
+                                fontWeight="800"
+                                fill="rgba(10,10,10,0.68)"
                                 fontFamily="Inter, system-ui, sans-serif"
+                                letterSpacing="-0.04em"
                             >
                                 {p.key}
                             </text>
                         );
                     })}
 
-                    {/* Madeira mini-inset (lower-left) */}
-                    <g transform="translate(836, 244)">
-                        <rect x="0" y="0" width="22" height="14" fill="#fff" stroke="rgba(10,10,10,0.20)" strokeWidth="0.4" rx="1.2" />
-                        <ellipse cx="11" cy="7" rx="6" ry="1.6" fill={PT.ink} opacity="0.35" />
-                        <text x="11" y="12.6" textAnchor="middle" fontSize="2.6" fill="rgba(10,10,10,0.55)" fontFamily="ui-monospace, monospace" letterSpacing="0.6">MADEIRA</text>
+                    <g transform="translate(945, 36)">
+                        <circle cx="0" cy="0" r="6" fill="#fff" stroke="rgba(10,10,10,0.22)" strokeWidth="0.4" />
+                        <path d="M0 -4.4 L1.4 0 L0 1.2 L-1.4 0 Z" fill={PT.red} />
+                        <path d="M0 4.4 L-1 0 L0 -1 L1 0 Z" fill="rgba(10,10,10,0.35)" />
+                        <text x="0" y="-7.4" textAnchor="middle" fontSize="3" fontWeight="900" fill={PT.ink} fontFamily="ui-monospace, monospace">N</text>
                     </g>
 
-                    {/* Açores mini-inset */}
-                    <g transform="translate(836, 220)">
-                        <rect x="0" y="0" width="22" height="14" fill="#fff" stroke="rgba(10,10,10,0.20)" strokeWidth="0.4" rx="1.2" />
-                        <circle cx="6" cy="7" r="1" fill={PT.ink} opacity="0.4" />
-                        <circle cx="11" cy="6" r="0.9" fill={PT.ink} opacity="0.4" />
-                        <circle cx="16" cy="8" r="1.1" fill={PT.ink} opacity="0.4" />
-                        <text x="11" y="12.6" textAnchor="middle" fontSize="2.6" fill="rgba(10,10,10,0.55)" fontFamily="ui-monospace, monospace" letterSpacing="0.6">AÇORES</text>
-                    </g>
-
-                    {/* Compass rose top-right */}
-                    <g transform="translate(948, 32)">
-                        <circle cx="0" cy="0" r="4.5" fill="#fff" stroke="rgba(10,10,10,0.22)" strokeWidth="0.4" />
-                        <path d="M0 -3.6 L1 0 L0 1 L-1 0 Z" fill={PT.red} />
-                        <text x="0" y="-5.5" textAnchor="middle" fontSize="2.6" fontWeight="900" fill={PT.ink} fontFamily="ui-monospace, monospace">N</text>
+                    <g transform="translate(840, 274)">
+                        <rect x="0" y="0" width="20" height="1.5" fill={PT.ink} opacity="0.85" />
+                        <rect x="0" y="0" width="10" height="1.5" fill="rgba(10,10,10,0.2)" />
+                        <text x="0" y="6" fontSize="2.8" fontWeight="800" fill="rgba(10,10,10,0.5)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">0</text>
+                        <text x="20" y="6" textAnchor="end" fontSize="2.8" fontWeight="800" fill="rgba(10,10,10,0.5)" fontFamily="ui-monospace, monospace" letterSpacing="0.3">200 KM</text>
                     </g>
                 </svg>
 
-                {/* Faro · ativa label — anchored by the SVG container, positioned absolute (HTML) */}
+                <div className="absolute top-2 left-2">
+                    <span
+                        className="inline-flex items-center gap-1 font-mono text-[8.5px] font-black uppercase px-1.5 py-0.5 rounded"
+                        style={{ background: PT.ink, color: "#fff", letterSpacing: "0.18em" }}
+                    >
+                        <span style={{ width: 4, height: 4, borderRadius: "50%", background: PT.red, display: "inline-block" }} />
+                        PT · Mainland
+                    </span>
+                </div>
+            </div>
+
+            {/* ============== RIGHT — EDITORIAL CITY ROSTER ============== */}
+            <div className="relative h-full flex flex-col gap-2 overflow-hidden">
+
                 <div
-                    className="absolute"
-                    style={{ left: "52%", top: "92%", transform: "translate(0, -50%)" }}
+                    className="relative p-3 overflow-hidden"
+                    style={{
+                        background: PT.ink,
+                        color: "#fff",
+                        borderRadius: 12,
+                    }}
                 >
                     <div
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
+                        aria-hidden
+                        className="absolute inset-0 opacity-[0.06] pointer-events-none"
                         style={{
-                            background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 6px 16px -4px rgba(10,10,10,0.22)",
+                            backgroundImage: `linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)`,
+                            backgroundSize: "10px 10px",
                         }}
-                    >
-                        <MapPin size={11} style={{ color: PT.red }} />
-                        <span className="font-bold text-[10.5px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Faro</span>
-                        <span className="font-mono text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.4)" }}>· ativa</span>
+                    />
+                    <div className="relative">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                            </span>
+                            <span className="font-mono text-[8.5px] font-black uppercase" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.75)" }}>
+                                Ativa agora
+                            </span>
+                        </div>
+                        <p
+                            className="font-black tracking-[-0.03em] leading-none mb-0.5"
+                            style={{ fontSize: 22, color: "#fff", fontWeight: 900 }}
+                        >
+                            Faro
+                        </p>
+                        <p className="font-mono text-[8.5px] font-bold" style={{ color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em" }}>
+                            37.018°N · 7.927°W
+                        </p>
+                        <div className="flex items-baseline gap-3 mt-2 pt-2" style={{ borderTop: "1px dashed rgba(255,255,255,0.18)" }}>
+                            <div>
+                                <p className="font-black text-[14px] leading-none" style={{ color: "#fff" }}>375</p>
+                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Membros</p>
+                            </div>
+                            <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)" }} />
+                            <div>
+                                <p className="font-black text-[14px] leading-none" style={{ color: "#fff" }}>12</p>
+                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Eventos</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* PT badge top-right (HTML — outside SVG so it scales with container) */}
-                <div className="absolute top-0 right-0">
-                    <span
-                        className="inline-block font-mono text-[8px] font-black uppercase px-1.5 py-0.5 rounded"
-                        style={{ background: PT.ink, color: "#fff", letterSpacing: "0.16em" }}
+                <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
+                    {ROSTER.slice(1, 5).map((r) => (
+                        <div
+                            key={r.name}
+                            className="flex items-center gap-1.5 px-2 py-1"
+                            style={{
+                                background: "#fff",
+                                border: "1px solid rgba(10,10,10,0.05)",
+                                borderRadius: 8,
+                            }}
+                        >
+                            <span className="rounded-full shrink-0" style={{ width: 5, height: 5, background: r.color }} />
+                            <span className="font-bold text-[10px] flex-1 min-w-0 truncate" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>{r.name}</span>
+                            <span className="font-mono text-[7.5px] font-bold uppercase shrink-0" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.10em" }}>
+                                {r.status}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                    <div
+                        className="flex items-center gap-1 px-1.5 py-1"
+                        style={{
+                            background: "rgba(10,10,10,0.04)",
+                            borderRadius: 6,
+                            border: "1px dashed rgba(10,10,10,0.15)",
+                        }}
                     >
-                        PT
-                    </span>
+                        <svg width="14" height="9" viewBox="0 0 14 9">
+                            <ellipse cx="7" cy="5" rx="5" ry="1.4" fill={PT.ink} opacity="0.35" />
+                        </svg>
+                        <span className="font-mono text-[7.5px] font-black uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.12em" }}>Madeira</span>
+                    </div>
+                    <div
+                        className="flex items-center gap-1 px-1.5 py-1"
+                        style={{
+                            background: "rgba(10,10,10,0.04)",
+                            borderRadius: 6,
+                            border: "1px dashed rgba(10,10,10,0.15)",
+                        }}
+                    >
+                        <svg width="16" height="9" viewBox="0 0 16 9">
+                            <circle cx="3" cy="5" r="1.1" fill={PT.ink} opacity="0.35" />
+                            <circle cx="8" cy="4" r="1" fill={PT.ink} opacity="0.35" />
+                            <circle cx="13" cy="6" r="1.2" fill={PT.ink} opacity="0.35" />
+                        </svg>
+                        <span className="font-mono text-[7.5px] font-black uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.12em" }}>Açores</span>
+                    </div>
                 </div>
             </div>
         </div>
