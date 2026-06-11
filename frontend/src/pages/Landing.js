@@ -863,7 +863,7 @@ function Hero({ stats }) {
                         aria-hidden
                     >
                         <span className="lusorae-heart" style={{ color: PT.red, fontSize: 18 }}>♥</span>
-                        <span className="text-[12.5px] font-bold" style={{ color: PT.ink }}>+12 reações</span>
+                        <span className="text-[12.5px] font-bold" style={{ color: PT.ink }}>Em direto</span>
                     </div>
 
                     {/* Mobile-only floating reaction (smaller) */}
@@ -881,7 +881,7 @@ function Hero({ stats }) {
                         aria-hidden
                     >
                         <span className="lusorae-heart" style={{ color: PT.red, fontSize: 14 }}>♥</span>
-                        <span className="text-[10.5px] font-bold" style={{ color: PT.ink }}>+12</span>
+                        <span className="text-[10.5px] font-bold" style={{ color: PT.ink }}>Live</span>
                     </div>
 
                     {/* Phone mockup — front (responsive, 3D tilt no desktop) */}
@@ -1008,9 +1008,9 @@ function EventStack() {
 // Stack of community cards (bottom-right behind phone) — interactive
 function CommunityStack() {
     const communities = [
-        { title: "Birdfire Algarve", members: "3.8K", img: IMG_COMM_1, accent: PT.red },
-        { title: "Surfing Portugal", members: "2.1K", img: IMG_COMM_3, accent: PT.azul },
-        { title: "Fotografia Lisboa", members: "1.7K", img: IMG_COMM_2, accent: PT.green },
+        { title: "Birdfire Algarve", topic: "Natureza · Aves", img: IMG_COMM_1, accent: PT.red },
+        { title: "Surfing Portugal", topic: "Surf · Costa atlântica", img: IMG_COMM_3, accent: PT.azul },
+        { title: "Fotografia Lisboa", topic: "Fotografia · Urbano", img: IMG_COMM_2, accent: PT.green },
     ];
     return (
         <div
@@ -1043,7 +1043,7 @@ function CommunityStack() {
                         />
                         <div className="min-w-0 flex-1">
                             <p className="font-bold text-[12px] leading-tight truncate" style={{ color: PT.ink }}>{c.title}</p>
-                            <p className="text-[10.5px] font-medium leading-tight mt-0.5" style={{ color: "rgba(10,10,10,0.55)" }}>{c.members} membros</p>
+                            <p className="text-[10.5px] font-medium leading-tight mt-0.5 truncate" style={{ color: "rgba(10,10,10,0.55)" }}>{c.topic}</p>
                         </div>
                         <span
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
@@ -1276,10 +1276,13 @@ function PhoneMockup() {
                     {/* Reactions */}
                     <div className="px-4 py-3 flex items-center gap-4">
                         <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
-                            <span className="lusorae-heart" style={{ color: PT.red, fontSize: 14 }}>♥</span> 1.2K
+                            <span className="lusorae-heart" style={{ color: PT.red, fontSize: 14 }}>♥</span> Gostar
                         </span>
                         <span className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: PT.ink }}>
-                            <span style={{ color: PT.azul, fontSize: 13 }}>💬</span> 23
+                            <span style={{ color: PT.azul, fontSize: 13 }}>💬</span> Comentar
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[12px] font-bold ml-auto" style={{ color: "rgba(10,10,10,0.5)" }}>
+                            <span style={{ fontSize: 13 }}>↗</span> Partilhar
                         </span>
                     </div>
 
@@ -1363,9 +1366,6 @@ function ValueStrip() {
             accent: PT.red,
             status: "EM CHAMAS",
             statusDot: PT.red,
-            members: "1.2K",
-            communities: 18,
-            events: 32,
             tags: ["#cultura", "#tertúlias", "#nightlife"],
         },
         {
@@ -1375,9 +1375,6 @@ function ValueStrip() {
             accent: PT.azul,
             status: "A CRESCER",
             statusDot: PT.azul,
-            members: "840",
-            communities: 12,
-            events: 24,
             tags: ["#ribeira", "#música", "#vinho"],
         },
         {
@@ -1387,9 +1384,6 @@ function ValueStrip() {
             accent: PT.gold,
             status: "AO SOL",
             statusDot: PT.gold,
-            members: "620",
-            communities: 9,
-            events: 18,
             tags: ["#surf", "#praia", "#sunset"],
         },
         {
@@ -1399,9 +1393,6 @@ function ValueStrip() {
             accent: PT.green,
             status: "NEW",
             statusDot: PT.green,
-            members: "280",
-            communities: 6,
-            events: 8,
             tags: ["#ilhas", "#natureza", "#trilhos"],
         },
     ];
@@ -1512,7 +1503,7 @@ function ValueStrip() {
                             </p>
                             <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(10,10,10,0.2)" }} />
                             <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(10,10,10,0.4)" }}>
-                                +2.9K membros · 45 comunidades · 82 eventos
+                                Lisboa · Porto · Algarve · Ilhas
                             </p>
                         </div>
                         <p className="font-black text-[22px] sm:text-[28px] lg:text-[32px] tracking-[-0.025em] leading-[1]" style={{ color: PT.ink }}>
@@ -1721,7 +1712,7 @@ function StepVisualCity() {
 
     // Editorial city roster (for the side panel)
     const ROSTER = [
-        { name: "Faro",     status: "ativa",        color: PT.red,   live: true,  members: 375 },
+        { name: "Faro",     status: "ativa",        color: PT.red,   live: true  },
         { name: "Lisboa",   status: "onboarding",   color: PT.azul,  live: false },
         { name: "Porto",    status: "onboarding",   color: PT.green, live: false },
         { name: "Coimbra",  status: "brevemente",   color: PT.gold,  live: false },
@@ -1939,13 +1930,13 @@ function StepVisualCity() {
                         </p>
                         <div className="flex items-baseline gap-3 mt-2 pt-2" style={{ borderTop: "1px dashed rgba(255,255,255,0.18)" }}>
                             <div>
-                                <p className="font-black text-[14px] leading-none" style={{ color: "#fff" }}>375</p>
-                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Membros</p>
+                                <p className="font-black text-[11px] leading-none" style={{ color: "#fff" }}>Beta</p>
+                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Estado</p>
                             </div>
                             <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.15)" }} />
                             <div>
-                                <p className="font-black text-[14px] leading-none" style={{ color: "#fff" }}>12</p>
-                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Eventos</p>
+                                <p className="font-black text-[11px] leading-none" style={{ color: "#fff" }}>Aberta</p>
+                                <p className="font-mono text-[7.5px] font-bold uppercase" style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.12em" }}>Inscrições</p>
                             </div>
                         </div>
                     </div>
@@ -2008,9 +1999,9 @@ function StepVisualCity() {
 
 function StepVisualFeed() {
     const items = [
-        { c: PT.red, t: "Surfing Portugal", s: "2.1K membros" },
-        { c: PT.azul, t: "Fotografia Lisboa", s: "1.7K membros" },
-        { c: PT.green, t: "Birdfire Algarve", s: "3.8K membros" },
+        { c: PT.red, t: "Surfing Portugal", s: "Surf · Costa atlântica" },
+        { c: PT.azul, t: "Fotografia Lisboa", s: "Fotografia · Urbano" },
+        { c: PT.green, t: "Birdfire Algarve", s: "Natureza · Aves" },
     ];
     return (
         <div className="absolute inset-0 p-3.5 flex flex-col gap-2 justify-center">
@@ -2090,7 +2081,7 @@ function StepVisualEvent() {
                                 <span key={i} className="rounded-full" style={{ width: 14, height: 14, background: c, border: "1.5px solid #fff" }} />
                             ))}
                         </div>
-                        <span className="text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.5)" }}>+24 vão</span>
+                        <span className="text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.5)" }}>Junta-te</span>
                     </div>
                 </div>
             </div>
@@ -2203,36 +2194,16 @@ function CityTile({ city }) {
                     {city.name}
                 </p>
 
-                {/* Stats row */}
-                <div className="flex items-center gap-3 pt-2.5"
+                {/* Bottom strip — "Junta-te" CTA */}
+                <div className="flex items-center justify-between pt-2.5"
                     style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}
                 >
-                    <div className="flex-1 min-w-0">
-                        <p className="font-black text-white text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]">
-                            {city.members}
-                        </p>
-                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
-                            membros
-                        </p>
-                    </div>
-                    <span className="w-px h-7 bg-white/20" aria-hidden />
-                    <div className="flex-1 min-w-0">
-                        <p className="font-black text-white text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]">
-                            {city.communities}
-                        </p>
-                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
-                            comunidades
-                        </p>
-                    </div>
-                    <span className="w-px h-7 bg-white/20" aria-hidden />
-                    <div className="flex-1 min-w-0">
-                        <p className="font-black text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]" style={{ color: city.accent === PT.gold ? city.accent : "#fff" }}>
-                            {city.events}
-                        </p>
-                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
-                            eventos
-                        </p>
-                    </div>
+                    <p className="text-[10.5px] font-bold uppercase text-white/75" style={{ letterSpacing: "0.10em" }}>
+                        A começar agora
+                    </p>
+                    <span className="text-[11px] font-black text-white inline-flex items-center gap-1" style={{ letterSpacing: "-0.01em" }}>
+                        Junta-te <ArrowUpRight size={12} strokeWidth={2.5} />
+                    </span>
                 </div>
             </div>
         </div>
