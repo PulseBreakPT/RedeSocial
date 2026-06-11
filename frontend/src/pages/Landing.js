@@ -462,7 +462,7 @@ function TopNav() {
         >
             <div className="max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 flex items-center justify-between h-[68px] lg:h-[76px]">
                 <Link to="/" data-testid="brand-logo" className="flex items-center gap-1.5" aria-label="Lusorae homepage">
-                    <Wordmark size={28} />
+                    <Wordmark size={44} />
                 </Link>
 
                 <nav className="hidden lg:flex items-center gap-9">

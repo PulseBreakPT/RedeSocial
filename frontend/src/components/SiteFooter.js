@@ -93,20 +93,20 @@ export default function SiteFooter() {
 
                     {/* --- LEFT: Brand block --- */}
                     <div>
-                        <div className="flex items-center gap-4 mb-5">
+                        <div className="flex items-center gap-5 mb-6">
                             <div
-                                className="grid place-items-center"
+                                className="grid place-items-center shrink-0"
                                 style={{
-                                    width: 56, height: 56, borderRadius: 16,
+                                    width: 96, height: 96, borderRadius: 22,
                                     background: "#fff",
-                                    boxShadow: "0 8px 22px -10px rgba(0,0,0,0.6)",
+                                    boxShadow: "0 14px 36px -14px rgba(0,0,0,0.6)",
                                 }}
                                 aria-hidden
                             >
                                 <img
                                     src="/brand/lusorae-L-transparent.png"
                                     alt=""
-                                    style={{ width: 40, height: 40, objectFit: "contain", display: "block" }}
+                                    style={{ width: 72, height: 72, objectFit: "contain", display: "block" }}
                                     data-testid="footer-monogram"
                                 />
                             </div>
@@ -116,7 +116,7 @@ export default function SiteFooter() {
                                     alt="Lusorae"
                                     data-testid="footer-wordmark"
                                     style={{
-                                        height: "clamp(28px, 3vw, 38px)",
+                                        height: "clamp(54px, 5.5vw, 78px)",
                                         width: "auto",
                                         display: "block",
                                         filter: "invert(1)",
