@@ -629,10 +629,10 @@ function Hero({ stats }) {
                             animationDelay: "0.05s",
                         }}
                     >
-                        {/* Line 1: A TUA (red under TUA, itálico para rhythm cinematográfico) */}
+                        {/* Line 1: A TUA (TUA em vermelho PT, itálico para rhythm cinematográfico) */}
                         <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.08s" }}>
                             A{" "}
-                            <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>
+                            <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.05em", color: PT.red }}>
                                 TUA
                                 <span
                                     className="absolute pointer-events-none"
@@ -642,9 +642,9 @@ function Hero({ stats }) {
                                 </span>
                             </span>
                         </span>
-                        {/* Line 2: CIDADE. (blue under CIDADE) */}
+                        {/* Line 2: CIDADE (em azul PT, sem ponto final) */}
                         <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.16s" }}>
-                            <span className="relative inline-block">
+                            <span className="relative inline-block" style={{ color: PT.azul }}>
                                 CIDADE
                                 <span
                                     className="absolute pointer-events-none"
@@ -653,16 +653,15 @@ function Hero({ stats }) {
                                     <UnderlineStroke color={PT.azul} w={420} h={22} variant="wave" delay={0.95} style={{ width: "100%", height: "100%" }} />
                                 </span>
                             </span>
-                            <span style={{ color: PT.red }}>.</span>
                         </span>
-                        {/* Line 3: A TUA (itálico mais uma vez — rhythm) */}
+                        {/* Line 3: A TUA (itálico mais uma vez — rhythm, mantém ink) */}
                         <span className="block relative lusorae-line" style={{ paddingBottom: "0.04em", animationDelay: "0.24s" }}>
                             A{" "}
                             <span style={{ fontStyle: "italic", letterSpacing: "-0.05em" }}>TUA</span>
                         </span>
-                        {/* Line 4: REDE. (green under REDE — wave para não cruzar letras) */}
+                        {/* Line 4: REDE (em verde PT, sem ponto final) */}
                         <span className="block relative lusorae-line" style={{ animationDelay: "0.32s" }}>
-                            <span className="relative inline-block">
+                            <span className="relative inline-block" style={{ color: PT.green }}>
                                 REDE
                                 <span
                                     className="absolute pointer-events-none"
@@ -671,7 +670,6 @@ function Hero({ stats }) {
                                     <UnderlineStroke color={PT.green} w={320} h={22} variant="thick" delay={1.15} style={{ width: "100%", height: "100%" }} />
                                 </span>
                             </span>
-                            <span style={{ color: PT.red }}>.</span>
                         </span>
                     </h1>
 
@@ -798,23 +796,6 @@ function Hero({ stats }) {
                                 {showCount && total >= 50 ? "já se juntaram à beta" : "a construir o Lusorae · entra agora"}
                             </p>
                         </div>
-                    </div>
-                </div>
-
-                {/* Floating MADE IN PORTUGAL stamp — desktop top-right entre colunas */}
-                <div
-                    className="absolute hidden lg:block z-30 pointer-events-none lusorae-float-soft"
-                    style={{ top: 18, right: "44%", "--rot": "-10deg" }}
-                >
-                    <div className="lusorae-spin-slow" style={{ opacity: 0.85 }}>
-                        <StampSeal size={118} color={PT.ink} rotate={0} />
-                    </div>
-                </div>
-
-                {/* Mobile-only stamp seal — top-right corner discrete */}
-                <div className="lg:hidden absolute z-30 pointer-events-none" style={{ top: 12, right: 18 }}>
-                    <div className="lusorae-spin-slow" style={{ opacity: 0.75 }}>
-                        <StampSeal size={72} color={PT.ink} rotate={-8} />
                     </div>
                 </div>
 
@@ -1205,13 +1186,37 @@ function PhoneMockup() {
 }
 
 // =============================================================================
-// VALUE STRIP — condensed below-fold: 3 promises + city tiles
+// VALUE STRIP — "Como funciona" reimaginado: 3 passos lógicos + cidades vivas
 // =============================================================================
 function ValueStrip() {
-    const promises = [
-        { icon: <MapPin size={20} />, title: "Cidade primeiro", sub: "Lisboa, Porto, Faro, Funchal — o teu feed começa onde tu estás." },
-        { icon: <Calendar size={20} />, title: "Eventos perto", sub: "Encontros, concertos, tertúlias e festas — descobre o que está a acontecer." },
-        { icon: <Users size={20} />, title: "Comunidades vivas", sub: "Pessoas reais a partilhar conversas reais — sem ruído, sem performance." },
+    const steps = [
+        {
+            n: "01",
+            kicker: "ESCOLHE",
+            title: "Diz onde vives",
+            sub: "Faro, Lisboa, Porto, Funchal, Açores — o teu feed começa pela cidade, não por uma trend global.",
+            accent: PT.red,
+            icon: <MapPin size={18} strokeWidth={2.5} />,
+            visual: <StepVisualCity />,
+        },
+        {
+            n: "02",
+            kicker: "SEGUE",
+            title: "Escolhe o sinal",
+            sub: "Comunidades, pessoas, temas. Tu decides o que entra no feed — não há recommended for you.",
+            accent: PT.azul,
+            icon: <Users size={18} strokeWidth={2.5} />,
+            visual: <StepVisualFeed />,
+        },
+        {
+            n: "03",
+            kicker: "VIVE",
+            title: "Sai do ecrã",
+            sub: "Eventos, tertúlias, jantares, surf, concertos. A rede acaba onde começa a vida real.",
+            accent: PT.green,
+            icon: <Calendar size={18} strokeWidth={2.5} />,
+            visual: <StepVisualEvent />,
+        },
     ];
 
     const cities = [
@@ -1224,41 +1229,70 @@ function ValueStrip() {
     return (
         <section
             data-testid="value-strip"
-            className="px-5 sm:px-8 lg:px-12 py-14 sm:py-18 lg:py-20"
+            className="relative overflow-hidden px-5 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24"
             style={{ background: PT.cream }}
         >
-            <div className="max-w-[1400px] mx-auto">
+            {/* Subtle grid background — premium texture */}
+            <div
+                aria-hidden
+                className="absolute inset-0 pointer-events-none opacity-[0.035]"
+                style={{
+                    backgroundImage: `linear-gradient(${PT.ink} 1px, transparent 1px), linear-gradient(90deg, ${PT.ink} 1px, transparent 1px)`,
+                    backgroundSize: "44px 44px",
+                }}
+            />
+
+            <div className="relative max-w-[1400px] mx-auto">
                 {/* Section header */}
-                <div className="flex items-end justify-between flex-wrap gap-4 mb-10 sm:mb-12">
-                    <div>
-                        <p className="font-mono text-[11px] font-bold uppercase mb-2" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}>
-                            02 — Como funciona
-                        </p>
+                <div className="flex items-end justify-between flex-wrap gap-5 mb-12 sm:mb-16">
+                    <div className="max-w-3xl">
+                        <div className="flex items-center gap-3 mb-3">
+                            <span
+                                className="inline-flex items-center justify-center font-mono text-[10.5px] font-black"
+                                style={{
+                                    width: 26, height: 26, borderRadius: "50%",
+                                    background: PT.ink, color: "#fff", letterSpacing: "0.04em",
+                                }}
+                            >
+                                02
+                            </span>
+                            <p
+                                className="font-mono text-[11px] font-bold uppercase"
+                                style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.62)" }}
+                            >
+                                Como funciona
+                            </p>
+                            <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(10,10,10,0.2)" }} />
+                            <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(10,10,10,0.4)" }}>
+                                3 passos · 0 algoritmos
+                            </p>
+                        </div>
                         <h2
-                            className="font-black tracking-[-0.035em] leading-[0.95]"
+                            className="font-black tracking-[-0.04em] leading-[0.92]"
                             style={{
-                                fontSize: "clamp(32px, 4.5vw, 56px)",
+                                fontSize: "clamp(34px, 5.2vw, 68px)",
                                 color: PT.ink,
                                 fontFamily: '"Inter", system-ui, sans-serif',
                                 fontWeight: 900,
                             }}
                         >
-                            Feito{" "}
-                            <span style={{ whiteSpace: "nowrap" }}>
-                                <span className="relative inline-block">
-                                    <span style={{ color: PT.red }}>para portugueses</span>
-                                    <span
-                                        className="absolute pointer-events-none"
-                                        style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
-                                    >
-                                        <UnderlineStroke color={PT.red} w={400} h={12} variant="dash" delay={0.3} style={{ width: "100%", height: "100%" }} />
-                                    </span>
+                            Três passos.{" "}
+                            <span className="relative inline-block" style={{ fontStyle: "italic", letterSpacing: "-0.045em", color: PT.red }}>
+                                Zero ruído
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: "-2%", right: "-2%", bottom: "-0.08em", height: 14 }}
+                                >
+                                    <UnderlineStroke color={PT.red} w={360} h={14} variant="slash" delay={0.3} style={{ width: "100%", height: "100%" }} />
                                 </span>
-                                ,
                             </span>
-                            <br/>
-                            por portugueses.
                         </h2>
+                        <p
+                            className="mt-5 text-[15.5px] sm:text-[17px] font-medium leading-relaxed max-w-[560px]"
+                            style={{ color: "rgba(10,10,10,0.68)" }}
+                        >
+                            Não te empurramos conteúdo. Devolvemos-te o controlo do que vês, de quem segues, e de onde vives.
+                        </p>
                     </div>
                     <Link
                         to="/manifesto"
@@ -1270,46 +1304,24 @@ function ValueStrip() {
                     </Link>
                 </div>
 
-                {/* 3 promises */}
-                <div className="grid sm:grid-cols-3 gap-5 lg:gap-7 mb-10 sm:mb-12">
-                    {promises.map((p, i) => (
-                        <div
-                            key={i}
-                            className="relative p-6 lg:p-7"
-                            style={{
-                                background: "#fff",
-                                borderRadius: 22,
-                                border: "1px solid rgba(10,10,10,0.06)",
-                                boxShadow: "0 2px 12px -4px rgba(10,10,10,0.06)",
-                            }}
-                            data-testid={`promise-${i}`}
-                        >
-                            <span
-                                className="inline-flex items-center justify-center mb-4"
-                                style={{
-                                    width: 44, height: 44, borderRadius: 14,
-                                    background: PT.ink, color: "#fff",
-                                }}
-                            >
-                                {p.icon}
-                            </span>
-                            <p className="font-bold text-[18px] leading-tight mb-1.5" style={{ color: PT.ink, letterSpacing: "-0.015em" }}>
-                                {p.title}
-                            </p>
-                            <p className="text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                {p.sub}
-                            </p>
-                            <span
-                                className="absolute font-mono text-[10px] font-bold"
-                                style={{ top: 18, right: 22, color: "rgba(10,10,10,0.30)" }}
-                            >
-                                0{i + 1}
-                            </span>
-                        </div>
+                {/* 3 STEPS — fluxo horizontal com conectores */}
+                <div className="relative grid sm:grid-cols-3 gap-4 lg:gap-6 mb-14 sm:mb-16">
+                    {steps.map((s, i) => (
+                        <StepCard key={i} step={s} index={i} isLast={i === steps.length - 1} />
                     ))}
                 </div>
 
-                {/* City tiles */}
+                {/* Sub-section: City tiles */}
+                <div className="flex items-end justify-between flex-wrap gap-3 mb-5 sm:mb-7">
+                    <div>
+                        <p className="font-mono text-[11px] font-bold uppercase mb-1.5" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
+                            Já está vivo em
+                        </p>
+                        <p className="font-black text-[20px] sm:text-[24px] tracking-[-0.02em]" style={{ color: PT.ink }}>
+                            Quatro regiões, dez ilhas, um país.
+                        </p>
+                    </div>
+                </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     {cities.map((c) => (
                         <CityTile key={c.name} city={c} />
@@ -1317,6 +1329,263 @@ function ValueStrip() {
                 </div>
             </div>
         </section>
+    );
+}
+
+// =============================================================================
+// STEP CARD — premium card com número gigante, mockup, conector
+// =============================================================================
+function StepCard({ step, index, isLast }) {
+    return (
+        <div
+            className="relative group"
+            data-testid={`step-${index}`}
+        >
+            {/* Connector arrow — desktop only, between cards */}
+            {!isLast && (
+                <div
+                    aria-hidden
+                    className="hidden sm:flex absolute z-20 items-center justify-center pointer-events-none"
+                    style={{
+                        right: -22, top: "44%", transform: "translateY(-50%)",
+                        width: 44, height: 44, borderRadius: "50%",
+                        background: "#fff",
+                        border: `1.5px solid rgba(10,10,10,0.08)`,
+                        boxShadow: "0 6px 18px -6px rgba(10,10,10,0.18)",
+                    }}
+                >
+                    <ArrowRight size={18} strokeWidth={2.5} style={{ color: PT.ink }} />
+                </div>
+            )}
+
+            <div
+                className="relative h-full p-6 lg:p-7 transition-all duration-300 group-hover:-translate-y-1"
+                style={{
+                    background: "#fff",
+                    borderRadius: 24,
+                    border: "1px solid rgba(10,10,10,0.06)",
+                    boxShadow: "0 4px 24px -8px rgba(10,10,10,0.08), 0 1px 3px rgba(10,10,10,0.04)",
+                }}
+            >
+                {/* Accent bar — top */}
+                <div
+                    aria-hidden
+                    className="absolute top-0 left-6 right-6 h-[3px] rounded-b"
+                    style={{ background: step.accent, opacity: 0.9 }}
+                />
+
+                {/* Header: big number + kicker */}
+                <div className="flex items-start justify-between mb-5">
+                    <div>
+                        <p
+                            className="font-mono text-[10.5px] font-black uppercase mb-1"
+                            style={{ letterSpacing: "0.22em", color: step.accent }}
+                        >
+                            {step.kicker}
+                        </p>
+                        <div className="flex items-end gap-2">
+                            <span
+                                className="font-black leading-none"
+                                style={{
+                                    fontSize: "clamp(56px, 7vw, 88px)",
+                                    color: PT.ink,
+                                    fontFamily: '"Inter", system-ui, sans-serif',
+                                    fontWeight: 900,
+                                    letterSpacing: "-0.05em",
+                                    fontStyle: "italic",
+                                }}
+                            >
+                                {step.n}
+                            </span>
+                            <span
+                                className="inline-flex items-center justify-center mb-2"
+                                style={{
+                                    width: 32, height: 32, borderRadius: 10,
+                                    background: step.accent, color: step.accent === PT.gold ? PT.ink : "#fff",
+                                }}
+                            >
+                                {step.icon}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Visual mockup */}
+                <div
+                    className="relative mb-5 overflow-hidden"
+                    style={{
+                        background: `linear-gradient(180deg, rgba(10,10,10,0.025) 0%, rgba(10,10,10,0.01) 100%)`,
+                        borderRadius: 16,
+                        border: "1px solid rgba(10,10,10,0.05)",
+                        aspectRatio: "16/10",
+                    }}
+                >
+                    {step.visual}
+                </div>
+
+                {/* Title + sub */}
+                <p
+                    className="font-black text-[20px] sm:text-[22px] leading-[1.1] mb-2 tracking-[-0.02em]"
+                    style={{ color: PT.ink }}
+                >
+                    {step.title}
+                </p>
+                <p className="text-[14px] font-medium leading-relaxed" style={{ color: "rgba(10,10,10,0.65)" }}>
+                    {step.sub}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// === Mini visual mockups for each step ===
+
+function StepVisualCity() {
+    return (
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+            {/* Simulated map dots */}
+            <div className="relative w-full h-full">
+                {/* Background dots grid */}
+                <svg className="absolute inset-0" width="100%" height="100%" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice" aria-hidden>
+                    {Array.from({ length: 8 }).map((_, r) => (
+                        Array.from({ length: 14 }).map((_, c) => (
+                            <circle key={`${r}-${c}`} cx={c * 15 + 8} cy={r * 15 + 8} r={1} fill="rgba(10,10,10,0.10)" />
+                        ))
+                    )).flat()}
+                </svg>
+                {/* Active city pin */}
+                <div className="absolute" style={{ left: "38%", top: "32%" }}>
+                    <span className="relative flex items-center justify-center">
+                        <span className="absolute inline-flex rounded-full lusorae-pulse" style={{ width: 40, height: 40, background: `${PT.red}33` }} />
+                        <span
+                            className="relative inline-flex items-center justify-center rounded-full font-black text-[10px]"
+                            style={{
+                                width: 24, height: 24, background: PT.red, color: "#fff",
+                                border: "2.5px solid #fff",
+                                boxShadow: "0 4px 10px rgba(10,10,10,0.2)",
+                            }}
+                        >
+                            ★
+                        </span>
+                    </span>
+                </div>
+                {/* Other pins (smaller, dim) */}
+                <span className="absolute rounded-full" style={{ left: "62%", top: "55%", width: 10, height: 10, background: PT.azul, opacity: 0.5, border: "2px solid #fff" }} />
+                <span className="absolute rounded-full" style={{ left: "22%", top: "68%", width: 10, height: 10, background: PT.green, opacity: 0.5, border: "2px solid #fff" }} />
+                <span className="absolute rounded-full" style={{ left: "78%", top: "22%", width: 10, height: 10, background: PT.gold, opacity: 0.5, border: "2px solid #fff" }} />
+
+                {/* City tag */}
+                <div
+                    className="absolute"
+                    style={{ left: "44%", top: "10%" }}
+                >
+                    <div
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
+                        style={{
+                            background: "#fff",
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            boxShadow: "0 4px 12px -4px rgba(10,10,10,0.2)",
+                        }}
+                    >
+                        <MapPin size={11} style={{ color: PT.red }} />
+                        <span className="font-bold text-[10.5px]" style={{ color: PT.ink, letterSpacing: "-0.01em" }}>Faro</span>
+                        <span className="font-mono text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.4)" }}>· ativa</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StepVisualFeed() {
+    const items = [
+        { c: PT.red, t: "Surfing Portugal", s: "2.1K membros" },
+        { c: PT.azul, t: "Fotografia Lisboa", s: "1.7K membros" },
+        { c: PT.green, t: "Birdfire Algarve", s: "3.8K membros" },
+    ];
+    return (
+        <div className="absolute inset-0 p-3.5 flex flex-col gap-2 justify-center">
+            {items.map((it, i) => (
+                <div
+                    key={i}
+                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
+                    style={{
+                        background: "#fff",
+                        border: i === 1 ? `1.5px solid ${PT.azul}` : "1px solid rgba(10,10,10,0.06)",
+                        boxShadow: i === 1 ? `0 6px 16px -6px ${PT.azul}55` : "0 2px 6px -2px rgba(10,10,10,0.06)",
+                        transform: i === 1 ? "translateX(4px)" : "none",
+                        transition: "transform 0.3s",
+                    }}
+                >
+                    <span
+                        className="rounded-lg shrink-0"
+                        style={{ width: 22, height: 22, background: it.c }}
+                    />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[10.5px] leading-tight truncate" style={{ color: PT.ink }}>{it.t}</p>
+                        <p className="text-[8.5px] font-medium leading-tight" style={{ color: "rgba(10,10,10,0.5)" }}>{it.s}</p>
+                    </div>
+                    <span
+                        className="inline-flex items-center justify-center text-[9px] font-black px-2 py-0.5 rounded-full shrink-0"
+                        style={{
+                            background: i === 1 ? PT.azul : "rgba(10,10,10,0.06)",
+                            color: i === 1 ? "#fff" : "rgba(10,10,10,0.55)",
+                        }}
+                    >
+                        {i === 1 ? "✓ Segues" : "Seguir"}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function StepVisualEvent() {
+    return (
+        <div className="absolute inset-0 p-3.5 flex items-center justify-center">
+            <div
+                className="relative w-full max-w-[220px] overflow-hidden"
+                style={{
+                    background: "#fff",
+                    borderRadius: 14,
+                    border: "1px solid rgba(10,10,10,0.06)",
+                    boxShadow: "0 8px 24px -10px rgba(10,10,10,0.25)",
+                }}
+            >
+                {/* Image area with gradient */}
+                <div
+                    className="relative"
+                    style={{
+                        aspectRatio: "16/8",
+                        background: `linear-gradient(135deg, ${PT.green} 0%, ${PT.azul} 100%)`,
+                    }}
+                >
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.92)" }}>
+                        <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                        </span>
+                        <span className="text-[8px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.06em" }}>Ao vivo</span>
+                    </div>
+                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md" style={{ background: PT.ink, color: "#fff" }}>
+                        <span className="text-[8px] font-black uppercase" style={{ letterSpacing: "0.06em" }}>SÁB · 19:30</span>
+                    </div>
+                </div>
+                <div className="p-2.5">
+                    <p className="font-black text-[11px] leading-tight mb-0.5 tracking-[-0.01em]" style={{ color: PT.ink }}>
+                        Sunset Party · Praia de Faro
+                    </p>
+                    <div className="flex items-center justify-between mt-1.5">
+                        <div className="flex -space-x-1">
+                            {[PT.red, PT.azul, PT.gold].map((c, i) => (
+                                <span key={i} className="rounded-full" style={{ width: 14, height: 14, background: c, border: "1.5px solid #fff" }} />
+                            ))}
+                        </div>
+                        <span className="text-[9px] font-bold" style={{ color: "rgba(10,10,10,0.5)" }}>+24 vão</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
