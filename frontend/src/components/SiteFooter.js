@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Instagram, Linkedin, Twitter } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PT } from "../pages/auth/AuthDecor";
 
 // =============================================================================
@@ -35,12 +35,6 @@ const NAV_GROUPS = [
             { to: "/legal",           text: "Centro Legal" },
         ],
     },
-];
-
-const SOCIAL_LINKS = [
-    { href: "https://instagram.com/lusorae", label: "Instagram", icon: Instagram },
-    { href: "https://linkedin.com/company/lusorae", label: "Linkedin", icon: Linkedin },
-    { href: "https://x.com/lusorae", label: "X (Twitter)", icon: Twitter },
 ];
 
 export default function SiteFooter() {
@@ -92,62 +86,42 @@ export default function SiteFooter() {
             />
 
             {/* ===================== MAIN GRID ===================== */}
-            <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 pt-16 sm:pt-20 pb-8">
-
-                {/* Kicker row */}
-                <div className="flex items-center gap-3 mb-10 sm:mb-12">
-                    <span
-                        className="inline-flex items-center justify-center font-mono text-[10.5px] font-black"
-                        style={{
-                            width: 26, height: 26, borderRadius: "50%",
-                            background: "#fff", color: PT.ink, letterSpacing: "0.04em",
-                        }}
-                    >
-                        04
-                    </span>
-                    <p
-                        className="font-mono text-[11px] font-bold uppercase"
-                        style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.62)" }}
-                    >
-                        Fecho · até já
-                    </p>
-                    <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(255,255,255,0.2)" }} />
-                    <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(255,255,255,0.4)" }}>
-                        37°–42°N · Atlântico
-                    </p>
-                </div>
+            <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8 lg:px-12 pt-12 sm:pt-14 pb-8">
 
                 {/* === TOP ROW: Brand + Newsletter === */}
-                <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 mb-14 sm:mb-16">
+                <div className="grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 mb-12 sm:mb-14">
 
                     {/* --- LEFT: Brand block --- */}
                     <div>
-                        <div className="flex items-center gap-3 mb-5">
+                        <div className="flex items-center gap-4 mb-5">
                             <div
-                                className="flex items-center justify-center font-black text-[20px]"
+                                className="grid place-items-center"
                                 style={{
-                                    width: 50, height: 50, borderRadius: 14,
-                                    background: "#fff", color: PT.ink,
-                                    fontStyle: "italic", letterSpacing: "-0.05em",
+                                    width: 56, height: 56, borderRadius: 16,
+                                    background: "#fff",
+                                    boxShadow: "0 8px 22px -10px rgba(0,0,0,0.6)",
                                 }}
                                 aria-hidden
                             >
-                                L
+                                <img
+                                    src="/brand/lusorae-L-transparent.png"
+                                    alt=""
+                                    style={{ width: 40, height: 40, objectFit: "contain", display: "block" }}
+                                    data-testid="footer-monogram"
+                                />
                             </div>
                             <div>
-                                <p
-                                    className="font-black tracking-[-0.025em] leading-none"
+                                <img
+                                    src="/brand/lusorae-wordmark-transparent.png"
+                                    alt="Lusorae"
+                                    data-testid="footer-wordmark"
                                     style={{
-                                        fontSize: "clamp(28px, 3.2vw, 38px)",
-                                        color: "#fff",
-                                        fontWeight: 900,
+                                        height: "clamp(28px, 3vw, 38px)",
+                                        width: "auto",
+                                        display: "block",
+                                        filter: "invert(1)",
                                     }}
-                                >
-                                    Lusorae
-                                </p>
-                                <p className="font-mono text-[10.5px] font-bold uppercase mt-1.5" style={{ letterSpacing: "0.20em", color: "rgba(255,255,255,0.55)" }}>
-                                    A rede portuguesa · Est. 2026
-                                </p>
+                                />
                             </div>
                         </div>
 
@@ -164,35 +138,9 @@ export default function SiteFooter() {
                                 É a rede.
                             </span>
                         </h3>
-                        <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-[460px] mb-7" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        <p className="text-[14.5px] sm:text-[15px] font-medium leading-relaxed max-w-[460px]" style={{ color: "rgba(255,255,255,0.65)" }}>
                             Feita em Portugal, para portugueses. Sem algoritmo de vaidade, sem feed for you. Tu mandas no que vês.
                         </p>
-
-                        {/* PT flag dots + Made in stamp */}
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <div
-                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-                                style={{
-                                    background: "rgba(255,255,255,0.06)",
-                                    border: "1px solid rgba(255,255,255,0.12)",
-                                }}
-                            >
-                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: PT.red, display: "inline-block" }} />
-                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: PT.green, display: "inline-block" }} />
-                                <span className="font-mono text-[10.5px] font-black uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.85)" }}>
-                                    Made in PT
-                                </span>
-                            </div>
-                            <div className="inline-flex items-center gap-2">
-                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
-                                </span>
-                                <span className="font-mono text-[10.5px] font-black uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.75)" }}>
-                                    Beta ativa
-                                </span>
-                            </div>
-                        </div>
                     </div>
 
                     {/* --- RIGHT: Newsletter glassmorphism card --- */}
@@ -355,40 +303,26 @@ export default function SiteFooter() {
                         </p>
                     </div>
 
-                    {/* Right: social icons */}
-                    <div className="flex items-center gap-2.5" data-testid="footer-social">
-                        {SOCIAL_LINKS.map(({ href, label, icon: Icon }) => (
-                            <a
-                                key={label}
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={label}
-                                data-testid={`footer-social-${label.toLowerCase().split(" ")[0]}`}
-                                className="inline-flex items-center justify-center transition-all hover:scale-110"
-                                style={{
-                                    width: 36, height: 36, borderRadius: "50%",
-                                    background: "rgba(255,255,255,0.06)",
-                                    border: "1px solid rgba(255,255,255,0.12)",
-                                    color: "rgba(255,255,255,0.75)",
-                                }}
-                            >
-                                <Icon size={15} strokeWidth={2} />
-                            </a>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Final coordinate strip — editorial flourish */}
-                <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5 pt-5" style={{ borderTop: "1px dashed rgba(255,255,255,0.10)" }}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: PT.red, display: "inline-block" }} aria-hidden />
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: PT.green, display: "inline-block" }} aria-hidden />
-                    <p className="font-mono text-[10px] font-bold uppercase text-center" style={{ letterSpacing: "0.25em", color: "rgba(255,255,255,0.30)" }}>
-                        Lat. 38°42&apos;N · Lon. 9°08&apos;W ·{" "}
-                        <span style={{ color: "rgba(255,255,255,0.55)" }}>Feito com</span>{" "}
-                        <span style={{ color: PT.red, fontSize: 11 }}>♥</span>{" "}
-                        <span style={{ color: "rgba(255,255,255,0.55)" }}>em Portugal</span>
-                    </p>
+                    {/* Right: editorial back-to-top word-mark */}
+                    <Link
+                        to="/"
+                        data-testid="footer-back-top"
+                        className="inline-flex items-center gap-2 font-mono text-[10.5px] font-bold uppercase transition-opacity hover:opacity-100"
+                        style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.55)" }}
+                    >
+                        Voltar ao topo
+                        <span
+                            className="inline-grid place-items-center"
+                            style={{
+                                width: 26, height: 26, borderRadius: "50%",
+                                background: "rgba(255,255,255,0.08)",
+                                border: "1px solid rgba(255,255,255,0.16)",
+                            }}
+                            aria-hidden
+                        >
+                            <ArrowRight size={12} style={{ transform: "rotate(-90deg)" }} />
+                        </span>
+                    </Link>
                 </div>
             </div>
         </footer>

@@ -333,12 +333,25 @@ function TrustStrip() {
 // =============================================================================
 function MobileStickyCta() {
     const [show, setShow] = useState(false);
+    const [dismissed, setDismissed] = useState(() => {
+        try {
+            return sessionStorage.getItem("vm_sticky_cta_dismissed") === "1";
+        } catch { return false; }
+    });
     useEffect(() => {
         const onScroll = () => setShow(window.scrollY > 320);
         window.addEventListener("scroll", onScroll, { passive: true });
         onScroll();
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
+
+    const onDismiss = () => {
+        setDismissed(true);
+        try { sessionStorage.setItem("vm_sticky_cta_dismissed", "1"); } catch { /* ignore */ }
+    };
+
+    if (dismissed) return null;
+
     return (
         <div
             className="lg:hidden fixed left-3 right-3 z-40 pointer-events-none"
@@ -351,7 +364,7 @@ function MobileStickyCta() {
             data-testid="mobile-sticky-cta"
         >
             <div
-                className="pointer-events-auto flex items-center gap-3 px-3 py-2.5"
+                className="pointer-events-auto flex items-center gap-2.5 px-2.5 py-2.5"
                 style={{
                     background: "rgba(255,255,255,0.96)",
                     backdropFilter: "blur(16px) saturate(140%)",
@@ -361,7 +374,22 @@ function MobileStickyCta() {
                     border: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
-                <div className="flex -space-x-2 shrink-0 pl-1">
+                <button
+                    type="button"
+                    onClick={onDismiss}
+                    data-testid="mobile-sticky-dismiss"
+                    aria-label="Fechar"
+                    className="grid place-items-center shrink-0 transition-all hover:scale-110 active:scale-95"
+                    style={{
+                        width: 28, height: 28, borderRadius: "50%",
+                        background: "rgba(10,10,10,0.06)",
+                        color: "rgba(10,10,10,0.55)",
+                        border: "1px solid rgba(10,10,10,0.08)",
+                    }}
+                >
+                    <X size={14} strokeWidth={2.6} />
+                </button>
+                <div className="flex -space-x-2 shrink-0">
                     {[PT.red, PT.azul, PT.green].map((c, i) => (
                         <span
                             key={i}
@@ -528,28 +556,27 @@ function TopNav() {
 }
 
 // =============================================================================
-// WORDMARK — custom "LUSORAE" letterforms, bold premium feel
+// WORDMARK — LUSORAE wordmark (Nano Banana generated, transparent)
 // =============================================================================
 function Wordmark({ size = 32, color = PT.ink, dot = PT.red }) {
+    const isLight = color !== PT.ink;
     return (
-        <div
-            className="font-black select-none"
-            style={{
-                fontFamily: '"Inter", system-ui, sans-serif',
-                fontWeight: 900,
-                fontSize: size,
-                color,
-                lineHeight: 1,
-                letterSpacing: "-0.04em",
-                fontStretch: "condensed",
-                display: "inline-flex",
-                alignItems: "baseline",
-                position: "relative",
-            }}
+        <span
+            className="inline-flex items-end select-none"
+            style={{ lineHeight: 1, position: "relative" }}
+            aria-label="Lusorae"
         >
-            <span style={{ display: "inline-block", transform: "scaleY(1.05)", transformOrigin: "bottom" }}>
-                LUSORAE
-            </span>
+            <img
+                src="/brand/lusorae-wordmark-transparent.png"
+                alt=""
+                aria-hidden
+                style={{
+                    height: size * 1.05,
+                    width: "auto",
+                    display: "block",
+                    filter: isLight ? "invert(1)" : "none",
+                }}
+            />
             <span
                 aria-hidden
                 style={{
@@ -557,12 +584,11 @@ function Wordmark({ size = 32, color = PT.ink, dot = PT.red }) {
                     height: size * 0.13,
                     background: dot,
                     borderRadius: "50%",
-                    marginLeft: size * 0.06,
-                    alignSelf: "flex-end",
-                    marginBottom: size * 0.02,
+                    marginLeft: size * 0.10,
+                    marginBottom: size * 0.06,
                 }}
             />
-        </div>
+        </span>
     );
 }
 
