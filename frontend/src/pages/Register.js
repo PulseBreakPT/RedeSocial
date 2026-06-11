@@ -103,8 +103,8 @@ export default function Register() {
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
 
-    const usernameState = useAvailabilityCheck({ value: form.username, endpoint: "/api/auth/check-username", paramName: "u", localValidate: _validateUsernameLocal });
-    const emailState = useAvailabilityCheck({ value: form.email, endpoint: "/api/auth/check-email", paramName: "e", localValidate: _validateEmailLocal });
+    const usernameState = useAvailabilityCheck({ value: form.username, endpoint: "/auth/check-username", paramName: "u", localValidate: _validateUsernameLocal });
+    const emailState = useAvailabilityCheck({ value: form.email, endpoint: "/auth/check-email", paramName: "e", localValidate: _validateEmailLocal });
     const pwdEval = useMemo(() => evaluatePassword(form.password), [form.password]);
     const pwdMatches = form.password && form.passwordConfirm && form.password === form.passwordConfirm;
     const pwdMismatch = form.password && form.passwordConfirm && form.password !== form.passwordConfirm;
@@ -123,6 +123,27 @@ export default function Register() {
         form.password.length >= 8 &&
         pwdMatches;
     const canSubmit = consent.age && consent.terms && !busy;
+
+    // Hint do que falta no step 1 — mostrado quando o user passa o rato/foco
+    // no bot\u00e3o Seguinte (ou quando clica e n\u00e3o pode avan\u00e7ar).
+    const step1Missing = () => {
+        if (!nameValid) return "Falta o teu nome.";
+        if (!form.username) return "Falta o username.";
+        if (usernameState.status === "checking") return "A verificar username\u2026 aguarda um segundo.";
+        if (usernameState.status === "taken") return "Esse username j\u00e1 est\u00e1 em uso.";
+        if (usernameState.status === "invalid") return usernameState.message || "Username inv\u00e1lido.";
+        if (usernameState.status !== "available") return "Confirma o username.";
+        if (!form.email) return "Falta o email.";
+        if (emailState.status === "checking") return "A verificar email\u2026 aguarda um segundo.";
+        if (emailState.status === "taken") return "J\u00e1 existe uma conta com esse email.";
+        if (emailState.status === "invalid") return emailState.message || "Email inv\u00e1lido.";
+        if (emailState.status !== "available") return "Confirma o email.";
+        if (form.password.length < 8) return "Palavra-passe tem de ter pelo menos 8 caracteres.";
+        if (pwdEval.score < 2) return "Refor\u00e7a a palavra-passe (mai\u00fasculas, n\u00fameros ou s\u00edmbolos).";
+        if (!form.passwordConfirm) return "Repete a palavra-passe.";
+        if (pwdMismatch) return "As palavras-passe n\u00e3o coincidem.";
+        return null;
+    };
 
     const next = () => {
         setError("");
@@ -528,14 +549,24 @@ export default function Register() {
                                 </GhostButton>
                             )}
                             {step < 3 ? (
-                                <PrimaryButton
-                                    type="button"
-                                    onClick={next}
-                                    disabled={step === 1 ? !canStep1 : false}
-                                    dataTestid="register-next"
-                                >
-                                    {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={16} strokeWidth={2.5} />
-                                </PrimaryButton>
+                                <div className="flex-1 flex flex-col gap-1.5">
+                                    <PrimaryButton
+                                        type="button"
+                                        onClick={next}
+                                        dataTestid="register-next"
+                                    >
+                                        {step === 2 && !city ? "Saltar" : "Seguinte"} <ArrowRight size={16} strokeWidth={2.5} />
+                                    </PrimaryButton>
+                                    {step === 1 && !canStep1 && (
+                                        <p
+                                            className="text-[11.5px] font-medium text-center px-2"
+                                            data-testid="register-step1-hint"
+                                            style={{ color: "rgba(10,10,10,0.55)" }}
+                                        >
+                                            {step1Missing()}
+                                        </p>
+                                    )}
+                                </div>
                             ) : (
                                 <PrimaryButton type="submit" disabled={!canSubmit} busy={busy} dataTestid="register-submit">
                                     {busy ? (<><Loader2 size={15} className="animate-spin" /> A criar…</>) : (<>Criar conta <Check size={16} strokeWidth={2.5} /></>)}
