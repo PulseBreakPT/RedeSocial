@@ -1220,10 +1220,54 @@ function ValueStrip() {
     ];
 
     const cities = [
-        { name: "Lisboa", img: CITY_LISBOA, accent: PT.red },
-        { name: "Porto", img: CITY_PORTO, accent: PT.azul },
-        { name: "Algarve", img: CITY_ALGARVE, accent: PT.gold },
-        { name: "Madeira & Açores", img: CITY_OUTRA, accent: PT.green },
+        {
+            name: "Lisboa",
+            region: "Capital · Tejo",
+            img: CITY_LISBOA,
+            accent: PT.red,
+            status: "EM CHAMAS",
+            statusDot: PT.red,
+            members: "1.2K",
+            communities: 18,
+            events: 32,
+            tags: ["#cultura", "#tertúlias", "#nightlife"],
+        },
+        {
+            name: "Porto",
+            region: "Norte · Douro",
+            img: CITY_PORTO,
+            accent: PT.azul,
+            status: "A CRESCER",
+            statusDot: PT.azul,
+            members: "840",
+            communities: 12,
+            events: 24,
+            tags: ["#ribeira", "#música", "#vinho"],
+        },
+        {
+            name: "Algarve",
+            region: "Sul · Costa",
+            img: CITY_ALGARVE,
+            accent: PT.gold,
+            status: "AO SOL",
+            statusDot: PT.gold,
+            members: "620",
+            communities: 9,
+            events: 18,
+            tags: ["#surf", "#praia", "#sunset"],
+        },
+        {
+            name: "Madeira & Açores",
+            region: "Ilhas · Atlântico",
+            img: CITY_OUTRA,
+            accent: PT.green,
+            status: "NEW",
+            statusDot: PT.green,
+            members: "280",
+            communities: 6,
+            events: 8,
+            tags: ["#ilhas", "#natureza", "#trilhos"],
+        },
     ];
 
     return (
@@ -1311,14 +1355,42 @@ function ValueStrip() {
                     ))}
                 </div>
 
-                {/* Sub-section: City tiles */}
-                <div className="flex items-end justify-between flex-wrap gap-3 mb-5 sm:mb-7">
+                {/* Sub-section: Cities — "Já está vivo em" */}
+                <div className="flex items-end justify-between flex-wrap gap-4 mb-6 sm:mb-8">
                     <div>
-                        <p className="font-mono text-[11px] font-bold uppercase mb-1.5" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
-                            Já está vivo em
-                        </p>
-                        <p className="font-black text-[20px] sm:text-[24px] tracking-[-0.02em]" style={{ color: PT.ink }}>
-                            Quatro regiões, dez ilhas, um país.
+                        <div className="flex items-center gap-3 mb-2">
+                            <span
+                                className="inline-flex items-center justify-center"
+                                style={{
+                                    width: 22, height: 22, borderRadius: "50%",
+                                    border: `1.5px solid ${PT.ink}`,
+                                }}
+                            >
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                                </span>
+                            </span>
+                            <p className="font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.62)" }}>
+                                Já está vivo em
+                            </p>
+                            <span className="hidden sm:inline-block" style={{ width: 28, height: 1, background: "rgba(10,10,10,0.2)" }} />
+                            <p className="hidden sm:inline-block font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: "rgba(10,10,10,0.4)" }}>
+                                +2.9K membros · 45 comunidades · 82 eventos
+                            </p>
+                        </div>
+                        <p className="font-black text-[22px] sm:text-[28px] lg:text-[32px] tracking-[-0.025em] leading-[1]" style={{ color: PT.ink }}>
+                            Quatro regiões.{" "}
+                            <span className="relative inline-block" style={{ fontStyle: "italic", color: PT.azul }}>
+                                Um país a sair do ecrã
+                                <span
+                                    className="absolute pointer-events-none"
+                                    style={{ left: 0, right: 0, bottom: "-0.08em", height: 10 }}
+                                >
+                                    <UnderlineStroke color={PT.azul} w={420} h={10} variant="wave" delay={0.3} style={{ width: "100%", height: "100%" }} />
+                                </span>
+                            </span>
+                            .
                         </p>
                     </div>
                 </div>
@@ -1326,6 +1398,45 @@ function ValueStrip() {
                     {cities.map((c) => (
                         <CityTile key={c.name} city={c} />
                     ))}
+                </div>
+
+                {/* "Não vês a tua cidade?" — closing strip */}
+                <div
+                    className="mt-6 sm:mt-8 flex flex-wrap items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5"
+                    style={{
+                        background: "#fff",
+                        borderRadius: 18,
+                        border: "1px dashed rgba(10,10,10,0.18)",
+                    }}
+                    data-testid="cities-cta"
+                >
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span
+                            className="inline-flex items-center justify-center shrink-0"
+                            style={{
+                                width: 36, height: 36, borderRadius: 12,
+                                background: PT.ink, color: "#fff",
+                            }}
+                        >
+                            <MapPin size={16} strokeWidth={2.5} />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="font-black text-[15px] sm:text-[16px] leading-tight tracking-[-0.01em]" style={{ color: PT.ink }}>
+                                Não vês a tua cidade?
+                            </p>
+                            <p className="text-[12.5px] sm:text-[13px] font-medium leading-tight mt-0.5" style={{ color: "rgba(10,10,10,0.55)" }}>
+                                Coimbra, Braga, Aveiro, Funchal — estamos a chegar. Entra na beta e abrimos-te a porta.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/register"
+                        data-testid="cities-cta-link"
+                        className="inline-flex items-center gap-1.5 text-[13.5px] font-bold px-5 py-2.5 rounded-full transition-all hover:scale-[1.03] shrink-0"
+                        style={{ background: PT.ink, color: "#fff", boxShadow: "0 6px 16px -6px rgba(10,10,10,0.35)" }}
+                    >
+                        Pedir convite <ArrowUpRight size={14} />
+                    </Link>
                 </div>
             </div>
         </section>
@@ -1597,119 +1708,395 @@ function CityTile({ city }) {
                 aspectRatio: "4/5",
                 borderRadius: 20,
                 border: "1px solid rgba(10,10,10,0.06)",
+                boxShadow: "0 2px 12px -4px rgba(10,10,10,0.08)",
             }}
             data-testid={`city-${city.name.toLowerCase().replace(/\s+/g, "-")}`}
         >
             <img
                 src={city.img}
                 alt={city.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-110"
                 loading="lazy"
             />
+            {/* Top gradient (status legibility) */}
+            <div
+                className="absolute inset-x-0 top-0 h-1/3 pointer-events-none"
+                style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
+            />
+            {/* Bottom gradient (info legibility) */}
             <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                    background: `linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.65) 100%)`,
+                    background: `linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.92) 100%)`,
                 }}
             />
-            <span
-                className="absolute top-3 right-3 z-10 flex items-center justify-center opacity-0 translate-y-2 scale-90 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 transition-all duration-300"
+
+            {/* TOP-LEFT: Status pill */}
+            <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full"
                 style={{
-                    width: 36, height: 36, borderRadius: "50%",
-                    background: "rgba(255,255,255,0.94)", color: PT.ink,
+                    background: "rgba(255,255,255,0.96)",
+                    boxShadow: "0 4px 12px -4px rgba(0,0,0,0.3)",
+                }}
+            >
+                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: city.statusDot }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: city.statusDot }} />
+                </span>
+                <span className="text-[9.5px] font-black uppercase" style={{ color: PT.ink, letterSpacing: "0.10em" }}>
+                    {city.status}
+                </span>
+            </div>
+
+            {/* TOP-RIGHT: Region badge */}
+            <div className="absolute top-3 right-3 z-10 px-2 py-1 rounded-full"
+                style={{
+                    background: "rgba(255,255,255,0.14)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.25)",
+                }}
+            >
+                <span className="text-[9px] font-bold uppercase text-white" style={{ letterSpacing: "0.12em" }}>
+                    {city.region}
+                </span>
+            </div>
+
+            {/* Hover arrow */}
+            <span
+                className="absolute z-20 flex items-center justify-center opacity-0 translate-y-2 scale-90 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100 transition-all duration-300"
+                style={{
+                    bottom: 16, right: 14,
+                    width: 38, height: 38, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.96)", color: PT.ink,
                     boxShadow: "0 6px 16px -4px rgba(0,0,0,0.3)",
                 }}
                 aria-hidden
             >
-                <ArrowUpRight size={16} />
+                <ArrowUpRight size={16} strokeWidth={2.5} />
             </span>
-            <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                    <span
-                        className="inline-block"
-                        style={{ width: 8, height: 8, borderRadius: "50%", background: city.accent }}
-                    />
-                    <span className="text-[10.5px] font-mono font-bold uppercase text-white/85" style={{ letterSpacing: "0.14em" }}>
-                        Em Portugal
-                    </span>
+
+            {/* BOTTOM: City name + tags + stats */}
+            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 z-10">
+                {/* Tags */}
+                <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
+                    {city.tags.map((t, i) => (
+                        <span
+                            key={i}
+                            className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                                background: "rgba(255,255,255,0.18)",
+                                color: "#fff",
+                                backdropFilter: "blur(8px)",
+                                WebkitBackdropFilter: "blur(8px)",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                                letterSpacing: "-0.01em",
+                            }}
+                        >
+                            {t}
+                        </span>
+                    ))}
                 </div>
+
+                {/* City name */}
                 <p
-                    className="font-black text-white tracking-[-0.02em] leading-none"
-                    style={{ fontSize: "clamp(22px, 2.4vw, 30px)" }}
+                    className="font-black text-white tracking-[-0.03em] leading-[0.92] mb-2.5"
+                    style={{ fontSize: "clamp(24px, 2.6vw, 34px)" }}
                 >
                     {city.name}
                 </p>
+
+                {/* Stats row */}
+                <div className="flex items-center gap-3 pt-2.5"
+                    style={{ borderTop: "1px solid rgba(255,255,255,0.18)" }}
+                >
+                    <div className="flex-1 min-w-0">
+                        <p className="font-black text-white text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]">
+                            {city.members}
+                        </p>
+                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
+                            membros
+                        </p>
+                    </div>
+                    <span className="w-px h-7 bg-white/20" aria-hidden />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-black text-white text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]">
+                            {city.communities}
+                        </p>
+                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
+                            comunidades
+                        </p>
+                    </div>
+                    <span className="w-px h-7 bg-white/20" aria-hidden />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-black text-[14px] sm:text-[15px] leading-none tracking-[-0.01em]" style={{ color: city.accent === PT.gold ? city.accent : "#fff" }}>
+                            {city.events}
+                        </p>
+                        <p className="text-[9px] font-bold uppercase text-white/65 mt-0.5" style={{ letterSpacing: "0.08em" }}>
+                            eventos
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
 // =============================================================================
-// FINAL CTA — minimal black strip
+// FINAL CTA — premium 2-column closer com checklist + timeline 30s
 // =============================================================================
 function FinalCta() {
+    const checklist = [
+        { txt: "Perfil pronto em 30 segundos" },
+        { txt: "Acesso imediato à beta — sem lista de espera" },
+        { txt: "Sem cartão, sem compromisso, para sempre grátis" },
+        { txt: "A primeira rede social sem algoritmo de vaidade" },
+    ];
+    const timeline = [
+        { t: "0:00", title: "Email + nome", sub: "Sem telefone, sem links sociais.", color: PT.red },
+        { t: "0:10", title: "Escolhe a tua cidade", sub: "É por aqui que o feed começa.", color: PT.azul },
+        { t: "0:25", title: "Já estás dentro", sub: "Bem-vindo à rede portuguesa.", color: PT.green },
+    ];
     return (
-        <section className="px-5 sm:px-8 lg:px-12 pb-12 sm:pb-16" data-testid="final-cta">
+        <section className="px-5 sm:px-8 lg:px-12 pb-16 sm:pb-20" data-testid="final-cta">
             <div
-                className="max-w-[1400px] mx-auto relative overflow-hidden px-7 sm:px-10 lg:px-14 py-12 sm:py-14 lg:py-16"
-                style={{ background: PT.ink, borderRadius: 28 }}
+                className="max-w-[1400px] mx-auto relative overflow-hidden px-6 sm:px-10 lg:px-14 py-12 sm:py-14 lg:py-16"
+                style={{ background: PT.ink, borderRadius: 32 }}
             >
-                {/* Floating colour blocks */}
-                <div className="absolute pointer-events-none lusorae-float-soft" style={{ right: -40, top: -40, width: 200, height: 200, background: PT.red, borderRadius: 24, "--rot": "14deg", opacity: 0.85 }} aria-hidden />
-                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ right: 80, bottom: -50, width: 140, height: 140, background: PT.gold, borderRadius: 20, "--rot": "-8deg", opacity: 0.85, animationDelay: "0.8s" }} aria-hidden />
-                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ right: 180, top: 40, width: 80, height: 80, background: PT.green, borderRadius: 14, "--rot": "-22deg", opacity: 0.7, animationDelay: "1.6s" }} aria-hidden />
+                {/* Subtle grid texture */}
+                <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none opacity-[0.05]"
+                    style={{
+                        backgroundImage: `linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)`,
+                        backgroundSize: "44px 44px",
+                    }}
+                />
 
-                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-7">
-                    <div className="max-w-2xl">
-                        <p className="font-mono text-[11px] font-bold uppercase mb-3" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.55)" }}>
-                            03 — Junta-te ao Lusorae
-                        </p>
+                {/* Floating colour blocks — background */}
+                <div className="absolute pointer-events-none lusorae-float-soft" style={{ right: -50, top: -40, width: 220, height: 220, background: PT.red, borderRadius: 28, "--rot": "14deg", opacity: 0.7 }} aria-hidden />
+                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ right: 140, bottom: -50, width: 140, height: 140, background: PT.gold, borderRadius: 22, "--rot": "-8deg", opacity: 0.55, animationDelay: "0.8s" }} aria-hidden />
+                <div className="hidden sm:block absolute pointer-events-none lusorae-float-soft" style={{ left: -30, bottom: 30, width: 100, height: 100, background: PT.green, borderRadius: 18, "--rot": "-22deg", opacity: 0.55, animationDelay: "1.6s" }} aria-hidden />
+
+                <div className="relative z-10 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
+
+                    {/* ============ LEFT: kicker + headline + checklist + CTAs ============ */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-4">
+                            <span
+                                className="inline-flex items-center justify-center font-mono text-[10.5px] font-black"
+                                style={{
+                                    width: 26, height: 26, borderRadius: "50%",
+                                    background: "#fff", color: PT.ink, letterSpacing: "0.04em",
+                                }}
+                            >
+                                03
+                            </span>
+                            <p className="font-mono text-[11px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.62)" }}>
+                                Junta-te à beta
+                            </p>
+                        </div>
                         <h2
-                            className="font-black tracking-[-0.035em] leading-[0.95]"
+                            className="font-black tracking-[-0.04em] leading-[0.92]"
                             style={{
-                                fontSize: "clamp(30px, 4.5vw, 56px)",
+                                fontSize: "clamp(36px, 5.5vw, 72px)",
                                 color: "#fff",
                                 fontFamily: '"Inter", system-ui, sans-serif',
                                 fontWeight: 900,
                             }}
                         >
-                            Pronto para fazer parte da{" "}
+                            30 segundos{" "}
                             <span style={{ whiteSpace: "nowrap" }}>
-                                <span className="relative inline-block">
-                                    <span style={{ color: PT.gold }}>tua cidade</span>
+                                e estás{" "}
+                                <span className="relative inline-block" style={{ fontStyle: "italic", color: PT.gold, letterSpacing: "-0.045em" }}>
+                                    dentro
                                     <span
                                         className="absolute pointer-events-none"
-                                        style={{ left: 0, right: 0, bottom: "-0.05em", height: 12 }}
+                                        style={{ left: "-2%", right: "-2%", bottom: "-0.08em", height: 14 }}
                                     >
-                                        <UnderlineStroke color={PT.gold} w={300} h={12} variant="wave" delay={0.3} style={{ width: "100%", height: "100%" }} />
+                                        <UnderlineStroke color={PT.gold} w={280} h={14} variant="thick" delay={0.3} style={{ width: "100%", height: "100%" }} />
                                     </span>
                                 </span>
-                                ?
                             </span>
                         </h2>
-                        <p className="mt-4 text-[15px] sm:text-[16px] font-medium leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
-                            30 segundos. Grátis. Para sempre. <strong style={{ color: "#fff", fontWeight: 700 }}>Sem algoritmos de vaidade.</strong>
+                        <p className="mt-5 text-[15.5px] sm:text-[17px] font-medium leading-relaxed max-w-[520px]" style={{ color: "rgba(255,255,255,0.72)" }}>
+                            Não é mais uma rede. É <strong style={{ color: "#fff", fontWeight: 700 }}>a rede portuguesa</strong> — feita aqui, para quem vive aqui.
+                        </p>
+
+                        {/* Checklist */}
+                        <ul className="mt-7 sm:mt-8 space-y-3" data-testid="final-cta-checklist">
+                            {checklist.map((c, i) => (
+                                <li key={i} className="flex items-start gap-3">
+                                    <span
+                                        className="inline-flex items-center justify-center shrink-0 mt-0.5"
+                                        style={{
+                                            width: 22, height: 22, borderRadius: "50%",
+                                            background: "rgba(255,255,255,0.10)",
+                                            border: "1px solid rgba(255,255,255,0.18)",
+                                        }}
+                                        aria-hidden
+                                    >
+                                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                            <path d="M2 6.5 L5 9 L10 3" stroke={PT.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-[14.5px] sm:text-[15.5px] font-medium leading-snug" style={{ color: "rgba(255,255,255,0.88)" }}>
+                                        {c.txt}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        {/* CTAs */}
+                        <div className="mt-8 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                            <Magnetic className="w-full sm:w-auto">
+                                <Link
+                                    to="/register"
+                                    data-testid="final-cta-register"
+                                    className="group inline-flex items-center justify-center gap-2 px-7 py-[18px] rounded-full text-[15px] font-bold transition-all hover:scale-[1.03] w-full sm:w-auto"
+                                    style={{ background: "#fff", color: PT.ink, boxShadow: `0 14px 32px -10px rgba(0,0,0,0.5)` }}
+                                >
+                                    Criar conta grátis{" "}
+                                    <ArrowRight size={17} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                </Link>
+                            </Magnetic>
+                            <Link
+                                to="/login"
+                                data-testid="final-cta-login"
+                                className="inline-flex items-center justify-center gap-1.5 text-[14.5px] font-bold py-[15px] px-6 rounded-full"
+                                style={{ border: `1.5px solid rgba(255,255,255,0.45)`, color: "#fff" }}
+                            >
+                                Já tenho conta
+                            </Link>
+                        </div>
+
+                        {/* Tiny print */}
+                        <p className="mt-5 text-[12px] font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>
+                            Sem cartão · Sem spam · Cancela a conta com 1 clique
                         </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 shrink-0 w-full lg:w-auto">
-                        <Magnetic className="w-full sm:w-auto">
-                            <Link
-                                to="/register"
-                                data-testid="final-cta-register"
-                                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full text-[14.5px] font-bold transition-all hover:scale-[1.03] w-full sm:w-auto"
-                                style={{ background: "#fff", color: PT.ink, boxShadow: `0 10px 28px -10px rgba(0,0,0,0.4)` }}
-                            >
-                                Criar conta grátis <ArrowRight size={17} />
-                            </Link>
-                        </Magnetic>
-                        <Link
-                            to="/login"
-                            data-testid="final-cta-login"
-                            className="inline-flex items-center justify-center gap-1.5 text-[14px] font-bold py-3.5 px-5 rounded-full"
-                            style={{ border: `1.5px solid rgba(255,255,255,0.5)`, color: "#fff" }}
+
+                    {/* ============ RIGHT: 30-second timeline card ============ */}
+                    <div className="relative">
+                        <div
+                            className="relative overflow-hidden p-6 sm:p-7"
+                            style={{
+                                background: "rgba(255,255,255,0.05)",
+                                backdropFilter: "blur(20px) saturate(140%)",
+                                WebkitBackdropFilter: "blur(20px) saturate(140%)",
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                borderRadius: 22,
+                                boxShadow: "0 20px 60px -20px rgba(0,0,0,0.5)",
+                            }}
+                            data-testid="final-cta-timeline"
                         >
-                            Entrar
-                        </Link>
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-2">
+                                    <span className="relative flex h-2 w-2" aria-hidden>
+                                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                        <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: PT.green }} />
+                                    </span>
+                                    <p className="font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,255,255,0.75)" }}>
+                                        O que acontece em 30s
+                                    </p>
+                                </div>
+                                <span className="font-mono text-[10.5px] font-black px-2 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.10)", color: "#fff", letterSpacing: "0.04em" }}>
+                                    0:30
+                                </span>
+                            </div>
+
+                            {/* Timeline */}
+                            <div className="relative pl-2">
+                                {/* Vertical line */}
+                                <span
+                                    aria-hidden
+                                    className="absolute left-[15px] top-2 bottom-2 w-px"
+                                    style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.05) 100%)" }}
+                                />
+                                {timeline.map((s, i) => (
+                                    <div key={i} className={`relative flex items-start gap-4 ${i === timeline.length - 1 ? "" : "pb-5"}`}>
+                                        {/* Dot */}
+                                        <span
+                                            className="relative z-10 inline-flex items-center justify-center shrink-0"
+                                            style={{
+                                                width: 26, height: 26, borderRadius: "50%",
+                                                background: s.color,
+                                                color: s.color === PT.gold ? PT.ink : "#fff",
+                                                boxShadow: `0 0 0 4px rgba(10,10,10,1), 0 4px 12px -2px ${s.color}88`,
+                                                marginLeft: -1,
+                                            }}
+                                        >
+                                            <span className="font-black text-[10px]">{i + 1}</span>
+                                        </span>
+                                        <div className="flex-1 min-w-0 pt-0.5">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <p className="font-black text-[14.5px] leading-tight tracking-[-0.01em]" style={{ color: "#fff" }}>
+                                                    {s.title}
+                                                </p>
+                                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.75)" }}>
+                                                    {s.t}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12.5px] font-medium leading-snug" style={{ color: "rgba(255,255,255,0.62)" }}>
+                                                {s.sub}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Footer: social proof */}
+                            <div
+                                className="mt-6 pt-5 flex items-center gap-3"
+                                style={{ borderTop: "1px solid rgba(255,255,255,0.10)" }}
+                            >
+                                <div className="flex -space-x-2 shrink-0">
+                                    {[PT.red, PT.azul, PT.green, PT.gold].map((c, i) => (
+                                        <span
+                                            key={i}
+                                            className="rounded-full flex items-center justify-center font-black text-[10px]"
+                                            style={{
+                                                width: 28, height: 28,
+                                                background: c,
+                                                color: c === PT.gold ? PT.ink : "#fff",
+                                                border: "2.5px solid #0A0A0A",
+                                            }}
+                                        >
+                                            {["S", "T", "I", "M"][i]}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[12.5px] font-bold leading-tight" style={{ color: "#fff" }}>
+                                        Os primeiros membros já estão dentro
+                                    </p>
+                                    <p className="text-[11px] font-medium leading-tight mt-0.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+                                        Lisboa · Porto · Faro · Funchal
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Floating "Made in PT" mini-stamp */}
+                        <div
+                            className="absolute -top-3 -right-3 z-20 lusorae-float-soft hidden sm:block"
+                            style={{ "--rot": "8deg" }}
+                            aria-hidden
+                        >
+                            <div
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
+                                style={{
+                                    background: "#fff",
+                                    boxShadow: "0 8px 20px -6px rgba(0,0,0,0.4)",
+                                }}
+                            >
+                                <span className="inline-block" style={{ width: 6, height: 6, borderRadius: "50%", background: PT.red }} />
+                                <span className="inline-block" style={{ width: 6, height: 6, borderRadius: "50%", background: PT.green }} />
+                                <span className="font-black text-[10px] uppercase" style={{ color: PT.ink, letterSpacing: "0.10em" }}>
+                                    Made in PT
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
