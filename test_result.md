@@ -3501,7 +3501,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Pulse Engine — background snapshot loop + 5 REST endpoints"
+    - "Landing + Login + Register — all buttons & links functional"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -3509,14 +3509,16 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: |
-        Fase 1 (Pulse Engine) is ready for backend-only testing. Please
-        validate the 5 endpoints + the opt-out toggle as described in
-        the task's `comment` block. Do NOT test the frontend yet — Fase 2
-        (Ambient Pulse Widgets UI) hasn't started.
+        Frontend-only QA pass: please verify every interactive element on
+        Landing, Login and Register works correctly. Recent changes:
+        1) Redesigned Login + Register with new editorial style
+        2) Fixed availability-check endpoints (was hitting /api/api/... )
+        3) Added terms disclaimer below CTAs
+        4) Sticky mobile beta CTA now minimizes instead of closing
+        5) CityTile mobile responsiveness fixed
+        6) StepVisualCity replaced (no more map SVG)
 
-        Admin creds in /app/memory/test_credentials.md.
+        Test credentials: admin@vermillion.app / admin123 (admin login OK)
+        For new registration: generate unique email+username each run.
 
-        Heads-up for the testing agent: on a fresh DB the pulse arrays may
-        be empty — that's valid and not a bug. The test should CREATE a
-        few posts (with hashtags + mood-laden words) and verify the
-        numbers reflect that activity within the same minute window.
+        Detailed checklist in the frontend task block below.
