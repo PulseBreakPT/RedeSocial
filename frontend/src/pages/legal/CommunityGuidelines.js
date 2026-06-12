@@ -14,7 +14,7 @@ export default function CommunityGuidelines() {
             active="community"
             title="Diretrizes da Comunidade"
             subtitle="As regras práticas que regem aquilo que se pode publicar, partilhar e dizer no Lusorae &mdash; e o que acontece quando alguém, voluntariamente ou não, sai delas. Em conformidade com o DSA, com a lei portuguesa e com aquilo a que nos comprometêmos publicamente."
-            lastUpdated="[data da última versão]"
+            lastUpdated="Junho de 2026"
         >
             <LegalKPIs items={[
                 { value: "8",       label: "categorias proibidas",     sub: "Mapeadas em §2",            icon: ShieldAlert },

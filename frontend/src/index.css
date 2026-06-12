@@ -994,7 +994,8 @@
         border-top: 1px solid rgba(10,10,10,0.10);
         color: #0A0A0A;
         scroll-margin-top: 96px;
-        display: flex; flex-direction: column;
+        display: block;
+        text-align: center;
         counter-increment: legal-section;
     }
     .prose-legal h2:first-child {
@@ -1002,36 +1003,22 @@
         padding-top: 0;
         border-top: 0;
     }
-    /* Section kicker — "SECÇÃO 01" red, above the title */
+    /* Section number — inline with the h2 title (no separate kicker line) */
     .prose-legal h2 .sec-n {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-size: 11px;
-        font-weight: 800;
+        display: inline;
+        font-size: inherit;
+        font-weight: 900;
         color: #C8102E;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        margin-bottom: 0.85rem;
-        font-family: "Inter", sans-serif;
+        letter-spacing: -0.02em;
+        text-transform: none;
+        margin: 0 0.32em 0 0;
+        font-family: inherit;
         background: transparent;
         padding: 0;
         border-radius: 0;
-        position: static;
-        top: 0;
-        order: -1;
     }
-    .prose-legal h2 .sec-n::before {
-        content: "";
-        width: 18px; height: 1.5px;
-        background: #C8102E;
-        border-radius: 999px;
-        display: inline-block;
-    }
-    .prose-legal h2 .sec-n::after {
-        content: " · Secção";
-        color: rgba(10,10,10,0.45);
-        font-weight: 700;
-        letter-spacing: 0.16em;
-    }
+    .prose-legal h2 .sec-n::before { content: none; }
+    .prose-legal h2 .sec-n::after  { content: none; }
 
     /* ─── LEAD PARAGRAPH — first p after h2 stands out (magazine "stand-first") ─── */
     .prose-legal h2 + p {
@@ -1232,15 +1219,21 @@
     .prose-legal .legal-callout.is-tldr code { background: rgba(200,16,46,0.10); color: #C8102E; }
     .prose-legal .legal-callout.is-tldr strong { color: #0A0A0A; }
 
-    /* Tables — editorial */
+    /* Tables — editorial. Legacy <table> usage is wrapped in scroll on
+       very narrow screens, but new code should use <LegalTable />
+       (renderiza cards em mobile, tabela editorial em desktop). */
     .prose-legal .legal-table-wrap { overflow-x: auto; margin: 1.4rem -2px; padding: 0 2px; }
     .prose-legal table {
-        width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 480px;
+        width: 100%; border-collapse: collapse; font-size: 13.5px;
         border: 1px solid rgba(10,10,10,0.08);
         border-radius: 14px;
         overflow: hidden;
         background: #ffffff;
+        display: table;
     }
+    /* Auto-wrap legacy <table> sem precisar de wrapper manual */
+    .prose-legal > table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .prose-legal > table > thead, .prose-legal > table > tbody { display: table; width: 100%; table-layout: auto; min-width: 100%; }
     .prose-legal th, .prose-legal td {
         padding: 12px 14px;
         border-bottom: 1px solid rgba(10,10,10,0.06);
@@ -1361,8 +1354,8 @@
             line-height: 1.15;
         }
         .prose-legal h2 .sec-n {
-            font-size: 10.5px;
-            margin-bottom: 0.6rem;
+            font-size: inherit;
+            margin: 0 0.3em 0 0;
         }
         .prose-legal h2 + p {
             font-size: 16.5px;
@@ -1382,6 +1375,200 @@
             top: -10px;
         }
     }
+
+    /* ════════════════════════════════════════════════════════════
+       LegalTable — RESPONSIVE table → cards
+       Desktop: editorial table. Mobile: stacked key/value cards.
+       ════════════════════════════════════════════════════════════ */
+    .prose-legal .legal-rtable { margin: 1.6rem 0 1.8rem; }
+    .prose-legal .legal-rtable-table {
+        width: 100%; border-collapse: collapse; font-size: 13.5px;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #ffffff;
+        table-layout: auto;
+        display: table;
+    }
+    .prose-legal .legal-rtable-table th,
+    .prose-legal .legal-rtable-table td {
+        padding: 13px 16px;
+        border-bottom: 1px solid rgba(10,10,10,0.06);
+        text-align: left; vertical-align: top;
+        word-break: break-word;
+    }
+    .prose-legal .legal-rtable-table th {
+        font-weight: 700; background: rgba(10,10,10,0.03); color: rgba(10,10,10,0.55);
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em;
+        border-bottom: 1px solid rgba(10,10,10,0.10);
+        font-family: "Inter", sans-serif;
+    }
+    .prose-legal .legal-rtable-table tr:last-child td { border-bottom: 0; }
+    .prose-legal .legal-rtable-table tr:hover td { background: rgba(10,10,10,0.02); }
+
+    .prose-legal .legal-rtable-cards { display: none; }
+    .prose-legal .legal-rtable-card {
+        position: relative;
+        background: #fff;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 14px;
+        padding: 16px 18px 14px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 2px rgba(10,10,10,0.03), 0 8px 22px -18px rgba(10,10,10,0.18);
+    }
+    .prose-legal .legal-rtable-card-num {
+        position: absolute;
+        top: -8px; right: 12px;
+        font-family: "Inter", sans-serif;
+        font-weight: 800;
+        font-size: 10.5px;
+        letter-spacing: 0.14em;
+        color: #C8102E;
+        background: #fff;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(200,16,46,0.18);
+    }
+    .prose-legal .legal-rtable-card dl { margin: 0; padding: 0; }
+    .prose-legal .legal-rtable-card-row {
+        padding: 9px 0;
+        border-bottom: 1px dashed rgba(10,10,10,0.08);
+    }
+    .prose-legal .legal-rtable-card-row:first-child { padding-top: 0; }
+    .prose-legal .legal-rtable-card-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .prose-legal .legal-rtable-card-row dt {
+        font-family: "Inter", sans-serif;
+        font-weight: 700;
+        font-size: 10.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(10,10,10,0.50);
+        margin: 0 0 4px;
+    }
+    .prose-legal .legal-rtable-card-row dt::before { content: none; }
+    .prose-legal .legal-rtable-card-row dd {
+        margin: 0; padding: 0;
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: #0A0A0A;
+        font-weight: 500;
+    }
+    .prose-legal .legal-rtable-caption {
+        margin-top: 10px;
+        font-size: 12px;
+        color: rgba(10,10,10,0.55);
+        font-style: italic;
+    }
+
+    @media (max-width: 720px) {
+        .prose-legal .legal-rtable-table { display: none; }
+        .prose-legal .legal-rtable-cards { display: block; }
+        /* Legacy raw <table> também colapsa: força horizontal scroll-friendly */
+        .prose-legal > table { font-size: 12.5px; }
+        .prose-legal > table th, .prose-legal > table td { padding: 10px 12px; }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       LegalContactsList — cartões de contacto institucionais
+       ════════════════════════════════════════════════════════════ */
+    .prose-legal .legal-contacts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 1.4rem 0 1.6rem;
+    }
+    @media (max-width: 720px) {
+        .prose-legal .legal-contacts { grid-template-columns: 1fr; }
+    }
+    .prose-legal .legal-contact-card {
+        display: flex; align-items: flex-start; gap: 11px;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid rgba(10,10,10,0.08);
+        border-radius: 14px;
+        text-decoration: none;
+        color: #0A0A0A;
+        transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+        box-shadow: 0 1px 2px rgba(10,10,10,0.03);
+    }
+    .prose-legal .legal-contact-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(200,16,46,0.30);
+        box-shadow: 0 1px 2px rgba(10,10,10,0.04), 0 12px 28px -18px rgba(200,16,46,0.30);
+    }
+    .prose-legal .legal-contact-icon {
+        width: 32px; height: 32px;
+        display: grid; place-items: center;
+        background: rgba(200,16,46,0.08);
+        color: #C8102E;
+        border-radius: 9px;
+        flex-shrink: 0;
+    }
+    .prose-legal .legal-contact-body { min-width: 0; flex: 1; }
+    .prose-legal .legal-contact-subject {
+        font-family: "Inter", sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #0A0A0A;
+        line-height: 1.35;
+        letter-spacing: -0.005em;
+    }
+    .prose-legal .legal-contact-email {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: rgba(10,10,10,0.62);
+        margin-top: 3px;
+        word-break: break-all;
+    }
+    .prose-legal .legal-contact-ref {
+        margin-top: 5px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(10,10,10,0.42);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       LegalSectionSummary — TL;DR por secção H2
+       ════════════════════════════════════════════════════════════ */
+    .prose-legal .legal-section-summary {
+        position: relative;
+        display: flex; gap: 14px;
+        margin: 0.4rem 0 1.4rem;
+        padding: 14px 16px 14px 14px;
+        background: linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%);
+        border: 1px solid rgba(10,10,10,0.07);
+        border-radius: 12px;
+    }
+    .prose-legal .legal-section-summary-strip {
+        flex-shrink: 0;
+        width: 3px;
+        background: linear-gradient(180deg, #C8102E 0%, #046A38 100%);
+        border-radius: 2px;
+    }
+    .prose-legal .legal-section-summary-label {
+        display: block;
+        font-family: "Inter", sans-serif;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.20em;
+        text-transform: uppercase;
+        color: #C8102E;
+        margin-bottom: 4px;
+    }
+    .prose-legal .legal-section-summary p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: rgba(10,10,10,0.78);
+        font-weight: 500;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       LegalShell — Mobile document switcher (handled via Tailwind
+       grid/flex classes directly em LegalShell.js).
+       ════════════════════════════════════════════════════════════ */
 
     /* ============================================================
        tab-grad-on — tabs com underline (border-b-2) ACTIVE state.

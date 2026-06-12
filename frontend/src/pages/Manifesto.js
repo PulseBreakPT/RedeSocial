@@ -1,698 +1,226 @@
-import { Link, useNavigate } from "react-router-dom";
 // =============================================================================
 // DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
-// Página pública das 6 promessas anti-dark-pattern, redesenhada em jun/2026.
-// Substitui o estilo "fanzine PT" (post-its, recibos, doodles, asteriscos
-// gigantes, azulejos rodados) pela linguagem editorial limpa: fundos paper,
-// hairlines 1px, sombras difusas, kickers mono, highlights suaves.
+// Manifesto público — agora dentro do shell editorial uniforme do Centro Legal.
+// Conteúdo intacto: 6 promessas, stats institucionais, regra de ouro,
+// três razões concretas e CTA final.
 // =============================================================================
-import { useRef, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
-    ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
-    Shield, Heart, Users, Quote, ChevronRight, ExternalLink,
+    Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
+    Shield, Heart, Users, ArrowRight, Quote,
 } from "lucide-react";
+import { LegalShell } from "./legal/LegalShell";
+import { LegalKPIs, LegalRightsGrid, LegalVisualBlock } from "./legal/_visuals";
 import { PT } from "../theme/editorial";
-import { Sticker, Kicker, PosterCard, Highlight } from "../components/editorial/Primitives";
-import SiteFooter from "../components/SiteFooter";
-
-/**
- * /manifesto — Página pública das 6 promessas anti-dark-pattern.
- * Design: LUSORAE EDITORIAL (paper · hairlines · sombras difusas · kickers mono).
- */
 
 const PROMISES = [
     {
-        n: "01",
-        icon: Moon,
         title: "Sem streaks que punam.",
-        body: "Não vais perder nada por não abrires um dia. Não há chamas a contar dias. Não há contrato emocional bilateral.",
+        desc: "Não vais perder nada por não abrires um dia. Não há chamas a contar dias consecutivos. Não há contrato emocional bilateral imposto pela aplicação.",
         ref: "Anti-padrão Snapchat / TikTok",
-        color: PT.red,
+        icon: Moon,
     },
     {
-        n: "02",
-        icon: Bell,
         title: "Modo Boa Noite — por defeito.",
-        body: "Entre as 23h00 e as 08h00 as notificações ficam silenciadas. Não te empurramos para acordado. Tu decides se queres opt-in.",
+        desc: "Entre as 23h00 e as 08h00 as notificações ficam silenciadas. Não te empurramos para acordado. Tu decides se queres opt-in.",
         ref: "Saúde mental > engagement",
-        color: PT.azul,
+        icon: Bell,
     },
     {
-        n: "03",
-        icon: Sparkles,
         title: "Sem agrupar notificações para fingir urgência.",
-        body: "Cada notificação tem 1 razão clara. Não somamos likes para empurrar com falsa urgência.",
+        desc: "Cada notificação tem uma razão clara. Não somamos likes nem comentários só para fabricar a sensação de urgência.",
         ref: "Anti-padrão Facebook",
-        color: PT.gold,
-        inkText: true,
+        icon: Sparkles,
     },
     {
-        n: "04",
-        icon: Cog,
         title: "Algoritmo destacável e feed cronológico.",
-        body: "Tens sempre uma versão não personalizada do feed. Podes resetar a tua bolha. Cumprimento integral do art. 27 do DSA.",
-        ref: "Reg. UE 2022/2065",
-        color: PT.green,
+        desc: "Tens sempre uma versão não personalizada do feed. Podes reiniciar a tua bolha. Cumprimento integral do artigo 27.º do DSA.",
+        ref: "Reg. UE 2022/2065 · DSA art. 27",
+        icon: Cog,
     },
     {
-        n: "05",
-        icon: MailCheck,
         title: "Sem read receipts forçados.",
-        body: "Nas mensagens, o emissor não sabe se leste. Read receipts são opt-in mútuo, e mesmo assim opcionais por conversa.",
+        desc: "Nas mensagens, o emissor não sabe se leste. Read receipts são opt-in mútuo e opcionais por conversa.",
         ref: "Anti-padrão WhatsApp",
-        color: PT.red,
+        icon: MailCheck,
     },
     {
-        n: "06",
-        icon: EyeOff,
         title: "Contagens escondidas nos teus próprios posts.",
-        body: "Vês quem reagiu, mas o número está esbatido até carregares. Não queremos comparação compulsiva contigo próprio.",
+        desc: "Vês quem reagiu, mas o número fica esbatido até carregares. Não queremos comparação compulsiva contigo próprio.",
         ref: "Anti-padrão Instagram",
-        color: PT.azul,
+        icon: EyeOff,
     },
-];
-
-const STATS = [
-    { value: "0", suffix: "", label: "Anúncios mostrados", bg: PT.red, color: "#fff" },
-    { value: "0", suffix: "", label: "Dados vendidos a terceiros", bg: PT.azul, color: "#fff" },
-    { value: "6", suffix: "", label: "Promessas públicas", bg: PT.gold, color: PT.ink },
-    { value: "100", suffix: "%", label: "Transparência de código", bg: PT.green, color: "#fff" },
 ];
 
 const WHY_DIFFERENT = [
     {
+        title: "Sem anúncios.",
+        desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa — não anunciantes que nos contratam para vender olhares.",
+        ref: "Modelo · Premium",
         icon: Shield,
-        title: "Sem anúncios",
-        desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa — não anunciantes.",
-        color: PT.green,
     },
     {
+        title: "Feito em Portugal.",
+        desc: "Equipa portuguesa, servidores europeus, dados protegidos pelo RGPD. Sem dependência de Big Tech para a infraestrutura crítica.",
+        ref: "Soberania técnica",
         icon: Users,
-        title: "Feito em Portugal",
-        desc: "Equipa portuguesa, servidores europeus, dados protegidos pelo RGPD. Sem dependência de Big Tech.",
-        color: PT.azul,
     },
     {
+        title: "Pessoas, não métricas.",
+        desc: "Não otimizamos por tempo de ecrã. Otimizamos por qualidade de conexão e satisfação real reportada pelos utilizadores.",
+        ref: "North Star · Bem-estar",
         icon: Heart,
-        title: "Pessoas, não métricas",
-        desc: "Não otimizamos por tempo de ecrã. Otimizamos por qualidade de conexão e satisfação real.",
-        color: PT.red,
     },
 ];
 
-/* ─── Scroll reveal — opacity + translate only, NO blur ─── */
-function Reveal({ children, delay = 0, className = "" }) {
-    const ref = useRef(null);
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const obs = new IntersectionObserver(
-            ([e]) => { if (e.isIntersecting) setVisible(true); },
-            { threshold: 0.1 }
-        );
-        if (ref.current) obs.observe(ref.current);
-        return () => obs.disconnect();
-    }, []);
-
-    return (
-        <div
-            ref={ref}
-            className={className}
-            style={{
-                opacity: visible ? 1 : 0,
-                transform: visible ? "translateY(0)" : "translateY(24px)",
-                transition: `opacity 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}s, transform 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
-            }}
-        >
-            {children}
-        </div>
-    );
-}
-
-/* ─── Animated stat counter ─── */
-function AnimatedStat({ value, suffix, label, bg, color, delay, rotate }) {
-    const ref = useRef(null);
-    const [visible, setVisible] = useState(false);
-    const [count, setCount] = useState(0);
-    const target = parseInt(value);
-
-    useEffect(() => {
-        const obs = new IntersectionObserver(
-            ([e]) => { if (e.isIntersecting) setVisible(true); },
-            { threshold: 0.3 }
-        );
-        if (ref.current) obs.observe(ref.current);
-        return () => obs.disconnect();
-    }, []);
-
-    useEffect(() => {
-        if (!visible) return;
-        if (target === 0) { setCount(0); return; }
-        let start = 0;
-        const step = Math.max(1, Math.ceil(target / 30));
-        const timer = setInterval(() => {
-            start += step;
-            if (start >= target) { setCount(target); clearInterval(timer); }
-            else setCount(start);
-        }, 40);
-        return () => clearInterval(timer);
-    }, [visible, target]);
-
-    return (
-        <div
-            ref={ref}
-            data-testid="manifesto-stat"
-            className="relative p-4 sm:p-5 lg:p-6"
-            style={{
-                background: bg,
-                color,
-                border: "1px solid rgba(10,10,10,0.06)",
-                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px rgba(10,10,10,0.18), 0 6px 16px -10px rgba(10,10,10,0.10)",
-                borderRadius: 18,
-                opacity: visible ? 1 : 0,
-                transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
-            }}
-        >
-            <p
-                className="font-black tabular-nums leading-none"
-                style={{ fontSize: "clamp(28px, 4vw, 44px)" }}
-            >
-                {count}{suffix}
-            </p>
-            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", opacity: 0.78 }}>
-                {label}
-            </p>
-        </div>
-    );
-}
-
-/* ─── Promise card — estilo editorial Lusorae ─── */
-function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkText, delay }) {
-    const textColor = inkText ? PT.ink : "#fff";
-    return (
-        <Reveal delay={delay}>
-            <article
-                data-testid={`promise-${n}`}
-                className="relative p-5 sm:p-6 h-full transition-all duration-200 hover:-translate-y-1"
-                style={{
-                    background: color,
-                    color: textColor,
-                    border: "1px solid rgba(10,10,10,0.06)",
-                    boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 40px -20px ${color}66, 0 6px 18px -10px rgba(10,10,10,0.12)`,
-                    borderRadius: 18,
-                }}
-            >
-                <div className="flex items-start gap-3">
-                    {/* Número grande estilo revista */}
-                    <span
-                        className="font-black leading-none shrink-0"
-                        style={{
-                            fontSize: 38,
-                            color: textColor,
-                            opacity: 0.85,
-                            textShadow: inkText ? "none" : "none",
-                        }}
-                    >
-                        {n}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span
-                                className="inline-flex items-center justify-center"
-                                style={{
-                                    width: 30, height: 30, borderRadius: 999,
-                                    background: inkText ? PT.ink : "#fff",
-                                    color: inkText ? "#fff" : PT.ink,
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                }}
-                            >
-                                <Icon size={15} strokeWidth={2.4} />
-                            </span>
-                        </div>
-                        <h3
-                            className="font-black tracking-tight leading-snug mb-2"
-                            style={{ fontSize: 16.5, color: textColor }}
-                        >
-                            {title}
-                        </h3>
-                        <p
-                            className="text-[13.5px] leading-relaxed font-medium"
-                            style={{ color: textColor, opacity: 0.92 }}
-                        >
-                            {body}
-                        </p>
-                        <p
-                            className="mt-3 text-[10.5px] uppercase font-mono font-black"
-                            style={{ letterSpacing: "0.10em", color: textColor, opacity: 0.7 }}
-                        >
-                            {reference}
-                        </p>
-                    </div>
-                </div>
-            </article>
-        </Reveal>
-    );
-}
-
 export default function Manifesto() {
-    const navigate = useNavigate();
-
     return (
-        <div className="min-h-screen relative overflow-hidden" style={{ background: "#FFFFFF", color: PT.ink }} data-testid="manifesto-page">
-            {/* TAPE topo */}
-            <div className="pt-tape h-3 w-full" />
+        <LegalShell
+            active="manifesto"
+            title="O nosso Manifesto"
+            subtitle="Não te queremos viciado. Queremos-te bem. Estas seis promessas não são marketing &mdash; são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui."
+            lastUpdated="Junho de 2026"
+            eli5="Sem streaks. Boa Noite por defeito. Sem urgência inventada nas notificações. Feed cronológico sempre disponível. Read receipts opcionais. Contagens esbatidas. Em conformidade com o DSA."
+        >
+            <LegalKPIs items={[
+                { value: "0",    label: "anúncios mostrados",          sub: "Nunca. Não é um plano.",       icon: Shield },
+                { value: "0",    label: "dados vendidos a terceiros",  sub: "Compromisso vinculativo",       icon: EyeOff },
+                { value: "6",    label: "promessas públicas",          sub: "Regras de engenharia",          icon: Sparkles },
+                { value: "100%", label: "transparência de código",     sub: "Auditoria anual",                icon: Cog },
+            ]} />
 
-            {/* Faixa "jornal" em INK */}
+            <h2>Porque escrevemos isto</h2>
+            <p>
+                A maior parte das redes sociais foi desenhada para uma coisa muito simples: prender a tua atenção o
+                máximo de tempo possível, para a vender a anunciantes. Tudo o que vês &mdash; o feed, as notificações,
+                os contadores, a forma como o conteúdo aparece e desaparece &mdash; foi otimizado nessa direção. O
+                resultado é conhecido: ansiedade, polarização, exaustão e uma certa pobreza no que se conversa.
+            </p>
+            <p>
+                O Lusorae existe para experimentar uma alternativa. Não temos a vaidade de pensar que somos os
+                primeiros a tentar &mdash; mas queremos ser dos que tentam com honestidade. As seis promessas que se
+                seguem são as regras concretas que aplicamos antes de lançar qualquer funcionalidade. Não são
+                vontade boa. São critérios.
+            </p>
+
+            <h2>As seis promessas</h2>
+            <LegalVisualBlock eyebrow="Núcleo público — anti-dark-pattern" title="Regras de engenharia que nos vinculam">
+                <LegalRightsGrid items={PROMISES} />
+            </LegalVisualBlock>
+
+            <h2>A regra silenciosa que aplicamos antes de qualquer feature</h2>
+            <p>
+                Antes de uma funcionalidade entrar em produção, fazemos uma pergunta única. É a pergunta que filtra
+                a maior parte do que a indústria normaliza:
+            </p>
+            <blockquote>
+                Se fechasses a app agora e voltasses amanhã, sentir-te-ias <strong>melhor</strong> ou{" "}
+                <strong>pior</strong> contigo próprio?
+            </blockquote>
+            <p>
+                Se a resposta honesta for &ldquo;<strong>pior</strong>&rdquo;, a feature não é lançada. É a única razão por que
+                muitos dos padrões da indústria &mdash; streaks coercivos, badges de urgência inventada, scroll
+                infinito sem pausas naturais, conteúdo escondido propositadamente para provocar regresso compulsivo
+                &mdash; simplesmente não existem aqui.
+            </p>
+
+            <h2>Três razões concretas</h2>
+            <LegalVisualBlock eyebrow="Porque somos diferentes" title="Sem anúncios. Em Portugal. Para pessoas.">
+                <LegalRightsGrid items={WHY_DIFFERENT} />
+            </LegalVisualBlock>
+
+            <h2>O que isto não é</h2>
+            <p>
+                Este manifesto não é uma <em>cláusula de estilo</em>. Não é um <em>brand statement</em>. Não é uma
+                forma elegante de dizer que somos &ldquo;humanos&rdquo; enquanto fazemos o mesmo que toda a gente.
+                É a versão pública de um documento que existe internamente, que serve para travar produto, e que
+                pode ser citado em reuniões para parar uma decisão.
+            </p>
+            <p>
+                Se um dia quebrarmos uma destas promessas, ficamos obrigados a três coisas, nesta ordem:{" "}
+                <strong>reconhecer publicamente</strong>, <strong>corrigir tecnicamente</strong>,{" "}
+                <strong>documentar</strong>. As versões anteriores deste manifesto ficam acessíveis em histórico,
+                com data e diff visível.
+            </p>
+
+            <h2>Como nos podes responsabilizar</h2>
+            <p>
+                Se observares uma decisão de produto, de notificação, de feed ou de moderação que pareça contradizer
+                qualquer uma das seis promessas, queremos saber. Escreve para{" "}
+                <a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a> ou, para questões mais formais, para{" "}
+                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Não garantimos resposta a tudo, mas
+                garantimos leitura &mdash; e tratamento interno como sinalização contra estas promessas.
+            </p>
+            <p>
+                Para perceberes como estas promessas se relacionam com tudo o resto do Lusorae, vê{" "}
+                <Link to="/legal/vision">A nossa visão</Link> &mdash; o documento que reúne os seis compromissos
+                institucionais que dão coerência a todo o Centro Legal.
+            </p>
+
+            {/* CTA final — coerente com o estilo dos outros documentos legais */}
             <div
-                className="flex items-center justify-between px-5 sm:px-8 py-2.5 relative z-10"
-                style={{ background: PT.ink, color: PT.bone }}
-            >
-                <span className="font-mono text-[10.5px] sm:text-[11px] font-bold uppercase" style={{ letterSpacing: "0.20em", color: PT.gold }}>
-                    LUSORAE · MANIFESTO · EDIÇÃO Nº&nbsp;{new Date().getFullYear() % 100}
-                </span>
-                <span className="hidden md:inline font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.65)" }}>
-                    6 PROMESSAS · ANTI-DARK-PATTERN
-                </span>
-            </div>
-
-            {/* ═══ HEADER (sticky) ═══ */}
-            <header
-                className="sticky top-0 z-30 backdrop-blur"
+                className="not-prose mt-12 mb-6 px-6 sm:px-8 py-7 sm:py-8 relative overflow-hidden"
+                data-testid="manifesto-cta-register-card"
                 style={{
-                    background: "rgba(255,255,255,0.92)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: `linear-gradient(135deg, ${PT.red} 0%, #B0001F 100%)`,
+                    color: "#fff",
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 32px 64px -28px rgba(200,16,46,0.55), 0 12px 28px -12px rgba(10,10,10,0.18)",
+                    borderRadius: 20,
                 }}
             >
-                <div className="max-w-[1100px] mx-auto flex items-center gap-3 px-4 lg:px-8 py-3">
-                    <button
-                        onClick={() => navigate(-1)}
-                        data-testid="manifesto-back-btn"
-                        className="w-10 h-10 grid place-items-center tap-shrink"
-                        style={{
-                            background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            borderRadius: 999,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            color: PT.ink,
-                        }}
-                        aria-label="Voltar"
-                    >
-                        <ArrowLeft size={18} strokeWidth={2.5} />
-                    </button>
-                    <Link to="/" className="inline-flex items-baseline gap-1.5" data-testid="manifesto-home-link">
-                        <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
-                        <span aria-hidden style={{ color: PT.red, fontSize: 12, fontWeight: 900, lineHeight: 1 }}>●</span>
-                    </Link>
+                <div className="absolute -top-2 -right-2 opacity-[0.10] pointer-events-none" aria-hidden>
+                    <Quote size={130} strokeWidth={1} style={{ color: "#fff" }} />
+                </div>
+                <div className="relative z-10">
                     <span
-                        className="ml-2 hidden sm:inline text-[10.5px] uppercase font-mono font-bold"
-                        style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-4 text-[10.5px] font-bold uppercase"
+                        style={{
+                            background: "rgba(255,204,41,0.22)",
+                            color: PT.gold,
+                            borderRadius: 999,
+                            letterSpacing: "0.20em",
+                        }}
                     >
-                        Manifesto
+                        Se chegaste até aqui
                     </span>
-                    <div className="ml-auto">
-                        <span
-                            className="inline-flex items-center gap-1.5 px-3 py-1"
+                    <h3
+                        className="font-black tracking-[-0.025em] max-w-[26ch] mb-4"
+                        style={{ fontSize: "clamp(22px, 3.6vw, 36px)", lineHeight: 1.08 }}
+                    >
+                        Então já percebeste que isto é diferente.
+                    </h3>
+                    <p className="text-[14px] sm:text-[14.5px] leading-relaxed max-w-[54ch] mb-6 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
+                        Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns. Se um dia mudarmos este
+                        manifesto, vais ser dos primeiros a saber &mdash; e a poder ir embora.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Link
+                            to="/register"
+                            data-testid="manifesto-cta-register"
+                            className="inline-flex items-center gap-2 font-bold text-[13.5px] px-5 py-2.5 group transition-transform hover:-translate-y-0.5"
                             style={{
-                                background: "rgba(255,204,41,0.18)",
+                                background: PT.gold,
                                 color: PT.ink,
+                                letterSpacing: "-0.005em",
                                 borderRadius: 999,
-                                fontSize: 10.5,
-                                fontWeight: 600,
-                                letterSpacing: "0.02em",
+                                boxShadow: "0 12px 30px -12px rgba(255,204,41,0.65), inset 0 1px 0 rgba(255,255,255,0.30)",
                             }}
                         >
-                            <span aria-hidden>🇵🇹</span>
-                            6 promessas públicas
-                        </span>
-                    </div>
-                </div>
-            </header>
-
-            {/* ═══ HERO ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 pt-10 sm:pt-14 lg:pt-20 pb-8 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <Kicker color={PT.red} className="mb-3 inline-flex items-center gap-2">
-                        <Shield size={12} strokeWidth={2.5} />
-                        <span>COMPROMISSO · PÚBLICO</span>
-                    </Kicker>
-                </Reveal>
-
-                <Reveal delay={0.1}>
-                    <h1
-                        data-testid="manifesto-title"
-                        className="font-black tracking-[-0.04em]"
-                        style={{ fontSize: "clamp(36px, 6vw, 76px)", lineHeight: 0.96, color: PT.ink }}
-                    >
-                        Não te queremos{" "}
-                        <Highlight color={PT.red}>viciado.</Highlight>
-                        <br/>
-                        <span className="inline-block mt-2 sm:mt-3">
-                            Queremos-te{" "}
-                            <Highlight color={PT.gold}>bem.</Highlight>
-                        </span>
-                    </h1>
-                </Reveal>
-
-                <Reveal delay={0.2}>
-                    <p className="mt-6 sm:mt-7 text-[15.5px] sm:text-[17px] leading-relaxed max-w-[60ch] font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>
-                        O Lusorae é uma rede social portuguesa. Não somos uma fábrica de atenção. Não somos pagos
-                        por quantos minutos passas aqui. Estas{" "}
-                        <strong className="font-black" style={{ color: PT.red }}>seis promessas</strong>{" "}
-                        não são marketing — são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui.
-                    </p>
-                </Reveal>
-
-                <Reveal delay={0.3}>
-                    <div className="mt-5 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: `${PT.green}15`, color: PT.green, borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
-                            <span aria-hidden>✓</span> Documento vivo
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: "#fff", color: PT.ink, border: "1px solid rgba(10,10,10,0.08)", borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
-                            <span aria-hidden>🇵🇹</span> PT-PT
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: `${PT.azul}12`, color: PT.azul, borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
-                            DSA · Art. 27
-                        </span>
-                    </div>
-                </Reveal>
-            </section>
-
-            {/* ═══ STATS STRIP ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 sm:py-14 max-w-[1100px] mx-auto">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
-                    {STATS.map((stat, idx) => (
-                    <AnimatedStat
-                        key={idx}
-                        {...stat}
-                        delay={idx * 0.08}
-                    />
-                ))}
-                </div>
-            </section>
-
-            {/* ═══ AS 6 PROMESSAS ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-8 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <div className="mb-7 sm:mb-8 relative">
-                        <Kicker color={PT.azul} className="mb-2">REGRAS · DE · ENGENHARIA</Kicker>
-                        <h2
-                            className="font-black tracking-[-0.03em]"
-                            style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
-                        >
-                            As <Highlight color={PT.gold}>6 promessas.</Highlight>
-                        </h2>
-                        <p className="mt-3 text-[13.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
-                            Regras, não marketing
-                        </p>
-                    </div>
-                </Reveal>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    {PROMISES.map((promise, idx) => (
-                        <PromiseCard key={promise.n} {...promise} delay={idx * 0.06} />
-                    ))}
-                </div>
-            </section>
-
-            {/* ═══ CINEMATIC IMAGE BREAK ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <figure
-                        data-testid="manifesto-image"
-                        className="relative overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9]"
-                        style={{
-                            border: "1px solid rgba(10,10,10,0.06)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 28px 60px -28px rgba(10,10,10,0.30), 0 10px 28px -12px rgba(10,10,10,0.12)",
-                            borderRadius: 24,
-                        }}
-                    >
-                        <div className="absolute inset-0" style={{ background: PT.ink }} />
-                        <img
-                            src="/hero/manifesto.webp"
-                            alt="Pessoa contemplativa ao pôr-do-sol sobre o Tejo, em Lisboa"
-                            className="absolute inset-0 w-full h-full object-cover"
-                            loading="lazy"
-                            onError={(e) => { e.target.style.display = "none"; }}
-                        />
-                        <div
-                            className="absolute inset-0"
-                            style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.20) 30%, rgba(0,0,0,0.75) 100%)" }}
-                            aria-hidden
-                        />
-
-                        <figcaption className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-                            <Kicker color={PT.gold} className="mb-3">REGRA · SILENCIOSA</Kicker>
-                            <h2
-                                className="font-black tracking-[-0.03em]"
-                                style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: "none" }}
-                            >
-                                O tempo que passas aqui{" "}
-                                <span className="relative inline-block">
-                                    <span
-                                        aria-hidden
-                                        className="absolute pointer-events-none"
-                                        style={{
-                                            left: -3, right: -3, bottom: "0.06em", height: "0.40em",
-                                            background: PT.gold, opacity: 0.85, zIndex: 0, borderRadius: 2,
-                                        }}
-                                    />
-                                    <span className="relative z-10" style={{ color: PT.ink }}>é teu.</span>
-                                </span>{" "}
-                                Não nosso.
-                            </h2>
-                        </figcaption>
-                    </figure>
-                </Reveal>
-            </section>
-
-            {/* ═══ GOLDEN RULE ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <div
-                        className="relative p-6 sm:p-8 lg:p-10 overflow-hidden"
-                        data-testid="manifesto-golden-rule"
-                        style={{
-                            background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.06)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 24px 56px -24px rgba(10,10,10,0.20), 0 8px 22px -10px rgba(10,10,10,0.10)",
-                            borderRadius: 24,
-                        }}
-                    >
-                        {/* Aspas gigantes esbatidas */}
-                        <div className="absolute top-4 right-6 opacity-[0.08] pointer-events-none" aria-hidden>
-                            <Quote size={120} strokeWidth={1} style={{ color: PT.red }} />
-                        </div>
-
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                <span
-                                    className="inline-flex items-center justify-center"
-                                    style={{
-                                        width: 40, height: 40,
-                                        background: "rgba(255,204,41,0.20)",
-                                        borderRadius: 12,
-                                    }}
-                                >
-                                    <Quote size={18} strokeWidth={2.0} style={{ color: PT.ink }} />
-                                </span>
-                                <Kicker color={PT.red}>REGRA · INTERNA</Kicker>
-                            </div>
-
-                            <blockquote
-                                className="font-black tracking-tight max-w-[40ch] mb-6"
-                                style={{ fontSize: "clamp(20px, 3.5vw, 34px)", lineHeight: 1.15, color: PT.ink }}
-                            >
-                                <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginRight: 6 }}>“</span>
-                                Se fechasses a app agora e voltasses amanhã, sentir-te-ias{" "}
-                                <Highlight color={PT.green}>melhor</Highlight>{" "}
-                                ou{" "}
-                                <Highlight color={PT.red}>pior</Highlight>{" "}
-                                contigo próprio?
-                                <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginLeft: 6 }}>”</span>
-                            </blockquote>
-
-                            <hr className="my-5" style={{ border: "none", borderTop: "1px solid rgba(10,10,10,0.08)" }} />
-
-                            <p className="text-[14px] sm:text-[15px] max-w-[58ch] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.72)" }}>
-                                Se a resposta honesta for{" "}
-                                <strong style={{ color: PT.red, fontWeight: 900 }}>“pior”</strong>, a feature não é lançada.
-                                É a única razão por que muitos dos padrões da indústria não existem aqui.
-                            </p>
-
-                            <div className="mt-5">
-                                <p className="font-bold uppercase" style={{ fontSize: 11, letterSpacing: "0.20em", color: PT.red }}>
-                                    — equipa Lusorae
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </Reveal>
-            </section>
-
-            {/* ═══ POR QUE SOMOS DIFERENTES ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <Kicker color={PT.green} className="mb-3">POR QUE · DIFERENTES</Kicker>
-                    <h2
-                        className="font-black tracking-[-0.03em] mb-7"
-                        style={{ fontSize: "clamp(26px, 4vw, 44px)", lineHeight: 1.0, color: PT.ink }}
-                    >
-                        Três razões{" "}
-                        <Highlight color={PT.gold} rotate={-1}>
-                            <span style={{ color: PT.ink }}>concretas.</span>
-                        </Highlight>
-                    </h2>
-                </Reveal>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-                    {WHY_DIFFERENT.map((item, idx) => {
-                        const Icon = item.icon;
-                        return (
-                            <Reveal key={idx} delay={idx * 0.1}>
-                                <PosterCard
-                                    bg="#fff"
-                                    color={PT.ink}
-                                    shadow={item.color}
-                                    style={{ padding: "22px 24px", height: "100%", border: "1px solid rgba(10,10,10,0.06)", boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${item.color}55, 0 6px 16px -10px rgba(10,10,10,0.10)` }}
-                                >
-                                    <span
-                                        className="inline-flex items-center justify-center mb-3"
-                                        style={{
-                                            width: 44, height: 44,
-                                            background: `${item.color}18`,
-                                            color: item.color,
-                                            borderRadius: 12,
-                                        }}
-                                    >
-                                        <Icon size={20} strokeWidth={2.2} />
-                                    </span>
-                                    <h3 className="font-black text-[17px] tracking-tight mb-2" style={{ color: PT.ink }}>{item.title}</h3>
-                                    <p className="text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.68)" }}>{item.desc}</p>
-                                </PosterCard>
-                            </Reveal>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* ═══ CTAs secundários ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-8 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <div className="flex flex-wrap gap-3">
-                        <Link
-                            to="/legal"
-                            data-testid="manifesto-cta-legal"
-                            className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
-                            style={{
-                                background: PT.ink, color: PT.gold,
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                letterSpacing: "0.06em",
-                                borderRadius: 999,
-                            }}
-                        >
-                            Ver Centro Legal <ChevronRight size={14} />
+                            Criar conta gratuita
+                            <ArrowRight size={15} strokeWidth={2.2} className="group-hover:translate-x-1 transition-transform duration-200" />
                         </Link>
                         <Link
-                            to="/settings"
-                            data-testid="manifesto-cta-settings"
-                            className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
-                            style={{
-                                background: "#fff", color: PT.ink,
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                letterSpacing: "0.06em",
-                                borderRadius: 999,
-                            }}
+                            to="/login"
+                            data-testid="manifesto-cta-login"
+                            className="inline-flex items-center text-[13px] font-semibold underline underline-offset-4 decoration-[1.5px]"
+                            style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "-0.005em", textDecorationColor: "rgba(255,255,255,0.30)" }}
                         >
-                            Ajustar preferências <ExternalLink size={12} />
+                            Já tenho conta
                         </Link>
                     </div>
-                </Reveal>
-            </section>
-
-            {/* ═══ CONVERSION CTA ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <div
-                        data-testid="manifesto-cta-register-card"
-                        className="relative p-7 sm:p-10 lg:p-12 overflow-hidden"
-                        style={{
-                            background: `linear-gradient(135deg, ${PT.red} 0%, #B0001F 100%)`,
-                            color: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 32px 64px -28px rgba(200,16,46,0.55), 0 12px 28px -12px rgba(10,10,10,0.18)",
-                            borderRadius: 28,
-                        }}
-                    >
-                        <div className="relative z-10">
-                            <Kicker color={PT.gold} className="mb-3">SE CHEGASTE AQUI</Kicker>
-                            <h3
-                                className="font-black tracking-[-0.03em] max-w-[22ch] mb-5"
-                                style={{ fontSize: "clamp(24px, 4.2vw, 44px)", lineHeight: 1.04 }}
-                            >
-                                Então já percebeste que isto{" "}
-                                <span className="relative inline-block">
-                                    <span
-                                        aria-hidden
-                                        className="absolute pointer-events-none"
-                                        style={{
-                                            left: -3, right: -3, bottom: "0.06em", height: "0.40em",
-                                            background: PT.gold, opacity: 0.85, zIndex: 0, borderRadius: 2,
-                                        }}
-                                    />
-                                    <span className="relative z-10" style={{ color: PT.ink }}>é diferente.</span>
-                                </span>
-                            </h3>
-                            <p className="text-[14.5px] sm:text-[15px] leading-relaxed max-w-[52ch] mb-7 sm:mb-8 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
-                                Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns.
-                                <strong className="font-black"> Se um dia mudarmos este manifesto, vais ser o primeiro a saber — e a poder ir embora.</strong>
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                                <Link
-                                    to="/register"
-                                    data-testid="manifesto-cta-register"
-                                    className="inline-flex items-center gap-2 font-bold text-[14px] px-6 py-3 group transition-transform hover:-translate-y-0.5"
-                                    style={{
-                                        background: PT.gold,
-                                        color: PT.ink,
-                                        letterSpacing: "-0.005em",
-                                        borderRadius: 999,
-                                        boxShadow: "0 12px 30px -12px rgba(255,204,41,0.65), inset 0 1px 0 rgba(255,255,255,0.30)",
-                                    }}
-                                >
-                                    Criar conta gratuita
-                                    <ArrowRight size={16} strokeWidth={2.2} className="group-hover:translate-x-1 transition-transform duration-200" />
-                                </Link>
-                                <Link
-                                    to="/login"
-                                    data-testid="manifesto-cta-login"
-                                    className="inline-flex items-center text-[13.5px] font-semibold underline underline-offset-4 decoration-[1.5px]"
-                                    style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "-0.005em", textDecorationColor: "rgba(255,255,255,0.30)" }}
-                                >
-                                    Já tenho conta
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </Reveal>
-            </section>
-
-            {/* ═══ FOOTER NOTE ═══ */}
-            <section className="relative z-10 px-5 sm:px-8 lg:px-16 pb-12 pt-4 max-w-[1100px] mx-auto">
-                <Reveal>
-                    <p className="text-[12.5px] leading-relaxed font-mono font-medium" style={{ color: "rgba(10,10,10,0.55)", borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 16 }}>
-                        Este manifesto é um <strong className="font-black" style={{ color: PT.ink }}>documento vivo</strong>, atualizado publicamente sempre que mudar.
-                        As versões anteriores ficam no histórico, com data de revisão visível.
-                    </p>
-                </Reveal>
-            </section>
-
-            {/* TAPE rodapé */}
-            <div className="pt-tape h-3 w-full relative z-10" />
-
-            <SiteFooter />
-        </div>
+                </div>
+            </div>
+        </LegalShell>
     );
 }

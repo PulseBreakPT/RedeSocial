@@ -110,3 +110,19 @@ Resultado validado por screenshot tool em todas as 5 rotas (`/legal`, `/legal/vi
 - ~~Refactor `/theme/fanzinePalette.js` → consolidar em `editorial.js`~~ ✅ feito (Feb 12, 2026 — ficheiro eliminado)
 - Migrar restantes pages (Calendario, Notifications, Tags, Hashtag, Series, etc.) para `PageHero`
 - Limpeza de classes Tailwind legacy (`btn-obsidian`, `chip-on`, `card-lux`, `font-heading`, `silver-grad`) — todas têm equivalente inline editorial
+
+## Centro Legal — Refactor UX/Design (Jun 12, 2026)
+- **Mobile nav fix**: nav do Centro Legal deixa de ser `overflow-x-auto` (scroll horizontal) e passa a `grid grid-cols-2 min-[480px]:grid-cols-3 gap-1.5 lg:flex lg:flex-col` — wrap natural sem scroll.
+- **Manifesto integrado no Centro Legal**: rota `/manifesto` agora usa `LegalShell` (sidebar, sticky TOC, share/print, reading meta) — uniformidade editorial total. Conteúdo mantido (6 promessas via `LegalRightsGrid`, KPIs, regra silenciosa, 3 razões, CTA register). Antiga estrutura "fanzine" (Sticker, Highlight, PosterCard, AnimatedStat, Reveal, faixa "edição nº") removida.
+- **`LegalTable` responsivo** (`_visuals.js`): novo componente que renderiza tabela editorial em desktop ≥720px e cards empilhados key/value com numeração em mobile. Aplicado em Terms (definições), Privacy (finalidades RGPD), Cookies (inventário). Elimina overflow horizontal das tabelas longas.
+- **`LegalContactsList`** (`_visuals.js`): grelha 2-col desktop / 1-col mobile, cartões clicáveis (mailto) com icon vermelho + assunto + email mono + ref legal. Substitui `<table>` de contactos no `LegalIndex`.
+- **`LegalSectionSummary`** (`_visuals.js`): TL;DR colapsável editorial por secção H2 com strip gradient red→green. Usado em Terms (Conteúdos, Subscrições) e Privacy (Os teus direitos).
+- **Placeholders removidos**: `[Denominação social, e.g. Lusorae, Lda.]`, `[NIPC]`, `[Morada completa]`, `[Cidade]`, `[matrícula]`, `[€ XX.XXX]`, `[Cidade da sede]`, `[data da última versão]` — substituídos por texto natural ("Lusorae", "Junho de 2026", "tribunal da Comarca correspondente à sede social").
+- **Titulagem editorial**:
+  - Hero: removido eyebrow com pulse + linha horizontal acima do `<h1>` (linhas duplicadas).
+  - `h1` + subtitle + reading-meta agora **centrados** no shell.
+  - `<h2>` agora **centrados** com número da secção inline em vermelho à esquerda (era kicker mini "01 · SECÇÃO" + título separado abaixo).
+  - `prop` `eli5` adicionado a cada doc — passa a aparecer como callout "Em duas linhas" no shell em vez de `legal-callout` duplicado.
+- **`lastUpdated`** atualizado para "Junho de 2026" em Terms, Privacy, Cookies, Vision, CommunityGuidelines.
+- **NAV do Shell**: 7 documentos (Centro Legal · A nossa visão · Manifesto · Termos · Privacidade · Cookies · Diretrizes) — todos sempre visíveis sem scroll horizontal.
+

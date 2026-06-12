@@ -1,7 +1,7 @@
 import { LegalShell } from "./LegalShell";
 import { openCookiePreferences } from "../../components/CookieBanner";
 import {
-    LegalKPIs, LegalCookieStack, LegalTimeline, LegalVisualBlock,
+    LegalKPIs, LegalCookieStack, LegalTimeline, LegalVisualBlock, LegalTable,
 } from "./_visuals";
 import {
     Cookie, ShieldCheck, Settings, BarChart3, Megaphone, Lock,
@@ -14,7 +14,8 @@ export default function Cookies() {
             active="cookies"
             title="Política de Cookies"
             subtitle="As tecnologias que utilizamos para guardar informação no teu dispositivo, com que finalidade, por quanto tempo, e como podes mudar de ideias a qualquer momento."
-            lastUpdated="[data da última versão]"
+            lastUpdated="Junho de 2026"
+            eli5="Só te pedimos consentimento para o que não é estritamente necessário. Tudo o resto é primeira-parte, com IP truncado, sem rastreamento publicitário entre sítios. Mudas de ideias com um clique."
         >
             <LegalKPIs items={[
                 { value: "4",       label: "categorias",            sub: "Necessários · Funcionais · Analíticos · Marketing", icon: Cookie },
@@ -91,20 +92,18 @@ export default function Cookies() {
                 A lista que se segue é atualizada com regularidade. A versão técnica mais detalhada,
                 gerada automaticamente, está disponível no Centro de Preferências.
             </p>
-            <table>
-                <thead>
-                    <tr><th>Nome</th><th>Categoria</th><th>Finalidade</th><th>Duração</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td><code>vm_session</code></td><td>Necessário</td><td>Sessão autenticada do Utilizador.</td><td>Sessão</td></tr>
-                    <tr><td><code>vm_csrf</code></td><td>Necessário</td><td>Proteção contra ataques CSRF.</td><td>Sessão</td></tr>
-                    <tr><td><code>vm_consent</code></td><td>Necessário</td><td>Memorizar as escolhas de consentimento e o respetivo timestamp.</td><td>12 meses</td></tr>
-                    <tr><td><code>vm_locale</code></td><td>Necessário</td><td>Idioma de interface.</td><td>12 meses</td></tr>
-                    <tr><td><code>vm_theme</code></td><td>Funcional</td><td>Preferência de tema (claro/escuro) e densidade.</td><td>12 meses</td></tr>
-                    <tr><td><code>vm_layout</code></td><td>Funcional</td><td>Preferências de layout do feed e da timeline.</td><td>12 meses</td></tr>
-                    <tr><td><code>vm_analytics</code></td><td>Analítico</td><td>Métricas agregadas em primeira-parte, com IP truncado.</td><td>13 meses</td></tr>
-                </tbody>
-            </table>
+            <LegalTable
+                headers={["Nome", "Categoria", "Finalidade", "Duração"]}
+                rows={[
+                    [<code key="n">vm_session</code>, "Necessário", "Sessão autenticada do Utilizador.", "Sessão"],
+                    [<code key="n">vm_csrf</code>, "Necessário", "Proteção contra ataques CSRF.", "Sessão"],
+                    [<code key="n">vm_consent</code>, "Necessário", "Memorizar as escolhas de consentimento e o respetivo timestamp.", "12 meses"],
+                    [<code key="n">vm_locale</code>, "Necessário", "Idioma de interface.", "12 meses"],
+                    [<code key="n">vm_theme</code>, "Funcional", "Preferência de tema (claro/escuro) e densidade.", "12 meses"],
+                    [<code key="n">vm_layout</code>, "Funcional", "Preferências de layout do feed e da timeline.", "12 meses"],
+                    [<code key="n">vm_analytics</code>, "Analítico", "Métricas agregadas em primeira-parte, com IP truncado.", "13 meses"],
+                ]}
+            />
 
             <LegalVisualBlock eyebrow="Duração no teu dispositivo" title="Quando cada cookie expira">
                 <LegalTimeline items={[

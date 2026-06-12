@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import {
-    FileText, ShieldCheck, Cookie, Sparkle, ChevronRight, ExternalLink, Compass,
+    FileText, ShieldCheck, Cookie, Sparkle, ChevronRight, ExternalLink, Compass, Flame,
+    Mail, Database, Scale, ShieldAlert, Newspaper, LifeBuoy, Gavel,
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
-import { LegalComplianceBoard, LegalVisualBlock } from "./_visuals";
+import { LegalComplianceBoard, LegalVisualBlock, LegalContactsList } from "./_visuals";
 import { PT } from "../../theme/editorial";
 
 const CARDS = [
@@ -16,6 +17,15 @@ const CARDS = [
         meta: "7 secções · ~8 min de leitura",
         emphasis: true,
         accent: PT.red,
+    },
+    {
+        to: "/manifesto",
+        icon: Flame,
+        title: "Manifesto",
+        ref: "Anti-dark-pattern",
+        desc: "As seis promessas públicas contra os padrões obscuros do habitual. Streaks, notificações sintéticas, read receipts forçados — o que recusamos e porquê.",
+        meta: "6 promessas · ~6 min de leitura",
+        accent: PT.azul,
     },
     {
         to: "/legal/terms",
@@ -53,6 +63,17 @@ const CARDS = [
         meta: "11 secções · ~9 min de leitura",
         accent: PT.red,
     },
+];
+
+const CONTACTS = [
+    { subject: "Assuntos legais e contratuais",          email: "legal@lusorae.pt",       icon: Scale,      ref: "Contratos · DSA" },
+    { subject: "Encarregado de Proteção de Dados",        email: "dpo@lusorae.pt",         icon: ShieldCheck, ref: "DPO · RGPD" },
+    { subject: "Exercício de direitos RGPD",              email: "privacidade@lusorae.pt", icon: Database,    ref: "Arts. 15.º–22.º RGPD" },
+    { subject: "Denúncias de conteúdo",                   email: "reportar@lusorae.pt",    icon: ShieldAlert, ref: "DSA art. 16.º" },
+    { subject: "Recursos a decisões de moderação",        email: "recurso@lusorae.pt",     icon: Gavel,       ref: "DSA art. 20.º" },
+    { subject: "Incidentes de segurança / abuso",          email: "abuso@lusorae.pt",       icon: ShieldAlert, ref: "Segurança" },
+    { subject: "Imprensa, investigação, autoridades",      email: "imprensa@lusorae.pt",    icon: Newspaper,   ref: "DSA art. 40.º" },
+    { subject: "Apoio ao utilizador",                      email: "apoio@lusorae.pt",       icon: LifeBuoy,    ref: "Helpdesk" },
 ];
 
 export default function LegalIndex() {
@@ -205,12 +226,13 @@ export default function LegalIndex() {
 
             <h2>Identificação da entidade responsável</h2>
             <p>
-                O Serviço Lusorae é operado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa
-                coletiva de direito português, com sede em <strong>[Morada completa]</strong>,
-                NIPC <strong>[NIPC]</strong>, matriculada na Conservatória do Registo Comercial de{" "}
-                <strong>[Cidade]</strong> sob o número <strong>[matrícula]</strong>, com o capital social de{" "}
-                <strong>[€ XX.XXX]</strong>. Os dados acima cumprem o dever de informação previsto no artigo 10.º do
-                Decreto-Lei n.º 7/2004 e nos artigos 11.º e seguintes do DSA.
+                O Serviço Lusorae é operado por <strong>Lusorae</strong>, projeto de direito português dirigido,
+                em primeiro lugar, a utilizadores em Portugal e na União Europeia. Os dados completos de identificação
+                societária (denominação social registada, NIPC, sede, matrícula na Conservatória do Registo Comercial
+                e capital social) são publicados nesta página em ato definitivo de constituição. Os dados acima
+                cumprem o dever de informação previsto no artigo 10.º do Decreto-Lei n.º 7/2004 e nos artigos 11.º e
+                seguintes do DSA. Para qualquer assunto contratual, é canal preferencial o endereço{" "}
+                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
             </p>
 
             <h2>Contactos institucionais</h2>
@@ -218,19 +240,7 @@ export default function LegalIndex() {
                 Mantemos endereços de correio distintos para cada matéria, de modo a que as mensagens cheguem,
                 desde o primeiro momento, à pessoa certa:
             </p>
-            <table>
-                <thead><tr><th>Assunto</th><th>Endereço</th></tr></thead>
-                <tbody>
-                    <tr><td>Assuntos legais e contratuais</td><td><a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a></td></tr>
-                    <tr><td>Encarregado de Proteção de Dados (DPO)</td><td><a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a></td></tr>
-                    <tr><td>Exercício de direitos RGPD</td><td><a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a></td></tr>
-                    <tr><td>Denúncias de conteúdo (DSA art. 16.º)</td><td><a href="mailto:reportar@lusorae.pt">reportar@lusorae.pt</a></td></tr>
-                    <tr><td>Recursos a decisões de moderação (DSA art. 20.º)</td><td><a href="mailto:recurso@lusorae.pt">recurso@lusorae.pt</a></td></tr>
-                    <tr><td>Incidentes de segurança / abuso</td><td><a href="mailto:abuso@lusorae.pt">abuso@lusorae.pt</a></td></tr>
-                    <tr><td>Imprensa, investigação académica, autoridades</td><td><a href="mailto:imprensa@lusorae.pt">imprensa@lusorae.pt</a></td></tr>
-                    <tr><td>Apoio ao utilizador</td><td><a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a></td></tr>
-                </tbody>
-            </table>
+            <LegalContactsList items={CONTACTS} />
 
             <h2>Autoridades de controlo e resolução de litígios</h2>
             <LegalVisualBlock eyebrow="A quem te podes dirigir, em alternativa a nós" title="Entidades independentes com competência sobre a Plataforma" tone="info">

@@ -1,5 +1,5 @@
 import { LegalShell } from "./LegalShell";
-import { LegalIconGrid, LegalLadder, LegalVisualBlock } from "./_visuals";
+import { LegalIconGrid, LegalLadder, LegalVisualBlock, LegalTable, LegalSectionSummary } from "./_visuals";
 import {
     AlertTriangle, EyeOff, Slash, ShieldAlert, ShieldOff, UserX, Ban, MessageCircle,
     Flag, ArrowDownToLine,
@@ -11,39 +11,34 @@ export default function Terms() {
             active="terms"
             title="Termos e Condições de Utilização"
             subtitle="O contrato entre ti e o Lusorae. Lê com atenção &mdash; ao criar conta, aceder ou utilizar o Serviço, aceitas integralmente o que aqui está escrito. Este documento é redigido em português e o original em português europeu prevalece sobre qualquer tradução."
-            lastUpdated="[data da última versão]"
+            lastUpdated="Junho de 2026"
+            eli5="Estes Termos definem o que esperas do Lusorae e o que o Lusorae espera de ti. Aplicam-se a partir do momento em que crias conta. Regem-se pela lei portuguesa e respeitam todos os direitos imperativos do consumidor."
         >
-            <div className="legal-callout">
-                <strong>Em poucas palavras</strong>
-                Estes Termos descrevem o que podes esperar do Lusorae e o que o Lusorae espera de ti. Reflectem os{" "}
-                <a href="/legal/vision">seis compromissos</a> que assumimos publicamente. Aplicam-se a partir do momento
-                em que crias conta ou utilizas o Serviço, e regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo
-                dos teus direitos imperativos enquanto consumidor.
-            </div>
-
             <h2>Identificação do prestador</h2>
             <p>
                 O Serviço Lusorae (adiante &ldquo;<strong>Plataforma</strong>&rdquo; ou &ldquo;<strong>Serviço</strong>&rdquo;)
-                é prestado por <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, pessoa coletiva de direito
-                português, NIPC <strong>[NIPC]</strong>, com sede em <strong>[Morada completa]</strong>, contactável
-                em <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. O cumprimento do dever de informação
-                resulta do artigo 10.º do Decreto-Lei n.º 7/2004, de 7 de janeiro, e dos artigos 11.º e seguintes do DSA.
+                é prestado por <strong>Lusorae</strong>, pessoa coletiva de direito português, contactável em{" "}
+                <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Os dados completos de identificação societária
+                (denominação, NIPC, morada da sede, matrícula e capital social) constam do{" "}
+                <a href="/legal">Centro Legal</a> e são atualizados sempre que registados em ato definitivo. O cumprimento
+                do dever de informação resulta do artigo 10.º do Decreto-Lei n.º 7/2004, de 7 de janeiro, e dos artigos
+                11.º e seguintes do DSA.
             </p>
 
             <h2>Definições</h2>
             <p>Para efeitos destes Termos, entende-se por:</p>
-            <table>
-                <thead><tr><th>Termo</th><th>Significado</th></tr></thead>
-                <tbody>
-                    <tr><td>Plataforma / Serviço</td><td>O conjunto de produtos digitais disponibilizados sob a marca Lusorae, incluindo aplicações web e móveis, APIs e qualquer extensão futura identificada com a mesma marca.</td></tr>
-                    <tr><td>Utilizador</td><td>Pessoa singular, com idade igual ou superior a 13 anos, que tenha conta registada na Plataforma.</td></tr>
-                    <tr><td>Visitante</td><td>Pessoa que aceda à Plataforma sem conta registada.</td></tr>
-                    <tr><td>Conteúdo</td><td>Qualquer texto, imagem, vídeo, áudio, ligação, código, reação ou outro elemento criado, carregado, partilhado ou reagido na Plataforma.</td></tr>
-                    <tr><td>Conteúdo do Utilizador</td><td>O Conteúdo gerado, carregado ou partilhado pelo Utilizador.</td></tr>
-                    <tr><td>Decisão de moderação</td><td>Qualquer ato do prestador relativo à visibilidade, disponibilidade ou existência de Conteúdo, ou à conta de Utilizador, abrangido pelo artigo 14.º do DSA.</td></tr>
-                    <tr><td>Recurso</td><td>Reclamação interna apresentada pelo Utilizador contra uma decisão de moderação, ao abrigo do artigo 20.º do DSA.</td></tr>
-                </tbody>
-            </table>
+            <LegalTable
+                headers={["Termo", "Significado"]}
+                rows={[
+                    ["Plataforma / Serviço", "O conjunto de produtos digitais disponibilizados sob a marca Lusorae, incluindo aplicações web e móveis, APIs e qualquer extensão futura identificada com a mesma marca."],
+                    ["Utilizador", "Pessoa singular, com idade igual ou superior a 13 anos, que tenha conta registada na Plataforma."],
+                    ["Visitante", "Pessoa que aceda à Plataforma sem conta registada."],
+                    ["Conteúdo", "Qualquer texto, imagem, vídeo, áudio, ligação, código, reação ou outro elemento criado, carregado, partilhado ou reagido na Plataforma."],
+                    ["Conteúdo do Utilizador", "O Conteúdo gerado, carregado ou partilhado pelo Utilizador."],
+                    ["Decisão de moderação", "Qualquer ato do prestador relativo à visibilidade, disponibilidade ou existência de Conteúdo, ou à conta de Utilizador, abrangido pelo artigo 14.º do DSA."],
+                    ["Recurso", "Reclamação interna apresentada pelo Utilizador contra uma decisão de moderação, ao abrigo do artigo 20.º do DSA."],
+                ]}
+            />
 
             <h2>Objeto e aceitação</h2>
             <p>
@@ -102,6 +97,9 @@ export default function Terms() {
             </p>
 
             <h2>Conteúdos do Utilizador</h2>
+            <LegalSectionSummary>
+                Continuas dono do que publicas. Damo-nos apenas a licença mínima necessária para operar a Plataforma e para te mostrar o teu próprio conteúdo. Não vendemos. Não usamos para treinar IA sem consentimento expresso.
+            </LegalSectionSummary>
             <h3>Titularidade</h3>
             <p>
                 O Utilizador mantém integralmente a titularidade dos direitos sobre os Conteúdos que publica. A
@@ -275,6 +273,9 @@ export default function Terms() {
             </p>
 
             <h2>Subscrições pagas (Plus, Aura)</h2>
+            <LegalSectionSummary>
+                A versão base é grátis e continua a ser. Os planos pagos só dão ferramentas adicionais — nunca alcance, prioridade ou influência sobre a moderação. Tens 14 dias para cancelar sem motivo e sem custo (livre resolução).
+            </LegalSectionSummary>
             <p>
                 A utilização do Serviço-base é, e continuará a ser, gratuita. Determinadas funcionalidades adicionais
                 de expressão, conforto e identidade podem ser disponibilizadas mediante subscrição paga (planos{" "}
@@ -330,9 +331,9 @@ export default function Terms() {
             <p>
                 Estes Termos regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo dos direitos imperativos
                 que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008 &mdash; Roma I), as partes
-                elegem o <strong>foro da Comarca de [Cidade da sede]</strong>, com expressa renúncia a qualquer
-                outro. Consumidores podem, em alternativa, recorrer ao seu próprio foro nos termos do Regulamento
-                (UE) n.º 1215/2012.
+                elegem o foro do tribunal da Comarca correspondente à sede social do prestador, em Portugal, com
+                expressa renúncia a qualquer outro. Consumidores podem, em alternativa, recorrer ao seu próprio foro
+                nos termos do Regulamento (UE) n.º 1215/2012.
             </p>
 
             <h2>Contactos institucionais</h2>

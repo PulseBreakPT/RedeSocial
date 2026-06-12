@@ -7,14 +7,16 @@ import { useEffect, useRef, useState } from "react";
 // =============================================================================
 import { Link, useNavigate } from "react-router-dom";
 import {
-    ArrowLeft, ArrowUp, Cookie, FileText,
+    ArrowLeft, ArrowUp, Cookie, FileText, Flame,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle, Check, Clock,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
 import SiteFooter from "../../components/SiteFooter";
 
 const NAV = [
-    { to: "/legal",            label: "Visão geral",            short: "Visão",       icon: Scale,        key: "index" },
+    { to: "/legal",            label: "Centro Legal",           short: "Centro",      icon: Scale,        key: "index" },
+    { to: "/legal/vision",     label: "A nossa visão",          short: "Visão",       icon: Sparkle,      key: "vision" },
+    { to: "/manifesto",        label: "Manifesto",              short: "Manifesto",   icon: Flame,        key: "manifesto" },
     { to: "/legal/terms",      label: "Termos e Condições",     short: "Termos",      icon: FileText,     key: "terms" },
     { to: "/legal/privacy",    label: "Política de Privacidade",short: "Privacidade", icon: ShieldCheck,  key: "privacy" },
     { to: "/legal/cookies",    label: "Política de Cookies",    short: "Cookies",     icon: Cookie,       key: "cookies" },
@@ -145,8 +147,6 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const onPrint = () => window.print();
     const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-    const eyebrow = NAV.find((n) => n.key === active)?.label || "Documento legal";
-
     return (
         <div className="min-h-screen text-black relative" style={{ background: "#FFFFFF" }}>
             {/* Reading progress bar */}
@@ -256,7 +256,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         </div>
                         <nav
                             data-testid="legal-doc-nav"
-                            className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible no-scrollbar pb-1 -mx-1 lg:mx-0 px-1"
+                            className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-1.5 lg:flex lg:flex-col lg:gap-2"
                         >
                             {NAV.map(({ to, label, short, icon: Icon, key }) => {
                                 const isActive = active === key;
@@ -265,7 +265,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                         key={key}
                                         to={to}
                                         data-testid={`legal-nav-${key}`}
-                                        className="shrink-0 lg:shrink inline-flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-bold transition-all duration-200"
+                                        className="inline-flex items-center gap-2 px-3 py-2.5 lg:px-3.5 text-[12.5px] lg:text-[13px] font-bold transition-all duration-200 min-w-0"
                                         style={{
                                             background: isActive ? PT.ink : "#fff",
                                             color: isActive ? "#fff" : PT.ink,
@@ -273,11 +273,12 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                             borderRadius: 999,
                                             boxShadow: isActive ? "0 6px 14px -6px rgba(10,10,10,0.35)" : "none",
                                             letterSpacing: "-0.005em",
+                                            justifyContent: "flex-start",
                                         }}
                                     >
-                                        <Icon size={14} strokeWidth={isActive ? 2.3 : 2} />
-                                        <span className="whitespace-nowrap lg:hidden">{short}</span>
-                                        <span className="whitespace-nowrap hidden lg:inline">{label}</span>
+                                        <Icon size={13} strokeWidth={isActive ? 2.3 : 2} className="shrink-0" />
+                                        <span className="truncate lg:hidden">{short}</span>
+                                        <span className="truncate hidden lg:inline">{label}</span>
                                     </Link>
                                 );
                             })}
@@ -293,34 +294,24 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
 
                 {/* Main reading column */}
                 <main className="col-span-12 lg:col-span-6 order-2 min-w-0">
-                    <article ref={articleRef} className="max-w-[760px]">
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
-                            </span>
-                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
-                                {eyebrow}
-                            </span>
-                            <span aria-hidden style={{ flex: 1, height: 1, background: "rgba(10,10,10,0.10)" }} />
-                        </div>
+                    <article ref={articleRef} className="max-w-[760px] mx-auto">
                         <h1
                             data-testid="legal-title"
-                            className="font-black tracking-[-0.045em]"
+                            className="font-black tracking-[-0.045em] text-center"
                             style={{ fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.96, color: PT.ink }}
                         >
                             {title}
                         </h1>
                         {subtitle && (
                             <p
-                                className="mt-5 text-[16px] lg:text-[17.5px] leading-relaxed max-w-[64ch] font-medium"
+                                className="mt-5 text-[16px] lg:text-[17.5px] leading-relaxed max-w-[64ch] mx-auto font-medium text-center"
                                 style={{ color: "rgba(10,10,10,0.7)" }}
                                 dangerouslySetInnerHTML={{ __html: subtitle }}
                             />
                         )}
 
                         {/* Reading meta — quick info bar */}
-                        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px]" style={{ color: "rgba(10,10,10,0.55)" }} data-testid="legal-reading-meta">
+                        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12.5px]" style={{ color: "rgba(10,10,10,0.55)" }} data-testid="legal-reading-meta">
                             {readingTime > 0 && (
                                 <span className="inline-flex items-center gap-1.5">
                                     <Clock size={13} strokeWidth={2.1} style={{ color: "rgba(10,10,10,0.45)" }} />
@@ -440,15 +431,12 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
 
                         <footer className="text-[13px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             <p>
-                                As menções entre{" "}
-                                <code className="px-1.5 py-0.5 text-[12px] font-bold rounded" style={{ background: "rgba(10,10,10,0.06)", color: PT.ink, fontFamily: "JetBrains Mono, monospace" }}>
-                                    [ ]
-                                </code>{" "}
-                                identificam dados a preencher pela entidade responsável antes da publicação definitiva.
-                            </p>
-                            <p className="mt-2">
                                 Em caso de divergência entre versões traduzidas, prevalece a versão em português europeu.
-                                A invalidade ou ineficácia de qualquer cláusula não afeta as demais.
+                                A invalidade ou ineficácia de qualquer cláusula não afeta as demais. Para qualquer
+                                dúvida sobre interpretação destes documentos, escreve para{" "}
+                                <a href="mailto:legal@lusorae.pt" className="font-bold underline underline-offset-2" style={{ color: PT.ink }}>
+                                    legal@lusorae.pt
+                                </a>.
                             </p>
                         </footer>
                     </article>

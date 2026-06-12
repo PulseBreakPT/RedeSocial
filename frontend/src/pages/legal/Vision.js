@@ -11,7 +11,7 @@ export default function Vision() {
             active="vision"
             title="A nossa visão"
             subtitle="Porque é que o Lusorae existe, em que se compromete, e o que recusa fazer. Esta página é o documento de referência a que todos os outros &mdash; Termos, Privacidade, Cookies, Diretrizes &mdash; respondem."
-            lastUpdated="[data da última versão]"
+            lastUpdated="Junho de 2026"
         >
             <div className="legal-callout">
                 <strong>Sobre este documento</strong>

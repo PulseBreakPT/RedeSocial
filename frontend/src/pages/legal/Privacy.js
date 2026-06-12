@@ -1,6 +1,7 @@
 import { LegalShell } from "./LegalShell";
 import {
     LegalFlow, LegalDataMap, LegalRightsGrid, LegalTimeline, LegalVisualBlock,
+    LegalTable, LegalSectionSummary,
 } from "./_visuals";
 import {
     FileText, Lock,
@@ -15,23 +16,14 @@ export default function Privacy() {
             active="privacy"
             title="Política de Privacidade"
             subtitle="O documento que descreve, em detalhe, como tratamos dados pessoais &mdash; o que recolhemos, porque o fazemos, durante quanto tempo o conservamos, com quem o partilhamos, e quais os direitos que assistem a quem usa o Lusorae."
-            lastUpdated="[data da última versão]"
+            lastUpdated="Junho de 2026"
+            eli5="Não vendemos, não alugamos, não cedemos dados pessoais. Recolhemos só o necessário, com fundamento legal claro, e dás-te todos os direitos do RGPD para acederes, corrigires, apagares ou levares contigo o que é teu."
         >
-            <div className="legal-callout">
-                <strong>O que faz e não faz esta política</strong>
-                Esta política descreve o tratamento de dados pessoais por parte do Lusorae. Reflecte, em particular,
-                o terceiro dos nossos <a href="/legal/vision">seis compromissos</a>: <em>dados próprios</em> &mdash;
-                não vendemos, não alugamos, não cedemos dados pessoais para finalidade comercial de terceiros.
-                Cumpre o RGPD, a Lei n.º 58/2019, a Lei n.º 41/2004 (ePrivacy) e a Lei n.º 27/2021 (Carta Portuguesa
-                dos Direitos Humanos na Era Digital).
-            </div>
-
             <h2>Responsável pelo tratamento</h2>
             <p>
-                <strong>[Denominação social, e.g. Lusorae, Lda.]</strong>, NIPC <strong>[NIPC]</strong>,
-                com sede em <strong>[Morada completa]</strong>, é o responsável pelo tratamento (<em>controller</em>)
-                dos dados pessoais tratados no âmbito do Serviço. Os contactos institucionais constam do{" "}
-                <a href="/legal">Centro Legal</a>.
+                O <strong>Lusorae</strong> é o responsável pelo tratamento (<em>controller</em>) dos dados pessoais
+                tratados no âmbito do Serviço. Os dados completos de identificação societária do prestador (denominação,
+                NIPC, morada da sede) e os contactos institucionais constam do <a href="/legal">Centro Legal</a>.
             </p>
 
             <h2>Encarregado de Proteção de Dados (DPO)</h2>
@@ -82,48 +74,46 @@ export default function Privacy() {
             </p>
 
             <h2>Finalidades e fundamentos legais</h2>
-            <table>
-                <thead>
-                    <tr><th>Finalidade</th><th>Categorias</th><th>Fundamento (RGPD)</th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Criação e manutenção da conta; prestação de funcionalidades do Serviço; exibição de Conteúdo.</td>
-                        <td>Identificação, Conteúdo, Técnicos.</td>
-                        <td>Art. 6.º, n.º 1, al. b) &mdash; execução do contrato.</td>
-                    </tr>
-                    <tr>
-                        <td>Cumprimento de obrigações legais (resposta a autoridades, conservação fiscal, comunicações CNPD).</td>
-                        <td>Conforme exigido.</td>
-                        <td>Art. 6.º, n.º 1, al. c).</td>
-                    </tr>
-                    <tr>
-                        <td>Segurança, prevenção de fraude, anti-abuso, integridade dos sistemas.</td>
-                        <td>Técnicos, Utilização, Localização aproximada.</td>
-                        <td>Art. 6.º, n.º 1, al. f) &mdash; interesse legítimo do prestador e dos demais utilizadores.</td>
-                    </tr>
-                    <tr>
-                        <td>Moderação de Conteúdo (avaliação de notificações, decisão e recurso).</td>
-                        <td>Conteúdo, Comunicação.</td>
-                        <td>Art. 6.º, n.º 1, al. c) e f) &mdash; obrigação legal (DSA) e interesse legítimo.</td>
-                    </tr>
-                    <tr>
-                        <td>Estatística agregada, métricas anónimas e melhoria do Serviço.</td>
-                        <td>Utilização (agregados).</td>
-                        <td>Art. 6.º, n.º 1, al. f).</td>
-                    </tr>
-                    <tr>
-                        <td>Comunicações de produto opcionais (newsletter, novidades, programas-piloto).</td>
-                        <td>Identificação.</td>
-                        <td>Art. 6.º, n.º 1, al. a) &mdash; consentimento (revogável a qualquer momento).</td>
-                    </tr>
-                    <tr>
-                        <td>Cookies analíticos e funcionais não estritamente necessários.</td>
-                        <td>Cookies.</td>
-                        <td>Art. 5.º, n.º 3, Lei n.º 41/2004 &mdash; consentimento.</td>
-                    </tr>
-                </tbody>
-            </table>
+            <LegalTable
+                headers={["Finalidade", "Categorias", "Fundamento (RGPD)"]}
+                rows={[
+                    [
+                        "Criação e manutenção da conta; prestação de funcionalidades do Serviço; exibição de Conteúdo.",
+                        "Identificação, Conteúdo, Técnicos.",
+                        <>Art. 6.º, n.º 1, al. b) &mdash; execução do contrato.</>,
+                    ],
+                    [
+                        "Cumprimento de obrigações legais (resposta a autoridades, conservação fiscal, comunicações CNPD).",
+                        "Conforme exigido.",
+                        "Art. 6.º, n.º 1, al. c).",
+                    ],
+                    [
+                        "Segurança, prevenção de fraude, anti-abuso, integridade dos sistemas.",
+                        "Técnicos, Utilização, Localização aproximada.",
+                        <>Art. 6.º, n.º 1, al. f) &mdash; interesse legítimo do prestador e dos demais utilizadores.</>,
+                    ],
+                    [
+                        "Moderação de Conteúdo (avaliação de notificações, decisão e recurso).",
+                        "Conteúdo, Comunicação.",
+                        <>Art. 6.º, n.º 1, al. c) e f) &mdash; obrigação legal (DSA) e interesse legítimo.</>,
+                    ],
+                    [
+                        "Estatística agregada, métricas anónimas e melhoria do Serviço.",
+                        "Utilização (agregados).",
+                        "Art. 6.º, n.º 1, al. f).",
+                    ],
+                    [
+                        "Comunicações de produto opcionais (newsletter, novidades, programas-piloto).",
+                        "Identificação.",
+                        <>Art. 6.º, n.º 1, al. a) &mdash; consentimento (revogável a qualquer momento).</>,
+                    ],
+                    [
+                        "Cookies analíticos e funcionais não estritamente necessários.",
+                        "Cookies.",
+                        <>Art. 5.º, n.º 3, Lei n.º 41/2004 &mdash; consentimento.</>,
+                    ],
+                ]}
+            />
 
             <h2>Origem dos dados</h2>
             <p>Os dados pessoais tratados têm três origens, devidamente diferenciadas:</p>
@@ -216,6 +206,9 @@ export default function Privacy() {
             </p>
 
             <h2>Os teus direitos enquanto titular dos dados</h2>
+            <LegalSectionSummary>
+                Tens 8 direitos directamente exercíveis: aceder, corrigir, apagar, limitar, levar contigo, opor-te, recusar decisões automatizadas e retirar consentimento. Resposta nossa em 1 mês. Sempre gratuito.
+            </LegalSectionSummary>
 
             <LegalVisualBlock eyebrow="RGPD · Arts. 15.º a 22.º" title="Os teus oito direitos">
                 <LegalRightsGrid items={[

@@ -325,6 +325,100 @@ export function LegalComplianceBoard({ items }) {
     );
 }
 
+/* ════════════════════════════════════════════════════════════════
+   13. LEGAL TABLE — tabela responsiva sem overflow horizontal.
+   Em desktop renderiza como tabela editorial; em mobile colapsa
+   automaticamente em cartões empilhados (key/value) para preservar
+   leitura sem scroll lateral.
+   Uso: <LegalTable headers={["Termo","Significado"]} rows={[["a","b"], ...]} />
+   ════════════════════════════════════════════════════════════════ */
+export function LegalTable({ headers = [], rows = [], variant = "default", caption }) {
+    if (!headers.length || !rows.length) return null;
+    return (
+        <div className={`legal-rtable legal-rtable--${variant} not-prose`} data-testid="legal-rtable">
+            {/* Desktop / tablet table */}
+            <table className="legal-rtable-table">
+                <thead>
+                    <tr>{headers.map((h, i) => <th key={i}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                    {rows.map((row, ri) => (
+                        <tr key={ri}>
+                            {row.map((cell, ci) => <td key={ci}>{cell}</td>)}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            {/* Mobile card stack */}
+            <div className="legal-rtable-cards" aria-hidden={false}>
+                {rows.map((row, ri) => (
+                    <div key={ri} className="legal-rtable-card">
+                        <div className="legal-rtable-card-num">{String(ri + 1).padStart(2, "0")}</div>
+                        <dl>
+                            {row.map((cell, ci) => (
+                                <div key={ci} className="legal-rtable-card-row">
+                                    <dt>{headers[ci]}</dt>
+                                    <dd>{cell}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </div>
+                ))}
+            </div>
+            {caption && <p className="legal-rtable-caption">{caption}</p>}
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   14. LEGAL CONTACTS LIST — lista visual de contactos institucionais
+   (substitui a tabela de assunto/email no LegalIndex). Em mobile fica
+   uma coluna; em desktop fica em grelha 2 colunas.
+   ════════════════════════════════════════════════════════════════ */
+export function LegalContactsList({ items }) {
+    return (
+        <div className="legal-contacts not-prose" data-testid="legal-contacts">
+            {items.map((it, i) => {
+                const Icon = it.icon;
+                return (
+                    <a
+                        key={i}
+                        href={`mailto:${it.email}`}
+                        className="legal-contact-card"
+                        data-testid={`legal-contact-${it.email.split("@")[0]}`}
+                    >
+                        <div className="legal-contact-icon">
+                            {Icon ? <Icon size={14} strokeWidth={1.8} /> : <Mail size={14} strokeWidth={1.8} />}
+                        </div>
+                        <div className="legal-contact-body">
+                            <div className="legal-contact-subject">{it.subject}</div>
+                            <div className="legal-contact-email">{it.email}</div>
+                            {it.ref && <div className="legal-contact-ref">{it.ref}</div>}
+                        </div>
+                    </a>
+                );
+            })}
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   15. LEGAL SECTION SUMMARY — TL;DR colapsável para secção H2 longa
+   Uso (dentro de prose-legal):
+   <LegalSectionSummary>Em poucas palavras: ...</LegalSectionSummary>
+   ════════════════════════════════════════════════════════════════ */
+export function LegalSectionSummary({ children, label = "Em poucas palavras" }) {
+    return (
+        <div className="legal-section-summary not-prose">
+            <div className="legal-section-summary-strip" aria-hidden />
+            <div className="legal-section-summary-body">
+                <span className="legal-section-summary-label">{label}</span>
+                <p>{children}</p>
+            </div>
+        </div>
+    );
+}
+
 /* — Ícone helpers re-exportados (para uso direto nas páginas) — */
 export const VIZ_ICONS = {
     Scale, ShieldCheck, CookieIcon, FileText, Sparkle,
