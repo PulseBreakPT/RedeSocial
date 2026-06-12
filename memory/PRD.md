@@ -135,3 +135,13 @@ Resultado validado por screenshot tool em todas as 5 rotas (`/legal`, `/legal/vi
 - **FAB "Voltar ao topo"** (`LegalShell`): botão fixo ink black no canto inferior direito, aparece após scroll > 8%, fade + scale transition.
 - **`ScrollToTopOnNavigate`** já presente no `App.js` no nível do BrowserRouter — confirmado: PUSH/REPLACE navega para topo, POP restaura posição guardada em sessionStorage. Testado entre `/legal/terms` (scroll 13859px) → `/legal/privacy` (scroll 0px).
 
+## Auditoria Jurídica Centro Legal (Jun 12, 2026) — pendente de execução
+Auditoria SSS-tier completa guardada em **`/app/memory/LEGAL_AUDIT_PT.md`**.
+- Score actual: 7.4/10 (subiria para 9/10 com P0+P1).
+- **3 erros bloqueadores** identificados (Lei 32/2008 inconstitucional, ODR descontinuada, "Tribunal da Comarca" obsoleto).
+- **8 gaps materiais** (Ponto Único Contacto DSA, categoria DSA, DPO CNPD, idade "Utilizador", limitação responsabilidade vs consumidores, Lei 36/2023, EU-US DPF, direitos personalidade Código Civil).
+- **9 itens de coerência/distribuição** (sucessão Terms→Privacy, página /legal/copyright dedicada, sobreposição Manifesto/Vision, etc.).
+- **6 páginas novas recomendadas** (P3): /legal/copyright, /legal/menores, /legal/dsa-transparency, /legal/historico, /legal/governance, /legal/seguranca-investigadores.
+- Ordem de execução priorizada (#1–17 = ~2h trabalho, #18–23 = ~14.5h).
+- Próxima pergunta ao utilizador: aplicar P0+P1+P2 já, ou começar pelas páginas novas P3?
+
