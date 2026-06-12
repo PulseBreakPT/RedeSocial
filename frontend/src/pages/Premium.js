@@ -1,175 +1,90 @@
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState } from "react";
 // =============================================================================
-// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// DESIGN SYSTEM: LUSORAE EDITORIAL — Premium SSS premium-premium
+// Mesma linguagem editorial (ink strip · H1 massive · kicker mono), com
+// paleta diferenciada: GOLD (Aura) + AZUL (Plus) — premium aesthetics.
+// Uma única tabela consolida todas as diferenças (Grátis · Plus · Aura).
 // =============================================================================
 import {
     Check, ArrowRight, Sparkles, Heart, Shield, Zap, Star, Crown, Info,
     Palette, Music, Eye, BookOpen, MessageCircle, TrendingUp, Lock,
-    Users, Image as ImageIcon, Bookmark, Layers, SunMoon, Globe, ChevronDown, Minus,
-    Radio, Compass, Clock, Award, Activity, Flame, Feather, MapPin
+    Image as ImageIcon, Bookmark, Layers, SunMoon, ChevronDown, Minus,
+    Radio, Compass, Clock, Award, Activity, Flame, Feather, MapPin,
 } from "lucide-react";
-import { PageHeader } from "../components/PageHeader";
-import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
-import { Highlight } from "../components/editorial/Primitives";
 import { usePremium } from "../context/PremiumContext";
 import { toast } from "sonner";
 
 /* ════════════════════════════════════════════════════════════════════
-   CONTEÚDO REAL — mapeado 1:1 aos entitlements do backend
-   (backend/entitlements.py). Sem promessas vagas: cada linha
-   corresponde a uma feature efetiva e cada número a um limite real.
+   FEATURES por tier — cartões de preço (curadoria editorial)
    ════════════════════════════════════════════════════════════════════ */
-
-/* — Features destacadas nos cards de preço — */
 const PLUS_FEATURES = [
-    { icon: Sparkles, text: "Perfil premium: estilo, banner subtil e assinatura pessoal", hl: true },
-    { icon: Music,    text: "Presença ao vivo com música e estados (até 140 caracteres)" },
+    { icon: Sparkles,  text: "Perfil premium: estilo, banner subtil e assinatura pessoal", hl: true },
+    { icon: Music,     text: "Presença ao vivo com música e estados (até 140 caracteres)" },
     { icon: ImageIcon, text: "Stories até 15 segundos, com arquivo e analytics" },
-    { icon: Zap,      text: "Feed calmo: filtros sociais e de energia" },
-    { icon: Bookmark, text: "Coleções e pastas ilimitadas (5 e 3 no plano grátis)" },
-    { icon: Award,    text: "Distintivo de Early Supporter — discreto, para sempre" },
+    { icon: Zap,       text: "Feed calmo: filtros sociais e de energia" },
+    { icon: Bookmark,  text: "Coleções e pastas ilimitadas" },
+    { icon: Award,     text: "Distintivo de Early Supporter — discreto, para sempre" },
 ];
 
 const AURA_FEATURES = [
-    { icon: Crown,    text: "Tudo do Plus, mais profundo", hl: true },
-    { icon: Layers,   text: "Memória social pessoal e mini-timeline da tua presença", hl: true },
-    { icon: SunMoon,  text: "Atmosfera de perfil — muda com a hora, o mood e a estação" },
+    { icon: Crown,     text: "Tudo do Plus, mais profundo", hl: true },
+    { icon: Layers,    text: "Memória social pessoal e mini-timeline da tua presença", hl: true },
+    { icon: SunMoon,   text: "Atmosfera de perfil — muda com a hora, o mood e a estação" },
     { icon: ImageIcon, text: "Stories até 30 segundos e moods exclusivos" },
-    { icon: Radio,    text: "Presença rica: histórico e estados até 240 caracteres" },
-    { icon: Activity, text: "Insights pessoais do teu ritmo social (só para ti)" },
+    { icon: Radio,     text: "Presença rica: histórico e estados até 240 caracteres" },
+    { icon: Activity,  text: "Insights pessoais do teu ritmo social (só para ti)" },
 ];
 
-/* — Deep-dive por categoria: cada linha é um direito real,
-     com o que cada plano efetivamente recebe — */
-const CATEGORIES = [
-    {
-        id: "identity",
-        eyebrow: "01 — Identidade & Perfil",
-        icon: Palette,
-        title: "O teu perfil, com mais voz",
-        desc: "Mais formas de te apresentares — sem competir com ninguém. Cada detalhe é teu.",
-        rows: [
-            { label: "Estilo de perfil premium",       free: "Estilo padrão",        plus: "Estilo premium",        aura: "Estilo premium" },
-            { label: "Banner de perfil",                free: "Padrão",               plus: "Banner subtil",         aura: "Banner subtil" },
-            { label: "Assinatura pessoal no perfil",   free: "—",                    plus: "Curta",                 aura: "Expandida" },
-            { label: "Atmosfera de perfil",             free: "—",                    plus: "—",                     aura: "Vive com a hora, o mood e a estação", aura_only: true },
-            { label: "Layouts de perfil",               free: "Padrão",               plus: "Padrão",                aura: "Layouts exclusivos", aura_only: true },
-            { label: "Identidade contextual",           free: "—",                    plus: "—",                     aura: "Perfil vivo, adaptado ao momento", aura_only: true },
-        ],
-    },
-    {
-        id: "presence",
-        eyebrow: "02 — Presença ao vivo",
-        icon: Radio,
-        title: "Estar presente, ao teu jeito",
-        desc: "Estados de presença mais ricos, mais subtis e mais duradouros. Sem ostentação.",
-        rows: [
-            { label: "Estado de presença",              free: "Básico",               plus: "Avançado",              aura: "Rico" },
-            { label: "Limite de caracteres do estado", free: "64",                    plus: "140",                   aura: "240" },
-            { label: "Música no estado de presença",   free: "—",                    plus: "Sim",                   aura: "Sim" },
-            { label: "Histórico de presença",           free: "—",                    plus: "—",                     aura: "Linha do tempo pessoal", aura_only: true },
-        ],
-    },
-    {
-        id: "stories",
-        eyebrow: "03 — Stories",
-        icon: ImageIcon,
-        title: "Mais tempo para contar",
-        desc: "Os teus stories ficam maiores, têm arquivo permanente e ganham analytics — visíveis só para ti.",
-        rows: [
-            { label: "Duração máxima do story",        free: "5 segundos",           plus: "15 segundos",           aura: "30 segundos" },
-            { label: "Moods nos stories",               free: "Catálogo padrão",      plus: "Moods premium",         aura: "Moods exclusivos" },
-            { label: "Arquivo de stories",              free: "—",                    plus: "Ilimitado",             aura: "Ilimitado" },
-            { label: "Analytics dos teus stories",     free: "—",                    plus: "Visualizações + reações", aura: "Visualizações + reações" },
-        ],
-    },
-    {
-        id: "feed",
-        eyebrow: "04 — Feed & Descoberta",
-        icon: Compass,
-        title: "Decides o que vês — e em que ritmo",
-        desc: "O feed não é manipulado por planos. Tu é que ganhas mais ferramentas para o sintonizar a ti.",
-        rows: [
-            { label: "Feed calmo",                      free: "—",                    plus: "Sim",                   aura: "Sim" },
-            { label: "Filtros sociais",                 free: "—",                    plus: "Sim",                   aura: "Sim" },
-            { label: "Filtros de energia",              free: "—",                    plus: "Sim",                   aura: "Sim" },
-            { label: "Reações premium",                 free: "Reações base",         plus: "Reações ampliadas",     aura: "Reações ampliadas" },
-            { label: "Destaque subtil em Descobrir",   free: "—",                    plus: "Discreto",              aura: "Discreto" },
-        ],
-        note: "Nenhum destes filtros muda o que os outros vêem. O algoritmo trata todos por igual — sempre.",
-    },
-    {
-        id: "collections",
-        eyebrow: "05 — Coleções & Guardados",
-        icon: Bookmark,
-        title: "Organiza o que importa, sem teto",
-        desc: "Mais espaço para guardar, organizar e voltar a momentos.",
-        rows: [
-            { label: "Coleções",                        free: "Até 5",                plus: "Ilimitadas",            aura: "Ilimitadas" },
-            { label: "Pastas de bookmarks",             free: "Até 3",                plus: "Ilimitadas",            aura: "Ilimitadas" },
-            { label: "Widgets sociais no perfil",      free: "—",                    plus: "Sim",                   aura: "Sim, expandidos" },
-        ],
-    },
-    {
-        id: "memory",
-        eyebrow: "06 — Memória social",
-        icon: Layers,
-        title: "O Lusorae passa a fazer parte da tua vida",
-        desc: "Exclusivo do Aura. Uma camada viva: a tua história aqui passa a ser navegável, com ritmos e insights pessoais.",
-        rows: [
-            { label: "Memória social pessoal",         free: "—",                    plus: "—",                     aura: "Sim", aura_only: true },
-            { label: "Mini-timeline da tua presença",  free: "—",                    plus: "—",                     aura: "Sim", aura_only: true },
-            { label: "Insights de ritmo social",       free: "—",                    plus: "—",                     aura: "Pessoais e privados", aura_only: true },
-            { label: "Analytics sociais pessoais",     free: "—",                    plus: "—",                     aura: "Sim, só visíveis para ti", aura_only: true },
-            { label: "Widgets de memória",              free: "—",                    plus: "—",                     aura: "Sim", aura_only: true },
-        ],
-        auraOnly: true,
-    },
+/* ════════════════════════════════════════════════════════════════════
+   TABELA ÚNICA · todas as diferenças, agrupadas por categoria.
+   Single source of truth: cada linha é uma feature efetiva do backend.
+   ════════════════════════════════════════════════════════════════════ */
+const TABLE = [
+    { group: "Identidade & Perfil", subtitle: "O teu perfil, com mais voz" },
+    { label: "Estilo de perfil premium",            icon: Palette,    free: "Padrão",      plus: "Premium",     aura: "Premium" },
+    { label: "Banner subtil",                       icon: Sparkles,   free: "—",           plus: "Sim",         aura: "Sim" },
+    { label: "Assinatura pessoal",                  icon: BookOpen,   free: "—",           plus: "Curta",       aura: "Expandida" },
+    { label: "Atmosfera de perfil",                 icon: SunMoon,    free: "—",           plus: "—",           aura: "Hora · Mood · Estação", auraOnly: true },
+    { label: "Layouts exclusivos",                  icon: Layers,     free: "—",           plus: "—",           aura: "Sim", auraOnly: true },
+    { label: "Identidade contextual",               icon: Star,       free: "—",           plus: "—",           aura: "Perfil vivo", auraOnly: true },
+
+    { group: "Presença ao vivo", subtitle: "Estar presente, ao teu jeito" },
+    { label: "Estado de presença",                  icon: Radio,      free: "Básico",      plus: "Avançado",    aura: "Rico" },
+    { label: "Limite de caracteres do estado",      icon: Feather,    free: "64",          plus: "140",         aura: "240" },
+    { label: "Música no estado",                    icon: Music,      free: "—",           plus: "Sim",         aura: "Sim" },
+    { label: "Histórico de presença",               icon: Clock,      free: "—",           plus: "—",           aura: "Linha do tempo", auraOnly: true },
+
+    { group: "Stories", subtitle: "Mais tempo para contar" },
+    { label: "Duração máxima",                      icon: ImageIcon,  free: "5 seg",       plus: "15 seg",      aura: "30 seg" },
+    { label: "Moods nos stories",                   icon: Heart,      free: "Padrão",      plus: "Premium",     aura: "Exclusivos" },
+    { label: "Arquivo de stories",                  icon: Bookmark,   free: "—",           plus: "Ilimitado",   aura: "Ilimitado" },
+    { label: "Analytics dos teus stories",          icon: Eye,        free: "—",           plus: "Sim",         aura: "Sim" },
+
+    { group: "Feed & Descoberta", subtitle: "Decides o que vês — e em que ritmo", note: "O algoritmo trata todos por igual. Os filtros só afetam o que tu vês — nunca o que os outros vêem de ti." },
+    { label: "Feed calmo",                          icon: Zap,        free: "—",           plus: "Sim",         aura: "Sim" },
+    { label: "Filtros sociais e de energia",        icon: Compass,    free: "—",           plus: "Sim",         aura: "Sim" },
+    { label: "Reações premium",                     icon: Flame,      free: "Base",        plus: "Ampliadas",   aura: "Ampliadas" },
+    { label: "Destaque subtil em Descobrir",        icon: Sparkles,   free: "—",           plus: "Discreto",    aura: "Discreto" },
+
+    { group: "Coleções & Guardados", subtitle: "Organiza o que importa, sem teto" },
+    { label: "Coleções",                            icon: Bookmark,   free: "Até 5",       plus: "Ilimitadas",  aura: "Ilimitadas" },
+    { label: "Pastas de bookmarks",                 icon: Layers,     free: "Até 3",       plus: "Ilimitadas",  aura: "Ilimitadas" },
+    { label: "Widgets sociais no perfil",           icon: Star,       free: "—",           plus: "Sim",         aura: "Expandidos" },
+
+    { group: "Memória social", subtitle: "O Lusorae passa a fazer parte da tua vida", auraOnly: true },
+    { label: "Memória social pessoal",              icon: Layers,     free: "—",           plus: "—",           aura: "Sim", auraOnly: true },
+    { label: "Mini-timeline da tua presença",       icon: TrendingUp, free: "—",           plus: "—",           aura: "Sim", auraOnly: true },
+    { label: "Insights de ritmo social",            icon: Activity,   free: "—",           plus: "—",           aura: "Pessoais", auraOnly: true },
+    { label: "Analytics sociais pessoais",          icon: Eye,        free: "—",           plus: "—",           aura: "Só para ti", auraOnly: true },
+    { label: "Widgets de memória",                  icon: Star,       free: "—",           plus: "—",           aura: "Sim", auraOnly: true },
+
+    { group: "Base · incluído em todos os planos", subtitle: "O essencial nunca está atrás de paywall" },
+    { label: "Mensagens sem limites",               icon: MessageCircle, free: "Sim",      plus: "Sim",         aura: "Sim" },
+    { label: "Posts e comentários",                 icon: BookOpen,   free: "Sim",         plus: "Sim",         aura: "Sim" },
+    { label: "Privacidade total",                   icon: Lock,       free: "Sim",         plus: "Sim",         aura: "Sim" },
 ];
 
-/* — Comparação compacta em tabela (cobre tudo) — */
-const COMPARISON = [
-    { group: "Identidade & Perfil" },
-    { label: "Estilo de perfil premium",        icon: Palette,    free: "—",        plus: "Sim",        aura: "Sim" },
-    { label: "Banner subtil",                    icon: Sparkles,   free: "—",        plus: "Sim",        aura: "Sim" },
-    { label: "Assinatura pessoal",               icon: BookOpen,   free: "—",        plus: "Curta",      aura: "Expandida" },
-    { label: "Atmosfera + identidade contextual",icon: SunMoon,    free: "—",        plus: "—",          aura: "Sim" },
-    { label: "Layouts exclusivos",               icon: Layers,     free: "—",        plus: "—",          aura: "Sim" },
-
-    { group: "Presença ao vivo" },
-    { label: "Limite do estado",                 icon: Feather,    free: "64 carac.",plus: "140 carac.", aura: "240 carac." },
-    { label: "Música no estado",                 icon: Music,      free: "—",        plus: "Sim",        aura: "Sim" },
-    { label: "Histórico de presença",            icon: Clock,      free: "—",        plus: "—",          aura: "Sim" },
-
-    { group: "Stories" },
-    { label: "Duração máxima",                   icon: ImageIcon,  free: "5 seg",    plus: "15 seg",     aura: "30 seg" },
-    { label: "Moods nos stories",                icon: Heart,      free: "Padrão",   plus: "Premium",    aura: "Exclusivos" },
-    { label: "Arquivo de stories",               icon: Bookmark,   free: "—",        plus: "Ilimitado",  aura: "Ilimitado" },
-    { label: "Analytics dos teus stories",       icon: Eye,        free: "—",        plus: "Sim",        aura: "Sim" },
-
-    { group: "Feed & Descoberta" },
-    { label: "Feed calmo",                       icon: Zap,        free: "—",        plus: "Sim",        aura: "Sim" },
-    { label: "Filtros sociais e de energia",     icon: Compass,    free: "—",        plus: "Sim",        aura: "Sim" },
-    { label: "Reações premium",                  icon: Flame,      free: "Base",     plus: "Ampliadas",  aura: "Ampliadas" },
-
-    { group: "Memória social" },
-    { label: "Memória social pessoal",           icon: Layers,     free: "—",        plus: "—",          aura: "Sim" },
-    { label: "Mini-timeline",                    icon: TrendingUp, free: "—",        plus: "—",          aura: "Sim" },
-    { label: "Insights de ritmo social",         icon: Activity,   free: "—",        plus: "—",          aura: "Sim" },
-
-    { group: "Coleções & Guardados" },
-    { label: "Coleções",                         icon: Bookmark,   free: "5",        plus: "Ilimitadas", aura: "Ilimitadas" },
-    { label: "Pastas de bookmarks",              icon: Layers,     free: "3",        plus: "Ilimitadas", aura: "Ilimitadas" },
-    { label: "Widgets sociais",                  icon: Star,       free: "—",        plus: "Sim",        aura: "Expandidos" },
-
-    { group: "Base (incluído em todos)" },
-    { label: "Mensagens sem limites",            icon: MessageCircle, free: "Sim",   plus: "Sim",        aura: "Sim" },
-    { label: "Posts e comentários",              icon: BookOpen,   free: "Sim",      plus: "Sim",        aura: "Sim" },
-    { label: "Privacidade total",                icon: Lock,       free: "Sim",      plus: "Sim",        aura: "Sim" },
-];
-
-/* — FAQ alargado e específico — */
 const FAQS = [
     { q: "Posso cancelar a qualquer momento?", a: "Sim. Sem compromissos, sem taxas, sem perguntas. Cancelas no portal e manténs o acesso até ao fim do período que já pagaste." },
     { q: "O que acontece aos meus dados se cancelar?", a: "Absolutamente nada. Posts, mensagens, coleções, perfil, stories arquivados — tudo fica exactamente como está. Só perdes acesso às funcionalidades premium (limites voltam ao plano grátis)." },
@@ -181,9 +96,11 @@ const FAQS = [
     { q: "E se o meu pagamento falhar?", a: "Mantemos os direitos premium ativos durante 7 dias enquanto o Stripe tenta recobrar — o suficiente para atualizares o cartão sem perderes acesso. Só depois é que o plano volta ao grátis." },
 ];
 
-/* ═══════════════ Components ═══════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   PRIMITIVES
+   ════════════════════════════════════════════════════════════════════ */
 
-function FeatureList({ items }) {
+function FeatureList({ items, accent }) {
     return (
         <ul className="space-y-2.5 mt-6">
             {items.map((f, i) => {
@@ -193,8 +110,8 @@ function FeatureList({ items }) {
                         <span
                             className="flex-shrink-0 w-6 h-6 grid place-items-center mt-0.5"
                             style={{
-                                background: "rgba(255,204,41,0.18)",
-                                color: PT.ink,
+                                background: `${accent}18`,
+                                color: accent === PT.gold ? PT.ink : accent,
                                 borderRadius: 999,
                             }}
                         >
@@ -210,127 +127,128 @@ function FeatureList({ items }) {
 
 function TierCard({
     tier, name, subtitle, tagline, price, interval, features, current,
-    billingAvailable, onSubscribe, onManage, accent, isRecommended, scale
+    billingAvailable, onSubscribe, onManage, accent, isRecommended,
 }) {
-    // accent — main PT color for this tier (gold for Aura, azul for Plus)
-    const accentColor = accent || PT.azul;
+    const isAura = tier === "aura";
     return (
-        <div className={`relative ${scale || ""}`}>
+        <div className="relative">
             {isRecommended && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20">
                     <div
-                        className="px-4 py-1 font-black uppercase"
+                        className="px-4 py-1.5 font-mono font-black uppercase"
                         style={{
-                            background: PT.red,
-                            color: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            background: PT.gold,
+                            color: PT.ink,
                             fontSize: 10.5,
-                            letterSpacing: "0.10em",
+                            letterSpacing: "0.22em",
                             borderRadius: 999,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 12px 28px -12px rgba(255,204,41,0.55)",
                         }}
                     >
-                        ★ RECOMENDADO
+                        ✦ Recomendado
                     </div>
                 </div>
             )}
 
             <div
-                className="relative p-6 sm:p-7 lg:p-8 flex flex-col h-full transition-transform duration-200 hover:-translate-y-1"
+                className="relative p-7 sm:p-8 flex flex-col h-full transition-transform duration-200 hover:-translate-y-1"
                 style={{
-                    background: "#fff",
-                    border: `3.5px solid ${PT.ink}`,
-                    boxShadow: `6px 6px 0 ${accentColor}`,
+                    background: isAura ? "linear-gradient(180deg, #FFFCF4 0%, #FFFFFF 60%)" : "#fff",
+                    border: "1px solid rgba(10,10,10,0.08)",
+                    boxShadow: isAura
+                        ? "0 1px 2px rgba(10,10,10,0.04), 0 30px 60px -25px rgba(255,204,41,0.35), 0 14px 30px -15px rgba(10,10,10,0.12)"
+                        : "0 1px 2px rgba(10,10,10,0.04), 0 24px 50px -25px rgba(0,63,135,0.30), 0 12px 28px -16px rgba(10,10,10,0.10)",
                     borderRadius: 24,
                 }}
             >
+                {/* Accent ribbon */}
+                <div
+                    aria-hidden
+                    className="absolute top-0 left-0 right-0"
+                    style={{
+                        height: 3,
+                        background: accent,
+                        borderTopLeftRadius: 24,
+                        borderTopRightRadius: 24,
+                    }}
+                />
+
                 <div className="mb-5 relative">
                     <div className="flex items-center gap-2.5 mb-2">
                         <span
                             className="inline-flex items-center justify-center"
                             style={{
-                                width: 38, height: 38,
-                                background: accentColor,
-                                color: tier === "aura" ? PT.ink : "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                borderRadius: 10,
+                                width: 40, height: 40,
+                                background: accent,
+                                color: isAura ? PT.ink : "#fff",
+                                borderRadius: 12,
+                                boxShadow: `0 1px 2px rgba(10,10,10,0.06), 0 10px 22px -10px ${accent}80`,
                             }}
                         >
-                            {tier === "aura" ? <Crown size={18} strokeWidth={2.4} /> : <Sparkles size={18} strokeWidth={2.4} />}
+                            {isAura ? <Crown size={19} strokeWidth={2.4} /> : <Sparkles size={19} strokeWidth={2.4} />}
                         </span>
-                        <h3 className="font-black tracking-tight leading-none" style={{ fontSize: 34, color: PT.ink }}>
+                        <h3 className="font-black tracking-[-0.025em] leading-none" style={{ fontSize: 38, color: PT.ink }}>
                             {name}
                         </h3>
                     </div>
-                    <p className="font-mono font-bold uppercase mb-2.5" style={{ fontSize: 10.5, letterSpacing: "0.18em", color: "rgba(10,10,10,0.50)" }}>
+                    <p className="font-mono font-bold uppercase mb-2.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.50)" }}>
                         {subtitle}
                     </p>
                     <p className="text-[14px] leading-relaxed max-w-[34ch] font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{tagline}</p>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-5">
                     <div className="flex items-baseline gap-2 mb-1">
                         <span
-                            className="font-black tabular-nums tracking-[-0.04em] leading-none relative inline-block"
-                            style={{
-                                fontSize: "clamp(40px, 6vw, 56px)",
-                                color: PT.ink,
-                            }}
+                            className="font-black tabular-nums tracking-[-0.04em] leading-none"
+                            style={{ fontSize: "clamp(44px, 6.4vw, 60px)", color: PT.ink }}
                         >
-                            <span
-                                aria-hidden
-                                className="absolute pointer-events-none"
-                                style={{
-                                    left: -3, right: -3, bottom: "0.04em", height: "0.36em",
-                                    background: `${PT.gold}55`, zIndex: 0, borderRadius: 2,
-                                }}
-                            />
-                            <span className="relative z-10">€{price.toFixed(2)}</span>
+                            €{price.toFixed(2)}
                         </span>
                         <span className="text-[13px] font-bold pb-1" style={{ color: "rgba(10,10,10,0.5)" }}>
                             /{interval === "year" ? "ano" : "mês"}
                         </span>
                     </div>
                     {interval === "year" && (
-                        <p className="text-[11.5px] mt-3 font-mono font-bold uppercase" style={{ color: PT.green, letterSpacing: "0.05em" }}>
-                            ✓ €{(price / 12).toFixed(2)}/mês · POUPAS 17%
+                        <p className="text-[11px] mt-2 font-mono font-bold uppercase inline-flex items-center gap-1.5" style={{ color: PT.green, letterSpacing: "0.14em" }}>
+                            <Check size={11} strokeWidth={3} /> €{(price / 12).toFixed(2)}/MÊS · POUPAS 17%
                         </p>
                     )}
                 </div>
 
-                <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)", marginBottom: 4 }} />
+                <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }} />
 
-                <FeatureList items={features} />
+                <FeatureList items={features} accent={accent} />
 
                 <div className="mt-auto pt-7">
                     {current ? (
                         <button
                             onClick={onManage}
-                            className="w-full h-12 text-[13px] font-black uppercase inline-flex items-center justify-center gap-2"
+                            className="w-full h-12 text-[12.5px] font-black uppercase inline-flex items-center justify-center gap-2 transition hover:translate-y-[-1px]"
                             style={{
                                 background: "#fff",
                                 color: PT.ink,
                                 border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.04)",
                                 borderRadius: 999,
-                                letterSpacing: "0.06em",
+                                letterSpacing: "0.14em",
                             }}
                         >
-                            ✓ O teu plano · Gerir
+                            <Check size={13} strokeWidth={3} /> O teu plano · Gerir
                         </button>
                     ) : billingAvailable ? (
                         <button
                             onClick={() => onSubscribe(tier, interval)}
                             data-testid={`premium-subscribe-${tier}`}
-                            className="w-full h-12 text-[13px] font-black uppercase inline-flex items-center justify-center gap-2 group/btn"
+                            className="w-full h-12 text-[12.5px] font-black uppercase inline-flex items-center justify-center gap-2 group/btn transition hover:translate-y-[-1px]"
                             style={{
-                                background: PT.red,
-                                color: "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                background: isAura ? PT.gold : PT.ink,
+                                color: isAura ? PT.ink : "#fff",
                                 borderRadius: 999,
-                                letterSpacing: "0.06em",
+                                letterSpacing: "0.14em",
+                                boxShadow: isAura
+                                    ? "0 1px 2px rgba(10,10,10,0.06), 0 12px 28px -10px rgba(255,204,41,0.55)"
+                                    : "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)",
                             }}
                         >
                             Escolher {name}
@@ -339,13 +257,13 @@ function TierCard({
                     ) : (
                         <button
                             disabled
-                            className="w-full h-12 text-[13px] font-black uppercase cursor-not-allowed"
+                            className="w-full h-12 text-[12.5px] font-black uppercase cursor-not-allowed"
                             style={{
                                 background: "#fff",
                                 color: "rgba(10,10,10,0.3)",
                                 border: "1px solid rgba(10,10,10,0.08)",
                                 borderRadius: 999,
-                                letterSpacing: "0.06em",
+                                letterSpacing: "0.14em",
                             }}
                         >
                             Brevemente
@@ -357,47 +275,43 @@ function TierCard({
     );
 }
 
-/* Cell renderer para a tabela comparativa: aceita string OU bool */
-function CCell({ value, hl, accent, tone }) {
+/* Cell renderer */
+function CCell({ value, hl, tone, accent, auraOnly }) {
     const isNone = value === "—" || value === false || value === null || value === undefined;
     const isYes  = value === true || value === "Sim";
 
-    // tone: "plus" → azul, "aura" → gold, undefined → neutro
-    const hlBg = tone === "aura" ? "rgba(255,204,41,0.12)" : tone === "plus" ? "rgba(14,77,146,0.07)" : "transparent";
+    const hlBg = tone === "aura" ? "rgba(255,204,41,0.08)" : tone === "plus" ? "rgba(0,63,135,0.05)" : "transparent";
 
     return (
         <td className="text-center py-3 px-2 align-middle" style={{ background: hl ? hlBg : "transparent" }}>
             {isNone ? (
                 <span
-                    className="inline-flex w-6 h-6 items-center justify-center"
+                    className="inline-flex w-7 h-7 items-center justify-center"
                     style={{
-                        background: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                        borderRadius: 6,
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        background: "transparent",
+                        color: "rgba(10,10,10,0.22)",
                     }}
                 >
-                    <Minus size={11} style={{ color: PT.ink }} strokeWidth={3} />
+                    <Minus size={14} strokeWidth={2.6} />
                 </span>
             ) : isYes ? (
                 <span
-                    className="inline-flex w-6 h-6 items-center justify-center"
+                    className="inline-flex w-7 h-7 items-center justify-center"
                     style={{
-                        background: PT.green,
-                        color: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                        borderRadius: 6,
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        background: tone === "aura" ? PT.gold : tone === "plus" ? PT.azul : PT.green,
+                        color: tone === "aura" ? PT.ink : "#fff",
+                        borderRadius: 999,
+                        boxShadow: `0 1px 2px rgba(10,10,10,0.06), 0 8px 18px -10px ${tone === "aura" ? "rgba(255,204,41,0.55)" : tone === "plus" ? "rgba(0,63,135,0.40)" : "rgba(4,106,56,0.40)"}`,
                     }}
                 >
-                    <Check size={12} strokeWidth={3.2} />
+                    <Check size={13} strokeWidth={3.2} />
                 </span>
             ) : (
                 <span
-                    className="text-[12px] sm:text-[12.5px] font-black tabular-nums uppercase"
+                    className="text-[12.5px] sm:text-[13px] font-black tabular-nums"
                     style={{
-                        color: accent || PT.ink,
-                        letterSpacing: "0.02em",
+                        color: auraOnly && tone === "aura" ? PT.gold === accent ? PT.ink : accent : (accent || PT.ink),
+                        letterSpacing: "-0.005em",
                     }}
                 >
                     {value}
@@ -407,177 +321,43 @@ function CCell({ value, hl, accent, tone }) {
     );
 }
 
-/* Linha de categoria/grupo dentro da tabela */
-function GroupRow({ label }) {
+/* Linha de grupo */
+function GroupRow({ label, subtitle, auraOnly }) {
     return (
         <tr style={{ background: PT.ink }}>
-            <td colSpan={4} className="py-2.5 px-4 sm:px-5">
-                <span
-                    className="font-mono font-bold uppercase"
-                    style={{
-                        fontSize: 10.5,
-                        letterSpacing: "0.22em",
-                        color: "rgba(255,204,41,0.85)",
-                    }}
-                >
-                    {label}
-                </span>
+            <td colSpan={4} className="py-3 px-5 sm:px-6">
+                <div className="flex items-baseline gap-3 flex-wrap">
+                    <span
+                        className="font-mono font-black uppercase"
+                        style={{
+                            fontSize: 10.5,
+                            letterSpacing: "0.22em",
+                            color: auraOnly ? PT.gold : "rgba(255,204,41,0.85)",
+                        }}
+                    >
+                        {label}
+                    </span>
+                    {subtitle && (
+                        <span
+                            className="font-medium"
+                            style={{
+                                fontSize: 12.5,
+                                color: "rgba(255,244,220,0.55)",
+                                letterSpacing: "-0.005em",
+                            }}
+                        >
+                            — {subtitle}
+                        </span>
+                    )}
+                </div>
             </td>
         </tr>
     );
 }
 
-/* Card de categoria do deep-dive */
-function CategoryCard({ cat, index }) {
-    const Icon = cat.icon;
-    const accent = cat.auraOnly ? PT.gold : PT.azul;
-    return (
-        <div
-            className="relative overflow-hidden"
-            style={{
-                background: "#fff",
-                border: "1px solid rgba(10,10,10,0.06)",
-                boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${accent}55, 0 6px 18px -10px rgba(10,10,10,0.10)`,
-                borderRadius: 20,
-            }}
-        >
-            <div
-                className="px-5 sm:px-6 py-4 sm:py-5"
-                style={{
-                    background: cat.auraOnly ? "rgba(255,204,41,0.10)" : "rgba(247,245,239,0.55)",
-                    borderBottom: "1px solid rgba(10,10,10,0.06)",
-                }}
-            >
-                <div className="flex items-start gap-3.5">
-                    <div
-                        className="w-11 h-11 grid place-items-center flex-shrink-0"
-                        style={{
-                            background: `${accent}15`,
-                            color: cat.auraOnly ? PT.ink : accent,
-                            borderRadius: 12,
-                        }}
-                    >
-                        <Icon size={19} strokeWidth={2.0} />
-                    </div>
-                    <div className="min-w-0">
-                        <p
-                            className="font-mono font-bold uppercase mb-1.5"
-                            style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}
-                        >
-                            {cat.eyebrow}
-                        </p>
-                        <h3
-                            className="font-black tracking-tight leading-tight mb-1.5"
-                            style={{ fontSize: "clamp(18px, 2.4vw, 22px)", color: PT.ink }}
-                        >
-                            {cat.title}
-                        </h3>
-                        <p className="text-[13px] sm:text-[13.5px] leading-relaxed max-w-[60ch] font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
-                            {cat.desc}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="overflow-x-auto">
-                <table className="w-full text-[13px] sm:text-[13.5px] min-w-[520px]">
-                    <thead>
-                        <tr style={{ background: "rgba(10,10,10,0.04)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
-                            <th
-                                className="text-left py-3 px-5 sm:px-6 font-mono font-black uppercase w-[44%]"
-                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.ink }}
-                            >
-                                Funcionalidade
-                            </th>
-                            <th
-                                className="text-center py-3 px-2 font-mono font-black uppercase w-[18%]"
-                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "rgba(10,10,10,0.55)" }}
-                            >
-                                Grátis
-                            </th>
-                            <th className="text-center py-3 px-2 w-[19%]">
-                                <span
-                                    className="inline-block font-black uppercase"
-                                    style={{
-                                        background: PT.azul,
-                                        color: "#fff",
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        padding: "2px 9px",
-                                        borderRadius: 6,
-                                        fontSize: 10.5,
-                                        letterSpacing: "0.12em",
-                                    }}
-                                >
-                                    Plus
-                                </span>
-                            </th>
-                            <th className="text-center py-3 px-2 w-[19%]">
-                                <span
-                                    className="inline-block font-bold uppercase"
-                                    style={{
-                                        background: "rgba(255,204,41,0.20)",
-                                        color: PT.ink,
-                                        padding: "3px 10px",
-                                        borderRadius: 999,
-                                        fontSize: 10.5,
-                                        letterSpacing: "0.18em",
-                                    }}
-                                >
-                                    Aura
-                                </span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {cat.rows.map((r, i) => (
-                            <tr
-                                key={i}
-                                style={{ borderBottom: i === cat.rows.length - 1 ? "none" : "1px solid rgba(10,10,10,0.08)" }}
-                            >
-                                <td className="py-3 px-5 sm:px-6 font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>
-                                    {r.label}
-                                </td>
-                                <CCell value={r.free} />
-                                <CCell value={r.plus} hl tone="plus" accent={PT.azul} />
-                                <CCell value={r.aura} hl tone="aura" accent={cat.auraOnly || r.aura_only ? PT.red : PT.ink} />
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {cat.note && (
-                <div
-                    className="px-5 sm:px-6 py-3"
-                    style={{
-                        background: "rgba(255,204,41,0.10)",
-                        borderTop: "1px solid rgba(10,10,10,0.06)",
-                    }}
-                >
-                    <p
-                        className="text-[12.5px] leading-relaxed flex items-start gap-2 font-medium"
-                        style={{ color: "rgba(10,10,10,0.75)" }}
-                    >
-                        <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.2} style={{ color: PT.ink }} />
-                        <span>{cat.note}</span>
-                    </p>
-                </div>
-            )}
-        </div>
-    );
-}
-
-/* ═══════════════════════════════════════════════════
-   HIERARQUIA VISUAL
-   ─────────────────
-   Nível 1 — PLANOS (herói)
-   Nível 2 — DEEP-DIVE por categoria (verdade detalhada)
-   Nível 3 — COMPARAÇÃO compacta (referência rápida)
-   Nível 4 — PRINCÍPIOS (camada emocional)
-   Nível 5 — TRANSPARÊNCIA + CONFIANÇA
-   Nível 6 — FAQ
-   ═══════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   PAGE
+   ════════════════════════════════════════════════════════════════════ */
 export default function Premium() {
     const { plan, tiers, billing_available, isPlus, isAura, checkout, openPortal } = usePremium();
     const [interval, setInterval] = useState("month");
@@ -597,53 +377,114 @@ export default function Premium() {
     };
 
     return (
-        <PtPageShell testid="premium-page">
-            <PageHeader title="Plus & Aura" back />
-
-            {/* ──────────────────────────────────────────
-                NÍVEL 1 — PLANOS (herói)
-                ────────────────────────────────────────── */}
-            <section className="px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-20 sm:pb-24 max-w-6xl mx-auto">
-                <div className="max-w-2xl mx-auto text-center mb-8 sm:mb-12">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 mb-5"
-                        style={{
-                            background: "#fff",
-                            color: "rgba(10,10,10,0.62)",
-                            border: "1px solid rgba(10,10,10,0.08)",
-                            borderRadius: 999,
-                        }}
-                    >
+        <div data-testid="premium-page" className="relative" style={{ background: PT.cream, minHeight: "100vh" }}>
+            {/* ─────────────────────────────────────────────────────────────
+                DESKTOP MASTHEAD — Lusorae Editorial · premium (gold accent)
+                ───────────────────────────────────────────────────────────── */}
+            <div
+                className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
+                style={{
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+                data-testid="premium-header"
+            >
+                <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
                         <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
                         </span>
-                        <span className="font-mono text-[10.5px] uppercase font-bold" style={{ letterSpacing: "0.20em" }}>Disponível agora</span>
+                        LUSORAE · PREMIUM · PLUS &amp; AURA
+                    </span>
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
+                        <span>SEM ANÚNCIOS</span>
+                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
+                        <span>SEM ALGORITMO MANIPULADO</span>
+                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
+                        <span style={{ color: PT.gold }}>14 DIAS DE GARANTIA</span>
+                    </span>
+                </div>
+                <div className="px-7 pt-7 pb-5 relative z-10">
+                    <div className="flex items-center gap-2.5 mb-3.5">
+                        <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                            Premium · Edição limitada
+                        </span>
+                        <span style={{ color: "rgba(10,10,10,0.18)" }}>—</span>
+                        <span className="font-mono text-[10.5px] font-bold uppercase inline-flex items-center gap-1.5" style={{ letterSpacing: "0.16em", color: PT.azul }}>
+                            <Crown size={11} strokeWidth={2.6} />
+                            o que aprofunda a tua presença
+                        </span>
                     </div>
                     <h1
-                        className="font-black tracking-[-0.035em] leading-[1.0] mb-5"
-                        style={{ fontSize: "clamp(34px, 5.5vw, 60px)", color: PT.ink }}
+                        className="font-black tracking-[-0.045em] leading-[0.94]"
+                        style={{ fontSize: "clamp(48px, 5.4vw, 64px)", color: PT.ink }}
                     >
-                        Escolhe o plano{" "}
+                        Plus{" "}
+                        <span style={{ color: "rgba(10,10,10,0.28)" }}>&amp;</span>{" "}
                         <span className="relative inline-block">
                             <span
                                 aria-hidden
                                 className="absolute pointer-events-none"
                                 style={{
-                                    left: -3, right: -3, bottom: "0.06em", height: "0.42em",
-                                    background: `${PT.gold}66`, zIndex: 0, borderRadius: 2,
+                                    left: -4, right: -4, bottom: "0.06em", height: "0.46em",
+                                    background: `${PT.gold}88`, zIndex: 0, borderRadius: 3,
                                 }}
                             />
-                            <span className="relative z-10">certo</span>
-                        </span>{" "}
-                        para ti.
+                            <span className="relative z-10">Aura</span>
+                        </span>
+                        <span style={{ color: PT.gold }}>.</span>
                     </h1>
-                    <p className="text-[15px] sm:text-[17px] leading-relaxed max-w-lg mx-auto font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
-                        Sem anúncios. Sem algoritmos manipulados. Apenas ferramentas que aprofundam a tua presença — ao teu ritmo.
+                    <p className="text-[15px] mt-3.5 font-medium max-w-[48ch]" style={{ color: "rgba(10,10,10,0.62)", lineHeight: 1.45 }}>
+                        Sem anúncios. Sem algoritmos manipulados. Apenas ferramentas que
+                        {" "}<strong style={{ color: PT.ink, fontWeight: 700 }}>aprofundam a tua presença</strong>{" "}
+                        — ao teu ritmo, sem competir com ninguém.
                     </p>
                 </div>
+            </div>
 
-                {/* Toggle — estilo fanzine PT */}
-                <div className="flex justify-center mb-10 sm:mb-14">
+            {/* ─────────────────────────────────────────────────────────────
+                MOBILE MASTHEAD
+                ───────────────────────────────────────────────────────────── */}
+            <div
+                className="lg:hidden sticky z-30 backdrop-blur"
+                style={{
+                    top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
+                    background: "rgba(247,245,239,0.94)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+            >
+                <div className="px-4 pt-3 pb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                        </span>
+                        <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
+                            Premium · Edição limitada
+                        </span>
+                    </div>
+                    <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 30, color: PT.ink }}>
+                        Plus <span style={{ color: "rgba(10,10,10,0.28)" }}>&amp;</span>{" "}
+                        <span className="relative inline-block">
+                            <span
+                                aria-hidden
+                                className="absolute pointer-events-none"
+                                style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 2 }}
+                            />
+                            <span className="relative z-10">Aura</span>
+                        </span>
+                        <span style={{ color: PT.gold }}>.</span>
+                    </h1>
+                </div>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 1 — PLANOS · pricing
+                ───────────────────────────────────────────────────────────── */}
+            <section className="px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-16 sm:pb-20 max-w-6xl mx-auto">
+                {/* Billing toggle */}
+                <div className="flex justify-center mb-10 sm:mb-12">
                     <div className="inline-flex items-center gap-0 p-1"
                         style={{
                             background: "#fff",
@@ -656,18 +497,19 @@ export default function Premium() {
                             const active = interval === i;
                             return (
                                 <button key={i} onClick={() => setInterval(i)}
-                                    className="px-5 sm:px-7 h-9 text-[13px] font-bold transition-all duration-200"
+                                    data-testid={`premium-interval-${i}`}
+                                    className="px-5 sm:px-7 h-9 text-[12.5px] font-black uppercase transition-all duration-200"
                                     style={{
                                         background: active ? `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)` : "transparent",
                                         color: active ? "#fff" : PT.ink,
                                         borderRadius: 999,
-                                        letterSpacing: "-0.005em",
+                                        letterSpacing: "0.14em",
                                         boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 16px -8px rgba(10,10,10,0.30)" : "none",
                                     }}
                                 >
                                     {i === "month" ? "Mensal" : "Anual"}
                                     {i === "year" && (
-                                        <span className="ml-2 font-mono text-[10px] font-bold uppercase" style={{ color: active ? "#A7E5BE" : PT.green, letterSpacing: "0.12em" }}>
+                                        <span className="ml-2 font-mono text-[9.5px] font-bold uppercase" style={{ color: active ? PT.gold : PT.green, letterSpacing: "0.16em" }}>
                                             -17%
                                         </span>
                                     )}
@@ -677,66 +519,65 @@ export default function Premium() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 lg:gap-8 max-w-[1080px] mx-auto items-start">
-                    <TierCard tier="plus" name="Plus" subtitle="Presença elevada"
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 lg:gap-8 max-w-[1080px] mx-auto items-start">
+                    <TierCard
+                        tier="plus" name="Plus" subtitle="Presença elevada"
                         tagline="Para quem quer personalizar a experiência. Mais expressão, mais controlo, mais conforto no dia-a-dia."
                         price={prices.plus} interval={interval} features={PLUS_FEATURES}
                         current={isPlus} billingAvailable={billing_available}
                         onSubscribe={subscribe} onManage={manage}
                         accent={PT.azul}
                     />
-                    <TierCard tier="aura" name="Aura" subtitle="A experiência definitiva"
+                    <TierCard
+                        tier="aura" name="Aura" subtitle="A experiência definitiva"
                         tagline="Tudo do Plus, mais uma camada de profundidade. O teu perfil ganha vida — adapta-se a ti, à hora e ao momento."
                         price={prices.aura} interval={interval} features={AURA_FEATURES}
                         current={isAura} billingAvailable={billing_available}
                         onSubscribe={subscribe} onManage={manage}
                         accent={PT.gold}
                         isRecommended
-                        scale="lg:-mt-4"
                     />
                 </div>
 
                 {plan !== "free" && (
-                    <p className="text-[12px] text-black/35 text-center mt-8 font-medium">
-                        Subscrição ativa &middot; gere pagamentos, faturas e cancelamento no portal seguro
+                    <p className="text-[12px] text-center mt-8 font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.42)", letterSpacing: "0.14em" }}>
+                        Subscrição ativa · gere pagamentos, faturas e cancelamento no portal seguro
                     </p>
                 )}
 
-                {/* Trust strip — confiança imediata */}
+                {/* Trust strip */}
                 <div className="mt-12 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-3xl mx-auto">
                     {[
-                        { icon: Shield,   t: "14 dias",        s: "garantia total", c: PT.green },
-                        { icon: Lock,     t: "Pagamento",      s: "via Stripe", c: PT.azul },
-                        { icon: MapPin,   t: "Portugal",       s: "feito por nós", c: PT.red },
-                        { icon: Heart,    t: "Sem anúncios",   s: "nunca", c: PT.gold },
-                    ].map((t, i) => {
-                        const Ic = t.icon;
+                        { icon: Shield,   t: "14 dias",      s: "garantia total",  c: PT.green },
+                        { icon: Lock,     t: "Pagamento",    s: "via Stripe",      c: PT.azul },
+                        { icon: MapPin,   t: "Portugal",     s: "feito por nós",   c: PT.ink },
+                        { icon: Heart,    t: "Sem anúncios", s: "nunca",           c: PT.gold },
+                    ].map((tr, i) => {
+                        const Ic = tr.icon;
                         return (
                             <div
                                 key={i}
-                                className="p-3 sm:p-3.5 flex items-center gap-2.5"
+                                className="p-3.5 flex items-center gap-2.5 transition hover:translate-y-[-1px]"
                                 style={{
                                     background: "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 10px 24px -14px ${t.c}55, 0 8px 20px -10px rgba(10,10,10,0.10)`,
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 14px 28px -16px ${tr.c}55`,
                                     borderRadius: 14,
                                 }}
                             >
                                 <div
                                     className="w-9 h-9 grid place-items-center flex-shrink-0"
                                     style={{
-                                        background: t.c,
-                                        color: t.c === PT.gold ? PT.ink : "#fff",
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        borderRadius: 8,
+                                        background: tr.c,
+                                        color: tr.c === PT.gold ? PT.ink : "#fff",
+                                        borderRadius: 10,
                                     }}
                                 >
-                                    <Ic size={14} strokeWidth={2.4} />
+                                    <Ic size={15} strokeWidth={2.4} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[12.5px] font-black leading-tight" style={{ color: PT.ink }}>{t.t}</p>
-                                    <p className="text-[10.5px] font-mono font-bold uppercase leading-tight" style={{ color: "rgba(10,10,10,0.5)", letterSpacing: "0.04em" }}>{t.s}</p>
+                                    <p className="text-[12.5px] font-black leading-tight tracking-tight" style={{ color: PT.ink }}>{tr.t}</p>
+                                    <p className="text-[10.5px] font-mono font-bold uppercase leading-tight mt-0.5" style={{ color: "rgba(10,10,10,0.5)", letterSpacing: "0.08em" }}>{tr.s}</p>
                                 </div>
                             </div>
                         );
@@ -744,144 +585,147 @@ export default function Premium() {
                 </div>
             </section>
 
-            {/* ──────────────────────────────────────────
-                NÍVEL 2 — DEEP-DIVE por categoria
-                Conteúdo verdadeiro: limites reais, features reais
-                ────────────────────────────────────────── */}
-            <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 2 — A TABELA · UMA SÓ, TUDO LADO A LADO
+                ───────────────────────────────────────────────────────────── */}
+            <section style={{ background: "#fff", borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-5xl mx-auto">
-                    <div className="mb-10 sm:mb-14 max-w-2xl">
-                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            O QUE RECEBES
+                    <div className="mb-10 sm:mb-12 max-w-2xl">
+                        <p className="font-mono font-black uppercase mb-3 inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.azul }}>
+                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.azul }} />
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.azul }} />
+                            </span>
+                            A tabela
                         </p>
                         <h2
-                            className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
-                            style={{ fontSize: "clamp(28px, 4.5vw, 46px)", color: PT.ink }}
+                            className="font-black tracking-[-0.035em] leading-[0.98] mb-4"
+                            style={{ fontSize: "clamp(32px, 5vw, 50px)", color: PT.ink }}
                         >
                             Tudo o que muda{" "}
-                            <Highlight color={PT.gold}>no Plus e no Aura.</Highlight>
+                            <span className="relative inline-block">
+                                <span
+                                    aria-hidden
+                                    className="absolute pointer-events-none"
+                                    style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 3 }}
+                                />
+                                <span className="relative z-10">lado a lado</span>
+                            </span>
+                            <span style={{ color: PT.gold }}>.</span>
                         </h2>
                         <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
-                            Seis categorias. Limites reais. Sem letras pequenas. Cada linha aqui é uma feature efetivamente implementada — não é marketing.
-                        </p>
-                    </div>
-
-                    <div className="space-y-5 sm:space-y-6">
-                        {CATEGORIES.map((cat, i) => (
-                            <CategoryCard key={cat.id} cat={cat} index={i} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ──────────────────────────────────────────
-                NÍVEL 3 — COMPARAÇÃO compacta (referência rápida)
-                ────────────────────────────────────────── */}
-            <section>
-                <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-4xl mx-auto">
-                    <div className="mb-8 sm:mb-10 max-w-2xl">
-                        <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
-                            Comparação rápida
-                        </p>
-                        <h2
-                            className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
-                            style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
-                        >
-                            Lado a lado,{" "}
-                            <Highlight color={PT.azul}>num só sítio</Highlight>
-                        </h2>
-                        <p className="text-[14px] sm:text-[15.5px] max-w-xl leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
-                            Os mesmos valores que vês acima, condensados. Para quando só queres comparar e decidir.
+                            Uma única tabela. Sete categorias. Limites reais.
+                            {" — "}
+                            <strong style={{ color: PT.ink, fontWeight: 700 }}>sem letras pequenas</strong>.
+                            Cada linha aqui é uma feature efetivamente implementada.
                         </p>
                     </div>
 
                     <div className="overflow-x-auto -mx-4 sm:mx-0">
-                        <div className="min-w-[600px] sm:min-w-0 px-4 sm:px-0">
+                        <div className="min-w-[680px] sm:min-w-0 px-4 sm:px-0">
                             <div
                                 className="overflow-hidden"
                                 style={{
                                     background: "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    borderRadius: 20,
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 24px 50px -25px rgba(10,10,10,0.18), 0 10px 24px -14px rgba(10,10,10,0.10)",
+                                    borderRadius: 24,
                                 }}
+                                data-testid="premium-comparison-table"
                             >
                                 <table className="w-full text-[13px] sm:text-[14px]">
-                                    <thead>
+                                    <thead className="sticky top-0 z-10">
                                         <tr style={{ background: PT.ink, borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                                             <th
-                                                className="text-left py-3.5 px-4 sm:px-5 font-mono font-black uppercase w-[44%]"
-                                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.gold }}
+                                                className="text-left py-4 px-5 sm:px-6 font-mono font-black uppercase w-[42%]"
+                                                style={{ fontSize: 10.5, letterSpacing: "0.18em", color: PT.gold }}
                                             >
                                                 Funcionalidade
                                             </th>
                                             <th
-                                                className="text-center py-3.5 px-2 font-mono font-black uppercase w-[18%]"
-                                                style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "rgba(255,255,255,0.65)" }}
+                                                className="text-center py-4 px-2 font-mono font-black uppercase w-[18%]"
+                                                style={{ fontSize: 10.5, letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}
                                             >
                                                 Grátis
                                             </th>
-                                            <th className="text-center py-3 px-2 w-[19%]">
+                                            <th className="text-center py-3 px-2 w-[20%]">
                                                 <span
-                                                    className="inline-block font-black uppercase"
+                                                    className="inline-flex items-center gap-1.5 font-mono font-black uppercase"
                                                     style={{
                                                         background: PT.azul,
                                                         color: "#fff",
-                                                        border: "1px solid rgba(10,10,10,0.10)",
-                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                        padding: "3px 10px",
-                                                        borderRadius: 6,
-                                                        fontSize: 11,
-                                                        letterSpacing: "0.12em",
+                                                        padding: "5px 12px",
+                                                        borderRadius: 999,
+                                                        fontSize: 10.5,
+                                                        letterSpacing: "0.22em",
+                                                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(0,63,135,0.55)",
                                                     }}
                                                 >
+                                                    <Sparkles size={11} strokeWidth={2.6} />
                                                     Plus
                                                 </span>
                                             </th>
-                                            <th className="text-center py-3 px-2 w-[19%]">
+                                            <th className="text-center py-3 px-2 w-[20%]">
                                                 <span
-                                                    className="inline-block font-bold uppercase"
+                                                    className="inline-flex items-center gap-1.5 font-mono font-black uppercase"
                                                     style={{
-                                                        background: "rgba(255,204,41,0.20)",
+                                                        background: PT.gold,
                                                         color: PT.ink,
-                                                        padding: "3px 10px",
+                                                        padding: "5px 12px",
                                                         borderRadius: 999,
-                                                        fontSize: 11,
-                                                        letterSpacing: "0.18em",
+                                                        fontSize: 10.5,
+                                                        letterSpacing: "0.22em",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.10), 0 10px 22px -10px rgba(255,204,41,0.65)",
                                                     }}
                                                 >
+                                                    <Crown size={11} strokeWidth={2.6} />
                                                     Aura
                                                 </span>
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {COMPARISON.map((r, i) => {
-                                            if (r.group) return <GroupRow key={`g-${i}`} label={r.group} />;
+                                        {TABLE.map((r, i) => {
+                                            if (r.group) return <GroupRow key={`g-${i}`} label={r.group} subtitle={r.subtitle} auraOnly={r.auraOnly} />;
                                             const Icon = r.icon;
+                                            const isLast = i === TABLE.length - 1 || !!TABLE[i + 1]?.group;
                                             return (
-                                                <tr
-                                                    key={i}
-                                                    style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}
-                                                >
-                                                    <td className="py-3 px-4 sm:px-5">
+                                                <tr key={i} style={{ borderBottom: isLast ? "none" : "1px solid rgba(10,10,10,0.06)" }} className="hover:bg-[rgba(10,10,10,0.015)] transition">
+                                                    <td className="py-3 px-5 sm:px-6">
                                                         <div className="flex items-center gap-2.5">
                                                             <span
                                                                 className="w-7 h-7 grid place-items-center flex-shrink-0 hidden sm:grid"
                                                                 style={{
                                                                     background: PT.cream,
-                                                                    border: "1px solid rgba(10,10,10,0.10)",
-                                                                    borderRadius: 6,
+                                                                    border: "1px solid rgba(10,10,10,0.08)",
+                                                                    borderRadius: 8,
+                                                                    color: r.auraOnly ? PT.gold : "rgba(10,10,10,0.62)",
                                                                 }}
                                                             >
-                                                                <Icon size={13} style={{ color: PT.ink }} strokeWidth={2.4} />
+                                                                <Icon size={13} strokeWidth={2.2} />
                                                             </span>
                                                             <span className="font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>{r.label}</span>
+                                                            {r.auraOnly && (
+                                                                <span
+                                                                    className="inline-block font-mono font-black uppercase"
+                                                                    style={{
+                                                                        background: "rgba(255,204,41,0.18)",
+                                                                        color: PT.ink,
+                                                                        padding: "2px 7px",
+                                                                        borderRadius: 999,
+                                                                        fontSize: 9,
+                                                                        letterSpacing: "0.18em",
+                                                                    }}
+                                                                    title="Exclusivo Aura"
+                                                                >
+                                                                    Aura
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <CCell value={r.free} />
                                                     <CCell value={r.plus} hl tone="plus" accent={PT.azul} />
-                                                    <CCell value={r.aura} hl tone="aura" accent={PT.red} />
+                                                    <CCell value={r.aura} hl tone="aura" accent={r.auraOnly ? PT.gold : PT.ink} auraOnly={r.auraOnly} />
                                                 </tr>
                                             );
                                         })}
@@ -890,62 +734,72 @@ export default function Premium() {
                             </div>
                         </div>
                     </div>
+
+                    <p className="text-[12px] mt-4 font-mono font-bold uppercase text-center" style={{ color: "rgba(10,10,10,0.42)", letterSpacing: "0.14em" }}>
+                        ✦ Marcadas como Aura — exclusivas do plano superior
+                    </p>
                 </div>
             </section>
 
-            {/* ──────────────────────────────────────────
-                NÍVEL 4 — PRINCÍPIOS (camada emocional)
-                ────────────────────────────────────────── */}
-            <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 3 — PRINCÍPIOS
+                ───────────────────────────────────────────────────────────── */}
+            <section style={{ background: PT.cream }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-12 max-w-2xl">
                         <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
                             Princípios
                         </p>
                         <h2
-                            className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
-                            style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
+                            className="font-black tracking-[-0.035em] leading-[0.98] mb-3"
+                            style={{ fontSize: "clamp(28px, 4.4vw, 44px)", color: PT.ink }}
                         >
                             O que torna este{" "}
-                            <Highlight color={PT.green}>premium diferente</Highlight>
+                            <span className="relative inline-block">
+                                <span aria-hidden className="absolute pointer-events-none" style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.azul}33`, zIndex: 0, borderRadius: 3 }} />
+                                <span className="relative z-10">premium diferente</span>
+                            </span>
+                            <span style={{ color: PT.azul }}>.</span>
                         </h2>
                         <p className="text-[14px] sm:text-[15.5px] max-w-lg leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
-                            Não vendemos atenção, alcance ou prioridade. O premium existe para te dar mais conforto — nunca mais poder.
+                            Não vendemos atenção, alcance ou prioridade. O premium existe para te dar mais
+                            {" "}<strong style={{ color: PT.ink, fontWeight: 700 }}>conforto</strong>{" "}— nunca mais poder.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                         {[
-                            { icon: Heart,  title: "Pertença real",     desc: "O premium não cria classes. A comunidade é uma só. As ferramentas premium aprofundam a tua experiência sem afetar a dos outros.", c: PT.azul,  iconWhite: true },
-                            { icon: Shield, title: "Sem distrações",    desc: "Controlo total sobre o que vês e quando. Feed calmo, filtros sociais e de energia, presença ao teu ritmo. Sem dark patterns.", c: PT.red,   iconWhite: true },
-                            { icon: Star,   title: "Identidade única",  desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.", c: PT.gold,  iconWhite: false },
+                            { icon: Heart,  title: "Pertença real",     desc: "O premium não cria classes. A comunidade é uma só. As ferramentas premium aprofundam a tua experiência sem afetar a dos outros.", c: PT.azul },
+                            { icon: Shield, title: "Sem distrações",    desc: "Controlo total sobre o que vês e quando. Feed calmo, filtros sociais e de energia, presença ao teu ritmo. Sem dark patterns.", c: PT.ink },
+                            { icon: Star,   title: "Identidade única",  desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.", c: PT.gold },
                         ].map((item, idx) => {
                             const Icon = item.icon;
                             return (
                                 <div
                                     key={idx}
-                                    className="p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1"
+                                    className="p-6 h-full transition-transform duration-200 hover:-translate-y-1"
                                     style={{
                                         background: "#fff",
-                                        border: "1px solid rgba(10,10,10,0.06)",
-                                        boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${item.c}55, 0 6px 18px -10px rgba(10,10,10,0.10)`,
-                                        borderRadius: 18,
+                                        border: "1px solid rgba(10,10,10,0.08)",
+                                        boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 22px 44px -22px ${item.c}55, 0 6px 18px -10px rgba(10,10,10,0.10)`,
+                                        borderRadius: 20,
                                     }}
                                 >
                                     <div
-                                        className="w-11 h-11 grid place-items-center mb-4"
+                                        className="w-12 h-12 grid place-items-center mb-4"
                                         style={{
-                                            background: `${item.c}18`,
-                                            color: item.c,
+                                            background: item.c,
+                                            color: item.c === PT.gold ? PT.ink : "#fff",
                                             borderRadius: 12,
+                                            boxShadow: `0 1px 2px rgba(10,10,10,0.06), 0 10px 22px -10px ${item.c}80`,
                                         }}
                                     >
-                                        <Icon size={18} strokeWidth={2.0} />
+                                        <Icon size={20} strokeWidth={2.0} />
                                     </div>
-                                    <h3 className="font-black text-[16px] sm:text-[17px] mb-2 tracking-tight leading-tight" style={{ color: PT.ink }}>
+                                    <h3 className="font-black text-[17px] sm:text-[18px] mb-2 tracking-[-0.02em] leading-tight" style={{ color: PT.ink }}>
                                         {item.title}
                                     </h3>
-                                    <p className="text-[13px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
+                                    <p className="text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                                         {item.desc}
                                     </p>
                                 </div>
@@ -955,81 +809,68 @@ export default function Premium() {
                 </div>
             </section>
 
-            {/* ──────────────────────────────────────────
-                NÍVEL 5 — TRANSPARÊNCIA (o que NÃO faz)
-                ────────────────────────────────────────── */}
-            <section>
-                <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 max-w-3xl mx-auto">
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 4 — TRANSPARÊNCIA · o que o premium NÃO faz
+                ───────────────────────────────────────────────────────────── */}
+            <section style={{ background: "#fff", borderTop: "1px solid rgba(10,10,10,0.10)" }}>
+                <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-3xl mx-auto">
                     <div
-                        className="relative p-5 sm:p-8"
+                        className="relative p-6 sm:p-9"
                         style={{
-                            background: "#fff",
-                            border: `3.5px solid ${PT.ink}`,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 22,
+                            background: PT.cream,
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 22px 44px -22px rgba(10,10,10,0.18), 0 8px 22px -12px rgba(10,10,10,0.10)",
+                            borderRadius: 24,
                         }}
                     >
-                        {/* corner stamp */}
-                        <div
-                            className="absolute -top-4 -right-3 px-3 py-1 font-mono font-black uppercase"
-                            style={{
-                                background: PT.red,
-                                color: "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                fontSize: 10,
-                                letterSpacing: "0.14em",
-                                borderRadius: 6,
-                                zIndex: 2,
-                            }}
-                        >
-                            TRANSPARÊNCIA
-                        </div>
-
-                        <div className="flex items-start gap-3 mb-5">
-                            <div
-                                className="w-11 h-11 grid place-items-center flex-shrink-0"
+                        <div className="absolute -top-3 left-7">
+                            <span
+                                className="inline-block font-mono font-black uppercase"
                                 style={{
-                                    background: PT.azul,
-                                    color: "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    borderRadius: 10,
+                                    background: PT.ink,
+                                    color: PT.gold,
+                                    padding: "5px 14px",
+                                    borderRadius: 999,
+                                    fontSize: 10,
+                                    letterSpacing: "0.22em",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 10px 22px -10px rgba(10,10,10,0.40)",
                                 }}
                             >
-                                <Info size={19} strokeWidth={2.4} />
-                            </div>
-                            <div>
-                                <h2
-                                    className="font-black tracking-[-0.025em] leading-[1.05] mt-1"
-                                    style={{ fontSize: "clamp(22px, 3.5vw, 34px)", color: PT.ink }}
-                                >
-                                    O que o premium{" "}
-                                    <Highlight color={PT.gold}>não faz</Highlight>
-                                </h2>
-                            </div>
+                                ✦ Transparência radical
+                            </span>
                         </div>
 
-                        <p className="text-[13.5px] sm:text-[14.5px] leading-relaxed mb-5 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        <h2
+                            className="font-black tracking-[-0.03em] leading-[1.0] mt-4 mb-4"
+                            style={{ fontSize: "clamp(24px, 3.8vw, 36px)", color: PT.ink }}
+                        >
+                            O que o premium{" "}
+                            <span className="relative inline-block">
+                                <span aria-hidden className="absolute pointer-events-none" style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 3 }} />
+                                <span className="relative z-10">não faz</span>
+                            </span>
+                            <span style={{ color: PT.gold }}>.</span>
+                        </h2>
+
+                        <p className="text-[14px] sm:text-[15px] leading-relaxed mb-6 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Dizemos-te exactamente o que o premium nunca vai fazer — para que saibas exactamente o que estás a pagar.
                         </p>
 
-                        <div className="space-y-2.5 mb-5">
+                        <div className="space-y-2.5 mb-6">
                             {[
                                 { bold: "Sem alcance extra", rest: " — não te dá mais visibilidade, prioridade no feed ou destaque nas tendências." },
                                 { bold: "Sem algoritmo diferente", rest: " — o teu conteúdo é tratado exactamente como o de qualquer outro utilizador." },
                                 { bold: "Sem remoção de anúncios", rest: " — porque o Lusorae não tem anúncios. Ponto." },
                                 { bold: "Sem hierarquia social", rest: " — não te torna melhor, mais importante ou mais visível que os outros." },
-                                { bold: "Sem badges de prestígio", rest: " — o único distintivo é o de Early Supporter, e é discreto. Não há troféus, leaderboards ou classes." },
-                            ].map((t, i) => (
+                                { bold: "Sem badges de prestígio", rest: " — o único distintivo é o de Early Supporter, e é discreto. Sem troféus, leaderboards ou classes." },
+                            ].map((tr, i) => (
                                 <div
                                     key={i}
-                                    className="flex items-start gap-2.5 p-2.5"
+                                    className="flex items-start gap-3 p-3.5"
                                     style={{
-                                        background: PT.cream,
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        borderRadius: 10,
+                                        background: "#fff",
+                                        border: "1px solid rgba(10,10,10,0.06)",
+                                        borderRadius: 12,
                                     }}
                                 >
                                     <div
@@ -1037,29 +878,32 @@ export default function Premium() {
                                         style={{
                                             background: PT.green,
                                             color: "#fff",
-                                            border: "1px solid rgba(10,10,10,0.10)",
-                                            borderRadius: 6,
+                                            borderRadius: 999,
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 6px 14px -8px rgba(4,106,56,0.55)",
                                         }}
                                     >
                                         <Check size={12} strokeWidth={3.2} />
                                     </div>
                                     <p className="text-[13.5px] sm:text-[14px] leading-relaxed" style={{ color: "rgba(10,10,10,0.78)" }}>
-                                        <strong className="font-black" style={{ color: PT.ink }}>{t.bold}</strong>{t.rest}
+                                        <strong className="font-black" style={{ color: PT.ink }}>{tr.bold}</strong>{tr.rest}
                                     </p>
                                 </div>
                             ))}
                         </div>
 
-                        <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 14 }}>
-                            <p className="text-[13px] sm:text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 16 }}>
+                            <p className="text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                                 O premium é conforto, identidade e ferramentas. Nunca é vantagem social.
                             </p>
                             <p
-                                className="mt-2 font-black tracking-tight"
-                                style={{ fontSize: "clamp(15px, 2vw, 17px)", color: PT.ink }}
+                                className="mt-3 font-black tracking-[-0.02em]"
+                                style={{ fontSize: "clamp(16px, 2.2vw, 19px)", color: PT.ink }}
                             >
                                 O tempo que passas aqui é{" "}
-                                <Highlight color={PT.gold}>teu</Highlight>
+                                <span className="relative inline-block">
+                                    <span aria-hidden className="absolute pointer-events-none" style={{ left: -2, right: -2, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 2 }} />
+                                    <span className="relative z-10">teu</span>
+                                </span>
                                 . Não nosso.
                             </p>
                         </div>
@@ -1067,30 +911,25 @@ export default function Premium() {
                 </div>
             </section>
 
-            {/* ──────────────────────────────────────────
-                NÍVEL 6 — FAQ (utilitário)
-                ────────────────────────────────────────── */}
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 5 — FAQ
+                ───────────────────────────────────────────────────────────── */}
             <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)" }}>
-                <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 max-w-2xl mx-auto prem-faq">
-                    <div className="mb-7 sm:mb-9">
-                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            DÚVIDAS
+                <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-20 max-w-2xl mx-auto prem-faq">
+                    <div className="mb-8">
+                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.azul }}>
+                            Dúvidas
                         </p>
                         <h2
-                            className="font-black tracking-[-0.025em] leading-[1.0] mb-2"
-                            style={{ fontSize: "clamp(24px, 3.8vw, 38px)", color: PT.ink }}
+                            className="font-black tracking-[-0.03em] leading-[0.98] mb-2"
+                            style={{ fontSize: "clamp(26px, 4vw, 40px)", color: PT.ink }}
                         >
                             Perguntas{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.azul,
-                                color: "#fff",
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>
-                                frequentes
+                            <span className="relative inline-block">
+                                <span aria-hidden className="absolute pointer-events-none" style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 3 }} />
+                                <span className="relative z-10">frequentes</span>
                             </span>
+                            <span style={{ color: PT.gold }}>.</span>
                         </h2>
                         <p className="text-[13.5px] sm:text-[14.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Respostas directas, sem rodeios.
@@ -1101,20 +940,20 @@ export default function Premium() {
                         {FAQS.map((faq, idx) => (
                             <details
                                 key={idx}
-                                className="group p-4 sm:p-4.5 cursor-pointer"
+                                className="group p-4 sm:p-5 cursor-pointer"
                                 style={{
                                     background: "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    borderRadius: 12,
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 22px -14px rgba(10,10,10,0.10)",
+                                    borderRadius: 14,
                                 }}
                             >
-                                <summary className="flex items-center justify-between font-black text-[14px] sm:text-[15px] list-none" style={{ color: PT.ink }}>
+                                <summary className="flex items-center justify-between font-black text-[14px] sm:text-[15px] list-none tracking-[-0.01em]" style={{ color: PT.ink }}>
                                     <span className="pr-3">{faq.q}</span>
                                     <span
                                         className="w-7 h-7 grid place-items-center flex-shrink-0"
                                         style={{
-                                            background: "rgba(10,10,10,0.05)",
+                                            background: "rgba(10,10,10,0.04)",
                                             color: PT.ink,
                                             borderRadius: 999,
                                         }}
@@ -1133,21 +972,29 @@ export default function Premium() {
                 </div>
             </section>
 
-            {/* ──────────────────────────────────────────
-                CTA FINAL — re-engajamento discreto
-                ────────────────────────────────────────── */}
+            {/* ─────────────────────────────────────────────────────────────
+                NÍVEL 6 — CTA FINAL (apenas para utilizadores free)
+                ───────────────────────────────────────────────────────────── */}
             {plan === "free" && billing_available && (
                 <section style={{ background: PT.ink }}>
                     <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-3xl mx-auto text-center">
-                        <p className="font-mono font-black uppercase mb-4" style={{ fontSize: 10.5, letterSpacing: "0.18em", color: PT.gold }}>
-                            PRÓXIMO PASSO
+                        <p className="font-mono font-black uppercase mb-4 inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.gold }}>
+                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                            </span>
+                            Próximo passo
                         </p>
                         <h3
-                            className="font-black tracking-[-0.03em] leading-[1.0] mb-4"
-                            style={{ fontSize: "clamp(26px, 4.5vw, 46px)", color: "#fff" }}
+                            className="font-black tracking-[-0.035em] leading-[0.98] mb-4"
+                            style={{ fontSize: "clamp(28px, 4.8vw, 48px)", color: "#fff" }}
                         >
                             Pronto para uma{" "}
-                            <Highlight color={PT.gold}>camada mais profunda?</Highlight>
+                            <span className="relative inline-block">
+                                <span aria-hidden className="absolute pointer-events-none" style={{ left: -3, right: -3, bottom: "0.06em", height: "0.42em", background: `${PT.gold}88`, zIndex: 0, borderRadius: 3 }} />
+                                <span className="relative z-10" style={{ color: PT.gold }}>camada mais profunda</span>
+                            </span>
+                            <span style={{ color: PT.gold }}>?</span>
                         </h3>
                         <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-lg mx-auto mb-8 font-medium" style={{ color: "rgba(255,244,220,0.75)" }}>
                             Começa pelo Plus e sobe quando quiseres. Cancelas a qualquer momento — sem perguntas.
@@ -1156,15 +1003,14 @@ export default function Premium() {
                             <button
                                 onClick={() => subscribe("plus", interval)}
                                 data-testid="premium-cta-bottom-plus"
-                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition-transform duration-150 hover:-translate-y-0.5"
+                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition hover:translate-y-[-1px]"
                                 style={{
-                                    background: PT.azul,
+                                    background: "transparent",
                                     color: "#fff",
-                                    border: "1.5px solid rgba(255,255,255,0.25)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                    border: "1.5px solid rgba(255,255,255,0.30)",
                                     borderRadius: 999,
-                                    fontSize: 13,
-                                    letterSpacing: "0.06em",
+                                    fontSize: 12.5,
+                                    letterSpacing: "0.14em",
                                 }}
                             >
                                 Começar com Plus
@@ -1173,35 +1019,35 @@ export default function Premium() {
                             <button
                                 onClick={() => subscribe("aura", interval)}
                                 data-testid="premium-cta-bottom-aura"
-                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition-transform duration-150 hover:-translate-y-0.5"
+                                className="w-full sm:w-auto px-7 h-12 font-black uppercase inline-flex items-center justify-center gap-2 transition hover:translate-y-[-1px]"
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: "1.5px solid rgba(255,255,255,0.25)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
-                                    fontSize: 13,
-                                    letterSpacing: "0.06em",
+                                    fontSize: 12.5,
+                                    letterSpacing: "0.14em",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.10), 0 14px 30px -10px rgba(255,204,41,0.55)",
                                 }}
                             >
                                 <Crown size={15} strokeWidth={2.6} />
                                 Saltar para Aura
                             </button>
                         </div>
-                        <p className="text-[11.5px] mt-6 font-mono font-bold uppercase" style={{ color: "rgba(255,244,220,0.5)", letterSpacing: "0.06em" }}>
-                            14 dias de garantia &middot; Cancelas quando quiseres &middot; Sem letras pequenas
+                        <p className="text-[11px] mt-7 font-mono font-bold uppercase" style={{ color: "rgba(255,244,220,0.5)", letterSpacing: "0.18em" }}>
+                            14 dias de garantia · cancelas quando quiseres · sem letras pequenas
                         </p>
                     </div>
                 </section>
             )}
 
             {!billing_available && (
-                <div className="px-4 py-8 text-center" style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.08)" }}>
-                    <p className="text-[11px] font-mono font-black uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.12em" }}>
+                <div className="px-4 py-10 text-center" style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.08)" }}>
+                    <p className="text-[11px] font-mono font-black uppercase inline-flex items-center gap-1.5" style={{ color: "rgba(10,10,10,0.42)", letterSpacing: "0.22em" }}>
+                        <Info size={12} strokeWidth={2.4} />
                         Sistema de pagamentos a ser ativado em breve
                     </p>
                 </div>
             )}
-        </PtPageShell>
+        </div>
     );
 }
