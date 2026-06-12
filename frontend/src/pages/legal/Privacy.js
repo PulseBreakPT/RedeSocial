@@ -46,6 +46,7 @@ export default function Privacy() {
                 <li><strong>Privacidade por defeito</strong>, cada novo recurso é lançado com as definições mais protetoras do utilizador como configuração inicial (artigo 25.º do RGPD).</li>
                 <li><strong>Privacy by design</strong>, novas funcionalidades passam por uma análise de impacto interna antes do lançamento; quando o tratamento envolva risco elevado, realizamos uma Avaliação de Impacto sobre a Proteção de Dados (artigo 35.º do RGPD).</li>
                 <li><strong>Minimização real</strong>, não recolhemos &laquo;por garantia&raquo;. Cada campo opcional está identificado como tal.</li>
+                <li><strong>Sem treino de IA não consentido</strong>, em coerência com os <a href="/legal/terms">Termos e Condições</a>, não utilizamos Conteúdo do Utilizador para treino de modelos de inteligência artificial sem o seu consentimento expresso, específico e revogável (artigo 7.º do RGPD).</li>
                 <li><strong>Auditoria interna anual</strong>, revemos finalidades, prazos, subcontratantes e fundamentos legais pelo menos uma vez por ano, em coerência com o sexto dos nossos <a href="/legal/vision">compromissos</a>.</li>
             </ul>
 
@@ -207,6 +208,31 @@ export default function Privacy() {
                 ]}
                 caption="Findo cada prazo, os dados são eliminados de forma irreversível ou anonimizados de forma a impedir a sua reidentificação." />
             </LegalVisualBlock>
+
+            <h2>Sucessão e inatividade</h2>
+            <p>
+                <strong>Inatividade prolongada.</strong> Contas com inatividade superior a <strong>36 meses</strong>{" "}
+                podem ser objeto de procedimento de arquivamento técnico, precedido de aviso ao endereço de e-mail
+                associado e respeitando integralmente os direitos do titular previstos nos artigos 15.º a 22.º do
+                RGPD. O arquivamento não dispensa o cumprimento dos prazos de conservação acima.
+            </p>
+            <p>
+                <strong>Falecimento do Utilizador.</strong> Em caso de falecimento, herdeiros ou pessoas com
+                legitimidade reconhecida podem, mediante prova documental adequada (certidão de óbito e comprovação
+                da legitimidade), solicitar uma das seguintes opções:
+            </p>
+            <ul>
+                <li><strong>Memorialização</strong> da conta, com restrição de novas publicações e preservação do histórico público;</li>
+                <li><strong>Portabilidade</strong> dos Conteúdos em formato estruturado e legível por máquina, nos termos do artigo 20.º do RGPD, quando os dados em causa tenham sido fornecidos pelo titular;</li>
+                <li><strong>Eliminação</strong> da conta e dos Conteúdos, nos termos do artigo 17.º do RGPD.</li>
+            </ul>
+            <p>
+                Os pedidos são endereçados a <a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a> e
+                tratados no prazo geral do artigo 12.º, n.º 3, do RGPD. Quando o falecido tenha deixado{" "}
+                <strong>instruções expressas</strong> sobre o tratamento <em>post mortem</em> dos seus dados
+                (designadamente nos termos do artigo 17.º da Lei n.º 58/2019), essas instruções prevalecem sobre o
+                pedido dos herdeiros, dentro dos limites legais aplicáveis.
+            </p>
 
             <h2>Decisões automatizadas e algoritmos de recomendação</h2>
             <p>

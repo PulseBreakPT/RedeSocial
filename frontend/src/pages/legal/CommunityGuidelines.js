@@ -80,7 +80,7 @@ export default function CommunityGuidelines() {
                 { label: "Desinformação lesiva, em particular sobre saúde pública, integridade eleitoral, emergências", icon: AlertTriangle },
                 { label: "Assédio coordenado (pile-on) dirigido a pessoa identificada",                                icon: UserX },
                 { label: "Doxing, dados pessoais de terceiros sem fundamento legal válido",                            icon: ShieldOff },
-                { label: "Conteúdo gerado por IA passado como humano sem identificação, ou deepfakes enganadores",     icon: Brain },
+                { label: "Conteúdo gerado por IA passado como humano sem identificação, ou deepfakes enganadores. O treino de modelos de IA com Conteúdo dos Utilizadores exige consentimento expresso, nos termos dos Termos e da Política de Privacidade", icon: Brain },
             ]} />
 
             <h2>Conteúdo sensível e etiquetagem</h2>

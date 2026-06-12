@@ -7,7 +7,7 @@
 import { Link } from "react-router-dom";
 import {
     Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
-    Shield, Heart, Users, ArrowRight, Quote,
+    Shield, Heart, Users,
 } from "lucide-react";
 import { LegalShell } from "./legal/LegalShell";
 import { LegalKPIs, LegalRightsGrid, LegalVisualBlock } from "./legal/_visuals";
@@ -157,70 +157,21 @@ export default function Manifesto() {
                 institucionais que dão coerência a todo o Centro Legal.
             </p>
 
-            {/* CTA final, coerente com o estilo dos outros documentos legais */}
-            <div
-                className="not-prose mt-12 mb-6 px-6 sm:px-8 py-7 sm:py-8 relative overflow-hidden"
-                data-testid="manifesto-cta-register-card"
-                style={{
-                    background: `linear-gradient(135deg, ${PT.red} 0%, #B0001F 100%)`,
-                    color: "#fff",
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 32px 64px -28px rgba(200,16,46,0.55), 0 12px 28px -12px rgba(10,10,10,0.18)",
-                    borderRadius: 20,
-                }}
+            <p
+                className="not-prose mt-12 mb-8 text-center text-[14px] font-medium"
+                style={{ color: "rgba(10,10,10,0.55)" }}
             >
-                <div className="absolute -top-2 -right-2 opacity-[0.10] pointer-events-none" aria-hidden>
-                    <Quote size={130} strokeWidth={1} style={{ color: "#fff" }} />
-                </div>
-                <div className="relative z-10">
-                    <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-4 text-[10.5px] font-bold uppercase"
-                        style={{
-                            background: "rgba(255,204,41,0.22)",
-                            color: PT.gold,
-                            borderRadius: 999,
-                            letterSpacing: "0.20em",
-                        }}
-                    >
-                        Se chegaste até aqui
-                    </span>
-                    <h3
-                        className="font-black tracking-[-0.025em] max-w-[26ch] mb-4"
-                        style={{ fontSize: "clamp(22px, 3.6vw, 36px)", lineHeight: 1.08 }}
-                    >
-                        Então já percebeste que isto é diferente.
-                    </h3>
-                    <p className="text-[14px] sm:text-[14.5px] leading-relaxed max-w-[54ch] mb-6 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
-                        Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns. Se um dia mudarmos este
-                        manifesto, vais ser dos primeiros a saber, e a poder ir embora.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Link
-                            to="/register"
-                            data-testid="manifesto-cta-register"
-                            className="inline-flex items-center gap-2 font-bold text-[13.5px] px-5 py-2.5 group transition-transform hover:-translate-y-0.5"
-                            style={{
-                                background: PT.gold,
-                                color: PT.ink,
-                                letterSpacing: "-0.005em",
-                                borderRadius: 999,
-                                boxShadow: "0 12px 30px -12px rgba(255,204,41,0.65), inset 0 1px 0 rgba(255,255,255,0.30)",
-                            }}
-                        >
-                            Criar conta gratuita
-                            <ArrowRight size={15} strokeWidth={2.2} className="group-hover:translate-x-1 transition-transform duration-200" />
-                        </Link>
-                        <Link
-                            to="/login"
-                            data-testid="manifesto-cta-login"
-                            className="inline-flex items-center text-[13px] font-semibold underline underline-offset-4 decoration-[1.5px]"
-                            style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "-0.005em", textDecorationColor: "rgba(255,255,255,0.30)" }}
-                        >
-                            Já tenho conta
-                        </Link>
-                    </div>
-                </div>
-            </div>
+                Se este manifesto soa a algo que valha a pena experimentar,{" "}
+                <Link
+                    to="/register"
+                    data-testid="manifesto-cta-register"
+                    className="font-bold underline underline-offset-4 decoration-[2px]"
+                    style={{ color: PT.red, textDecorationColor: "rgba(200,16,46,0.35)" }}
+                >
+                    podes criar conta aqui
+                </Link>
+                {" "}<span aria-hidden>→</span>
+            </p>
         </LegalShell>
     );
 }

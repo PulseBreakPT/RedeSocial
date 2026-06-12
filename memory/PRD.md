@@ -173,4 +173,22 @@ Gaps materiais P1 da auditoria aplicados (com 2 correcções relevantes às pró
 
 **Pendente (próximas sessões):** P2 (9 itens de coerência), P3 (6 páginas novas).
 
+## Centro Legal — P2 Concluído (Jun 12, 2026) ✅
+8 itens P2 da auditoria aplicados (P2.2 fica como P3 — pagina /legal/copyright dedicada). 5 profissões orientadoras: UX writer, advogado direito digital, DPO, information architect, anti-dark-pattern designer.
+
+- **P2.1 — Inatividade & Sucessão migradas Terms → Privacy**: secção H2 em `Terms.js` reduzida a 1 parágrafo+link; nova secção #10 "Sucessão e inatividade" em `Privacy.js` entre "Prazos de conservação" e "Decisões automatizadas", com 3 opções claras (memorialização, portabilidade art. 20.º RGPD, eliminação art. 17.º RGPD) + cláusula sobre instruções *post mortem* (art. 17.º Lei n.º 58/2019).
+- **P2.3 — Sobreposição Manifesto vs Vision**: nota introdutória adicionada em `Vision.js` §3 ("Os seis compromissos") clarificando que Vision = enquadramento institucional, Manifesto = tradução operacional (regras de engenharia concretas).
+- **P2.4 — Categoria Marketing em `Cookies.js`**: reformulada para "Reservada, sem cookies desta categoria", com compromisso de 15 dias de antecedência + novo consentimento por categoria + interdição automática a menores (art. 28.º DSA).
+- **P2.5 — Métricas LegalIndex recalculadas**: contagem real de H2 e estimativa a 180 wpm (legal denso). Vision 8·~6min · Manifesto 6·~4min · Terms 22·~14min · Privacy 18·~10min · Cookies 10·~4min · Community 11·~5min.
+- **P2.6 — Cross-ref Treino de IA**: novo princípio em `Privacy.js` ("Sem treino de IA não consentido") + reforço no item IA/deepfakes das `Diretrizes da Comunidade`.
+- **P2.7 — CTA Manifesto suavizado**: removido card vermelho gigante (`manifesto-cta-register-card`) que contradizia o tom anti-marketing; substituído por link inline discreto centrado em prosa cinza com underline vermelho. Mantido `data-testid="manifesto-cta-register"` para testes.
+- **P2.8 — "Sala" e "Conselho de Integridade"**: definição inline reforçada em `Vision.js` ("Sala" = feed oficial sem privilégio algorítmico) + link para `/legal/governance` (página a publicar com a primeira reunião do Conselho).
+- **P2.9 — Cookies analíticos**: removida ênfase em "pseudonimizados" (argumento técnico frágil); mantida formulação factual "IP truncado como medida técnica complementar de minimização".
+
+**Verificado** por screenshots em `/legal` (cards com métricas novas), `/manifesto` (sem card grande, link discreto), `/legal/vision#os-seis-compromissos` (cross-ref Manifesto + link governance) e `/legal/privacy#sucessao-e-inatividade` (nova secção #10 / 18). Lint JS limpo nos 5 ficheiros editados (Vision, Manifesto, Terms, Privacy, Cookies, CommunityGuidelines, LegalIndex). Único lint warning é pré-existente em `LegalShell.js` (set-state-in-effect) — não relacionado.
+
+**Score estimado pós P0+P1+P2:** ~9.5/10 (acima do objetivo da auditoria de 9/10 para "go-live ready").
+
+**Pendente:** P3 (6 páginas novas) + constituição societária externa ao código.
+
 

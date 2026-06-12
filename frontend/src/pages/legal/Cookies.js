@@ -74,15 +74,15 @@ export default function Cookies() {
                         title: "Analíticos",
                         required: false,
                         icon: BarChart3,
-                        desc: "Recolhem informação agregada sobre como o Serviço é utilizado, em primeira-parte e com IP truncado, para identificar falhas e oportunidades de melhoria. Exigem consentimento.",
-                        examples: "vm_analytics (IP truncado, dados pseudonimizados)",
+                        desc: "Recolhem informação agregada sobre como o Serviço é utilizado, em primeira-parte e com IP truncado como medida técnica complementar de minimização, para identificar falhas e oportunidades de melhoria. Exigem consentimento.",
+                        examples: "vm_analytics (primeira-parte, IP truncado)",
                     },
                     {
                         title: "Marketing e publicidade",
                         required: false,
                         icon: Megaphone,
-                        desc: "Apresentar conteúdo publicitário relevante. Exigem consentimento e nunca são exibidos a menores (art. 28.º DSA). Em coerência com o quinto dos nossos compromissos, atualmente não utilizamos cookies desta categoria.",
-                        examples: "Categoria atualmente vazia.",
+                        desc: "Reservada, sem cookies desta categoria nesta versão do Serviço, em coerência com o quinto dos nossos compromissos. Se uma categoria desta natureza vier a ser introduzida no futuro, será comunicada com pelo menos 15 dias de antecedência e exigirá novo consentimento expresso por categoria. Nunca será apresentada a utilizadores reconhecidos ou razoavelmente presumidos como menores (art. 28.º DSA).",
+                        examples: "Sem cookies activos.",
                     },
                 ]} />
             </LegalVisualBlock>
@@ -109,7 +109,7 @@ export default function Cookies() {
                 <LegalTimeline items={[
                     { when: "SESSÃO",   what: "vm_session, vm_csrf",     note: "Eliminados ao fechares o browser ou ao terminar sessão.", tone: "short" },
                     { when: "12 MESES", what: "vm_locale, vm_theme, vm_layout, vm_consent", note: "Preferências funcionais e registo de consentimento.", tone: "medium" },
-                    { when: "13 MESES", what: "vm_analytics",             note: "Só com o teu consentimento. Dados pseudonimizados.",         tone: "long" },
+                    { when: "13 MESES", what: "vm_analytics",             note: "Só com o teu consentimento. Em primeira-parte, com IP truncado.",         tone: "long" },
                 ]}
                 caption="Findo o prazo, o cookie expira automaticamente. Podes apagá-los antes em qualquer altura." />
             </LegalVisualBlock>

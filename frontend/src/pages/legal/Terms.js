@@ -367,16 +367,11 @@ export default function Terms() {
 
             <h2>Inatividade prolongada e sucessão</h2>
             <p>
-                Contas com inatividade superior a <strong>36 meses</strong> podem ser objeto de procedimento de
-                arquivamento técnico, com aviso prévio ao endereço de e-mail associado, sem prejuízo dos direitos
-                de privacidade do titular.
-            </p>
-            <p>
-                Em caso de falecimento do Utilizador, herdeiros ou pessoas com legitimidade reconhecida podem,
-                mediante prova documental adequada (certidão de óbito, comprovação de legitimidade), solicitar:
-                (i) a memorialização da conta, com restrição de novas publicações; (ii) a transferência de Conteúdos
-                em formato portátil, nos termos do artigo 20.º do RGPD; ou (iii) a eliminação da conta. Os pedidos
-                são tratados em <a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a>.
+                O arquivamento técnico de contas com inatividade prolongada, a memorialização ou eliminação da
+                conta em caso de falecimento do Utilizador e o exercício de direitos pelos herdeiros ou pessoas
+                com legitimidade reconhecida seguem o disposto na{" "}
+                <a href="/legal/privacy">Política de Privacidade</a> (secção &laquo;Sucessão e inatividade&raquo;),
+                onde se concentra o tratamento desses dados pessoais.
             </p>
 
             <h2>Reorganizações societárias e cessão</h2>

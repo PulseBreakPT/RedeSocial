@@ -15,7 +15,7 @@ const CARDS = [
         title: "A nossa visão",
         ref: "Fundação",
         desc: "Os seis compromissos institucionais que dão coerência a todos os outros documentos. Leitura recomendada antes de qualquer outra.",
-        meta: "7 secções · ~8 min de leitura",
+        meta: "8 secções · ~6 min de leitura",
         emphasis: true,
         accent: PT.red,
     },
@@ -25,7 +25,7 @@ const CARDS = [
         title: "Manifesto",
         ref: "Anti-dark-pattern",
         desc: "As seis promessas públicas contra os padrões obscuros do habitual. Streaks, notificações sintéticas, read receipts forçados, o que recusamos e porquê.",
-        meta: "6 promessas · ~6 min de leitura",
+        meta: "6 promessas · ~4 min de leitura",
         accent: PT.azul,
     },
     {
@@ -34,7 +34,7 @@ const CARDS = [
         title: "Termos e Condições",
         ref: "Contrato",
         desc: "O contrato entre ti e o Lusorae. Regras de utilização, conta, conteúdos, moderação, suspensão, subscrições e foro competente.",
-        meta: "21 secções · ~14 min de leitura",
+        meta: "22 secções · ~14 min de leitura",
         accent: PT.azul,
     },
     {
@@ -43,7 +43,7 @@ const CARDS = [
         title: "Política de Privacidade",
         ref: "Dados pessoais",
         desc: "Que dados tratamos, com que finalidade e fundamento legal, durante quanto tempo, e quais os teus direitos ao abrigo do RGPD.",
-        meta: "17 secções · ~12 min de leitura",
+        meta: "18 secções · ~10 min de leitura",
         accent: PT.green,
     },
     {
@@ -52,7 +52,7 @@ const CARDS = [
         title: "Política de Cookies",
         ref: "Tecnologias",
         desc: "Cookies e tecnologias equivalentes em uso. Categorias, inventário, validade do consentimento e como o gerir.",
-        meta: "9 secções · ~5 min de leitura",
+        meta: "10 secções · ~4 min de leitura",
         accent: PT.gold,
     },
     {
@@ -61,7 +61,7 @@ const CARDS = [
         title: "Diretrizes da Comunidade",
         ref: "Convivência",
         desc: "O que é permitido, o que é proibido, como reportamos, e como decidimos quando há infrações. Em conformidade com o DSA.",
-        meta: "11 secções · ~9 min de leitura",
+        meta: "11 secções · ~5 min de leitura",
         accent: PT.red,
     },
 ];

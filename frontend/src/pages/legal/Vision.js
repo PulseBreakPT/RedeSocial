@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { LegalShell } from "./LegalShell";
 import { LegalVisualBlock, LegalIconGrid } from "./_visuals";
 import {
@@ -59,6 +60,13 @@ export default function Vision() {
                 Estes seis compromissos são o núcleo da nossa identidade institucional. Citamo-los, por nome, ao
                 longo dos restantes documentos. São propositadamente concretos: se um dia falharmos um, fica registado.
             </p>
+            <p>
+                O <Link to="/manifesto">Manifesto</Link> operacionaliza estes compromissos ao nível do produto, em
+                regras concretas de engenharia (sem <em>streaks</em>, Modo Boa Noite por defeito, contagens esbatidas,
+                <em> read receipts</em> opcionais, feed cronológico disponível). Esta página descreve o{" "}
+                <strong>enquadramento institucional</strong> desses compromissos; o Manifesto descreve a sua{" "}
+                <strong>tradução operacional</strong>.
+            </p>
 
             <LegalVisualBlock eyebrow="Núcleo institucional" title="Os seis compromissos do Lusorae" tone="info">
                 <ol style={{ margin: 0, paddingLeft: "1.2rem", listStyle: "decimal" }}>
@@ -114,7 +122,9 @@ export default function Vision() {
                 de Proteção de Dados e, quando aplicável, aconselhamento jurídico externo. Para decisões com impacto
                 particularmente material, instituímos um <strong>Conselho de Integridade</strong>: um pequeno painel
                 consultivo, com pelo menos um membro externo independente, que se reúne trimestralmente e em
-                situações extraordinárias.
+                situações extraordinárias. A composição nominal, o regulamento de funcionamento e as atas das
+                reuniões serão publicados em <Link to="/legal/governance">/legal/governance</Link> a partir da
+                primeira reunião formal.
             </p>
             <p>
                 Quando errarmos, e iremos errar, tentamos fazer três coisas, nesta ordem:
@@ -132,7 +142,10 @@ export default function Vision() {
                     <strong>Centro Legal</strong> (esta secção), para políticas, termos, privacidade e diretrizes.
                 </li>
                 <li>
-                    <strong>Sala</strong>, o nosso espaço editorial público dentro da própria Plataforma, identificado de forma inequívoca, onde publicamos notas, mudanças de política e relatórios de transparência.
+                    <strong>Sala</strong>, o nosso espaço editorial público dentro da própria Plataforma,
+                    identificado de forma inequívoca, onde publicamos notas, mudanças de política e relatórios de
+                    transparência. É um <em>feed</em> oficial, sem privilégio algorítmico, sujeito às mesmas regras
+                    de moderação que os demais.
                 </li>
                 <li>
                     <strong>Correio institucional</strong>, <a href="mailto:imprensa@lusorae.pt">imprensa@lusorae.pt</a> (jornalistas, investigadores, autoridades), <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a> (assuntos legais), <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a> (DPO).
