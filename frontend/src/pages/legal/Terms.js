@@ -210,10 +210,12 @@ export default function Terms() {
             <p>
                 Sem prejuízo do direito de recurso aos tribunais comuns, o Utilizador pode submeter litígios sobre
                 decisões de moderação a um órgão de resolução extrajudicial certificado nos termos do artigo 21.º
-                do DSA. Pode ainda recorrer aos centros de arbitragem de consumo em Portugal e à plataforma europeia
-                de Resolução de Litígios em Linha (ODR):{" "}
-                <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">
-                    ec.europa.eu/consumers/odr
+                do DSA. Pode ainda recorrer aos <strong>meios alternativos de resolução de litígios de consumo</strong>{" "}
+                certificados pela Direção-Geral do Consumidor (DGC), nos termos da Lei n.º 144/2015, de 8 de setembro,
+                incluindo os centros de arbitragem de consumo aderentes ao sistema nacional. A lista oficial dos
+                centros e respetivas competências está disponível em{" "}
+                <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">
+                    consumidor.gov.pt
                 </a>.
             </p>
 
@@ -331,9 +333,10 @@ export default function Terms() {
             <p>
                 Estes Termos regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo dos direitos imperativos
                 que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008, Roma I), as partes
-                elegem o foro do tribunal da Comarca correspondente à sede social do prestador, em Portugal, com
-                expressa renúncia a qualquer outro. Consumidores podem, em alternativa, recorrer ao seu próprio foro
-                nos termos do Regulamento (UE) n.º 1215/2012.
+                elegem o <strong>Juízo competente em razão do território da sede social do prestador</strong>, no
+                Tribunal Judicial respetivo, nos termos da Lei n.º 62/2013, de 26 de agosto (Lei da Organização do
+                Sistema Judiciário), com expressa renúncia a qualquer outro. Consumidores podem, em alternativa,
+                recorrer ao seu próprio foro nos termos do Regulamento (UE) n.º 1215/2012.
             </p>
 
             <h2>Contactos institucionais</h2>

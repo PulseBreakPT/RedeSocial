@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import {
-    FileText, ShieldCheck, Cookie, Users, ChevronRight, ExternalLink, Compass, Flame,
+    FileText, ShieldCheck, Cookie, Users, ChevronRight, Compass, Flame,
     Database, Scale, ShieldAlert, Newspaper, LifeBuoy, Gavel, Flag,
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
-import { LegalComplianceBoard, LegalVisualBlock, LegalContactsList } from "./_visuals";
+import { LegalComplianceBoard, LegalVisualBlock, LegalContactsList, LegalEntityNotice } from "./_visuals";
+import { LEGAL_ENTITY } from "../../theme/legalEntity";
 import { PT } from "../../theme/editorial";
 
 const CARDS = [
@@ -225,13 +226,11 @@ export default function LegalIndex() {
             ]} />
 
             <h2>Identificação da entidade responsável</h2>
+            <LegalEntityNotice entity={LEGAL_ENTITY} />
             <p>
                 O Serviço Lusorae é operado por <strong>Lusorae</strong>, projeto de direito português dirigido,
-                em primeiro lugar, a utilizadores em Portugal e na União Europeia. Os dados completos de identificação
-                societária (denominação social registada, NIPC, sede, matrícula na Conservatória do Registo Comercial
-                e capital social) são publicados nesta página em ato definitivo de constituição. Os dados acima
-                cumprem o dever de informação previsto no artigo 10.º do Decreto-Lei n.º 7/2004 e nos artigos 11.º e
-                seguintes do DSA. Para qualquer assunto contratual, é canal preferencial o endereço{" "}
+                em primeiro lugar, a utilizadores em Portugal e na União Europeia. Para qualquer assunto contratual,
+                é canal preferencial o endereço{" "}
                 <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
             </p>
 
@@ -258,13 +257,14 @@ export default function LegalIndex() {
                         <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">www.consumidor.gov.pt</a>
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>ODR</strong>, Plataforma Europeia de Resolução de Litígios em Linha.{" "}
-                        <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ec.europa.eu/consumers/odr</a>{" "}
-                        <ExternalLink className="inline" size={11} />
+                        <strong>Centros de Arbitragem de Consumo</strong>, certificados ao abrigo da Lei n.º 144/2015,
+                        de 8 de setembro. Lista oficial em{" "}
+                        <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">consumidor.gov.pt</a>
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>Centros de Arbitragem de Consumo</strong>, lista oficial em{" "}
-                        <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">consumidor.gov.pt</a>
+                        <strong>Provedor de Justiça</strong>, órgão constitucional independente para a defesa dos
+                        direitos, liberdades e garantias (Constituição, art. 23.º).{" "}
+                        <a href="https://www.provedor-jus.pt" target="_blank" rel="noopener noreferrer">www.provedor-jus.pt</a>
                     </li>
                 </ul>
             </LegalVisualBlock>

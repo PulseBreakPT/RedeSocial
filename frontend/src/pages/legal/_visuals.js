@@ -419,6 +419,35 @@ export function LegalSectionSummary({ children, label = "Em poucas palavras" }) 
     );
 }
 
+/* ════════════════════════════════════════════════════════════════
+   16. LEGAL ENTITY NOTICE — aviso transparente de identificação
+   societária pendente. Só renderiza quando LEGAL_ENTITY.pending===true.
+   Quando os dados oficiais existirem, este bloco desaparece e o texto
+   normal das páginas fica visível com a entidade preenchida.
+   ════════════════════════════════════════════════════════════════ */
+export function LegalEntityNotice({ entity, variant = "compact" }) {
+    if (!entity?.pending) return null;
+    return (
+        <div className={`legal-entity-notice legal-entity-notice--${variant} not-prose`} data-testid="legal-entity-pending">
+            <div className="legal-entity-notice-strip" aria-hidden />
+            <div className="legal-entity-notice-body">
+                <span className="legal-entity-notice-label">
+                    <AlertCircle size={12} strokeWidth={2.2} />
+                    Identificação societária, a publicar em ato definitivo
+                </span>
+                <p>
+                    Os dados completos do prestador (denominação social registada, NIPC,
+                    morada da sede, matrícula na Conservatória e capital social) serão
+                    publicados nesta página assim que estiverem registados em ato definitivo,
+                    em cumprimento do artigo 10.º do Decreto-Lei n.º 7/2004 e dos artigos
+                    11.º e 12.º do DSA. Até lá, é canal preferencial para qualquer assunto
+                    contratual o endereço <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
+                </p>
+            </div>
+        </div>
+    );
+}
+
 /* — Ícone helpers re-exportados (para uso direto nas páginas) — */
 export const VIZ_ICONS = {
     Scale, ShieldCheck, CookieIcon, FileText, Sparkle,

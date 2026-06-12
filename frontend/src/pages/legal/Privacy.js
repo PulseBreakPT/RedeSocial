@@ -182,7 +182,7 @@ export default function Privacy() {
                     { when: "13 MESES",           what: "Cookies analíticos",                    note: "Apenas com consentimento expresso. Renovável.",        tone: "medium" },
                     { when: "24 MESES",           what: "Denúncias e recursos arquivados",       note: "Tempo útil para auditoria de coerência de decisões.", tone: "medium" },
                     { when: "6 MESES (PRORROGÁVEL)", what: "Dados associados a Recurso ativo",   note: "Até ao trânsito em julgado, se aplicável.",            tone: "medium" },
-                    { when: "PRAZOS IMPERATIVOS", what: "Dados de tráfego (Lei n.º 32/2008)",     note: "Quando aplicável, durante os prazos legais específicos.", tone: "long" },
+                    { when: "PRAZOS IMPERATIVOS", what: "Obrigações setoriais aplicáveis",     note: "Quando estejamos vinculados a prazos legais específicos de conservação (obrigações fiscais, ordens judiciais, regimes setoriais), aplicam-se esses prazos.", tone: "long" },
                     { when: "10 ANOS",            what: "Faturas e documentos fiscais",          note: "Artigo 123.º do CIRC e legislação tributária.",       tone: "long" },
                 ]}
                 caption="Findo cada prazo, os dados são eliminados de forma irreversível ou anonimizados de forma a impedir a sua reidentificação." />

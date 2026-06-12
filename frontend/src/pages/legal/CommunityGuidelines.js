@@ -129,8 +129,8 @@ export default function CommunityGuidelines() {
                     {
                         title: "Resolução extrajudicial / judicial",
                         icon: Scale,
-                        desc: "Se o desacordo persistir, pode recorrer-se a órgão certificado (art. 21.º DSA), centros de arbitragem de consumo, ou tribunais comuns.",
-                        meta: "ODR · Tribunais comuns",
+                        desc: "Se o desacordo persistir, pode recorrer-se a órgão certificado (art. 21.º DSA), centros de arbitragem de consumo certificados (Lei n.º 144/2015), ou tribunais comuns.",
+                        meta: "DGC · Tribunais comuns",
                     },
                 ]} />
             </LegalVisualBlock>
