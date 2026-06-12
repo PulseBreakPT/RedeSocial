@@ -10,6 +10,7 @@ import {
     ArrowLeft, ArrowUp, Compass, Cookie, FileText, Flame, Users,
     ListTree, Printer, Scale, ShieldCheck, Share2, Check, Clock,
     BookOpen, Heart, BarChart3, Building2, ShieldAlert,
+    ChevronDown, X,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
 import SiteFooter from "../../components/SiteFooter";
@@ -29,6 +30,10 @@ const NAV = [
     { to: "/legal/seguranca-investigadores", label: "Segurança", short: "Segurança",   icon: ShieldAlert,  key: "seguranca" },
     { to: "/legal/historico",  label: "Histórico",              short: "Histórico",   icon: Clock,        key: "historico" },
 ];
+
+const PRIMARY_KEYS = ["index", "vision", "manifesto", "terms", "privacy", "cookies", "community"];
+const PRIMARY = NAV.filter((n) => PRIMARY_KEYS.includes(n.key));
+const SPECIALIZED = NAV.filter((n) => !PRIMARY_KEYS.includes(n.key));
 
 function slugify(s) {
     return (s || "")
@@ -55,6 +60,27 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const [copied, setCopied] = useState(false);
     const [passedIds, setPassedIds] = useState(() => new Set());
     const [readingTime, setReadingTime] = useState(0);
+    const [docMenuOpen, setDocMenuOpen] = useState(false);
+    const docMenuRef = useRef(null);
+    const currentDoc = NAV.find((n) => n.key === active) || NAV[0];
+    const CurrentIcon = currentDoc.icon;
+
+    // Close doc menu on Escape, outside click
+    useEffect(() => {
+        if (!docMenuOpen) return undefined;
+        const onKey = (e) => { if (e.key === "Escape") setDocMenuOpen(false); };
+        const onClick = (e) => {
+            if (docMenuRef.current && !docMenuRef.current.contains(e.target)) {
+                setDocMenuOpen(false);
+            }
+        };
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("mousedown", onClick);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("mousedown", onClick);
+        };
+    }, [docMenuOpen]);
 
     // Build TOC + IDs + section numbers, calc reading time
     useEffect(() => {
@@ -211,10 +237,248 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     </Link>
                     <span
                         className="ml-2 hidden sm:inline text-[11px] font-bold uppercase"
-                        style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}
+                        style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.35)" }}
+                        aria-hidden
                     >
-                        · Centro legal
+                        ·
                     </span>
+
+                    {/* Floating document switcher (replaces left sidebar) */}
+                    <div ref={docMenuRef} className="relative ml-1">
+                        <button
+                            type="button"
+                            onClick={() => setDocMenuOpen((o) => !o)}
+                            data-testid="legal-doc-switcher-trigger"
+                            aria-haspopup="menu"
+                            aria-expanded={docMenuOpen}
+                            aria-label={`Documento atual: ${currentDoc.label}. Clica para abrir o seletor de documentos.`}
+                            className="inline-flex items-center gap-2 px-3 py-2 transition tap-shrink"
+                            style={{
+                                background: docMenuOpen ? PT.ink : "#fff",
+                                color: docMenuOpen ? "#fff" : PT.ink,
+                                border: `1px solid ${docMenuOpen ? PT.ink : "rgba(10,10,10,0.10)"}`,
+                                borderRadius: 999,
+                                boxShadow: docMenuOpen
+                                    ? "0 8px 18px -6px rgba(10,10,10,0.30)"
+                                    : "0 1px 0 rgba(255,255,255,0.60) inset, 0 1px 2px rgba(10,10,10,0.04)",
+                                letterSpacing: "-0.005em",
+                            }}
+                        >
+                            <CurrentIcon size={13} strokeWidth={2.1} className="shrink-0" />
+                            <span className="text-[12.5px] font-bold max-w-[120px] sm:max-w-[180px] truncate">
+                                {currentDoc.short}
+                            </span>
+                            <ChevronDown
+                                size={13}
+                                strokeWidth={2.4}
+                                className="shrink-0 transition-transform duration-200"
+                                style={{
+                                    transform: docMenuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                    opacity: 0.8,
+                                }}
+                            />
+                        </button>
+
+                        {docMenuOpen && (
+                            <>
+                                {/* Backdrop dim (no blur) */}
+                                <div
+                                    onClick={() => setDocMenuOpen(false)}
+                                    aria-hidden
+                                    data-testid="legal-doc-switcher-backdrop"
+                                    className="fixed inset-0 z-40"
+                                    style={{
+                                        background: "rgba(10,10,10,0.32)",
+                                        animation: "legalDocFade 180ms ease-out both",
+                                    }}
+                                />
+
+                                {/* Floating panel — fixed on mobile (avoid overflow), absolute on desktop */}
+                                <div
+                                    role="menu"
+                                    data-testid="legal-doc-switcher-menu"
+                                    className="fixed lg:absolute z-50 left-2 right-2 lg:left-0 lg:right-auto lg:w-[360px] top-[64px] lg:top-full lg:mt-2 max-h-[78vh] overflow-y-auto"
+                                    style={{
+                                        background: "#ffffff",
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        borderRadius: 18,
+                                        boxShadow:
+                                            "0 1px 0 rgba(255,255,255,0.50) inset, 0 1px 2px rgba(10,10,10,0.06), 0 28px 56px -18px rgba(10,10,10,0.30), 0 12px 24px -12px rgba(10,10,10,0.14)",
+                                        animation: "legalDocPanel 200ms cubic-bezier(0.22, 1, 0.36, 1) both",
+                                    }}
+                                >
+                                    {/* Header strip */}
+                                    <div
+                                        className="px-4 pt-3.5 pb-2.5 flex items-center justify-between gap-3"
+                                        style={{ borderBottom: "1px solid rgba(10,10,10,0.06)" }}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+                                                <span
+                                                    className="absolute inline-flex h-full w-full rounded-full lusorae-pulse"
+                                                    style={{ background: PT.red }}
+                                                />
+                                                <span
+                                                    className="relative inline-flex rounded-full h-1.5 w-1.5"
+                                                    style={{ background: PT.red }}
+                                                />
+                                            </span>
+                                            <span
+                                                className="text-[10.5px] font-bold uppercase truncate"
+                                                style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}
+                                            >
+                                                {NAV.length} documentos · Centro Legal
+                                            </span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDocMenuOpen(false)}
+                                            data-testid="legal-doc-switcher-close"
+                                            aria-label="Fechar"
+                                            className="w-6 h-6 grid place-items-center tap-shrink transition"
+                                            style={{
+                                                background: "rgba(10,10,10,0.04)",
+                                                color: "rgba(10,10,10,0.55)",
+                                                border: "1px solid rgba(10,10,10,0.06)",
+                                                borderRadius: 999,
+                                            }}
+                                        >
+                                            <X size={11} strokeWidth={2.4} />
+                                        </button>
+                                    </div>
+
+                                    {/* Primary group */}
+                                    <div className="py-2 px-1.5">
+                                        <div className="px-2.5 py-1.5">
+                                            <span
+                                                className="text-[10px] font-bold uppercase"
+                                                style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.42)" }}
+                                            >
+                                                Primários
+                                            </span>
+                                        </div>
+                                        {PRIMARY.map(({ to, label, icon: Icon, key }) => {
+                                            const isActive = active === key;
+                                            return (
+                                                <Link
+                                                    key={key}
+                                                    to={to}
+                                                    role="menuitem"
+                                                    onClick={() => setDocMenuOpen(false)}
+                                                    data-testid={`legal-doc-switcher-item-${key}`}
+                                                    className="group flex items-center gap-2.5 px-2.5 py-2 relative transition"
+                                                    style={{
+                                                        background: isActive ? "rgba(200,16,46,0.06)" : "transparent",
+                                                        borderRadius: 10,
+                                                    }}
+                                                >
+                                                    {isActive && (
+                                                        <span
+                                                            aria-hidden
+                                                            className="absolute left-[2px] top-[10px] bottom-[10px] w-[2px] rounded-full"
+                                                            style={{ background: PT.red }}
+                                                        />
+                                                    )}
+                                                    <span
+                                                        className="w-7 h-7 grid place-items-center shrink-0"
+                                                        style={{
+                                                            background: isActive ? "rgba(200,16,46,0.10)" : "rgba(10,10,10,0.04)",
+                                                            color: isActive ? PT.red : "rgba(10,10,10,0.65)",
+                                                            borderRadius: 8,
+                                                        }}
+                                                    >
+                                                        <Icon size={13} strokeWidth={isActive ? 2.3 : 2} />
+                                                    </span>
+                                                    <span
+                                                        className="flex-1 text-[13px] font-semibold truncate"
+                                                        style={{ color: isActive ? PT.ink : "rgba(10,10,10,0.78)" }}
+                                                    >
+                                                        {label}
+                                                    </span>
+                                                    {isActive && (
+                                                        <Check size={13} strokeWidth={2.5} style={{ color: PT.red }} aria-hidden />
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Specialized group */}
+                                    <div className="py-2 px-1.5" style={{ borderTop: "1px solid rgba(10,10,10,0.06)" }}>
+                                        <div className="px-2.5 py-1.5">
+                                            <span
+                                                className="text-[10px] font-bold uppercase"
+                                                style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.42)" }}
+                                            >
+                                                Especializados
+                                            </span>
+                                        </div>
+                                        {SPECIALIZED.map(({ to, label, icon: Icon, key }) => {
+                                            const isActive = active === key;
+                                            return (
+                                                <Link
+                                                    key={key}
+                                                    to={to}
+                                                    role="menuitem"
+                                                    onClick={() => setDocMenuOpen(false)}
+                                                    data-testid={`legal-doc-switcher-item-${key}`}
+                                                    className="group flex items-center gap-2.5 px-2.5 py-2 relative transition"
+                                                    style={{
+                                                        background: isActive ? "rgba(200,16,46,0.06)" : "transparent",
+                                                        borderRadius: 10,
+                                                    }}
+                                                >
+                                                    {isActive && (
+                                                        <span
+                                                            aria-hidden
+                                                            className="absolute left-[2px] top-[10px] bottom-[10px] w-[2px] rounded-full"
+                                                            style={{ background: PT.red }}
+                                                        />
+                                                    )}
+                                                    <span
+                                                        className="w-7 h-7 grid place-items-center shrink-0"
+                                                        style={{
+                                                            background: isActive ? "rgba(200,16,46,0.10)" : "rgba(10,10,10,0.04)",
+                                                            color: isActive ? PT.red : "rgba(10,10,10,0.65)",
+                                                            borderRadius: 8,
+                                                        }}
+                                                    >
+                                                        <Icon size={13} strokeWidth={isActive ? 2.3 : 2} />
+                                                    </span>
+                                                    <span
+                                                        className="flex-1 text-[13px] font-semibold truncate"
+                                                        style={{ color: isActive ? PT.ink : "rgba(10,10,10,0.78)" }}
+                                                    >
+                                                        {label}
+                                                    </span>
+                                                    {isActive && (
+                                                        <Check size={13} strokeWidth={2.5} style={{ color: PT.red }} aria-hidden />
+                                                    )}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {lastUpdated && (
+                                        <div
+                                            className="px-4 py-2.5 flex items-center gap-2 text-[10.5px] font-bold"
+                                            style={{
+                                                borderTop: "1px solid rgba(10,10,10,0.06)",
+                                                color: "rgba(10,10,10,0.55)",
+                                                letterSpacing: "0.04em",
+                                            }}
+                                        >
+                                            <span
+                                                className="w-1.5 h-1.5 rounded-full"
+                                                style={{ background: PT.green }}
+                                            />
+                                            Atualizado · {lastUpdated}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <div className="ml-auto flex items-center gap-2">
                         <button
                             onClick={onShare}
@@ -249,58 +513,8 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
             </header>
 
             <div className="max-w-[1280px] mx-auto px-4 lg:px-8 grid grid-cols-12 gap-6 lg:gap-10 py-8 lg:py-14 relative z-10">
-                {/* Left sidebar — document switcher */}
-                <aside className="legal-shell-sidebar col-span-12 lg:col-span-3 order-1">
-                    <div className="lg:sticky lg:top-[80px]">
-                        <div className="hidden lg:flex items-center gap-1.5 mb-4 px-1">
-                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
-                            </span>
-                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
-                                Documentos
-                            </span>
-                        </div>
-                        <nav
-                            data-testid="legal-doc-nav"
-                            className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-1.5 lg:flex lg:flex-col lg:gap-2"
-                        >
-                            {NAV.map(({ to, label, short, icon: Icon, key }) => {
-                                const isActive = active === key;
-                                return (
-                                    <Link
-                                        key={key}
-                                        to={to}
-                                        data-testid={`legal-nav-${key}`}
-                                        className="inline-flex items-center gap-2 px-3 py-2.5 lg:px-3.5 text-[12.5px] lg:text-[13px] font-bold transition-all duration-200 min-w-0"
-                                        style={{
-                                            background: isActive ? PT.ink : "#fff",
-                                            color: isActive ? "#fff" : PT.ink,
-                                            border: isActive ? `1px solid ${PT.ink}` : "1px solid rgba(10,10,10,0.10)",
-                                            borderRadius: 999,
-                                            boxShadow: isActive ? "0 6px 14px -6px rgba(10,10,10,0.35)" : "none",
-                                            letterSpacing: "-0.005em",
-                                            justifyContent: "flex-start",
-                                        }}
-                                    >
-                                        <Icon size={13} strokeWidth={isActive ? 2.3 : 2} className="shrink-0" />
-                                        <span className="truncate lg:hidden">{short}</span>
-                                        <span className="truncate hidden lg:inline">{label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                        {lastUpdated && (
-                            <div className="hidden lg:flex mt-6 px-2 items-center gap-2 text-[11px] font-bold" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.04em" }}>
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: PT.green }} />
-                                Atualizado · {lastUpdated}
-                            </div>
-                        )}
-                    </div>
-                </aside>
-
-                {/* Main reading column */}
-                <main className="col-span-12 lg:col-span-6 order-2 min-w-0">
+                {/* Main reading column — wider since left sidebar replaced by floating doc switcher */}
+                <main className="col-span-12 lg:col-span-9 order-1 min-w-0">
                     <article ref={articleRef} className="max-w-[760px] mx-auto">
                         <h1
                             data-testid="legal-title"
@@ -450,7 +664,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 </main>
 
                 {/* Right rail — TOC scroll-spy */}
-                <aside className="legal-shell-tools hidden lg:block lg:col-span-3 order-3">
+                <aside className="legal-shell-tools hidden lg:block lg:col-span-3 order-2">
                     <div className="sticky top-[80px]">
                         <div className="flex items-center justify-between gap-2 px-2 mb-3.5">
                             <div className="flex items-center gap-2">

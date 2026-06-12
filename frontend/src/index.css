@@ -673,6 +673,16 @@
     animation: lusoraeFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Legal document switcher — dropdown enter animations */
+@keyframes legalDocFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes legalDocPanel {
+    from { opacity: 0; transform: translateY(-6px) scale(0.985); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .lusorae-pulse,
     .auth-fade-up { animation: none !important; }
