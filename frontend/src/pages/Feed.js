@@ -24,7 +24,6 @@ import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { FeedContextLine } from "../components/pulse/FeedContextLine";
 import { haptic } from "../lib/haptics";
 import { PT } from "../theme/editorial";
-import { Sticker } from "../components/editorial/Primitives";
 
 // Frases curadas pt-PT mostradas no pull-to-refresh.
 // Rotativas para dar sensação humana e mexer com o utilizador.
