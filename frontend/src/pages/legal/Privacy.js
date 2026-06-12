@@ -15,7 +15,7 @@ export default function Privacy() {
         <LegalShell
             active="privacy"
             title="Política de Privacidade"
-            subtitle="O documento que descreve, em detalhe, como tratamos dados pessoais &mdash; o que recolhemos, porque o fazemos, durante quanto tempo o conservamos, com quem o partilhamos, e quais os direitos que assistem a quem usa o Lusorae."
+            subtitle="O documento que descreve, em detalhe, como tratamos dados pessoais, o que recolhemos, porque o fazemos, durante quanto tempo o conservamos, com quem o partilhamos, e quais os direitos que assistem a quem usa o Lusorae."
             lastUpdated="Junho de 2026"
             eli5="Não vendemos, não alugamos, não cedemos dados pessoais. Recolhemos só o necessário, com fundamento legal claro, e dás-te todos os direitos do RGPD para acederes, corrigires, apagares ou levares contigo o que é teu."
         >
@@ -30,21 +30,21 @@ export default function Privacy() {
             <p>
                 Designamos um Encarregado de Proteção de Dados, nos termos dos artigos 37.º a 39.º do RGPD. O DPO
                 opera com independência funcional, não recebe instruções no exercício das suas tarefas, e é
-                contactável diretamente em <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a> &mdash; ou por correio
+                contactável diretamente em <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>, ou por correio
                 postal para a sede social, ao cuidado do &laquo;Encarregado de Proteção de Dados&raquo;.
             </p>
 
             <h2>Princípios que seguimos</h2>
             <p>
-                Aplicamos integralmente os princípios do artigo 5.º do RGPD &mdash; licitude, lealdade,
+                Aplicamos integralmente os princípios do artigo 5.º do RGPD, licitude, lealdade,
                 transparência, limitação das finalidades, minimização, exatidão, limitação da conservação,
                 integridade e responsabilidade. Operacionalmente, traduzimo-los em quatro práticas:
             </p>
             <ul>
-                <li><strong>Privacidade por defeito</strong> &mdash; cada novo recurso é lançado com as definições mais protetoras do utilizador como configuração inicial (artigo 25.º do RGPD).</li>
-                <li><strong>Privacy by design</strong> &mdash; novas funcionalidades passam por uma análise de impacto interna antes do lançamento; quando o tratamento envolva risco elevado, realizamos uma Avaliação de Impacto sobre a Proteção de Dados (artigo 35.º do RGPD).</li>
-                <li><strong>Minimização real</strong> &mdash; não recolhemos &laquo;por garantia&raquo;. Cada campo opcional está identificado como tal.</li>
-                <li><strong>Auditoria interna anual</strong> &mdash; revemos finalidades, prazos, subcontratantes e fundamentos legais pelo menos uma vez por ano, em coerência com o sexto dos nossos <a href="/legal/vision">compromissos</a>.</li>
+                <li><strong>Privacidade por defeito</strong>, cada novo recurso é lançado com as definições mais protetoras do utilizador como configuração inicial (artigo 25.º do RGPD).</li>
+                <li><strong>Privacy by design</strong>, novas funcionalidades passam por uma análise de impacto interna antes do lançamento; quando o tratamento envolva risco elevado, realizamos uma Avaliação de Impacto sobre a Proteção de Dados (artigo 35.º do RGPD).</li>
+                <li><strong>Minimização real</strong>, não recolhemos &laquo;por garantia&raquo;. Cada campo opcional está identificado como tal.</li>
+                <li><strong>Auditoria interna anual</strong>, revemos finalidades, prazos, subcontratantes e fundamentos legais pelo menos uma vez por ano, em coerência com o sexto dos nossos <a href="/legal/vision">compromissos</a>.</li>
             </ul>
 
             <h2>Categorias de dados pessoais tratados</h2>
@@ -80,7 +80,7 @@ export default function Privacy() {
                     [
                         "Criação e manutenção da conta; prestação de funcionalidades do Serviço; exibição de Conteúdo.",
                         "Identificação, Conteúdo, Técnicos.",
-                        <>Art. 6.º, n.º 1, al. b) &mdash; execução do contrato.</>,
+                        <>Art. 6.º, n.º 1, al. b), execução do contrato.</>,
                     ],
                     [
                         "Cumprimento de obrigações legais (resposta a autoridades, conservação fiscal, comunicações CNPD).",
@@ -90,12 +90,12 @@ export default function Privacy() {
                     [
                         "Segurança, prevenção de fraude, anti-abuso, integridade dos sistemas.",
                         "Técnicos, Utilização, Localização aproximada.",
-                        <>Art. 6.º, n.º 1, al. f) &mdash; interesse legítimo do prestador e dos demais utilizadores.</>,
+                        <>Art. 6.º, n.º 1, al. f), interesse legítimo do prestador e dos demais utilizadores.</>,
                     ],
                     [
                         "Moderação de Conteúdo (avaliação de notificações, decisão e recurso).",
                         "Conteúdo, Comunicação.",
-                        <>Art. 6.º, n.º 1, al. c) e f) &mdash; obrigação legal (DSA) e interesse legítimo.</>,
+                        <>Art. 6.º, n.º 1, al. c) e f), obrigação legal (DSA) e interesse legítimo.</>,
                     ],
                     [
                         "Estatística agregada, métricas anónimas e melhoria do Serviço.",
@@ -105,12 +105,12 @@ export default function Privacy() {
                     [
                         "Comunicações de produto opcionais (newsletter, novidades, programas-piloto).",
                         "Identificação.",
-                        <>Art. 6.º, n.º 1, al. a) &mdash; consentimento (revogável a qualquer momento).</>,
+                        <>Art. 6.º, n.º 1, al. a), consentimento (revogável a qualquer momento).</>,
                     ],
                     [
                         "Cookies analíticos e funcionais não estritamente necessários.",
                         "Cookies.",
-                        <>Art. 5.º, n.º 3, Lei n.º 41/2004 &mdash; consentimento.</>,
+                        <>Art. 5.º, n.º 3, Lei n.º 41/2004, consentimento.</>,
                     ],
                 ]}
             />
@@ -118,14 +118,14 @@ export default function Privacy() {
             <h2>Origem dos dados</h2>
             <p>Os dados pessoais tratados têm três origens, devidamente diferenciadas:</p>
             <ol>
-                <li><strong>Fornecidos pelo Utilizador</strong> &mdash; no registo, na configuração do perfil, ao publicar Conteúdo ou ao contactar o suporte.</li>
-                <li><strong>Gerados pela interação</strong> &mdash; logs técnicos, padrões de utilização, eventos de segurança.</li>
-                <li><strong>Obtidos através de terceiros</strong> &mdash; apenas quando o Utilizador o autorize (e.g. <em>login</em> federado), e estritamente com o âmbito mínimo necessário à finalidade.</li>
+                <li><strong>Fornecidos pelo Utilizador</strong>, no registo, na configuração do perfil, ao publicar Conteúdo ou ao contactar o suporte.</li>
+                <li><strong>Gerados pela interação</strong>, logs técnicos, padrões de utilização, eventos de segurança.</li>
+                <li><strong>Obtidos através de terceiros</strong>, apenas quando o Utilizador o autorize (e.g. <em>login</em> federado), e estritamente com o âmbito mínimo necessário à finalidade.</li>
             </ol>
 
             <h2>Destinatários e subcontratantes</h2>
 
-            <LegalVisualBlock eyebrow="Quem pode aceder — e em que termos" title="O percurso dos teus dados">
+            <LegalVisualBlock eyebrow="Quem pode aceder, e em que termos" title="O percurso dos teus dados">
                 <LegalFlow steps={[
                     { label: "Tu",                  sub: "Titular dos dados",            icon: User,        accent: "accent-strong" },
                     { label: "Lusorae",             sub: "Responsável pelo tratamento",   icon: Database },
@@ -275,8 +275,8 @@ export default function Privacy() {
             <h2>Avaliações de impacto sobre a proteção de dados (DPIA)</h2>
             <p>
                 Sempre que prevejamos um novo tratamento suscetível de implicar risco elevado para os direitos e
-                liberdades das pessoas singulares &mdash; designadamente em função da escala, da utilização de novas
-                tecnologias, ou do tratamento de categorias especiais &mdash; conduzimos uma Avaliação de Impacto
+                liberdades das pessoas singulares, designadamente em função da escala, da utilização de novas
+                tecnologias, ou do tratamento de categorias especiais, conduzimos uma Avaliação de Impacto
                 sobre a Proteção de Dados nos termos do artigo 35.º do RGPD, com envolvimento documentado do DPO.
             </p>
 

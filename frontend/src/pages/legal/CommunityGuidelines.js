@@ -13,7 +13,7 @@ export default function CommunityGuidelines() {
         <LegalShell
             active="community"
             title="Diretrizes da Comunidade"
-            subtitle="As regras práticas que regem aquilo que se pode publicar, partilhar e dizer no Lusorae &mdash; e o que acontece quando alguém, voluntariamente ou não, sai delas. Em conformidade com o DSA, com a lei portuguesa e com aquilo a que nos comprometêmos publicamente."
+            subtitle="As regras práticas que regem aquilo que se pode publicar, partilhar e dizer no Lusorae, e o que acontece quando alguém, voluntariamente ou não, sai delas. Em conformidade com o DSA, com a lei portuguesa e com aquilo a que nos comprometêmos publicamente."
             lastUpdated="Junho de 2026"
         >
             <LegalKPIs items={[
@@ -38,14 +38,14 @@ export default function CommunityGuidelines() {
             <p>
                 O Lusorae quer ser um sítio onde se conversa em português como se conversa nas melhores mesas:
                 com vontade real de ouvir, com vontade real de discordar, com vontade real de descobrir. Não
-                esperamos que toda a gente concorde &mdash; pelo contrário. Esperamos que se discorde dos
+                esperamos que toda a gente concorde, pelo contrário. Esperamos que se discorde dos
                 <em> argumentos</em> e não das <em>pessoas</em>; que se cite quando se cita; que se assuma quando
                 se opina; e que se aceite que há outras pessoas do outro lado, com a sua própria história e
                 vulnerabilidade.
             </p>
             <p>
                 As regras que se seguem não substituem o bom senso. Existem porque, em escala, o bom senso não
-                basta &mdash; é preciso uma linguagem comum a que a equipa de Trust &amp; Safety possa responder de
+                basta, é preciso uma linguagem comum a que a equipa de Trust &amp; Safety possa responder de
                 forma previsível. É essa a função destas Diretrizes.
             </p>
 
@@ -69,23 +69,23 @@ export default function CommunityGuidelines() {
             <h2>O que pode ser removido ou despromovido</h2>
             <p>
                 Para além do manifestamente ilegal, existem categorias de Conteúdo que, sem constituirem crime,
-                podem ser objeto de medidas de moderação &mdash; rotulagem, redução de alcance, remoção &mdash;
+                podem ser objeto de medidas de moderação, rotulagem, redução de alcance, remoção,
                 quando a sua circulação cause dano significativo à comunidade:
             </p>
 
             <LegalIconGrid tone="warn" items={[
                 { label: "Spam e comportamento coordenado inautêntico",                                              icon: Ban },
                 { label: "Conteúdo sexual explícito não etiquetado em superfícies inadequadas",                       icon: EyeOff },
-                { label: "Desinformação lesiva — em particular sobre saúde pública, integridade eleitoral, emergências", icon: AlertTriangle },
+                { label: "Desinformação lesiva, em particular sobre saúde pública, integridade eleitoral, emergências", icon: AlertTriangle },
                 { label: "Assédio coordenado (pile-on) dirigido a pessoa identificada",                                icon: UserX },
-                { label: "Doxing — dados pessoais de terceiros sem fundamento legal válido",                            icon: ShieldOff },
+                { label: "Doxing, dados pessoais de terceiros sem fundamento legal válido",                            icon: ShieldOff },
                 { label: "Conteúdo gerado por IA passado como humano sem identificação, ou deepfakes enganadores",     icon: Brain },
             ]} />
 
             <h2>Conteúdo sensível e etiquetagem</h2>
             <p>
                 Algum Conteúdo não é ilegal nem está proibido, mas pode causar desconforto se aparecer sem aviso
-                prévio &mdash; tópicos de violência, conteúdo relacionado com saúde mental, saúde física, ou
+                prévio, tópicos de violência, conteúdo relacionado com saúde mental, saúde física, ou
                 discussões sensíveis sobre orientação sexual ou identidade. Pedimos ao autor que utilize, sempre
                 que aplicável, a etiquetagem disponível (<em>spoiler</em>, conteúdo sensível, alerta de gatilho).
                 Quando a etiquetagem não seja feita, a equipa de moderação pode aplicá-la de forma neutra, sem
@@ -95,8 +95,8 @@ export default function CommunityGuidelines() {
             <h2>Como reportar</h2>
             <p>
                 Cada publicação, comentário, mensagem e perfil tem uma opção <em>Reportar</em>. As denúncias são
-                tratadas em prazo razoável; em casos urgentes &mdash; segurança física, exploração de menores,
-                ameaças credíveis &mdash; priorizamos a triagem imediata. Em conformidade com o artigo 16.º do DSA,
+                tratadas em prazo razoável; em casos urgentes, segurança física, exploração de menores,
+                ameaças credíveis, priorizamos a triagem imediata. Em conformidade com o artigo 16.º do DSA,
                 qualquer pessoa, mesmo sem conta, pode notificar Conteúdo potencialmente ilegal.
             </p>
 
@@ -117,7 +117,7 @@ export default function CommunityGuidelines() {
                     {
                         title: "Decisão fundamentada (Statement of Reasons)",
                         icon: FileCheck,
-                        desc: "Aplicamos a medida proporcional (ver §7) e comunicamos a decisão ao autor com fundamentação detalhada — facto, regra aplicável, recurso disponível (art. 17.º DSA).",
+                        desc: "Aplicamos a medida proporcional (ver §7) e comunicamos a decisão ao autor com fundamentação detalhada, facto, regra aplicável, recurso disponível (art. 17.º DSA).",
                         meta: "Sempre por escrito",
                     },
                     {
@@ -145,7 +145,7 @@ export default function CommunityGuidelines() {
             <p>
                 Reconhecemos o estatuto de &laquo;sinalizadores de confiança&raquo; certificados pelo Coordenador
                 Nacional dos Serviços Digitais (ANACOM), nos termos do artigo 22.º do DSA. As suas notificações são
-                tratadas com prioridade, mantendo-se em rigor os mesmos critérios de apreciação &mdash; a prioridade
+                tratadas com prioridade, mantendo-se em rigor os mesmos critérios de apreciação, a prioridade
                 está no tempo de resposta, não no resultado. Suspendemos esta prioridade em relação a sinalizadores
                 que, demonstradamente, submetam notificações infundadas com frequência.
             </p>
@@ -156,7 +156,7 @@ export default function CommunityGuidelines() {
                 reincidência. Por ordem crescente:
             </p>
 
-            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas — do menos ao mais restritivo">
+            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas, do menos ao mais restritivo">
                 <LegalLadder steps={[
                     { label: "Aviso interno",          desc: "Notificação ao autor, sem efeito visível para terceiros.",                                  icon: Flag },
                     { label: "Rotulagem (label)",      desc: "Aviso contextual mantendo o Conteúdo visível.",                                            icon: AlertTriangle },
@@ -184,11 +184,11 @@ export default function CommunityGuidelines() {
 
             <h2>Crises e situações excecionais</h2>
             <p>
-                Em situações de crise &mdash; emergências de saúde pública, processos eleitorais, atentados à
-                segurança, catástrofes &mdash; podemos ativar protocolos específicos: reforço temporário da equipa
+                Em situações de crise, emergências de saúde pública, processos eleitorais, atentados à
+                segurança, catástrofes, podemos ativar protocolos específicos: reforço temporário da equipa
                 de moderação, reforço da etiquetagem informativa, suspensão temporária de promoção algorítmica em
                 tópicos sensíveis. Estes protocolos são sempre temporários, comunicados publicamente, e revistos
-                após o fim da crise &mdash; em conformidade com o artigo 36.º do DSA quando aplicável.
+                após o fim da crise, em conformidade com o artigo 36.º do DSA quando aplicável.
             </p>
 
             <h2>Transparência operacional</h2>
@@ -202,10 +202,10 @@ export default function CommunityGuidelines() {
 
             <h2>Em síntese, pessoa a pessoa</h2>
             <blockquote>
-                Trata cada pessoa como tratarias um vizinho que ainda não conheces bem &mdash; com curiosidade,
+                Trata cada pessoa como tratarias um vizinho que ainda não conheces bem, com curiosidade,
                 paciência, e firmeza quando for caso disso. Discorda dos argumentos, não das pessoas. Cita as fontes.
                 Avisa quando estás a partilhar opinião, e quando estás a partilhar facto. E, sempre que possível,
-                escreve melhor &mdash; a internet em português agradece.
+                escreve melhor, a internet em português agradece.
             </blockquote>
         </LegalShell>
     );

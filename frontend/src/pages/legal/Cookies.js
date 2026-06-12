@@ -27,7 +27,7 @@ export default function Cookies() {
             <div className="legal-callout">
                 <strong>O essencial</strong>
                 Os únicos cookies que colocamos sem te pedir nada são os estritamente necessários para o Serviço
-                funcionar. Tudo o resto &mdash; funcionais, analíticos, eventual marketing &mdash; depende de
+                funcionar. Tudo o resto, funcionais, analíticos, eventual marketing, depende de
                 consentimento que tu dás, podes recusar, e podes retirar a qualquer momento, no{" "}
                 <button type="button" onClick={openCookiePreferences} className="underline underline-offset-2 hover:text-[color:var(--coral-500)]">
                     Centro de Preferências de Cookies
@@ -46,28 +46,28 @@ export default function Cookies() {
 
             <h2>Princípios que aplicamos</h2>
             <ul>
-                <li><strong>Primeira-parte por defeito</strong> &mdash; os nossos cookies são servidos pelos nossos próprios domínios. Não autorizamos cookies de terceiros para fins de rastreamento publicitário entre sítios.</li>
-                <li><strong>Finalidade declarada</strong> &mdash; cada cookie está associado a uma e uma só finalidade descrita nesta política.</li>
-                <li><strong>Sem dark patterns</strong> &mdash; o botão &laquo;Recusar&raquo; tem o mesmo peso visual que o botão &laquo;Aceitar&raquo;, em coerência com as Diretrizes CNPD 2022/1 e com o primeiro dos nossos <a href="/legal/vision">compromissos</a>.</li>
-                <li><strong>Minimização de IP</strong> &mdash; os endereços IP utilizados em sistemas analíticos são truncados antes de qualquer armazenamento.</li>
+                <li><strong>Primeira-parte por defeito</strong>, os nossos cookies são servidos pelos nossos próprios domínios. Não autorizamos cookies de terceiros para fins de rastreamento publicitário entre sítios.</li>
+                <li><strong>Finalidade declarada</strong>, cada cookie está associado a uma e uma só finalidade descrita nesta política.</li>
+                <li><strong>Sem dark patterns</strong>, o botão &laquo;Recusar&raquo; tem o mesmo peso visual que o botão &laquo;Aceitar&raquo;, em coerência com as Diretrizes CNPD 2022/1 e com o primeiro dos nossos <a href="/legal/vision">compromissos</a>.</li>
+                <li><strong>Minimização de IP</strong>, os endereços IP utilizados em sistemas analíticos são truncados antes de qualquer armazenamento.</li>
             </ul>
 
             <h2>Categorias e finalidades</h2>
 
-            <LegalVisualBlock eyebrow="As 4 categorias" title="O que cada categoria faz — e qual exige o teu consentimento">
+            <LegalVisualBlock eyebrow="As 4 categorias" title="O que cada categoria faz, e qual exige o teu consentimento">
                 <LegalCookieStack items={[
                     {
                         title: "Estritamente necessários",
                         required: true,
                         icon: Lock,
-                        desc: "Indispensáveis ao funcionamento do Serviço — autenticação, sessão, proteção anti-CSRF, balanceamento de carga, idioma e preferências essenciais. Não exigem consentimento (art. 5.º, n.º 3, segunda parte, da Lei n.º 41/2004).",
+                        desc: "Indispensáveis ao funcionamento do Serviço, autenticação, sessão, proteção anti-CSRF, balanceamento de carga, idioma e preferências essenciais. Não exigem consentimento (art. 5.º, n.º 3, segunda parte, da Lei n.º 41/2004).",
                         examples: "vm_session, vm_csrf, vm_consent, vm_locale",
                     },
                     {
                         title: "Funcionais",
                         required: false,
                         icon: Settings,
-                        desc: "Memorizam escolhas que o Utilizador faz para personalizar a experiência — tema, layout, último filtro utilizado. Exigem consentimento.",
+                        desc: "Memorizam escolhas que o Utilizador faz para personalizar a experiência, tema, layout, último filtro utilizado. Exigem consentimento.",
                         examples: "vm_theme, vm_layout, vm_lastfilter",
                     },
                     {
@@ -116,7 +116,7 @@ export default function Cookies() {
 
             <h2>Tecnologias equivalentes</h2>
             <p>
-                Para além dos cookies HTTP, utilizamos &mdash; estritamente para finalidades funcionais &mdash;{" "}
+                Para além dos cookies HTTP, utilizamos, estritamente para finalidades funcionais,{" "}
                 <em>local storage</em> (preservar rascunhos de publicações não submetidas, preferências de visualização
                 pesadas) e <em>service workers</em> (capacidade limitada de funcionamento offline e otimização de
                 carregamento). Estes mecanismos são exclusivamente locais ao dispositivo e não transmitem dados
@@ -152,7 +152,7 @@ export default function Cookies() {
                 Adicionalmente ao Centro de Preferências, podes configurar o teu navegador para bloquear ou eliminar
                 cookies. As principais opções estão documentadas pelos respetivos fabricantes (Firefox, Chrome,
                 Safari, Edge). A inibição de cookies estritamente necessários pode impedir o funcionamento de partes
-                do Serviço &mdash; em particular, a autenticação.
+                do Serviço, em particular, a autenticação.
             </p>
 
             <h2>Atualizações</h2>

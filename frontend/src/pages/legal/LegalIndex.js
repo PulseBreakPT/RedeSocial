@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
-    FileText, ShieldCheck, Cookie, Sparkle, ChevronRight, ExternalLink, Compass, Flame,
-    Mail, Database, Scale, ShieldAlert, Newspaper, LifeBuoy, Gavel,
+    FileText, ShieldCheck, Cookie, Users, ChevronRight, ExternalLink, Compass, Flame,
+    Database, Scale, ShieldAlert, Newspaper, LifeBuoy, Gavel, Flag,
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
 import { LegalComplianceBoard, LegalVisualBlock, LegalContactsList } from "./_visuals";
@@ -23,7 +23,7 @@ const CARDS = [
         icon: Flame,
         title: "Manifesto",
         ref: "Anti-dark-pattern",
-        desc: "As seis promessas públicas contra os padrões obscuros do habitual. Streaks, notificações sintéticas, read receipts forçados — o que recusamos e porquê.",
+        desc: "As seis promessas públicas contra os padrões obscuros do habitual. Streaks, notificações sintéticas, read receipts forçados, o que recusamos e porquê.",
         meta: "6 promessas · ~6 min de leitura",
         accent: PT.azul,
     },
@@ -56,7 +56,7 @@ const CARDS = [
     },
     {
         to: "/legal/community",
-        icon: Sparkle,
+        icon: Users,
         title: "Diretrizes da Comunidade",
         ref: "Convivência",
         desc: "O que é permitido, o que é proibido, como reportamos, e como decidimos quando há infrações. Em conformidade com o DSA.",
@@ -68,8 +68,8 @@ const CARDS = [
 const CONTACTS = [
     { subject: "Assuntos legais e contratuais",          email: "legal@lusorae.pt",       icon: Scale,      ref: "Contratos · DSA" },
     { subject: "Encarregado de Proteção de Dados",        email: "dpo@lusorae.pt",         icon: ShieldCheck, ref: "DPO · RGPD" },
-    { subject: "Exercício de direitos RGPD",              email: "privacidade@lusorae.pt", icon: Database,    ref: "Arts. 15.º–22.º RGPD" },
-    { subject: "Denúncias de conteúdo",                   email: "reportar@lusorae.pt",    icon: ShieldAlert, ref: "DSA art. 16.º" },
+    { subject: "Exercício de direitos RGPD",              email: "privacidade@lusorae.pt", icon: Database,    ref: "Arts. 15.º a 22.º RGPD" },
+    { subject: "Denúncias de conteúdo",                   email: "reportar@lusorae.pt",    icon: Flag,        ref: "DSA art. 16.º" },
     { subject: "Recursos a decisões de moderação",        email: "recurso@lusorae.pt",     icon: Gavel,       ref: "DSA art. 20.º" },
     { subject: "Incidentes de segurança / abuso",          email: "abuso@lusorae.pt",       icon: ShieldAlert, ref: "Segurança" },
     { subject: "Imprensa, investigação, autoridades",      email: "imprensa@lusorae.pt",    icon: Newspaper,   ref: "DSA art. 40.º" },
@@ -81,9 +81,9 @@ export default function LegalIndex() {
         <LegalShell
             active="index"
             title="Centro Legal"
-            subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa &mdash; e não apenas por advogados."
+            subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa, e não apenas por advogados."
         >
-            {/* Antes de começares — callout editorial (cinza, sem fundo amarelo) */}
+            {/* Antes de começares, callout editorial (cinza, sem fundo amarelo) */}
             <div
                 className="not-prose px-5 py-4 relative"
                 style={{
@@ -104,12 +104,12 @@ export default function LegalIndex() {
                         A nossa visão
                     </Link>
                     . É a página onde estão escritos, por extenso, os <strong>seis compromissos</strong> que dão coerência a todos os outros
-                    documentos &mdash; os Termos, a Privacidade, os Cookies, as Diretrizes. Todas as decisões difíceis
+                    documentos, os Termos, a Privacidade, os Cookies, as Diretrizes. Todas as decisões difíceis
                     que tomamos depois respondem perante esses seis compromissos.
                 </p>
             </div>
 
-            {/* CARDS dos documentos — estilo editorial (todos brancos, sem fundo preto) */}
+            {/* CARDS dos documentos, estilo editorial (todos brancos, sem fundo preto) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose" style={{ marginTop: "1.8rem" }}>
                 {CARDS.map(({ to, icon: Icon, title, ref, desc, meta, emphasis, accent }, idx) => (
                     <Link
@@ -188,15 +188,15 @@ export default function LegalIndex() {
 
             <h2>Como ler estes documentos</h2>
             <p>
-                A maior parte das pessoas não lê documentos legais &mdash; e tem razão para isso. A maior parte deles
+                A maior parte das pessoas não lê documentos legais, e tem razão para isso. A maior parte deles
                 é escrita para se proteger de quem os lê. Tentámos escrever os nossos de outra maneira: assumimos que
                 quem está deste lado é uma pessoa adulta, curiosa, e provavelmente irritada com a opacidade habitual
                 do sector. Por isso, e na medida em que o rigor jurídico o permite:
             </p>
             <ul>
                 <li>Cada documento começa com um <em>callout</em> que resume o seu objeto numa frase honesta.</li>
-                <li>As referências legais aparecem ao lado das afirmações que as exigem &mdash; não rebatidas no fim em letra pequena.</li>
-                <li>Sempre que o texto contiver um número (prazo, idade, percentagem), esse número é real e operacional &mdash; não é prosa.</li>
+                <li>As referências legais aparecem ao lado das afirmações que as exigem, não rebatidas no fim em letra pequena.</li>
+                <li>Sempre que o texto contiver um número (prazo, idade, percentagem), esse número é real e operacional, não é prosa.</li>
                 <li>Sempre que uma decisão seja editável pelo utilizador (consentimento, plano, conta), o documento aponta para o sítio onde isso se faz.</li>
             </ul>
             <p>
@@ -217,10 +217,10 @@ export default function LegalIndex() {
                 { name: "Lei n.º 58/2019",       scope: "Execução nacional do RGPD em Portugal",                     ref: "DR 145/2019" },
                 { name: "Lei n.º 41/2004",       scope: "Privacidade nas comunicações eletrónicas (ePrivacy)",       ref: "Art. 5.º n.º 3" },
                 { name: "Lei n.º 27/2021",       scope: "Carta Portuguesa dos Direitos Humanos na Era Digital",      ref: "Algoritmos" },
-                { name: "DL n.º 7/2004",         scope: "Comércio eletrónico &mdash; dever de informação",                   ref: "Art. 10.º" },
+                { name: "DL n.º 7/2004",         scope: "Comércio eletrónico, dever de informação",                   ref: "Art. 10.º" },
                 { name: "DL n.º 84/2021",        scope: "Conteúdos e serviços digitais (consumidor)",                ref: "Garantias" },
                 { name: "DL n.º 24/2014",         scope: "Contratos celebrados à distância (livre resolução)",        ref: "Art. 10.º" },
-                { name: "Lei n.º 31/2024",        scope: "Coordenador Nacional dos Serviços Digitais &mdash; ANACOM",           ref: "DSA-PT" },
+                { name: "Lei n.º 31/2024",        scope: "Coordenador Nacional dos Serviços Digitais, ANACOM",           ref: "DSA-PT" },
                 { name: "Diretrizes CNPD 2022/1", scope: "Cookies e tecnologias semelhantes",                        ref: "Cookies-PT" },
             ]} />
 
@@ -246,24 +246,24 @@ export default function LegalIndex() {
             <LegalVisualBlock eyebrow="A quem te podes dirigir, em alternativa a nós" title="Entidades independentes com competência sobre a Plataforma" tone="info">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>CNPD</strong> &mdash; Comissão Nacional de Proteção de Dados (autoridade de controlo RGPD).{" "}
+                        <strong>CNPD</strong>, Comissão Nacional de Proteção de Dados (autoridade de controlo RGPD).{" "}
                         <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a>
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>ANACOM</strong> &mdash; Coordenador Nacional dos Serviços Digitais (DSA).{" "}
+                        <strong>ANACOM</strong>, Coordenador Nacional dos Serviços Digitais (DSA).{" "}
                         <a href="https://www.anacom.pt" target="_blank" rel="noopener noreferrer">www.anacom.pt</a>
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>DGC</strong> &mdash; Direção-Geral do Consumidor.{" "}
+                        <strong>DGC</strong>, Direção-Geral do Consumidor.{" "}
                         <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">www.consumidor.gov.pt</a>
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>ODR</strong> &mdash; Plataforma Europeia de Resolução de Litígios em Linha.{" "}
+                        <strong>ODR</strong>, Plataforma Europeia de Resolução de Litígios em Linha.{" "}
                         <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ec.europa.eu/consumers/odr</a>{" "}
                         <ExternalLink className="inline" size={11} />
                     </li>
                     <li style={{ padding: "6px 0", fontSize: 13, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>Centros de Arbitragem de Consumo</strong> &mdash; lista oficial em{" "}
+                        <strong>Centros de Arbitragem de Consumo</strong>, lista oficial em{" "}
                         <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener noreferrer">consumidor.gov.pt</a>
                     </li>
                 </ul>

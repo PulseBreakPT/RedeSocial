@@ -124,5 +124,14 @@ Resultado validado por screenshot tool em todas as 5 rotas (`/legal`, `/legal/vi
   - `<h2>` agora **centrados** com número da secção inline em vermelho à esquerda (era kicker mini "01 · SECÇÃO" + título separado abaixo).
   - `prop` `eli5` adicionado a cada doc — passa a aparecer como callout "Em duas linhas" no shell em vez de `legal-callout` duplicado.
 - **`lastUpdated`** atualizado para "Junho de 2026" em Terms, Privacy, Cookies, Vision, CommunityGuidelines.
-- **NAV do Shell**: 7 documentos (Centro Legal · A nossa visão · Manifesto · Termos · Privacidade · Cookies · Diretrizes) — todos sempre visíveis sem scroll horizontal.
+- **NAV do Shell**: 7 documentos (Centro Legal · A nossa visão · Manifesto · Termos · Privacidade · Cookies · Diretrizes), todos sempre visíveis sem scroll horizontal.
+
+## Centro Legal — Polish round 2 (Jun 12, 2026)
+- **Travessões `&mdash;` removidos** (estilo "gerado por IA"): substituídos por vírgula natural em Terms, Privacy, Cookies, CommunityGuidelines, Vision, LegalIndex e Manifesto (~85 ocorrências de `&mdash;` + ~44 de `—` literal).
+- **Ícones desambiguados**:
+  - `vision` no NAV: Sparkle → **Compass** (coerente com card do LegalIndex).
+  - `community` no NAV+cards: Sparkle → **Users** (sem conflito com vision).
+  - `reportar@` em CONTACTS: ShieldAlert → **Flag** (resolve duplicação com `abuso@`).
+- **FAB "Voltar ao topo"** (`LegalShell`): botão fixo ink black no canto inferior direito, aparece após scroll > 8%, fade + scale transition.
+- **`ScrollToTopOnNavigate`** já presente no `App.js` no nível do BrowserRouter — confirmado: PUSH/REPLACE navega para topo, POP restaura posição guardada em sessionStorage. Testado entre `/legal/terms` (scroll 13859px) → `/legal/privacy` (scroll 0px).
 

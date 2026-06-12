@@ -10,7 +10,7 @@ export default function Terms() {
         <LegalShell
             active="terms"
             title="Termos e Condições de Utilização"
-            subtitle="O contrato entre ti e o Lusorae. Lê com atenção &mdash; ao criar conta, aceder ou utilizar o Serviço, aceitas integralmente o que aqui está escrito. Este documento é redigido em português e o original em português europeu prevalece sobre qualquer tradução."
+            subtitle="O contrato entre ti e o Lusorae. Lê com atenção, ao criar conta, aceder ou utilizar o Serviço, aceitas integralmente o que aqui está escrito. Este documento é redigido em português e o original em português europeu prevalece sobre qualquer tradução."
             lastUpdated="Junho de 2026"
             eli5="Estes Termos definem o que esperas do Lusorae e o que o Lusorae espera de ti. Aplicam-se a partir do momento em que crias conta. Regem-se pela lei portuguesa e respeitam todos os direitos imperativos do consumidor."
         >
@@ -92,7 +92,7 @@ export default function Terms() {
             <p>
                 O Utilizador pode, a todo o tempo, encerrar a sua conta nas Definições, sem necessidade de invocar
                 motivo. A eliminação é executada nos termos da{" "}
-                <a href="/legal/privacy">Política de Privacidade</a> &mdash; em regra, em até 30 dias &mdash; salvo
+                <a href="/legal/privacy">Política de Privacidade</a>, em regra, em até 30 dias, salvo
                 períodos de conservação legalmente exigidos.
             </p>
 
@@ -147,7 +147,7 @@ export default function Terms() {
                 { label: "Compromisso da integridade técnica, acesso indevido ou exfiltração",          ref: "Acesso indevido", icon: ShieldOff },
                 { label: "Spam, malware, smishing ou conteúdo enganador automatizado",                   ref: "DSA art. 14.º",   icon: Ban },
                 { label: "Operação de contas automatizadas (bots) sem identificação clara",              ref: "DSA",             icon: Slash },
-                { label: "Doxing — divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
+                { label: "Doxing, divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
                 { label: "Difamação, injúria, assédio ou perseguição (stalking)",                         ref: "Arts. 180.º · 181.º · 154.º-A CP", icon: MessageCircle },
             ]} />
 
@@ -162,7 +162,7 @@ export default function Terms() {
                 e só escalam quando a gravidade do facto, o impacto sobre terceiros, ou a reincidência o justifiquem.
             </p>
 
-            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas — do menos ao mais restritivo">
+            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas, do menos ao mais restritivo">
                 <LegalLadder steps={[
                     { label: "Aviso interno",            desc: "Notificação ao Utilizador, com identificação do Conteúdo e da regra aplicável. Sem efeito visível para terceiros.", icon: Flag },
                     { label: "Rotulagem (label)",        desc: "O Conteúdo permanece visível, mas com aviso contextual (e.g. sensível, possivelmente desinformação verificada).",      icon: AlertTriangle },
@@ -274,7 +274,7 @@ export default function Terms() {
 
             <h2>Subscrições pagas (Plus, Aura)</h2>
             <LegalSectionSummary>
-                A versão base é grátis e continua a ser. Os planos pagos só dão ferramentas adicionais — nunca alcance, prioridade ou influência sobre a moderação. Tens 14 dias para cancelar sem motivo e sem custo (livre resolução).
+                A versão base é grátis e continua a ser. Os planos pagos só dão ferramentas adicionais, nunca alcance, prioridade ou influência sobre a moderação. Tens 14 dias para cancelar sem motivo e sem custo (livre resolução).
             </LegalSectionSummary>
             <p>
                 A utilização do Serviço-base é, e continuará a ser, gratuita. Determinadas funcionalidades adicionais
@@ -330,7 +330,7 @@ export default function Terms() {
             <h2>Lei aplicável e foro</h2>
             <p>
                 Estes Termos regem-se pela <strong>lei portuguesa</strong>. Sem prejuízo dos direitos imperativos
-                que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008 &mdash; Roma I), as partes
+                que assistem ao consumidor (artigo 6.º do Regulamento (CE) n.º 593/2008, Roma I), as partes
                 elegem o foro do tribunal da Comarca correspondente à sede social do prestador, em Portugal, com
                 expressa renúncia a qualquer outro. Consumidores podem, em alternativa, recorrer ao seu próprio foro
                 nos termos do Regulamento (UE) n.º 1215/2012.

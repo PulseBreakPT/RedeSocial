@@ -7,20 +7,20 @@ import { useEffect, useRef, useState } from "react";
 // =============================================================================
 import { Link, useNavigate } from "react-router-dom";
 import {
-    ArrowLeft, ArrowUp, Cookie, FileText, Flame,
-    ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle, Check, Clock,
+    ArrowLeft, ArrowUp, Compass, Cookie, FileText, Flame, Users,
+    ListTree, Printer, Scale, ShieldCheck, Share2, Check, Clock,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
 import SiteFooter from "../../components/SiteFooter";
 
 const NAV = [
     { to: "/legal",            label: "Centro Legal",           short: "Centro",      icon: Scale,        key: "index" },
-    { to: "/legal/vision",     label: "A nossa visão",          short: "Visão",       icon: Sparkle,      key: "vision" },
+    { to: "/legal/vision",     label: "A nossa visão",          short: "Visão",       icon: Compass,      key: "vision" },
     { to: "/manifesto",        label: "Manifesto",              short: "Manifesto",   icon: Flame,        key: "manifesto" },
     { to: "/legal/terms",      label: "Termos e Condições",     short: "Termos",      icon: FileText,     key: "terms" },
     { to: "/legal/privacy",    label: "Política de Privacidade",short: "Privacidade", icon: ShieldCheck,  key: "privacy" },
     { to: "/legal/cookies",    label: "Política de Cookies",    short: "Cookies",     icon: Cookie,       key: "cookies" },
-    { to: "/legal/community",  label: "Diretrizes",             short: "Diretrizes",  icon: Sparkle,      key: "community" },
+    { to: "/legal/community",  label: "Diretrizes",             short: "Diretrizes",  icon: Users,        key: "community" },
 ];
 
 function slugify(s) {
@@ -513,6 +513,37 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     </div>
                 </aside>
             </div>
+
+            {/* Floating "voltar ao topo" — aparece após scroll. Em mobile substitui
+                o botão de Topo do TOC (que fica oculto), em desktop complementa. */}
+            <button
+                type="button"
+                onClick={scrollTop}
+                aria-label="Voltar ao topo"
+                data-testid="legal-fab-top"
+                className="legal-fab-top tap-shrink"
+                style={{
+                    position: "fixed",
+                    right: "clamp(14px, 3vw, 28px)",
+                    bottom: "clamp(14px, 3vw, 28px)",
+                    width: 48,
+                    height: 48,
+                    display: "grid",
+                    placeItems: "center",
+                    background: PT.ink,
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 999,
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.10), 0 18px 40px -16px rgba(10,10,10,0.45)",
+                    opacity: progress > 8 ? 1 : 0,
+                    visibility: progress > 8 ? "visible" : "hidden",
+                    transform: progress > 8 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.92)",
+                    transition: "opacity 220ms ease, transform 260ms cubic-bezier(0.22,1,0.36,1), visibility 0s linear " + (progress > 8 ? "0s" : "260ms"),
+                    zIndex: 45,
+                }}
+            >
+                <ArrowUp size={18} strokeWidth={2.4} />
+            </button>
 
             <SiteFooter />
         </div>

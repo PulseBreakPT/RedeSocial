@@ -1,6 +1,6 @@
 // =============================================================================
-// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
-// Manifesto público — agora dentro do shell editorial uniforme do Centro Legal.
+// DESIGN SYSTEM: LUSORAE EDITORIAL, ver /src/theme/EDITORIAL.md
+// Manifesto público, agora dentro do shell editorial uniforme do Centro Legal.
 // Conteúdo intacto: 6 promessas, stats institucionais, regra de ouro,
 // três razões concretas e CTA final.
 // =============================================================================
@@ -21,7 +21,7 @@ const PROMISES = [
         icon: Moon,
     },
     {
-        title: "Modo Boa Noite — por defeito.",
+        title: "Modo Boa Noite, por defeito.",
         desc: "Entre as 23h00 e as 08h00 as notificações ficam silenciadas. Não te empurramos para acordado. Tu decides se queres opt-in.",
         ref: "Saúde mental > engagement",
         icon: Bell,
@@ -55,7 +55,7 @@ const PROMISES = [
 const WHY_DIFFERENT = [
     {
         title: "Sem anúncios.",
-        desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa — não anunciantes que nos contratam para vender olhares.",
+        desc: "Não vendemos a tua atenção. O nosso modelo é premium: quem paga é quem usa, não anunciantes que nos contratam para vender olhares.",
         ref: "Modelo · Premium",
         icon: Shield,
     },
@@ -78,7 +78,7 @@ export default function Manifesto() {
         <LegalShell
             active="manifesto"
             title="O nosso Manifesto"
-            subtitle="Não te queremos viciado. Queremos-te bem. Estas seis promessas não são marketing &mdash; são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui."
+            subtitle="Não te queremos viciado. Queremos-te bem. Estas seis promessas não são marketing, são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui."
             lastUpdated="Junho de 2026"
             eli5="Sem streaks. Boa Noite por defeito. Sem urgência inventada nas notificações. Feed cronológico sempre disponível. Read receipts opcionais. Contagens esbatidas. Em conformidade com o DSA."
         >
@@ -92,19 +92,19 @@ export default function Manifesto() {
             <h2>Porque escrevemos isto</h2>
             <p>
                 A maior parte das redes sociais foi desenhada para uma coisa muito simples: prender a tua atenção o
-                máximo de tempo possível, para a vender a anunciantes. Tudo o que vês &mdash; o feed, as notificações,
-                os contadores, a forma como o conteúdo aparece e desaparece &mdash; foi otimizado nessa direção. O
+                máximo de tempo possível, para a vender a anunciantes. Tudo o que vês, o feed, as notificações,
+                os contadores, a forma como o conteúdo aparece e desaparece, foi otimizado nessa direção. O
                 resultado é conhecido: ansiedade, polarização, exaustão e uma certa pobreza no que se conversa.
             </p>
             <p>
                 O Lusorae existe para experimentar uma alternativa. Não temos a vaidade de pensar que somos os
-                primeiros a tentar &mdash; mas queremos ser dos que tentam com honestidade. As seis promessas que se
+                primeiros a tentar, mas queremos ser dos que tentam com honestidade. As seis promessas que se
                 seguem são as regras concretas que aplicamos antes de lançar qualquer funcionalidade. Não são
                 vontade boa. São critérios.
             </p>
 
             <h2>As seis promessas</h2>
-            <LegalVisualBlock eyebrow="Núcleo público — anti-dark-pattern" title="Regras de engenharia que nos vinculam">
+            <LegalVisualBlock eyebrow="Núcleo público, anti-dark-pattern" title="Regras de engenharia que nos vinculam">
                 <LegalRightsGrid items={PROMISES} />
             </LegalVisualBlock>
 
@@ -119,9 +119,9 @@ export default function Manifesto() {
             </blockquote>
             <p>
                 Se a resposta honesta for &ldquo;<strong>pior</strong>&rdquo;, a feature não é lançada. É a única razão por que
-                muitos dos padrões da indústria &mdash; streaks coercivos, badges de urgência inventada, scroll
-                infinito sem pausas naturais, conteúdo escondido propositadamente para provocar regresso compulsivo
-                &mdash; simplesmente não existem aqui.
+                muitos dos padrões da indústria (streaks coercivos, badges de urgência inventada, scroll
+                infinito sem pausas naturais, conteúdo escondido propositadamente para provocar regresso compulsivo)
+                simplesmente não existem aqui.
             </p>
 
             <h2>Três razões concretas</h2>
@@ -149,15 +149,15 @@ export default function Manifesto() {
                 qualquer uma das seis promessas, queremos saber. Escreve para{" "}
                 <a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a> ou, para questões mais formais, para{" "}
                 <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>. Não garantimos resposta a tudo, mas
-                garantimos leitura &mdash; e tratamento interno como sinalização contra estas promessas.
+                garantimos leitura, e tratamento interno como sinalização contra estas promessas.
             </p>
             <p>
                 Para perceberes como estas promessas se relacionam com tudo o resto do Lusorae, vê{" "}
-                <Link to="/legal/vision">A nossa visão</Link> &mdash; o documento que reúne os seis compromissos
+                <Link to="/legal/vision">A nossa visão</Link>, o documento que reúne os seis compromissos
                 institucionais que dão coerência a todo o Centro Legal.
             </p>
 
-            {/* CTA final — coerente com o estilo dos outros documentos legais */}
+            {/* CTA final, coerente com o estilo dos outros documentos legais */}
             <div
                 className="not-prose mt-12 mb-6 px-6 sm:px-8 py-7 sm:py-8 relative overflow-hidden"
                 data-testid="manifesto-cta-register-card"
@@ -192,7 +192,7 @@ export default function Manifesto() {
                     </h3>
                     <p className="text-[14px] sm:text-[14.5px] leading-relaxed max-w-[54ch] mb-6 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
                         Cria conta em 60 segundos. Sem cartão. Sem trial. Sem dark patterns. Se um dia mudarmos este
-                        manifesto, vais ser dos primeiros a saber &mdash; e a poder ir embora.
+                        manifesto, vais ser dos primeiros a saber, e a poder ir embora.
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
                         <Link
