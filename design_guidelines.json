@@ -1,129 +1,141 @@
 {
-  "project_name": "Lusorae",
-  "design_philosophy": "Premium Luxury Light Design (Hermès × Twitter × Apple Notes). Zero noise, absolute typographic clarity, and sophisticated silver metallic accents on a pristine white canvas.",
-  "theme": "light",
-  "archetype": "High-Contrast Minimalist Luxury",
-  "brand_identity": {
-    "logo_concept": {
-      "symbol": "◆",
-      "wordmark": "lusorae",
-      "typography": "Cormorant Garamond (Italic/Regular mix)",
-      "color": "Obsidian (#0A0A0A) with a subtle silver foil gradient hover state",
-      "layout": "Symbol slightly smaller than x-height, tightly kerned wordmark"
+  "project": "Lusorae Social App",
+  "theme": "LIGHT",
+  "archetype": "Archetype 4 (Swiss & High-Contrast) + Editorial Hybrid",
+  "philosophy": "LUSORAE EDITORIAL: SSS-tier, highly structured, minimal noise, high density, culturally infused. No fake doodles, no aggressive 3D offset shadows.",
+  "professions_perspectives": {
+    "editorial_art_director": "Drive hierarchy through typography. Use 'Fraunces' for pull quotes and expressive moments, 'JetBrains Mono' for metadata and kickers, 'Inter' for UI density. Generous whitespace in reading areas.",
+    "product_designer": "Optimize for scanability. F-pattern reading for Feed. Predictable interaction models. Cards should feel tactile but not heavy.",
+    "motion_designer": "Spring physics for micro-interactions (stiffness: 400, damping: 30). Magnetic buttons for primary CTAs. Subtle hover lifts (-translate-y-1) on cards.",
+    "frontend_architect": "Maintain zero new dependencies. Use Shadcn primitives heavily customized for the Editorial theme. Rely on Tailwind arbitrary values for exact tokens if needed.",
+    "brand_designer": "Inject Portuguese identity via functional color accents (gold, green, red, azul) and localized copy (e.g., 'LISBOA', 'MANHÃ', 'Fado')."
+  },
+  "colors": {
+    "backgrounds": {
+      "page": "#F7F5EF",
+      "card": "#FBFAF6",
+      "elevated": "#FFFFFF",
+      "inverted": "#0A0A0A"
+    },
+    "text": {
+      "primary": "#0A0A0A",
+      "secondary": "#525252",
+      "tertiary": "#A3A3A3",
+      "inverted": "#FBFAF6"
+    },
+    "borders": {
+      "default": "rgba(10, 10, 10, 0.08)",
+      "strong": "rgba(10, 10, 10, 0.2)",
+      "focus": "#003F87"
+    },
+    "accents_pt": {
+      "red": "#C8102E",
+      "gold": "#FFCC29",
+      "green": "#046A38",
+      "azul": "#003F87",
+      "fado": "#1c1917"
     }
   },
-  "design_tokens": {
-    "colors": {
-      "background": "#FFFFFF",
-      "surface": "#FAFAFA",
-      "surface_elevated": "#FFFFFF",
-      "border_hairline": "#E5E5E5",
-      "text_primary": "#0A0A0A",
-      "text_secondary": "#737373",
-      "text_tertiary": "#A3A3A3",
-      "primary_silver_gradient": "linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 40%, #9CA3AF 60%, #F3F4F6 100%)",
-      "primary_silver_solid": "#D1D5DB",
-      "accent_red_soft": "#EF4444",
-      "accent_green_soft": "#10B981",
-      "accent_blue_soft": "#3B82F6"
+  "typography": {
+    "fonts": {
+      "ui": "Inter, sans-serif",
+      "editorial": "Fraunces, serif",
+      "mono": "JetBrains Mono, monospace"
     },
-    "typography": {
-      "font_families": {
-        "display": "'Cormorant Garamond', serif",
-        "sans_primary": "'Bricolage Grotesque', sans-serif",
-        "body": "'Geist', sans-serif",
-        "mono": "'JetBrains Mono', monospace"
-      },
-      "scale": {
-        "h1": "text-4xl tracking-tighter leading-none font-light",
-        "h2": "text-2xl tracking-tight leading-tight font-medium",
-        "h3": "text-lg tracking-tight font-medium",
-        "body": "text-base leading-relaxed text-text_primary",
-        "caption": "text-sm text-text_secondary",
-        "overline": "text-xs tracking-[0.2em] uppercase font-mono text-text_tertiary"
-      }
-    },
-    "spacing_and_radius": {
-      "spacing_scale": "Tailwind default (p-2, p-4, p-6, p-8, p-12)",
-      "radius_card": "rounded-[24px]",
-      "radius_button": "rounded-full",
-      "radius_pill": "rounded-full"
-    },
-    "elevation": {
-      "shadow_soft": "0 8px 30px rgba(0, 0, 0, 0.04)",
-      "shadow_hover": "0 20px 40px rgba(0, 0, 0, 0.08)",
-      "glassmorphism": "backdrop-blur-xl bg-white/70 backdrop-saturate-150"
-    },
-    "motion": {
-      "easing_elegant": "cubic-bezier(0.16, 1, 0.3, 1)",
-      "duration_fast": "150ms",
-      "duration_smooth": "400ms",
-      "page_reveal": "opacity 0 to 1, transform translateY(10px) to 0 over 600ms"
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-editorial tracking-tight text-ink",
+      "h2": "text-2xl sm:text-3xl font-ui font-bold tracking-tight text-ink",
+      "h3": "text-xl font-ui font-semibold text-ink",
+      "kicker": "text-[10px] font-mono uppercase tracking-[0.2em] text-secondary",
+      "body": "text-base font-ui text-secondary leading-relaxed",
+      "meta": "text-xs font-ui text-tertiary"
     }
   },
-  "components_blueprints": {
-    "post_card": {
-      "container": "bg-white border border-[#E5E5E5] rounded-[24px] p-5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.04)] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
-      "avatar_ring": "p-[2px] rounded-full bg-gradient-to-br from-[#F3F4F6] via-[#9CA3AF] to-[#F3F4F6]",
-      "verified_badge": "text-[#3B82F6] fill-current w-4 h-4 ml-1",
-      "action_bar": "flex justify-between items-center mt-4 pt-4 border-t border-[#E5E5E5]/50",
-      "action_button": "text-[#737373] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] rounded-full p-2 transition-colors",
-      "reactions_row": "flex gap-1 bg-[#FAFAFA] rounded-full px-2 py-1 border border-[#E5E5E5]"
+  "layout_and_spacing": {
+    "grid": "Bento Grid protocol for Explore/Premium, Control Room grid for Feed/Notifications.",
+    "containers": "max-w-7xl mx-auto for shells. Max-width of 600px for Feed column to ensure optimal reading length.",
+    "padding": "Generous scaling: p-4 to p-8 inside cards, py-12 for sections.",
+    "radii": "Subtle: rounded-xl for main cards, rounded-full for pills, rounded-2xl for modals."
+  },
+  "motion_and_interactions": {
+    "hover_lift": "transition-transform duration-300 ease-out hover:-translate-y-1",
+    "active_press": "transition-transform duration-150 ease-in active:scale-[0.98]",
+    "card_shadow_hover": "hover:shadow-[0_8px_30px_rgba(10,10,10,0.08)]",
+    "pulse": ".lusorae-pulse (used on live indicators)"
+  },
+  "component_guidelines": {
+    "LeftSidebar": {
+      "design": "Clean vertical navigation. Remove chunky borders. Use subtle bg-black/5 on hover.",
+      "active_state": "font-bold text-ink with a 2px vertical indicator on the left side (bg-red or bg-ink).",
+      "cta": "Primary 'Publicar' button: fully rounded (pill), black background, white text, magnetic hover."
     },
-    "buttons": {
-      "primary": "bg-[#0A0A0A] text-white rounded-full px-6 py-2.5 font-medium text-sm hover:opacity-90 transition-opacity active:scale-[0.98]",
-      "secondary_silver": "bg-gradient-to-r from-[#F3F4F6] to-[#E5E7EB] text-[#0A0A0A] border border-[#D1D5DB] rounded-full px-6 py-2.5 font-medium text-sm hover:shadow-sm transition-all",
-      "ghost": "bg-transparent text-[#737373] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] rounded-full px-4 py-2 text-sm transition-colors",
-      "text_link": "text-[#0A0A0A] font-medium underline decoration-[#E5E5E5] underline-offset-4 hover:decoration-[#0A0A0A] transition-colors"
+    "Feed": {
+      "design": "Linear-style timeline. Clean headers with backdrop-blur-md bg-paper/80. Sticky tabs.",
+      "post_cards": "No heavy borders. border border-black/5. White background (bg-cream). Hover applies soft lift and diffuse shadow. Avatar is circular.",
+      "typography": "Post body in Inter 15px. Quotes/Reposts use Fraunces italics with a left border."
     },
-    "inputs": {
-      "text_field": "w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-[16px] px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#0A0A0A] focus:bg-white transition-all text-sm",
-      "composer": "w-full bg-transparent resize-none text-lg placeholder:text-[#A3A3A3] focus:outline-none"
+    "StoriesBar": {
+      "design": "Horizontal scroll. Avatars with 2px offset border. Unread state uses a gradient ring (gold to red). Read state uses solid gray ring.",
+      "size": "w-16 h-16 avatars to feel tactile and premium."
+    },
+    "Messages": {
+      "design": "Split pane on desktop (List left, Chat right). Clean, Messenger/iMessage-like bubble density.",
+      "bubbles": "Sent: bg-ink text-white rounded-2xl rounded-tr-sm. Received: bg-bone text-ink rounded-2xl rounded-tl-sm.",
+      "list_item": "Hover state bg-black/5. Unread indicator is a solid azul dot."
+    },
+    "Explore": {
+      "design": "Bento grids. Top trending tags use large editorial typography. Horizontal scrolling rails for 'Pessoas para seguir'.",
+      "cards": "Image heavy, use aspect-square or aspect-[4/5]. Image overlay bg-black/20 maximum."
+    },
+    "Premium": {
+      "design": "High-end presentation. Use glassmorphism (backdrop-blur-xl bg-white/70 border-white/40).",
+      "cards": "Subtle grain texture overlay. Highlight tiers with gold accents."
+    },
+    "Notifications": {
+      "design": "Dense list. Unread items have bg-blue-50/50 (subtle tint). Icons color-coded (heart=red, repost=green, follow=azul).",
+      "spacing": "py-3 px-4 per item."
+    },
+    "Legal": {
+      "design": "Swiss minimalist document. Wide left margin, sticky TOC on the left. Maximum readable line length (65 chars).",
+      "typography": "Large h1, deeply indented paragraphs. Serifs for section headers."
     }
   },
-  "layout_specifications": {
-    "desktop": {
-      "grid": "grid-cols-1 lg:grid-cols-12 max-w-[1400px] mx-auto gap-8 px-4 lg:px-8",
-      "left_sidebar": "lg:col-span-3 sticky top-0 h-screen py-8 flex flex-col justify-between",
-      "main_feed": "lg:col-span-6 min-h-screen border-l border-r border-[#E5E5E5] pb-24",
-      "right_rail": "lg:col-span-3 sticky top-0 h-screen py-8"
+  "image_urls": {
+    "premium_hero": {
+      "url": "https://images.unsplash.com/photo-1658604663578-04634f4cb897?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGxpZ2h0JTIwYXVyYSUyMG1pbmltYWx8ZW58MHx8fHwxNzgxMjU2MDE0fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract light aura for premium background",
+      "location": "Premium page hero background"
     },
-    "mobile": {
-      "top_bar": "fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-xl border-b border-[#E5E5E5] z-50 flex items-center justify-between px-4",
-      "bottom_nav": "fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-t border-[#E5E5E5] z-50 flex items-center justify-around pb-safe",
-      "center_fab": "absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-[#0A0A0A] text-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 transition-transform",
-      "bottom_sheet": "fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-[32px] shadow-[0_-20px_40px_rgba(0,0,0,0.1)] p-6 transform transition-transform"
+    "explore_banner": {
+      "url": "https://images.unsplash.com/photo-1533421821268-87e42c1d70b0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwyfHxsaXNib24lMjBhcmNoaXRlY3R1cmUlMjBtaW5pbWFsfGVufDB8fHx8MTc4MTI1NjAxNHww&ixlib=rb-4.1.0&q=85",
+      "description": "Minimal Lisbon architecture",
+      "location": "Explore page top banner or featured community"
     }
   },
-  "page_blueprints": {
-    "feed": "Top bar fixed with blur. Stories bar sits below top bar, using silver avatar rings. Feed items have ample spacing (gap-6) and 1px hairline borders. Pull-to-refresh spinner is a minimalist silver ring.",
-    "profile": "Hero banner is a soft noise gradient or uploaded image with 30% white overlay. Avatar overlaps banner with pure white 4px border. Stats card uses Japandi minimalism (FAFAFA background). Heatmap uses silver/grey shades for streaks.",
-    "composer_bottom_sheet": "Opens with smooth spring physics. Large typography for input. Multi-image carousel shows images with 16px radius. Action bar at bottom has minimalist lucide icons.",
-    "messages": "Conversations list uses pure white with hover:bg-FAFAFA. Chat view has sticky header. Bubbles are #0A0A0A (sent) and #F3F4F6 (received) with 20px radius.",
-    "communities": "Grid layout (bento style) for communities. Silver borders, soft shadows on hover.",
-    "auth": "Split screen on desktop. Left side: subtle silver aurora gradient with brand symbol. Right side: minimalist form. Mobile: clean white screen, large serif welcome text."
+  "implementation_phases": {
+    "P0": [
+      "/app/frontend/src/components/PostCard.js",
+      "/app/frontend/src/components/LeftSidebar.js",
+      "/app/frontend/src/components/StoriesBar.js"
+    ],
+    "P1": [
+      "/app/frontend/src/pages/Feed.js",
+      "/app/frontend/src/pages/Messages.js",
+      "/app/frontend/src/pages/Notifications.js"
+    ],
+    "P2": [
+      "/app/frontend/src/pages/Explore.js",
+      "/app/frontend/src/pages/Premium.js",
+      "/app/frontend/src/pages/legal/LegalShell.js"
+    ]
   },
-  "iconography": {
-    "library": "lucide-react",
-    "stroke_weight": "1.25px to 1.5px (keeps it light and elegant)",
-    "style": "Outlined by default. Filled ONLY for active states (e.g., active tab in bottom nav, liked heart)",
-    "brand_mark": "Use the diamond (◆) in pure black, or apply the silver gradient via CSS text-fill-color for premium touch."
-  },
-  "motion_choreography": {
-    "page_load": "Staggered fade-in (opacity 0->1, translateY 10px->0) with 50ms delay per feed item.",
-    "hover_lifts": "Card hovers move Y by -2px and increase shadow spread softly.",
-    "ink_links": "Underline scales from width 0 to 100% on hover, originating from left.",
-    "reaction_burst": "Clicking like triggers a micro-scale (0.8 -> 1.2 -> 1.0) and a subtle flash of the soft red/green accent color."
-  },
-  "css_variables_snippet": ":root {\n  --background: 0 0% 100%;\n  --foreground: 0 0% 4%;\n  --card: 0 0% 100%;\n  --card-foreground: 0 0% 4%;\n  --popover: 0 0% 100%;\n  --popover-foreground: 0 0% 4%;\n  --primary: 0 0% 4%;\n  --primary-foreground: 0 0% 100%;\n  --secondary: 210 20% 96%;\n  --secondary-foreground: 0 0% 4%;\n  --muted: 210 20% 98%;\n  --muted-foreground: 0 0% 45%;\n  --accent: 210 20% 98%;\n  --accent-foreground: 0 0% 4%;\n  --destructive: 0 84.2% 60.2%;\n  --destructive-foreground: 0 0% 100%;\n  --border: 0 0% 90%;\n  --input: 0 0% 90%;\n  --ring: 0 0% 4%;\n  --radius: 1.5rem;\n}\n\n.silver-gradient-text {\n  background: linear-gradient(135deg, #A3A3A3 0%, #E5E5E5 50%, #A3A3A3 100%);\n  -webkit-background-clip: text;\n  -webkit-text-fill-color: transparent;\n}",
-  "tailwind_classes": {
-    "text_hero": "font-display text-4xl lg:text-5xl tracking-tighter text-[#0A0A0A] font-light",
-    "section_label": "font-mono text-xs tracking-[0.2em] uppercase text-[#A3A3A3]",
-    "card_premium": "bg-white border border-[#E5E5E5] rounded-[24px] p-6 shadow-sm hover:shadow-md transition-all duration-300",
-    "nav_item": "flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#FAFAFA] text-[#0A0A0A] transition-colors group",
-    "glass_header": "bg-white/70 backdrop-blur-xl border-b border-[#E5E5E5]/50 supports-[backdrop-filter]:bg-white/60"
-  },
-  "testing_attributes": {
-    "instruction": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case."
-  }
+  "instructions_to_main_agent": [
+    "Load this JSON to understand the Lusorae Editorial SSS-tier style.",
+    "Remove any usage of offset 3D shadows (e.g., 'shadow-[4px_4px_0_#000]') and replace with standard Tailwind 'shadow-sm' or 'shadow-md'.",
+    "Replace overly rounded decorative borders (e.g., border-4 border-black) with 'border border-black/10' or 'border border-border'.",
+    "Implement the component overrides exactly as described in component_guidelines.",
+    "Ensure all interactive elements maintain their 'data-testid'.",
+    "Do not touch routing logic or backend fetching logic.",
+    "Use 'Inter' for body, 'JetBrains Mono' for small overlines, and 'Fraunces' specifically for quotes, headers, or premium tier names."
+  ]
 }
