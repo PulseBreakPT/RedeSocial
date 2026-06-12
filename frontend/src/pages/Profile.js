@@ -6,19 +6,18 @@ import { useEffect, useMemo, useState } from "react";
 // kickers mono, sombras difusas.
 // =============================================================================
 import { useNavigate, useParams } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock, ArrowLeft } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { FollowsModal } from "../components/FollowsModal";
 import { PostCard } from "../components/PostCard";
 import { ProfileSkeleton, PostSkeletonList } from "../components/Skeleton";
-import { PageHeader } from "../components/PageHeader";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
 import { PT } from "../theme/editorial";
-import { Kicker, Sticker } from "../components/editorial/Primitives";
+import { EditorialTag } from "../components/editorial/Button";
 
 import { IdentityCard } from "./profile/IdentityCard";
 import { ShareModal } from "./profile/ShareModal";
@@ -155,17 +154,54 @@ export default function Profile() {
 
     return (
         <div data-testid="profile-page" className="pb-32 sm:pb-12 relative" style={{ background: PT.cream, minHeight: "100vh" }}>
-            <PageHeader
-                title={
-                    <span className="inline-flex items-center gap-1.5">
-                        {profile.name} {profile.verified && <VerifiedBadge size={16} />}
+            {/* ─────────── EDITORIAL MASTHEAD (sticky, ink strip + identity meta) ─────────── */}
+            <div
+                className="sticky top-0 lg:top-0 z-30 backdrop-blur"
+                style={{
+                    top: "calc(var(--mobile-topbar-h, 0px) + var(--safe-top, 0px))",
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+                data-testid="profile-header"
+            >
+                <div className="hidden lg:flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                        </span>
+                        LUSORAE · PERFIL · @{profile.username.toUpperCase()}
                     </span>
-                }
-                subtitle={`${stats?.posts_count ?? 0} publicações`}
-                back
-                sticky={false}
-                testid="profile-header"
-            />
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
+                        {regionMeta && <><span>{regionMeta.label.toUpperCase()}</span><span style={{ color: "rgba(255,244,220,0.28)" }}>·</span></>}
+                        <span>{stats?.posts_count ?? 0} PUBLICAÇÕES</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-3 px-4 lg:px-7 py-3 lg:py-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        data-testid="profile-back"
+                        aria-label="voltar"
+                        className="lg:hidden -ml-1 w-9 h-9 grid place-items-center tap-shrink transition"
+                        style={{
+                            background: "#fff",
+                            color: PT.ink,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            borderRadius: 999,
+                        }}
+                    >
+                        <ArrowLeft size={18} strokeWidth={2.2} />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="font-black tracking-[-0.025em] leading-tight truncate inline-flex items-center gap-1.5" style={{ fontSize: "clamp(20px, 2.4vw, 26px)", color: PT.ink }}>
+                            {profile.name} {profile.verified && <VerifiedBadge size={16} />}
+                        </h1>
+                        <p className="text-[10.5px] truncate mt-0.5 font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.5)", letterSpacing: "0.18em" }}>
+                            @{profile.username} · {stats?.posts_count ?? 0} publicações
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             {/* ---------- HERO BANNER — bloco editorial sólido com hairline ---------- */}
             <div
@@ -184,11 +220,11 @@ export default function Profile() {
                     <img src={profile.banner} alt="" className="relative w-full h-full object-cover" />
                 )}
                 {!profile.banner && regionMeta && (
-                    <div className="absolute right-4 bottom-5 text-right z-[2]">
-                        <Sticker bg={PT.ink} color={PT.gold} style={{ fontSize: 10, padding: "5px 10px" }}>
+                    <div className="absolute right-4 bottom-4 z-[2]">
+                        <EditorialTag tone="ink">
                             <span className="mr-1.5" aria-hidden>{regionMeta.emoji}</span>
                             {regionMeta.label}
-                        </Sticker>
+                        </EditorialTag>
                     </div>
                 )}
             </div>
@@ -230,8 +266,8 @@ export default function Profile() {
                 <div className="mt-12 mx-4 lg:mx-8 p-8 lg:p-12 text-center relative z-10" data-testid="private-locked"
                     style={{
                         background: "#fff",
-                        border: `3.5px solid ${PT.ink}`,
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        border: "1px solid rgba(10,10,10,0.08)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 22px 44px -22px rgba(200,16,46,0.18), 0 8px 22px -12px rgba(10,10,10,0.10)",
                         borderRadius: 24,
                     }}
                 >
@@ -239,16 +275,18 @@ export default function Profile() {
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
                             background: PT.red, color: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 12px 28px -10px rgba(200,16,46,0.50)",
                             borderRadius: 999,
                         }}
                     >
                         <Lock size={26} strokeWidth={2.2} />
                     </div>
-                    <Kicker color={PT.red} className="mb-2">PERFIL · PRIVADO</Kicker>
-                    <h3 className="font-black tracking-tight" style={{ fontSize: 26, color: PT.ink }}>Perfil privado</h3>
-                    <p className="font-mono text-[11px] mt-3" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.10em" }}>
-                        SEGUE · PARA · VER · PUBLICAÇÕES
+                    <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.red }}>
+                        Perfil · Privado
+                    </p>
+                    <h3 className="font-black tracking-[-0.025em] leading-tight" style={{ fontSize: "clamp(22px, 3vw, 30px)", color: PT.ink }}>Perfil privado</h3>
+                    <p className="text-[13.5px] mt-3 font-medium max-w-[36ch] mx-auto" style={{ color: "rgba(10,10,10,0.55)" }}>
+                        Segue esta pessoa para veres as publicações.
                     </p>
                 </div>
             ) : (
@@ -363,13 +401,34 @@ function BlockedWallView({ profile }) {
 
     return (
         <div data-testid="profile-blocked-wall" className="pb-32 sm:pb-12" style={{ background: PT.cream, minHeight: "100vh" }}>
-            <PageHeader
-                title="Conta com muro"
-                subtitle="Não vês nada desta pessoa enquanto o muro estiver de pé"
-                back
-                sticky={false}
-                testid="profile-header-blocked"
-            />
+            <div
+                className="sticky top-0 z-30 backdrop-blur"
+                style={{
+                    top: "calc(var(--mobile-topbar-h, 0px) + var(--safe-top, 0px))",
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+                data-testid="profile-header-blocked"
+            >
+                <div className="flex items-center gap-3 px-4 lg:px-7 py-3 lg:py-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        aria-label="voltar"
+                        className="lg:hidden -ml-1 w-9 h-9 grid place-items-center transition"
+                        style={{ background: "#fff", color: PT.ink, border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
+                    >
+                        <ArrowLeft size={18} strokeWidth={2.2} />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="font-black tracking-[-0.025em] leading-tight" style={{ fontSize: "clamp(20px, 2.4vw, 26px)", color: PT.ink }}>
+                            Conta com muro
+                        </h1>
+                        <p className="text-[10.5px] truncate mt-0.5 font-mono font-bold uppercase" style={{ color: "rgba(10,10,10,0.5)", letterSpacing: "0.18em" }}>
+                            Muro levantado · não vês nada desta pessoa
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             {/* Banner placeholder — listrado neutro Lusorae editorial */}
             <div

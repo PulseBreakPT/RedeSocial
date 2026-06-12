@@ -50,16 +50,7 @@ export function StoriesBar() {
             data-testid="stories-bar"
             style={{ background: "rgba(247,245,239,0.50)" }}
         >
-            <div className="flex items-center justify-between mb-2.5 px-1">
-                <div className="inline-flex items-center gap-2">
-                    <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: "#C8102E" }} />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#C8102E" }} />
-                    </span>
-                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
-                        Stories · ao vivo
-                    </span>
-                </div>
+            <div className="flex items-center justify-end mb-2.5 px-1" style={{ minHeight: 18 }}>
                 {orderedGroups.length > 0 && (
                     <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.32)" }}>
                         {orderedGroups.length} {orderedGroups.length === 1 ? "autor" : "autores"}

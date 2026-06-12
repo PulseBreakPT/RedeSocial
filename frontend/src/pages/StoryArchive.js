@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { StoryViewer } from "../components/stories/StoryViewer";
 import { bgCss } from "../components/stories/storyConstants";
 import { useAuth } from "../context/AuthContext";
-import { PtPageShell } from "../components/PtPageShell";
+import { PageShell, PageHero } from "../components/PageShell";
+import { PT } from "../theme/editorial";
 
 function relativeShort(iso) {
     const t = new Date(iso).getTime();
@@ -57,56 +58,56 @@ export default function StoryArchive() {
     const expired = (items || []).filter(s => !s.expires_at || new Date(s.expires_at).getTime() <= Date.now());
 
     return (
-        <PtPageShell testid="story-archive-page">
-            <div className="max-w-2xl mx-auto pb-20">
-            <header className="hairline-b sticky top-0 z-30 bg-white/85 backdrop-blur px-4 lg:px-6 py-3 flex items-center gap-2">
-                <Link to={`/u/${user?.username}`} className="p-1 -ml-1 rounded-full hover:bg-black/[0.06]" aria-label="voltar">
-                    <ChevronLeft size={18} />
-                </Link>
-                <Archive size={15} className="text-coral" />
-                <h1 className="font-display text-[19px] tracking-tight">Arquivo de stories</h1>
-            </header>
-
-            <div className="px-4 lg:px-6 py-4">
-                <p className="font-mono text-[11px] text-black/45 mb-3">
-                    Stories próprios — incluindo já expirados. Só tu vês esta página.
-                </p>
+        <PageShell max="max-w-4xl">
+            <PageHero
+                title="Arquivo de stories"
+                subtitle="Os teus stories — incluindo os que já expiraram. Só tu vês esta página."
+                badge="Memória de stories"
+                accent={PT.brasa}
+            />
+            <div className="px-4 lg:px-7 pt-6 pb-20">
 
                 {items === null ? (
-                    <div className="py-10 grid place-items-center"><Loader2 className="animate-spin text-black/40" size={20} /></div>
+                    <div className="py-10 grid place-items-center"><Loader2 className="animate-spin" size={20} style={{ color: "rgba(10,10,10,0.40)" }} /></div>
                 ) : items.length === 0 ? (
-                    <div className="py-12 text-center text-black/50 font-mono text-[11px]">
-                        Ainda não publicaste nenhum story.
+                    <div className="py-16 text-center">
+                        <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.42)" }}>Sem stories</p>
+                        <h3 className="font-black tracking-[-0.025em]" style={{ fontSize: 22, color: PT.ink }}>Ainda não publicaste nenhum story.</h3>
                     </div>
                 ) : (
                     <>
                         {activeOnly.length > 0 && (
                             <>
-                                <h2 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-coral mb-2">Activos (24h)</h2>
+                                <h2 className="font-mono font-bold uppercase mb-3 inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.brasa }}>
+                                    <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.brasa }} />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.brasa }} />
+                                    </span>
+                                    Activos (24h)
+                                </h2>
                                 <Grid items={activeOnly} all={items} onOpen={(idx) => setOpenIdx(idx)} onDel={del} onHL={addHL} />
                             </>
                         )}
                         {expired.length > 0 && (
                             <>
-                                <h2 className={`font-mono text-[10.5px] uppercase tracking-[0.18em] text-black/55 mb-2 ${activeOnly.length ? "mt-6" : ""}`}>Expirados</h2>
+                                <h2 className="font-mono font-bold uppercase mb-3 mt-8" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>Expirados</h2>
                                 <Grid items={expired} all={items} onOpen={(idx) => setOpenIdx(idx)} onDel={del} onHL={addHL} indexOffset={activeOnly.length} />
                             </>
                         )}
                     </>
                 )}
-            </div>
 
-            {openIdx != null && items && (
-                <StoryViewer
-                    groups={[{ author: user, stories: items, has_unseen: false }]}
-                    startIndex={0}
-                    startSubIndex={openIdx}
-                    onClose={() => { setOpenIdx(null); load(); }}
-                    onChange={load}
-                />
-            )}
+                {openIdx != null && items && (
+                    <StoryViewer
+                        groups={[{ author: user, stories: items, has_unseen: false }]}
+                        startIndex={0}
+                        startSubIndex={openIdx}
+                        onClose={() => { setOpenIdx(null); load(); }}
+                        onChange={load}
+                    />
+                )}
             </div>
-        </PtPageShell>
+        </PageShell>
     );
 }
 

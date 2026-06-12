@@ -5,7 +5,6 @@ import {
 import { LegalShell } from "./LegalShell";
 import { LegalComplianceBoard, LegalVisualBlock } from "./_visuals";
 import { PT } from "../../theme/editorial";
-import { Sticker, Kicker } from "../../components/editorial/Primitives";
 
 const CARDS = [
     {

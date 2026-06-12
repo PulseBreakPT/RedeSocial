@@ -12,10 +12,10 @@ export function PageShell({ children, max = "max-w-5xl" }) {
     return (
         <div
             className="relative"
-            style={{ background: "#FFFFFF", minHeight: "100vh" }}
+            style={{ background: PT.cream, minHeight: "100vh" }}
             data-testid="page-shell"
         >
-            <div className={`${max} mx-auto px-4 lg:px-6 py-5 lg:py-7 relative z-10`}>
+            <div className={`${max} mx-auto relative z-10`}>
                 {children}
             </div>
         </div>
@@ -45,46 +45,88 @@ export function Kicker({ children, color = PT.red, dot = true, className = "" })
 }
 
 // =============================================================================
-// PageHero — header editorial limpo
+// PageHero — Lusorae Editorial masthead (sticky · ink strip · H1 massive)
+// API legada: { icon, title, subtitle, badge, actions, children, accent }
+// Compat: aceita `icon` mas não o mostra (estética premium não usa caixas com ícone).
 // =============================================================================
-export function PageHero({ icon: Icon, title, subtitle, badge, actions, children, accent = PT.red }) {
+export function PageHero({ title, subtitle, badge, actions, children, accent = PT.gold }) {
+    const meta = { hh: new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }),
+                   day: new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase() };
     return (
-        <div className="mb-7 lg:mb-9 relative" data-testid="page-hero">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1 min-w-0">
-                    {badge && <Kicker color={accent} className="mb-3">{badge}</Kicker>}
-                    <h1
-                        className="font-black tracking-[-0.035em] leading-[0.98] flex items-center gap-3"
-                        style={{ fontSize: "clamp(30px, 4vw, 44px)", color: PT.ink }}
-                    >
-                        {Icon && (
-                            <span
-                                className="inline-flex items-center justify-center shrink-0"
-                                style={{
-                                    width: 42, height: 42,
-                                    background: "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    borderRadius: 12,
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 6px 14px -6px rgba(10,10,10,0.08)",
-                                }}
+        <div className="relative" data-testid="page-hero">
+            {/* DESKTOP MASTHEAD */}
+            <div
+                className="hidden lg:block sticky top-0 z-30 backdrop-blur"
+                style={{
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+            >
+                <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: accent }}>
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: accent }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: accent }} />
+                        </span>
+                        LUSORAE · {(typeof title === "string" ? title : (badge || "")).toUpperCase()}
+                    </span>
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
+                        <span>LISBOA · {meta.hh}</span>
+                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
+                        <span>EDIÇÃO · {meta.day}</span>
+                    </span>
+                </div>
+                <div className="px-7 pt-7 pb-5">
+                    <div className="flex items-end justify-between gap-6 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                            {badge && typeof badge === "string" && (
+                                <p className="font-mono text-[10.5px] font-bold uppercase mb-3.5 inline-flex items-center gap-1.5" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
+                                    {badge}
+                                </p>
+                            )}
+                            <h1
+                                className="font-black tracking-[-0.045em] leading-[0.94]"
+                                style={{ fontSize: "clamp(40px, 5vw, 56px)", color: PT.ink }}
                             >
-                                <Icon size={22} strokeWidth={2} style={{ color: PT.ink }} />
-                            </span>
-                        )}
-                        <span>{title}</span>
+                                {typeof title === "string" ? (
+                                    <>{title}<span style={{ color: accent }}>.</span></>
+                                ) : title}
+                            </h1>
+                            {subtitle && (
+                                <p className="mt-3 text-[14.5px] lg:text-[15px] max-w-[52ch] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
+                                    {subtitle}
+                                </p>
+                            )}
+                        </div>
+                        {actions && <div className="flex items-center gap-2 flex-shrink-0 pb-1">{actions}</div>}
+                    </div>
+                </div>
+                {children}
+            </div>
+
+            {/* MOBILE MASTHEAD — compacto */}
+            <div
+                className="lg:hidden sticky z-30 backdrop-blur"
+                style={{
+                    top: "calc(var(--mobile-topbar-h, 0px) + var(--safe-top, 0px))",
+                    background: "rgba(247,245,239,0.94)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+            >
+                <div className="px-4 pt-3 pb-3.5">
+                    <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: "clamp(22px, 6vw, 28px)", color: PT.ink }}>
+                        {typeof title === "string" ? (
+                            <>{title}<span style={{ color: accent }}>.</span></>
+                        ) : title}
                     </h1>
                     {subtitle && (
-                        <p
-                            className="mt-3 text-[14.5px] lg:text-[15.5px] max-w-2xl leading-relaxed font-medium"
-                            style={{ color: "rgba(10,10,10,0.62)" }}
-                        >
+                        <p className="mt-1.5 text-[12.5px] font-medium" style={{ color: "rgba(10,10,10,0.55)", lineHeight: 1.45 }}>
                             {subtitle}
                         </p>
                     )}
                 </div>
-                {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
+                {children}
             </div>
-            {children}
         </div>
     );
 }
@@ -185,43 +227,48 @@ export function Chip({ active, onClick, icon: Icon, children, testid, count }) {
 }
 
 // =============================================================================
-// Empty — clean editorial empty state
+// Empty — clean editorial empty state (sem caixas amarelas/cinzentas)
 // =============================================================================
 export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
     return (
         <div
-            className="py-14 px-6 text-center"
+            className="py-14 px-6 text-center mx-4 lg:mx-7 mt-6 mb-10"
             data-testid="empty-state"
             style={{
                 background: "#fff",
                 border: "1px solid rgba(10,10,10,0.08)",
                 borderRadius: 24,
-                boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 40px -22px rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 22px 44px -22px rgba(10,10,10,0.12), 0 8px 22px -12px rgba(10,10,10,0.10)",
             }}
         >
             {Icon && (
                 <div
-                    className="w-16 h-16 mx-auto mb-5 grid place-items-center"
+                    className="w-20 h-20 mx-auto mb-5 grid place-items-center"
                     style={{
-                        background: "rgba(10,10,10,0.04)",
+                        background: "#fff",
                         color: PT.ink,
-                        borderRadius: 16,
+                        border: "1px solid rgba(10,10,10,0.08)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 30px -12px rgba(10,10,10,0.18)",
+                        borderRadius: 999,
                     }}
                 >
-                    <Icon size={26} strokeWidth={1.8} />
+                    <Icon size={26} strokeWidth={2.0} />
                 </div>
             )}
-            <h3 className="font-black text-[19px] tracking-[-0.02em] mb-2" style={{ color: PT.ink }}>{title}</h3>
-            {body && <p className="text-[14px] max-w-md mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{body}</p>}
+            <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.42)" }}>
+                Nada por aqui
+            </p>
+            <h3 className="font-black tracking-[-0.025em] leading-tight mb-2" style={{ fontSize: "clamp(20px, 2.8vw, 26px)", color: PT.ink }}>{title}</h3>
+            {body && <p className="text-[13.5px] max-w-md mx-auto leading-relaxed font-medium mt-3" style={{ color: "rgba(10,10,10,0.6)" }}>{body}</p>}
             {cta && (ctaTo ? (
                 <Link
                     to={ctaTo}
-                    className="inline-block mt-6 px-5 py-3 text-[13px] font-bold rounded-full transition-all duration-200 hover:translate-y-[-1px]"
+                    className="inline-block mt-6 px-5 h-11 leading-[44px] text-[12.5px] font-black uppercase rounded-full transition hover:translate-y-[-1px]"
                     style={{
-                        background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
+                        background: PT.ink,
                         color: "#fff",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px -10px rgba(10,10,10,0.35)",
-                        letterSpacing: "-0.005em",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)",
+                        letterSpacing: "0.14em",
                     }}
                     data-testid="empty-state-cta"
                 >
@@ -230,12 +277,12 @@ export function Empty({ icon: Icon, title, body, cta, ctaTo, ctaOnClick }) {
             ) : (
                 <button
                     onClick={ctaOnClick}
-                    className="mt-6 px-5 py-3 text-[13px] font-bold rounded-full transition-all duration-200 hover:translate-y-[-1px]"
+                    className="mt-6 px-5 h-11 text-[12.5px] font-black uppercase rounded-full transition hover:translate-y-[-1px]"
                     style={{
-                        background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
+                        background: PT.ink,
                         color: "#fff",
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px -10px rgba(10,10,10,0.35)",
-                        letterSpacing: "-0.005em",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)",
+                        letterSpacing: "0.14em",
                     }}
                     data-testid="empty-state-cta"
                 >

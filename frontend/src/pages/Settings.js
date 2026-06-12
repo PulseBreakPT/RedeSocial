@@ -7,8 +7,6 @@ import {
     Search, Check, X, Settings as SettingsIcon, Palette,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
-import { PageHeader } from "../components/PageHeader";
-import { PtPageShell } from "../components/PtPageShell";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
@@ -290,10 +288,39 @@ export default function Settings() {
     const ActiveIcon = activeGroup.icon;
 
     return (
-        <PtPageShell testid="settings-page" className="pb-32" doodles="minimal">
-            <PageHeader title="Definições" back testid="settings-header">
+        <div data-testid="settings-page" className="relative pb-32" style={{ background: PT.cream, minHeight: "100vh" }}>
+            {/* ──────────── EDITORIAL MASTHEAD (Settings) ──────────── */}
+            <div
+                className="sticky top-0 z-30 backdrop-blur"
+                style={{
+                    top: "calc(var(--mobile-topbar-h, 0px) + var(--safe-top, 0px))",
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                }}
+                data-testid="settings-header"
+            >
+                <div className="hidden lg:flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                        </span>
+                        LUSORAE · DEFINIÇÕES · A TUA CONTA
+                    </span>
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
+                        <span>{activeGroup?.label?.toUpperCase()}</span>
+                    </span>
+                </div>
+                <div className="px-4 lg:px-7 pt-4 lg:pt-7 pb-3 lg:pb-5">
+                    <h1 className="font-black tracking-[-0.045em] leading-[0.94]" style={{ fontSize: "clamp(28px, 5vw, 56px)", color: PT.ink }}>
+                        Definições<span style={{ color: PT.gold }}>.</span>
+                    </h1>
+                    <p className="hidden lg:block mt-3 text-[14.5px] max-w-[52ch] font-medium" style={{ color: "rgba(10,10,10,0.62)", lineHeight: 1.45 }}>
+                        Gere a tua conta, privacidade, notificações e aparência — tudo num só sítio.
+                    </p>
+                </div>
                 {/* Mobile-only chip tabs */}
-                <div className="lg:hidden px-3 pb-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
+                <div className="lg:hidden px-3 pb-3 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 10 }}>
                     {filteredTabs.map((t) => {
                         const Icon = t.icon;
                         const active = tab === t.key;
@@ -302,14 +329,14 @@ export default function Settings() {
                                 key={t.key}
                                 onClick={() => setTab(t.key)}
                                 data-testid={`settings-tab-${t.key}`}
-                                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase tap-shrink transition-transform"
+                                className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 text-[11.5px] font-black uppercase transition hover:translate-y-[-1px]"
                                 style={{
                                     background: active ? PT.ink : "#fff",
                                     color: active ? "#fff" : PT.ink,
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                    border: active ? "1px solid transparent" : "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 999,
-                                    letterSpacing: "0.06em",
+                                    letterSpacing: "0.14em",
+                                    boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.30)" : "0 1px 2px rgba(10,10,10,0.04)",
                                 }}
                             >
                                 <Icon size={12} strokeWidth={2.6} /> {t.short || t.label}
@@ -317,7 +344,7 @@ export default function Settings() {
                         );
                     })}
                 </div>
-            </PageHeader>
+            </div>
 
             <div className="lg:grid lg:grid-cols-[300px_1fr] lg:gap-0">
                 {/* Desktop vertical sidebar — fanzine */}
@@ -664,6 +691,6 @@ export default function Settings() {
                     </div>
                 </div>
             )}
-        </PtPageShell>
+        </div>
     );
 }

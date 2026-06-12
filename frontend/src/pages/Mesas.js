@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Coffee, Plus, Clock, Users, Send, ArrowLeft, X as XIcon } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
-import { PageHeader } from "../components/PageHeader";
-import { PtPageShell } from "../components/PtPageShell";
+import { PageShell, PageHero, Empty } from "../components/PageShell";
+import { PT } from "../theme/editorial";
 import { Avatar } from "../components/Avatar";
 import { useAuth } from "../context/AuthContext";
 import { useWsMessages } from "../components/WebSocketProvider";
@@ -67,22 +67,25 @@ export default function Mesas() {
     }
 
     return (
-        <PtPageShell testid="mesas-page">
-            <PageHeader
+        <PageShell max="max-w-5xl">
+            <PageHero
                 title="Mesas"
                 subtitle="Conversas efémeras. Nascem, vivem enquanto há gente, e fecham sozinhas."
-                testid="mesas-header"
-                action={
+                badge="Salas que existem só agora"
+                accent={PT.telha}
+                actions={
                     <button
                         onClick={() => setCreating(true)}
                         data-testid="mesa-create-open"
-                        className="btn-obsidian text-[13px] py-2 px-3.5 flex items-center gap-1.5"
+                        className="inline-flex items-center gap-1.5 h-10 px-4 font-black uppercase transition hover:translate-y-[-1px]"
+                        style={{ background: PT.ink, color: "#fff", borderRadius: 999, fontSize: 11.5, letterSpacing: "0.14em", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)" }}
                     >
-                        <Plus size={15} strokeWidth={2} /> Abrir mesa
+                        <Plus size={13} strokeWidth={2.6} /> Abrir mesa
                     </button>
                 }
             />
 
+            <div className="px-4 lg:px-7 pt-6 pb-12">
             {creating && (
                 <CreateMesa
                     onClose={() => setCreating(false)}
@@ -90,44 +93,38 @@ export default function Mesas() {
                 />
             )}
 
-            <div className="px-4 lg:px-5 py-3 space-y-2.5">
+            <div className="space-y-3">
                 {loading ? (
-                    <div className="py-16 text-center text-black/40 text-[13px]">A carregar mesas…</div>
+                    <div className="py-16 text-center font-mono font-bold uppercase" style={{ fontSize: 11, letterSpacing: "0.18em", color: "rgba(10,10,10,0.42)" }}>A carregar mesas…</div>
                 ) : mesas.length === 0 ? (
-                    <div className="px-6 py-20 text-center anim-fade-up">
-                        <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                            <Coffee size={26} strokeWidth={1.4} className="text-black/70" />
-                        </div>
-                        <h3 className="font-display text-[19px] font-bold tracking-tight text-black">Nenhuma mesa aberta.</h3>
-                        <p className="text-black/55 text-[14px] mt-3 max-w-xs mx-auto leading-relaxed">
-                            Abre a primeira — uma conversa que dura só o tempo certo.
-                        </p>
-                    </div>
+                    <Empty icon={Coffee} title="Nenhuma mesa aberta" body="Abre a primeira — uma conversa que dura só o tempo certo." cta="Abrir mesa" ctaOnClick={() => setCreating(true)} />
                 ) : (
                     mesas.map((m) => (
                         <button
                             key={m.id}
                             onClick={() => setActive(m.id)}
                             data-testid={`mesa-row-${m.id}`}
-                            className="card-lux w-full text-left p-4 hover:shadow-md transition flex items-start gap-3 anim-fade-up"
+                            className="w-full text-left p-4 transition hover:translate-y-[-1px] flex items-start gap-3"
+                            style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 18, boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 22px -14px rgba(10,10,10,0.10)" }}
                         >
-                            <div className="w-11 h-11 rounded-xl bg-black/[0.04] grid place-items-center shrink-0 text-black/70">
-                                <Coffee size={18} strokeWidth={1.7} />
+                            <div className="w-12 h-12 grid place-items-center shrink-0" style={{ background: PT.telha, color: "#fff", borderRadius: 12, boxShadow: `0 1px 2px rgba(10,10,10,0.06), 0 10px 22px -10px ${PT.telha}80` }}>
+                                <Coffee size={20} strokeWidth={2.2} />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="font-heading font-semibold text-[14.5px] tracking-tight text-black truncate">{m.title}</div>
-                                {m.topic && <div className="text-[12.5px] text-black/55 truncate mt-0.5">{m.topic}</div>}
-                                <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-black/45">
-                                    <span className="inline-flex items-center gap-1"><Users size={12} /> {m.participants_count}</span>
-                                    <span className="inline-flex items-center gap-1"><Clock size={12} /> fecha em {fmtLeft(m.seconds_left)}</span>
-                                    <span className="text-[10px] font-mono uppercase tracking-wider bg-black/[0.05] text-black/55 px-1.5 py-0.5 rounded-full">{KIND_LABEL[m.kind] || m.kind}</span>
+                                <div className="font-black text-[15.5px] tracking-[-0.015em] truncate" style={{ color: PT.ink }}>{m.title}</div>
+                                {m.topic && <div className="text-[13px] truncate mt-0.5 font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>{m.topic}</div>}
+                                <div className="flex items-center gap-3 mt-2 font-mono text-[10.5px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.50)", letterSpacing: "0.08em" }}>
+                                    <span className="inline-flex items-center gap-1"><Users size={11} /> {m.participants_count}</span>
+                                    <span className="inline-flex items-center gap-1"><Clock size={11} /> FECHA EM {fmtLeft(m.seconds_left)}</span>
+                                    <span className="inline-block font-black uppercase" style={{ background: "rgba(10,10,10,0.06)", color: PT.ink, padding: "2px 8px", borderRadius: 999, fontSize: 9.5, letterSpacing: "0.16em" }}>{KIND_LABEL[m.kind] || m.kind}</span>
                                 </div>
                             </div>
                         </button>
                     ))
                 )}
             </div>
-        </PtPageShell>
+            </div>
+        </PageShell>
     );
 }
 

@@ -264,16 +264,7 @@ export default function Explore() {
                 }}
             >
                 <div className="px-4 pt-3 pb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
-                        </span>
-                        <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
-                            Edição · {new Date().toLocaleDateString("pt-PT", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase()}
-                        </span>
-                    </div>
-                    <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 26, color: PT.ink }}>
+                    <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 28, color: PT.ink }}>
                         Descobre{" "}
                         <span className="relative inline-block">
                             <span className="relative z-10" style={{ color: PT.red }}>Portugal</span>

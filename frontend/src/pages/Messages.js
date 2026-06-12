@@ -1497,17 +1497,8 @@ export default function Messages() {
                             borderBottom: "1px solid rgba(10,10,10,0.10)",
                         }}
                     >
-                        <div className="px-4 pt-3 pb-3">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
-                                </span>
-                                <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
-                                    Conversas · Privadas
-                                </span>
-                            </div>
-                            <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 26, color: PT.ink }}>
+                        <div className="px-4 pt-3 pb-3.5">
+                            <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 28, color: PT.ink }}>
                                 Mensagens<span style={{ color: PT.red }}>.</span>
                             </h1>
                         </div>

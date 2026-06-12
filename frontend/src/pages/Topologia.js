@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 // =============================================================================
 import { MapPin, Activity } from "lucide-react";
 import { api } from "../lib/api";
-import { PageHeader } from "../components/PageHeader";
-import { PtPageShell } from "../components/PtPageShell";
+import { PageShell, PageHero, Empty } from "../components/PageShell";
+import { PT } from "../theme/editorial";
 import { useWsMessages } from "../components/WebSocketProvider";
 
 // Layout esquemático de Portugal (não geográfico ao pixel — honesto e
@@ -74,49 +74,45 @@ export default function Topologia() {
     const anySignal = regions.some((r) => (r.score || 0) > 0);
 
     return (
-        <PtPageShell testid="topologia-page">
-            <PageHeader
+        <PageShell max="max-w-5xl">
+            <PageHero
                 title="Topologia"
                 subtitle="O mapa social a respirar — onde Portugal está mais aceso agora. Só sinal real, granularidade cidade."
-                testid="topologia-header"
+                badge="Mapa social ao vivo"
+                accent={PT.brasa}
             />
 
-            <div className="px-4 lg:px-5 py-4">
+            <div className="px-4 lg:px-7 pt-6 pb-12">
                 {loading ? (
-                    <div className="py-16 text-center text-black/40 text-[13px]">A ler o pulso do país…</div>
+                    <div className="py-16 text-center font-mono font-bold uppercase" style={{ fontSize: 11, letterSpacing: "0.18em", color: "rgba(10,10,10,0.42)" }}>A ler o pulso do país…</div>
                 ) : !anySignal ? (
-                    <div className="px-6 py-20 text-center anim-fade-up">
-                        <div className="ring-silver w-20 h-20 rounded-full grid place-items-center mx-auto mb-6">
-                            <Activity size={26} strokeWidth={1.4} className="text-black/70" />
-                        </div>
-                        <h3 className="font-display text-[19px] font-bold tracking-tight text-black">A rede está calma.</h3>
-                        <p className="text-black/55 text-[14px] mt-3 max-w-xs mx-auto leading-relaxed">
-                            Sem picos de atividade neste momento. O mapa acende quando o país se mexe.
-                        </p>
-                    </div>
+                    <Empty icon={Activity} title="A rede está calma" body="Sem picos de atividade neste momento. O mapa acende quando o país se mexe." />
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5 anim-fade-up">
-                        {/* Mapa esquemático */}
-                        <div className="card-lux p-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+                        <div className="p-5" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 20, boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 22px -14px rgba(10,10,10,0.10)" }}>
+                            <p className="font-mono font-bold uppercase mb-4 inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.brasa }}>
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.brasa }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.brasa }} />
+                                </span>
+                                Regiões
+                            </p>
                             <div className="grid grid-cols-[88px_1fr] gap-3">
-                                {/* Ilhas à esquerda */}
                                 <div className="flex flex-col justify-end gap-3">
                                     {ISLANDS.map((k) => <RegionTile key={k} r={byKey[k]} />)}
                                 </div>
-                                {/* Continente em coluna */}
                                 <div className="flex flex-col gap-3">
                                     {MAINLAND.map((k) => <RegionTile key={k} r={byKey[k]} />)}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Cidades a crescer */}
-                        <div className="card-lux p-4">
-                            <div className="type-overline mb-3 flex items-center gap-1.5 text-black/55">
-                                <MapPin size={13} /> Cidades a crescer
-                            </div>
+                        <div className="p-5" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 20, boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 22px -14px rgba(10,10,10,0.10)" }}>
+                            <p className="font-mono font-bold uppercase mb-4 inline-flex items-center gap-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: PT.green }}>
+                                <MapPin size={11} strokeWidth={2.6} /> Cidades a crescer
+                            </p>
                             {meaningfulCities.length === 0 ? (
-                                <p className="text-[12.5px] text-black/45 leading-relaxed">
+                                <p className="text-[12.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.45)" }}>
                                     Nenhuma cidade com pico significativo agora.
                                 </p>
                             ) : (
@@ -125,9 +121,12 @@ export default function Topologia() {
                                         const d = fmtDelta(c.delta_pct);
                                         return (
                                             <li key={c.key} className="flex items-center gap-2.5" data-testid={`topo-city-${c.key}`}>
-                                                <span className="live-dot shrink-0" aria-hidden />
-                                                <span className="text-[13.5px] font-medium tracking-tight text-black flex-1 truncate">{c.label}</span>
-                                                {d && <span className="text-[11px] font-mono text-[var(--eu-500)]">{d}</span>}
+                                                <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+                                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                                                </span>
+                                                <span className="text-[13.5px] font-black tracking-tight flex-1 truncate" style={{ color: PT.ink }}>{c.label}</span>
+                                                {d && <span className="text-[10.5px] font-mono font-bold uppercase" style={{ color: PT.green, letterSpacing: "0.10em" }}>{d}</span>}
                                             </li>
                                         );
                                     })}
@@ -137,6 +136,6 @@ export default function Topologia() {
                     </div>
                 )}
             </div>
-        </PtPageShell>
+        </PageShell>
     );
 }

@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Users, Plus, X, Search, Flame, Clock, TrendingUp } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { PageShell, PageHero, FilterBar, Chip, Grid, Empty } from "../components/PageShell";
+import { PT } from "../theme/editorial";
 import { COMMUNITY_CATEGORIES, categoryLabel } from "../lib/portuguese";
 import { RowSkeletonList } from "../components/Skeleton";
 import { toast } from "sonner";
@@ -85,36 +86,40 @@ export default function Communities() {
     return (
         <PageShell max="max-w-6xl">
             <PageHero
-                icon={Users}
                 title="Comunidades"
                 subtitle={`${communities.length} grupos · ${communities.filter((c) => c.joined).length} são tuas`}
+                badge="Pessoas com algo em comum"
+                accent={PT.azul}
                 actions={
                     <button
                         onClick={() => setCreating(true)}
                         data-testid="new-community-btn"
-                        className="btn-obsidian px-4 py-2 text-[11px] flex items-center gap-1.5"
+                        className="inline-flex items-center gap-1.5 h-10 px-4 font-black uppercase transition hover:translate-y-[-1px]"
+                        style={{ background: PT.ink, color: "#fff", borderRadius: 999, fontSize: 11.5, letterSpacing: "0.14em", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)" }}
                     >
-                        <Plus size={13} strokeWidth={2} /> Criar
+                        <Plus size={13} strokeWidth={2.6} /> Criar comunidade
                     </button>
                 }
             />
 
-            <div className="flex items-center gap-2 mb-3">
+            <div className="px-4 lg:px-7 pt-6 pb-12">
+            <div className="flex items-center gap-2 mb-4">
                 <div className="flex-1 relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                    <Search size={14} strokeWidth={2.2} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "rgba(10,10,10,0.45)" }} />
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="Pesquisar comunidades..."
+                        placeholder="Pesquisar comunidades…"
                         data-testid="communities-search"
-                        className="w-full bg-black/[0.04] border border-transparent rounded-full pl-9 pr-9 py-2 text-[13px] focus:bg-white focus:border-black/15 outline-none transition"
+                        className="w-full pl-10 pr-9 py-2.5 text-[13.5px] outline-none font-medium"
+                        style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 999, color: PT.ink, boxShadow: "0 1px 2px rgba(10,10,10,0.04)" }}
                     />
-                    {q && (<button onClick={() => setQ("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black/40"><X size={13} /></button>)}
+                    {q && (<button onClick={() => setQ("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(10,10,10,0.55)" }}><X size={13} /></button>)}
                 </div>
                 <div className="flex items-center gap-1">
                     {SORTS.map((s) => { const Icon = s.icon; const active = sort === s.key; return (
-                        <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className={`w-8 h-8 rounded-full grid place-items-center transition ${active ? "chip-filter-on" : "text-black hover:bg-black/[0.06]"}`}>
-                            <Icon size={13} />
+                        <button key={s.key} onClick={() => setSort(s.key)} title={s.label} className="w-10 h-10 grid place-items-center transition hover:translate-y-[-1px]" style={{ background: active ? PT.ink : "#fff", color: active ? "#fff" : PT.ink, border: active ? "1px solid transparent" : "1px solid rgba(10,10,10,0.10)", borderRadius: 999, boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.30)" : "0 1px 2px rgba(10,10,10,0.04)" }}>
+                            <Icon size={14} strokeWidth={2.4} />
                         </button>
                     ); })}
                 </div>
@@ -126,7 +131,7 @@ export default function Communities() {
                         {t.label}
                     </Chip>
                 ))}
-                <span className="text-black/15 mx-1">·</span>
+                <span style={{ color: "rgba(10,10,10,0.15)" }} className="mx-1">·</span>
                 <Chip active={cat === ""} onClick={() => setCat("")}>Todas</Chip>
                 {COMMUNITY_CATEGORIES.map((c) => (
                     <Chip key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} testid={`communities-cat-${c.key}`}>
@@ -136,37 +141,37 @@ export default function Communities() {
             </FilterBar>
 
             {creating && (
-                <div className="fixed inset-0 z-[70] bg-black/30 backdrop-blur-sm flex items-end lg:items-center lg:justify-center p-0 lg:p-4" onClick={() => setCreating(false)}>
-                    <form onSubmit={create} onClick={(e) => e.stopPropagation()} className="w-full lg:max-w-md bg-white border-t lg:border border-black/[0.08] rounded-t-3xl lg:rounded-2xl p-6 lg:p-7 space-y-5 anim-sheet-up lg:anim-fade-up pb-safe max-h-[90vh] overflow-y-auto" data-testid="create-community-form">
-                        <div className="lg:hidden flex justify-center -mt-2 mb-1"><span className="w-10 h-1 rounded-full bg-black/15" /></div>
+                <div className="fixed inset-0 z-[70] flex items-end lg:items-center lg:justify-center p-0 lg:p-4" style={{ background: "rgba(10,10,10,0.35)", backdropFilter: "blur(6px)" }} onClick={() => setCreating(false)}>
+                    <form onSubmit={create} onClick={(e) => e.stopPropagation()} className="w-full lg:max-w-md anim-sheet-up lg:anim-fade-up pb-safe p-6 lg:p-7 space-y-5 max-h-[90vh] overflow-y-auto" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 24, boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 24px 50px -25px rgba(10,10,10,0.30)" }} data-testid="create-community-form">
+                        <div className="lg:hidden flex justify-center -mt-2 mb-1"><span className="w-10 h-1 rounded-full" style={{ background: "rgba(10,10,10,0.15)" }} /></div>
                         <div className="flex items-start justify-between">
                             <div>
-                                <p className="type-overline mb-1">Nova comunidade</p>
-                                <h2 className="font-display text-[28px] tracking-tight leading-none text-black">Comunidade</h2>
+                                <p className="font-mono font-bold uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>Nova comunidade</p>
+                                <h2 className="font-black tracking-[-0.025em] leading-tight" style={{ fontSize: 30, color: PT.ink }}>Comunidade<span style={{ color: PT.azul }}>.</span></h2>
                             </div>
-                            <button type="button" onClick={() => setCreating(false)} className="hidden lg:grid w-9 h-9 rounded-full place-items-center hover:bg-black/[0.04] text-black/55"><X size={16} /></button>
+                            <button type="button" onClick={() => setCreating(false)} className="hidden lg:grid w-9 h-9 rounded-full place-items-center" style={{ color: "rgba(10,10,10,0.55)" }}><X size={16} /></button>
                         </div>
                         <div>
-                            <label className="type-overline">Nome</label>
-                            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={3} maxLength={40} data-testid="community-name-input" className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3 focus:border-black/40 focus:bg-white focus:outline-none transition" />
+                            <label className="font-mono font-bold uppercase block mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>Nome</label>
+                            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={3} maxLength={40} data-testid="community-name-input" className="w-full px-4 py-3 outline-none transition" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 14, color: PT.ink, fontSize: 14 }} />
                         </div>
                         <div>
-                            <label className="type-overline">Categoria</label>
-                            <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                            <label className="font-mono font-bold uppercase block mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>Categoria</label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                 {COMMUNITY_CATEGORIES.map((c) => (
-                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} data-testid={`community-form-cat-${c.key}`} className={`px-2.5 py-2 rounded-xl text-[12px] font-medium border transition ${form.category === c.key ? "chip-on border-transparent" : "bg-white border-black/[0.10] text-black/70 hover:border-black/30"}`}>
+                                    <button key={c.key} type="button" onClick={() => setForm({ ...form, category: c.key })} data-testid={`community-form-cat-${c.key}`} className="px-2.5 py-2 text-[12px] font-black uppercase transition" style={{ background: form.category === c.key ? PT.ink : "#fff", color: form.category === c.key ? "#fff" : PT.ink, border: form.category === c.key ? "1px solid transparent" : "1px solid rgba(10,10,10,0.10)", borderRadius: 10, letterSpacing: "0.10em" }}>
                                         <span className="mr-1">{c.emoji}</span>{c.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
                         <div>
-                            <label className="type-overline">Descrição</label>
-                            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={200} rows={3} data-testid="community-description-input" className="mt-2 w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-4 py-3 focus:border-black/40 focus:bg-white focus:outline-none transition resize-none" />
+                            <label className="font-mono font-bold uppercase block mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>Descrição</label>
+                            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={200} rows={3} data-testid="community-description-input" className="w-full px-4 py-3 outline-none transition resize-none" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 14, color: PT.ink, fontSize: 14 }} />
                         </div>
                         <div className="flex justify-end gap-2 pt-1">
-                            <button type="button" onClick={() => setCreating(false)} className="px-5 py-2.5 rounded-full font-mono text-[11px] uppercase tracking-[0.16em] text-black/60 hover:bg-black/[0.04]">Cancelar</button>
-                            <button type="submit" data-testid="submit-community-btn" className="btn-obsidian px-5 py-2.5 text-[11px]">Criar</button>
+                            <button type="button" onClick={() => setCreating(false)} className="px-5 py-2.5 font-mono font-bold uppercase" style={{ fontSize: 11, color: "rgba(10,10,10,0.55)", letterSpacing: "0.16em", borderRadius: 999 }}>Cancelar</button>
+                            <button type="submit" data-testid="submit-community-btn" className="px-5 h-10 inline-flex items-center gap-1.5 font-black uppercase transition hover:translate-y-[-1px]" style={{ background: PT.ink, color: "#fff", fontSize: 11.5, letterSpacing: "0.14em", borderRadius: 999, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)" }}>Criar</button>
                         </div>
                     </form>
                 </div>
@@ -181,9 +186,6 @@ export default function Communities() {
                     body={q || cat ? "Tenta outro filtro." : "Cria a primeira e reúne pessoas afins."}
                     cta={q || cat ? null : "Criar comunidade"}
                     ctaOnClick={() => setCreating(true)}
-                    shadowColor="#D86A4E"
-                    iconBg="#2EB4A6"
-                    ctaBg="#1B4F8F"
                 />
             ) : (
                 <Grid cols={2} gap={4} data-testid="communities-grid">
@@ -192,39 +194,49 @@ export default function Communities() {
                             key={c.id}
                             to={`/c/${c.slug}`}
                             data-testid={`community-${c.slug}`}
-                            className="group block rounded-2xl border border-black/[0.08] bg-white p-4 hover:border-black/25 hover:shadow-md transition"
+                            className="group block p-4 transition hover:translate-y-[-1px]"
+                            style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 18, boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 22px -14px rgba(10,10,10,0.10)" }}
                         >
                             <div className="flex items-start gap-3 mb-2">
-                                <div className="w-12 h-12 rounded-2xl silver-grad grid place-items-center flex-shrink-0 shadow-sm">
-                                    <Users size={18} strokeWidth={1.5} className="text-black/70" />
+                                <div className="w-12 h-12 grid place-items-center flex-shrink-0" style={{ background: PT.azul, color: "#fff", borderRadius: 12, boxShadow: `0 1px 2px rgba(10,10,10,0.06), 0 10px 22px -10px ${PT.azul}80` }}>
+                                    <Users size={20} strokeWidth={2.4} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-display text-[18px] tracking-tight leading-tight text-black truncate group-hover:underline">{c.name}</h3>
-                                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-black/45 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                        {c.members_count} membros
+                                    <h3 className="font-black text-[17px] tracking-[-0.02em] leading-tight truncate" style={{ color: PT.ink }}>{c.name}</h3>
+                                    <p className="font-mono text-[10.5px] font-bold uppercase mt-1 flex items-center gap-1.5 flex-wrap" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.06em" }}>
+                                        {c.members_count} MEMBROS
                                         {hotMap[c.slug]?.posts > 0 && (
-                                            <span className="inline-flex items-center gap-0.5 text-emerald-700 normal-case tracking-normal">
-                                                <TrendingUp size={10} /> {hotMap[c.slug].posts}/sem
+                                            <span className="inline-flex items-center gap-0.5" style={{ color: PT.green }}>
+                                                <TrendingUp size={10} strokeWidth={2.6} /> {hotMap[c.slug].posts}/SEM
                                             </span>
                                         )}
                                     </p>
                                 </div>
                             </div>
-                            <span className="inline-block text-[10px] font-mono text-black/55 bg-black/[0.04] px-1.5 py-0.5 rounded mb-2">
+                            <span className="inline-block font-mono font-bold uppercase mb-3" style={{ fontSize: 9.5, background: "rgba(10,10,10,0.05)", color: "rgba(10,10,10,0.55)", padding: "3px 8px", borderRadius: 999, letterSpacing: "0.14em" }}>
                                 {categoryLabel(COMMUNITY_CATEGORIES, c.category)}
                             </span>
-                            {c.description && <p className="text-[13px] text-black/65 line-clamp-2 leading-relaxed mb-3">{c.description}</p>}
+                            {c.description && <p className="text-[13px] leading-relaxed mb-4 line-clamp-2 font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{c.description}</p>}
                             <button
                                 onClick={(e) => { e.preventDefault(); join(c.slug); }}
                                 data-testid={`join-${c.slug}`}
-                                className={`w-full text-[11px] font-heading font-medium tracking-tight rounded-full px-3 py-1.5 transition ${c.joined ? "chip-on" : "btn-obsidian"}`}
+                                className="w-full text-[11.5px] font-black uppercase px-3 py-2 transition hover:translate-y-[-1px]"
+                                style={{
+                                    background: c.joined ? "#fff" : PT.ink,
+                                    color: c.joined ? PT.ink : "#fff",
+                                    border: c.joined ? "1px solid rgba(10,10,10,0.10)" : "1px solid transparent",
+                                    borderRadius: 999,
+                                    letterSpacing: "0.14em",
+                                    boxShadow: c.joined ? "0 1px 2px rgba(10,10,10,0.04)" : "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.30)",
+                                }}
                             >
-                                {c.joined ? "Sair" : "Entrar"}
+                                {c.joined ? "Membro · Sair" : "Entrar"}
                             </button>
                         </Link>
                     ))}
                 </Grid>
             )}
+            </div>
         </PageShell>
     );
 }
