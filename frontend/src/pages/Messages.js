@@ -12,8 +12,6 @@ import {
 import { api, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { ConvSkeleton } from "../components/Skeleton";
-import { PageHeader } from "../components/PageHeader";
-import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
 import { Spinner } from "../components/Spinner";
 import { smartTime } from "../lib/time";
@@ -402,15 +400,14 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     )}
                 </div>
                 <button onClick={onNew} data-testid="messages-new-btn"
-                    className="shrink-0 h-9 pl-3 pr-4 inline-flex items-center gap-1.5 tap-shrink font-black uppercase"
+                    className="shrink-0 h-9 pl-3 pr-4 inline-flex items-center gap-1.5 tap-shrink font-black uppercase transition hover:translate-y-[-1px]"
                     style={{
-                        background: PT.red,
+                        background: PT.ink,
                         color: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 999,
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.30)",
                         fontSize: 11,
-                        letterSpacing: "0.06em",
+                        letterSpacing: "0.12em",
                     }}
                     title="Nova conversa" aria-label="Nova conversa">
                     <Plus size={13} strokeWidth={2.5} />
@@ -442,36 +439,38 @@ function ConversationList({ activeId, onSelect, onNew }) {
                 <div className="px-6 py-14 mx-4 my-6 text-center"
                     style={{
                         background: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        border: "1px solid rgba(10,10,10,0.08)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 12px 28px -16px rgba(10,10,10,0.10)",
                         borderRadius: 24,
                     }}
                 >
-                    <div className="w-16 h-16 mx-auto mb-4 grid place-items-center"
+                    <div className="w-20 h-20 mx-auto mb-5 grid place-items-center"
                         style={{
-                            background: "rgba(255,204,41,0.18)",
+                            background: "#fff",
                             color: PT.ink,
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 30px -12px rgba(10,10,10,0.18)",
                             borderRadius: 999,
                         }}
                     >
-                        <MessageCircle size={24} strokeWidth={2.0} />
+                        <MessageCircle size={26} strokeWidth={2.0} />
                     </div>
                     <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, color: "rgba(10,10,10,0.42)", letterSpacing: "0.22em" }}>Sem conversas</p>
-                    <h3 className="font-black tracking-tight" style={{ fontSize: 18, color: PT.ink }}>
+                    <h3 className="font-black tracking-[-0.02em] leading-tight" style={{ fontSize: 22, color: PT.ink }}>
                         {filter === "all" ? "Sem mensagens ainda" : "Vazio neste filtro"}
                     </h3>
-                    <p className="text-[13.5px] mt-2 max-w-[34ch] mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
+                    <p className="text-[13.5px] mt-3 max-w-[36ch] mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
                         {filter === "all"
                             ? "Começa uma conversa com alguém. Sem read receipts forçados."
                             : "Não há nada para mostrar aqui agora."}
                     </p>
                     {filter === "all" && (
                         <button onClick={onNew} data-testid="messages-empty-cta"
-                            className="mt-6 px-5 py-2.5 inline-flex items-center gap-1.5 font-black uppercase"
+                            className="mt-6 px-5 py-2.5 inline-flex items-center gap-1.5 font-black uppercase transition hover:translate-y-[-1px]"
                             style={{
-                                background: PT.red, color: "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                borderRadius: 999, fontSize: 12, letterSpacing: "0.06em",
+                                background: PT.ink, color: "#fff",
+                                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.30)",
+                                borderRadius: 999, fontSize: 12, letterSpacing: "0.12em",
                             }}>
                             <Plus size={13} strokeWidth={2.5} /> Nova conversa
                         </button>
@@ -503,11 +502,11 @@ function ConversationList({ activeId, onSelect, onNew }) {
                         <Avatar user={c.other_user} size={48} showOnline />
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                                <div className="font-heading font-medium tracking-tight text-[15px] truncate text-black flex items-center gap-1.5">
+                                <div className="font-black tracking-[-0.015em] text-[15px] truncate flex items-center gap-1.5" style={{ color: PT.ink }}>
                                     {c.pinned && <Pin size={11} className="text-amber-500" fill="currentColor" />}
                                     {c.other_user?.name}
                                 </div>
-                                <span className="font-mono text-[10px] text-black/45 flex-shrink-0">{smartTime(c.last_at)}</span>
+                                <span className="font-mono text-[10px] flex-shrink-0" style={{ color: "rgba(10,10,10,0.45)" }}>{smartTime(c.last_at)}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                                 <div className={`text-[13px] truncate flex-1 ${c.unread > 0 ? "text-black font-medium" : "text-black/55"}`}>
@@ -528,7 +527,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                                 {c.unread > 0 && (
                                     <span data-testid={`conv-unread-${c.other_user?.username}`}
                                         className="min-w-[20px] h-[20px] px-1.5 rounded-full text-[10px] font-mono grid place-items-center text-white font-bold"
-                                        style={{ background: "linear-gradient(135deg, #df8a7d 0%, #c64a3d 100%)" }}>
+                                        style={{ background: PT.red }}>
                                         {c.unread > 99 ? "99+" : c.unread}
                                     </span>
                                 )}
@@ -1213,18 +1212,18 @@ function ChatView({ other, onBack }) {
                 <Link to={`/u/${other.username}`} className="flex items-center gap-3 flex-1 min-w-0 tap-shrink" data-testid="chat-profile-link">
                     <Avatar user={other} size={38} showOnline />
                     <div className="flex-1 min-w-0">
-                        <div className="font-heading font-medium text-[14px] tracking-tight truncate text-black">{other.name}</div>
-                        <div className="font-mono text-[11px] truncate">
+                        <div className="font-black text-[15px] tracking-[-0.015em] truncate" style={{ color: PT.ink }}>{other.name}</div>
+                        <div className="font-mono text-[10.5px] truncate uppercase" style={{ letterSpacing: "0.10em" }}>
                             {typing ? (
-                                <span className="text-black/65 italic">a escrever…</span>
+                                <span style={{ color: PT.green }}>a escrever…</span>
                             ) : other.online ? (
-                                <span className="text-green-soft inline-flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-soft pulse-dot" />online
+                                <span className="inline-flex items-center gap-1.5" style={{ color: PT.green }}>
+                                    <span className="w-1.5 h-1.5 rounded-full lusorae-pulse" style={{ background: PT.green }} />online
                                 </span>
                             ) : (
-                                <span className="text-black/45">
+                                <span style={{ color: "rgba(10,10,10,0.45)" }}>
                                     @{other.username}
-                                    {other.city && <span className="ml-1.5 text-black/35">· {other.city}</span>}
+                                    {other.city && <span className="ml-1.5" style={{ color: "rgba(10,10,10,0.32)" }}>· {other.city}</span>}
                                 </span>
                             )}
                         </div>
@@ -1389,8 +1388,8 @@ function ChatView({ other, onBack }) {
                     />
                     <button onClick={send} disabled={!text.trim() || sending} data-testid="send-message-btn"
                         className="w-11 h-11 grid place-items-center rounded-full text-white active:scale-90 transition disabled:opacity-30 shadow-sm shrink-0"
-                        style={{ background: "linear-gradient(135deg, #4a7bbf 0%, #6a91cc 45%, #df8a7d 100%)" }} aria-label="enviar">
-                        <Send size={16} strokeWidth={1.7} />
+                        style={{ background: PT.ink, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px -10px rgba(10,10,10,0.35)" }} aria-label="enviar">
+                        <Send size={16} strokeWidth={2.0} />
                     </button>
                 </div>
                 <p className="text-[10.5px] text-black/35 font-mono mt-1.5 px-1 hidden sm:block">
@@ -1439,16 +1438,87 @@ export default function Messages() {
     };
 
     return (
-        <PtPageShell testid="messages-page" doodles="minimal">
+        <div data-testid="messages-page" className="relative" style={{ background: PT.cream, minHeight: "100vh" }}>
             {!active ? (
                 <>
-                    <PageHeader title="Mensagens" subtitle="As tuas conversas privadas" testid="messages-header" />
+                    {/* ──────────────── DESKTOP MASTHEAD — Lusorae Editorial ──────────────── */}
+                    <div
+                        className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
+                        style={{
+                            background: "rgba(247,245,239,0.92)",
+                            borderBottom: "1px solid rgba(10,10,10,0.10)",
+                        }}
+                        data-testid="messages-header"
+                    >
+                        <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
+                            <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                                </span>
+                                LUSORAE · MENSAGENS · PRIVADAS
+                            </span>
+                            <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
+                                <span>LISBOA · {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
+                                <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
+                                <span>EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}</span>
+                            </span>
+                        </div>
+                        <div className="px-7 pt-7 pb-5 relative z-10">
+                            <div className="flex items-center gap-2.5 mb-3.5">
+                                <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                                    {new Date().toLocaleDateString("pt-PT", { weekday: "long", day: "2-digit", month: "long" })}
+                                </span>
+                                <span style={{ color: "rgba(10,10,10,0.18)" }}>—</span>
+                                <span className="font-mono text-[10.5px] font-bold uppercase" style={{ letterSpacing: "0.16em", color: PT.red }}>
+                                    as tuas conversas privadas
+                                </span>
+                            </div>
+                            <h1
+                                className="font-black tracking-[-0.045em] leading-[0.94]"
+                                style={{ fontSize: "clamp(48px, 5.4vw, 64px)", color: PT.ink }}
+                            >
+                                Mensagens<span style={{ color: PT.red }}>.</span>
+                            </h1>
+                            <p className="text-[15px] mt-3.5 font-medium max-w-[44ch]" style={{ color: "rgba(10,10,10,0.62)", lineHeight: 1.45 }}>
+                                Sem read receipts forçados, sem leituras silenciosas
+                                {" — "}
+                                <strong style={{ color: PT.ink, fontWeight: 700 }}>tu controlas o ritmo</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* ──────────────── MOBILE MASTHEAD ──────────────── */}
+                    <div
+                        className="lg:hidden sticky z-30 backdrop-blur"
+                        style={{
+                            top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
+                            background: "rgba(247,245,239,0.94)",
+                            borderBottom: "1px solid rgba(10,10,10,0.10)",
+                        }}
+                    >
+                        <div className="px-4 pt-3 pb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                                </span>
+                                <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
+                                    Conversas · Privadas
+                                </span>
+                            </div>
+                            <h1 className="font-black tracking-[-0.03em] leading-[1.0]" style={{ fontSize: 26, color: PT.ink }}>
+                                Mensagens<span style={{ color: PT.red }}>.</span>
+                            </h1>
+                        </div>
+                    </div>
+
                     <ConversationList activeId={null} onSelect={open} onNew={() => setNewOpen(true)} />
                 </>
             ) : (
                 <ChatView other={active} onBack={() => { setActive(null); navigate("/messages"); }} />
             )}
             <NewConversationModal open={newOpen} onClose={() => setNewOpen(false)} onPick={open} />
-        </PtPageShell>
+        </div>
     );
 }
