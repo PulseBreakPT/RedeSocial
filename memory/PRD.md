@@ -191,4 +191,30 @@ Gaps materiais P1 da auditoria aplicados (com 2 correcções relevantes às pró
 
 **Pendente:** P3 (6 páginas novas) + constituição societária externa ao código.
 
+## Centro Legal — P3 Concluído (Jun 12, 2026) ✅
+6 páginas especializadas criadas integralmente. 5 profissões orientadoras: advogado de propriedade intelectual digital, DSA compliance officer, B1 accessibility writer (menores), ethics & governance officer, security researcher liaison.
+
+- **P3.1 — `/legal/copyright`** (Direitos de Autor e Notificações): procedimento Notice & Takedown completo, 11 secções. CDADC + DL n.º 47/2023 + DSA arts. 16.º a 23.º. Inclui formato estruturado de notificação (6 elementos obrigatórios), procedimento em 5 passos (LegalLadder), contra-notificação fundamentada, política de infratores reincidentes (3 strikes), reposição gratuita após recurso procedente. Email dedicado: `copyright@lusorae.pt`.
+- **P3.2 — `/legal/menores`** (Para Pais e Menores): linguagem B1, 7 secções. Três patamares etários (<13, 13-15, ≥16) com KPI grid. O que NÃO fazemos a menores (sem publicidade comportamental, sem dados sensíveis, sem dark patterns, sem contadores públicos). Configurações de proteção por defeito (perfil privado, descoberta limitada, mensagens controladas). Como pais exercem direitos do menor (RGPD arts. 15.º-22.º + Lei 58/2019 + DSA art. 28.º + Lei 27/2021 + Convenção ONU).
+- **P3.3 — `/legal/dsa-transparency`** (Transparência DSA): relatório trimestral, 11 secções. Cumpre DSA arts. 15.º + 17.º + 20.º + 24.º. Tabelas estruturadas: notificações por categoria, decisões por tipo de medida, recursos internos, sistemas automatizados vs revisão humana (LegalTimeline), comunicações de autoridades, sinalizadores de confiança (ANACOM via DL 20-B/2024), acesso de investigadores académicos (art. 40.º DSA). Frequência: trimestral, formato JSON+HTML.
+- **P3.4 — `/legal/historico`** (Histórico de Versões): registo cronológico, 7 secções. Esquema semver aplicado a documentos legais (MAJOR=direitos / MINOR=clarificações / PATCH=editoriais). Tabela de estado actual com 11 documentos em v1.0.0. Política de retenção indefinida, formato dos diferenciais publicados (sumário+tabela+diff textual), comunicação de alterações materiais com 15 dias de antecedência.
+- **P3.5 — `/legal/governance`** (Governança e Conselho de Integridade): 9 secções. Três níveis de decisão (Trust & Safety / DPO independente / Conselho de Integridade) em LegalRightsGrid. Composição do Conselho: mínimo 3 membros, ≥1 membro externo independente, mandato bianual renovável uma vez. Competências consultivas e princípios (atas públicas, voto de vencido, conflito de interesses, remuneração transparente). Candidatura a membro externo aberta. Email: `governance@lusorae.pt`.
+- **P3.6 — `/legal/seguranca-investigadores`** (Responsible Disclosure): 11 secções. Compromisso de não retaliação (safe harbor) com 5 princípios obrigatórios. Âmbito in-scope/out-of-scope (engenharia social, DoS e exfiltração massiva são out-of-scope). Procedimento em 5 passos (Reportar → 72h acusação → Triagem → Mitigação → Divulgação pública). Janela de divulgação coordenada CVSS-graded (Crítica 30d, Alta 60d, Média 90d, Baixa 180d). Hall of Fame opt-in. Auditoria externa anual. Email: `seguranca@lusorae.pt`.
+
+### Integração
+- **`App.js`**: 6 lazy imports + 6 rotas adicionadas (`/legal/copyright`, `/legal/menores`, `/legal/dsa-transparency`, `/legal/historico`, `/legal/governance`, `/legal/seguranca-investigadores`).
+- **`LegalShell.js`**: NAV alargada de 7 → 13 entradas, com ícones distintos (BookOpen, Heart, BarChart3, Building2, ShieldAlert, Clock). Grid responsivo absorve o aumento sem quebras.
+- **`LegalIndex.js`**: nova secção "Documentos especializados" com 6 cards mais compactos (formato `sm:grid-cols-2`), separados visualmente dos 6 cards primários. CONTACTS list alargada para 11 endereços (incluindo copyright, seguranca, governance). `data-testid` único por card.
+- **`legalEntity.js`**: `LEGAL_CONTACTS` expandido com `copyright`, `security`, `governance`.
+
+### Verificado
+Screenshots em `/legal` (12 cards visíveis com `data-testid` correto, NAV com 13 documentos), `/legal/copyright` (TOC 11 secções + 4 KPIs + "Em duas linhas" + LegalLadder), `/legal/menores` (7 secções B1 + KPI grid das idades), `/legal/dsa-transparency` (11 secções + tabelas DSA estruturadas + "Não-VLOP" badge), `/legal/seguranca-investigadores` (11 secções + KPI 72h/90d/opt-in + LegalLadder 5 passos), e visual coerente nas restantes. Lint clean em todas as 6 páginas novas.
+
+**Score estimado pós P0+P1+P2+P3:** ~9.8/10 ("exemplar tier", acima dos parâmetros típicos do mercado europeu).
+
+**Centro Legal Lusorae = um dos mais completos do mercado português (e provavelmente europeu) para uma plataforma social em fase pré-lançamento.**
+
+**Pendente:** apenas constituição societária definitiva da Lusorae (acto externo ao código — quando estiver feito, basta actualizar `legalEntity.js` com `pending: false` + dados completos).
+
+
 

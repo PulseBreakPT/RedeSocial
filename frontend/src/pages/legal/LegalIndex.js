@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import {
     FileText, ShieldCheck, Cookie, Users, ChevronRight, Compass, Flame,
     Database, Scale, ShieldAlert, Newspaper, LifeBuoy, Gavel, Flag,
+    BookOpen, Heart, BarChart3, Building2, Clock, Search,
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
 import { LegalComplianceBoard, LegalVisualBlock, LegalContactsList, LegalEntityNotice } from "./_visuals";
@@ -63,6 +64,63 @@ const CARDS = [
         desc: "O que é permitido, o que é proibido, como reportamos, e como decidimos quando há infrações. Em conformidade com o DSA.",
         meta: "11 secções · ~5 min de leitura",
         accent: PT.red,
+    },
+];
+
+const SPECIALIZED = [
+    {
+        to: "/legal/copyright",
+        icon: BookOpen,
+        title: "Direitos de Autor e Notificações",
+        ref: "Notice & Takedown",
+        desc: "Procedimento de notificação, contestação e remoção de Conteúdo. CDADC, DL 47/2023 e DSA arts. 16.º a 23.º.",
+        meta: "11 secções · ~6 min",
+        accent: PT.azul,
+    },
+    {
+        to: "/legal/menores",
+        icon: Heart,
+        title: "Para Pais e Menores",
+        ref: "Linguagem simples",
+        desc: "Em linguagem clara: três idades, o que não fazemos a menores, o que protegemos, como os pais podem agir.",
+        meta: "8 secções · ~5 min",
+        accent: PT.red,
+    },
+    {
+        to: "/legal/dsa-transparency",
+        icon: BarChart3,
+        title: "Transparência DSA",
+        ref: "Relatório trimestral",
+        desc: "Notificações, decisões, recursos e comunicações com autoridades, em cumprimento dos arts. 15.º, 17.º, 20.º e 24.º do DSA.",
+        meta: "10 secções · ~6 min",
+        accent: PT.green,
+    },
+    {
+        to: "/legal/governance",
+        icon: Building2,
+        title: "Governança e Conselho de Integridade",
+        ref: "Quem decide",
+        desc: "Equipa Trust & Safety, DPO independente, Conselho de Integridade com membro externo, candidaturas e atas públicas.",
+        meta: "9 secções · ~6 min",
+        accent: PT.azul,
+    },
+    {
+        to: "/legal/seguranca-investigadores",
+        icon: ShieldAlert,
+        title: "Segurança e Investigadores",
+        ref: "Responsible Disclosure",
+        desc: "Como reportar vulnerabilidades. Compromisso de não retaliação, janela coordenada e Hall of Fame opcional.",
+        meta: "11 secções · ~5 min",
+        accent: PT.gold,
+    },
+    {
+        to: "/legal/historico",
+        icon: Clock,
+        title: "Histórico de Versões",
+        ref: "Versões anteriores",
+        desc: "O registo cronológico de todas as alterações aos documentos. Esquema semver, política de retenção e acesso a versões anteriores.",
+        meta: "7 secções · ~4 min",
+        accent: PT.ink,
     },
 ];
 
@@ -185,6 +243,79 @@ export default function LegalIndex() {
                         </div>
                     </Link>
                 ))}
+            </div>
+
+            {/* Documentos especializados — DSA, copyright, governança, segurança, menores, histórico */}
+            <div className="not-prose" style={{ marginTop: "3rem" }}>
+                <div className="flex items-baseline justify-between flex-wrap gap-3 mb-5">
+                    <h2 className="font-black tracking-[-0.02em]" style={{ fontSize: "clamp(22px, 2.6vw, 28px)", color: PT.ink, margin: 0 }}>
+                        Documentos especializados
+                    </h2>
+                    <span className="text-[11px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.45)" }}>
+                        Para públicos específicos
+                    </span>
+                </div>
+                <p className="text-[14.5px] font-medium leading-relaxed mb-5" style={{ color: "rgba(10,10,10,0.62)" }}>
+                    Documentos dedicados a audiências particulares, ou que executam procedimentos específicos previstos
+                    no DSA, no CDADC ou na nossa governança interna. Não substituem os documentos primários acima, complementam-nos.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {SPECIALIZED.map(({ to, icon: Icon, title, ref, desc, meta, accent }) => (
+                        <Link
+                            key={to}
+                            to={to}
+                            data-testid={`legal-card-${to.split("/").pop()}`}
+                            className="group block p-4 hover:-translate-y-[2px] transition relative"
+                            style={{
+                                background: "#ffffff",
+                                color: PT.ink,
+                                border: "1px solid rgba(10,10,10,0.08)",
+                                borderRadius: 14,
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 8px 20px -12px rgba(10,10,10,0.10)",
+                            }}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div
+                                    className="shrink-0 grid place-items-center"
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        background: "rgba(10,10,10,0.04)",
+                                        color: accent === PT.gold ? PT.ink : accent,
+                                        borderRadius: 10,
+                                    }}
+                                >
+                                    <Icon size={17} strokeWidth={2.0} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h3 className="font-bold text-[15px] tracking-tight flex items-center gap-1" style={{ color: PT.ink }}>
+                                            {title}
+                                            <ChevronRight size={14} strokeWidth={2.2} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
+                                        </h3>
+                                        <span
+                                            className="text-[9.5px] font-bold uppercase ml-auto px-2 py-0.5 shrink-0"
+                                            style={{
+                                                background: "rgba(10,10,10,0.04)",
+                                                color: "rgba(10,10,10,0.55)",
+                                                borderRadius: 999,
+                                                letterSpacing: "0.14em",
+                                            }}
+                                        >
+                                            {ref}
+                                        </span>
+                                    </div>
+                                    <p className="text-[13px] leading-relaxed mb-1.5 font-medium" style={{ color: "rgba(10,10,10,0.68)" }}>
+                                        {desc}
+                                    </p>
+                                    <p className="text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(10,10,10,0.42)" }}>
+                                        {meta}
+                                    </p>
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
             </div>
 
             <h2>Como ler estes documentos</h2>

@@ -35,4 +35,7 @@ export const LEGAL_CONTACTS = {
     press:      "imprensa@lusorae.pt",
     support:    "apoio@lusorae.pt",
     research:   "investigacao@lusorae.pt",
+    copyright:  "copyright@lusorae.pt",
+    security:   "seguranca@lusorae.pt",
+    governance: "governance@lusorae.pt",
 };

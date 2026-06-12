@@ -41,6 +41,12 @@ const Terms = lazy(() => import("./pages/legal/Terms"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Cookies = lazy(() => import("./pages/legal/Cookies"));
 const CommunityGuidelines = lazy(() => import("./pages/legal/CommunityGuidelines"));
+const Copyright = lazy(() => import("./pages/legal/Copyright"));
+const Menores = lazy(() => import("./pages/legal/Menores"));
+const DsaTransparency = lazy(() => import("./pages/legal/DsaTransparency"));
+const Historico = lazy(() => import("./pages/legal/Historico"));
+const Governance = lazy(() => import("./pages/legal/Governance"));
+const Seguranca = lazy(() => import("./pages/legal/Seguranca"));
 const Manifesto = lazy(() => import("./pages/Manifesto"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Visitors = lazy(() => import("./pages/Visitors"));
@@ -105,6 +111,12 @@ function App() {
                         <Route path="/legal/privacy" element={<Privacy />} />
                         <Route path="/legal/cookies" element={<Cookies />} />
                         <Route path="/legal/community" element={<CommunityGuidelines />} />
+                        <Route path="/legal/copyright" element={<Copyright />} />
+                        <Route path="/legal/menores" element={<Menores />} />
+                        <Route path="/legal/dsa-transparency" element={<DsaTransparency />} />
+                        <Route path="/legal/historico" element={<Historico />} />
+                        <Route path="/legal/governance" element={<Governance />} />
+                        <Route path="/legal/seguranca-investigadores" element={<Seguranca />} />
                         <Route path="/manifesto" element={<Manifesto />} />
                         <Route path="/" element={<Landing />} />
                         <Route

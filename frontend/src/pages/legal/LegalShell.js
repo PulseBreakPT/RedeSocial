@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowLeft, ArrowUp, Compass, Cookie, FileText, Flame, Users,
     ListTree, Printer, Scale, ShieldCheck, Share2, Check, Clock,
+    BookOpen, Heart, BarChart3, Building2, ShieldAlert,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
 import SiteFooter from "../../components/SiteFooter";
@@ -21,6 +22,12 @@ const NAV = [
     { to: "/legal/privacy",    label: "Política de Privacidade",short: "Privacidade", icon: ShieldCheck,  key: "privacy" },
     { to: "/legal/cookies",    label: "Política de Cookies",    short: "Cookies",     icon: Cookie,       key: "cookies" },
     { to: "/legal/community",  label: "Diretrizes",             short: "Diretrizes",  icon: Users,        key: "community" },
+    { to: "/legal/copyright",  label: "Direitos de Autor",      short: "Direitos",    icon: BookOpen,     key: "copyright" },
+    { to: "/legal/menores",    label: "Para Pais e Menores",    short: "Menores",     icon: Heart,        key: "menores" },
+    { to: "/legal/dsa-transparency", label: "Transparência DSA",short: "DSA",         icon: BarChart3,    key: "dsa-transparency" },
+    { to: "/legal/governance", label: "Governança",             short: "Governança",  icon: Building2,    key: "governance" },
+    { to: "/legal/seguranca-investigadores", label: "Segurança", short: "Segurança",   icon: ShieldAlert,  key: "seguranca" },
+    { to: "/legal/historico",  label: "Histórico",              short: "Histórico",   icon: Clock,        key: "historico" },
 ];
 
 function slugify(s) {
