@@ -256,10 +256,23 @@ export default function Privacy() {
 
             <h2>Menores</h2>
             <p>
-                Para tratamento baseado em consentimento, a idade mínima é de 13 anos, em coerência com o artigo
-                16.º da Lei n.º 58/2019. Para utilização autónoma do Serviço exigimos 16 anos. Não apresentamos
-                publicidade baseada em <em>profiling</em> a utilizadores reconhecidos ou presumidos como menores
-                (artigo 28.º do DSA), nem permitimos a recolha de dados sensíveis a partir de menores.
+                O acesso ao Serviço observa os patamares etários definidos nos{" "}
+                <a href="/legal/terms">Termos e Condições</a>, articulados com o artigo 8.º do RGPD e o artigo
+                16.º da Lei n.º 58/2019, de 8 de agosto:
+            </p>
+            <ul>
+                <li><strong>Menores de 13 anos</strong>, sem permissão para criar conta.</li>
+                <li><strong>Entre 13 e 15 anos</strong>, apenas mediante consentimento ou autorização verificável dos representantes legais.</li>
+                <li><strong>16 anos ou mais</strong>, utilização autónoma.</li>
+            </ul>
+            <p>
+                Não apresentamos publicidade baseada em <em>profiling</em> a utilizadores reconhecidos ou
+                razoavelmente presumidos como menores (artigo 28.º do DSA), não solicitamos categorias especiais
+                de dados a menores, e adotamos por defeito as configurações mais protetoras nas contas em que
+                exista indício fundado de minoridade. Os representantes legais podem, a todo o tempo, exercer
+                em nome do menor os direitos previstos nos artigos 15.º a 22.º do RGPD através de{" "}
+                <a href="mailto:privacidade@lusorae.pt">privacidade@lusorae.pt</a>, mediante prova suficiente
+                de legitimidade.
             </p>
 
             <h2>Violações de dados pessoais</h2>

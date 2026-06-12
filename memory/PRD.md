@@ -145,3 +145,20 @@ Auditoria SSS-tier completa guardada em **`/app/memory/LEGAL_AUDIT_PT.md`**.
 - Ordem de execução priorizada (#1–17 = ~2h trabalho, #18–23 = ~14.5h).
 - Próxima pergunta ao utilizador: aplicar P0+P1+P2 já, ou começar pelas páginas novas P3?
 
+## Centro Legal — P0 Concluído (Jun 12, 2026) ✅
+Bloqueadores P0 da auditoria resolvidos integralmente. Estado verificado por inspecção do código e screenshot das páginas:
+
+- **P0.1 — Identificação societária**: resolvido via `/app/frontend/src/theme/legalEntity.js` (`LEGAL_ENTITY` em `pending: true`) e `LegalEntityNotice` em `LegalIndex`. Mantém-se "Lusorae" como denominação simples até constituição definitiva.
+- **P0.2 — Lei 32/2008 (inconstitucional)**: já removida em `Privacy.js` linha 185 (`LegalTimeline` "PRAZOS IMPERATIVOS" → "Obrigações setoriais aplicáveis").
+- **P0.3 — Plataforma ODR descontinuada**: zero referências em todo o `frontend/src` (`ec.europa.eu/consumers/odr` eliminado de `Terms.js`, `LegalIndex.js`, `CommunityGuidelines.js`). Substituído por meios alternativos certificados pela DGC (Lei n.º 144/2015) + centros de arbitragem listados em `LegalIndex` autoridades.
+- **P0.4 — "Tribunal da Comarca" obsoleto**: `Terms.js` linha 334 usa terminologia moderna ("Juízo competente em razão do território da sede social, no Tribunal Judicial respetivo, nos termos da Lei n.º 62/2013, LOSJ"). Lei 62/2013 mantém-se citada por ser a actual Lei da Organização do Sistema Judiciário em vigor.
+- **P0.5 — Idade contraditória 13 vs 16 anos**: corrigido com redação SSS-tier articulando 3 patamares cumulativos em `Terms.js` (definição de "Utilizador" + secção "Capacidade jurídica e idade mínima") e em `Privacy.js` secção "Menores":
+  - **< 13:** acesso interdito (sem fundamento legal válido em PT).
+  - **13–15:** consentimento/autorização verificável dos representantes legais (art. 16.º, n.º 2 da Lei 58/2019). Interdição automática de publicidade baseada em *profiling* (art. 28.º DSA).
+  - **≥ 16:** utilização autónoma + plena capacidade contratual.
+  - Mecanismos de verificação etária (art. 28.º DSA) reforçados como proporcionais e mínimos sobre dados pessoais.
+- Verificado por screenshot das três secções afectadas (`/legal/terms#definicoes`, `/legal/terms#capacidade-juridica-e-idade-minima`, `/legal/privacy#menores`).
+
+**Pendente (próximas sessões):** P1 (8 gaps materiais), P2 (9 itens de coerência), P3 (6 páginas novas).
+
+

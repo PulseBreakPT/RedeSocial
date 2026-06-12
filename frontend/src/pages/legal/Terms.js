@@ -31,7 +31,7 @@ export default function Terms() {
                 headers={["Termo", "Significado"]}
                 rows={[
                     ["Plataforma / Serviço", "O conjunto de produtos digitais disponibilizados sob a marca Lusorae, incluindo aplicações web e móveis, APIs e qualquer extensão futura identificada com a mesma marca."],
-                    ["Utilizador", "Pessoa singular, com idade igual ou superior a 13 anos, que tenha conta registada na Plataforma."],
+                    ["Utilizador", "Pessoa singular com conta registada na Plataforma, sendo: (i) com idade igual ou superior a 16 anos, em utilização autónoma; ou (ii) com idade entre 13 e 15 anos, mediante consentimento ou autorização verificável dos representantes legais (artigo 16.º, n.º 2 da Lei n.º 58/2019)."],
                     ["Visitante", "Pessoa que aceda à Plataforma sem conta registada."],
                     ["Conteúdo", "Qualquer texto, imagem, vídeo, áudio, ligação, código, reação ou outro elemento criado, carregado, partilhado ou reagido na Plataforma."],
                     ["Conteúdo do Utilizador", "O Conteúdo gerado, carregado ou partilhado pelo Utilizador."],
@@ -58,15 +58,31 @@ export default function Terms() {
 
             <h2>Capacidade jurídica e idade mínima</h2>
             <p>
-                Nos termos do artigo 8.º do RGPD e do artigo 16.º da Lei n.º 58/2019, de 8 de agosto, o tratamento
-                de dados pessoais de menor com fundamento no consentimento (artigo 6.º, n.º 1, alínea a) do RGPD)
-                só é lícito a partir dos <strong>13 anos</strong>; abaixo dessa idade exige-se autorização dos
-                representantes legais. Para utilização autónoma do Serviço, exigimos <strong>16 anos</strong>.
+                O acesso ao Serviço observa três patamares etários cumulativos, articulados entre o artigo 8.º do
+                RGPD, o artigo 16.º da Lei n.º 58/2019, de 8 de agosto, e o artigo 28.º do DSA:
             </p>
+            <ul>
+                <li>
+                    <strong>Menores de 13 anos</strong>, a criação e utilização da conta não é permitida.
+                    Conteúdo que se demonstre ter sido publicado por menor de 13 anos é objeto de remoção e a
+                    conta é encerrada, sem prejuízo do exercício dos direitos pelos representantes legais.
+                </li>
+                <li>
+                    <strong>Entre 13 e 15 anos</strong>, a utilização do Serviço só é admitida mediante
+                    consentimento ou autorização verificável dos representantes legais (artigo 16.º, n.º 2 da
+                    Lei n.º 58/2019), aplicando-se desde logo a interdição de publicidade baseada em{" "}
+                    <em>profiling</em> prevista no artigo 28.º do DSA.
+                </li>
+                <li>
+                    <strong>16 anos ou mais</strong>, utilização autónoma do Serviço e plena capacidade para
+                    aceitar estes Termos, sem prejuízo das normas gerais de capacidade civil.
+                </li>
+            </ul>
             <p>
                 A Plataforma reserva-se o direito de adotar mecanismos razoáveis e proporcionais de verificação
-                etária, em particular nos termos do artigo 28.º do DSA. A submissão de informação falsa sobre idade
-                constitui violação contratual e fundamento bastante para suspensão da conta.
+                etária, nomeadamente nos termos do artigo 28.º do DSA, com a menor intrusividade possível sobre
+                dados pessoais. A prestação de informação falsa sobre idade constitui violação contratual e
+                fundamento bastante para suspensão imediata da conta.
             </p>
 
             <h2>Conta de utilizador</h2>
