@@ -189,8 +189,8 @@
         0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* Identity ring — vivid conic gradient when story is unseen,
-   transparent grey ring when already viewed. */
+/* Identity ring — Lusorae Editorial PT palette (red → gold → green → azul)
+   smooth rotating conic, com fallback grey quando já visto. */
 .sv-ring {
     position: relative;
     padding: 2.75px;
@@ -198,21 +198,25 @@
     background:
         conic-gradient(
             from var(--sv-ring-angle, 210deg),
-            #ff3d7f 0deg,
-            #ff6b6b 60deg,
-            #ff9a3d 130deg,
-            #ffd166 195deg,
-            #e85d4f 255deg,
-            #b557ff 315deg,
-            #ff3d7f 360deg
+            #C8102E 0deg,
+            #E85D4F 50deg,
+            #FFCC29 110deg,
+            #FFE082 165deg,
+            #FFCC29 200deg,
+            #046A38 270deg,
+            #003F87 320deg,
+            #C8102E 360deg
         );
-    animation: sv-ring-rotate 9s linear infinite;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+    animation: sv-ring-rotate 11s linear infinite;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 6px 16px -8px rgba(200, 16, 46, 0.32);
 }
 .sv-ring.is-seen {
-    background: rgba(0, 0, 0, 0.16);
+    background: rgba(10, 10, 10, 0.14);
     animation: none;
     box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .sv-ring { animation: none; }
 }
 @keyframes sv-ring-rotate {
     from { --sv-ring-angle: 0deg; }

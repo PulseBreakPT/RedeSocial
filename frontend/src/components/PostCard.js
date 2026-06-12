@@ -332,18 +332,35 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     e.stopPropagation();
                                     navigate(`/post/${post.quote_of.id}`);
                                 }}
-                                className="mt-3 p-3 border border-black/[0.08] rounded-2xl hover:bg-black/[0.02] cursor-pointer transition"
+                                className="mt-3 pl-4 pr-3 py-3 border border-black/[0.06] rounded-2xl hover:bg-black/[0.02] cursor-pointer transition group/quote relative overflow-hidden"
                                 data-testid={`quote-ref-${post.id}`}
+                                style={{ background: "rgba(247,245,239,0.55)" }}
                             >
+                                <span
+                                    aria-hidden
+                                    className="absolute left-0 top-0 bottom-0 w-[3px] transition-colors group-hover/quote:opacity-100"
+                                    style={{ background: "linear-gradient(180deg, #C8102E 0%, #FFCC29 100%)", opacity: 0.85 }}
+                                />
                                 <div className="flex items-center gap-2 text-sm">
                                     <Avatar user={post.quote_of.author} size={20} />
                                     <span className="font-heading font-semibold text-black">{post.quote_of.author?.name}</span>
                                     {post.quote_of.author?.verified && <VerifiedBadge size={11} />}
-                                    <span className="font-mono text-xs text-black/50">@{post.quote_of.author?.username}</span>
-                                    <span className="text-black/30">·</span>
-                                    <span className="font-mono text-xs text-black/50">{smartTime(post.quote_of.created_at)}</span>
+                                    <span className="font-mono text-xs text-black/45">@{post.quote_of.author?.username}</span>
+                                    <span className="text-black/25">·</span>
+                                    <span className="font-mono text-xs text-black/45">{smartTime(post.quote_of.created_at)}</span>
                                 </div>
-                                <p className="mt-1.5 text-sm text-black/70 line-clamp-3">{post.quote_of.content}</p>
+                                <p
+                                    className="mt-1.5 line-clamp-3 font-editorial italic"
+                                    style={{
+                                        fontSize: 15,
+                                        lineHeight: 1.45,
+                                        color: "rgba(10,10,10,0.78)",
+                                        fontWeight: 460,
+                                        fontVariationSettings: '"opsz" 22, "SOFT" 50',
+                                    }}
+                                >
+                                    {post.quote_of.content}
+                                </p>
                             </div>
                         )}
 

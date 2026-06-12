@@ -45,7 +45,27 @@ export function StoriesBar() {
     const openAt = (gi) => setViewer({ gi, si: 0 });
 
     return (
-        <div className="hairline-b px-3 sm:px-4 py-4 sm:py-5 overflow-x-auto scroll-smooth no-scrollbar snap-x-stories" data-testid="stories-bar">
+        <div
+            className="hairline-b px-3 sm:px-5 pt-3 pb-4 sm:pt-4 sm:pb-5 overflow-x-auto scroll-smooth no-scrollbar snap-x-stories"
+            data-testid="stories-bar"
+            style={{ background: "rgba(247,245,239,0.50)" }}
+        >
+            <div className="flex items-center justify-between mb-2.5 px-1">
+                <div className="inline-flex items-center gap-2">
+                    <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                        <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: "#C8102E" }} />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#C8102E" }} />
+                    </span>
+                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.55)" }}>
+                        Stories · ao vivo
+                    </span>
+                </div>
+                {orderedGroups.length > 0 && (
+                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.32)" }}>
+                        {orderedGroups.length} {orderedGroups.length === 1 ? "autor" : "autores"}
+                    </span>
+                )}
+            </div>
             <div className="flex gap-4 sm:gap-5 items-start">
                 <button
                     onClick={() => setComposerOpen(true)}

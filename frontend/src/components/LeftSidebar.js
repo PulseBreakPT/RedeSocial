@@ -117,9 +117,13 @@ export function LeftSidebar({ onCompose }) {
                 />
             </Link>
             <p
-                className="px-3 mb-4 font-mono text-[10px] font-bold uppercase shrink-0"
+                className="px-3 mb-4 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase shrink-0"
                 style={{ color: "rgba(10,10,10,0.42)", letterSpacing: "0.22em" }}
             >
+                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                </span>
                 Edição · {today}
             </p>
 

@@ -190,11 +190,17 @@ export default function Feed() {
             >
                 {/* Faixa "jornal" topo */}
                 <div className="flex items-center justify-between px-6 py-1.5" style={{ background: PT.ink, color: PT.bone }}>
-                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: PT.gold }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: PT.gold }}>
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
+                        </span>
                         LUSORAE · FEED · AO VIVO
                     </span>
-                    <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(255,244,220,0.55)" }}>
-                        EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(255,244,220,0.55)" }}>
+                        <span>LISBOA · {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span style={{ color: "rgba(255,244,220,0.30)" }}>·</span>
+                        <span>EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}</span>
                     </span>
                 </div>
                 <div className="px-6 pt-4 pb-3 flex items-end justify-between gap-4 relative z-10">
