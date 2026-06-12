@@ -62,13 +62,14 @@ export default function LegalIndex() {
             title="Centro Legal"
             subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa &mdash; e não apenas por advogados."
         >
-            {/* Antes de começares — callout editorial */}
+            {/* Antes de começares — callout editorial (cinza, sem fundo amarelo) */}
             <div
                 className="not-prose px-5 py-4 relative"
                 style={{
-                    background: "rgba(255,204,41,0.10)",
+                    background: "#FAFAFA",
                     color: PT.ink,
-                    border: "1px solid rgba(10,10,10,0.06)",
+                    border: "1px solid rgba(10,10,10,0.08)",
+                    borderLeft: `2px solid ${PT.red}`,
                     borderRadius: 16,
                     marginTop: "1.5rem",
                 }}
@@ -87,7 +88,7 @@ export default function LegalIndex() {
                 </p>
             </div>
 
-            {/* CARDS dos documentos — estilo editorial */}
+            {/* CARDS dos documentos — estilo editorial (todos brancos, sem fundo preto) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose" style={{ marginTop: "1.8rem" }}>
                 {CARDS.map(({ to, icon: Icon, title, ref, desc, meta, emphasis, accent }, idx) => (
                     <Link
@@ -96,13 +97,12 @@ export default function LegalIndex() {
                         data-testid={`legal-card-${to.split("/").pop()}`}
                         className={`group block p-5 hover:-translate-y-[2px] transition relative ${emphasis ? "sm:col-span-2" : ""}`}
                         style={{
-                            background: emphasis ? PT.ink : "#fff",
-                            color: emphasis ? "#fff" : PT.ink,
-                            border: "1px solid rgba(10,10,10,0.06)",
+                            background: "#ffffff",
+                            color: PT.ink,
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            borderLeft: emphasis ? `3px solid ${accent}` : "1px solid rgba(10,10,10,0.08)",
                             borderRadius: 16,
-                            boxShadow: emphasis
-                                ? "0 1px 2px rgba(10,10,10,0.06), 0 18px 40px -18px rgba(10,10,10,0.45)"
-                                : `0 1px 2px rgba(10,10,10,0.04), 0 12px 30px -16px ${accent}66, 0 6px 16px -10px rgba(10,10,10,0.10)`,
+                            boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 12px 30px -16px ${accent}55, 0 6px 16px -10px rgba(10,10,10,0.10)`,
                         }}
                     >
                         {/* Número grande tipo revista */}
@@ -137,15 +137,15 @@ export default function LegalIndex() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                    <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
+                                    <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-1" style={{ color: PT.ink }}>
                                         {title}
                                         <ChevronRight size={16} strokeWidth={2.2} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
                                     </h3>
                                     <span
                                         className="text-[11px] font-bold uppercase ml-auto px-2.5 py-1 shrink-0"
                                         style={{
-                                            background: emphasis ? "rgba(255,204,41,0.18)" : "rgba(10,10,10,0.05)",
-                                            color: emphasis ? PT.gold : "rgba(10,10,10,0.55)",
+                                            background: "rgba(10,10,10,0.05)",
+                                            color: "rgba(10,10,10,0.55)",
                                             borderRadius: 999,
                                             letterSpacing: "0.14em",
                                         }}
@@ -153,10 +153,10 @@ export default function LegalIndex() {
                                         {ref}
                                     </span>
                                 </div>
-                                <p className="text-[14px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.68)" }}>
+                                <p className="text-[14px] leading-relaxed mb-2.5 font-medium" style={{ color: "rgba(10,10,10,0.68)" }}>
                                     {desc}
                                 </p>
-                                <p className="text-[11px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: emphasis ? "rgba(255,204,41,0.85)" : "rgba(10,10,10,0.42)" }}>
+                                <p className="text-[11px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(10,10,10,0.42)" }}>
                                     {meta}
                                 </p>
                             </div>

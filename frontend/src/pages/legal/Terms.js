@@ -149,7 +149,7 @@ export default function Terms() {
                 { label: "Compromisso da integridade técnica, acesso indevido ou exfiltração",          ref: "Acesso indevido", icon: ShieldOff },
                 { label: "Spam, malware, smishing ou conteúdo enganador automatizado",                   ref: "DSA art. 14.º",   icon: Ban },
                 { label: "Operação de contas automatizadas (bots) sem identificação clara",              ref: "DSA",             icon: Slash },
-                { label: "Doxing &mdash; divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
+                { label: "Doxing — divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
                 { label: "Difamação, injúria, assédio ou perseguição (stalking)",                         ref: "Arts. 180.º · 181.º · 154.º-A CP", icon: MessageCircle },
             ]} />
 
@@ -164,7 +164,7 @@ export default function Terms() {
                 e só escalam quando a gravidade do facto, o impacto sobre terceiros, ou a reincidência o justifiquem.
             </p>
 
-            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas &mdash; do menos ao mais restritivo">
+            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas — do menos ao mais restritivo">
                 <LegalLadder steps={[
                     { label: "Aviso interno",            desc: "Notificação ao Utilizador, com identificação do Conteúdo e da regra aplicável. Sem efeito visível para terceiros.", icon: Flag },
                     { label: "Rotulagem (label)",        desc: "O Conteúdo permanece visível, mas com aviso contextual (e.g. sensível, possivelmente desinformação verificada).",      icon: AlertTriangle },

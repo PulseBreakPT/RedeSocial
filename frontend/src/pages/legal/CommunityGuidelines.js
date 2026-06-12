@@ -1,6 +1,6 @@
 import { LegalShell } from "./LegalShell";
 import {
-    LegalSignalPills, LegalKPIs, LegalIconGrid, LegalLadder, LegalReportFlow, LegalVisualBlock,
+    LegalKPIs, LegalIconGrid, LegalLadder, LegalReportFlow, LegalVisualBlock,
 } from "./_visuals";
 import {
     Scale, ShieldAlert, ShieldCheck, Heart, Globe, Flag, Clock,
@@ -16,17 +16,8 @@ export default function CommunityGuidelines() {
             subtitle="As regras práticas que regem aquilo que se pode publicar, partilhar e dizer no Lusorae &mdash; e o que acontece quando alguém, voluntariamente ou não, sai delas. Em conformidade com o DSA, com a lei portuguesa e com aquilo a que nos comprometêmos publicamente."
             lastUpdated="[data da última versão]"
         >
-            <LegalSignalPills items={[
-                { label: "Convivência",   tone: "tone-key", icon: Heart },
-                { label: "DSA",            tone: "tone-eu",  icon: Scale,        ref: "UE 2022/2065" },
-                { label: "Código Penal",   tone: "tone-pt",  icon: ShieldAlert,  ref: "PT" },
-                { label: "Lei 52/2003",    tone: "tone-pt",  icon: ShieldOff,    ref: "Antiterrorismo" },
-                { label: "Art. 37.º CRP",  tone: "tone-pt",  icon: Megaphone,    ref: "Lib. expressão" },
-                { label: "PT-PT",          tone: "tone-key", icon: Globe },
-            ]} />
-
             <LegalKPIs items={[
-                { value: "8",       label: "categorias proibidas",     sub: "Mapeadas em &sect;2",       icon: ShieldAlert },
+                { value: "8",       label: "categorias proibidas",     sub: "Mapeadas em §2",            icon: ShieldAlert },
                 { value: "6",       label: "escalações de medida",     sub: "Aviso → Suspensão",         icon: ArrowDownToLine },
                 { value: "6 meses", label: "recurso interno",           sub: "Art. 20.º DSA",             icon: Clock },
                 { value: "24h",     label: "triagem urgente",           sub: "Casos críticos",            icon: AlertTriangle },
@@ -85,9 +76,9 @@ export default function CommunityGuidelines() {
             <LegalIconGrid tone="warn" items={[
                 { label: "Spam e comportamento coordenado inautêntico",                                              icon: Ban },
                 { label: "Conteúdo sexual explícito não etiquetado em superfícies inadequadas",                       icon: EyeOff },
-                { label: "Desinformação lesiva &mdash; em particular sobre saúde pública, integridade eleitoral, emergências", icon: AlertTriangle },
+                { label: "Desinformação lesiva — em particular sobre saúde pública, integridade eleitoral, emergências", icon: AlertTriangle },
                 { label: "Assédio coordenado (pile-on) dirigido a pessoa identificada",                                icon: UserX },
-                { label: "Doxing &mdash; dados pessoais de terceiros sem fundamento legal válido",                            icon: ShieldOff },
+                { label: "Doxing — dados pessoais de terceiros sem fundamento legal válido",                            icon: ShieldOff },
                 { label: "Conteúdo gerado por IA passado como humano sem identificação, ou deepfakes enganadores",     icon: Brain },
             ]} />
 
@@ -126,7 +117,7 @@ export default function CommunityGuidelines() {
                     {
                         title: "Decisão fundamentada (Statement of Reasons)",
                         icon: FileCheck,
-                        desc: "Aplicamos a medida proporcional (ver &sect;7) e comunicamos a decisão ao autor com fundamentação detalhada &mdash; facto, regra aplicável, recurso disponível (art. 17.º DSA).",
+                        desc: "Aplicamos a medida proporcional (ver §7) e comunicamos a decisão ao autor com fundamentação detalhada — facto, regra aplicável, recurso disponível (art. 17.º DSA).",
                         meta: "Sempre por escrito",
                     },
                     {
@@ -165,7 +156,7 @@ export default function CommunityGuidelines() {
                 reincidência. Por ordem crescente:
             </p>
 
-            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas &mdash; do menos ao mais restritivo">
+            <LegalVisualBlock eyebrow="Princípio da proporcionalidade" title="Escala de medidas — do menos ao mais restritivo">
                 <LegalLadder steps={[
                     { label: "Aviso interno",          desc: "Notificação ao autor, sem efeito visível para terceiros.",                                  icon: Flag },
                     { label: "Rotulagem (label)",      desc: "Aviso contextual mantendo o Conteúdo visível.",                                            icon: AlertTriangle },

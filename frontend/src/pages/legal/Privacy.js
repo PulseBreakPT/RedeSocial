@@ -135,7 +135,7 @@ export default function Privacy() {
 
             <h2>Destinatários e subcontratantes</h2>
 
-            <LegalVisualBlock eyebrow="Quem pode aceder &mdash; e em que termos" title="O percurso dos teus dados">
+            <LegalVisualBlock eyebrow="Quem pode aceder — e em que termos" title="O percurso dos teus dados">
                 <LegalFlow steps={[
                     { label: "Tu",                  sub: "Titular dos dados",            icon: User,        accent: "accent-strong" },
                     { label: "Lusorae",             sub: "Responsável pelo tratamento",   icon: Database },

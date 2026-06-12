@@ -1,7 +1,7 @@
 import { LegalShell } from "./LegalShell";
 import { openCookiePreferences } from "../../components/CookieBanner";
 import {
-    LegalSignalPills, LegalKPIs, LegalCookieStack, LegalTimeline, LegalVisualBlock,
+    LegalKPIs, LegalCookieStack, LegalTimeline, LegalVisualBlock,
 } from "./_visuals";
 import {
     Cookie, ShieldCheck, Settings, BarChart3, Megaphone, Lock,
@@ -16,14 +16,6 @@ export default function Cookies() {
             subtitle="As tecnologias que utilizamos para guardar informação no teu dispositivo, com que finalidade, por quanto tempo, e como podes mudar de ideias a qualquer momento."
             lastUpdated="[data da última versão]"
         >
-            <LegalSignalPills items={[
-                { label: "ePrivacy",     tone: "tone-pt",  icon: Cookie,     ref: "L. 41/2004" },
-                { label: "CNPD 2022/1",  tone: "tone-pt",  icon: FileText,   ref: "Diretrizes" },
-                { label: "RGPD",          tone: "tone-eu",  icon: ShieldCheck,ref: "UE 2016/679" },
-                { label: "Dir. 2002/58",  tone: "tone-eu",  icon: Scale },
-                { label: "PT · UE",       tone: "tone-key", icon: Globe },
-            ]} />
-
             <LegalKPIs items={[
                 { value: "4",       label: "categorias",            sub: "Necessários · Funcionais · Analíticos · Marketing", icon: Cookie },
                 { value: "6-12 m",  label: "validade do consentimento", sub: "Diretrizes CNPD 2022/1",                       icon: Clock },
@@ -61,20 +53,20 @@ export default function Cookies() {
 
             <h2>Categorias e finalidades</h2>
 
-            <LegalVisualBlock eyebrow="As 4 categorias" title="O que cada categoria faz &mdash; e qual exige o teu consentimento">
+            <LegalVisualBlock eyebrow="As 4 categorias" title="O que cada categoria faz — e qual exige o teu consentimento">
                 <LegalCookieStack items={[
                     {
                         title: "Estritamente necessários",
                         required: true,
                         icon: Lock,
-                        desc: "Indispensáveis ao funcionamento do Serviço &mdash; autenticação, sessão, proteção anti-CSRF, balanceamento de carga, idioma e preferências essenciais. Não exigem consentimento (art. 5.º, n.º 3, segunda parte, da Lei n.º 41/2004).",
+                        desc: "Indispensáveis ao funcionamento do Serviço — autenticação, sessão, proteção anti-CSRF, balanceamento de carga, idioma e preferências essenciais. Não exigem consentimento (art. 5.º, n.º 3, segunda parte, da Lei n.º 41/2004).",
                         examples: "vm_session, vm_csrf, vm_consent, vm_locale",
                     },
                     {
                         title: "Funcionais",
                         required: false,
                         icon: Settings,
-                        desc: "Memorizam escolhas que o Utilizador faz para personalizar a experiência &mdash; tema, layout, último filtro utilizado. Exigem consentimento.",
+                        desc: "Memorizam escolhas que o Utilizador faz para personalizar a experiência — tema, layout, último filtro utilizado. Exigem consentimento.",
                         examples: "vm_theme, vm_layout, vm_lastfilter",
                     },
                     {

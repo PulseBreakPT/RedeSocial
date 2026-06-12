@@ -7,8 +7,8 @@ import { useEffect, useRef, useState } from "react";
 // =============================================================================
 import { Link, useNavigate } from "react-router-dom";
 import {
-    ArrowLeft, ArrowUp, Check, Cookie, FileText,
-    ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
+    ArrowLeft, ArrowUp, Cookie, FileText,
+    ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle, Check, Clock,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
 import SiteFooter from "../../components/SiteFooter";
@@ -44,8 +44,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const [activeId, setActiveId] = useState(null);
     const [progress, setProgress] = useState(0);
     const [copied, setCopied] = useState(false);
+    const [passedIds, setPassedIds] = useState(() => new Set());
+    const [readingTime, setReadingTime] = useState(0);
 
-    // Build TOC + IDs + section numbers
+    // Build TOC + IDs + section numbers, calc reading time
     useEffect(() => {
         if (!articleRef.current) return;
         const root = articleRef.current;
@@ -77,6 +79,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
         });
         setToc(items);
         if (items.length) setActiveId(items[0].id);
+        // Reading time — ~200 WPM portuguese
+        const text = (root.textContent || "").trim();
+        const words = text.split(/\s+/).filter(Boolean).length;
+        setReadingTime(Math.max(1, Math.round(words / 200)));
     }, [children]);
 
     useEffect(() => {
@@ -101,6 +107,18 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     .filter((e) => e.isIntersecting)
                     .sort((a, b) => a.target.getBoundingClientRect().top - b.target.getBoundingClientRect().top);
                 if (visible[0]) setActiveId(visible[0].target.id);
+                // Mark sections as "passed" when their top crosses viewport top
+                setPassedIds((prev) => {
+                    let next = prev;
+                    entries.forEach((e) => {
+                        const top = e.target.getBoundingClientRect().top;
+                        if (top < 80 && !prev.has(e.target.id)) {
+                            if (next === prev) next = new Set(prev);
+                            next.add(e.target.id);
+                        }
+                    });
+                    return next;
+                });
             },
             { rootMargin: "-25% 0px -60% 0px", threshold: [0, 1] }
         );
@@ -130,7 +148,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
     const eyebrow = NAV.find((n) => n.key === active)?.label || "Documento legal";
 
     return (
-        <div className="min-h-screen text-black relative" style={{ background: PT.paper || "#F7F5EF" }}>
+        <div className="min-h-screen text-black relative" style={{ background: "#FFFFFF" }}>
             {/* Reading progress bar */}
             <div
                 className="legal-shell-progress fixed top-0 left-0 right-0 h-[2px] z-50 pointer-events-none"
@@ -147,7 +165,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
             <header
                 className="sticky top-0 z-30"
                 style={{
-                    background: "rgba(247,245,239,0.92)",
+                    background: "rgba(255,255,255,0.88)",
                     backdropFilter: "blur(20px) saturate(180%)",
                     WebkitBackdropFilter: "blur(20px) saturate(180%)",
                     borderBottom: "1px solid rgba(10,10,10,0.06)",
@@ -300,43 +318,27 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 dangerouslySetInnerHTML={{ __html: subtitle }}
                             />
                         )}
-                        <div className="mt-5 flex flex-wrap items-center gap-2">
-                            {lastUpdated && (
-                                <span
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
-                                    style={{
-                                        background: "rgba(4,106,56,0.10)",
-                                        color: PT.green,
-                                        borderRadius: 999,
-                                        letterSpacing: "0.10em",
-                                    }}
-                                >
-                                    <Check size={11} strokeWidth={3} /> Atualizado · {lastUpdated}
+
+                        {/* Reading meta — quick info bar */}
+                        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px]" style={{ color: "rgba(10,10,10,0.55)" }} data-testid="legal-reading-meta">
+                            {readingTime > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Clock size={13} strokeWidth={2.1} style={{ color: "rgba(10,10,10,0.45)" }} />
+                                    <span className="font-medium"><strong className="font-bold text-[#0A0A0A]">{readingTime} min</strong> de leitura</span>
                                 </span>
                             )}
-                            <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
-                                style={{
-                                    background: "#fff",
-                                    color: PT.ink,
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    borderRadius: 999,
-                                    letterSpacing: "0.10em",
-                                }}
-                            >
-                                PT-PT
-                            </span>
-                            <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
-                                style={{
-                                    background: "rgba(0,63,135,0.10)",
-                                    color: PT.azul,
-                                    borderRadius: 999,
-                                    letterSpacing: "0.10em",
-                                }}
-                            >
-                                RGPD · DSA
-                            </span>
+                            {toc.length > 0 && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <ListTree size={13} strokeWidth={2.1} style={{ color: "rgba(10,10,10,0.45)" }} />
+                                    <span className="font-medium"><strong className="font-bold text-[#0A0A0A]">{toc.length} secções</strong></span>
+                                </span>
+                            )}
+                            {lastUpdated && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Check size={13} strokeWidth={2.5} style={{ color: PT.green }} />
+                                    <span className="font-medium">Atualizado · <strong className="font-bold text-[#0A0A0A]">{lastUpdated}</strong></span>
+                                </span>
+                            )}
                         </div>
 
                         {eli5 && (
@@ -344,10 +346,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 className="mt-8 px-5 py-4 relative"
                                 data-testid="legal-eli5"
                                 style={{
-                                    background: "#fff",
+                                    background: "#ffffff",
                                     color: PT.ink,
                                     border: "1px solid rgba(10,10,10,0.08)",
-                                    borderLeft: `2px solid ${PT.gold}`,
+                                    borderLeft: `2px solid ${PT.red}`,
                                     borderRadius: 16,
                                     boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 12px 28px -16px rgba(10,10,10,0.10)",
                                 }}
@@ -455,11 +457,18 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                 {/* Right rail — TOC scroll-spy */}
                 <aside className="legal-shell-tools hidden lg:block lg:col-span-3 order-3">
                     <div className="sticky top-[80px]">
-                        <div className="flex items-center gap-2 px-2 mb-3.5">
-                            <ListTree size={13} strokeWidth={2.2} style={{ color: PT.red }} />
-                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
-                                Nesta página
-                            </span>
+                        <div className="flex items-center justify-between gap-2 px-2 mb-3.5">
+                            <div className="flex items-center gap-2">
+                                <ListTree size={13} strokeWidth={2.2} style={{ color: PT.red }} />
+                                <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
+                                    Nesta página
+                                </span>
+                            </div>
+                            {toc.length > 0 && (
+                                <span className="text-[11px] font-bold tabular-nums" style={{ color: "rgba(10,10,10,0.45)" }} data-testid="legal-toc-progress">
+                                    {passedIds.size}/{toc.length}
+                                </span>
+                            )}
                         </div>
                         <nav data-testid="legal-toc" style={{ borderLeft: "1px solid rgba(10,10,10,0.10)" }}>
                             {toc.length === 0 && (
@@ -467,6 +476,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             )}
                             {toc.map((t, i) => {
                                 const isActive = activeId === t.id;
+                                const isPassed = passedIds.has(t.id) && !isActive;
                                 return (
                                     <a
                                         key={t.id}
@@ -483,18 +493,18 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                                 history.replaceState(null, "", `#${t.id}`);
                                             }
                                         }}
-                                        className="group block pl-4 pr-2 py-1.5 text-[13px] leading-snug transition"
+                                        className="group flex items-start gap-2 pl-4 pr-2 py-1.5 text-[13px] leading-snug transition"
                                         style={{
                                             marginLeft: -1,
-                                            borderLeft: `2px solid ${isActive ? PT.red : "transparent"}`,
-                                            color: isActive ? PT.ink : "rgba(10,10,10,0.55)",
+                                            borderLeft: `2px solid ${isActive ? PT.red : (isPassed ? "rgba(4,106,56,0.45)" : "transparent")}`,
+                                            color: isActive ? PT.ink : (isPassed ? "rgba(10,10,10,0.42)" : "rgba(10,10,10,0.55)"),
                                             fontWeight: isActive ? 700 : 500,
                                         }}
                                     >
-                                        <span className="font-bold text-[11px] mr-1.5" style={{ color: isActive ? PT.red : "rgba(10,10,10,0.32)" }}>
-                                            {String(i + 1).padStart(2, "0")}
+                                        <span className="font-bold text-[11px] shrink-0 inline-flex items-center justify-center w-[18px]" style={{ color: isActive ? PT.red : (isPassed ? PT.green : "rgba(10,10,10,0.32)") }}>
+                                            {isPassed ? <Check size={11} strokeWidth={3} /> : String(i + 1).padStart(2, "0")}
                                         </span>
-                                        {t.label}
+                                        <span className="flex-1 min-w-0">{t.label}</span>
                                     </a>
                                 );
                             })}
