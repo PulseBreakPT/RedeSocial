@@ -31,7 +31,9 @@ export default function Privacy() {
                 Designamos um Encarregado de Proteção de Dados, nos termos dos artigos 37.º a 39.º do RGPD. O DPO
                 opera com independência funcional, não recebe instruções no exercício das suas tarefas, e é
                 contactável diretamente em <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>, ou por correio
-                postal para a sede social, ao cuidado do &laquo;Encarregado de Proteção de Dados&raquo;.
+                postal para a sede social, ao cuidado do &laquo;Encarregado de Proteção de Dados&raquo;. A
+                designação e os contactos do DPO foram comunicados à <strong>CNPD</strong> nos termos do artigo
+                37.º, n.º 7, do RGPD.
             </p>
 
             <h2>Princípios que seguimos</h2>
@@ -166,10 +168,28 @@ export default function Privacy() {
             <p>
                 A nossa preferencia operacional é manter os dados <strong>no Espaço Económico Europeu</strong>. Quando,
                 excecionalmente, ocorram transferências para fora do EEE (e.g. apoio internacional, redundância
-                técnica), aplicamos uma das garantias previstas nos artigos 44.º a 49.º do RGPD: decisão de
-                adequação da Comissão Europeia; cláusulas contratuais-tipo (SCC, Decisão 2021/914) com Transfer Impact
-                Assessment documentada; ou regras vinculativas para empresas (BCR). O Utilizador pode solicitar
-                cópia das garantias aplicadas, mediante pedido para <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.
+                técnica), aplicamos uma das garantias previstas nos artigos 44.º a 49.º do RGPD:
+            </p>
+            <ul>
+                <li>
+                    <strong>Decisões de adequação</strong> da Comissão Europeia (artigo 45.º do RGPD), incluindo,
+                    quando aplicável, a <strong>EU-US Data Privacy Framework</strong> (Decisão de Execução (UE)
+                    2023/1795, de 10 de julho de 2023) relativamente a subcontratantes nos EUA certificados no quadro
+                    do <em>Framework</em>;
+                </li>
+                <li>
+                    <strong>Cláusulas Contratuais-Tipo</strong> (SCC) adotadas pela Decisão de Execução (UE) 2021/914,
+                    acompanhadas de <em>Transfer Impact Assessment</em> documentada (TIA) e medidas suplementares
+                    quando necessárias;
+                </li>
+                <li>
+                    <strong>Regras vinculativas para empresas</strong> (BCR) aprovadas nos termos do artigo 47.º do
+                    RGPD, quando aplicável.
+                </li>
+            </ul>
+            <p>
+                O Utilizador pode solicitar cópia das garantias aplicadas a cada destinatário, mediante pedido para{" "}
+                <a href="mailto:dpo@lusorae.pt">dpo@lusorae.pt</a>.
             </p>
 
             <h2>Prazos de conservação</h2>

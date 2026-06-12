@@ -159,6 +159,18 @@ Bloqueadores P0 da auditoria resolvidos integralmente. Estado verificado por ins
   - Mecanismos de verificação etária (art. 28.º DSA) reforçados como proporcionais e mínimos sobre dados pessoais.
 - Verificado por screenshot das três secções afectadas (`/legal/terms#definicoes`, `/legal/terms#capacidade-juridica-e-idade-minima`, `/legal/privacy#menores`).
 
-**Pendente (próximas sessões):** P1 (8 gaps materiais), P2 (9 itens de coerência), P3 (6 páginas novas).
+## Centro Legal — P1 Concluído (Jun 12, 2026) ✅
+Gaps materiais P1 da auditoria aplicados (com 2 correcções relevantes às próprias referências legais propostas pela auditoria, validadas por pesquisa em diariodarepublica.pt):
+
+- **P1.1 + P1.2 — Categoria DSA + Ponto Único de Contacto**: nova secção H2 #02 em `Terms.js` ("Categoria DSA e Ponto Único de Contacto"). Declara o Lusorae como **Plataforma Online** (art. 3.º al. i) DSA), **não-VLOP** (não atinge limiares art. 33.º DSA), com 2 pontos únicos de contacto distintos: `legal@lusorae.pt` para autoridades (art. 11.º DSA) e `apoio@lusorae.pt` para utilizadores (art. 12.º DSA). Línguas aceites: português europeu e inglês.
+- **P1.3 — DPO comunicado à CNPD**: frase final adicionada à secção "Encarregado de Proteção de Dados" em `Privacy.js` (artigo 37.º, n.º 7 do RGPD).
+- **P1.4 — Definição "Utilizador" contraditória**: já coberto no P0.5.
+- **P1.5 — Salvaguarda do consumidor na limitação de responsabilidade**: parágrafo "Salvaguarda do consumidor" adicionado em `Terms.js` §16, com referência expressa à Lei n.º 24/96, ao DL 84/2021 e aos arts. 18.º e 21.º do DL 446/85.
+- **P1.6 — Transposição da Diretiva 2019/790**: corrigido em `Terms.js` para o diploma correcto, **Decreto-Lei n.º 47/2023, de 19 de junho** (ao abrigo da Lei de autorização legislativa n.º 11/2023, de 22 de março). A auditoria original mencionava erradamente "Lei n.º 36/2023" — verificado em diariodarepublica.pt.
+- **P1.7 — EU-US Data Privacy Framework**: secção "Transferências internacionais" em `Privacy.js` reescrita em lista, com 3 garantias do RGPD (decisões de adequação incluindo EU-US DPF Decisão 2023/1795, SCC Decisão 2021/914 + TIA, BCR art. 47.º).
+- **P1.8 — Direitos de personalidade (CC arts. 70.º a 81.º)**: novo item adicionado às `LegalIconGrid` de condutas proibidas tanto em `Terms.js` como em `CommunityGuidelines.js` (nome, imagem, palavra, reserva da vida privada, integridade moral).
+- **Bónus — Autoridade DSA-PT**: corrigida referência "Lei n.º 31/2024" (fictícia) para **Decreto-Lei n.º 20-B/2024, de 16 de fevereiro** (diploma vigente que designa a ANACOM como Coordenador Nacional dos Serviços Digitais) em `LegalIndex.js` `LegalComplianceBoard` + nova secção do `Terms.js`. Verificado em diariodarepublica.pt.
+
+**Pendente (próximas sessões):** P2 (9 itens de coerência), P3 (6 páginas novas).
 
 

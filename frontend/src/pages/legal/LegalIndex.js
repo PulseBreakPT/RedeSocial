@@ -221,7 +221,7 @@ export default function LegalIndex() {
                 { name: "DL n.º 7/2004",         scope: "Comércio eletrónico, dever de informação",                   ref: "Art. 10.º" },
                 { name: "DL n.º 84/2021",        scope: "Conteúdos e serviços digitais (consumidor)",                ref: "Garantias" },
                 { name: "DL n.º 24/2014",         scope: "Contratos celebrados à distância (livre resolução)",        ref: "Art. 10.º" },
-                { name: "Lei n.º 31/2024",        scope: "Coordenador Nacional dos Serviços Digitais, ANACOM",           ref: "DSA-PT" },
+                { name: "DL n.º 20-B/2024",       scope: "ANACOM como Coordenador Nacional dos Serviços Digitais",       ref: "DSA-PT" },
                 { name: "Diretrizes CNPD 2022/1", scope: "Cookies e tecnologias semelhantes",                        ref: "Cookies-PT" },
             ]} />
 

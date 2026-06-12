@@ -25,6 +25,37 @@ export default function Terms() {
                 11.º e seguintes do DSA.
             </p>
 
+            <h2>Categoria DSA e Ponto Único de Contacto</h2>
+            <p>
+                O Lusorae qualifica-se como <strong>Plataforma Online</strong> na aceção do artigo 3.º, alínea i), do
+                Regulamento (UE) 2022/2065 (DSA). À data de publicação destes Termos, o Serviço{" "}
+                <strong>não atinge os limiares</strong> do artigo 33.º do DSA e, por conseguinte, não está designado
+                como <em>Very Large Online Platform</em> (VLOP) pela Comissão Europeia. Qualquer alteração desta
+                qualificação será aqui refletida e publicamente comunicada.
+            </p>
+            <p>
+                Nos termos dos artigos 11.º e 12.º do DSA, designamos os seguintes pontos únicos de contacto:
+            </p>
+            <ul>
+                <li>
+                    <strong>Autoridades dos Estados-Membros, Comissão Europeia e Comité Europeu dos Serviços
+                    Digitais</strong> (art. 11.º DSA):{" "}
+                    <a href="mailto:legal@lusorae.pt">legal@lusorae.pt</a>.
+                </li>
+                <li>
+                    <strong>Destinatários do Serviço</strong> (utilizadores) (art. 12.º DSA):{" "}
+                    <a href="mailto:apoio@lusorae.pt">apoio@lusorae.pt</a>, sem prejuízo dos endereços
+                    especializados (denúncias, recursos, RGPD) listados em <a href="/legal">Centro Legal</a>.
+                </li>
+            </ul>
+            <p>
+                As comunicações podem ser dirigidas em <strong>português europeu</strong> ou em{" "}
+                <strong>inglês</strong>. Não exigimos qualquer formulário automatizado, qualquer mensagem de correio
+                eletrónico recebida nos endereços acima é considerada validamente dirigida ao Ponto Único de Contacto.
+                A autoridade nacional competente para a coordenação dos serviços digitais em Portugal é a{" "}
+                <strong>ANACOM</strong>, designada pelo Decreto-Lei n.º 20-B/2024, de 16 de fevereiro.
+            </p>
+
             <h2>Definições</h2>
             <p>Para efeitos destes Termos, entende-se por:</p>
             <LegalTable
@@ -146,8 +177,10 @@ export default function Terms() {
                 Conteúdo potencialmente ilícito através do mecanismo &ldquo;<em>Reportar</em>&rdquo; presente em cada
                 publicação, ou enviando notificação fundamentada para{" "}
                 <a href="mailto:reportar@lusorae.pt">reportar@lusorae.pt</a>. Para alegadas violações de direitos
-                de autor, aplicam-se ainda os regimes específicos resultantes da Diretiva (UE) 2019/790 e da sua
-                transposição nacional, sempre que aplicáveis.
+                de autor, aplicam-se ainda os regimes específicos resultantes da Diretiva (UE) 2019/790, transposta
+                em Portugal pelo <strong>Decreto-Lei n.º 47/2023, de 19 de junho</strong> (ao abrigo da Lei de
+                autorização legislativa n.º 11/2023, de 22 de março), sem prejuízo da aplicação do Código do Direito
+                de Autor e dos Direitos Conexos.
             </p>
 
             <h2>Condutas proibidas</h2>
@@ -165,6 +198,7 @@ export default function Terms() {
                 { label: "Operação de contas automatizadas (bots) sem identificação clara",              ref: "DSA",             icon: Slash },
                 { label: "Doxing, divulgação de dados pessoais de terceiros sem base legal",              ref: "Art. 192.º-A CP", icon: AlertTriangle },
                 { label: "Difamação, injúria, assédio ou perseguição (stalking)",                         ref: "Arts. 180.º · 181.º · 154.º-A CP", icon: MessageCircle },
+                { label: "Violação de direitos de personalidade: nome, imagem, palavra, reserva da vida privada, integridade moral", ref: "CC arts. 70.º a 81.º", icon: ShieldAlert },
             ]} />
 
             <h2>Moderação e medidas</h2>
@@ -288,6 +322,14 @@ export default function Terms() {
                 oportunidade. As cláusulas de exclusão ou limitação de responsabilidade estão sujeitas ao regime
                 das cláusulas contratuais gerais (Decreto-Lei n.º 446/85, de 25 de outubro), prevalecendo as normas
                 imperativas em matéria de defesa do consumidor.
+            </p>
+            <p>
+                <strong>Salvaguarda do consumidor.</strong> Esta limitação <strong>não se aplica</strong> ao
+                Utilizador que actue na qualidade de consumidor na aceção do artigo 2.º da Lei n.º 24/96, de 31 de
+                julho, nem aos danos resultantes da violação de direitos imperativos do consumidor, do RGPD, do DSA,
+                do Decreto-Lei n.º 84/2021 ou de qualquer outra legislação imperativa portuguesa ou da União
+                Europeia. As cláusulas que, no contexto de um contrato com consumidor, infringissem os artigos 18.º
+                e 21.º do Decreto-Lei n.º 446/85 consideram-se não escritas.
             </p>
 
             <h2>Subscrições pagas (Plus, Aura)</h2>

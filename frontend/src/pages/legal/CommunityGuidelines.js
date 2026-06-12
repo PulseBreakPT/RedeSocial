@@ -62,6 +62,7 @@ export default function CommunityGuidelines() {
                 { label: "Ameaças graves, perseguição e <em>stalking</em>",                              ref: "Arts. 153.º · 154.º-A CP", icon: UserX },
                 { label: "Divulgação não consentida de imagens íntimas ou conteúdo deepfake sexual",     ref: "Art. 192.º-A CP",          icon: EyeOff },
                 { label: "Difamação, injúria, calunia com carácter persistente",                          ref: "Arts. 180.º-181.º CP",      icon: MessageCircle },
+                { label: "Violação de direitos de personalidade (nome, imagem, palavra, reserva da vida privada, integridade moral)", ref: "CC arts. 70.º a 81.º", icon: UserX },
                 { label: "Fraude, burla informática, usurpação de identidade",                           ref: "CP",                       icon: Ban },
                 { label: "Violação de direitos de autor e direitos conexos",                              ref: "CDADC",                     icon: Slash },
             ]} />
