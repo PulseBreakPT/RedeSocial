@@ -1332,7 +1332,7 @@ frontend:
               - All interactions smooth and responsive
             
             Test Credentials: admin@vermillion.app / admin123
-            Test URL: https://legal-refresh-9.preview.emergentagent.com/settings
+            Test URL: https://prd-legal-review.preview.emergentagent.com/settings
             
             CONCLUSION:
             The settings page restructuring is COMPLETE and WORKING perfectly.

@@ -1,7 +1,7 @@
 # H1-H4 Security Hardening Test Summary
 
 **Test Date:** 2026-05-21  
-**Backend:** https://legal-refresh-9.preview.emergentagent.com/api  
+**Backend:** https://prd-legal-review.preview.emergentagent.com/api  
 **Test Credentials:** (read from `/app/memory/test_credentials.md` or env — never hardcoded)  
 **Test File:** /app/backend_test_h1h4.py  
 **Test Output:** /app/h1h4_test_output.log  
