@@ -1,6 +1,8 @@
 /**
  * Admin Panel — Lusorae
  * --------------------------------------------------------------
+ * DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+ *
  * A real, non-mocked control center for moderators/operators.
  * Every action calls a /api/admin/* endpoint and shows the
  * authoritative server response. No localStorage shenanigans,

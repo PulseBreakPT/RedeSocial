@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Link, useParams } from "react-router-dom";
 import { Hash, MapPin, TrendingUp, Users, Heart, BellRing, BellOff, Share2 } from "lucide-react";
 import { api } from "../lib/api";

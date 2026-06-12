@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// Shell partilhado das rotas legais (/legal, /legal/terms, …). Sticky TOC,
+// "estado de leitura" e CTA share/print — tudo em hairlines + sombras
+// difusas. Sem stickers rodados nem doodles.
+// =============================================================================
 import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowLeft, ArrowUp, Check, Cookie, FileText,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
 import { PT } from "../../theme/editorial";
-import { AuthStyles } from "../auth/AuthLayout";
 import SiteFooter from "../../components/SiteFooter";
 
 const NAV = [
@@ -512,7 +517,6 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
             </div>
 
             <SiteFooter />
-            <AuthStyles />
         </div>
     );
 }

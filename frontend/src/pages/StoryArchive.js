@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { ChevronLeft, Archive, Star, Trash2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, toastApiError } from "../lib/api";

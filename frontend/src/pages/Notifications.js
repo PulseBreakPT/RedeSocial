@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Link } from "react-router-dom";
 import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog, Reply, Send, X, Eye } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";

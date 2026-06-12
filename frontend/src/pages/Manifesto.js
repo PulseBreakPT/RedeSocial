@@ -1,4 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// Página pública das 6 promessas anti-dark-pattern, redesenhada em jun/2026.
+// Substitui o estilo "fanzine PT" (post-its, recibos, doodles, asteriscos
+// gigantes, azulejos rodados) pela linguagem editorial limpa: fundos paper,
+// hairlines 1px, sombras difusas, kickers mono, highlights suaves.
+// =============================================================================
 import { useRef, useState, useEffect } from "react";
 import {
     ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
@@ -10,7 +17,7 @@ import SiteFooter from "../components/SiteFooter";
 
 /**
  * /manifesto — Página pública das 6 promessas anti-dark-pattern.
- * Reskin: estilo fanzine PT (cream + PT colors + doodles).
+ * Design: LUSORAE EDITORIAL (paper · hairlines · sombras difusas · kickers mono).
  */
 
 const PROMISES = [
@@ -254,29 +261,6 @@ export default function Manifesto() {
 
     return (
         <div className="min-h-screen relative overflow-hidden" style={{ background: "#FFFFFF", color: PT.ink }} data-testid="manifesto-page">
-            {/* ============ DOODLES DECORATIVOS DE FUNDO ============ */}
-            <div className="absolute -top-16 -right-20 pointer-events-none opacity-[0.07] z-0 hidden sm:block" aria-hidden>
-                <GiantAsterisk color={PT.red} size={320} rotate={-12} />
-            </div>
-            <div className="absolute top-20 right-3 sm:top-28 sm:right-8 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-right z-0" aria-hidden>
-                <DoodleStar color={PT.gold} size={48} rotate={14} />
-            </div>
-            <div className="absolute top-28 left-3 sm:top-36 sm:left-6 pointer-events-none block opacity-60 scale-[0.55] sm:scale-100 sm:opacity-100 origin-top-left z-0" aria-hidden>
-                <DoodleSparkles color={PT.red} size={44} rotate={-10} />
-            </div>
-            <div className="absolute top-[480px] -left-3 sm:left-2 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-left z-0 hidden md:block" aria-hidden>
-                <DoodleScribble color={PT.azul} w={130} h={50} style={{ transform: "rotate(-6deg)" }} />
-            </div>
-            <div className="absolute top-[580px] -right-2 sm:right-4 pointer-events-none block opacity-50 scale-[0.55] sm:scale-100 sm:opacity-90 origin-right z-0 hidden md:block" aria-hidden>
-                <DoodleSpiral color={PT.gold} size={64} rotate={12} />
-            </div>
-            <div className="absolute bottom-32 left-3 sm:bottom-44 sm:left-8 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-left z-0" aria-hidden>
-                <DoodleZigzag color={PT.red} w={130} h={28} style={{ transform: "rotate(6deg)" }} />
-            </div>
-            <div className="absolute bottom-40 right-3 sm:bottom-52 sm:right-10 pointer-events-none block opacity-55 scale-[0.6] sm:scale-100 sm:opacity-90 origin-bottom-right z-0" aria-hidden>
-                <DoodleCross color={PT.green} size={30} rotate={-14} />
-            </div>
-
             {/* TAPE topo */}
             <div className="pt-tape h-3 w-full" />
 
@@ -433,9 +417,6 @@ export default function Manifesto() {
                         <p className="mt-3 text-[13.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
                             // regras, não marketing
                         </p>
-                        <div className="absolute -top-3 -right-1 pointer-events-none hidden sm:block">
-                            <DoodleHeart color={PT.red} size={32} rotate={-12} />
-                        </div>
                     </div>
                 </Reveal>
 
@@ -443,11 +424,6 @@ export default function Manifesto() {
                     {PROMISES.map((promise, idx) => (
                         <PromiseCard key={promise.n} {...promise} delay={idx * 0.06} />
                     ))}
-                </div>
-
-                {/* Azulejos separador */}
-                <div className="mt-12 sm:mt-14 flex justify-center overflow-hidden">
-                    <AzulejoBorder count={6} size={32} />
                 </div>
             </section>
 
@@ -498,11 +474,6 @@ export default function Manifesto() {
                                 Não nosso.
                             </h2>
                         </figcaption>
-
-                        {/* Doodle no canto */}
-                        <div className="absolute top-4 right-4 z-10 pointer-events-none">
-                            <DoodleStar color={PT.gold} size={42} rotate={14} />
-                        </div>
                     </figure>
                 </Reveal>
             </section>
@@ -576,9 +547,9 @@ export default function Manifesto() {
                             </p>
 
                             <div className="mt-5">
-                                <Signature size={22} rotate={-3} color={PT.red}>
+                                <p className="font-bold uppercase" style={{ fontSize: 11, letterSpacing: "0.20em", color: PT.red }}>
                                     — equipa Lusorae
-                                </Signature>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -684,17 +655,6 @@ export default function Manifesto() {
                             borderRadius: 24,
                         }}
                     >
-                        {/* Decorações */}
-                        <div className="absolute -top-12 -right-12 z-0 pointer-events-none opacity-30" aria-hidden>
-                            <GiantAsterisk color={PT.gold} size={240} rotate={-14} />
-                        </div>
-                        <div className="absolute top-4 left-4 z-0 pointer-events-none block opacity-80 scale-[0.6] sm:scale-100">
-                            <DoodleStar color={PT.gold} size={36} rotate={12} />
-                        </div>
-                        <div className="absolute bottom-4 right-6 z-0 pointer-events-none block opacity-80 scale-[0.6] sm:scale-100">
-                            <DoodleExclamation color={PT.gold} size={42} rotate={-8} />
-                        </div>
-
                         <div className="relative z-10">
                             <Kicker color={PT.gold} className="mb-3">SE CHEGASTE AQUI</Kicker>
                             <h3
@@ -762,7 +722,6 @@ export default function Manifesto() {
             <div className="pt-tape h-3 w-full relative z-10" />
 
             <SiteFooter />
-            <AuthStyles />
         </div>
     );
 }

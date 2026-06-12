@@ -1,3 +1,6 @@
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Eye, Lock, Loader2, ShieldOff } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";

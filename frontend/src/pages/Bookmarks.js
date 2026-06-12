@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Bookmark, Plus, FolderPlus, Pencil, Trash2, Search, X, Image as ImageIcon, BarChart3, Type, Compass } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PostCard } from "../components/PostCard";

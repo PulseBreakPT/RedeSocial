@@ -1,4 +1,7 @@
 import { useMemo, useState, useRef, useCallback } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import {
     Check, ArrowRight, Sparkles, Heart, Shield, Zap, Star, Crown, Info,
     Palette, Music, Eye, BookOpen, MessageCircle, TrendingUp, Lock,
@@ -710,7 +713,7 @@ export default function Premium() {
                                 style={{
                                     background: "#fff",
                                     border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: `3px 3px 0 ${t.c}`,
+                                    boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 10px 24px -14px ${t.c}55, 0 8px 20px -10px rgba(10,10,10,0.10)`,
                                     borderRadius: 14,
                                 }}
                             >

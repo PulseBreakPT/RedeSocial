@@ -13,20 +13,21 @@ import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 import { PT } from "../theme/editorial";
 
 // =============================================================================
-// LUSORAE — Left Sidebar (clean editorial, alinhado com a Landing/Auth)
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// Left Sidebar (clean editorial, alinhado com a Landing/Auth).
 // =============================================================================
 //
-// Removido:
-//   · sombras 3D fanzine (`3px 3px 0 ink`)
+// Removido (legacy fanzine PT):
+//   · sombras 3D offset (`3px 3px 0 ink` / `4px 4px 0 ink`)
 //   · stickers rotacionados
 //   · text-shadow no logo
-//   · pill activo vermelho com sombra
+//   · pill activo vermelho com sombra dura
 //
-// Adicionado:
+// Lusorae Editorial:
 //   · nav active = pill ink suave (linear-gradient charcoal → black)
 //   · CTA Publicar = pill ink premium com soft shadow
 //   · perfil card = paper limpo com hairline
-//   · kickers mono uppercase
+//   · kickers mono uppercase com dot pulse
 //
 // =============================================================================
 

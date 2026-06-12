@@ -3,8 +3,12 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 // =============================================================================
-// LUSORAE — Auth Layout (clean editorial, alinhado com a Landing)
-// Tokens, primitives e shell partilhados entre Login e Register.
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// Auth shell partilhado (Login + Register + Forgot password).
+// Tokens, primitives e visual panel alinhados com a Landing: paper + ink,
+// hairlines, sombras difusas, pill CTAs, kicker mono com dot pulse.
+// Selo "Made in Portugal" no rodapé do painel visual reforça a identidade.
+// Substitui completamente o antigo estilo "poster urbano / stickers fanzine PT".
 // =============================================================================
 
 export const PT = {
@@ -386,7 +390,7 @@ export function VisualPanel({
                 )}
 
                 {/* Footer mini */}
-                <div className="mt-auto pt-8 flex items-center justify-between gap-4">
+                <div className="mt-auto pt-8 flex items-end justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="flex -space-x-2">
                             {[PT.red, PT.gold, PT.azul, PT.green].map((c, i) => (
@@ -396,7 +400,8 @@ export function VisualPanel({
                                     style={{
                                         width: 28, height: 28, background: c,
                                         color: c === PT.gold ? PT.ink : "#fff",
-                                        border: "2.5px solid rgba(10,10,10,0.9)",
+                                        border: "2px solid rgba(10,10,10,0.92)",
+                                        boxShadow: "0 2px 6px rgba(0,0,0,0.35)",
                                     }}
                                 >
                                     {["S", "T", "I", "M"][i]}
@@ -412,13 +417,47 @@ export function VisualPanel({
                             </p>
                         </div>
                     </div>
-                    <Link
-                        to="/"
-                        className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase opacity-70 hover:opacity-100 transition-opacity"
-                        style={{ color: "#fff", letterSpacing: "0.16em" }}
+                    {/* ─── Selo "Made in Portugal" ──────────────────────────── */}
+                    <div
+                        className="flex flex-col items-center gap-1.5 shrink-0"
+                        aria-label="Made in Portugal"
+                        data-testid="auth-made-in-pt-seal"
                     >
-                        Landing <ArrowUpRight size={11} strokeWidth={2.5} />
-                    </Link>
+                        <div
+                            className="grid place-items-center font-black uppercase text-center"
+                            style={{
+                                width: 64, height: 64, borderRadius: "50%",
+                                background: "rgba(255,255,255,0.06)",
+                                border: "1px solid rgba(255,255,255,0.22)",
+                                backdropFilter: "blur(10px)",
+                                WebkitBackdropFilter: "blur(10px)",
+                                color: "#fff",
+                                lineHeight: 1.05,
+                                letterSpacing: "0.06em",
+                                boxShadow: "0 8px 22px -10px rgba(0,0,0,0.55)",
+                            }}
+                        >
+                            <div className="flex flex-col items-center gap-0.5">
+                                <span className="font-mono text-[7.5px] font-bold" style={{ letterSpacing: "0.22em", color: "rgba(255,255,255,0.68)" }}>
+                                    MADE IN
+                                </span>
+                                <span className="text-[13px] tracking-tight" style={{ color: "#fff" }}>
+                                    PORTUGAL
+                                </span>
+                                <span className="flex items-center gap-0.5 mt-0.5" aria-hidden>
+                                    <span style={{ width: 6, height: 3, background: PT.green, borderRadius: 1 }} />
+                                    <span style={{ width: 6, height: 3, background: PT.red, borderRadius: 1 }} />
+                                </span>
+                            </div>
+                        </div>
+                        <Link
+                            to="/"
+                            className="inline-flex items-center gap-1 font-mono text-[9.5px] font-bold uppercase opacity-70 hover:opacity-100 transition-opacity"
+                            style={{ color: "#fff", letterSpacing: "0.16em" }}
+                        >
+                            Landing <ArrowUpRight size={10} strokeWidth={2.5} />
+                        </Link>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -446,63 +485,17 @@ export function AuthShell({ visual, children, bottomLink }) {
                     {visual}
                 </div>
             </div>
-            <AuthStyles />
         </div>
     );
 }
 
 // =============================================================================
-// AuthStyles — estilos globais leves (sem doodles, sem sombras 3D)
+// AuthStyles — kept como no-op (back-compat). Os estilos `.auth-input`,
+// `.lusorae-pulse` e `.auth-fade-up` foram migrados para `/src/index.css`
+// (LUSORAE EDITORIAL · classes globais partilhadas) em jun/2026.
 // =============================================================================
 export function AuthStyles() {
-    return (
-        <style>{`
-            .auth-input {
-                width: 100%;
-                background: #fff;
-                color: ${PT.ink};
-                border: 1.5px solid rgba(10,10,10,0.10);
-                border-radius: 14px;
-                padding: 14px 16px;
-                font-size: 15px;
-                font-weight: 500;
-                letter-spacing: -0.005em;
-                outline: none;
-                transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-                font-family: inherit;
-            }
-            .auth-input::placeholder {
-                color: rgba(10,10,10,0.32);
-                font-weight: 500;
-            }
-            .auth-input:hover {
-                border-color: rgba(10,10,10,0.20);
-            }
-            .auth-input:focus {
-                border-color: ${PT.ink};
-                box-shadow: 0 0 0 3px rgba(10,10,10,0.08);
-            }
-            .auth-input:disabled {
-                background: rgba(10,10,10,0.04);
-                color: rgba(10,10,10,0.45);
-                cursor: not-allowed;
-            }
-            .lusorae-pulse {
-                animation: lusoraePulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            }
-            @keyframes lusoraePulse {
-                0%, 100% { opacity: 1; transform: scale(1); }
-                50%      { opacity: 0.5; transform: scale(1.6); }
-            }
-            @keyframes fadeUp {
-                from { opacity: 0; transform: translateY(8px); }
-                to   { opacity: 1; transform: translateY(0); }
-            }
-            .auth-fade-up {
-                animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-            }
-        `}</style>
-    );
+    return null;
 }
 
 // =============================================================================

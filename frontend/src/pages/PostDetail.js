@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
     MessageCircle, CornerDownRight, X, BellOff, BellRing,

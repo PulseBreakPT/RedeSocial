@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { useSearchParams } from "react-router-dom";
 import { Coffee, Plus, Clock, Users, Send, ArrowLeft, X as XIcon } from "lucide-react";
 import { api, toastApiError } from "../lib/api";

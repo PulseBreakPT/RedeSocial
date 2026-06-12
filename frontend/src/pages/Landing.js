@@ -7,6 +7,9 @@ import { api } from "../lib/api";
 
 // =============================================================================
 // LUSORAE — Landing pública SSS-tier · ONE-SCREEN
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// Esta landing é a casa-mãe do design system: tokens, primitives,
+// micro-interações e tipografia que todas as outras rotas seguem.
 // Inspiração: refs premium (Linear, Threads, Substack) × paleta PT × tipografia massiva
 // =============================================================================
 

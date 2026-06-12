@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import {
     CalendarDays, MapPin, ExternalLink, Filter, ChevronRight, X,
     LayoutGrid, AlignJustify, Compass, ChevronDown, Sparkles, Flame,

@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Link, useSearchParams } from "react-router-dom";
 import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
@@ -193,7 +196,9 @@ export default function Explore() {
                                 </button>
                             </div>
                             <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-5 px-3 lg:px-5 pb-1">
-                                {suggestions.slice(0, 8).map((u, idx) => (
+                                {suggestions.slice(0, 8).map((u, idx) => {
+                                    const accent = idx % 3 === 0 ? PT.gold : idx % 3 === 1 ? PT.azul : PT.red;
+                                    return (
                                     <Link
                                         key={u.id}
                                         to={`/u/${u.username}`}
@@ -202,9 +207,8 @@ export default function Explore() {
                                         style={{
                                             background: "#fff",
                                             border: "1px solid rgba(10,10,10,0.10)",
-                                            boxShadow: `3px 3px 0 ${idx % 3 === 0 ? PT.gold : idx % 3 === 1 ? PT.azul : PT.red}`,
+                                            boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 12px 26px -16px ${accent}66, 0 6px 14px -8px rgba(10,10,10,0.10)`,
                                             borderRadius: 14,
-                                            transform: `rotate(${idx % 2 === 0 ? -0.6 : 0.6}deg)`,
                                         }}
                                     >
                                         <Avatar user={u} size={44} />
@@ -229,7 +233,8 @@ export default function Explore() {
                                             Seguir
                                         </button>
                                     </Link>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

@@ -1,4 +1,7 @@
 import { useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Link } from "react-router-dom";
 import { api, formatApiError } from "../lib/api";
 

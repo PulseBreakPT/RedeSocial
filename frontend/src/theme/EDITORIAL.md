@@ -50,6 +50,44 @@ gold #FFCC29 · green #046A38 · azul #003F87
 
 ## Rotas migradas (jun 2026)
 
-Feed, Notificações, Perfil (+ sub-componentes), Definições (+ todos os tabs),
-Premium, Manifesto, Mensagens, Explorar, Calendário, Legal (índice + páginas),
-componentes partilhados (sidebars, mobile bars, menus) e páginas de auth.
+Todas as rotas/páginas da app têm header de documentação a apontar para este
+ficheiro. Lista completa:
+
+- `/` — `pages/Landing.js` *(casa-mãe do design system)*
+- `/login` — `pages/Login.js` *(usa `AuthShell` + `VisualPanel` + selo "Made in Portugal")*
+- `/register` — `pages/Register.js`
+- `/forgot-password` — `pages/ForgotPassword.js`
+- `/feed` — `pages/Feed.js`
+- `/u/:username` — `pages/Profile.js`
+- `/manifesto` — `pages/Manifesto.js`
+- `/notifications` — `pages/Notifications.js`
+- `/settings` — `pages/Settings.js` *(+ todos os tabs em `pages/settings/*`)*
+- `/premium` — `pages/Premium.js`
+- `/messages` — `pages/Messages.js`
+- `/explore` — `pages/Explore.js`
+- `/calendar/pt` — `pages/Calendario.js`
+- `/communities`, `/c/:slug` — `pages/Communities.js`, `pages/Community.js`
+- `/trending`, `/tag/:tag` — `pages/Trending.js`, `pages/TagPage.js`
+- `/bookmarks`, `/drafts`, `/scheduled`, `/series/:id`, `/story-archive`,
+  `/visitors`, `/topologia`, `/mesas`, `/p/:id` — todas marcadas
+- `/admin` — `pages/Admin.js`
+- `/legal/*` — shell partilhado `pages/legal/LegalShell.js`
+
+## Ficheiros removidos / neutralizados (jun 2026)
+
+- `pages/auth/AuthDecor.js` → **shim** de back-compat. Re-exporta `PT` e as
+  primitivas editoriais (`Sticker`, `StampCircle`, `PosterCard`, `Kicker`,
+  `Highlight`) a partir de `/src/components/editorial/Primitives`. Todos os
+  doodles, post-its, recibos, polaroides, asteriscos, azulejos, signatures,
+  speech bubbles, etc. são exportados como `() => null` (no-op).
+- `index.css` → removidos blocos `.shadow-pt-*`, `.chip-pt-*`, `.stamp-pt-*`,
+  `.hl-pt-*`, `.zone-cal`, `.zone-areia` (estilos fanzine de bordas grossas
+  e sombras offset 4px). Adicionados em substituição `.auth-input`,
+  `.lusorae-pulse`, `.auth-fade-up` (classes globais editoriais).
+- `<AuthStyles />` removido como JSX render em `Feed.js`, `Manifesto.js`,
+  `Profile.js`, `LegalShell.js` e dentro do próprio `AuthShell`. Os estilos
+  estão agora em `/src/index.css`.
+
+> Não voltar a introduzir bordas `2.5px+ solid PT.ink` nem sombras
+> `4px 4px 0 PT.ink`. Para profundidade usar `ED.cardShadow`, `ED.softShadow`,
+> `ED.ctaShadow` ou compor sombras difusas multi-camada.

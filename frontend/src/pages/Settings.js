@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import {
     User as UserIcon, Bell, Shield, LayoutDashboard, Database,
     Search, Check, X, Settings as SettingsIcon, Palette,

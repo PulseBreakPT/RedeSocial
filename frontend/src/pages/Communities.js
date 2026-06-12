@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { Link, useNavigate } from "react-router-dom";
 import { Users, Plus, X, Search, Flame, Clock, TrendingUp } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";

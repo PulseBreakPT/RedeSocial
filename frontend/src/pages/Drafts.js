@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+// =============================================================================
+// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// =============================================================================
 import { FileText, Trash2, Send, Image as ImageIcon, BarChart3, Search, X, CheckSquare, Square, ArrowUpDown } from "lucide-react";
 import { PageShell, PageHero, Empty, Grid } from "../components/PageShell";
 import { PostSkeletonList } from "../components/Skeleton";
