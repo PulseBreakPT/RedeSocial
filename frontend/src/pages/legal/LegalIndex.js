@@ -69,14 +69,14 @@ export default function LegalIndex() {
                     background: "rgba(255,204,41,0.10)",
                     color: PT.ink,
                     border: "1px solid rgba(10,10,10,0.06)",
-                    borderRadius: 14,
+                    borderRadius: 16,
                     marginTop: "1.5rem",
                 }}
             >
-                <strong className="block font-mono font-bold uppercase mb-1.5 text-[10.5px]" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}>
+                <strong className="block font-bold uppercase mb-1.5 text-[11px]" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}>
                     Antes de começares
                 </strong>
-                <p className="text-[14.5px] font-medium leading-relaxed">
+                <p className="text-[15px] font-medium leading-relaxed">
                     Se só vais ler um documento, lê{" "}
                     <Link to="/legal/vision" className="font-bold underline underline-offset-4 decoration-[2px]" style={{ color: PT.red, textDecorationColor: "rgba(200,16,46,0.35)" }}>
                         A nossa visão
@@ -115,10 +115,10 @@ export default function LegalIndex() {
                                 borderRadius: "50%",
                                 border: `1px solid ${accent}33`,
                                 boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 8px 18px -10px ${accent}55`,
-                                fontSize: 12,
+                                fontSize: 13,
                                 lineHeight: 1,
-                                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                                letterSpacing: "0.04em",
+                                fontFamily: "Inter, sans-serif",
+                                letterSpacing: "-0.02em",
                             }}
                         >
                             {String(idx + 1).padStart(2, "0")}
@@ -137,26 +137,26 @@ export default function LegalIndex() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                    <h3 className="font-bold text-[16.5px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
+                                    <h3 className="font-bold text-[17px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
                                         {title}
                                         <ChevronRight size={16} strokeWidth={2.2} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
                                     </h3>
                                     <span
-                                        className="font-mono text-[10px] font-bold uppercase ml-auto px-2.5 py-1 shrink-0"
+                                        className="text-[11px] font-bold uppercase ml-auto px-2.5 py-1 shrink-0"
                                         style={{
                                             background: emphasis ? "rgba(255,204,41,0.18)" : "rgba(10,10,10,0.05)",
                                             color: emphasis ? PT.gold : "rgba(10,10,10,0.55)",
                                             borderRadius: 999,
-                                            letterSpacing: "0.18em",
+                                            letterSpacing: "0.14em",
                                         }}
                                     >
                                         {ref}
                                     </span>
                                 </div>
-                                <p className="text-[13.5px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.68)" }}>
+                                <p className="text-[14px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.68)" }}>
                                     {desc}
                                 </p>
-                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", color: emphasis ? "rgba(255,204,41,0.85)" : "rgba(10,10,10,0.42)" }}>
+                                <p className="text-[11px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: emphasis ? "rgba(255,204,41,0.85)" : "rgba(10,10,10,0.42)" }}>
                                     {meta}
                                 </p>
                             </div>

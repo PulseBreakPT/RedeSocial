@@ -66,6 +66,35 @@ Regras:
 - **Definições** (`Settings.js`): masthead com tabs mobile pills ink + sidebar groups
 - **Centro Legal** (`/legal/*`): LegalShell já editorial premium · cards Visão/Termos/Privacidade/Cookies/Diretrizes
 
+### Phase 6 — Centro Legal alinhado com Landing (Feb 12, 2026) ✅
+Refatoração das 5 páginas legais (Visão · Termos · Privacidade · Cookies · Diretrizes) para coerência total com o design da landing page:
+- **Eliminado** `/theme/fanzinePalette.js` (110 linhas, único ficheiro órfão sem referências externas)
+- **Adicionada** rota `/legal/vision` ao `App.js` (antes só existia o ficheiro, sem rota)
+- **CSS `.prose-legal` refatorado** no `index.css`:
+  - Bullets `✱` (red asterisks) → traços hairline cinza (estilo landing)
+  - Chips mono `01`/`02` ao lado de H2 → ocultos (TOC à direita já faz esse papel)
+  - Listas `<ol>` com chips mono `::before` → markers decimais limpos com font-feature `tnum`
+  - H3 com `::before` mono red sigil → removido
+  - Callouts: strong eyebrow `JetBrains Mono` uppercase → Inter editorial com tracking 0.18em
+  - Tabelas: `th` `JetBrains Mono` → Inter sans
+  - Definition lists: `dt` `JetBrains Mono` uppercase → Inter clean
+  - `details` summary marker `JetBrains Mono` → Inter
+  - Cor azul `#0E4D92` → `#003F87` (azul landing)
+  - Cor verde `#2D6E4B` → `#046A38` (verde landing)
+  - Cor dourada `#FFCC00` → `#FFCC29` (dourado landing)
+- **CSS `.legal-viz-*` refatorado** (12 componentes):
+  - Pills, KPIs, blocos, fluxos, escadas, grids de direitos, mapas de dados, timelines, icon grids, cookie stack, report flow, compliance board
+  - Todos os labels/eyebrows/refs `JetBrains Mono` → Inter sans com tracking subtil 0.10–0.18em
+  - Removidos prefixos decorativos `✦` em captions
+  - Border-strip dos `legal-viz-block` `::before` removidos (usa `border-left` editorial agora)
+- **`LegalShell.js`**: todos os `font-mono` removidos (eyebrows "Documentos", "Nesta página", "Vê também", "Centro legal", chips PT-PT/RGPD/Atualizado) → tipografia editorial Inter
+- **`LegalIndex.js`**: cards com números magazine usando Inter (era ui-monospace), pill `REF` Inter editorial, callout "Antes de começares" Inter clean
+
+Resultado validado por screenshot tool em todas as 5 rotas (`/legal`, `/legal/vision`, `/legal/terms`, `/legal/privacy`, `/legal/cookies`, `/legal/community`):
+- Tipografia coerente com landing (Inter font-black tracking apertado em H1 massive, Fraunces serif italic em `<em>`, sublinhado vermelho subtil em links)
+- Sem vestígios mono/✱/✦/chips fanzine
+- Cores PT alinhadas com tokens da landing (`#C8102E`, `#FFCC29`, `#003F87`, `#046A38`)
+
 ### Refactor partilhado
 - `PageHero` global em `PageShell.js` agora gera o masthead editorial (sticky desktop + compact mobile)
 - `Empty` editorial (círculo branco, sem caixas amarelas/cinza)
@@ -78,6 +107,6 @@ Regras:
 
 ## Roadmap (P2 — futuro)
 - Testes E2E para todas as páginas
-- Refactor `/theme/fanzinePalette.js` → consolidar em `editorial.js`
+- ~~Refactor `/theme/fanzinePalette.js` → consolidar em `editorial.js`~~ ✅ feito (Feb 12, 2026 — ficheiro eliminado)
 - Migrar restantes pages (Calendario, Notifications, Tags, Hashtag, Series, etc.) para `PageHero`
 - Limpeza de classes Tailwind legacy (`btn-obsidian`, `chip-on`, `card-lux`, `font-heading`, `silver-grad`) — todas têm equivalente inline editorial

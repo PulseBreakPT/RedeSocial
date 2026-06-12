@@ -36,6 +36,7 @@ const Trending = lazy(() => import("./pages/Trending"));
 const Drafts = lazy(() => import("./pages/Drafts"));
 const Scheduled = lazy(() => import("./pages/Scheduled"));
 const LegalIndex = lazy(() => import("./pages/legal/LegalIndex"));
+const Vision = lazy(() => import("./pages/legal/Vision"));
 const Terms = lazy(() => import("./pages/legal/Terms"));
 const Privacy = lazy(() => import("./pages/legal/Privacy"));
 const Cookies = lazy(() => import("./pages/legal/Cookies"));
@@ -99,6 +100,7 @@ function App() {
                         <Route path="/forgot" element={<ForgotPassword />} />
                         {/* Public legal pages — accessible without auth */}
                         <Route path="/legal" element={<LegalIndex />} />
+                        <Route path="/legal/vision" element={<Vision />} />
                         <Route path="/legal/terms" element={<Terms />} />
                         <Route path="/legal/privacy" element={<Privacy />} />
                         <Route path="/legal/cookies" element={<Cookies />} />

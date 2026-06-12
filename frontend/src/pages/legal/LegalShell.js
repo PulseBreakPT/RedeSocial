@@ -185,8 +185,8 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         />
                     </Link>
                     <span
-                        className="ml-2 hidden sm:inline font-mono text-[10.5px] font-bold uppercase"
-                        style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}
+                        className="ml-2 hidden sm:inline text-[11px] font-bold uppercase"
+                        style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}
                     >
                         · Centro legal
                     </span>
@@ -232,7 +232,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
                                 <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
                             </span>
-                            <span className="font-mono text-[10px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.22em" }}>
+                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
                                 Documentos
                             </span>
                         </div>
@@ -265,7 +265,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             })}
                         </nav>
                         {lastUpdated && (
-                            <div className="hidden lg:flex mt-6 px-2 items-center gap-2 font-mono text-[10.5px] font-bold" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.04em" }}>
+                            <div className="hidden lg:flex mt-6 px-2 items-center gap-2 text-[11px] font-bold" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.04em" }}>
                                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: PT.green }} />
                                 Atualizado · {lastUpdated}
                             </div>
@@ -281,15 +281,15 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
                                 <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
                             </span>
-                            <span className="font-mono text-[10.5px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.22em" }}>
+                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
                                 {eyebrow}
                             </span>
                             <span aria-hidden style={{ flex: 1, height: 1, background: "rgba(10,10,10,0.10)" }} />
                         </div>
                         <h1
                             data-testid="legal-title"
-                            className="font-black tracking-[-0.04em]"
-                            style={{ fontSize: "clamp(38px, 5.4vw, 64px)", lineHeight: 0.96, color: PT.ink }}
+                            className="font-black tracking-[-0.045em]"
+                            style={{ fontSize: "clamp(40px, 6vw, 72px)", lineHeight: 0.96, color: PT.ink }}
                         >
                             {title}
                         </h1>
@@ -303,36 +303,36 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         <div className="mt-5 flex flex-wrap items-center gap-2">
                             {lastUpdated && (
                                 <span
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10.5px] font-bold uppercase"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
                                     style={{
                                         background: "rgba(4,106,56,0.10)",
                                         color: PT.green,
                                         borderRadius: 999,
-                                        letterSpacing: "0.14em",
+                                        letterSpacing: "0.10em",
                                     }}
                                 >
                                     <Check size={11} strokeWidth={3} /> Atualizado · {lastUpdated}
                                 </span>
                             )}
                             <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10.5px] font-bold uppercase"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
                                 style={{
                                     background: "#fff",
                                     color: PT.ink,
                                     border: "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 999,
-                                    letterSpacing: "0.14em",
+                                    letterSpacing: "0.10em",
                                 }}
                             >
                                 PT-PT
                             </span>
                             <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10.5px] font-bold uppercase"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase"
                                 style={{
-                                    background: "rgba(14,77,146,0.10)",
+                                    background: "rgba(0,63,135,0.10)",
                                     color: PT.azul,
                                     borderRadius: 999,
-                                    letterSpacing: "0.14em",
+                                    letterSpacing: "0.10em",
                                 }}
                             >
                                 RGPD · DSA
@@ -347,15 +347,15 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                     background: "#fff",
                                     color: PT.ink,
                                     border: "1px solid rgba(10,10,10,0.08)",
-                                    borderLeft: `1.5px solid ${PT.gold}`,
-                                    borderRadius: 14,
-                                    boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,10,10,0.10)",
+                                    borderLeft: `2px solid ${PT.gold}`,
+                                    borderRadius: 16,
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 12px 28px -16px rgba(10,10,10,0.10)",
                                 }}
                             >
-                                <strong className="block font-mono font-bold uppercase mb-1.5 text-[10.5px]" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.6)" }}>
+                                <strong className="block font-bold uppercase mb-1.5 text-[11px]" style={{ letterSpacing: "0.18em", color: "rgba(10,10,10,0.55)" }}>
                                     Em duas linhas
                                 </strong>
-                                <span className="text-[14.5px] font-medium leading-relaxed">{eli5}</span>
+                                <span className="text-[15px] font-medium leading-relaxed">{eli5}</span>
                             </div>
                         )}
 
@@ -367,7 +367,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                 style={{
                                     background: "#fff",
                                     border: "1px solid rgba(10,10,10,0.08)",
-                                    borderRadius: 14,
+                                    borderRadius: 16,
                                 }}
                             >
                                 <summary className="flex items-center gap-2 cursor-pointer select-none px-4 py-3 text-[12.5px] font-bold uppercase list-none" style={{ color: PT.ink, letterSpacing: "0.10em" }}>
@@ -379,10 +379,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                         <li key={t.id}>
                                             <a
                                                 href={`#${t.id}`}
-                                                className="flex gap-2 text-[13px] py-1.5 hover:opacity-70"
+                                                className="flex gap-2 text-[13.5px] py-1.5 hover:opacity-70"
                                                 style={{ color: PT.ink }}
                                             >
-                                                <span className="font-mono font-bold text-[10.5px] mt-[3px] w-7 shrink-0" style={{ color: PT.red }}>
+                                                <span className="font-bold text-[11px] mt-[3px] w-7 shrink-0" style={{ color: PT.red }}>
                                                     {String(i + 1).padStart(2, "0")}
                                                 </span>
                                                 <span className="font-medium">{t.label}</span>
@@ -403,8 +403,8 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             style={{
                                 background: "#fff",
                                 border: "1px solid rgba(10,10,10,0.08)",
-                                borderRadius: 14,
-                                boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,10,10,0.10)",
+                                borderRadius: 16,
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 12px 28px -16px rgba(10,10,10,0.10)",
                             }}
                         >
                             <div className="inline-flex items-center gap-1.5 mb-3">
@@ -412,7 +412,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                     <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
                                     <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
                                 </span>
-                                <span className="font-mono text-[10px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.20em" }}>
+                                <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
                                     Vê também
                                 </span>
                             </div>
@@ -421,7 +421,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                     <Link
                                         key={n.key}
                                         to={n.to}
-                                        className="inline-flex items-center text-[12.5px] font-bold px-3.5 py-1.5 transition hover:opacity-80"
+                                        className="inline-flex items-center text-[13px] font-bold px-3.5 py-1.5 transition hover:opacity-80"
                                         style={{
                                             background: "rgba(10,10,10,0.04)",
                                             color: PT.ink,
@@ -436,10 +436,10 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                             </div>
                         </div>
 
-                        <footer className="text-[12.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        <footer className="text-[13px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             <p>
                                 As menções entre{" "}
-                                <code className="px-1.5 py-0.5 text-[11.5px] font-bold rounded" style={{ background: "rgba(10,10,10,0.06)", color: PT.ink }}>
+                                <code className="px-1.5 py-0.5 text-[12px] font-bold rounded" style={{ background: "rgba(10,10,10,0.06)", color: PT.ink, fontFamily: "JetBrains Mono, monospace" }}>
                                     [ ]
                                 </code>{" "}
                                 identificam dados a preencher pela entidade responsável antes da publicação definitiva.
@@ -457,13 +457,13 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                     <div className="sticky top-[80px]">
                         <div className="flex items-center gap-2 px-2 mb-3.5">
                             <ListTree size={13} strokeWidth={2.2} style={{ color: PT.red }} />
-                            <span className="font-mono text-[10px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.22em" }}>
+                            <span className="text-[11px] font-bold uppercase" style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.18em" }}>
                                 Nesta página
                             </span>
                         </div>
                         <nav data-testid="legal-toc" style={{ borderLeft: "1px solid rgba(10,10,10,0.10)" }}>
                             {toc.length === 0 && (
-                                <p className="pl-4 text-[12px] font-mono" style={{ color: "rgba(10,10,10,0.38)" }}>Sem secções</p>
+                                <p className="pl-4 text-[12.5px]" style={{ color: "rgba(10,10,10,0.38)" }}>Sem secções</p>
                             )}
                             {toc.map((t, i) => {
                                 const isActive = activeId === t.id;
@@ -483,7 +483,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                                 history.replaceState(null, "", `#${t.id}`);
                                             }
                                         }}
-                                        className="group block pl-4 pr-2 py-1.5 text-[12.5px] leading-snug transition"
+                                        className="group block pl-4 pr-2 py-1.5 text-[13px] leading-snug transition"
                                         style={{
                                             marginLeft: -1,
                                             borderLeft: `2px solid ${isActive ? PT.red : "transparent"}`,
@@ -491,7 +491,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                             fontWeight: isActive ? 700 : 500,
                                         }}
                                     >
-                                        <span className="font-mono font-bold text-[10.5px] mr-1.5" style={{ color: isActive ? PT.red : "rgba(10,10,10,0.32)" }}>
+                                        <span className="font-bold text-[11px] mr-1.5" style={{ color: isActive ? PT.red : "rgba(10,10,10,0.32)" }}>
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
                                         {t.label}
@@ -503,7 +503,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                         <button
                             onClick={scrollTop}
                             data-testid="legal-top-btn"
-                            className="mt-5 ml-1 inline-flex items-center gap-1.5 text-[11.5px] font-bold px-3.5 py-1.5 transition tap-shrink"
+                            className="mt-5 ml-1 inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 transition tap-shrink"
                             style={{
                                 background: "#fff", color: PT.ink,
                                 border: "1px solid rgba(10,10,10,0.10)",
