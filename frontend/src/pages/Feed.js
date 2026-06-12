@@ -188,117 +188,124 @@ export default function Feed() {
                     borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
-                {/* Faixa "jornal" topo */}
-                <div className="flex items-center justify-between px-6 py-1.5" style={{ background: PT.ink, color: PT.bone }}>
-                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: PT.gold }}>
+                {/* Masthead — faixa editorial em ink, alinhada à Landing */}
+                <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: PT.bone }}>
+                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
                         <span className="relative flex h-1.5 w-1.5" aria-hidden>
                             <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
                         </span>
                         LUSORAE · FEED · AO VIVO
                     </span>
-                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.14em", color: "rgba(255,244,220,0.55)" }}>
+                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
                         <span>LISBOA · {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
-                        <span style={{ color: "rgba(255,244,220,0.30)" }}>·</span>
+                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
                         <span>EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}</span>
                     </span>
                 </div>
-                <div className="px-6 pt-4 pb-3 flex items-end justify-between gap-4 relative z-10">
-                    <div className="min-w-0">
-                        <h1
-                            className="font-black tracking-[-0.03em] leading-[0.98]"
-                            style={{ fontSize: 30, color: PT.ink }}
-                            data-testid="feed-greeting"
-                        >
-                            {greeting}{firstName ? (
-                                <>, <span className="relative inline-block">
-                                    <span
-                                        aria-hidden
-                                        className="absolute pointer-events-none"
-                                        style={{
-                                            left: -2, right: -2, bottom: "0.05em", height: "0.40em",
-                                            background: `${PT.gold}55`, zIndex: 0, borderRadius: 2,
-                                        }}
-                                    />
-                                    <span className="relative z-10">{firstName}</span>
-                                </span></>
-                            ) : ""}.
-                        </h1>
-                        <p className="text-[13px] mt-2 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
-                            O que se passa em Portugal{" "}
-                            <strong style={{ color: PT.red, fontWeight: 700 }}>agora</strong>.
-                        </p>
-                        <FeedContextLine className="mt-1 block" />
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[10px] font-bold uppercase"
-                            style={{
-                                background: "#fff",
-                                color: "rgba(10,10,10,0.62)",
-                                border: "1px solid rgba(10,10,10,0.08)",
-                                borderRadius: 999,
-                                letterSpacing: "0.14em",
-                            }}
-                        >
-                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
-                            </span>
-                            Notícias reais
+
+                {/* Hero editorial — tipografia massiva, alinhada à Landing */}
+                <div className="px-7 pt-7 pb-5 relative z-10">
+                    {/* Kicker editorial */}
+                    <div className="flex items-center gap-2.5 mb-3.5">
+                        <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                            {new Date().toLocaleDateString("pt-PT", { weekday: "long", day: "2-digit", month: "long" })}
                         </span>
-                        <button
-                            onClick={refresh}
-                            data-testid="feed-refresh"
-                            className="w-10 h-10 grid place-items-center tap-shrink transition"
-                            title="Atualizar"
-                            style={{
-                                background: "#fff",
-                                border: "1px solid rgba(10,10,10,0.08)",
-                                borderRadius: 999,
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 6px 16px -10px rgba(10,10,10,0.18)",
-                                color: PT.ink,
-                            }}
-                        >
-                            <RefreshCw size={16} strokeWidth={2.2} className={refreshing ? "animate-spin" : ""} />
-                        </button>
+                        <span style={{ color: "rgba(10,10,10,0.18)" }}>—</span>
+                        <FeedContextLine className="inline-block" />
+                    </div>
+
+                    <div className="flex items-end justify-between gap-6">
+                        <div className="min-w-0 flex-1">
+                            <h1
+                                className="font-black tracking-[-0.045em] leading-[0.94]"
+                                style={{ fontSize: "clamp(48px, 5.4vw, 64px)", color: PT.ink }}
+                                data-testid="feed-greeting"
+                            >
+                                {greeting}{firstName ? (
+                                    <>,{" "}
+                                    <span className="relative inline-block">
+                                        <span className="relative z-10" style={{ color: PT.red }}>{firstName}</span>
+                                        <svg
+                                            aria-hidden
+                                            className="absolute pointer-events-none"
+                                            style={{ left: 0, right: 0, bottom: "-0.08em", width: "100%", height: "0.22em" }}
+                                            viewBox="0 0 200 12"
+                                            preserveAspectRatio="none"
+                                        >
+                                            <path d="M2 7 Q 50 0, 100 6 T 198 5" fill="none" stroke={PT.red} strokeWidth="3" strokeLinecap="round" />
+                                        </svg>
+                                    </span></>
+                                ) : ""}.
+                            </h1>
+                            <p className="text-[15px] mt-3.5 font-medium max-w-[36ch]" style={{ color: "rgba(10,10,10,0.62)", lineHeight: 1.45 }}>
+                                O que se passa em Portugal{" "}
+                                <strong style={{ color: PT.ink, fontWeight: 700 }}>agora</strong>
+                                {" — "}selecionado para ti.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 pb-1">
+                            <span
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase"
+                                style={{
+                                    background: "#fff",
+                                    color: "rgba(10,10,10,0.68)",
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    borderRadius: 999,
+                                    letterSpacing: "0.18em",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04)",
+                                }}
+                            >
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                                </span>
+                                Notícias reais
+                            </span>
+                            <button
+                                onClick={refresh}
+                                data-testid="feed-refresh"
+                                className="w-11 h-11 grid place-items-center tap-shrink transition hover:translate-y-[-1px]"
+                                title="Atualizar"
+                                style={{
+                                    background: "#fff",
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    borderRadius: 999,
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 8px 20px -10px rgba(10,10,10,0.22)",
+                                    color: PT.ink,
+                                }}
+                            >
+                                <RefreshCw size={17} strokeWidth={2.2} className={refreshing ? "animate-spin" : ""} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Tabs — estilo fanzine PT */}
-                <div className="grid grid-cols-2 px-3 relative">
-                    <button
-                        onClick={() => setTab("following")}
-                        data-testid="tab-following"
-                        className={`py-3 font-black uppercase text-[12.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
-                        style={{
-                            color: tab === "following" ? PT.red : "rgba(10,10,10,0.55)",
-                        }}
-                    >
-                        Seguindo
-                        {tab === "following" && (
-                            <span
-                                className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full"
-                                style={{ background: PT.red, width: 56 }}
-                            />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setTab("foryou")}
-                        data-testid="tab-foryou"
-                        className={`py-3 font-black uppercase text-[12.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
-                        style={{
-                            color: tab === "foryou" ? PT.red : "rgba(10,10,10,0.55)",
-                        }}
-                    >
-                        Para ti
-                        {tab === "foryou" && (
-                            <span
-                                className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full"
-                                style={{ background: PT.red, width: 56 }}
-                            />
-                        )}
-                    </button>
+                {/* Tabs — magazine premium com indicador animado */}
+                <div className="grid grid-cols-2 px-7 relative" style={{ borderTop: "1px solid rgba(10,10,10,0.06)" }}>
+                    {[
+                        { key: "following", label: "Seguindo", testId: "tab-following" },
+                        { key: "foryou",    label: "Para ti",  testId: "tab-foryou" },
+                    ].map((t) => {
+                        const active = tab === t.key;
+                        return (
+                            <button
+                                key={t.key}
+                                onClick={() => setTab(t.key)}
+                                data-testid={t.testId}
+                                className="py-4 font-black uppercase text-[12px] tracking-[0.14em] transition relative active:scale-[0.98] hover:text-black"
+                                style={{ color: active ? PT.ink : "rgba(10,10,10,0.42)" }}
+                            >
+                                {t.label}
+                                {active && (
+                                    <span
+                                        className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 h-[2.5px]"
+                                        style={{ background: PT.red, width: 72, borderRadius: 999 }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
