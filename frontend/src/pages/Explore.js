@@ -361,17 +361,17 @@ function EmptyExplore({ msg = "Sem publicações" }) {
             <div
                 className="w-20 h-20 grid place-items-center mx-auto mb-6"
                 style={{
-                    background: PT.gold,
+                    background: "#fff",
                     color: PT.ink,
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                    borderRadius: 18,
+                    border: "1px solid rgba(10,10,10,0.06)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 12px 30px -14px rgba(10,10,10,0.18)",
+                    borderRadius: 999,
                 }}
             >
-                <Compass size={26} strokeWidth={2.4} />
+                <Compass size={26} strokeWidth={2.0} />
             </div>
-            <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                // NADA POR AQUI
+            <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.42)" }}>
+                Nada por aqui
             </p>
             <h3
                 className="font-black tracking-[-0.025em] leading-tight"

@@ -240,7 +240,7 @@ export default function Profile() {
                         style={{
                             background: PT.red, color: "#fff",
                             border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 999, transform: "rotate(-3deg)",
+                            borderRadius: 999,
                         }}
                     >
                         <Lock size={26} strokeWidth={2.2} />
@@ -371,13 +371,13 @@ function BlockedWallView({ profile }) {
                 testid="profile-header-blocked"
             />
 
-            {/* Banner placeholder · FANZINE — listrado dashed cream/ink */}
+            {/* Banner placeholder — listrado neutro Lusorae editorial */}
             <div
                 className="relative h-36 lg:h-52 overflow-hidden"
                 style={{
                     background:
-                        "repeating-linear-gradient(45deg, rgba(10,10,10,0.08) 0 14px, rgba(10,10,10,0.02) 14px 28px), #F4F4F4",
-                    borderBottom: `4px solid ${PT.ink}`,
+                        "repeating-linear-gradient(45deg, rgba(10,10,10,0.06) 0 14px, rgba(10,10,10,0.015) 14px 28px), #F4F4F4",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
                 aria-hidden
             >
@@ -387,12 +387,12 @@ function BlockedWallView({ profile }) {
                         className="w-16 h-16 grid place-items-center"
                         style={{
                             background: PT.red, color: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            border: "1px solid rgba(200,16,46,0.18)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 12px 28px -12px rgba(200,16,46,0.55)",
                             borderRadius: 999,
                         }}
                     >
-                        <Lock size={26} strokeWidth={2.2} />
+                        <Lock size={26} strokeWidth={2.0} />
                     </div>
                 </div>
             </div>

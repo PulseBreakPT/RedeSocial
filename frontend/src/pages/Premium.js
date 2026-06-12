@@ -11,6 +11,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
+import { Highlight } from "../components/editorial/Primitives";
 import { usePremium } from "../context/PremiumContext";
 import { toast } from "sonner";
 
@@ -192,14 +193,12 @@ function FeatureList({ items }) {
                         <span
                             className="flex-shrink-0 w-6 h-6 grid place-items-center mt-0.5"
                             style={{
-                                background: PT.gold,
+                                background: "rgba(255,204,41,0.18)",
                                 color: PT.ink,
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                borderRadius: 6,
+                                borderRadius: 999,
                             }}
                         >
-                            <Icon size={11} strokeWidth={2.5} />
+                            <Icon size={11} strokeWidth={2.4} />
                         </span>
                         <span>{f.text}</span>
                     </li>
@@ -264,8 +263,8 @@ function TierCard({
                             {name}
                         </h3>
                     </div>
-                    <p className="font-mono font-black uppercase mb-2.5" style={{ fontSize: 10.5, letterSpacing: "0.12em", color: PT.red }}>
-                        // {subtitle}
+                    <p className="font-mono font-bold uppercase mb-2.5" style={{ fontSize: 10.5, letterSpacing: "0.18em", color: "rgba(10,10,10,0.50)" }}>
+                        {subtitle}
                     </p>
                     <p className="text-[14px] leading-relaxed max-w-[34ch] font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>{tagline}</p>
                 </div>
@@ -273,18 +272,21 @@ function TierCard({
                 <div className="mb-4">
                     <div className="flex items-baseline gap-2 mb-1">
                         <span
-                            className="font-black tabular-nums tracking-[-0.04em] leading-none"
+                            className="font-black tabular-nums tracking-[-0.04em] leading-none relative inline-block"
                             style={{
                                 fontSize: "clamp(40px, 6vw, 56px)",
                                 color: PT.ink,
-                                background: PT.gold,
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                display: "inline-block",
                             }}
                         >
-                            €{price.toFixed(2)}
+                            <span
+                                aria-hidden
+                                className="absolute pointer-events-none"
+                                style={{
+                                    left: -3, right: -3, bottom: "0.04em", height: "0.36em",
+                                    background: `${PT.gold}55`, zIndex: 0, borderRadius: 2,
+                                }}
+                            />
+                            <span className="relative z-10">€{price.toFixed(2)}</span>
                         </span>
                         <span className="text-[13px] font-bold pb-1" style={{ color: "rgba(10,10,10,0.5)" }}>
                             /{interval === "year" ? "ano" : "mês"}
@@ -411,14 +413,14 @@ function GroupRow({ label }) {
         <tr style={{ background: PT.ink }}>
             <td colSpan={4} className="py-2.5 px-4 sm:px-5">
                 <span
-                    className="font-mono font-black uppercase"
+                    className="font-mono font-bold uppercase"
                     style={{
                         fontSize: 10.5,
-                        letterSpacing: "0.16em",
-                        color: PT.gold,
+                        letterSpacing: "0.22em",
+                        color: "rgba(255,204,41,0.85)",
                     }}
                 >
-                    // {label}
+                    {label}
                 </span>
             </td>
         </tr>
@@ -434,37 +436,35 @@ function CategoryCard({ cat, index }) {
             className="relative overflow-hidden"
             style={{
                 background: "#fff",
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: `5px 5px 0 ${accent}`,
+                border: "1px solid rgba(10,10,10,0.06)",
+                boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${accent}55, 0 6px 18px -10px rgba(10,10,10,0.10)`,
                 borderRadius: 20,
             }}
         >
             <div
                 className="px-5 sm:px-6 py-4 sm:py-5"
                 style={{
-                    background: cat.auraOnly ? "rgba(255,204,41,0.10)" : PT.cream,
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: cat.auraOnly ? "rgba(255,204,41,0.10)" : "rgba(247,245,239,0.55)",
+                    borderBottom: "1px solid rgba(10,10,10,0.06)",
                 }}
             >
                 <div className="flex items-start gap-3.5">
                     <div
                         className="w-11 h-11 grid place-items-center flex-shrink-0"
                         style={{
-                            background: accent,
-                            color: cat.auraOnly ? PT.ink : "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 10,
+                            background: `${accent}15`,
+                            color: cat.auraOnly ? PT.ink : accent,
+                            borderRadius: 12,
                         }}
                     >
-                        <Icon size={19} strokeWidth={2.4} />
+                        <Icon size={19} strokeWidth={2.0} />
                     </div>
                     <div className="min-w-0">
                         <p
-                            className="font-mono font-black uppercase mb-1.5"
-                            style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.red }}
+                            className="font-mono font-bold uppercase mb-1.5"
+                            style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}
                         >
-                            // {cat.eyebrow}
+                            {cat.eyebrow}
                         </p>
                         <h3
                             className="font-black tracking-tight leading-tight mb-1.5"
@@ -514,16 +514,14 @@ function CategoryCard({ cat, index }) {
                             </th>
                             <th className="text-center py-3 px-2 w-[19%]">
                                 <span
-                                    className="inline-block font-black uppercase"
+                                    className="inline-block font-bold uppercase"
                                     style={{
-                                        background: PT.gold,
+                                        background: "rgba(255,204,41,0.20)",
                                         color: PT.ink,
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        padding: "2px 9px",
-                                        borderRadius: 6,
+                                        padding: "3px 10px",
+                                        borderRadius: 999,
                                         fontSize: 10.5,
-                                        letterSpacing: "0.12em",
+                                        letterSpacing: "0.18em",
                                     }}
                                 >
                                     Aura
@@ -553,15 +551,15 @@ function CategoryCard({ cat, index }) {
                 <div
                     className="px-5 sm:px-6 py-3"
                     style={{
-                        background: PT.gold,
-                        borderTop: "1px solid rgba(10,10,10,0.10)",
+                        background: "rgba(255,204,41,0.10)",
+                        borderTop: "1px solid rgba(10,10,10,0.06)",
                     }}
                 >
                     <p
-                        className="text-[12.5px] leading-relaxed flex items-start gap-2 font-bold"
-                        style={{ color: PT.ink }}
+                        className="text-[12.5px] leading-relaxed flex items-start gap-2 font-medium"
+                        style={{ color: "rgba(10,10,10,0.75)" }}
                     >
-                        <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.6} />
+                        <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.2} style={{ color: PT.ink }} />
                         <span>{cat.note}</span>
                     </p>
                 </div>
@@ -609,28 +607,34 @@ export default function Premium() {
                 <div className="max-w-2xl mx-auto text-center mb-8 sm:mb-12">
                     <div className="inline-flex items-center gap-2 px-3 py-1 mb-5"
                         style={{
-                            background: PT.green, color: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            background: "#fff",
+                            color: "rgba(10,10,10,0.62)",
+                            border: "1px solid rgba(10,10,10,0.08)",
                             borderRadius: 999,
                         }}
                     >
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        <span className="text-[10.5px] uppercase tracking-[0.14em] font-black">DISPONÍVEL AGORA</span>
+                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                        </span>
+                        <span className="font-mono text-[10.5px] uppercase font-bold" style={{ letterSpacing: "0.20em" }}>Disponível agora</span>
                     </div>
                     <h1
                         className="font-black tracking-[-0.035em] leading-[1.0] mb-5"
                         style={{ fontSize: "clamp(34px, 5.5vw, 60px)", color: PT.ink }}
                     >
                         Escolhe o plano{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.gold,
-                            padding: "0 0.10em",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>certo</span>{" "}
+                        <span className="relative inline-block">
+                            <span
+                                aria-hidden
+                                className="absolute pointer-events-none"
+                                style={{
+                                    left: -3, right: -3, bottom: "0.06em", height: "0.42em",
+                                    background: `${PT.gold}66`, zIndex: 0, borderRadius: 2,
+                                }}
+                            />
+                            <span className="relative z-10">certo</span>
+                        </span>{" "}
                         para ti.
                     </h1>
                     <p className="text-[15px] sm:text-[17px] leading-relaxed max-w-lg mx-auto font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
@@ -643,8 +647,8 @@ export default function Premium() {
                     <div className="inline-flex items-center gap-0 p-1"
                         style={{
                             background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 8px 20px -10px rgba(10,10,10,0.12)",
                             borderRadius: 999,
                         }}
                     >
@@ -652,18 +656,19 @@ export default function Premium() {
                             const active = interval === i;
                             return (
                                 <button key={i} onClick={() => setInterval(i)}
-                                    className="px-5 sm:px-7 h-9 text-[12px] font-black uppercase transition-all duration-200"
+                                    className="px-5 sm:px-7 h-9 text-[13px] font-bold transition-all duration-200"
                                     style={{
-                                        background: active ? PT.ink : "transparent",
+                                        background: active ? `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)` : "transparent",
                                         color: active ? "#fff" : PT.ink,
                                         borderRadius: 999,
-                                        letterSpacing: "0.05em",
+                                        letterSpacing: "-0.005em",
+                                        boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 16px -8px rgba(10,10,10,0.30)" : "none",
                                     }}
                                 >
                                     {i === "month" ? "Mensal" : "Anual"}
                                     {i === "year" && (
-                                        <span className="ml-1.5 text-[9.5px] font-black tracking-wide" style={{ color: active ? PT.green : PT.green }}>
-                                            POUPA 17%
+                                        <span className="ml-2 font-mono text-[10px] font-bold uppercase" style={{ color: active ? "#A7E5BE" : PT.green, letterSpacing: "0.12em" }}>
+                                            -17%
                                         </span>
                                     )}
                                 </button>
@@ -754,13 +759,7 @@ export default function Premium() {
                             style={{ fontSize: "clamp(28px, 4.5vw, 46px)", color: PT.ink }}
                         >
                             Tudo o que muda{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.gold,
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>no Plus e no Aura.</span>
+                            <Highlight color={PT.gold}>no Plus e no Aura.</Highlight>
                         </h2>
                         <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Seis categorias. Limites reais. Sem letras pequenas. Cada linha aqui é uma feature efetivamente implementada — não é marketing.
@@ -781,24 +780,15 @@ export default function Premium() {
             <section>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-4xl mx-auto">
                     <div className="mb-8 sm:mb-10 max-w-2xl">
-                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            COMPARAÇÃO RÁPIDA
+                        <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                            Comparação rápida
                         </p>
                         <h2
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
                             style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
                         >
                             Lado a lado,{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.azul,
-                                color: "#fff",
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>
-                                num só sítio
-                            </span>
+                            <Highlight color={PT.azul}>num só sítio</Highlight>
                         </h2>
                         <p className="text-[14px] sm:text-[15.5px] max-w-xl leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Os mesmos valores que vês acima, condensados. Para quando só queres comparar e decidir.
@@ -850,16 +840,14 @@ export default function Premium() {
                                             </th>
                                             <th className="text-center py-3 px-2 w-[19%]">
                                                 <span
-                                                    className="inline-block font-black uppercase"
+                                                    className="inline-block font-bold uppercase"
                                                     style={{
-                                                        background: PT.gold,
+                                                        background: "rgba(255,204,41,0.20)",
                                                         color: PT.ink,
-                                                        border: "1px solid rgba(10,10,10,0.10)",
-                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         padding: "3px 10px",
-                                                        borderRadius: 6,
+                                                        borderRadius: 999,
                                                         fontSize: 11,
-                                                        letterSpacing: "0.12em",
+                                                        letterSpacing: "0.18em",
                                                     }}
                                                 >
                                                     Aura
@@ -911,24 +899,15 @@ export default function Premium() {
             <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-12 max-w-2xl">
-                        <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                            PRINCÍPIOS
+                        <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                            Princípios
                         </p>
                         <h2
                             className="font-black tracking-[-0.03em] leading-[1.0] mb-3"
                             style={{ fontSize: "clamp(26px, 4.2vw, 42px)", color: PT.ink }}
                         >
                             O que torna este{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.green,
-                                color: "#fff",
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>
-                                premium diferente
-                            </span>
+                            <Highlight color={PT.green}>premium diferente</Highlight>
                         </h2>
                         <p className="text-[14px] sm:text-[15.5px] max-w-lg leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                             Não vendemos atenção, alcance ou prioridade. O premium existe para te dar mais conforto — nunca mais poder.
@@ -942,30 +921,26 @@ export default function Premium() {
                             { icon: Star,   title: "Identidade única",  desc: "Ferramentas de expressão que se adaptam a ti — não te forçam a competir. Moods, atmosferas e presença autêntica, sem pressão social.", c: PT.gold,  iconWhite: false },
                         ].map((item, idx) => {
                             const Icon = item.icon;
-                            const rot = idx === 1 ? 0 : idx === 0 ? -1.2 : 1.2;
                             return (
                                 <div
                                     key={idx}
                                     className="p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1"
                                     style={{
                                         background: "#fff",
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: `5px 5px 0 ${item.c}`,
+                                        border: "1px solid rgba(10,10,10,0.06)",
+                                        boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${item.c}55, 0 6px 18px -10px rgba(10,10,10,0.10)`,
                                         borderRadius: 18,
-                                        transform: `rotate(${rot}deg)`,
                                     }}
                                 >
                                     <div
                                         className="w-11 h-11 grid place-items-center mb-4"
                                         style={{
-                                            background: item.c,
-                                            color: item.iconWhite ? "#fff" : PT.ink,
-                                            border: "1px solid rgba(10,10,10,0.10)",
-                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                            borderRadius: 10,
+                                            background: `${item.c}18`,
+                                            color: item.c,
+                                            borderRadius: 12,
                                         }}
                                     >
-                                        <Icon size={18} strokeWidth={2.4} />
+                                        <Icon size={18} strokeWidth={2.0} />
                                     </div>
                                     <h3 className="font-black text-[16px] sm:text-[17px] mb-2 tracking-tight leading-tight" style={{ color: PT.ink }}>
                                         {item.title}
@@ -1030,15 +1005,7 @@ export default function Premium() {
                                     style={{ fontSize: "clamp(22px, 3.5vw, 34px)", color: PT.ink }}
                                 >
                                     O que o premium{" "}
-                                    <span style={{
-                                        display: "inline-block",
-                                        background: PT.gold,
-                                        padding: "0 0.10em",
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    }}>
-                                        não faz
-                                    </span>
+                                    <Highlight color={PT.gold}>não faz</Highlight>
                                 </h2>
                             </div>
                         </div>
@@ -1092,15 +1059,7 @@ export default function Premium() {
                                 style={{ fontSize: "clamp(15px, 2vw, 17px)", color: PT.ink }}
                             >
                                 O tempo que passas aqui é{" "}
-                                <span style={{
-                                    display: "inline-block",
-                                    background: PT.gold,
-                                    padding: "0 0.18em",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                }}>
-                                    teu
-                                </span>
+                                <Highlight color={PT.gold}>teu</Highlight>
                                 . Não nosso.
                             </p>
                         </div>
@@ -1155,14 +1114,12 @@ export default function Premium() {
                                     <span
                                         className="w-7 h-7 grid place-items-center flex-shrink-0"
                                         style={{
-                                            background: PT.gold,
+                                            background: "rgba(10,10,10,0.05)",
                                             color: PT.ink,
-                                            border: "1px solid rgba(10,10,10,0.10)",
                                             borderRadius: 999,
-                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         }}
                                     >
-                                        <ChevronDown size={13} className="group-open:rotate-180 transition-transform duration-200" strokeWidth={3} />
+                                        <ChevronDown size={13} className="group-open:rotate-180 transition-transform duration-200" strokeWidth={2.4} />
                                     </span>
                                 </summary>
                                 <div className="prem-faq-answer">
@@ -1190,16 +1147,7 @@ export default function Premium() {
                             style={{ fontSize: "clamp(26px, 4.5vw, 46px)", color: "#fff" }}
                         >
                             Pronto para uma{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.gold,
-                                color: PT.ink,
-                                padding: "0 0.10em",
-                                border: `1.5px solid ${PT.gold}`,
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>
-                                camada mais profunda?
-                            </span>
+                            <Highlight color={PT.gold}>camada mais profunda?</Highlight>
                         </h3>
                         <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-lg mx-auto mb-8 font-medium" style={{ color: "rgba(255,244,220,0.75)" }}>
                             Começa pelo Plus e sobe quando quiseres. Cancelas a qualquer momento — sem perguntas.

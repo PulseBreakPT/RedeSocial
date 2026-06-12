@@ -9,6 +9,7 @@ import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
+import { Highlight } from "../components/editorial/Primitives";
 import { NotificationReplyPreview } from "../components/NotificationReplyPreview";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
@@ -233,16 +234,15 @@ export default function Notifications() {
                         <Link
                             to="/settings"
                             title="Definições de notificações"
-                            className="w-9 h-9 grid place-items-center tap-shrink"
+                            className="w-9 h-9 grid place-items-center tap-shrink transition hover:bg-black/[0.04]"
                             style={{
-                                background: PT.gold,
-                                color: PT.ink,
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                background: "#fff",
+                                color: "rgba(10,10,10,0.65)",
+                                border: "1px solid rgba(10,10,10,0.08)",
                                 borderRadius: 999,
                             }}
                         >
-                            <Cog size={15} strokeWidth={2.5} />
+                            <Cog size={15} strokeWidth={2.0} />
                         </Link>
                     </div>
                 }
@@ -297,8 +297,8 @@ export default function Notifications() {
                                         borderBottom: "1px solid rgba(10,10,10,0.10)",
                                     }}
                                 >
-                                    <span className="font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.14em" }}>
-                                        // {grp.label}
+                                    <span className="font-mono font-bold uppercase" style={{ fontSize: 10.5, letterSpacing: "0.22em" }}>
+                                        {grp.label}
                                     </span>
                                     <span
                                         className="ml-auto font-black tabular-nums px-2 py-0.5"
@@ -351,34 +351,23 @@ export default function Notifications() {
                     <div
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
-                            background: PT.gold,
-                            color: PT.ink,
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 18,
+                            background: "#fff",
+                            color: PT.green,
+                            border: "1px solid rgba(10,10,10,0.06)",
+                            boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 12px 30px -14px ${PT.green}40, 0 6px 16px -10px rgba(10,10,10,0.10)`,
+                            borderRadius: 999,
                         }}
                     >
-                        <Bell size={26} strokeWidth={2.4} />
+                        <Bell size={26} strokeWidth={2.0} />
                     </div>
-                    <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                        // TUDO LIDO
+                    <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.42)" }}>
+                        Tudo lido
                     </p>
                     <h3
                         className="font-black tracking-[-0.025em] leading-tight"
                         style={{ fontSize: "clamp(22px, 3vw, 28px)", color: PT.ink }}
                     >
-                        Tudo{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.green,
-                            color: "#fff",
-                            padding: "0 0.15em",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                        }}>
-                            calmo
-                        </span>{" "}
-                        por aqui.
+                        Tudo <Highlight color={PT.green}>calmo</Highlight> por aqui.
                     </h3>
                     <p className="mt-4 text-[13.5px] font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
                         Volta mais tarde para novidades.
@@ -396,10 +385,10 @@ export default function Notifications() {
                             }}
                         >
                             <span
-                                className="font-mono font-black uppercase"
-                                style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}
+                                className="font-mono font-bold uppercase"
+                                style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.50)" }}
                             >
-                                // {dayLabel(day)}
+                                {dayLabel(day)}
                             </span>
                         </div>
                         {list.map((n) => {

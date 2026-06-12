@@ -63,24 +63,23 @@ export default function LegalIndex() {
             title="Centro Legal"
             subtitle="O Centro Legal reúne todos os documentos que descrevem o que o Lusorae é, como funciona e como respondemos perante a comunidade e perante a lei. Está organizado de forma a poder ser lido por uma pessoa &mdash; e não apenas por advogados."
         >
-            {/* Antes de começares — callout poster */}
+            {/* Antes de começares — callout editorial */}
             <div
                 className="not-prose px-5 py-4 relative"
                 style={{
-                    background: PT.gold,
+                    background: "rgba(255,204,41,0.10)",
                     color: PT.ink,
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                    transform: "rotate(-0.4deg)",
+                    border: "1px solid rgba(10,10,10,0.06)",
+                    borderRadius: 14,
                     marginTop: "1.5rem",
                 }}
             >
-                <strong className="block font-black uppercase mb-1.5 text-[12px]" style={{ letterSpacing: "0.10em" }}>
-                    ⚠ ANTES DE COMEÇARES
+                <strong className="block font-mono font-bold uppercase mb-1.5 text-[10.5px]" style={{ letterSpacing: "0.20em", color: "rgba(10,10,10,0.55)" }}>
+                    Antes de começares
                 </strong>
                 <p className="text-[14.5px] font-medium leading-relaxed">
                     Se só vais ler um documento, lê{" "}
-                    <Link to="/legal/vision" className="font-black underline underline-offset-4 decoration-[3px]" style={{ color: PT.red, textDecorationColor: PT.ink }}>
+                    <Link to="/legal/vision" className="font-bold underline underline-offset-4 decoration-[2px]" style={{ color: PT.red, textDecorationColor: "rgba(200,16,46,0.35)" }}>
                         A nossa visão
                     </Link>
                     . É a página onde estão escritos, por extenso, os <strong>seis compromissos</strong> que dão coerência a todos os outros
@@ -89,35 +88,38 @@ export default function LegalIndex() {
                 </p>
             </div>
 
-            {/* CARDS dos documentos — estilo poster */}
+            {/* CARDS dos documentos — estilo editorial */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose" style={{ marginTop: "1.8rem" }}>
                 {CARDS.map(({ to, icon: Icon, title, ref, desc, meta, emphasis, accent }, idx) => (
                     <Link
                         key={to}
                         to={to}
                         data-testid={`legal-card-${to.split("/").pop()}`}
-                        className={`group block p-5 hover:-translate-y-[3px] transition relative ${emphasis ? "sm:col-span-2" : ""}`}
+                        className={`group block p-5 hover:-translate-y-[2px] transition relative ${emphasis ? "sm:col-span-2" : ""}`}
                         style={{
                             background: emphasis ? PT.ink : "#fff",
                             color: emphasis ? "#fff" : PT.ink,
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: `5px 5px 0 ${accent}`,
-                            transform: idx % 2 === 0 ? "rotate(-0.4deg)" : "rotate(0.4deg)",
+                            border: "1px solid rgba(10,10,10,0.06)",
+                            borderRadius: 16,
+                            boxShadow: emphasis
+                                ? "0 1px 2px rgba(10,10,10,0.06), 0 18px 40px -18px rgba(10,10,10,0.45)"
+                                : `0 1px 2px rgba(10,10,10,0.04), 0 12px 30px -16px ${accent}66, 0 6px 16px -10px rgba(10,10,10,0.10)`,
                         }}
                     >
                         {/* Número grande tipo revista */}
                         <span
-                            className="absolute -top-3 -left-3 inline-flex items-center justify-center font-black"
+                            className="absolute -top-2.5 -left-2.5 inline-flex items-center justify-center font-bold"
                             style={{
-                                width: 40, height: 40,
-                                background: accent,
-                                color: accent === PT.gold ? PT.ink : "#fff",
+                                width: 36, height: 36,
+                                background: "#fff",
+                                color: accent,
                                 borderRadius: "50%",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                fontSize: 14,
+                                border: `1px solid ${accent}33`,
+                                boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 8px 18px -10px ${accent}55`,
+                                fontSize: 12,
                                 lineHeight: 1,
                                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                                letterSpacing: "0.04em",
                             }}
                         >
                             {String(idx + 1).padStart(2, "0")}
@@ -127,37 +129,35 @@ export default function LegalIndex() {
                             <div
                                 className="w-11 h-11 grid place-items-center shrink-0"
                                 style={{
-                                    background: accent,
-                                    color: accent === PT.gold ? PT.ink : "#fff",
-                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    background: `${accent}1A`,
+                                    color: accent === PT.gold ? PT.ink : accent,
                                     borderRadius: 12,
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}
                             >
-                                <Icon size={19} strokeWidth={2.4} />
+                                <Icon size={19} strokeWidth={2.0} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                    <h3 className="font-black text-[16.5px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
+                                    <h3 className="font-bold text-[16.5px] tracking-tight flex items-center gap-1" style={{ color: emphasis ? "#fff" : PT.ink }}>
                                         {title}
-                                        <ChevronRight size={16} strokeWidth={2.5} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
+                                        <ChevronRight size={16} strokeWidth={2.2} className="opacity-0 group-hover:opacity-100 -ml-0.5 transition" style={{ color: accent === PT.gold ? PT.ink : accent }} />
                                     </h3>
                                     <span
-                                        className="text-[10px] font-black uppercase ml-auto px-2.5 py-1 shrink-0"
+                                        className="font-mono text-[10px] font-bold uppercase ml-auto px-2.5 py-1 shrink-0"
                                         style={{
-                                            background: emphasis ? PT.gold : PT.ink,
-                                            color: emphasis ? PT.ink : PT.gold,
+                                            background: emphasis ? "rgba(255,204,41,0.18)" : "rgba(10,10,10,0.05)",
+                                            color: emphasis ? PT.gold : "rgba(10,10,10,0.55)",
                                             borderRadius: 999,
-                                            letterSpacing: "0.08em",
+                                            letterSpacing: "0.18em",
                                         }}
                                     >
                                         {ref}
                                     </span>
                                 </div>
-                                <p className="text-[13.5px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.72)" }}>
+                                <p className="text-[13.5px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.68)" }}>
                                     {desc}
                                 </p>
-                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: emphasis ? "rgba(255,204,41,0.85)" : PT.red }}>
+                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", color: emphasis ? "rgba(255,204,41,0.85)" : "rgba(10,10,10,0.42)" }}>
                                     {meta}
                                 </p>
                             </div>

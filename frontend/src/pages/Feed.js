@@ -211,25 +211,42 @@ export default function Feed() {
                             data-testid="feed-greeting"
                         >
                             {greeting}{firstName ? (
-                                <>, <span style={{
-                                    display: "inline-block",
-                                    background: PT.gold,
-                                    padding: "0 0.10em",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                }}>{firstName}</span></>
+                                <>, <span className="relative inline-block">
+                                    <span
+                                        aria-hidden
+                                        className="absolute pointer-events-none"
+                                        style={{
+                                            left: -2, right: -2, bottom: "0.05em", height: "0.40em",
+                                            background: `${PT.gold}55`, zIndex: 0, borderRadius: 2,
+                                        }}
+                                    />
+                                    <span className="relative z-10">{firstName}</span>
+                                </span></>
                             ) : ""}.
                         </h1>
                         <p className="text-[13px] mt-2 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                             O que se passa em Portugal{" "}
-                            <strong style={{ color: PT.red, fontWeight: 900 }}>agora</strong>.
+                            <strong style={{ color: PT.red, fontWeight: 700 }}>agora</strong>.
                         </p>
                         <FeedContextLine className="mt-1 block" />
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <Sticker bg={PT.green} color="#fff" rotate={-3} style={{ fontSize: 9.5, padding: "4px 8px" }}>
-                            ✓ NOTÍCIAS REAIS
-                        </Sticker>
+                        <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[10px] font-bold uppercase"
+                            style={{
+                                background: "#fff",
+                                color: "rgba(10,10,10,0.62)",
+                                border: "1px solid rgba(10,10,10,0.08)",
+                                borderRadius: 999,
+                                letterSpacing: "0.14em",
+                            }}
+                        >
+                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
+                            </span>
+                            Notícias reais
+                        </span>
                         <button
                             onClick={refresh}
                             data-testid="feed-refresh"
@@ -237,9 +254,9 @@ export default function Feed() {
                             title="Atualizar"
                             style={{
                                 background: "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)",
+                                border: "1px solid rgba(10,10,10,0.08)",
                                 borderRadius: 999,
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 6px 16px -10px rgba(10,10,10,0.18)",
                                 color: PT.ink,
                             }}
                         >
@@ -336,17 +353,17 @@ export default function Feed() {
                     <button
                         onClick={refresh}
                         data-testid="new-posts-pill"
-                        className="text-[12px] py-2 px-4 active:scale-95 flex items-center gap-1.5 font-black uppercase"
+                        className="text-[12.5px] py-2 px-4 active:scale-95 flex items-center gap-1.5 font-bold transition-all duration-200 hover:translate-y-[-1px]"
                         style={{
-                            background: PT.red,
+                            background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
                             color: "#fff",
                             border: "1px solid rgba(10,10,10,0.10)",
                             borderRadius: 999,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            letterSpacing: "0.05em",
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 22px -10px rgba(10,10,10,0.35)",
+                            letterSpacing: "-0.005em",
                         }}
                     >
-                        <Sparkles size={12} strokeWidth={2.4} />
+                        <Sparkles size={12} strokeWidth={2.2} />
                         {newCount === 1 ? "1 nova publicação" : `${newCount} novas publicações`}
                     </button>
                 </div>
@@ -370,13 +387,13 @@ export default function Feed() {
                     <div
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
-                            background: PT.gold,
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            background: "#fff",
+                            border: "1px solid rgba(10,10,10,0.08)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 30px -12px rgba(10,10,10,0.18)",
                             borderRadius: 999,
                         }}
                     >
-                        <Sparkles size={26} strokeWidth={2.2} style={{ color: PT.ink }} />
+                        <Sparkles size={26} strokeWidth={2.0} style={{ color: PT.ink }} />
                     </div>
                     <h3 className="font-black tracking-tight leading-tight mt-2" style={{ fontSize: 22, color: PT.ink }}>
                         {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}

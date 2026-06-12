@@ -330,7 +330,7 @@ export function DataTab({ user }) {
                     <div className="flex items-start gap-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8 }}
                         >
                             <ShieldAlert size={17} strokeWidth={2.2} />
                         </div>

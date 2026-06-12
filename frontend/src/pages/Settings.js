@@ -384,11 +384,10 @@ export default function Settings() {
                                 </button>
                             ) : (
                                 <kbd
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 text-[10px] font-mono font-black"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 px-1.5 text-[10px] font-mono font-bold"
                                     style={{
-                                        background: PT.gold,
-                                        color: PT.ink,
-                                        border: `1.5px solid ${PT.ink}`,
+                                        background: "rgba(10,10,10,0.05)",
+                                        color: "rgba(10,10,10,0.55)",
                                         borderRadius: 4,
                                     }}
                                 >/</kbd>
@@ -449,11 +448,11 @@ export default function Settings() {
                         <ul className="text-[11.5px] space-y-1.5 font-medium" style={{ color: "rgba(10,10,10,0.65)" }}>
                             <li className="flex items-center justify-between gap-2">
                                 <span>Focar pesquisa</span>
-                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-black" style={{ background: PT.gold, color: PT.ink, border: `1.5px solid ${PT.ink}`, borderRadius: 4 }}>/</kbd>
+                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-bold" style={{ background: "rgba(10,10,10,0.05)", color: "rgba(10,10,10,0.55)", borderRadius: 4 }}>/</kbd>
                             </li>
                             <li className="flex items-center justify-between gap-2">
                                 <span>Fechar modal</span>
-                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-black" style={{ background: PT.gold, color: PT.ink, border: `1.5px solid ${PT.ink}`, borderRadius: 4 }}>esc</kbd>
+                                <kbd className="font-mono text-[10px] px-1.5 py-0.5 font-bold" style={{ background: "rgba(10,10,10,0.05)", color: "rgba(10,10,10,0.55)", borderRadius: 4 }}>esc</kbd>
                             </li>
                         </ul>
                     </div>
@@ -467,18 +466,16 @@ export default function Settings() {
                             <div
                                 className="w-14 h-14 grid place-items-center shrink-0"
                                 style={{
-                                    background: PT.gold,
+                                    background: "rgba(255,204,41,0.18)",
                                     color: PT.ink,
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 14,
                                 }}
                             >
-                                <ActiveIcon size={22} strokeWidth={2.4} />
+                                <ActiveIcon size={22} strokeWidth={2.0} />
                             </div>
                             <div className="min-w-0">
-                                <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
-                                    DEFINIÇÕES
+                                <p className="font-mono font-bold uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                                    Definições
                                 </p>
                                 <h1
                                     className="font-black tracking-[-0.025em] leading-tight"
@@ -493,18 +490,21 @@ export default function Settings() {
                         </div>
                         {isDirty && (
                             <span
-                                className="font-mono font-black uppercase px-3 py-1.5 inline-flex items-center gap-2"
+                                className="font-mono font-bold uppercase px-3 py-1.5 inline-flex items-center gap-2"
                                 style={{
-                                    background: PT.gold,
-                                    color: PT.ink,
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                    background: "#fff",
+                                    color: "rgba(10,10,10,0.62)",
+                                    border: "1px solid rgba(10,10,10,0.08)",
+                                    borderRadius: 999,
                                     fontSize: 10.5,
-                                    letterSpacing: "0.10em",
+                                    letterSpacing: "0.22em",
                                 }}
                             >
-                                <span className="w-2 h-2 animate-pulse" style={{ background: PT.red, border: `1.5px solid ${PT.ink}`, borderRadius: 999 }} />
-                                // POR GUARDAR
+                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
+                                </span>
+                                Por guardar
                             </span>
                         )}
                     </div>
@@ -554,17 +554,15 @@ export default function Settings() {
                                     <span
                                         className="w-8 h-8 grid place-items-center"
                                         style={{
-                                            background: PT.gold,
+                                            background: "rgba(10,10,10,0.05)",
                                             color: PT.ink,
-                                            border: "1px solid rgba(10,10,10,0.10)",
-                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                            borderRadius: 8,
+                                            borderRadius: 10,
                                         }}
                                     >
-                                        {sec.key === "aparencia" && <Palette size={14} strokeWidth={2.4} />}
-                                        {sec.key === "seg" && <Shield size={14} strokeWidth={2.4} />}
-                                        {sec.key === "legal" && <Shield size={14} strokeWidth={2.4} />}
-                                        {!["aparencia", "seg", "legal"].includes(sec.key) && <SettingsIcon size={14} strokeWidth={2.4} />}
+                                        {sec.key === "aparencia" && <Palette size={14} strokeWidth={2.0} />}
+                                        {sec.key === "seg" && <Shield size={14} strokeWidth={2.0} />}
+                                        {sec.key === "legal" && <Shield size={14} strokeWidth={2.0} />}
+                                        {!["aparencia", "seg", "legal"].includes(sec.key) && <SettingsIcon size={14} strokeWidth={2.0} />}
                                     </span>
                                     <h2 className="font-black tracking-tight" style={{ fontSize: 19, color: PT.ink }}>
                                         {sec.label}
@@ -626,24 +624,23 @@ export default function Settings() {
                             style={{
                                 background: PT.gold,
                                 color: PT.ink,
-                                border: `1.5px solid ${PT.gold}`,
                                 borderRadius: 999,
                             }}
                         >
-                            <Check size={14} strokeWidth={2.8} />
+                            <Check size={14} strokeWidth={2.4} />
                         </div>
-                        <span className="text-[13px] font-black tracking-tight uppercase" style={{ letterSpacing: "0.04em" }}>Alterações por guardar</span>
+                        <span className="text-[13px] font-bold tracking-tight" style={{ letterSpacing: "-0.005em" }}>Alterações por guardar</span>
                         <div className="flex items-center gap-2 ml-2">
                             <button
                                 onClick={discard}
                                 data-testid="unsaved-discard"
-                                className="px-3 py-1.5 text-[11.5px] font-black uppercase tap-shrink transition-colors"
+                                className="px-3 py-1.5 text-[12px] font-semibold tap-shrink transition-colors"
                                 style={{
                                     background: "transparent",
                                     color: "rgba(255,244,220,0.75)",
-                                    border: `2px solid rgba(255,244,220,0.35)`,
+                                    border: "1px solid rgba(255,244,220,0.25)",
                                     borderRadius: 999,
-                                    letterSpacing: "0.06em",
+                                    letterSpacing: "-0.005em",
                                 }}
                             >
                                 Descartar
@@ -652,14 +649,13 @@ export default function Settings() {
                                 onClick={save}
                                 disabled={busy}
                                 data-testid="unsaved-save"
-                                className="px-4 py-1.5 text-[11.5px] font-black uppercase tap-shrink disabled:opacity-50"
+                                className="px-4 py-1.5 text-[12px] font-bold tap-shrink disabled:opacity-50"
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: `1.5px solid ${PT.gold}`,
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
-                                    letterSpacing: "0.06em",
+                                    letterSpacing: "-0.005em",
+                                    boxShadow: "0 8px 22px -10px rgba(255,204,41,0.50)",
                                 }}
                             >
                                 {busy ? "A guardar…" : "Guardar"}

@@ -166,41 +166,40 @@ function AnimatedStat({ value, suffix, label, bg, color, delay, rotate }) {
             style={{
                 background: bg,
                 color,
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                transform: `rotate(${rotate}deg)`,
-                borderRadius: 16,
+                border: "1px solid rgba(10,10,10,0.06)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px rgba(10,10,10,0.18), 0 6px 16px -10px rgba(10,10,10,0.10)",
+                borderRadius: 18,
                 opacity: visible ? 1 : 0,
-                transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
+                transition: `opacity 0.5s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
             }}
         >
             <p
                 className="font-black tabular-nums leading-none"
-                style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: color === "#fff" ? "none" : "none" }}
+                style={{ fontSize: "clamp(28px, 4vw, 44px)" }}
             >
                 {count}{suffix}
             </p>
-            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-black uppercase" style={{ letterSpacing: "0.08em", opacity: 0.92 }}>
+            <p className="mt-1.5 sm:mt-2 text-[10.5px] sm:text-[11.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.20em", opacity: 0.78 }}>
                 {label}
             </p>
         </div>
     );
 }
 
-/* ─── Promise card — estilo fanzine PT ─── */
+/* ─── Promise card — estilo editorial Lusorae ─── */
 function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkText, delay }) {
     const textColor = inkText ? PT.ink : "#fff";
     return (
         <Reveal delay={delay}>
             <article
                 data-testid={`promise-${n}`}
-                className="relative p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1 hover:rotate-[-0.5deg]"
+                className="relative p-5 sm:p-6 h-full transition-all duration-200 hover:-translate-y-1"
                 style={{
                     background: color,
                     color: textColor,
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                    borderRadius: 16,
+                    border: "1px solid rgba(10,10,10,0.06)",
+                    boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 40px -20px ${color}66, 0 6px 18px -10px rgba(10,10,10,0.12)`,
+                    borderRadius: 18,
                 }}
             >
                 <div className="flex items-start gap-3">
@@ -302,19 +301,30 @@ export default function Manifesto() {
                         <ArrowLeft size={18} strokeWidth={2.5} />
                     </button>
                     <Link to="/" className="inline-flex items-baseline gap-1.5" data-testid="manifesto-home-link">
-                        <span aria-hidden style={{ color: PT.red, fontSize: 22, fontWeight: 900, lineHeight: 1 }}>✱</span>
                         <span className="text-[18px] font-black tracking-tight" style={{ color: PT.ink }}>lusorae</span>
+                        <span aria-hidden style={{ color: PT.red, fontSize: 12, fontWeight: 900, lineHeight: 1 }}>●</span>
                     </Link>
                     <span
-                        className="ml-2 hidden sm:inline text-[11px] uppercase font-mono font-bold"
-                        style={{ letterSpacing: "0.16em", color: PT.red }}
+                        className="ml-2 hidden sm:inline text-[10.5px] uppercase font-mono font-bold"
+                        style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}
                     >
-                        MANIFESTO
+                        Manifesto
                     </span>
                     <div className="ml-auto">
-                        <Sticker bg={PT.gold} color={PT.ink} rotate={-3} style={{ fontSize: 10, padding: "5px 10px" }}>
-                            🇵🇹 6 promessas públicas
-                        </Sticker>
+                        <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1"
+                            style={{
+                                background: "rgba(255,204,41,0.18)",
+                                color: PT.ink,
+                                borderRadius: 999,
+                                fontSize: 10.5,
+                                fontWeight: 600,
+                                letterSpacing: "0.02em",
+                            }}
+                        >
+                            <span aria-hidden>🇵🇹</span>
+                            6 promessas públicas
+                        </span>
                     </div>
                 </div>
             </header>
@@ -335,23 +345,11 @@ export default function Manifesto() {
                         style={{ fontSize: "clamp(36px, 6vw, 76px)", lineHeight: 0.96, color: PT.ink }}
                     >
                         Não te queremos{" "}
-                        <span style={{
-                            display: "inline-block",
-                            background: PT.red,
-                            color: "#fff",
-                            padding: "0 0.10em",
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            WebkitTextStroke: `0.5px ${PT.ink}`,
-                        }}>
-                            viciado.
-                        </span>
+                        <Highlight color={PT.red}>viciado.</Highlight>
                         <br/>
                         <span className="inline-block mt-2 sm:mt-3">
                             Queremos-te{" "}
-                            <Highlight color={PT.gold} rotate={-1}>
-                                <span style={{ color: PT.ink }}>bem.</span>
-                            </Highlight>
+                            <Highlight color={PT.gold}>bem.</Highlight>
                         </span>
                     </h1>
                 </Reveal>
@@ -367,15 +365,15 @@ export default function Manifesto() {
 
                 <Reveal delay={0.3}>
                     <div className="mt-5 flex flex-wrap items-center gap-2">
-                        <Sticker bg={PT.green} color="#fff" rotate={-2} style={{ fontSize: 10, padding: "5px 10px" }}>
-                            ✓ DOCUMENTO VIVO
-                        </Sticker>
-                        <Sticker bg="#fff" color={PT.ink} rotate={1} style={{ fontSize: 10, padding: "5px 10px" }}>
-                            🇵🇹 PT-PT
-                        </Sticker>
-                        <Sticker bg={PT.azul} color="#fff" rotate={-1} style={{ fontSize: 10, padding: "5px 10px" }}>
-                            DSA · ART. 27
-                        </Sticker>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: `${PT.green}15`, color: PT.green, borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
+                            <span aria-hidden>✓</span> Documento vivo
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: "#fff", color: PT.ink, border: "1px solid rgba(10,10,10,0.08)", borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
+                            <span aria-hidden>🇵🇹</span> PT-PT
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium" style={{ background: `${PT.azul}12`, color: PT.azul, borderRadius: 999, fontSize: 11, letterSpacing: "0.02em" }}>
+                            DSA · Art. 27
+                        </span>
                     </div>
                 </Reveal>
             </section>
@@ -384,13 +382,12 @@ export default function Manifesto() {
             <section className="relative z-10 px-5 sm:px-8 lg:px-16 py-10 sm:py-14 max-w-[1100px] mx-auto">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                     {STATS.map((stat, idx) => (
-                        <AnimatedStat
-                            key={idx}
-                            {...stat}
-                            rotate={idx % 2 === 0 ? -0.6 : 0.6}
-                            delay={idx * 0.08}
-                        />
-                    ))}
+                    <AnimatedStat
+                        key={idx}
+                        {...stat}
+                        delay={idx * 0.08}
+                    />
+                ))}
                 </div>
             </section>
 
@@ -403,19 +400,10 @@ export default function Manifesto() {
                             className="font-black tracking-[-0.03em]"
                             style={{ fontSize: "clamp(28px, 4.5vw, 52px)", lineHeight: 0.98, color: PT.ink }}
                         >
-                            As{" "}
-                            <span style={{
-                                display: "inline-block",
-                                background: PT.gold,
-                                padding: "0 0.10em",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            }}>
-                                6 promessas.
-                            </span>
+                            As <Highlight color={PT.gold}>6 promessas.</Highlight>
                         </h2>
-                        <p className="mt-3 text-[13.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: "rgba(10,10,10,0.55)" }}>
-                            // regras, não marketing
+                        <p className="mt-3 text-[13.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>
+                            Regras, não marketing
                         </p>
                     </div>
                 </Reveal>
@@ -434,8 +422,8 @@ export default function Manifesto() {
                         data-testid="manifesto-image"
                         className="relative overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9]"
                         style={{
-                            border: `4px solid ${PT.ink}`,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            border: "1px solid rgba(10,10,10,0.06)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 28px 60px -28px rgba(10,10,10,0.30), 0 10px 28px -12px rgba(10,10,10,0.12)",
                             borderRadius: 24,
                         }}
                     >
@@ -460,16 +448,16 @@ export default function Manifesto() {
                                 style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: "none" }}
                             >
                                 O tempo que passas aqui{" "}
-                                <span style={{
-                                    display: "inline-block",
-                                    background: PT.gold,
-                                    color: PT.ink,
-                                    padding: "0 0.10em",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    textShadow: "none",
-                                }}>
-                                    é teu.
+                                <span className="relative inline-block">
+                                    <span
+                                        aria-hidden
+                                        className="absolute pointer-events-none"
+                                        style={{
+                                            left: -3, right: -3, bottom: "0.06em", height: "0.40em",
+                                            background: PT.gold, opacity: 0.85, zIndex: 0, borderRadius: 2,
+                                        }}
+                                    />
+                                    <span className="relative z-10" style={{ color: PT.ink }}>é teu.</span>
                                 </span>{" "}
                                 Não nosso.
                             </h2>
@@ -486,8 +474,8 @@ export default function Manifesto() {
                         data-testid="manifesto-golden-rule"
                         style={{
                             background: "#fff",
-                            border: `4px solid ${PT.ink}`,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                            border: "1px solid rgba(10,10,10,0.06)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 24px 56px -24px rgba(10,10,10,0.20), 0 8px 22px -10px rgba(10,10,10,0.10)",
                             borderRadius: 24,
                         }}
                     >
@@ -502,13 +490,11 @@ export default function Manifesto() {
                                     className="inline-flex items-center justify-center"
                                     style={{
                                         width: 40, height: 40,
-                                        background: PT.gold,
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        borderRadius: 8,
+                                        background: "rgba(255,204,41,0.20)",
+                                        borderRadius: 12,
                                     }}
                                 >
-                                    <Quote size={18} strokeWidth={2.2} style={{ color: PT.ink }} />
+                                    <Quote size={18} strokeWidth={2.0} style={{ color: PT.ink }} />
                                 </span>
                                 <Kicker color={PT.red}>REGRA · INTERNA</Kicker>
                             </div>
@@ -519,21 +505,9 @@ export default function Manifesto() {
                             >
                                 <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginRight: 6 }}>“</span>
                                 Se fechasses a app agora e voltasses amanhã, sentir-te-ias{" "}
-                                <span style={{
-                                    background: PT.green, color: "#fff", padding: "0 0.10em",
-                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    display: "inline-block", transform: "rotate(-1deg)",
-                                }}>
-                                    melhor
-                                </span>{" "}
+                                <Highlight color={PT.green}>melhor</Highlight>{" "}
                                 ou{" "}
-                                <span style={{
-                                    background: PT.red, color: "#fff", padding: "0 0.10em",
-                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    display: "inline-block", transform: "rotate(1deg)",
-                                }}>
-                                    pior
-                                </span>{" "}
+                                <Highlight color={PT.red}>pior</Highlight>{" "}
                                 contigo próprio?
                                 <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginLeft: 6 }}>”</span>
                             </blockquote>
@@ -579,19 +553,16 @@ export default function Manifesto() {
                                 <PosterCard
                                     bg="#fff"
                                     color={PT.ink}
-                                    rotate={idx % 2 === 0 ? -1 : 1}
                                     shadow={item.color}
-                                    style={{ padding: "20px 22px", height: "100%", border: "1px solid rgba(10,10,10,0.10)" }}
+                                    style={{ padding: "22px 24px", height: "100%", border: "1px solid rgba(10,10,10,0.06)", boxShadow: `0 1px 2px rgba(10,10,10,0.04), 0 18px 38px -20px ${item.color}55, 0 6px 16px -10px rgba(10,10,10,0.10)` }}
                                 >
                                     <span
                                         className="inline-flex items-center justify-center mb-3"
                                         style={{
-                                            width: 42, height: 42,
-                                            background: item.color,
-                                            color: "#fff",
-                                            border: "1px solid rgba(10,10,10,0.10)",
-                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                            borderRadius: 10,
+                                            width: 44, height: 44,
+                                            background: `${item.color}18`,
+                                            color: item.color,
+                                            borderRadius: 12,
                                         }}
                                     >
                                         <Icon size={20} strokeWidth={2.2} />
@@ -648,11 +619,11 @@ export default function Manifesto() {
                         data-testid="manifesto-cta-register-card"
                         className="relative p-7 sm:p-10 lg:p-12 overflow-hidden"
                         style={{
-                            background: PT.red,
+                            background: `linear-gradient(135deg, ${PT.red} 0%, #B0001F 100%)`,
                             color: "#fff",
-                            border: `4px solid ${PT.ink}`,
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 24,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 32px 64px -28px rgba(200,16,46,0.55), 0 12px 28px -12px rgba(10,10,10,0.18)",
+                            borderRadius: 28,
                         }}
                     >
                         <div className="relative z-10">
@@ -662,16 +633,16 @@ export default function Manifesto() {
                                 style={{ fontSize: "clamp(24px, 4.2vw, 44px)", lineHeight: 1.04 }}
                             >
                                 Então já percebeste que isto{" "}
-                                <span style={{
-                                    display: "inline-block",
-                                    background: PT.gold,
-                                    color: PT.ink,
-                                    padding: "0 0.10em",
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    WebkitTextStroke: `0.5px ${PT.ink}`,
-                                }}>
-                                    é diferente.
+                                <span className="relative inline-block">
+                                    <span
+                                        aria-hidden
+                                        className="absolute pointer-events-none"
+                                        style={{
+                                            left: -3, right: -3, bottom: "0.06em", height: "0.40em",
+                                            background: PT.gold, opacity: 0.85, zIndex: 0, borderRadius: 2,
+                                        }}
+                                    />
+                                    <span className="relative z-10" style={{ color: PT.ink }}>é diferente.</span>
                                 </span>
                             </h3>
                             <p className="text-[14.5px] sm:text-[15px] leading-relaxed max-w-[52ch] mb-7 sm:mb-8 font-medium" style={{ color: "rgba(255,255,255,0.88)" }}>
@@ -682,23 +653,23 @@ export default function Manifesto() {
                                 <Link
                                     to="/register"
                                     data-testid="manifesto-cta-register"
-                                    className="inline-flex items-center gap-2 font-black text-[14px] uppercase px-6 py-3 group"
+                                    className="inline-flex items-center gap-2 font-bold text-[14px] px-6 py-3 group transition-transform hover:-translate-y-0.5"
                                     style={{
-                                        background: PT.gold, color: PT.ink,
-                                        border: "1px solid rgba(10,10,10,0.10)",
-                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                        letterSpacing: "0.06em",
+                                        background: PT.gold,
+                                        color: PT.ink,
+                                        letterSpacing: "-0.005em",
                                         borderRadius: 999,
+                                        boxShadow: "0 12px 30px -12px rgba(255,204,41,0.65), inset 0 1px 0 rgba(255,255,255,0.30)",
                                     }}
                                 >
                                     Criar conta gratuita
-                                    <ArrowRight size={16} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform duration-200" />
+                                    <ArrowRight size={16} strokeWidth={2.2} className="group-hover:translate-x-1 transition-transform duration-200" />
                                 </Link>
                                 <Link
                                     to="/login"
                                     data-testid="manifesto-cta-login"
-                                    className="inline-flex items-center text-[13.5px] font-black uppercase underline underline-offset-4"
-                                    style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "0.06em" }}
+                                    className="inline-flex items-center text-[13.5px] font-semibold underline underline-offset-4 decoration-[1.5px]"
+                                    style={{ color: "rgba(255,255,255,0.85)", letterSpacing: "-0.005em", textDecorationColor: "rgba(255,255,255,0.30)" }}
                                 >
                                     Já tenho conta
                                 </Link>

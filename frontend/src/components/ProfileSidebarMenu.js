@@ -202,55 +202,45 @@ export function ProfileSidebarMenu({
                 transition: "opacity 160ms ease, transform 160ms ease",
                 pointerEvents: pos.ready ? "auto" : "none",
                 background: "#fff",
-                border: "1px solid rgba(10,10,10,0.10)",
+                border: "1px solid rgba(10,10,10,0.08)",
                 boxShadow: "0 18px 40px -16px rgba(10,10,10,0.22), 0 4px 10px rgba(10,10,10,0.06)",
-                borderRadius: 16,
+                borderRadius: 18,
             }}
             className="overflow-hidden flex flex-col max-h-[min(560px,80vh)]"
-            // PT fanzine styling
         >
-            {/* Hairline tape */}
-            <div className="pt-tape h-1.5 w-full" />
             {/* Identity header */}
             <Link
                 to={profileTo}
                 onClick={onClose}
                 data-testid="drawer-identity-card"
-                className="flex items-center gap-3 px-4 py-3.5 transition"
+                className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-black/[0.02]"
                 style={{
-                    background: PT.cream,
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "#fff",
+                    borderBottom: "1px solid rgba(10,10,10,0.06)",
                 }}
             >
-                <span style={{
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                    borderRadius: 999,
-                    display: "block",
-                }}>
-                    <Avatar user={user} size={40} showOnline />
-                </span>
+                <Avatar user={user} size={40} showOnline />
                 <div className="min-w-0 flex-1">
-                    <div className="font-black text-[14px] tracking-tight truncate flex items-center gap-1.5" style={{ color: PT.ink }}>
+                    <div className="font-bold text-[14px] tracking-tight truncate flex items-center gap-1.5" style={{ color: PT.ink }}>
                         {user.name}
                         {user.verified && <VerifiedBadge size={10} />}
                     </div>
-                    <div className="font-mono text-[11px] truncate mt-0.5 font-bold uppercase" style={{ color: PT.red, letterSpacing: "0.06em" }}>
+                    <div className="font-mono text-[11.5px] truncate mt-0.5" style={{ color: "rgba(10,10,10,0.50)" }}>
                         @{user.username}
                     </div>
                 </div>
-                <ChevronRight size={14} style={{ color: PT.ink }} className="shrink-0" />
+                <ChevronRight size={14} style={{ color: "rgba(10,10,10,0.35)" }} className="shrink-0" />
             </Link>
 
             {/* Scrollable sections */}
-            <div className="flex-1 overflow-y-auto py-2 no-scrollbar" style={{ background: "#fff" }}>
+            <div className="flex-1 overflow-y-auto py-1.5 no-scrollbar" style={{ background: "#fff" }}>
                 {SECTIONS.map((section, idx) => (
-                    <div key={section.title} className={idx > 0 ? "mt-1 pt-1.5" : ""} style={idx > 0 ? { borderTop: "1px solid rgba(10,10,10,0.08)" } : {}}>
+                    <div key={section.title} className={idx > 0 ? "mt-1 pt-1.5" : ""} style={idx > 0 ? { borderTop: "1px solid rgba(10,10,10,0.06)" } : {}}>
                         <p
-                            className="px-4 pt-1.5 pb-1 font-mono font-black uppercase select-none"
-                            style={{ fontSize: 9.5, letterSpacing: "0.16em", color: PT.red }}
+                            className="px-4 pt-2 pb-1 font-mono font-bold uppercase select-none"
+                            style={{ fontSize: 10, letterSpacing: "0.20em", color: "rgba(10,10,10,0.42)" }}
                         >
-                            // {section.title}
+                            {section.title}
                         </p>
                         <ul className="flex flex-col px-1.5">
                             {section.items.map((item) => {
@@ -264,17 +254,15 @@ export function ProfileSidebarMenu({
                                             onClick={onClose}
                                             data-testid={item.testid}
                                             role="menuitem"
-                                            className="flex items-center gap-2.5 px-2.5 py-2 transition tap-shrink"
+                                            className="flex items-center gap-3 px-3 py-2 transition tap-shrink hover:bg-black/[0.04]"
                                             style={{
-                                                background: active ? PT.cream : "transparent",
+                                                background: active ? "rgba(10,10,10,0.06)" : "transparent",
                                                 color: active ? PT.ink : "rgba(10,10,10,0.78)",
-                                                borderRadius: 8,
-                                                border: active ? "1px solid rgba(10,10,10,0.10)" : "2px solid transparent",
-                                                boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "none",
-                                                fontWeight: active ? 900 : 600,
+                                                borderRadius: 10,
+                                                fontWeight: active ? 700 : 500,
                                             }}
                                         >
-                                            <Icon size={15} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
+                                            <Icon size={16} strokeWidth={active ? 2.2 : 1.8} className="shrink-0" style={{ color: active ? PT.ink : "rgba(10,10,10,0.55)" }} />
                                             <span className="text-[13.5px] tracking-tight truncate">
                                                 {item.label}
                                             </span>
@@ -288,22 +276,22 @@ export function ProfileSidebarMenu({
             </div>
 
             {/* Logout footer */}
-            <div className="px-2 py-2" style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)" }}>
+            <div className="px-3 py-3" style={{ background: "#fff", borderTop: "1px solid rgba(10,10,10,0.06)" }}>
                 <button
                     onClick={handleLogout}
                     data-testid="drawer-logout"
                     role="menuitem"
-                    className="w-full flex items-center gap-2.5 px-3 py-2 transition text-[13.5px] font-black uppercase tap-shrink text-left"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 transition text-[13px] font-semibold tap-shrink"
                     style={{
-                        background: PT.red,
-                        color: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                        background: "transparent",
+                        color: PT.red,
+                        border: "1px solid rgba(200,16,46,0.18)",
                         borderRadius: 999,
-                        letterSpacing: "0.04em",
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(200,16,46,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
-                    <LogOut size={14} strokeWidth={2.4} /> Sair da conta
+                    <LogOut size={14} strokeWidth={2.2} /> Sair da conta
                 </button>
             </div>
         </div>,

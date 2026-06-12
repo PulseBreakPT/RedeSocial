@@ -566,7 +566,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                     <div className="flex items-start gap-3 mb-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#FFCC29", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#FFCC29", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8 }}
                         >
                             <MailCheck size={16} strokeWidth={2.2} />
                         </div>
@@ -606,7 +606,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                     <div className="flex items-start gap-3 min-w-0">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#3E5C9A", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#3E5C9A", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8 }}
                         >
                             <Bell size={16} strokeWidth={2.2} />
                         </div>

@@ -51,13 +51,13 @@ function OptionCard({ active, onClick, icon: Icon, label, desc, swatchBg, testid
                 {swatchBg ? (
                     <span
                         className="w-11 h-11"
-                        style={{ background: swatchBg, border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: swatchBg, border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8 }}
                         aria-hidden
                     />
                 ) : (
                     <div
                         className="w-11 h-11 grid place-items-center"
-                        style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8 }}
                     >
                         <Icon size={15} strokeWidth={2.2} />
                     </div>

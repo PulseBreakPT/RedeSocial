@@ -449,14 +449,14 @@ function ConversationList({ activeId, onSelect, onNew }) {
                 >
                     <div className="w-16 h-16 mx-auto mb-4 grid place-items-center"
                         style={{
-                            background: PT.gold, color: PT.ink,
-                            border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            borderRadius: 12, transform: "rotate(-3deg)",
+                            background: "rgba(255,204,41,0.18)",
+                            color: PT.ink,
+                            borderRadius: 999,
                         }}
                     >
-                        <MessageCircle size={24} strokeWidth={2.2} />
+                        <MessageCircle size={24} strokeWidth={2.0} />
                     </div>
-                    <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 11, color: PT.red, letterSpacing: "0.10em" }}>SEM · CONVERSAS</p>
+                    <p className="font-mono font-bold uppercase mb-2" style={{ fontSize: 10.5, color: "rgba(10,10,10,0.42)", letterSpacing: "0.22em" }}>Sem conversas</p>
                     <h3 className="font-black tracking-tight" style={{ fontSize: 18, color: PT.ink }}>
                         {filter === "all" ? "Sem mensagens ainda" : "Vazio neste filtro"}
                     </h3>
