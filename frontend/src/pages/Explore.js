@@ -4,7 +4,7 @@ import { PostCard } from "../components/PostCard";
 import { PostSkeletonList } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
-import { PT } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { Compass, Search, Users, Hash, Layers, MapPin, X, Sparkles, RotateCw, MessageSquare } from "lucide-react";
@@ -118,10 +118,10 @@ export default function Explore() {
                             className="w-full pl-9 pr-9 py-2 text-[13px] outline-none font-medium"
                             style={{
                                 background: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
                                 borderRadius: 999,
                                 color: PT.ink,
-                                boxShadow: `2px 2px 0 ${PT.ink}`,
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}
                         />
                         {q && (
@@ -134,7 +134,7 @@ export default function Explore() {
                         <div className="flex items-center gap-1" />
                     )}
                 </div>
-                <div className="px-3 lg:px-4 flex gap-1.5 overflow-x-auto scrollbar-hide pb-2 pt-2" style={{ borderTop: `2px dashed ${PT.ink}` }}>
+                <div className="px-3 lg:px-4 flex gap-1.5 overflow-x-auto scrollbar-hide pb-2 pt-2" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                     {TABS.map((t) => {
                         const Icon = t.icon;
                         const active = tab === t.key;
@@ -146,10 +146,10 @@ export default function Explore() {
                                 className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase transition`}
                                 style={{
                                     background: active ? PT.ink : "#fff",
-                                    color: active ? PT.gold : PT.ink,
-                                    border: `2px solid ${PT.ink}`,
+                                    color: active ? "#fff" : PT.ink,
+                                    border: "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 999,
-                                    boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     letterSpacing: "0.04em",
                                 }}
                             >
@@ -169,7 +169,7 @@ export default function Explore() {
                     {suggestions.length > 0 && (
                         <div
                             className="px-3 lg:px-5 pt-4 pb-4"
-                            style={{ borderBottom: `2.5px solid ${PT.ink}`, background: PT.cream }}
+                            style={{ borderBottom: "1px solid rgba(10,10,10,0.10)", background: PT.cream }}
                             data-testid="explore-quem-seguir"
                         >
                             <div className="flex items-center justify-between mb-3">
@@ -183,8 +183,8 @@ export default function Explore() {
                                     style={{
                                         background: "#fff",
                                         color: PT.ink,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 999,
                                         letterSpacing: "0.06em",
                                     }}
@@ -201,7 +201,7 @@ export default function Explore() {
                                         className="flex-shrink-0 w-[170px] p-3 active:scale-[0.98] transition"
                                         style={{
                                             background: "#fff",
-                                            border: `2.5px solid ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
                                             boxShadow: `3px 3px 0 ${idx % 3 === 0 ? PT.gold : idx % 3 === 1 ? PT.azul : PT.red}`,
                                             borderRadius: 14,
                                             transform: `rotate(${idx % 2 === 0 ? -0.6 : 0.6}deg)`,
@@ -221,7 +221,7 @@ export default function Explore() {
                                             style={{
                                                 background: PT.ink,
                                                 color: PT.gold,
-                                                border: `2px solid ${PT.ink}`,
+                                                border: "1px solid rgba(10,10,10,0.10)",
                                                 borderRadius: 999,
                                                 letterSpacing: "0.06em",
                                             }}
@@ -242,7 +242,7 @@ export default function Explore() {
                 </>
             ) : tab === "pessoas" ? (
                 (filtered || pessoas).length === 0 ? <EmptyExplore msg="Sem sugestões agora" /> : (filtered || pessoas).map((u) => (
-                    <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
+                    <div key={u.id} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}>
                         <Avatar user={u} size={44} />
                         <Link to={`/u/${u.username}`} className="flex-1 min-w-0">
                             <div className="font-black text-[14px] truncate" style={{ color: PT.ink }}>{u.display_name || u.username}</div>
@@ -255,8 +255,8 @@ export default function Explore() {
                             style={{
                                 background: u.is_following ? "#fff" : PT.ink,
                                 color: u.is_following ? PT.ink : PT.gold,
-                                border: `2px solid ${PT.ink}`,
-                                boxShadow: `2px 2px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                                 letterSpacing: "0.06em",
                             }}
@@ -267,14 +267,14 @@ export default function Explore() {
                 ))
             ) : tab === "tags" ? (
                 (filtered || tags).length === 0 ? <EmptyExplore msg="Sem hashtags em alta" /> : (filtered || tags).map((t, i) => (
-                    <Link key={t.tag} to={`/tag/${t.tag}`} className="flex items-center gap-4 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
+                    <Link key={t.tag} to={`/tag/${t.tag}`} className="flex items-center gap-4 px-4 lg:px-5 py-3.5" style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}>
                         <span
                             className="w-8 h-8 grid place-items-center font-black tabular-nums"
                             style={{
                                 background: i === 0 ? PT.gold : i === 1 ? PT.cream : "#fff",
                                 color: PT.ink,
-                                border: `2px solid ${PT.ink}`,
-                                boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 8,
                                 fontSize: 12,
                             }}
@@ -292,16 +292,15 @@ export default function Explore() {
                 ))
             ) : tab === "comunidades" ? (
                 (filtered || comunidades).length === 0 ? <EmptyExplore msg="Sem comunidades em alta" /> : (filtered || comunidades).map((c) => (
-                    <Link key={c.id} to={`/c/${c.slug}`} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: `1.5px dashed rgba(10,10,10,0.18)` }}>
+                    <Link key={c.id} to={`/c/${c.slug}`} className="flex items-center gap-3 px-4 lg:px-5 py-3.5" style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}>
                         <div
                             className="w-11 h-11 grid place-items-center"
                             style={{
                                 background: PT.azul,
                                 color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 10,
-                                transform: "rotate(-4deg)",
                             }}
                         >
                             <Layers size={18} strokeWidth={2.4} />
@@ -329,10 +328,9 @@ export default function Explore() {
                                     style={{
                                         background: PT.red,
                                         color: "#fff",
-                                        border: `2.5px solid ${PT.ink}`,
-                                        boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 10,
-                                        transform: "rotate(-4deg)",
                                     }}
                                 >
                                     <MapPin size={16} strokeWidth={2.4} />
@@ -360,10 +358,9 @@ function EmptyExplore({ msg = "Sem publicações" }) {
                 style={{
                     background: PT.gold,
                     color: PT.ink,
-                    border: `3px solid ${PT.ink}`,
-                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 18,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Compass size={26} strokeWidth={2.4} />

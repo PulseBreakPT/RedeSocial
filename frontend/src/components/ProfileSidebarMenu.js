@@ -8,7 +8,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 /**
  * ProfileDropdownMenu  (file kept as "ProfileSidebarMenu" for import compat)
@@ -202,8 +202,8 @@ export function ProfileSidebarMenu({
                 transition: "opacity 160ms ease, transform 160ms ease",
                 pointerEvents: pos.ready ? "auto" : "none",
                 background: "#fff",
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${PT.ink}, 5px 5px 0 3px ${PT.gold}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 18px 40px -16px rgba(10,10,10,0.22), 0 4px 10px rgba(10,10,10,0.06)",
                 borderRadius: 16,
             }}
             className="overflow-hidden flex flex-col max-h-[min(560px,80vh)]"
@@ -219,12 +219,12 @@ export function ProfileSidebarMenu({
                 className="flex items-center gap-3 px-4 py-3.5 transition"
                 style={{
                     background: PT.cream,
-                    borderBottom: `2.5px solid ${PT.ink}`,
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 <span style={{
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 999,
                     display: "block",
                 }}>
@@ -245,7 +245,7 @@ export function ProfileSidebarMenu({
             {/* Scrollable sections */}
             <div className="flex-1 overflow-y-auto py-2 no-scrollbar" style={{ background: "#fff" }}>
                 {SECTIONS.map((section, idx) => (
-                    <div key={section.title} className={idx > 0 ? "mt-1 pt-1.5" : ""} style={idx > 0 ? { borderTop: `2px dashed ${PT.ink}` } : {}}>
+                    <div key={section.title} className={idx > 0 ? "mt-1 pt-1.5" : ""} style={idx > 0 ? { borderTop: "1px solid rgba(10,10,10,0.08)" } : {}}>
                         <p
                             className="px-4 pt-1.5 pb-1 font-mono font-black uppercase select-none"
                             style={{ fontSize: 9.5, letterSpacing: "0.16em", color: PT.red }}
@@ -269,8 +269,8 @@ export function ProfileSidebarMenu({
                                                 background: active ? PT.cream : "transparent",
                                                 color: active ? PT.ink : "rgba(10,10,10,0.78)",
                                                 borderRadius: 8,
-                                                border: active ? `2px solid ${PT.ink}` : "2px solid transparent",
-                                                boxShadow: active ? `2px 2px 0 ${PT.red}` : "none",
+                                                border: active ? "1px solid rgba(10,10,10,0.10)" : "2px solid transparent",
+                                                boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "none",
                                                 fontWeight: active ? 900 : 600,
                                             }}
                                         >
@@ -288,7 +288,7 @@ export function ProfileSidebarMenu({
             </div>
 
             {/* Logout footer */}
-            <div className="px-2 py-2" style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}` }}>
+            <div className="px-2 py-2" style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)" }}>
                 <button
                     onClick={handleLogout}
                     data-testid="drawer-logout"
@@ -297,8 +297,8 @@ export function ProfileSidebarMenu({
                     style={{
                         background: PT.red,
                         color: "#fff",
-                        border: `2px solid ${PT.ink}`,
-                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                         letterSpacing: "0.04em",
                     }}

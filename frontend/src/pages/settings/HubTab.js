@@ -99,17 +99,16 @@ function StatCard({ icon: Icon, value, label, sub, tintBg, tintFg }) {
             <div
                 className="w-10 h-10 grid place-items-center shrink-0"
                 style={{
-                    background: tintBg || "#FFD93D",
+                    background: tintBg || "#FFCC29",
                     color: tintFg || "#0A0A0A",
-                    border: "2px solid #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 8,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Icon size={15} strokeWidth={2.2} />
             </div>
             <div className="font-black tabular-nums leading-none mt-3.5" style={{ fontSize: 26, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
-            <div className="font-mono font-black uppercase mt-2 truncate" style={{ fontSize: 10, letterSpacing: "0.14em", color: "#C8261E" }}>{label}</div>
+            <div className="font-mono font-black uppercase mt-2 truncate" style={{ fontSize: 10, letterSpacing: "0.14em", color: "#C8102E" }}>{label}</div>
             {sub && <div className="text-[11.5px] mt-1 leading-snug truncate font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
         </div>
     );
@@ -127,11 +126,10 @@ function ActionTile({ icon: Icon, title, sub, onClick, to, badge, dataTestid, ti
             <div
                 className="w-11 h-11 grid place-items-center shrink-0"
                 style={{
-                    background: tintBg || "#FFD93D",
+                    background: tintBg || "#FFCC29",
                     color: tintFg || "#0A0A0A",
-                    border: "2px solid #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 8,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Icon size={16} strokeWidth={2.2} />
@@ -140,7 +138,7 @@ function ActionTile({ icon: Icon, title, sub, onClick, to, badge, dataTestid, ti
                 <div className="font-black tracking-tight flex items-center gap-1.5" style={{ fontSize: 13.5, color: "#0A0A0A" }}>
                     {title}
                     {badge && (
-                        <span className="font-mono font-black uppercase px-1.5 py-0.5" style={{ fontSize: 9.5, letterSpacing: "0.10em", background: "#F4F4F4", color: "#0A0A0A", border: "1.5px solid #0A0A0A", borderRadius: 999 }}>{badge}</span>
+                        <span className="font-mono font-black uppercase px-1.5 py-0.5" style={{ fontSize: 9.5, letterSpacing: "0.10em", background: "#FBFAF6", color: "#0A0A0A", border: "1.5px solid #0A0A0A", borderRadius: 999 }}>{badge}</span>
                     )}
                 </div>
                 {sub && <div className="text-[11.5px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>}
@@ -209,14 +207,14 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                 <div
                     className="lg:col-span-12 relative overflow-hidden p-6 lg:p-8"
                     style={{
-                        background: "#F4F4F4",
-                        border: "3px solid #0A0A0A",
-                        boxShadow: "5px 5px 0 #0A0A0A",
+                        background: "#FBFAF6",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 14,
                     }}
                 >
                     <div className="absolute top-0 left-0 right-0 h-2 pt-tape pointer-events-none" />
-                    <div className="absolute -top-12 -right-10 w-44 h-44 pointer-events-none opacity-20" aria-hidden style={{ background: "#C8261E", borderRadius: "50%", border: "3px solid #0A0A0A" }} />
+                    <div className="absolute -top-12 -right-10 w-44 h-44 pointer-events-none opacity-20" aria-hidden style={{ background: "#C8102E", borderRadius: "50%", border: "1px solid rgba(10,10,10,0.10)" }} />
 
                     <div className="relative flex items-start justify-between gap-6 flex-wrap">
                         <div className="min-w-0 max-w-xl">
@@ -264,9 +262,9 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                 {/* STATS — 4 cards reais (likes recebidos, comments, reposts, engagement) */}
                 <div className="lg:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                     <StatCard icon={Activity} value={fmtNumber(rich?.posts_count ?? 0)} label="Publicações" sub={`média ${fmtNumber(Math.round(rich?.avg_likes || 0))} gostos/post`} tintBg="#3E5C9A" tintFg="#fff" />
-                    <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tintBg="#C8261E" tintFg="#fff" />
-                    <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tintBg="#FFD93D" tintFg="#0A0A0A" />
-                    <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tintBg="#1F7A5A" tintFg="#fff" />
+                    <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tintBg="#C8102E" tintFg="#fff" />
+                    <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tintBg="#FFCC29" tintFg="#0A0A0A" />
+                    <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tintBg="#046A38" tintFg="#fff" />
                 </div>
 
                 {/* SCORES — completude + segurança detalhada */}
@@ -366,10 +364,10 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                     <div className="card-lux p-5 h-full">
                         <p className="type-overline mb-3.5">Acessos rápidos</p>
                         <div className="grid grid-cols-1 gap-2">
-                            <ActionTile icon={Bell} title="Notificações" sub="Modos saudáveis, tipos, som & vibração" onClick={() => setActiveTab("notif")} dataTestid="hub-action-notif" tintBg="#FFD93D" tintFg="#0A0A0A" />
+                            <ActionTile icon={Bell} title="Notificações" sub="Modos saudáveis, tipos, som & vibração" onClick={() => setActiveTab("notif")} dataTestid="hub-action-notif" tintBg="#FFCC29" tintFg="#0A0A0A" />
                             <ActionTile icon={Lock} title="Privacidade & Segurança" sub="2FA, sessões, palavra-passe, alertas" onClick={() => setActiveTab("priv-seg")} dataTestid="hub-action-priv" tintBg="#3E5C9A" tintFg="#fff" />
-                            <ActionTile icon={Database} title="Dados & Legal" sub="Exportar, apagar conta, RGPD" onClick={() => setActiveTab("dados-legal")} dataTestid="hub-action-dados" tintBg="#1F7A5A" tintFg="#fff" />
-                            <ActionTile icon={FileText} title="Editar perfil" sub="Nome, bio, capa, cidade, aparência" onClick={() => setActiveTab("perfil")} dataTestid="hub-action-perfil" tintBg="#C8261E" tintFg="#fff" />
+                            <ActionTile icon={Database} title="Dados & Legal" sub="Exportar, apagar conta, RGPD" onClick={() => setActiveTab("dados-legal")} dataTestid="hub-action-dados" tintBg="#046A38" tintFg="#fff" />
+                            <ActionTile icon={FileText} title="Editar perfil" sub="Nome, bio, capa, cidade, aparência" onClick={() => setActiveTab("perfil")} dataTestid="hub-action-perfil" tintBg="#C8102E" tintFg="#fff" />
                         </div>
                     </div>
                 </div>
@@ -393,7 +391,7 @@ function Pill({ on, label }) {
             style={{
                 fontSize: 10,
                 letterSpacing: "0.14em",
-                background: on ? "#1F7A5A" : "#F4F4F4",
+                background: on ? "#046A38" : "#FBFAF6",
                 color: on ? "#fff" : "rgba(10,10,10,0.55)",
                 border: "1.5px solid #0A0A0A",
                 borderRadius: 999,
@@ -411,7 +409,7 @@ function SecRow({ ok, label }) {
             <span
                 className="w-5 h-5 grid place-items-center shrink-0"
                 style={{
-                    background: ok ? "#1F7A5A" : "#F4F4F4",
+                    background: ok ? "#046A38" : "#FBFAF6",
                     color: ok ? "#fff" : "rgba(10,10,10,0.45)",
                     border: "1.5px solid #0A0A0A",
                     borderRadius: 999,
@@ -430,26 +428,25 @@ function MicroStat({ icon: Icon, label, value }) {
             className="flex items-center gap-3 p-3"
             style={{
                 background: "#fff",
-                border: "2px solid #0A0A0A",
-                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 borderRadius: 10,
             }}
         >
             <div
                 className="w-9 h-9 grid place-items-center shrink-0"
                 style={{
-                    background: "#FFD93D",
+                    background: "#FFCC29",
                     color: "#0A0A0A",
-                    border: "2px solid #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 7,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Icon size={14} strokeWidth={2.2} />
             </div>
             <div className="min-w-0">
                 <div className="font-black tabular-nums leading-none" style={{ fontSize: 17, color: "#0A0A0A", letterSpacing: "-0.02em" }}>{value}</div>
-                <div className="font-mono font-black uppercase mt-1 truncate" style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#C8261E" }}>{label}</div>
+                <div className="font-mono font-black uppercase mt-1 truncate" style={{ fontSize: 9.5, letterSpacing: "0.14em", color: "#C8102E" }}>{label}</div>
             </div>
         </div>
     );

@@ -19,7 +19,7 @@ const REASONS = [
 
 function MenuRow({ icon: Icon, label, onClick, danger, busy, active }) {
     const bg = danger ? "transparent" : active ? "#0A0A0A" : "transparent";
-    const fg = danger ? "#C8261E" : active ? "#FFD93D" : "#0A0A0A";
+    const fg = danger ? "#C8102E" : active ? "#FFCC29" : "#0A0A0A";
     return (
         <button
             onClick={onClick} disabled={busy}
@@ -46,8 +46,8 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                 className="max-w-md w-full p-6"
                 style={{
                     background: "#fff",
-                    border: "3px solid #0A0A0A",
-                    boxShadow: "6px 6px 0 #C8261E",
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 14,
                 }}
             >
@@ -59,7 +59,7 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                     <button
                         onClick={onCancel}
                         className="w-9 h-9 grid place-items-center tap-shrink"
-                        style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                        style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
                     >
                         <X size={14} strokeWidth={2.4} />
                     </button>
@@ -74,9 +74,9 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                                 className="text-left px-3 py-2 font-black uppercase tap-shrink"
                                 style={{
                                     background: active ? "#0A0A0A" : "#fff",
-                                    color: active ? "#FFD93D" : "#0A0A0A",
-                                    border: "2px solid #0A0A0A",
-                                    boxShadow: active ? "2px 2px 0 #C8261E" : "1.5px 1.5px 0 #0A0A0A",
+                                    color: active ? "#FFCC29" : "#0A0A0A",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 8,
                                     fontSize: 11.5,
                                     letterSpacing: "0.04em",
@@ -93,10 +93,10 @@ function ReportModal({ targetLabel, onCancel, onSubmit }) {
                     placeholder="Detalhes (opcional)…"
                     className="w-full px-3 py-2 focus:outline-none resize-none mb-3 font-medium"
                     style={{
-                        background: "#F4F4F4",
+                        background: "#FBFAF6",
                         color: "#0A0A0A",
-                        border: "2.5px solid #0A0A0A",
-                        boxShadow: "2px 2px 0 #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 10,
                         fontSize: 13.5,
                     }}
@@ -223,8 +223,8 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                     className="w-10 h-10 grid place-items-center tap-shrink"
                     style={{
                         background: "#fff", color: "#0A0A0A",
-                        border: "2.5px solid #0A0A0A",
-                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                     }}
                 >
@@ -235,8 +235,8 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                         className="absolute right-0 top-full mt-2 z-40 w-60 py-1.5 anim-fade-up overflow-hidden"
                         style={{
                             background: "#fff",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "5px 5px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 12,
                         }}
                     >
@@ -258,8 +258,8 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                     className="w-10 h-10 grid place-items-center tap-shrink"
                     style={{
                         background: "#fff", color: "#0A0A0A",
-                        border: "2.5px solid #0A0A0A",
-                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                     }}
                 >
@@ -270,8 +270,8 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                         className="absolute right-0 top-full mt-2 z-40 w-64 py-1.5 anim-fade-up overflow-hidden"
                         style={{
                             background: "#fff",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "5px 5px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 12,
                         }}
                     >
@@ -297,7 +297,7 @@ export function ProfileMoreMenu({ profile, onProfileUpdate }) {
                             busy={busyKey === "mute"}
                             active={rel.muted}
                         />
-                        <div className="my-1" style={{ borderTop: "2px dashed #0A0A0A" }} />
+                        <div className="my-1" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }} />
                         <MenuRow
                             icon={Flag} label="Reportar utilizador"
                             onClick={() => { setOpen(false); setReportOpen(true); }}

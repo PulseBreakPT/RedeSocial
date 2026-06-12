@@ -4,7 +4,8 @@ import {
 } from "lucide-react";
 import { LegalShell } from "./LegalShell";
 import { LegalComplianceBoard, LegalVisualBlock } from "./_visuals";
-import { PT, Sticker, Kicker } from "../auth/AuthDecor";
+import { PT } from "../../theme/editorial";
+import { Sticker, Kicker } from "../../components/editorial/Primitives";
 
 const CARDS = [
     {
@@ -68,8 +69,8 @@ export default function LegalIndex() {
                 style={{
                     background: PT.gold,
                     color: PT.ink,
-                    border: `3px solid ${PT.ink}`,
-                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     transform: "rotate(-0.4deg)",
                     marginTop: "1.5rem",
                 }}
@@ -99,7 +100,7 @@ export default function LegalIndex() {
                         style={{
                             background: emphasis ? PT.ink : "#fff",
                             color: emphasis ? "#fff" : PT.ink,
-                            border: `3px solid ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
                             boxShadow: `5px 5px 0 ${accent}`,
                             transform: idx % 2 === 0 ? "rotate(-0.4deg)" : "rotate(0.4deg)",
                         }}
@@ -112,8 +113,8 @@ export default function LegalIndex() {
                                 background: accent,
                                 color: accent === PT.gold ? PT.ink : "#fff",
                                 borderRadius: "50%",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 fontSize: 14,
                                 lineHeight: 1,
                                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
@@ -128,9 +129,9 @@ export default function LegalIndex() {
                                 style={{
                                     background: accent,
                                     color: accent === PT.gold ? PT.ink : "#fff",
-                                    border: `2.5px solid ${emphasis ? PT.gold : PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 12,
-                                    boxShadow: `3px 3px 0 ${emphasis ? PT.gold : PT.ink}`,
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}
                             >
                                 <Icon size={19} strokeWidth={2.4} />
@@ -156,7 +157,7 @@ export default function LegalIndex() {
                                 <p className="text-[13.5px] leading-relaxed mb-2.5 font-medium" style={{ color: emphasis ? "rgba(255,255,255,0.82)" : "rgba(10,10,10,0.72)" }}>
                                     {desc}
                                 </p>
-                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: emphasis ? "rgba(255,204,0,0.85)" : PT.red }}>
+                                <p className="text-[10.5px] font-mono font-bold uppercase" style={{ letterSpacing: "0.08em", color: emphasis ? "rgba(255,204,41,0.85)" : PT.red }}>
                                     {meta}
                                 </p>
                             </div>

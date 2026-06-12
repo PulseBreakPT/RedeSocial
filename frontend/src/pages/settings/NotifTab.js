@@ -15,11 +15,11 @@ import { SectionHeader, SwitchPill } from "./_shared";
    ============================================================= */
 
 const NOTIF_TYPES = [
-    { k: "notif_likes",    icon: Heart,         label: "Gostos",         sub: "Quando alguém gosta de um post teu",      tintBg: "#C8261E", tintFg: "#fff" },
-    { k: "notif_comments", icon: MessageCircle, label: "Comentários",    sub: "Respostas e fóruns nos teus posts",       tintBg: "#FFD93D", tintFg: "#0A0A0A" },
-    { k: "notif_follows",  icon: UserPlus,      label: "Novos seguidores", sub: "Quando alguém te começa a seguir",      tintBg: "#1F7A5A", tintFg: "#fff" },
+    { k: "notif_likes",    icon: Heart,         label: "Gostos",         sub: "Quando alguém gosta de um post teu",      tintBg: "#C8102E", tintFg: "#fff" },
+    { k: "notif_comments", icon: MessageCircle, label: "Comentários",    sub: "Respostas e fóruns nos teus posts",       tintBg: "#FFCC29", tintFg: "#0A0A0A" },
+    { k: "notif_follows",  icon: UserPlus,      label: "Novos seguidores", sub: "Quando alguém te começa a seguir",      tintBg: "#046A38", tintFg: "#fff" },
     { k: "notif_mentions", icon: AtSign,        label: "Menções",        sub: "Quando alguém te marca com @",            tintBg: "#3E5C9A", tintFg: "#fff" },
-    { k: "notif_dm",       icon: MessageSquare, label: "Mensagens diretas", sub: "Push para conversas privadas",         tintBg: "#F4F4F4", tintFg: "#0A0A0A" },
+    { k: "notif_dm",       icon: MessageSquare, label: "Mensagens diretas", sub: "Push para conversas privadas",         tintBg: "#FBFAF6", tintFg: "#0A0A0A" },
 ];
 
 export function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
@@ -40,7 +40,7 @@ export function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
                         <div className="flex items-start gap-3 min-w-0">
                             <div
                                 className="w-11 h-11 grid place-items-center shrink-0"
-                                style={{ background: "#3E5C9A", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                                style={{ background: "#3E5C9A", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                             >
                                 <Moon size={16} strokeWidth={2.2} />
                             </div>
@@ -88,7 +88,7 @@ export function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
                     <div className="flex items-start gap-3 min-w-0">
                         <div
                             className="w-11 h-11 grid place-items-center shrink-0"
-                            style={{ background: "#FFD93D", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#FFCC29", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <Sun size={16} strokeWidth={2.2} />
                         </div>
@@ -124,9 +124,9 @@ export function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
                     data-testid="settings-manifesto-link"
                     className="lg:col-span-12 flex items-center gap-3 p-4 sm:p-5 transition-transform hover:-translate-y-0.5 group tap-shrink"
                     style={{
-                        background: "#F4F4F4",
-                        border: "2.5px solid #0A0A0A",
-                        boxShadow: "3px 3px 0 #C8261E",
+                        background: "#FBFAF6",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 12,
                     }}
                 >
@@ -134,10 +134,9 @@ export function NotifTab({ form, setForm, prefs, setPref, save, busy }) {
                         className="w-11 h-11 grid place-items-center shrink-0"
                         style={{
                             background: "#0A0A0A",
-                            color: "#FFD93D",
-                            border: "2px solid #0A0A0A",
+                            color: "#FFCC29",
+                            border: "1px solid rgba(10,10,10,0.10)",
                             borderRadius: 8,
-                            transform: "rotate(-4deg)",
                         }}
                     >
                         <ScrollText size={16} strokeWidth={2.2} />
@@ -188,9 +187,8 @@ function NotifTypeRow({ type, prefs, setPref }) {
                     style={{
                         background: type.tintBg,
                         color: type.tintFg,
-                        border: "2px solid #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 8,
-                        transform: "rotate(-4deg)",
                     }}
                 >
                     <Icon size={14} strokeWidth={2.2} />
@@ -217,7 +215,7 @@ function NotifSoundCard() {
                 <div className="flex items-start gap-3 min-w-0">
                     <div
                         className="w-11 h-11 grid place-items-center shrink-0"
-                        style={{ background: "#1F7A5A", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: "#046A38", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                     >
                         <Bell size={15} strokeWidth={2.2} />
                     </div>
@@ -235,10 +233,10 @@ function NotifSoundCard() {
                         data-testid="pref-notif-sound-preview"
                         className="font-mono font-black uppercase px-2.5 py-1 tap-shrink"
                         style={{
-                            background: "#F4F4F4",
+                            background: "#FBFAF6",
                             color: "#0A0A0A",
-                            border: "2px solid #0A0A0A",
-                            boxShadow: "1.5px 1.5px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                             fontSize: 10,
                             letterSpacing: "0.10em",
@@ -265,7 +263,7 @@ function HapticsCard() {
                 <div className="flex items-start gap-3 min-w-0">
                     <div
                         className="w-11 h-11 grid place-items-center shrink-0"
-                        style={{ background: "#C8261E", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                     >
                         <Sliders size={15} strokeWidth={2.2} />
                     </div>

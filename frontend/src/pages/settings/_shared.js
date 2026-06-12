@@ -3,7 +3,7 @@
    Bordas grossas, sombras offset ink, paleta PT, eyebrows mono `//`.
    ============================================================= */
 import { ChevronRight } from "lucide-react";
-import { PT } from "../auth/AuthDecor";
+import { PT } from "../../theme/editorial";
 
 /* SectionHeader — eyebrow mono PT + heading + lede, full 12-col row */
 export function SectionHeader({ overline, title, desc, action, idx }) {
@@ -15,12 +15,11 @@ export function SectionHeader({ overline, title, desc, action, idx }) {
                         className="hidden lg:grid place-items-center w-8 h-8 shrink-0 mt-1 font-mono font-black tabular-nums"
                         style={{
                             background: PT.ink, color: PT.gold,
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: `2.5px 2.5px 0 ${PT.red}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 8,
                             fontSize: 10.5,
                             letterSpacing: "0.08em",
-                            transform: "rotate(-4deg)",
                         }}
                         aria-hidden
                     >
@@ -63,8 +62,8 @@ export function ToggleRow({ label, sub, k, prefs, setPref, accent }) {
             className="flex items-center justify-between gap-3 p-4 cursor-pointer tap-shrink transition-transform hover:-translate-y-0.5"
             style={{
                 background: "#fff",
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: `3px 3px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 borderRadius: 12,
             }}
         >
@@ -100,16 +99,16 @@ export function SwitchPill({ checked, onChange, disabled, testid, accent }) {
             className={`relative w-[48px] h-[26px] shrink-0 transition-all ${disabled ? "opacity-50" : ""}`}
             style={{
                 background: checked ? onColor : PT.cream,
-                border: `2.5px solid ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
                 borderRadius: 999,
-                boxShadow: checked ? `2px 2px 0 ${PT.gold}` : "none",
+                boxShadow: checked ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "none",
             }}
         >
             <span
                 className="absolute top-[1px] left-[1px] w-[18px] h-[18px] transition-transform duration-200"
                 style={{
                     background: checked ? PT.gold : "#fff",
-                    border: `2px solid ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 999,
                     transform: checked ? "translateX(20px)" : "translateX(0)",
                 }}
@@ -129,8 +128,8 @@ export function LinkRow({ to, icon: Icon, title, desc, dataTestid, asLink = true
             className="group flex items-start gap-3 p-4 tap-shrink transition-transform hover:-translate-y-0.5 text-left w-full"
             style={{
                 background: "#fff",
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: `3px 3px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 borderRadius: 12,
             }}
         >
@@ -138,9 +137,8 @@ export function LinkRow({ to, icon: Icon, title, desc, dataTestid, asLink = true
                 className="w-10 h-10 grid place-items-center shrink-0"
                 style={{
                     background: PT.gold, color: PT.ink,
-                    border: `2px solid ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 8,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Icon size={15} strokeWidth={2.2} />
@@ -168,7 +166,7 @@ export function StatusPill({ tone = "neutral", children, dot = true }) {
         warning: { bg: PT.gold, fg: PT.ink, dotBg: PT.red },
         danger:  { bg: PT.red,  fg: "#fff", dotBg: PT.gold },
         neutral: { bg: PT.cream, fg: PT.ink, dotBg: PT.ink },
-        accent:  { bg: PT.ink, fg: PT.gold, dotBg: PT.gold },
+        accent:  { bg: PT.ink, fg: "#fff", dotBg: PT.gold },
     };
     const c = map[tone] || map.neutral;
     return (
@@ -176,7 +174,7 @@ export function StatusPill({ tone = "neutral", children, dot = true }) {
             className="inline-flex items-center gap-1.5 font-mono font-black uppercase px-2 py-0.5"
             style={{
                 background: c.bg, color: c.fg,
-                border: `2px solid ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
                 borderRadius: 999,
                 fontSize: 10,
                 letterSpacing: "0.10em",
@@ -199,8 +197,8 @@ export function StatusPill({ tone = "neutral", children, dot = true }) {
 export function fzCardStyle(extra = {}) {
     return {
         background: "#fff",
-        border: `2.5px solid ${PT.ink}`,
-        boxShadow: `3px 3px 0 ${PT.ink}`,
+        border: "1px solid rgba(10,10,10,0.10)",
+        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
         borderRadius: 12,
         ...extra,
     };

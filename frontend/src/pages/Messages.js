@@ -11,7 +11,7 @@ import { Avatar } from "../components/Avatar";
 import { ConvSkeleton } from "../components/Skeleton";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
-import { PT } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
 import { Spinner } from "../components/Spinner";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
@@ -379,7 +379,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                 </div>
             )}
 
-            <div className="px-3 lg:px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: `2px dashed ${PT.ink}` }}>
+            <div className="px-3 lg:px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}>
                 <div className="relative flex-1">
                     <Search size={14} strokeWidth={2.2} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: PT.ink }} />
                     <input
@@ -388,10 +388,10 @@ function ConversationList({ activeId, onSelect, onNew }) {
                         className="w-full pl-9 pr-9 py-2 text-[13px] outline-none font-medium"
                         style={{
                             background: "#fff",
-                            border: `2.5px solid ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
                             borderRadius: 999,
                             color: PT.ink,
-                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         }}
                     />
                     {q && (
@@ -403,9 +403,9 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     style={{
                         background: PT.red,
                         color: "#fff",
-                        border: `2.5px solid ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 999,
-                        boxShadow: `3px 3px 0 ${PT.ink}`,
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         fontSize: 11,
                         letterSpacing: "0.06em",
                     }}
@@ -414,7 +414,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                     <span>Nova</span>
                 </button>
             </div>
-            <div className="px-3 lg:px-4 py-2 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderBottom: `2px dashed ${PT.ink}` }}>
+            <div className="px-3 lg:px-4 py-2 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}>
                 {FILTERS.map((f) => {
                     const active = filter === f.key;
                     return (
@@ -422,10 +422,10 @@ function ConversationList({ activeId, onSelect, onNew }) {
                             className="shrink-0 px-3 py-1.5 text-[11.5px] font-black uppercase transition"
                             style={{
                                 background: active ? PT.ink : "#fff",
-                                color: active ? PT.gold : PT.ink,
-                                border: `2px solid ${PT.ink}`,
+                                color: active ? "#fff" : PT.ink,
+                                border: "1px solid rgba(10,10,10,0.10)",
                                 borderRadius: 999,
-                                boxShadow: active ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                                boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 letterSpacing: "0.05em",
                             }}>
                             {f.label}
@@ -439,15 +439,15 @@ function ConversationList({ activeId, onSelect, onNew }) {
                 <div className="px-6 py-14 mx-4 my-6 text-center"
                     style={{
                         background: "#fff",
-                        border: `3px solid ${PT.ink}`,
-                        boxShadow: `5px 5px 0 ${PT.gold}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 24,
                     }}
                 >
                     <div className="w-16 h-16 mx-auto mb-4 grid place-items-center"
                         style={{
                             background: PT.gold, color: PT.ink,
-                            border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 12, transform: "rotate(-3deg)",
                         }}
                     >
@@ -467,7 +467,7 @@ function ConversationList({ activeId, onSelect, onNew }) {
                             className="mt-6 px-5 py-2.5 inline-flex items-center gap-1.5 font-black uppercase"
                             style={{
                                 background: PT.red, color: "#fff",
-                                border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999, fontSize: 12, letterSpacing: "0.06em",
                             }}>
                             <Plus size={13} strokeWidth={2.5} /> Nova conversa

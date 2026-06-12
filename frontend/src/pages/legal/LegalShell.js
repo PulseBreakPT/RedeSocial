@@ -4,7 +4,7 @@ import {
     ArrowLeft, ArrowUp, Check, Cookie, FileText,
     ListTree, Printer, Scale, ShieldCheck, Share2, Sparkle,
 } from "lucide-react";
-import { PT } from "../auth/AuthDecor";
+import { PT } from "../../theme/editorial";
 import { AuthStyles } from "../auth/AuthLayout";
 import SiteFooter from "../../components/SiteFooter";
 
@@ -342,7 +342,7 @@ export function LegalShell({ title, subtitle, lastUpdated, eli5, children, activ
                                     background: "#fff",
                                     color: PT.ink,
                                     border: "1px solid rgba(10,10,10,0.08)",
-                                    borderLeft: `3px solid ${PT.gold}`,
+                                    borderLeft: `1.5px solid ${PT.gold}`,
                                     borderRadius: 14,
                                     boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 8px 24px -16px rgba(10,10,10,0.10)",
                                 }}

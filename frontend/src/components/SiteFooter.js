@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Site Footer · Premium redesign matching new landing design system

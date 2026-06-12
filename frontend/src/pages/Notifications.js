@@ -12,7 +12,7 @@ import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { NotifSkeletonList } from "../components/Skeleton";
-import { PT } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 /* ── Tokens fanzine PT por tipo de notificação ───────────────── */
 /* Diversificado com a paleta expandida (5+ cores distintas em
@@ -24,7 +24,7 @@ const TYPE_TOKENS = {
     repost:  { bg: PT.eucalipto,  fg: "#fff",   Icon: Repeat2      },              // eucalipto — crescimento
     quote:   { bg: PT.malva,      fg: "#fff",   Icon: Quote        },              // malva — cultura/cita
     mention: { bg: PT.laranja,    fg: PT.ink,   Icon: AtSign       },              // laranja queimado — atenção
-    default: { bg: PT.ink,        fg: PT.gold,  Icon: Bell         },
+    default: { bg: PT.ink,        fg: "#fff",  Icon: Bell         },
 };
 
 function TypeStamp({ type, size = 36 }) {
@@ -39,10 +39,9 @@ function TypeStamp({ type, size = 36 }) {
                 height: size,
                 background: t.bg,
                 color: t.fg,
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 borderRadius: 10,
-                transform: "rotate(-4deg)",
             }}
         >
             <Icon size={iconSize} strokeWidth={2.4} fill={t.fill ? "currentColor" : "none"} />
@@ -206,8 +205,8 @@ export default function Notifications() {
                             style={{
                                 background: PT.green,
                                 color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                             }}
                         >
@@ -221,8 +220,8 @@ export default function Notifications() {
                             style={{
                                 background: "#fff",
                                 color: PT.ink,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `2.5px 2.5px 0 ${PT.red}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                             }}
                         >
@@ -235,8 +234,8 @@ export default function Notifications() {
                             style={{
                                 background: PT.gold,
                                 color: PT.ink,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                             }}
                         >
@@ -247,7 +246,7 @@ export default function Notifications() {
             >
                 <div
                     className="px-3 lg:px-4 pb-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-hide"
-                    style={{ borderTop: `2.5px dashed ${PT.ink}` }}
+                    style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}
                 >
                     {FILTERS.map((f) => {
                         const active = filter === f.key;
@@ -259,9 +258,9 @@ export default function Notifications() {
                                 className="shrink-0 px-3.5 py-1.5 text-[12px] font-black uppercase transition-transform duration-100 hover:-translate-y-0.5"
                                 style={{
                                     background: active ? PT.ink : "#fff",
-                                    color: active ? PT.gold : PT.ink,
-                                    border: `2px solid ${PT.ink}`,
-                                    boxShadow: active ? `2.5px 2.5px 0 ${PT.gold}` : `2px 2px 0 ${PT.ink}`,
+                                    color: active ? "#fff" : PT.ink,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     letterSpacing: "0.06em",
                                 }}
@@ -281,18 +280,18 @@ export default function Notifications() {
                         { key: "urgent", label: "Urgente · Menções & Convites", c: PT.red,   fg: "#fff"  },
                         { key: "high",   label: "Mesa & Roda",                  c: PT.gold,  fg: PT.ink },
                         { key: "normal", label: "Pessoas que segues",           c: PT.azul,  fg: "#fff"  },
-                        { key: "low",    label: "Outros",                       c: PT.ink,   fg: PT.gold },
+                        { key: "low",    label: "Outros",                       c: PT.ink,   fg: "#fff" },
                     ].map((grp) => {
                         const list = priorityGroups[grp.key] || [];
                         if (list.length === 0) return null;
                         return (
-                            <div key={grp.key} style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
+                            <div key={grp.key} style={{ borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                                 <div
                                     className="px-4 lg:px-5 py-2.5 flex items-center gap-2"
                                     style={{
                                         background: grp.c,
                                         color: grp.fg,
-                                        borderBottom: `2px solid ${PT.ink}`,
+                                        borderBottom: "1px solid rgba(10,10,10,0.10)",
                                     }}
                                 >
                                     <span className="font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.14em" }}>
@@ -303,10 +302,10 @@ export default function Notifications() {
                                         style={{
                                             background: "#fff",
                                             color: PT.ink,
-                                            border: `2px solid ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
                                             borderRadius: 6,
                                             fontSize: 10.5,
-                                            boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         }}
                                     >
                                         {list.length}
@@ -319,7 +318,7 @@ export default function Notifications() {
                                             key={n.id}
                                             to={linkTo}
                                             className="flex items-start gap-3 px-4 lg:px-5 py-3 transition-colors"
-                                            style={{ borderBottom: `1px dashed rgba(10,10,10,0.18)` }}
+                                            style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}
                                             data-testid={`notif-priority-item-${n.id}`}
                                         >
                                             <TypeStamp type={n.type} size={32} />
@@ -351,10 +350,9 @@ export default function Notifications() {
                         style={{
                             background: PT.gold,
                             color: PT.ink,
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 18,
-                            transform: "rotate(-4deg)",
                         }}
                     >
                         <Bell size={26} strokeWidth={2.4} />
@@ -372,9 +370,8 @@ export default function Notifications() {
                             background: PT.green,
                             color: "#fff",
                             padding: "0 0.15em",
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
-                            transform: "rotate(-1.5deg)",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         }}>
                             calmo
                         </span>{" "}
@@ -390,9 +387,9 @@ export default function Notifications() {
                         <div
                             className="px-4 lg:px-5 py-2 sticky top-[calc(var(--mobile-topbar-h)+108px)] lg:top-[150px] backdrop-blur z-10"
                             style={{
-                                background: "rgba(244,244,244,0.94)",
-                                borderBottom: `2.5px solid ${PT.ink}`,
-                                borderTop: `2.5px solid ${PT.ink}`,
+                                background: "rgba(247,245,239,0.92)",
+                                borderBottom: "1px solid rgba(10,10,10,0.10)",
+                                borderTop: "1px solid rgba(10,10,10,0.10)",
                             }}
                         >
                             <span
@@ -414,8 +411,8 @@ export default function Notifications() {
                                     data-testid={`notification-${n.id}`}
                                     className="group transition-colors"
                                     style={{
-                                        borderBottom: `1.5px dashed rgba(10,10,10,0.18)`,
-                                        background: n.read ? "transparent" : "rgba(255,204,0,0.10)",
+                                        borderBottom: "1px solid rgba(10,10,10,0.08)",
+                                        background: n.read ? "transparent" : "rgba(255,204,41,0.10)",
                                     }}
                                 >
                                     <div className="flex items-start gap-3 px-4 lg:px-5 py-4">
@@ -457,8 +454,8 @@ export default function Notifications() {
                                                     style={{
                                                         background: isReplying ? PT.azul : "#fff",
                                                         color: isReplying ? "#fff" : PT.ink,
-                                                        border: `2px solid ${PT.ink}`,
-                                                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         borderRadius: 6,
                                                     }}
                                                 >
@@ -473,9 +470,9 @@ export default function Notifications() {
                                                     className="w-7 h-7 grid place-items-center"
                                                     style={{
                                                         background: isExpanded ? PT.ink : "#fff",
-                                                        color: isExpanded ? PT.gold : PT.ink,
-                                                        border: `2px solid ${PT.ink}`,
-                                                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                                        color: isExpanded ? "#fff" : PT.ink,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         borderRadius: 6,
                                                     }}
                                                 >
@@ -490,8 +487,8 @@ export default function Notifications() {
                                                 style={{
                                                     background: n.starred ? PT.gold : "#fff",
                                                     color: PT.ink,
-                                                    border: `2px solid ${PT.ink}`,
-                                                    boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                                    border: "1px solid rgba(10,10,10,0.10)",
+                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                     borderRadius: 6,
                                                 }}
                                             >
@@ -505,8 +502,8 @@ export default function Notifications() {
                                                 style={{
                                                     background: "#fff",
                                                     color: PT.ink,
-                                                    border: `2px solid ${PT.ink}`,
-                                                    boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                                    border: "1px solid rgba(10,10,10,0.10)",
+                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                     borderRadius: 6,
                                                 }}
                                             >
@@ -520,7 +517,7 @@ export default function Notifications() {
                                                 style={{
                                                     background: "#fff",
                                                     color: "rgba(10,10,10,0.55)",
-                                                    border: `2px dashed ${PT.ink}`,
+                                                    border: "1px solid rgba(10,10,10,0.08)",
                                                     borderRadius: 6,
                                                 }}
                                             >
@@ -534,8 +531,8 @@ export default function Notifications() {
                                                 style={{
                                                     background: "#fff",
                                                     color: PT.red,
-                                                    border: `2px solid ${PT.ink}`,
-                                                    boxShadow: `1.5px 1.5px 0 ${PT.red}`,
+                                                    border: "1px solid rgba(10,10,10,0.10)",
+                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                     borderRadius: 6,
                                                 }}
                                             >
@@ -551,8 +548,8 @@ export default function Notifications() {
                                                 style={{
                                                     background: PT.cream,
                                                     color: "rgba(10,10,10,0.78)",
-                                                    border: `2px solid ${PT.ink}`,
-                                                    boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                                    border: "1px solid rgba(10,10,10,0.10)",
+                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                     borderRadius: 10,
                                                 }}
                                             >
@@ -575,8 +572,8 @@ export default function Notifications() {
                                                     style={{
                                                         background: "#fff",
                                                         color: PT.ink,
-                                                        border: `2.5px solid ${PT.ink}`,
-                                                        boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         borderRadius: 10,
                                                     }}
                                                 />
@@ -588,8 +585,8 @@ export default function Notifications() {
                                                     style={{
                                                         background: PT.red,
                                                         color: "#fff",
-                                                        border: `2.5px solid ${PT.ink}`,
-                                                        boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         borderRadius: 999,
                                                         letterSpacing: "0.06em",
                                                     }}
@@ -603,8 +600,8 @@ export default function Notifications() {
                                                     style={{
                                                         background: "#fff",
                                                         color: PT.ink,
-                                                        border: `2.5px solid ${PT.ink}`,
-                                                        boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         borderRadius: 999,
                                                     }}
                                                 >

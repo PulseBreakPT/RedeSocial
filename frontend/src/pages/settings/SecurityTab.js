@@ -90,14 +90,14 @@ function TwoFaSetupModal({ onClose, onDone }) {
                 className="relative w-full max-w-md overflow-hidden"
                 style={{
                     background: "#fff",
-                    border: "3px solid #0A0A0A",
-                    boxShadow: "6px 6px 0 #C8261E",
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 14,
                 }}
             >
                 <button onClick={onClose} aria-label="Fechar"
                     className="absolute top-3 right-3 w-8 h-8 grid place-items-center z-10 tap-shrink"
-                    style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
                 ><X size={14} strokeWidth={2.4} /></button>
 
                 <div className="p-6">
@@ -210,10 +210,10 @@ function TwoFaDisableModal({ onClose, onDone }) {
             style={{ background: "rgba(10,10,10,0.65)" }}
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="relative w-full max-w-md overflow-hidden p-6"
-                style={{ background: "#fff", border: "3px solid #0A0A0A", boxShadow: "6px 6px 0 #C8261E", borderRadius: 14 }}>
+                style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 14 }}>
                 <button onClick={onClose} aria-label="Fechar"
                     className="absolute top-3 right-3 w-8 h-8 grid place-items-center tap-shrink"
-                    style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
                 ><X size={14} strokeWidth={2.4} /></button>
                 <p className="type-overline mb-1">Desativar 2FA</p>
                 <h3 className="font-display text-[19px] font-bold tracking-tight text-black leading-tight">Confirma a tua identidade</h3>
@@ -419,11 +419,10 @@ export function SecurityTab({ user, onUserUpdate }) {
                             <div
                                 className="w-12 h-12 grid place-items-center shrink-0"
                                 style={{
-                                    background: twoFaStatus.enabled ? "#1F7A5A" : "#F4F4F4",
+                                    background: twoFaStatus.enabled ? "#046A38" : "#FBFAF6",
                                     color: twoFaStatus.enabled ? "#fff" : "rgba(10,10,10,0.55)",
-                                    border: "2.5px solid #0A0A0A",
+                                    border: "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 8,
-                                    transform: "rotate(-4deg)",
                                 }}
                             >
                                 <ShieldCheck size={17} strokeWidth={2.2} />
@@ -455,8 +454,8 @@ export function SecurityTab({ user, onUserUpdate }) {
                                         className="font-mono font-black uppercase px-3 py-2 inline-flex items-center gap-1.5 disabled:opacity-50 tap-shrink"
                                         style={{
                                             background: "#fff", color: "#0A0A0A",
-                                            border: "2px solid #0A0A0A",
-                                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 999,
                                             fontSize: 11, letterSpacing: "0.10em",
                                         }}>
@@ -465,9 +464,9 @@ export function SecurityTab({ user, onUserUpdate }) {
                                     <button type="button" onClick={() => setTwoFaDisableOpen(true)}
                                         className="font-mono font-black uppercase px-3 py-2 inline-flex items-center gap-1.5 tap-shrink"
                                         style={{
-                                            background: "#C8261E", color: "#fff",
-                                            border: "2px solid #0A0A0A",
-                                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                            background: "#C8102E", color: "#fff",
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 999,
                                             fontSize: 11, letterSpacing: "0.10em",
                                         }}
@@ -515,11 +514,10 @@ export function SecurityTab({ user, onUserUpdate }) {
                                         <div
                                             className="w-11 h-11 grid place-items-center shrink-0"
                                             style={{
-                                                background: s.current ? "#1F7A5A" : "#F4F4F4",
+                                                background: s.current ? "#046A38" : "#FBFAF6",
                                                 color: s.current ? "#fff" : "rgba(10,10,10,0.6)",
-                                                border: "2px solid #0A0A0A",
+                                                border: "1px solid rgba(10,10,10,0.10)",
                                                 borderRadius: 8,
-                                                transform: "rotate(-4deg)",
                                             }}
                                         >
                                             <Icon size={15} strokeWidth={2.2} />
@@ -539,9 +537,9 @@ export function SecurityTab({ user, onUserUpdate }) {
                                                 data-testid={`session-revoke-${s.id}`}
                                                 className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 font-mono font-black uppercase tap-shrink disabled:opacity-40"
                                                 style={{
-                                                    background: "#fff", color: "#C8261E",
-                                                    border: "2px solid #0A0A0A",
-                                                    boxShadow: "2px 2px 0 #0A0A0A",
+                                                    background: "#fff", color: "#C8102E",
+                                                    border: "1px solid rgba(10,10,10,0.10)",
+                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                     borderRadius: 999,
                                                     fontSize: 10.5, letterSpacing: "0.10em",
                                                 }}
@@ -568,7 +566,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                     <div className="flex items-start gap-3 mb-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#FFD93D", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#FFCC29", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <MailCheck size={16} strokeWidth={2.2} />
                         </div>
@@ -608,7 +606,7 @@ export function SecurityTab({ user, onUserUpdate }) {
                     <div className="flex items-start gap-3 min-w-0">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#3E5C9A", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#3E5C9A", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <Bell size={16} strokeWidth={2.2} />
                         </div>

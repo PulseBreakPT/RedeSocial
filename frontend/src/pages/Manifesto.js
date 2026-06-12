@@ -4,12 +4,8 @@ import {
     ArrowLeft, ArrowRight, Moon, Bell, Sparkles, Cog, EyeOff, MailCheck,
     Shield, Heart, Users, Quote, ChevronRight, ExternalLink,
 } from "lucide-react";
-import {
-    PT, Sticker, Kicker, PosterCard, Highlight, Signature, AuthStyles,
-    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
-    DoodleZigzag, DoodleCross, DoodleUnderline, DoodleHeart,
-    DoodleExclamation, GiantAsterisk, AzulejoBorder,
-} from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
+import { Sticker, Kicker, PosterCard, Highlight } from "../components/editorial/Primitives";
 import SiteFooter from "../components/SiteFooter";
 
 /**
@@ -163,8 +159,8 @@ function AnimatedStat({ value, suffix, label, bg, color, delay, rotate }) {
             style={{
                 background: bg,
                 color,
-                border: `3px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 transform: `rotate(${rotate}deg)`,
                 borderRadius: 16,
                 opacity: visible ? 1 : 0,
@@ -173,7 +169,7 @@ function AnimatedStat({ value, suffix, label, bg, color, delay, rotate }) {
         >
             <p
                 className="font-black tabular-nums leading-none"
-                style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: color === "#fff" ? `2px 2px 0 ${PT.ink}` : "none" }}
+                style={{ fontSize: "clamp(28px, 4vw, 44px)", textShadow: color === "#fff" ? "none" : "none" }}
             >
                 {count}{suffix}
             </p>
@@ -195,8 +191,8 @@ function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkTex
                 style={{
                     background: color,
                     color: textColor,
-                    border: `3px solid ${PT.ink}`,
-                    boxShadow: `5px 5px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 16,
                 }}
             >
@@ -208,7 +204,7 @@ function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkTex
                             fontSize: 38,
                             color: textColor,
                             opacity: 0.85,
-                            textShadow: inkText ? `2px 2px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                            textShadow: inkText ? "none" : "none",
                         }}
                     >
                         {n}
@@ -220,9 +216,9 @@ function PromiseCard({ n, icon: Icon, title, body, ref: reference, color, inkTex
                                 style={{
                                     width: 30, height: 30, borderRadius: 999,
                                     background: inkText ? PT.ink : "#fff",
-                                    color: inkText ? PT.gold : PT.ink,
-                                    border: `2px solid ${PT.ink}`,
-                                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                                    color: inkText ? "#fff" : PT.ink,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}
                             >
                                 <Icon size={15} strokeWidth={2.4} />
@@ -302,7 +298,7 @@ export default function Manifesto() {
                 className="sticky top-0 z-30 backdrop-blur"
                 style={{
                     background: "rgba(255,255,255,0.92)",
-                    borderBottom: `3px solid ${PT.ink}`,
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 <div className="max-w-[1100px] mx-auto flex items-center gap-3 px-4 lg:px-8 py-3">
@@ -312,9 +308,9 @@ export default function Manifesto() {
                         className="w-10 h-10 grid place-items-center tap-shrink"
                         style={{
                             background: "#fff",
-                            border: `2.5px solid ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
                             borderRadius: 999,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             color: PT.ink,
                         }}
                         aria-label="Voltar"
@@ -360,9 +356,8 @@ export default function Manifesto() {
                             background: PT.red,
                             color: "#fff",
                             padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1.5deg)",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             WebkitTextStroke: `0.5px ${PT.ink}`,
                         }}>
                             viciado.
@@ -429,9 +424,8 @@ export default function Manifesto() {
                                 display: "inline-block",
                                 background: PT.gold,
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>
                                 6 promessas.
                             </span>
@@ -465,7 +459,7 @@ export default function Manifesto() {
                         className="relative overflow-hidden isolate aspect-[16/9] sm:aspect-[21/9]"
                         style={{
                             border: `4px solid ${PT.ink}`,
-                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 24,
                         }}
                     >
@@ -487,7 +481,7 @@ export default function Manifesto() {
                             <Kicker color={PT.gold} className="mb-3">REGRA · SILENCIOSA</Kicker>
                             <h2
                                 className="font-black tracking-[-0.03em]"
-                                style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: `3px 3px 0 ${PT.ink}` }}
+                                style={{ fontSize: "clamp(22px, 4vw, 50px)", lineHeight: 1.04, color: "#fff", textShadow: "none" }}
                             >
                                 O tempo que passas aqui{" "}
                                 <span style={{
@@ -495,9 +489,8 @@ export default function Manifesto() {
                                     background: PT.gold,
                                     color: PT.ink,
                                     padding: "0 0.10em",
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                                    transform: "rotate(-1deg)",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     textShadow: "none",
                                 }}>
                                     é teu.
@@ -523,7 +516,7 @@ export default function Manifesto() {
                         style={{
                             background: "#fff",
                             border: `4px solid ${PT.ink}`,
-                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 24,
                         }}
                     >
@@ -539,8 +532,8 @@ export default function Manifesto() {
                                     style={{
                                         width: 40, height: 40,
                                         background: PT.gold,
-                                        border: `2.5px solid ${PT.ink}`,
-                                        boxShadow: `3px 3px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 8,
                                     }}
                                 >
@@ -557,7 +550,7 @@ export default function Manifesto() {
                                 Se fechasses a app agora e voltasses amanhã, sentir-te-ias{" "}
                                 <span style={{
                                     background: PT.green, color: "#fff", padding: "0 0.10em",
-                                    border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     display: "inline-block", transform: "rotate(-1deg)",
                                 }}>
                                     melhor
@@ -565,7 +558,7 @@ export default function Manifesto() {
                                 ou{" "}
                                 <span style={{
                                     background: PT.red, color: "#fff", padding: "0 0.10em",
-                                    border: `2.5px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     display: "inline-block", transform: "rotate(1deg)",
                                 }}>
                                     pior
@@ -574,7 +567,7 @@ export default function Manifesto() {
                                 <span style={{ color: "rgba(10,10,10,0.30)", fontSize: "1.1em", marginLeft: 6 }}>”</span>
                             </blockquote>
 
-                            <hr className="my-5" style={{ border: "none", borderTop: `3px dashed ${PT.ink}` }} />
+                            <hr className="my-5" style={{ border: "none", borderTop: "1px solid rgba(10,10,10,0.08)" }} />
 
                             <p className="text-[14px] sm:text-[15px] max-w-[58ch] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.72)" }}>
                                 Se a resposta honesta for{" "}
@@ -617,7 +610,7 @@ export default function Manifesto() {
                                     color={PT.ink}
                                     rotate={idx % 2 === 0 ? -1 : 1}
                                     shadow={item.color}
-                                    style={{ padding: "20px 22px", height: "100%", border: `3px solid ${PT.ink}` }}
+                                    style={{ padding: "20px 22px", height: "100%", border: "1px solid rgba(10,10,10,0.10)" }}
                                 >
                                     <span
                                         className="inline-flex items-center justify-center mb-3"
@@ -625,8 +618,8 @@ export default function Manifesto() {
                                             width: 42, height: 42,
                                             background: item.color,
                                             color: "#fff",
-                                            border: `2.5px solid ${PT.ink}`,
-                                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 10,
                                         }}
                                     >
@@ -651,8 +644,8 @@ export default function Manifesto() {
                             className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
                             style={{
                                 background: PT.ink, color: PT.gold,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.red}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 letterSpacing: "0.06em",
                                 borderRadius: 999,
                             }}
@@ -665,8 +658,8 @@ export default function Manifesto() {
                             className="inline-flex items-center gap-1.5 font-black text-[13px] uppercase px-4 py-2.5"
                             style={{
                                 background: "#fff", color: PT.ink,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 letterSpacing: "0.06em",
                                 borderRadius: 999,
                             }}
@@ -687,7 +680,7 @@ export default function Manifesto() {
                             background: PT.red,
                             color: "#fff",
                             border: `4px solid ${PT.ink}`,
-                            boxShadow: `6px 6px 0 ${PT.gold}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 24,
                         }}
                     >
@@ -714,9 +707,8 @@ export default function Manifesto() {
                                     background: PT.gold,
                                     color: PT.ink,
                                     padding: "0 0.10em",
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
-                                    transform: "rotate(-1deg)",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     WebkitTextStroke: `0.5px ${PT.ink}`,
                                 }}>
                                     é diferente.
@@ -733,8 +725,8 @@ export default function Manifesto() {
                                     className="inline-flex items-center gap-2 font-black text-[14px] uppercase px-6 py-3 group"
                                     style={{
                                         background: PT.gold, color: PT.ink,
-                                        border: `3px solid ${PT.ink}`,
-                                        boxShadow: `5px 5px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         letterSpacing: "0.06em",
                                         borderRadius: 999,
                                     }}
@@ -759,7 +751,7 @@ export default function Manifesto() {
             {/* ═══ FOOTER NOTE ═══ */}
             <section className="relative z-10 px-5 sm:px-8 lg:px-16 pb-12 pt-4 max-w-[1100px] mx-auto">
                 <Reveal>
-                    <p className="text-[12.5px] leading-relaxed font-mono font-medium" style={{ color: "rgba(10,10,10,0.55)", borderTop: `3px dashed ${PT.ink}`, paddingTop: 16 }}>
+                    <p className="text-[12.5px] leading-relaxed font-mono font-medium" style={{ color: "rgba(10,10,10,0.55)", borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 16 }}>
                         Este manifesto é um <strong className="font-black" style={{ color: PT.ink }}>documento vivo</strong>, atualizado publicamente sempre que mudar.
                         As versões anteriores ficam no histórico, com data de revisão visível.
                     </p>

@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
 import { HeaderLiveDot } from "./HeaderLiveDot";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Mobile Top Bar (clean editorial)

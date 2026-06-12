@@ -9,7 +9,7 @@ import { PtPageShell } from "../components/PtPageShell";
 import { useAuth } from "../context/AuthContext";
 import { lsGet, lsSet } from "../lib/portuguese";
 import { toast } from "sonner";
-import { PT } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 import { HubTab } from "./settings/HubTab";
 import { SecurityTab } from "./settings/SecurityTab";
@@ -290,7 +290,7 @@ export default function Settings() {
         <PtPageShell testid="settings-page" className="pb-32" doodles="minimal">
             <PageHeader title="Definições" back testid="settings-header">
                 {/* Mobile-only chip tabs */}
-                <div className="lg:hidden px-3 pb-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderTop: `2.5px dashed ${PT.ink}` }}>
+                <div className="lg:hidden px-3 pb-3 pt-3 flex gap-1.5 overflow-x-auto scrollbar-hide" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                     {filteredTabs.map((t) => {
                         const Icon = t.icon;
                         const active = tab === t.key;
@@ -302,9 +302,9 @@ export default function Settings() {
                                 className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-black uppercase tap-shrink transition-transform"
                                 style={{
                                     background: active ? PT.ink : "#fff",
-                                    color: active ? PT.gold : PT.ink,
-                                    border: `2px solid ${PT.ink}`,
-                                    boxShadow: active ? `2.5px 2.5px 0 ${PT.gold}` : `2px 2px 0 ${PT.ink}`,
+                                    color: active ? "#fff" : PT.ink,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     letterSpacing: "0.06em",
                                 }}
@@ -321,7 +321,7 @@ export default function Settings() {
                 <aside
                     className="hidden lg:flex flex-col min-h-[calc(100vh-80px)] sticky top-0 self-start py-6 px-3"
                     style={{
-                        borderRight: `2.5px solid ${PT.ink}`,
+                        borderRight: "1px solid rgba(10,10,10,0.10)",
                         background: "#FBFAF7",
                     }}
                 >
@@ -332,10 +332,9 @@ export default function Settings() {
                             style={{
                                 background: PT.ink,
                                 color: PT.gold,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.red}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 10,
-                                transform: "rotate(-4deg)",
                             }}
                         >
                             <SettingsIcon size={17} strokeWidth={2.4} />
@@ -365,8 +364,8 @@ export default function Settings() {
                                 style={{
                                     background: "#fff",
                                     color: PT.ink,
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `2.5px 2.5px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 10,
                                 }}
                             />
@@ -406,9 +405,9 @@ export default function Settings() {
                                     className="relative w-full flex items-start gap-3 px-3 py-3 text-left tap-shrink transition-transform"
                                     style={{
                                         background: active ? PT.ink : "#fff",
-                                        color: active ? PT.gold : PT.ink,
-                                        border: `2.5px solid ${PT.ink}`,
-                                        boxShadow: active ? `3px 3px 0 ${PT.red}` : `2.5px 2.5px 0 ${PT.ink}`,
+                                        color: active ? "#fff" : PT.ink,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 10,
                                     }}
                                 >
@@ -417,9 +416,8 @@ export default function Settings() {
                                         style={{
                                             background: active ? PT.gold : PT.cream,
                                             color: PT.ink,
-                                            border: `2px solid ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
                                             borderRadius: 7,
-                                            transform: "rotate(-4deg)",
                                         }}
                                     >
                                         <Icon size={15} strokeWidth={2.4} />
@@ -441,7 +439,7 @@ export default function Settings() {
                     </nav>
 
                     {/* Footer mini help */}
-                    <div className="mt-auto px-3 pt-4 mx-1 mt-4" style={{ borderTop: `2.5px dashed ${PT.ink}` }}>
+                    <div className="mt-auto px-3 pt-4 mx-1 mt-4" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                         <p className="font-mono font-black uppercase mb-2" style={{ fontSize: 10, letterSpacing: "0.14em", color: PT.red }}>
                             ATALHOS
                         </p>
@@ -461,17 +459,16 @@ export default function Settings() {
                 {/* Main content area */}
                 <main className="min-w-0">
                     {/* Group header */}
-                    <div className="hidden lg:flex items-end justify-between gap-4 flex-wrap px-4 lg:px-8 pt-6 pb-4" style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
+                    <div className="hidden lg:flex items-end justify-between gap-4 flex-wrap px-4 lg:px-8 pt-6 pb-4" style={{ borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                         <div className="min-w-0 flex items-start gap-4">
                             <div
                                 className="w-14 h-14 grid place-items-center shrink-0"
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 14,
-                                    transform: "rotate(-4deg)",
                                 }}
                             >
                                 <ActiveIcon size={22} strokeWidth={2.4} />
@@ -497,11 +494,10 @@ export default function Settings() {
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `2.5px 2.5px 0 ${PT.red}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     fontSize: 10.5,
                                     letterSpacing: "0.10em",
-                                    transform: "rotate(-1deg)",
                                 }}
                             >
                                 <span className="w-2 h-2 animate-pulse" style={{ background: PT.red, border: `1.5px solid ${PT.ink}`, borderRadius: 999 }} />
@@ -529,8 +525,8 @@ export default function Settings() {
                                     style={{
                                         background: "#fff",
                                         color: PT.ink,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 999,
                                         letterSpacing: "0.06em",
                                     }}
@@ -548,7 +544,7 @@ export default function Settings() {
                             id={`sec-${sec.key}`}
                             data-testid={`settings-section-${sec.key}`}
                             className={idx > 0 ? "mt-4 pt-6" : ""}
-                            style={idx > 0 ? { borderTop: `2.5px dashed ${PT.ink}` } : undefined}
+                            style={idx > 0 ? { borderTop: "1px solid rgba(10,10,10,0.08)" } : undefined}
                         >
                             {sec.label && idx > 0 && (
                                 <div className="px-4 lg:px-8 -mb-1 flex items-center gap-2.5">
@@ -557,10 +553,9 @@ export default function Settings() {
                                         style={{
                                             background: PT.gold,
                                             color: PT.ink,
-                                            border: `2.5px solid ${PT.ink}`,
-                                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 8,
-                                            transform: "rotate(-4deg)",
                                         }}
                                     >
                                         {sec.key === "aparencia" && <Palette size={14} strokeWidth={2.4} />}
@@ -618,8 +613,8 @@ export default function Settings() {
                         style={{
                             background: PT.ink,
                             color: PT.cream,
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `5px 5px 0 ${PT.gold}, 5px 5px 0 2.5px ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 12px 28px -10px rgba(10,10,10,0.4), inset 0 1px 0 rgba(255,255,255,0.12)",
                             borderRadius: 14,
                         }}
                     >
@@ -628,9 +623,8 @@ export default function Settings() {
                             style={{
                                 background: PT.gold,
                                 color: PT.ink,
-                                border: `2px solid ${PT.gold}`,
+                                border: `1.5px solid ${PT.gold}`,
                                 borderRadius: 999,
-                                transform: "rotate(-4deg)",
                             }}
                         >
                             <Check size={14} strokeWidth={2.8} />
@@ -659,8 +653,8 @@ export default function Settings() {
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: `2px solid ${PT.gold}`,
-                                    boxShadow: `2px 2px 0 ${PT.red}`,
+                                    border: `1.5px solid ${PT.gold}`,
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     letterSpacing: "0.06em",
                                 }}

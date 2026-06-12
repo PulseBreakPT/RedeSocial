@@ -95,8 +95,8 @@ export function IdentityCard({
                     className="p-1.5"
                     style={{
                         background: "#fff",
-                        border: "3px solid #0A0A0A",
-                        boxShadow: "4px 4px 0 #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                     }}
                 >
@@ -110,10 +110,10 @@ export function IdentityCard({
                             title={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                             className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
                             style={{
-                                background: fav ? "#FFD93D" : "#fff",
+                                background: fav ? "#FFCC29" : "#fff",
                                 color: fav ? "#0A0A0A" : "rgba(10,10,10,0.6)",
-                                border: "2.5px solid #0A0A0A",
-                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                             }}
                         >
@@ -126,10 +126,10 @@ export function IdentityCard({
                         data-testid="profile-selo-btn"
                         className="w-10 h-10 grid place-items-center tap-shrink transition-transform hover:-translate-y-0.5"
                         style={{
-                            background: "#C8261E",
+                            background: "#C8102E",
                             color: "#fff",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                         }}
                     >
@@ -145,8 +145,8 @@ export function IdentityCard({
                         style={{
                             background: "#fff",
                             color: "#0A0A0A",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                         }}
                     >
@@ -171,8 +171,8 @@ export function IdentityCard({
                                     style={{
                                         background: "#fff",
                                         color: "#0A0A0A",
-                                        border: "2.5px solid #0A0A0A",
-                                        boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 999,
                                     }}
                                     title="Mensagem rápida"
@@ -185,8 +185,8 @@ export function IdentityCard({
                                         className="absolute right-0 top-full mt-2 z-30 w-80 p-3 anim-fade-up"
                                         style={{
                                             background: "#fff",
-                                            border: "2.5px solid #0A0A0A",
-                                            boxShadow: "5px 5px 0 #0A0A0A",
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 12,
                                         }}
                                     >
@@ -195,7 +195,7 @@ export function IdentityCard({
                                             <button
                                                 onClick={() => setQuickOpen(false)}
                                                 className="w-6 h-6 grid place-items-center tap-shrink"
-                                                style={{ background: "#F4F4F4", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                                                style={{ background: "#FBFAF6", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
                                             >
                                                 <X size={11} strokeWidth={2.4} />
                                             </button>
@@ -209,8 +209,8 @@ export function IdentityCard({
                                             data-testid="profile-quick-msg-input"
                                             className="w-full px-3 py-2 outline-none resize-none font-medium"
                                             style={{
-                                                background: "#F4F4F4",
-                                                border: "2px solid #0A0A0A",
+                                                background: "#FBFAF6",
+                                                border: "1px solid rgba(10,10,10,0.10)",
                                                 borderRadius: 8,
                                                 fontSize: 13,
                                                 color: "#0A0A0A",
@@ -221,7 +221,7 @@ export function IdentityCard({
                                                 onClick={onMessage}
                                                 data-testid="profile-quick-msg-open-thread"
                                                 className="font-mono font-black uppercase"
-                                                style={{ fontSize: 10.5, letterSpacing: "0.10em", color: "#C8261E" }}
+                                                style={{ fontSize: 10.5, letterSpacing: "0.10em", color: "#C8102E" }}
                                             >
                                                 // abrir conversa →
                                             </button>

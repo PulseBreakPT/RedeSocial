@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
-import { PT, Sticker } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
+import { Sticker } from "./editorial/Primitives";
 
 /**
  * Mobile-only personalized hero strip — fanzine PT.
@@ -13,8 +14,8 @@ export function MobileHomeHero({ greeting, firstName }) {
             className="lg:hidden px-4 pt-4 pb-3 relative"
             data-testid="mobile-home-hero"
             style={{
-                background: "rgba(244,244,244,0.96)",
-                borderBottom: `2.5px solid ${PT.ink}`,
+                background: "rgba(247,245,239,0.94)",
+                borderBottom: "1px solid rgba(10,10,10,0.10)",
             }}
         >
             <div className="flex items-start justify-between gap-3">
@@ -28,9 +29,8 @@ export function MobileHomeHero({ greeting, firstName }) {
                                 display: "inline-block",
                                 background: PT.gold,
                                 padding: "0 0.10em",
-                                border: `2px solid ${PT.ink}`,
-                                boxShadow: `2px 2px 0 ${PT.ink}`,
-                                transform: "rotate(-1.5deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>{firstName}</span></>
                         ) : ""}.
                     </h1>

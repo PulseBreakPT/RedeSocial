@@ -16,11 +16,8 @@ import { PulseBar } from "../components/pulse/PulseBar";
 import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { FeedContextLine } from "../components/pulse/FeedContextLine";
 import { haptic } from "../lib/haptics";
-import {
-    PT, Sticker, AuthStyles,
-    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
-    DoodleZigzag, DoodleCross, GiantAsterisk,
-} from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
+import { Sticker } from "../components/editorial/Primitives";
 
 // Frases curadas pt-PT mostradas no pull-to-refresh.
 // Rotativas para dar sensação humana e mexer com o utilizador.
@@ -199,8 +196,8 @@ export default function Feed() {
             <div
                 className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
                 style={{
-                    background: "rgba(244,244,244,0.94)",
-                    borderBottom: `3px solid ${PT.ink}`,
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 {/* Faixa "jornal" topo */}
@@ -224,9 +221,8 @@ export default function Feed() {
                                     display: "inline-block",
                                     background: PT.gold,
                                     padding: "0 0.10em",
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `3px 3px 0 ${PT.ink}`,
-                                    transform: "rotate(-1deg)",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}>{firstName}</span></>
                             ) : ""}.
                         </h1>
@@ -247,9 +243,9 @@ export default function Feed() {
                             title="Atualizar"
                             style={{
                                 background: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
                                 borderRadius: 999,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 color: PT.ink,
                             }}
                         >
@@ -309,8 +305,8 @@ export default function Feed() {
                 className="lg:hidden sticky z-20 backdrop-blur relative"
                 style={{
                     top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
-                    background: "rgba(244,244,244,0.94)",
-                    borderBottom: `3px solid ${PT.ink}`,
+                    background: "rgba(247,245,239,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 <div className="grid grid-cols-2 relative">
@@ -350,9 +346,9 @@ export default function Feed() {
                         style={{
                             background: PT.red,
                             color: "#fff",
-                            border: `2.5px solid ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
                             borderRadius: 999,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             letterSpacing: "0.05em",
                         }}
                     >
@@ -381,10 +377,9 @@ export default function Feed() {
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
                             background: PT.gold,
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
-                            transform: "rotate(-3deg)",
                         }}
                     >
                         <Sparkles size={26} strokeWidth={2.2} style={{ color: PT.ink }} />

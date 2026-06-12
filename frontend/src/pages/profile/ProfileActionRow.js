@@ -155,13 +155,13 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                 <div
                     className="px-4 py-3 flex flex-wrap items-center gap-3"
                     style={{
-                        background: "#F4F4F4",
-                        border: "3px solid #C8261E",
-                        boxShadow: "4px 4px 0 #0A0A0A",
+                        background: "#FBFAF6",
+                        border: "1.5px solid #C8102E",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 14,
                     }}
                 >
-                    <div className="flex items-center gap-2" style={{ color: "#C8261E" }}>
+                    <div className="flex items-center gap-2" style={{ color: "#C8102E" }}>
                         <ShieldAlert size={16} strokeWidth={2.4} />
                         <span className="font-black tracking-tight" style={{ fontSize: 13.5 }}>
                             Muro levantado com {firstName}
@@ -176,9 +176,9 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         data-testid="action-unblock"
                         className="inline-flex items-center gap-1.5 px-4 py-2 font-black uppercase tap-shrink disabled:opacity-50"
                         style={{
-                            background: "#fff", color: "#C8261E",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                            background: "#fff", color: "#C8102E",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                             fontSize: 12, letterSpacing: "0.04em",
                         }}
@@ -195,16 +195,16 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
     let followStyle, followLabel, followIcon;
     if (isFollowing) {
         if (hover) {
-            followStyle = { background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A" };
+            followStyle = { background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" };
             followLabel = "Deixar de seguir";
             followIcon = <UserMinus size={14} strokeWidth={2.4} />;
         } else {
-            followStyle = { background: "#1F7A5A", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A" };
+            followStyle = { background: "#046A38", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" };
             followLabel = isMutual ? "Seguem-se" : "A seguir";
             followIcon = <Check size={14} strokeWidth={2.6} />;
         }
     } else {
-        followStyle = { background: "#0A0A0A", color: "#FFD93D", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #C8261E" };
+        followStyle = { background: "#0A0A0A", color: "#FFCC29", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" };
         followLabel = followsMe ? "Seguir de volta" : "Seguir";
         followIcon = <UserPlus size={14} strokeWidth={2.4} />;
     }
@@ -218,8 +218,8 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                 className="grain isolate p-3 sm:p-3.5"
                 style={{
                     background: "#fff",
-                    border: "2.5px solid #0A0A0A",
-                    boxShadow: "4px 4px 0 #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     borderRadius: 12,
                 }}
             >
@@ -249,8 +249,8 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         className="h-11 px-5 inline-flex items-center justify-center gap-2 font-black uppercase tap-shrink"
                         style={{
                             background: "#fff", color: "#0A0A0A",
-                            border: "2.5px solid #0A0A0A",
-                            boxShadow: "3px 3px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                             fontSize: 12.5, letterSpacing: "0.04em",
                         }}
@@ -267,9 +267,9 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
                         title={`Levantar muro com ${firstName}`}
                         className="h-11 px-4 inline-flex items-center justify-center gap-1.5 font-black uppercase tap-shrink disabled:opacity-50"
                         style={{
-                            background: "#F4F4F4", color: "#C8261E",
-                            border: "2.5px solid #C8261E",
-                            boxShadow: "3px 3px 0 #0A0A0A",
+                            background: "#FBFAF6", color: "#C8102E",
+                            border: "1.5px solid #C8102E",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                             fontSize: 12, letterSpacing: "0.04em",
                         }}
@@ -286,7 +286,7 @@ export function ProfileActionRow({ profile, onMessage, onProfileUpdate }) {
 
                 {/* Hint — quando ela já te segue mas ainda não retribuíste */}
                 {!isFollowing && followsMe && (
-                    <p className="mt-2.5 font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8261E" }}>
+                    <p className="mt-2.5 font-mono font-black uppercase" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8102E" }}>
                         // {firstName} SEGUE-TE — SEGUE DE VOLTA?
                     </p>
                 )}

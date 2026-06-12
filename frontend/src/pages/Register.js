@@ -432,7 +432,7 @@ export default function Register() {
                                         className="flex items-start gap-3 px-4 py-4 rounded-2xl"
                                         style={{
                                             background: "#fff",
-                                            border: "1.5px dashed rgba(10,10,10,0.15)",
+                                            border: "1px solid rgba(10,10,10,0.08)",
                                         }}
                                     >
                                         <MapPin size={20} className="shrink-0 mt-0.5" style={{ color: PT.azul }} />

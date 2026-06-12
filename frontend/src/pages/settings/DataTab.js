@@ -241,7 +241,7 @@ export function DataTab({ user }) {
                         onClick={onExportCsv}
                         loading={exporting.csv}
                         dataTestid="data-export-csv"
-                        tintBg="#1F7A5A" tintFg="#fff"
+                        tintBg="#046A38" tintFg="#fff"
                     />
                 </div>
 
@@ -257,11 +257,11 @@ export function DataTab({ user }) {
                         icon={RefreshCw}
                         title="Limpar cache local"
                         sub={`Inclui caches de feed, perfis e pesquisas (${fmtBytes(cacheBytes)})`}
-                        tintBg="#FFD93D" tintFg="#0A0A0A"
+                        tintBg="#FFCC29" tintFg="#0A0A0A"
                         action={
                             <button onClick={onClearCache} data-testid="data-clear-cache"
                                 className="font-mono font-black uppercase px-3 py-1.5 tap-shrink"
-                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
+                                style={{ background: "#fff", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
                                 Limpar
                             </button>
                         }
@@ -274,7 +274,7 @@ export function DataTab({ user }) {
                         action={
                             <button onClick={onClearSearches} data-testid="data-clear-searches"
                                 className="font-mono font-black uppercase px-3 py-1.5 tap-shrink disabled:opacity-40"
-                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}
+                                style={{ background: "#fff", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}
                                 disabled={recentSearches === 0}>
                                 Apagar
                             </button>
@@ -284,11 +284,11 @@ export function DataTab({ user }) {
                         icon={ImageIcon}
                         title="Imagens em cache"
                         sub="Thumbnails e pré-visualizações guardadas localmente"
-                        tintBg="#C8261E" tintFg="#fff"
+                        tintBg="#C8102E" tintFg="#fff"
                         action={
                             <button onClick={onClearImages} data-testid="data-clear-images"
                                 className="font-mono font-black uppercase px-3 py-1.5 tap-shrink"
-                                style={{ background: "#fff", color: "#0A0A0A", border: "2px solid #0A0A0A", boxShadow: "2px 2px 0 #0A0A0A", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
+                                style={{ background: "#fff", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999, fontSize: 10.5, letterSpacing: "0.10em" }}>
                                 Limpar
                             </button>
                         }
@@ -301,17 +301,16 @@ export function DataTab({ user }) {
                         <span
                             className="hidden lg:grid place-items-center w-8 h-8 font-mono font-black tabular-nums shrink-0 mt-1"
                             style={{
-                                background: "#C8261E", color: "#fff",
-                                border: "2.5px solid #0A0A0A",
-                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                background: "#C8102E", color: "#fff",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 8,
                                 fontSize: 10.5, letterSpacing: "0.08em",
-                                transform: "rotate(-4deg)",
                             }}
                         >03</span>
                         <div>
-                            <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: "#C8261E" }}>ZONA PERIGOSA</p>
-                            <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 19, color: "#C8261E" }}>Apagar conta permanentemente</h3>
+                            <p className="font-mono font-black uppercase mb-1.5" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: "#C8102E" }}>ZONA PERIGOSA</p>
+                            <h3 className="font-black tracking-tight leading-tight" style={{ fontSize: 19, color: "#C8102E" }}>Apagar conta permanentemente</h3>
                             <p className="text-[13px] leading-relaxed mt-1.5 max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                                 Esta acção é irreversível. Todos os teus dados são apagados e removidos do sistema.
                             </p>
@@ -322,16 +321,16 @@ export function DataTab({ user }) {
                 <div
                     className="lg:col-span-12 p-5"
                     style={{
-                        background: "#F4F4F4",
-                        border: "3px solid #C8261E",
-                        boxShadow: "4px 4px 0 #0A0A0A",
+                        background: "#FBFAF6",
+                        border: "1.5px solid #C8102E",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 14,
                     }}
                 >
                     <div className="flex items-start gap-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <ShieldAlert size={17} strokeWidth={2.2} />
                         </div>
@@ -342,7 +341,7 @@ export function DataTab({ user }) {
                                     className="font-mono font-black uppercase px-2 py-0.5"
                                     style={{
                                         fontSize: 10, letterSpacing: "0.10em",
-                                        background: "#C8261E", color: "#fff",
+                                        background: "#C8102E", color: "#fff",
                                         border: "1.5px solid #0A0A0A",
                                         borderRadius: 999,
                                     }}
@@ -355,9 +354,9 @@ export function DataTab({ user }) {
                                 <button onClick={() => setShowDelete(true)} data-testid="data-delete-account"
                                     className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink"
                                     style={{
-                                        background: "#C8261E", color: "#fff",
-                                        border: "2.5px solid #0A0A0A",
-                                        boxShadow: "3px 3px 0 #0A0A0A",
+                                        background: "#C8102E", color: "#fff",
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 999,
                                         fontSize: 12, letterSpacing: "0.04em",
                                     }}>
@@ -367,7 +366,7 @@ export function DataTab({ user }) {
                                 <form
                                     onSubmit={onConfirmDelete}
                                     className="mt-4 space-y-3 p-4"
-                                    style={{ background: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A", borderRadius: 12 }}
+                                    style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 12 }}
                                 >
                                     <div>
                                         <label className="type-overline">Palavra-passe</label>
@@ -378,7 +377,7 @@ export function DataTab({ user }) {
                                     </div>
                                     <div>
                                         <label className="type-overline">
-                                            Escreve <span className="font-mono px-1.5 py-0.5" style={{ background: "#C8261E", color: "#fff", borderRadius: 4 }}>APAGAR</span> para confirmar
+                                            Escreve <span className="font-mono px-1.5 py-0.5" style={{ background: "#C8102E", color: "#fff", borderRadius: 4 }}>APAGAR</span> para confirmar
                                         </label>
                                         <input type="text" value={delForm.confirm}
                                             onChange={(e) => setDelForm({ ...delForm, confirm: e.target.value })}
@@ -397,9 +396,9 @@ export function DataTab({ user }) {
                                             data-testid="delete-confirm-btn"
                                             className="inline-flex items-center gap-1.5 px-4 py-2 font-black uppercase disabled:opacity-40 tap-shrink"
                                             style={{
-                                                background: "#C8261E", color: "#fff",
-                                                border: "2.5px solid #0A0A0A",
-                                                boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                                background: "#C8102E", color: "#fff",
+                                                border: "1px solid rgba(10,10,10,0.10)",
+                                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                 borderRadius: 999,
                                                 fontSize: 11.5, letterSpacing: "0.04em",
                                             }}>
@@ -423,11 +422,10 @@ function ExportTile({ icon: Icon, title, sub, onClick, loading, dataTestid, tint
             <div
                 className="w-12 h-12 grid place-items-center mb-3"
                 style={{
-                    background: tintBg || "#FFD93D",
+                    background: tintBg || "#FFCC29",
                     color: tintFg || "#0A0A0A",
-                    border: "2px solid #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 8,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 {loading ? <Loader2 size={17} className="animate-spin" /> : <Icon size={17} strokeWidth={2.2} />}
@@ -437,7 +435,7 @@ function ExportTile({ icon: Icon, title, sub, onClick, loading, dataTestid, tint
                 <span className="font-mono font-black uppercase" style={{ fontSize: 10, letterSpacing: "0.14em", color: "rgba(10,10,10,0.45)" }}>.{title.toLowerCase()}</span>
             </div>
             <div className="text-[12px] mt-1 leading-snug font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>{sub}</div>
-            <div className="font-mono font-black uppercase inline-flex items-center gap-1 mt-3" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8261E" }}>
+            <div className="font-mono font-black uppercase inline-flex items-center gap-1 mt-3" style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#C8102E" }}>
                 <Download size={11} strokeWidth={2.4} /> EXPORTAR
             </div>
         </button>
@@ -450,11 +448,10 @@ function DataRow({ icon: Icon, title, sub, action, tintBg, tintFg }) {
             <div
                 className="w-10 h-10 grid place-items-center shrink-0"
                 style={{
-                    background: tintBg || "#FFD93D",
+                    background: tintBg || "#FFCC29",
                     color: tintFg || "#0A0A0A",
-                    border: "2px solid #0A0A0A",
+                    border: "1px solid rgba(10,10,10,0.10)",
                     borderRadius: 8,
-                    transform: "rotate(-4deg)",
                 }}
             >
                 <Icon size={14} strokeWidth={2.2} />

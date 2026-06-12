@@ -14,7 +14,7 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
             data-testid="profile-mobile-actions"
             style={{
                 background: "#fff",
-                borderTop: "3px solid #0A0A0A",
+                borderTop: "1px solid rgba(10,10,10,0.10)",
                 paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
             }}
         >
@@ -23,7 +23,7 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                     onClick={() => setSeloOpen(true)}
                     data-testid="mob-action-selo"
                     className="w-11 h-11 grid place-items-center tap-shrink"
-                    style={{ background: "#C8261E", color: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999 }}
                     aria-label="Selo pessoal"
                     title="O selo pessoal"
                 >
@@ -35,7 +35,7 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                     onClick={onShare}
                     data-testid="mob-action-share"
                     className="w-11 h-11 grid place-items-center tap-shrink"
-                    style={{ background: "#fff", color: "#0A0A0A", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#fff", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999 }}
                     aria-label="Partilhar"
                 >
                     <Share2 size={15} strokeWidth={2.2} />
@@ -54,7 +54,7 @@ export function MobileActionBar({ profile, onFollow, onMessage, onShare, onEditP
                             onClick={onMessage}
                             data-testid="mob-action-message"
                             className="w-11 h-11 grid place-items-center tap-shrink"
-                            style={{ background: "#fff", color: "#0A0A0A", border: "2.5px solid #0A0A0A", boxShadow: "2.5px 2.5px 0 #0A0A0A", borderRadius: 999 }}
+                            style={{ background: "#fff", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 999 }}
                             aria-label="Mensagem"
                         >
                             <MessageCircle size={15} strokeWidth={2.2} />

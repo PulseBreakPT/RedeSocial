@@ -7,7 +7,7 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityTicker } from "./ActivityTicker";
 import { TrendingPulse } from "./TrendingPulse";
 import { useClickOutside } from "../hooks/useClickOutside";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Right Sidebar (clean editorial)

@@ -13,14 +13,14 @@ const TOGGLES = [
         icon: Eye,
         label: "Mostrar quando estou online",
         sub: "Ponto verde no avatar + estado nas listas de pessoas",
-        tintBg: "#1F7A5A", tintFg: "#fff",
+        tintBg: "#046A38", tintFg: "#fff",
     },
     {
         k: "priv_typing",
         icon: Pencil,
         label: "Indicador a escrever",
         sub: "‘Está a escrever…’ visível em conversas privadas",
-        tintBg: "#FFD93D", tintFg: "#0A0A0A",
+        tintBg: "#FFCC29", tintFg: "#0A0A0A",
     },
     {
         k: "priv_search",
@@ -34,7 +34,7 @@ const TOGGLES = [
         icon: Activity,
         label: "Contribuir para o pulso social",
         sub: "Os teus posts somam no mapa coletivo ‘a tua cidade está ativa’. Nunca te identifica.",
-        tintBg: "#C8261E", tintFg: "#fff",
+        tintBg: "#C8102E", tintFg: "#fff",
     },
 ];
 
@@ -68,9 +68,8 @@ function PrivacyToggle({ entry, prefs, setPref }) {
                     style={{
                         background: entry.tintBg,
                         color: entry.tintFg,
-                        border: "2px solid #0A0A0A",
+                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 8,
-                        transform: "rotate(-4deg)",
                     }}
                 >
                     <Icon size={15} strokeWidth={2.2} />

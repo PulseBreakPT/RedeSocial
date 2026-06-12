@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // PageHeader — sticky header (clean editorial)

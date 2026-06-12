@@ -3,7 +3,7 @@
 // alinhado com a Landing e Auth.
 
 import { Link } from "react-router-dom";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // PageShell — outer wrapper (clean, sem doodles)

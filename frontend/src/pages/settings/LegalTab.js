@@ -56,7 +56,7 @@ export function LegalTab() {
                     <div className="flex items-start gap-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#0A0A0A", color: "#FFD93D", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#0A0A0A", color: "#FFCC29", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <Scale size={16} strokeWidth={2.2} />
                         </div>
@@ -70,9 +70,9 @@ export function LegalTab() {
                                 data-testid="legal-dpo-email"
                                 className="inline-flex items-center gap-2 mt-3 px-4 py-2.5 font-black uppercase tap-shrink"
                                 style={{
-                                    background: "#F4F4F4", color: "#0A0A0A",
-                                    border: "2.5px solid #0A0A0A",
-                                    boxShadow: "2.5px 2.5px 0 #0A0A0A",
+                                    background: "#FBFAF6", color: "#0A0A0A",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     fontSize: 12, letterSpacing: "0.04em",
                                 }}
@@ -86,7 +86,7 @@ export function LegalTab() {
                     <div className="flex items-start gap-3">
                         <div
                             className="w-12 h-12 grid place-items-center shrink-0"
-                            style={{ background: "#C8261E", color: "#fff", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                            style={{ background: "#C8102E", color: "#fff", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         >
                             <Building2 size={16} strokeWidth={2.2} />
                         </div>
@@ -100,7 +100,7 @@ export function LegalTab() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 mt-2 font-mono font-black uppercase tap-shrink"
-                                style={{ fontSize: 11, letterSpacing: "0.10em", color: "#C8261E" }}
+                                style={{ fontSize: 11, letterSpacing: "0.10em", color: "#C8102E" }}
                             >
                                 www.cnpd.pt <ExternalLink size={10} strokeWidth={2.4} />
                             </a>

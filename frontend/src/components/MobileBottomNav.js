@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useHideOnScroll } from "../hooks/useHideOnScroll";
 import { haptic as centralHaptic } from "../lib/haptics";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Mobile Bottom Nav (clean editorial)

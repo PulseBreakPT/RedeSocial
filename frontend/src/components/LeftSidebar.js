@@ -10,7 +10,7 @@ import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { api } from "../lib/api";
 import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
-import { PT } from "../pages/auth/AuthDecor";
+import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Left Sidebar (clean editorial, alinhado com a Landing/Auth)

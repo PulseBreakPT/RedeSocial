@@ -11,11 +11,8 @@ import { VerifiedBadge } from "../components/VerifiedBadge";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { useAuth } from "../context/AuthContext";
 import { PT_REGIONS, PT_MOODS, PT_TEAMS } from "../lib/ptCulture";
-import {
-    PT, Kicker, Sticker, AuthStyles,
-    DoodleStar, DoodleSparkles, DoodleScribble, DoodleSpiral,
-    DoodleZigzag, DoodleCross, DoodleHeart, GiantAsterisk,
-} from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
+import { Kicker, Sticker } from "../components/editorial/Primitives";
 
 import { IdentityCard } from "./profile/IdentityCard";
 import { ShareModal } from "./profile/ShareModal";
@@ -255,7 +252,7 @@ export default function Profile() {
                     style={{
                         background: "#fff",
                         border: `3.5px solid ${PT.ink}`,
-                        boxShadow: `6px 6px 0 ${PT.red}`,
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 24,
                     }}
                 >
@@ -263,7 +260,7 @@ export default function Profile() {
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
                             background: PT.red, color: "#fff",
-                            border: `3px solid ${PT.ink}`, boxShadow: `4px 4px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999, transform: "rotate(-3deg)",
                         }}
                     >
@@ -412,10 +409,9 @@ function BlockedWallView({ profile }) {
                         className="w-16 h-16 grid place-items-center"
                         style={{
                             background: PT.red, color: "#fff",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
-                            transform: "rotate(-4deg)",
                         }}
                     >
                         <Lock size={26} strokeWidth={2.2} />
@@ -430,8 +426,8 @@ function BlockedWallView({ profile }) {
                     style={{
                         background: PT.cream,
                         color: "rgba(10,10,10,0.45)",
-                        border: `3px solid ${PT.ink}`,
-                        boxShadow: `4px 4px 0 ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                         fontSize: 26,
                         letterSpacing: "-0.02em",
@@ -470,8 +466,8 @@ function BlockedWallView({ profile }) {
                     className="mt-6 max-w-xl p-5"
                     style={{
                         background: "#fff",
-                        border: `3px solid ${PT.red}`,
-                        boxShadow: `5px 5px 0 ${PT.ink}`,
+                        border: `1.5px solid ${PT.red}`,
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 14,
                     }}
                     data-testid="blocked-wall-card"
@@ -481,9 +477,8 @@ function BlockedWallView({ profile }) {
                             className="w-12 h-12 grid place-items-center shrink-0"
                             style={{
                                 background: PT.red, color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
                                 borderRadius: 8,
-                                transform: "rotate(-4deg)",
                             }}
                         >
                             <Lock size={17} strokeWidth={2.2} />
@@ -508,8 +503,8 @@ function BlockedWallView({ profile }) {
                             className="inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink disabled:opacity-50"
                             style={{
                                 background: PT.red, color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                                 fontSize: 12, letterSpacing: "0.04em",
                             }}
@@ -522,8 +517,8 @@ function BlockedWallView({ profile }) {
                             className="inline-flex items-center gap-1.5 px-4 py-2.5 font-black uppercase tap-shrink"
                             style={{
                                 background: "#fff", color: PT.ink,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                                 fontSize: 12, letterSpacing: "0.04em",
                             }}

@@ -6,7 +6,8 @@ import {
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
-import { PT, Sticker, StampCircle } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
+import { Sticker, StampCircle } from "../components/editorial/Primitives";
 
 /* ════════════════════════════════════════════════════════════════
    Constants & helpers
@@ -65,8 +66,8 @@ function StatusPill({ status, days, compact = false }) {
                 style={{
                     background: PT.red,
                     color: "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 }}
             >
                 ● a decorrer
@@ -80,7 +81,7 @@ function StatusPill({ status, days, compact = false }) {
                 style={{
                     background: "transparent",
                     color: "rgba(10,10,10,0.40)",
-                    border: `2px dashed rgba(10,10,10,0.30)`,
+                    border: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
                 já passou
@@ -95,8 +96,8 @@ function StatusPill({ status, days, compact = false }) {
                 style={{
                     background: PT.gold,
                     color: PT.ink,
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: `2px 2px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 }}
             >
                 {label}
@@ -117,8 +118,8 @@ function CategoryChip({ meta, active, onClick, count }) {
             style={{
                 background: active ? PT.ink : "#fff",
                 color: active ? PT.cream : PT.ink,
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: active ? "none" : `3px 3px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: active ? "none" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 transform: active ? "translate(3px,3px)" : "none",
                 transition: "transform 0.08s",
             }}
@@ -147,14 +148,14 @@ function YearCompass({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, o
             data-testid="cal-compass"
             style={{
                 background: "#fff",
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: `5px 5px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
             }}
         >
             {/* Header da rosa-dos-meses */}
             <div
                 className="flex items-center justify-between px-3 sm:px-4 py-2.5"
-                style={{ borderBottom: `2px solid ${PT.ink}`, background: PT.ink, color: PT.cream }}
+                style={{ borderBottom: "1px solid rgba(10,10,10,0.10)", background: PT.ink, color: PT.cream }}
             >
                 <span className="inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-[0.16em] text-[10px]">
                     <Compass size={12} strokeWidth={2.4} />
@@ -221,7 +222,7 @@ function YearCompass({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, o
             {/* legenda */}
             <div
                 className="flex items-center justify-between px-3 sm:px-4 py-2 text-[9.5px] font-mono uppercase tracking-[0.14em]"
-                style={{ borderTop: `2px solid ${PT.ink}`, color: "rgba(10,10,10,0.55)" }}
+                style={{ borderTop: "1px solid rgba(10,10,10,0.10)", color: "rgba(10,10,10,0.55)" }}
             >
                 <span className="inline-flex items-center gap-1.5">
                     <span aria-hidden className="inline-block w-2.5 h-2.5" style={{ background: "#FFF8DC", border: `1.5px solid ${PT.ink}` }} />
@@ -259,8 +260,8 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                 className="cal-reveal group grid grid-cols-[44px_1fr_auto] sm:grid-cols-[56px_1fr_auto] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5"
                 style={{
                     background: featured ? "#FFFCF5" : "#fff",
-                    border: `2px solid ${PT.ink}`,
-                    boxShadow: featured ? `3px 3px 0 ${PT.red}` : `2px 2px 0 ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
+                    boxShadow: featured ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     animationDelay: `${delayMs}ms`,
                     borderLeft: `5px solid ${accentColor}`,
                 }}
@@ -321,8 +322,8 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
             className="cal-reveal group relative grid grid-cols-[56px_1fr] sm:grid-cols-[92px_1fr] gap-3 sm:gap-5 p-3 sm:p-5 transition-all duration-150"
             style={{
                 background: featured ? "#FFFCF5" : "#fff",
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: featured ? `5px 5px 0 ${PT.red}` : `4px 4px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: featured ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 animationDelay: `${delayMs}ms`,
             }}
         >
@@ -337,9 +338,8 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                     style={{
                         background: PT.red,
                         color: "#fff",
-                        border: `2px solid ${PT.ink}`,
-                        boxShadow: `2px 2px 0 ${PT.ink}`,
-                        transform: "rotate(2deg)",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     }}
                 >
                     em destaque
@@ -352,7 +352,7 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                 style={{
                     background: accentColor,
                     color: isLightAccent ? PT.ink : "#fff",
-                    border: `2px solid ${PT.ink}`,
+                    border: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 <span className="font-mono font-bold tracking-[0.14em] text-[9px] sm:text-[11px] uppercase" style={{ opacity: 0.85 }}>
@@ -449,7 +449,7 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
             data-testid={`cal-month-${monthKey}`}
         >
             {/* HEADER do mês — magazine-style: numeral gigante watermark */}
-            <header className="relative mb-5 sm:mb-7 pb-4 sm:pb-5" style={{ borderBottom: `2.5px solid ${PT.ink}` }}>
+            <header className="relative mb-5 sm:mb-7 pb-4 sm:pb-5" style={{ borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="flex items-end gap-3 sm:gap-5">
                     <span
                         className="font-black leading-none tracking-[-0.05em] select-none flex-shrink-0"
@@ -531,8 +531,8 @@ function Highlight({ ev, catMetaMap }) {
             className="block p-3 sm:p-4 hover:translate-y-[-2px] transition-transform w-[78vw] sm:w-auto flex-shrink-0 snap-start"
             style={{
                 background: "#fff",
-                border: `2.5px solid ${PT.ink}`,
-                boxShadow: `4px 4px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
             }}
         >
             <div className="flex items-center gap-3">
@@ -541,7 +541,7 @@ function Highlight({ ev, catMetaMap }) {
                     style={{
                         background: meta?.color || PT.ink,
                         color: meta?.color === "#FFCC00" ? PT.ink : "#fff",
-                        border: `2px solid ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
                     }}
                 >
                     <span className="font-mono text-[9px] uppercase tracking-[0.14em] opacity-85">{month}</span>
@@ -577,8 +577,8 @@ function MonthJumpPill({ monthKey, count, onClick, isCurrent }) {
             style={{
                 background: isCurrent ? PT.red : "#fff",
                 color: isCurrent ? "#fff" : PT.ink,
-                border: `2px solid ${PT.ink}`,
-                boxShadow: `2px 2px 0 ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
             }}
             aria-current={isCurrent ? "true" : undefined}
         >
@@ -604,7 +604,7 @@ function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
             data-testid={idPrefix}
             role="radiogroup"
             aria-label="densidade da agenda"
-            style={{ border: `2px solid ${PT.ink}`, background: "#fff" }}
+            style={{ border: "1px solid rgba(10,10,10,0.10)", background: "#fff" }}
         >
             {opts.map((o, i) => {
                 const Icon = o.icon;
@@ -621,7 +621,7 @@ function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
                         style={{
                             background: active ? PT.ink : "transparent",
                             color: active ? PT.cream : PT.ink,
-                            borderLeft: i > 0 ? `2px solid ${PT.ink}` : "none",
+                            borderLeft: i > 0 ? "1px solid rgba(10,10,10,0.10)" : "none",
                         }}
                     >
                         <Icon size={11} strokeWidth={2.4} />
@@ -826,8 +826,8 @@ export default function Calendario() {
                     className="sticky z-20 backdrop-blur"
                     style={{
                         top: "calc(var(--mobile-topbar-h) + 56px)",
-                        background: "rgba(244,244,244,0.94)",
-                        borderBottom: `2px solid ${PT.ink}`,
+                        background: "rgba(247,245,239,0.92)",
+                        borderBottom: "1px solid rgba(10,10,10,0.10)",
                     }}
                     data-testid="cal-monthnav"
                 >
@@ -867,7 +867,7 @@ export default function Calendario() {
                     {/* edition strip */}
                     <div
                         className="flex items-center justify-between gap-3 mb-4 pb-2"
-                        style={{ borderBottom: `1.5px dashed ${PT.ink}` }}
+                        style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}
                     >
                         <div className="inline-flex items-center gap-2 sm:gap-3 min-w-0">
                             <Overline color={PT.ink}>// lusorae · papel</Overline>
@@ -913,8 +913,8 @@ export default function Calendario() {
                             <div
                                 className="mt-5 sm:mt-6 grid grid-cols-3 sm:grid-cols-4 gap-0"
                                 style={{
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `4px 4px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     background: "#fff",
                                 }}
                                 data-testid="cal-stats"
@@ -993,8 +993,8 @@ export default function Calendario() {
                         style={{
                             background: filtersOpen ? PT.ink : "#fff",
                             color: filtersOpen ? PT.cream : PT.ink,
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: filtersOpen ? "none" : `4px 4px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: filtersOpen ? "none" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             transform: filtersOpen ? "translate(4px,4px)" : "none",
                             transition: "transform 0.08s, background 0.12s",
                         }}
@@ -1033,9 +1033,9 @@ export default function Calendario() {
                             className="cal-reveal p-3 sm:p-4 mt-2.5"
                             style={{
                                 background: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                borderTop: `2px dashed ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                borderTop: "1px solid rgba(10,10,10,0.08)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}
                         >
                             <div className="flex items-center justify-between mb-3">
@@ -1087,7 +1087,7 @@ export default function Calendario() {
                                             style={{
                                                 background: region === rk ? PT.ink : "transparent",
                                                 color: region === rk ? PT.cream : PT.ink,
-                                                border: `2px solid ${PT.ink}`,
+                                                border: "1px solid rgba(10,10,10,0.10)",
                                             }}
                                         >
                                             {regionMetaMap[rk].label}
@@ -1129,7 +1129,7 @@ export default function Calendario() {
                 {error && !loading && (
                     <div
                         className="p-6 text-center"
-                        style={{ background: "#fff", border: `2.5px solid ${PT.red}`, boxShadow: `4px 4px 0 ${PT.ink}` }}
+                        style={{ background: "#fff", border: `1.5px solid ${PT.red}`, boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" }}
                     >
                         <p className="font-black mb-1">Não foi possível carregar.</p>
                         <p className="text-sm font-mono" style={{ color: "rgba(10,10,10,0.6)" }}>{error}</p>
@@ -1137,7 +1137,7 @@ export default function Calendario() {
                 )}
 
                 {!loading && !error && monthKeys.length === 0 && (
-                    <div className="p-8 text-center" style={{ background: "#fff", border: `2.5px dashed ${PT.ink}` }} data-testid="cal-empty">
+                    <div className="p-8 text-center" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)" }} data-testid="cal-empty">
                         <CalendarDays size={32} strokeWidth={2.2} style={{ color: PT.ink, margin: "0 auto 10px" }} />
                         <p className="font-black">Nada nesta combinação.</p>
                         <p className="text-sm font-mono mt-1" style={{ color: "rgba(10,10,10,0.6)" }}>
@@ -1150,7 +1150,7 @@ export default function Calendario() {
                                 className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-bold uppercase tracking-[0.14em]"
                                 style={{
                                     background: PT.ink, color: PT.cream, padding: "6px 12px",
-                                    border: `2px solid ${PT.ink}`, boxShadow: `3px 3px 0 ${PT.red}`,
+                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}
                             >
                                 limpar filtros
@@ -1174,7 +1174,7 @@ export default function Calendario() {
                 {!loading && data && (
                     <footer
                         className="mt-12 p-5 text-center"
-                        style={{ background: "transparent", border: `2.5px dashed ${PT.ink}` }}
+                        style={{ background: "transparent", border: "1px solid rgba(10,10,10,0.08)" }}
                     >
                         <Overline color="rgba(10,10,10,0.55)">
                             // {data.total} eventos curados · datas confirmadas para {data.year}

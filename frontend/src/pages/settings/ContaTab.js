@@ -29,9 +29,9 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                     className="absolute bottom-3 right-3 p-2.5 tap-shrink inline-flex items-center gap-1.5 font-mono font-black uppercase"
                     style={{
                         background: "#0A0A0A",
-                        color: "#FFD93D",
-                        border: "2.5px solid #0A0A0A",
-                        boxShadow: "2.5px 2.5px 0 #C8261E",
+                        color: "#FFCC29",
+                        border: "1px solid rgba(10,10,10,0.10)",
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                         borderRadius: 999,
                         fontSize: 10.5,
                         letterSpacing: "0.10em",
@@ -50,8 +50,8 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                         className="relative inline-block p-1.5"
                         style={{
                             background: "#fff",
-                            border: "3px solid #0A0A0A",
-                            boxShadow: "4px 4px 0 #0A0A0A",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                         }}
                     >
@@ -62,9 +62,9 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                             className="absolute bottom-1 right-1 p-2 tap-shrink"
                             style={{
                                 background: "#0A0A0A",
-                                color: "#FFD93D",
-                                border: "2px solid #0A0A0A",
-                                boxShadow: "2px 2px 0 #C8261E",
+                                color: "#FFCC29",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                             }}
                             aria-label="alterar avatar"
@@ -129,10 +129,10 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                             placeholder="Conta-nos algo em poucas palavras…"
                             className="mt-2 w-full px-4 py-3.5 focus:outline-none resize-none font-medium"
                             style={{
-                                background: "#F4F4F4",
+                                background: "#FBFAF6",
                                 color: "#0A0A0A",
-                                border: "2.5px solid #0A0A0A",
-                                boxShadow: "2px 2px 0 #0A0A0A",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 10,
                                 fontSize: 14,
                                 lineHeight: 1.6,
@@ -148,9 +148,8 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                                 style={{
                                     background: "#3E5C9A",
                                     color: "#fff",
-                                    border: "2px solid #0A0A0A",
+                                    border: "1px solid rgba(10,10,10,0.10)",
                                     borderRadius: 8,
-                                    transform: "rotate(-4deg)",
                                 }}
                             >
                                 <Lock size={15} strokeWidth={2.2} />
@@ -164,7 +163,7 @@ export function ContaTab({ user, form, setForm, avatarRef, bannerRef, readFile, 
                                             style={{
                                                 fontSize: 10,
                                                 letterSpacing: "0.10em",
-                                                background: "#1F7A5A",
+                                                background: "#046A38",
                                                 color: "#fff",
                                                 border: "1.5px solid #0A0A0A",
                                                 borderRadius: 999,

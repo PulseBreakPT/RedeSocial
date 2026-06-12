@@ -9,7 +9,7 @@ import { SwitchPill } from "./_shared";
 
 const THEMES = [
     { key: "light", label: "Clara", desc: "Branco e tinta — a padrão.", icon: Sun, swatchBg: "#fff" },
-    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatchBg: "#F4F4F4" },
+    { key: "sepia", label: "Sépia", desc: "Tom de papel — descansa a vista.", icon: FileText, swatchBg: "#FBFAF6" },
     { key: "auto", label: "Sistema", desc: "Segue a preferência do dispositivo.", icon: Sparkles, swatchBg: "#3E5C9A" },
 ];
 
@@ -32,16 +32,16 @@ function OptionCard({ active, onClick, icon: Icon, label, desc, swatchBg, testid
             data-testid={testid}
             className="relative p-4 sm:p-5 text-left tap-shrink transition-transform hover:-translate-y-0.5 w-full"
             style={{
-                background: active ? "#FFD93D" : "#fff",
-                border: "2.5px solid #0A0A0A",
-                boxShadow: active ? "4px 4px 0 #C8261E" : "3px 3px 0 #0A0A0A",
+                background: active ? "#FFCC29" : "#fff",
+                border: "1px solid rgba(10,10,10,0.10)",
+                boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                 borderRadius: 12,
             }}
         >
             {active && (
                 <span
                     className="absolute top-3 right-3 w-6 h-6 grid place-items-center"
-                    style={{ background: "#0A0A0A", color: "#FFD93D", border: "2px solid #0A0A0A", borderRadius: 999 }}
+                    style={{ background: "#0A0A0A", color: "#FFCC29", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 999 }}
                     aria-hidden
                 >
                     <Check size={11} strokeWidth={2.8} />
@@ -51,13 +51,13 @@ function OptionCard({ active, onClick, icon: Icon, label, desc, swatchBg, testid
                 {swatchBg ? (
                     <span
                         className="w-11 h-11"
-                        style={{ background: swatchBg, border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: swatchBg, border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                         aria-hidden
                     />
                 ) : (
                     <div
                         className="w-11 h-11 grid place-items-center"
-                        style={{ background: "#F4F4F4", color: "#0A0A0A", border: "2px solid #0A0A0A", borderRadius: 8, transform: "rotate(-4deg)" }}
+                        style={{ background: "#FBFAF6", color: "#0A0A0A", border: "1px solid rgba(10,10,10,0.10)", borderRadius: 8, transform: "rotate(-4deg)" }}
                     >
                         <Icon size={15} strokeWidth={2.2} />
                     </div>
@@ -122,7 +122,7 @@ export function AppearanceTab({ prefs, setPref }) {
                         <p className="type-overline mb-0">Idioma</p>
                     </div>
                 </div>
-                <div className="lg:col-span-12 p-1.5 grid grid-cols-3 gap-1.5" style={{ background: "#fff", border: "2.5px solid #0A0A0A", boxShadow: "3px 3px 0 #0A0A0A", borderRadius: 12 }}>
+                <div className="lg:col-span-12 p-1.5 grid grid-cols-3 gap-1.5" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)", borderRadius: 12 }}>
                     {LANGUAGES.map((l) => {
                         const active = prefs.language === l.key;
                         return (
@@ -134,9 +134,9 @@ export function AppearanceTab({ prefs, setPref }) {
                                 className="relative px-3 py-2.5 font-black tap-shrink flex items-center justify-center gap-2 transition-transform"
                                 style={{
                                     background: active ? "#0A0A0A" : "transparent",
-                                    color: active ? "#FFD93D" : "rgba(10,10,10,0.65)",
-                                    border: active ? "2px solid #0A0A0A" : "2px solid transparent",
-                                    boxShadow: active ? "2px 2px 0 #C8261E" : "none",
+                                    color: active ? "#FFCC29" : "rgba(10,10,10,0.65)",
+                                    border: active ? "1px solid rgba(10,10,10,0.10)" : "2px solid transparent",
+                                    boxShadow: active ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "none",
                                     borderRadius: 10,
                                     fontSize: 12.5,
                                     letterSpacing: "0.02em",

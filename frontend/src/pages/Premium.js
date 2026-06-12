@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
-import { PT } from "./auth/AuthDecor";
+import { PT } from "../theme/editorial";
 import { usePremium } from "../context/PremiumContext";
 import { toast } from "sonner";
 
@@ -191,8 +191,8 @@ function FeatureList({ items }) {
                             style={{
                                 background: PT.gold,
                                 color: PT.ink,
-                                border: `2px solid ${PT.ink}`,
-                                boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 6,
                             }}
                         >
@@ -221,11 +221,10 @@ function TierCard({
                         style={{
                             background: PT.red,
                             color: "#fff",
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             fontSize: 10.5,
                             letterSpacing: "0.10em",
-                            transform: "rotate(-2deg)",
                             borderRadius: 999,
                         }}
                     >
@@ -251,10 +250,9 @@ function TierCard({
                                 width: 38, height: 38,
                                 background: accentColor,
                                 color: tier === "aura" ? PT.ink : "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 10,
-                                transform: "rotate(-3deg)",
                             }}
                         >
                             {tier === "aura" ? <Crown size={18} strokeWidth={2.4} /> : <Sparkles size={18} strokeWidth={2.4} />}
@@ -278,9 +276,8 @@ function TierCard({
                                 color: PT.ink,
                                 background: PT.gold,
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1.5deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 display: "inline-block",
                             }}
                         >
@@ -297,7 +294,7 @@ function TierCard({
                     )}
                 </div>
 
-                <div style={{ borderTop: `2.5px dashed ${PT.ink}`, marginBottom: 4 }} />
+                <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)", marginBottom: 4 }} />
 
                 <FeatureList items={features} />
 
@@ -309,8 +306,8 @@ function TierCard({
                             style={{
                                 background: "#fff",
                                 color: PT.ink,
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                                 letterSpacing: "0.06em",
                             }}
@@ -325,8 +322,8 @@ function TierCard({
                             style={{
                                 background: PT.red,
                                 color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 borderRadius: 999,
                                 letterSpacing: "0.06em",
                             }}
@@ -341,7 +338,7 @@ function TierCard({
                             style={{
                                 background: "#fff",
                                 color: "rgba(10,10,10,0.3)",
-                                border: `2.5px dashed ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.08)",
                                 borderRadius: 999,
                                 letterSpacing: "0.06em",
                             }}
@@ -361,7 +358,7 @@ function CCell({ value, hl, accent, tone }) {
     const isYes  = value === true || value === "Sim";
 
     // tone: "plus" → azul, "aura" → gold, undefined → neutro
-    const hlBg = tone === "aura" ? "rgba(255,204,0,0.12)" : tone === "plus" ? "rgba(14,77,146,0.07)" : "transparent";
+    const hlBg = tone === "aura" ? "rgba(255,204,41,0.12)" : tone === "plus" ? "rgba(14,77,146,0.07)" : "transparent";
 
     return (
         <td className="text-center py-3 px-2 align-middle" style={{ background: hl ? hlBg : "transparent" }}>
@@ -370,9 +367,9 @@ function CCell({ value, hl, accent, tone }) {
                     className="inline-flex w-6 h-6 items-center justify-center"
                     style={{
                         background: "#fff",
-                        border: `2px solid ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 6,
-                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     }}
                 >
                     <Minus size={11} style={{ color: PT.ink }} strokeWidth={3} />
@@ -383,9 +380,9 @@ function CCell({ value, hl, accent, tone }) {
                     style={{
                         background: PT.green,
                         color: "#fff",
-                        border: `2px solid ${PT.ink}`,
+                        border: "1px solid rgba(10,10,10,0.10)",
                         borderRadius: 6,
-                        boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                     }}
                 >
                     <Check size={12} strokeWidth={3.2} />
@@ -434,7 +431,7 @@ function CategoryCard({ cat, index }) {
             className="relative overflow-hidden"
             style={{
                 background: "#fff",
-                border: `3px solid ${PT.ink}`,
+                border: "1px solid rgba(10,10,10,0.10)",
                 boxShadow: `5px 5px 0 ${accent}`,
                 borderRadius: 20,
             }}
@@ -442,8 +439,8 @@ function CategoryCard({ cat, index }) {
             <div
                 className="px-5 sm:px-6 py-4 sm:py-5"
                 style={{
-                    background: cat.auraOnly ? "rgba(255,204,0,0.10)" : PT.cream,
-                    borderBottom: `2.5px solid ${PT.ink}`,
+                    background: cat.auraOnly ? "rgba(255,204,41,0.10)" : PT.cream,
+                    borderBottom: "1px solid rgba(10,10,10,0.10)",
                 }}
             >
                 <div className="flex items-start gap-3.5">
@@ -452,10 +449,9 @@ function CategoryCard({ cat, index }) {
                         style={{
                             background: accent,
                             color: cat.auraOnly ? PT.ink : "#fff",
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 10,
-                            transform: "rotate(-4deg)",
                         }}
                     >
                         <Icon size={19} strokeWidth={2.4} />
@@ -483,7 +479,7 @@ function CategoryCard({ cat, index }) {
             <div className="overflow-x-auto">
                 <table className="w-full text-[13px] sm:text-[13.5px] min-w-[520px]">
                     <thead>
-                        <tr style={{ background: "rgba(10,10,10,0.04)", borderBottom: `2px solid ${PT.ink}` }}>
+                        <tr style={{ background: "rgba(10,10,10,0.04)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                             <th
                                 className="text-left py-3 px-5 sm:px-6 font-mono font-black uppercase w-[44%]"
                                 style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.ink }}
@@ -502,13 +498,12 @@ function CategoryCard({ cat, index }) {
                                     style={{
                                         background: PT.azul,
                                         color: "#fff",
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         padding: "2px 9px",
                                         borderRadius: 6,
                                         fontSize: 10.5,
                                         letterSpacing: "0.12em",
-                                        transform: "rotate(-2deg)",
                                     }}
                                 >
                                     Plus
@@ -520,13 +515,12 @@ function CategoryCard({ cat, index }) {
                                     style={{
                                         background: PT.gold,
                                         color: PT.ink,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         padding: "2px 9px",
                                         borderRadius: 6,
                                         fontSize: 10.5,
                                         letterSpacing: "0.12em",
-                                        transform: "rotate(2deg)",
                                     }}
                                 >
                                     Aura
@@ -538,7 +532,7 @@ function CategoryCard({ cat, index }) {
                         {cat.rows.map((r, i) => (
                             <tr
                                 key={i}
-                                style={{ borderBottom: i === cat.rows.length - 1 ? "none" : `1px dashed rgba(10,10,10,0.12)` }}
+                                style={{ borderBottom: i === cat.rows.length - 1 ? "none" : "1px solid rgba(10,10,10,0.08)" }}
                             >
                                 <td className="py-3 px-5 sm:px-6 font-medium" style={{ color: "rgba(10,10,10,0.78)" }}>
                                     {r.label}
@@ -557,7 +551,7 @@ function CategoryCard({ cat, index }) {
                     className="px-5 sm:px-6 py-3"
                     style={{
                         background: PT.gold,
-                        borderTop: `2.5px solid ${PT.ink}`,
+                        borderTop: "1px solid rgba(10,10,10,0.10)",
                     }}
                 >
                     <p
@@ -613,10 +607,9 @@ export default function Premium() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 mb-5"
                         style={{
                             background: PT.green, color: "#fff",
-                            border: `2px solid ${PT.ink}`,
-                            boxShadow: `2px 2px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
-                            transform: "rotate(-2deg)",
                         }}
                     >
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -631,9 +624,8 @@ export default function Premium() {
                             display: "inline-block",
                             background: PT.gold,
                             padding: "0 0.10em",
-                            border: `3px solid ${PT.ink}`,
-                            boxShadow: `4px 4px 0 ${PT.ink}`,
-                            transform: "rotate(-1.5deg)",
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             WebkitTextStroke: `0.5px ${PT.ink}`,
                         }}>certo</span>{" "}
                         para ti.
@@ -648,8 +640,8 @@ export default function Premium() {
                     <div className="inline-flex items-center gap-0 p-1"
                         style={{
                             background: "#fff",
-                            border: `2.5px solid ${PT.ink}`,
-                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                            border: "1px solid rgba(10,10,10,0.10)",
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 999,
                         }}
                     >
@@ -660,7 +652,7 @@ export default function Premium() {
                                     className="px-5 sm:px-7 h-9 text-[12px] font-black uppercase transition-all duration-200"
                                     style={{
                                         background: active ? PT.ink : "transparent",
-                                        color: active ? PT.gold : PT.ink,
+                                        color: active ? "#fff" : PT.ink,
                                         borderRadius: 999,
                                         letterSpacing: "0.05em",
                                     }}
@@ -717,7 +709,7 @@ export default function Premium() {
                                 className="p-3 sm:p-3.5 flex items-center gap-2.5"
                                 style={{
                                     background: "#fff",
-                                    border: `2.5px solid ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
                                     boxShadow: `3px 3px 0 ${t.c}`,
                                     borderRadius: 14,
                                 }}
@@ -727,8 +719,8 @@ export default function Premium() {
                                     style={{
                                         background: t.c,
                                         color: t.c === PT.gold ? PT.ink : "#fff",
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 8,
                                     }}
                                 >
@@ -748,7 +740,7 @@ export default function Premium() {
                 NÍVEL 2 — DEEP-DIVE por categoria
                 Conteúdo verdadeiro: limites reais, features reais
                 ────────────────────────────────────────── */}
-            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}`, borderBottom: `2.5px solid ${PT.ink}` }}>
+            <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-14 max-w-2xl">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
@@ -763,9 +755,8 @@ export default function Premium() {
                                 display: "inline-block",
                                 background: PT.gold,
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>no Plus e no Aura.</span>
                         </h2>
                         <p className="text-[14.5px] sm:text-[16px] leading-relaxed max-w-xl font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
@@ -800,9 +791,8 @@ export default function Premium() {
                                 background: PT.azul,
                                 color: "#fff",
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1.5deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>
                                 num só sítio
                             </span>
@@ -818,14 +808,14 @@ export default function Premium() {
                                 className="overflow-hidden"
                                 style={{
                                     background: "#fff",
-                                    border: `3px solid ${PT.ink}`,
-                                    boxShadow: `6px 6px 0 ${PT.gold}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 20,
                                 }}
                             >
                                 <table className="w-full text-[13px] sm:text-[14px]">
                                     <thead>
-                                        <tr style={{ background: PT.ink, borderBottom: `2.5px solid ${PT.ink}` }}>
+                                        <tr style={{ background: PT.ink, borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                                             <th
                                                 className="text-left py-3.5 px-4 sm:px-5 font-mono font-black uppercase w-[44%]"
                                                 style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PT.gold }}
@@ -844,13 +834,12 @@ export default function Premium() {
                                                     style={{
                                                         background: PT.azul,
                                                         color: "#fff",
-                                                        border: `2px solid ${PT.ink}`,
-                                                        boxShadow: `2px 2px 0 ${PT.gold}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         padding: "3px 10px",
                                                         borderRadius: 6,
                                                         fontSize: 11,
                                                         letterSpacing: "0.12em",
-                                                        transform: "rotate(-2deg)",
                                                     }}
                                                 >
                                                     Plus
@@ -862,13 +851,12 @@ export default function Premium() {
                                                     style={{
                                                         background: PT.gold,
                                                         color: PT.ink,
-                                                        border: `2px solid ${PT.ink}`,
-                                                        boxShadow: `2px 2px 0 ${PT.red}`,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                                         padding: "3px 10px",
                                                         borderRadius: 6,
                                                         fontSize: 11,
                                                         letterSpacing: "0.12em",
-                                                        transform: "rotate(2deg)",
                                                     }}
                                                 >
                                                     Aura
@@ -883,7 +871,7 @@ export default function Premium() {
                                             return (
                                                 <tr
                                                     key={i}
-                                                    style={{ borderBottom: `1px dashed rgba(10,10,10,0.14)` }}
+                                                    style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}
                                                 >
                                                     <td className="py-3 px-4 sm:px-5">
                                                         <div className="flex items-center gap-2.5">
@@ -891,7 +879,7 @@ export default function Premium() {
                                                                 className="w-7 h-7 grid place-items-center flex-shrink-0 hidden sm:grid"
                                                                 style={{
                                                                     background: PT.cream,
-                                                                    border: `2px solid ${PT.ink}`,
+                                                                    border: "1px solid rgba(10,10,10,0.10)",
                                                                     borderRadius: 6,
                                                                 }}
                                                             >
@@ -917,7 +905,7 @@ export default function Premium() {
             {/* ──────────────────────────────────────────
                 NÍVEL 4 — PRINCÍPIOS (camada emocional)
                 ────────────────────────────────────────── */}
-            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}`, borderBottom: `2.5px solid ${PT.ink}` }}>
+            <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)", borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 max-w-5xl mx-auto">
                     <div className="mb-10 sm:mb-12 max-w-2xl">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
@@ -933,9 +921,8 @@ export default function Premium() {
                                 background: PT.green,
                                 color: "#fff",
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `4px 4px 0 ${PT.ink}`,
-                                transform: "rotate(-1.5deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>
                                 premium diferente
                             </span>
@@ -959,7 +946,7 @@ export default function Premium() {
                                     className="p-5 sm:p-6 h-full transition-transform duration-200 hover:-translate-y-1"
                                     style={{
                                         background: "#fff",
-                                        border: `3px solid ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
                                         boxShadow: `5px 5px 0 ${item.c}`,
                                         borderRadius: 18,
                                         transform: `rotate(${rot}deg)`,
@@ -970,10 +957,9 @@ export default function Premium() {
                                         style={{
                                             background: item.c,
                                             color: item.iconWhite ? "#fff" : PT.ink,
-                                            border: `2.5px solid ${PT.ink}`,
-                                            boxShadow: `3px 3px 0 ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                             borderRadius: 10,
-                                            transform: "rotate(-4deg)",
                                         }}
                                     >
                                         <Icon size={18} strokeWidth={2.4} />
@@ -1001,7 +987,7 @@ export default function Premium() {
                         style={{
                             background: "#fff",
                             border: `3.5px solid ${PT.ink}`,
-                            boxShadow: `8px 8px 0 ${PT.red}`,
+                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             borderRadius: 22,
                         }}
                     >
@@ -1011,11 +997,10 @@ export default function Premium() {
                             style={{
                                 background: PT.red,
                                 color: "#fff",
-                                border: `2.5px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 fontSize: 10,
                                 letterSpacing: "0.14em",
-                                transform: "rotate(4deg)",
                                 borderRadius: 6,
                                 zIndex: 2,
                             }}
@@ -1029,10 +1014,9 @@ export default function Premium() {
                                 style={{
                                     background: PT.azul,
                                     color: "#fff",
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 10,
-                                    transform: "rotate(-4deg)",
                                 }}
                             >
                                 <Info size={19} strokeWidth={2.4} />
@@ -1047,9 +1031,8 @@ export default function Premium() {
                                         display: "inline-block",
                                         background: PT.gold,
                                         padding: "0 0.10em",
-                                        border: `3px solid ${PT.ink}`,
-                                        boxShadow: `3px 3px 0 ${PT.ink}`,
-                                        transform: "rotate(-1.5deg)",
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     }}>
                                         não faz
                                     </span>
@@ -1074,8 +1057,8 @@ export default function Premium() {
                                     className="flex items-start gap-2.5 p-2.5"
                                     style={{
                                         background: PT.cream,
-                                        border: `2px solid ${PT.ink}`,
-                                        boxShadow: `2px 2px 0 ${PT.ink}`,
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         borderRadius: 10,
                                     }}
                                 >
@@ -1084,7 +1067,7 @@ export default function Premium() {
                                         style={{
                                             background: PT.green,
                                             color: "#fff",
-                                            border: `2px solid ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
                                             borderRadius: 6,
                                         }}
                                     >
@@ -1097,7 +1080,7 @@ export default function Premium() {
                             ))}
                         </div>
 
-                        <div style={{ borderTop: `2.5px dashed ${PT.ink}`, paddingTop: 14 }}>
+                        <div style={{ borderTop: "1px solid rgba(10,10,10,0.08)", paddingTop: 14 }}>
                             <p className="text-[13px] sm:text-[13.5px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                                 O premium é conforto, identidade e ferramentas. Nunca é vantagem social.
                             </p>
@@ -1110,9 +1093,8 @@ export default function Premium() {
                                     display: "inline-block",
                                     background: PT.gold,
                                     padding: "0 0.18em",
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `2px 2px 0 ${PT.ink}`,
-                                    transform: "rotate(-1deg)",
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                 }}>
                                     teu
                                 </span>
@@ -1126,7 +1108,7 @@ export default function Premium() {
             {/* ──────────────────────────────────────────
                 NÍVEL 6 — FAQ (utilitário)
                 ────────────────────────────────────────── */}
-            <section style={{ background: PT.cream, borderTop: `2.5px solid ${PT.ink}` }}>
+            <section style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.10)" }}>
                 <div className="px-4 sm:px-6 lg:px-8 py-14 sm:py-18 max-w-2xl mx-auto prem-faq">
                     <div className="mb-7 sm:mb-9">
                         <p className="font-mono font-black uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: PT.red }}>
@@ -1142,9 +1124,8 @@ export default function Premium() {
                                 background: PT.azul,
                                 color: "#fff",
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.ink}`,
-                                boxShadow: `3px 3px 0 ${PT.ink}`,
-                                transform: "rotate(-1.5deg)",
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>
                                 frequentes
                             </span>
@@ -1161,8 +1142,8 @@ export default function Premium() {
                                 className="group p-4 sm:p-4.5 cursor-pointer"
                                 style={{
                                     background: "#fff",
-                                    border: `2.5px solid ${PT.ink}`,
-                                    boxShadow: `3px 3px 0 ${PT.ink}`,
+                                    border: "1px solid rgba(10,10,10,0.10)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 12,
                                 }}
                             >
@@ -1173,16 +1154,16 @@ export default function Premium() {
                                         style={{
                                             background: PT.gold,
                                             color: PT.ink,
-                                            border: `2px solid ${PT.ink}`,
+                                            border: "1px solid rgba(10,10,10,0.10)",
                                             borderRadius: 999,
-                                            boxShadow: `1.5px 1.5px 0 ${PT.ink}`,
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                         }}
                                     >
                                         <ChevronDown size={13} className="group-open:rotate-180 transition-transform duration-200" strokeWidth={3} />
                                     </span>
                                 </summary>
                                 <div className="prem-faq-answer">
-                                    <div className="mt-3 pt-3" style={{ borderTop: `1.5px dashed ${PT.ink}` }}>
+                                    <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                                         <p className="text-[13.5px] sm:text-[14px] leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.66)" }}>{faq.a}</p>
                                     </div>
                                 </div>
@@ -1211,9 +1192,8 @@ export default function Premium() {
                                 background: PT.gold,
                                 color: PT.ink,
                                 padding: "0 0.10em",
-                                border: `3px solid ${PT.gold}`,
-                                boxShadow: `4px 4px 0 ${PT.red}`,
-                                transform: "rotate(-1.5deg)",
+                                border: `1.5px solid ${PT.gold}`,
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                             }}>
                                 camada mais profunda?
                             </span>
@@ -1229,8 +1209,8 @@ export default function Premium() {
                                 style={{
                                     background: PT.azul,
                                     color: "#fff",
-                                    border: `2.5px solid #fff`,
-                                    boxShadow: `4px 4px 0 ${PT.gold}`,
+                                    border: "1.5px solid rgba(255,255,255,0.25)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     fontSize: 13,
                                     letterSpacing: "0.06em",
@@ -1246,8 +1226,8 @@ export default function Premium() {
                                 style={{
                                     background: PT.gold,
                                     color: PT.ink,
-                                    border: `2.5px solid #fff`,
-                                    boxShadow: `4px 4px 0 ${PT.red}`,
+                                    border: "1.5px solid rgba(255,255,255,0.25)",
+                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
                                     borderRadius: 999,
                                     fontSize: 13,
                                     letterSpacing: "0.06em",
@@ -1265,7 +1245,7 @@ export default function Premium() {
             )}
 
             {!billing_available && (
-                <div className="px-4 py-8 text-center" style={{ background: PT.cream, borderTop: `2.5px dashed ${PT.ink}` }}>
+                <div className="px-4 py-8 text-center" style={{ background: PT.cream, borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                     <p className="text-[11px] font-mono font-black uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.12em" }}>
                         Sistema de pagamentos a ser ativado em breve
                     </p>
