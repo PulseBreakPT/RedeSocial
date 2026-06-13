@@ -6,7 +6,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     Users, BarChart3, Crown, TrendingUp, Share2, Search, MoreHorizontal,
     Flame, Activity, Shield, Flag, VolumeX, UserX, Trash2, Check, Clock, Pencil,
-    Bell, BellOff, MapPin, UserCheck, Coffee,
+    Bell, BellOff, MapPin, UserCheck,
 } from "lucide-react";
 import { api, toastApiError } from "../lib/api";
 import { PostCard } from "../components/PostCard";
@@ -142,7 +142,6 @@ export default function Community() {
     const [yourPeople, setYourPeople] = useState([]);
     const [subscribed, setSubscribed] = useState(false);
     const [pertenca, setPertenca] = useState(null);
-    const [communityMesas, setCommunityMesas] = useState([]);
     const [tab, setTab] = useState("conversas");
     const [q, setQ] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
@@ -209,9 +208,6 @@ export default function Community() {
     const loadPertenca = useCallback(async () => {
         try { const { data } = await api.get(`/communities/${slug}/pertenca`); setPertenca(data); } catch { /* */ }
     }, [slug]);
-    const loadCommunityMesas = useCallback(async () => {
-        try { const { data } = await api.get(`/communities/${slug}/mesas`); setCommunityMesas(data || []); } catch { /* */ }
-    }, [slug]);
 
     // Carrega contagem de reports abertos assim que se sabe que é mod.
     useEffect(() => { if (canMod) loadReports(); }, [canMod, loadReports]);
@@ -231,7 +227,7 @@ export default function Community() {
         if (tab === "pessoas" && !pertenca) loadPertenca();
         if (tab === "alta" && !stats) loadStats();
         if ((tab === "agora" || tab === "alta" || tab === "pessoas") && !nowData) loadNow();
-        if (tab === "agora") { loadHappenings(); loadCommunityMesas(); }
+        if (tab === "agora") { loadHappenings(); }
         if (tab === "mod") { loadReports(); loadModlog(); loadSaude(); }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab]);
@@ -244,7 +240,6 @@ export default function Community() {
                 event: msg.event, post_id: msg.post_id, at: msg.at,
                 author_id: msg.actor?.id, preview: msg.preview, _actor: msg.actor,
             }, ...prev].slice(0, 30));
-            if (msg.event === "mesa") loadCommunityMesas();
         } else if (msg.type === "community_mod") {
             // Fluxo de moderação realtime: remove o post do feed na hora.
             if (msg.action === "remove_post" && msg.removed_post_id) {
@@ -261,7 +256,7 @@ export default function Community() {
                 description: bits.length ? `${bits.join(" · ")} já por aqui.` : "Faz-te em casa.",
             });
         }
-    }, [community, loadCommunityMesas]);
+    }, [community]);
     useWsMessages(onWs);
 
     const join = async () => { try { await api.post(`/communities/${slug}/join`); loadCore(); } catch (e) { toastApiError(e); } };
@@ -313,10 +308,6 @@ export default function Community() {
             await api.post(`/communities/${slug}/report`, { kind: "post", target_id: postId, reason });
             toast.success("Reportado. Obrigado.");
         } catch (e) { toastApiError(e); }
-    };
-    const joinMesa = async (mesaId) => {
-        try { await api.post(`/mesas/${mesaId}/join`); } catch { /* idempotente */ }
-        navigate(`/mesas?open=${mesaId}`);
     };
     const toggleSubscribe = async () => {
         try {
@@ -446,7 +437,7 @@ export default function Community() {
 
             {tab === "agora" && (
                 <AgoraTab nowData={nowData} ticker={ticker} pulse={pulse} presentNow={presentNow}
-                    pastHappenings={pastHappenings} mesas={communityMesas} onJoinMesa={joinMesa} />
+                    pastHappenings={pastHappenings} />
             )}
 
             {tab === "alta" && (
@@ -524,7 +515,7 @@ function PresenceAvatars({ users = [], count = 0 }) {
     );
 }
 
-function AgoraTab({ nowData, ticker, pulse, presentNow, pastHappenings = [], mesas = [], onJoinMesa }) {
+function AgoraTab({ nowData, ticker, pulse, presentNow, pastHappenings = [] }) {
     const fmtAgo = (iso) => {
         try {
             const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -551,25 +542,6 @@ function AgoraTab({ nowData, ticker, pulse, presentNow, pastHappenings = [], mes
                     </p>
                 )}
             </div>
-
-            {mesas.length > 0 && (
-                <div className="card-lux p-4">
-                    <p className="type-overline mb-2 flex items-center gap-1.5"><Coffee size={12} /> Mesas do bairro</p>
-                    <ul className="space-y-2">
-                        {mesas.map((m) => (
-                            <li key={m.id} className="flex items-center gap-2.5">
-                                <div className="min-w-0 flex-1">
-                                    <div className="text-[13.5px] font-medium text-black/80 truncate">{m.title || `#${m.topic}`}</div>
-                                    <div className="text-[11px] text-black/45">{m.participants_count} {m.participants_count === 1 ? "pessoa" : "pessoas"} · {m.message_count} msg</div>
-                                </div>
-                                <button onClick={() => onJoinMesa(m.id)} className="text-[11.5px] font-heading font-medium rounded-full px-3.5 py-1.5 btn-obsidian active:scale-95 transition flex-shrink-0">
-                                    Entrar
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
 
             {nowData?.growing?.length > 0 && (
                 <div className="card-lux p-4">

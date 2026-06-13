@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 /**
@@ -43,7 +42,6 @@ function isLateNight() {
 }
 
 export function useScrollHealth({ enabled = true } = {}) {
-    const navigate = useNavigate();
     const startRef = useRef(Date.now());
     const lastInteractRef = useRef(Date.now());
     const scrollAccumRef = useRef(0);
@@ -86,10 +84,6 @@ export function useScrollHealth({ enabled = true } = {}) {
                     toast("Uma pausa?", {
                         description: "Estás a scrollar há um bocado. Que tal entrar numa conversa em vez de só ver?",
                         duration: 9000,
-                        action: {
-                            label: "Ver Mesas",
-                            onClick: () => navigate("/mesas"),
-                        },
                     });
                 }
             }
@@ -102,7 +96,7 @@ export function useScrollHealth({ enabled = true } = {}) {
             window.removeEventListener("keydown", onInteract);
             clearInterval(id);
         };
-    }, [enabled, navigate]);
+    }, [enabled]);
 }
 
 export default useScrollHealth;

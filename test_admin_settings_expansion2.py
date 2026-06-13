@@ -9,7 +9,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://feed-fusion-30.preview.emergentagent.com/api"
+BASE_URL = "https://apaga-rotas.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@lusorae.app"
 ADMIN_PASSWORD = "b1saiF-OI8D4CrTFmEL4lIHAbamaDJrL"
 

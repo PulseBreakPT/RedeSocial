@@ -27,8 +27,7 @@
 // =============================================================================
 import {
     Home, Compass, Bell, MessageCircle, Users as UsersIcon, Settings,
-    Calendar, Shield, User, Bookmark, FileText, Clock, Archive, Coffee,
-    Map as MapIcon,
+    Calendar, Shield, User, Bookmark, FileText, Clock, Archive,
 } from "lucide-react";
 
 export const PRIMARY_NAV = [
@@ -64,8 +63,6 @@ export const DRAWER_PERSONAL = (profileTo) => [
 export const DRAWER_DISCOVER = [
     { to: "/calendario",   label: "Calendário",  icon: Calendar,  testid: "drawer-calendario" },
     { to: "/communities",  label: "Comunidades", icon: UsersIcon, testid: "drawer-communities" },
-    { to: "/mesas",        label: "Mesas",       icon: Coffee,    testid: "drawer-mesas" },
-    { to: "/topologia",    label: "Topologia",   icon: MapIcon,   testid: "drawer-topologia" },
 ];
 
 export const DRAWER_STORIES = [

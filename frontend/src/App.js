@@ -32,8 +32,6 @@ const PostDetail = lazy(() => import("./pages/PostDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
 const TagPage = lazy(() => import("./pages/TagPage"));
 const Communities = lazy(() => import("./pages/Communities"));
-const Mesas = lazy(() => import("./pages/Mesas"));
-const Topologia = lazy(() => import("./pages/Topologia"));
 const Community = lazy(() => import("./pages/Community"));
 const Trending = lazy(() => import("./pages/Trending"));
 const Drafts = lazy(() => import("./pages/Drafts"));
@@ -148,8 +146,6 @@ function App() {
                             <Route path="/drafts" element={<Drafts />} />
                             <Route path="/scheduled" element={<Scheduled />} />
                             <Route path="/communities" element={<Communities />} />
-                            <Route path="/mesas" element={<Mesas />} />
-                            <Route path="/topologia" element={<Topologia />} />
                             <Route path="/c/:slug" element={<Community />} />
                             <Route path="/u/:username" element={<Profile />} />
                             <Route path="/post/:postId" element={<PostDetail />} />
