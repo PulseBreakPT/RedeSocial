@@ -666,7 +666,18 @@ export default function EventPage() {
                 event={ev}
                 onShared={(channel, res) => {
                     setCounts((c) => ({ ...c, shares: (c.shares || 0) + 1 }));
-                    if (res?.copied) toast.success("Link copiado.");
+                    // Toasts diferenciadas por canal (especialmente IG que não tem
+                    // URL intent — o utilizador precisa de saber que tem o link copiado).
+                    if (channel === "instagram") {
+                        toast.success("Link copiado — cola no Instagram", {
+                            description: "O Instagram não permite partilha direta. Cola no story ou bio.",
+                            duration: 5000,
+                        });
+                    } else if (channel === "copy" && res?.copied) {
+                        toast.success("Link copiado.");
+                    } else if (res?.copied) {
+                        toast.success("Link copiado.");
+                    }
                 }}
             />
         </div>

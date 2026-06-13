@@ -110,20 +110,36 @@ export async function shareEvent({ event, channel, viewerUsername }) {
             _openExternal(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
             return { ok: true, channel };
         case "instagram": {
-            // Instagram não tem URL intent. Estratégia:
-            //   1) Tenta Web Share (em mobile abre app picker incluindo IG)
-            //   2) Senão, copia texto + URL para clipboard e abre instagram.com
+            // Instagram não tem URL intent público para criar story/post.
+            // Estratégia robusta:
+            //   1. Copia texto + URL para clipboard SEMPRE (garantia).
+            //   2. Tenta Web Share API (mobile: sheet do sistema, inclui IG se instalado).
+            //   3. Em mobile, tenta deep link `instagram://library` (abre IG app se instalado).
+            //   4. Sempre abre instagram.com num separador novo (visivelmente "algo aconteceu").
+            const fullText = `${text} ${url}`;
+            try { await navigator.clipboard.writeText(fullText); } catch { /* ignore */ }
+            const isMobile = typeof navigator !== "undefined"
+                && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
             if (canUseWebShare()) {
                 try {
                     await navigator.share({ title: event.title, text, url });
-                    return { ok: true, channel: "instagram" };
+                    return { ok: true, channel: "instagram", copied: true };
                 } catch (e) {
-                    if (e?.name === "AbortError") return { ok: false, cancelled: true };
+                    if (e?.name === "AbortError") {
+                        // User cancelou o sheet — não cancelamos a operação,
+                        // continuamos para garantir que algo abre.
+                    }
                 }
             }
-            try { await navigator.clipboard.writeText(`${text} ${url}`); } catch { /* ignore */ }
+            if (isMobile) {
+                // Tenta deep link Instagram (abre app se instalada). Se falhar,
+                // o utilizador é deixado em instagram.com via fallback abaixo.
+                try {
+                    window.location.href = "instagram://library";
+                } catch { /* ignore */ }
+            }
             _openExternal("https://www.instagram.com/");
-            return { ok: true, channel, copied: true };
+            return { ok: true, channel: "instagram", copied: true, hint: "instagram-paste" };
         }
         case "copy":
         default: {

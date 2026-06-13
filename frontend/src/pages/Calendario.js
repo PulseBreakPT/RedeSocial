@@ -20,6 +20,7 @@ import {
     Share2,
 } from "lucide-react";
 import { api } from "../lib/api";
+import { toast } from "sonner";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
@@ -1256,6 +1257,16 @@ export default function Calendario() {
                 open={!!shareEvent}
                 onOpenChange={(o) => { if (!o) setShareEvent(null); }}
                 event={shareEvent}
+                onShared={(channel, res) => {
+                    if (channel === "instagram") {
+                        toast.success("Link copiado — cola no Instagram", {
+                            description: "O Instagram não permite partilha direta. Cola no story ou bio.",
+                            duration: 5000,
+                        });
+                    } else if (res?.copied) {
+                        toast.success("Link copiado.");
+                    }
+                }}
             />
         </PtPageShell>
     );
