@@ -1,7 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Repeat2, Quote } from "lucide-react";
-
-const itemCls = "w-full px-4 py-2.5 text-[13px] font-body text-left hover:bg-black/[0.04] flex items-center gap-3 text-black/80 transition";
+import { Repeat2, Quote, Check } from "lucide-react";
 
 function formatNum(n) {
     if (!n) return "0";
@@ -18,8 +16,15 @@ export function RepostMenu({ reposted, count = 0, onRepost, onQuote, postId }) {
         const close = (e) => {
             if (ref.current && !ref.current.contains(e.target)) setOpen(false);
         };
+        const onKey = (e) => {
+            if (e.key === "Escape") setOpen(false);
+        };
         document.addEventListener("mousedown", close);
-        return () => document.removeEventListener("mousedown", close);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", close);
+            document.removeEventListener("keydown", onKey);
+        };
     }, []);
 
     return (
@@ -45,27 +50,54 @@ export function RepostMenu({ reposted, count = 0, onRepost, onQuote, postId }) {
             </button>
             {open && (
                 <div
+                    role="menu"
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 top-full mt-1.5 z-30 bg-white border border-black/[0.08] rounded-xl py-1.5 min-w-[200px] shadow-[0_20px_50px_-12px_rgba(13,13,16,0.18)] anim-fade-up"
+                    className="absolute left-0 top-full mt-2 z-30 bg-white border border-black/[0.06] rounded-2xl p-1.5 min-w-[268px] shadow-[0_24px_60px_-16px_rgba(13,13,16,0.22),0_4px_12px_-4px_rgba(13,13,16,0.08)] anim-fade-up overflow-hidden"
                 >
                     <button
+                        role="menuitem"
                         onClick={() => {
                             onRepost?.();
                             setOpen(false);
                         }}
-                        className={itemCls}
+                        data-testid={postId ? `repost-action-${postId}` : undefined}
+                        className="w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(2,158,110,0.06)] transition group"
                     >
-                        <Repeat2 size={14} strokeWidth={1.6} className="text-green-soft" />
-                        {reposted ? "Desfazer republicação" : "Republicar"}
+                        <span className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full grid place-items-center bg-[rgba(2,158,110,0.08)] text-green-soft transition group-hover:bg-[rgba(2,158,110,0.14)]">
+                            {reposted ? <Check size={15} strokeWidth={2} /> : <Repeat2 size={15} strokeWidth={1.8} />}
+                        </span>
+                        <span className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-heading font-semibold text-[13.5px] tracking-tight text-black">
+                                {reposted ? "Desfazer republicação" : "Republicar"}
+                            </span>
+                            <span className="font-mono text-[11px] text-black/50 leading-snug">
+                                {reposted
+                                    ? "Remove esta publicação do teu perfil"
+                                    : "Partilha esta publicação com os teus seguidores"}
+                            </span>
+                        </span>
                     </button>
+                    <div className="h-px bg-black/[0.05] mx-2 my-0.5" aria-hidden />
                     <button
+                        role="menuitem"
                         onClick={() => {
                             onQuote?.();
                             setOpen(false);
                         }}
-                        className={itemCls}
+                        data-testid={postId ? `quote-action-${postId}` : undefined}
+                        className="w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-[rgba(44,111,209,0.06)] transition group"
                     >
-                        <Quote size={14} strokeWidth={1.6} className="text-blue-soft" /> Citar com comentário
+                        <span className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full grid place-items-center bg-[rgba(44,111,209,0.08)] text-blue-soft transition group-hover:bg-[rgba(44,111,209,0.14)]">
+                            <Quote size={15} strokeWidth={1.8} />
+                        </span>
+                        <span className="flex flex-col gap-0.5 min-w-0">
+                            <span className="font-heading font-semibold text-[13.5px] tracking-tight text-black">
+                                Citar com comentário
+                            </span>
+                            <span className="font-mono text-[11px] text-black/50 leading-snug">
+                                Adiciona o teu pensamento à publicação
+                            </span>
+                        </span>
                     </button>
                 </div>
             )}

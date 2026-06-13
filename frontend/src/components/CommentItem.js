@@ -28,23 +28,29 @@ function ReportSheet({ targetLabel, onCancel, onSubmit }) {
     const [busy, setBusy] = useState(false);
     return (
         <div className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-sm grid place-items-center p-4 anim-fade-up">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-                <div className="flex items-center justify-between mb-3">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-black/[0.05]">
+                <div className="flex items-center justify-between mb-4">
                     <div>
                         <p className="type-overline">Reportar</p>
-                        <h3 className="font-display text-[20px] tracking-tight">{targetLabel}</h3>
+                        <h3 className="font-display text-[22px] tracking-tight leading-tight">{targetLabel}</h3>
                     </div>
-                    <button onClick={onCancel} className="text-black/40 hover:text-black tap-shrink"><X size={18} /></button>
+                    <button
+                        onClick={onCancel}
+                        className="w-9 h-9 rounded-full grid place-items-center text-black/45 hover:text-black hover:bg-black/[0.05] tap-shrink transition"
+                        aria-label="Fechar"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
-                <div className="space-y-1.5 mb-3">
+                <div className="space-y-1.5 mb-4">
                     {REPORT_REASONS.map((r) => (
                         <button
                             key={r.key}
                             onClick={() => setReason(r.key)}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-[13.5px] font-mono transition ${
+                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-[13.5px] font-mono transition tap-shrink ${
                                 reason === r.key
-                                    ? "bg-black text-white"
-                                    : "bg-black/[0.04] hover:bg-black/[0.08] text-black/75"
+                                    ? "bg-black text-white shadow-[0_4px_14px_-4px_rgba(13,13,16,0.4)]"
+                                    : "bg-black/[0.04] hover:bg-black/[0.07] text-black/75"
                             }`}
                         >
                             {r.label}
@@ -57,10 +63,10 @@ function ReportSheet({ targetLabel, onCancel, onSubmit }) {
                     rows={3}
                     maxLength={400}
                     placeholder="Detalhes (opcional)…"
-                    className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3 py-2 text-[13.5px] focus:bg-white focus:border-black/30 focus:outline-none resize-none mb-3"
+                    className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-[13.5px] focus:bg-white focus:border-black/30 focus:outline-none focus:ring-2 focus:ring-black/[0.04] resize-none mb-4 transition"
                 />
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 text-[11px] font-mono uppercase tracking-[0.14em] text-black/60 hover:text-black rounded-full hover:bg-black/[0.04]">
+                    <button onClick={onCancel} className="px-4 py-2 text-[11px] font-mono uppercase tracking-[0.14em] text-black/60 hover:text-black rounded-full hover:bg-black/[0.04] tap-shrink transition">
                         Cancelar
                     </button>
                     <button
@@ -89,6 +95,7 @@ export function CommentItem({
     const isPostAuthor = viewerId === postAuthorId;
     const canDelete = isAuthor || isPostAuthor;
     const canEdit = isAuthor;
+    const isOP = node.author?.id === postAuthorId;
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [reactOpen, setReactOpen] = useState(false);
@@ -96,6 +103,7 @@ export function CommentItem({
     const [editText, setEditText] = useState(node.content);
     const [editBusy, setEditBusy] = useState(false);
     const [reportOpen, setReportOpen] = useState(false);
+    const [animLike, setAnimLike] = useState(false);
     const menuRef = useRef(null);
     const reactRef = useRef(null);
     const longPressTimer = useRef(null);
@@ -113,6 +121,8 @@ export function CommentItem({
 
     const toggleLike = async () => {
         const prev = { liked: node.liked, count: node.likes_count || 0 };
+        setAnimLike(true);
+        setTimeout(() => setAnimLike(false), 280);
         // optimistic
         onLocalUpdate({
             ...node,
@@ -212,59 +222,99 @@ export function CommentItem({
         <div
             id={`c-${node.id}`}
             data-testid={`comment-${node.id}`}
-            className="relative py-3.5 hairline-b hover:bg-black/[0.012] transition anim-fade-up"
+            className="group/comment relative py-3.5 hairline-b hover:bg-black/[0.012] transition-colors anim-fade-up"
             style={{ paddingLeft: pl, paddingRight: 16 }}
         >
+            {/* Thread guide — gradient fade for depth */}
             {depth > 0 && (
-                <span aria-hidden className="absolute top-0 bottom-0 w-px bg-black/[0.07]" style={{ left: pl - 9 }} />
+                <span
+                    aria-hidden
+                    className="absolute top-0 bottom-0 w-px"
+                    style={{
+                        left: pl - 9,
+                        background:
+                            "linear-gradient(180deg, rgba(13,13,16,0.10) 0%, rgba(13,13,16,0.06) 50%, rgba(13,13,16,0.02) 100%)",
+                    }}
+                />
             )}
             <div className="flex gap-2.5">
-                <Link to={`/u/${node.author?.username}`} className="flex-shrink-0">
+                <Link to={`/u/${node.author?.username}`} className="flex-shrink-0 self-start">
                     <Avatar user={node.author} size={depth === 0 ? 36 : 30} />
                 </Link>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <Link to={`/u/${node.author?.username}`} className="font-heading font-medium text-[13.5px] tracking-tight hover:underline text-black">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <Link
+                            to={`/u/${node.author?.username}`}
+                            className="font-heading font-semibold text-[13.5px] tracking-tight hover:underline underline-offset-4 decoration-black/20 text-black truncate"
+                        >
                             {node.author?.name}
                         </Link>
                         {node.author?.verified && <VerifiedBadge size={11} />}
-                        <span className="font-mono text-[11px] text-black/45">@{node.author?.username}</span>
-                        <span className="text-black/20">·</span>
-                        <span className="font-mono text-[11px] text-black/45" title={fullTime(node.created_at)}>{smartTime(node.created_at)}</span>
+                        <span className="font-mono text-[11px] text-black/45 truncate">@{node.author?.username}</span>
+                        <span className="text-black/20" aria-hidden>·</span>
+                        <span
+                            className="font-mono text-[11px] text-black/45 tabular-nums whitespace-nowrap"
+                            title={fullTime(node.created_at)}
+                        >
+                            {smartTime(node.created_at)}
+                        </span>
                         {node.edited_at && (
-                            <span className="font-mono text-[10px] text-black/35 italic" title={`Editado ${fullTime(node.edited_at)}`}>(editado)</span>
+                            <span
+                                className="font-mono text-[10px] text-black/35 italic"
+                                title={`Editado ${fullTime(node.edited_at)}`}
+                            >
+                                (editado)
+                            </span>
                         )}
-                        {node.author?.id === postAuthorId && (
-                            <span className="font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-black/55">
+                        {isOP && (
+                            <span
+                                className="inline-flex items-center font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full text-black/65"
+                                style={{ background: "rgba(247,245,239,0.95)", boxShadow: "inset 0 0 0 1px rgba(13,13,16,0.08)" }}
+                                title="Autor da publicação"
+                            >
                                 autor
                             </span>
                         )}
                         {node.pinned_by_author && (
                             <span
-                                className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700"
+                                className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-[0.18em] px-1.5 py-0.5 rounded-full"
+                                style={{
+                                    background: "linear-gradient(135deg, #FFE9B7 0%, #FFCC29 100%)",
+                                    color: "#5a3d00",
+                                    boxShadow: "inset 0 0 0 1px rgba(217,162,62,0.35)",
+                                }}
                                 data-testid={`comment-pinned-${node.id}`}
                                 title="Destacado pelo autor"
                             >
-                                <Pin size={9} /> destaque
+                                <Pin size={9} strokeWidth={2.2} /> destaque
                             </span>
                         )}
 
-                        {/* More menu */}
-                        <div className="ml-auto relative" ref={menuRef}>
+                        {/* More menu — appears on hover (desktop) or tap (mobile via :focus-within) */}
+                        <div
+                            className="ml-auto relative opacity-100 lg:opacity-0 lg:group-hover/comment:opacity-100 lg:focus-within:opacity-100 transition-opacity duration-150"
+                            ref={menuRef}
+                        >
                             <button
                                 onClick={() => setMenuOpen((o) => !o)}
                                 data-testid={`comment-more-${node.id}`}
                                 aria-label="Mais opções"
+                                aria-haspopup="menu"
+                                aria-expanded={menuOpen}
                                 className="p-1 rounded-full text-black/35 hover:text-black hover:bg-black/[0.05] tap-shrink"
                             >
                                 <MoreHorizontal size={14} />
                             </button>
                             {menuOpen && (
-                                <div className="absolute right-0 top-7 z-50 bg-white rounded-2xl shadow-xl border border-black/[0.06] py-1.5 w-56 anim-fade-up overflow-hidden">
+                                <div
+                                    role="menu"
+                                    className="absolute right-0 top-7 z-50 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(13,13,16,0.22)] border border-black/[0.06] py-1.5 w-60 anim-fade-up overflow-hidden"
+                                >
                                     <MenuRow onClick={copyContent} icon={Copy} label="Copiar texto" />
                                     <MenuRow onClick={shareComment} icon={Share2} label="Partilhar comentário" />
                                     {depth === 0 && (
                                         <>
+                                            <div className="h-px bg-black/[0.05] mx-2 my-1" aria-hidden />
                                             <MenuRow
                                                 onClick={() => { setMenuOpen(false); onToggleThreadFollow?.(); }}
                                                 icon={Heart}
@@ -277,6 +327,7 @@ export function CommentItem({
                                             />
                                         </>
                                     )}
+                                    {(canEdit || isPostAuthor) && <div className="h-px bg-black/[0.05] mx-2 my-1" aria-hidden />}
                                     {canEdit && (
                                         <MenuRow
                                             onClick={() => { setMenuOpen(false); setEditing(true); setEditText(node.content); }}
@@ -289,6 +340,7 @@ export function CommentItem({
                                             label={node.pinned_by_author ? "Remover destaque" : "Destacar"}
                                         />
                                     )}
+                                    {(!isAuthor || canDelete) && <div className="h-px bg-black/[0.05] mx-2 my-1" aria-hidden />}
                                     {!isAuthor && (
                                         <MenuRow
                                             onClick={() => { setMenuOpen(false); setReportOpen(true); }}
@@ -312,31 +364,36 @@ export function CommentItem({
                                 maxLength={300}
                                 autoFocus
                                 data-testid={`comment-edit-input-${node.id}`}
-                                className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3 py-2 text-[14px] focus:bg-white focus:border-black/30 focus:outline-none transition resize-none"
+                                className="w-full bg-[#fafafa] border border-black/[0.08] rounded-2xl px-3.5 py-2.5 text-[14px] focus:bg-white focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-[rgba(44,111,209,0.10)] transition resize-none"
                                 onKeyDown={(e) => {
                                     if (e.key === "Escape") { setEditing(false); setEditText(node.content); }
                                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); saveEdit(); }
                                 }}
                             />
-                            <div className="flex justify-end gap-2 mt-1.5">
-                                <button
-                                    onClick={() => { setEditing(false); setEditText(node.content); }}
-                                    className="text-[11px] font-mono uppercase tracking-[0.14em] text-black/55 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04]"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={saveEdit}
-                                    disabled={editBusy || !editText.trim()}
-                                    data-testid={`comment-edit-save-${node.id}`}
-                                    className="btn-obsidian text-[11px] px-4 py-1.5 disabled:opacity-40 inline-flex items-center gap-1.5"
-                                >
-                                    {editBusy && <Spinner size={10} />} <Check size={11} /> Guardar
-                                </button>
+                            <div className="flex items-center justify-between mt-1.5">
+                                <span className="font-mono text-[10px] text-black/40 uppercase tracking-[0.14em] hidden sm:inline">
+                                    ⌘ + enter para guardar
+                                </span>
+                                <div className="flex gap-2 ml-auto">
+                                    <button
+                                        onClick={() => { setEditing(false); setEditText(node.content); }}
+                                        className="text-[11px] font-mono uppercase tracking-[0.14em] text-black/55 hover:text-black px-3 py-1.5 rounded-full hover:bg-black/[0.04] tap-shrink transition"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={saveEdit}
+                                        disabled={editBusy || !editText.trim()}
+                                        data-testid={`comment-edit-save-${node.id}`}
+                                        className="btn-obsidian text-[11px] px-4 py-1.5 disabled:opacity-40 inline-flex items-center gap-1.5"
+                                    >
+                                        {editBusy && <Spinner size={10} />} <Check size={11} /> Guardar
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <RichText text={node.content} className="mt-1.5 text-[14.5px] text-black/85 leading-relaxed" />
+                        <RichText text={node.content} className="mt-1.5 text-[14.5px] text-black/85 leading-[1.55]" />
                     )}
 
                     {/* Reactions row */}
@@ -348,12 +405,12 @@ export function CommentItem({
                                     onClick={() => sendReact(emoji)}
                                     className={`inline-flex items-center gap-1 text-[11.5px] font-mono px-2 py-0.5 rounded-full tap-shrink transition ${
                                         info.reacted
-                                            ? "bg-black text-white"
+                                            ? "bg-black text-white shadow-[0_2px_8px_-2px_rgba(13,13,16,0.3)]"
                                             : "bg-black/[0.05] hover:bg-black/[0.1] text-black/70"
                                     }`}
                                 >
-                                    <span>{emoji}</span>
-                                    <span>{info.count}</span>
+                                    <span className="text-[13px] leading-none">{emoji}</span>
+                                    <span className="tabular-nums">{info.count}</span>
                                 </button>
                             ))}
                         </div>
@@ -369,19 +426,33 @@ export function CommentItem({
                             onTouchStart={onLongPressStart}
                             onTouchEnd={onLongPressEnd}
                             data-testid={`comment-like-${node.id}`}
+                            aria-pressed={node.liked}
                             className={`inline-flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition ${
-                                node.liked ? "text-red-500" : "text-black/50 hover:text-black"
+                                node.liked
+                                    ? "text-[var(--coral-500)] hover:bg-[var(--coral-50)]"
+                                    : "text-black/50 hover:text-black"
                             }`}
                             title="Like (segura para reagir)"
                         >
-                            <Heart size={12} fill={node.liked ? "currentColor" : "none"} />
-                            {node.likes_count > 0 && <span>{node.likes_count}</span>}
-                            {node.likes_count === 0 && <span>gosto</span>}
+                            <Heart
+                                size={12}
+                                fill={node.liked ? "currentColor" : "none"}
+                                className={animLike ? "anim-pop" : ""}
+                            />
+                            {node.likes_count > 0 ? (
+                                <span key={node.likes_count} className={`tabular-nums ${animLike ? "anim-count-roll" : ""}`}>
+                                    {node.likes_count}
+                                </span>
+                            ) : (
+                                <span>gosto</span>
+                            )}
                         </button>
                         <button
                             ref={reactRef}
                             onClick={() => setReactOpen((o) => !o)}
                             data-testid={`comment-react-${node.id}`}
+                            aria-haspopup="dialog"
+                            aria-expanded={reactOpen}
                             className="inline-flex items-center gap-1 text-[12px] font-mono text-black/50 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition relative"
                             title="Reagir com emoji"
                         >
@@ -389,13 +460,14 @@ export function CommentItem({
                             {reactOpen && (
                                 <div
                                     onMouseDown={(e) => e.stopPropagation()}
-                                    className="absolute top-9 left-0 z-50 bg-white rounded-full shadow-xl border border-black/[0.06] flex gap-0.5 px-2 py-1.5 anim-fade-up"
+                                    className="absolute top-9 left-0 z-50 bg-white/95 backdrop-blur-md rounded-full shadow-[0_12px_30px_-8px_rgba(13,13,16,0.22)] border border-black/[0.06] flex gap-0.5 px-2.5 py-1.5 anim-fade-up"
                                 >
-                                    {QUICK_EMOJIS.map((e) => (
+                                    {QUICK_EMOJIS.map((e, i) => (
                                         <span
                                             key={e}
                                             onClick={(ev) => { ev.stopPropagation(); sendReact(e); }}
-                                            className="text-[18px] hover:scale-125 transition cursor-pointer px-1"
+                                            className="text-[18px] hover:scale-[1.35] transition-transform duration-200 cursor-pointer px-1 tap-shrink"
+                                            style={{ animationDelay: `${i * 22}ms` }}
                                         >
                                             {e}
                                         </span>
@@ -406,9 +478,13 @@ export function CommentItem({
                         <button
                             onClick={() => onReplyOpen(isReplyOpen ? null : node.id)}
                             data-testid={`comment-reply-${node.id}`}
-                            className="inline-flex items-center gap-1 text-[12px] font-mono text-black/50 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition"
+                            className={`inline-flex items-center gap-1 text-[12px] font-mono px-2 py-1 rounded-full tap-shrink transition ${
+                                isReplyOpen
+                                    ? "text-blue-soft bg-[rgba(44,111,209,0.08)]"
+                                    : "text-black/50 hover:text-black hover:bg-black/[0.04]"
+                            }`}
                         >
-                            <CornerDownRight size={12} /> responder
+                            <CornerDownRight size={12} /> {isReplyOpen ? "a responder" : "responder"}
                         </button>
                         {hasChildren && (
                             <button
@@ -417,7 +493,7 @@ export function CommentItem({
                                 className="inline-flex items-center gap-1 text-[12px] font-mono text-black/50 hover:text-black px-2 py-1 rounded-full hover:bg-black/[0.04] tap-shrink transition"
                             >
                                 {isCollapsed
-                                    ? <><ChevronRight size={12} /> mostrar {totalDescendants}</>
+                                    ? <><ChevronRight size={12} /> mostrar <span className="tabular-nums">{totalDescendants}</span></>
                                     : <><ChevronDown size={12} /> ocultar</>}
                             </button>
                         )}
@@ -439,14 +515,15 @@ export function CommentItem({
 function MenuRow({ icon: Icon, label, onClick, danger }) {
     return (
         <button
+            role="menuitem"
             onClick={onClick}
-            className={`w-full text-left px-3 py-2 text-[13px] font-mono inline-flex items-center gap-2 transition ${
+            className={`w-full text-left px-3 py-2 text-[13px] font-mono inline-flex items-center gap-2.5 transition ${
                 danger
                     ? "text-red-600 hover:bg-red-50"
-                    : "text-black/75 hover:bg-black/[0.04]"
+                    : "text-black/75 hover:bg-black/[0.04] hover:text-black"
             }`}
         >
-            <Icon size={13} /> {label}
+            <Icon size={13} strokeWidth={1.8} /> {label}
         </button>
     );
 }

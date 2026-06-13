@@ -66,6 +66,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const [poll, setPoll] = useState(post.poll);
     const [reactions, setReactions] = useState(post.reactions);
     const [animLike, setAnimLike] = useState(false);
+    const [animBookmark, setAnimBookmark] = useState(false);
     const [lightboxIdx, setLightboxIdx] = useState(-1);
     const [editing, setEditing] = useState(false);
     const [quoting, setQuoting] = useState(false);
@@ -163,6 +164,8 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         e.stopPropagation();
         const prev = bookmarked;
         setBookmarked(!prev);
+        setAnimBookmark(true);
+        setTimeout(() => setAnimBookmark(false), 320);
         try {
             const { data } = await api.post(`/posts/${post.id}/bookmark`);
             setBookmarked(data.bookmarked);
@@ -199,32 +202,47 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
 
     const openDetail = () => clickable && navigate(`/post/${post.id}`);
 
+    // Secondary meta chips (audience, ring, edited) live on a dedicated line below the name
+    // so the author row stays scannable and never wraps awkwardly on small screens.
+    const hasSecondaryMeta =
+        (post.audience_ring && post.audience_ring !== "publico") ||
+        audience !== "everyone" ||
+        editedAt;
+
     return (
         <>
             <div ref={articleRef} onClick={openDetail} className={clickable ? "cursor-pointer" : ""}>
                 {pinned && (
-                    <div className="flex items-center gap-1.5 text-xs font-mono text-black/50 ml-12 mb-1.5" data-testid={`pinned-${post.id}`}>
-                        <Pin size={11} strokeWidth={1.7} className="text-black/55" />
+                    <div className="flex items-center gap-1.5 type-overline ml-12 mb-2 normal-case tracking-[0.16em] text-black/50" data-testid={`pinned-${post.id}`}>
+                        <Pin size={10} strokeWidth={1.8} className="text-black/55" />
                         <span>Fixado no perfil</span>
                     </div>
                 )}
                 <div className="flex gap-3 lg:gap-4">
-                    <Link to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()}>
-                        <Avatar user={post.author} size={44} showOnline />
+                    <Link to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start">
+                        <div className="relative transition-transform duration-300 hover:-translate-y-px">
+                            <Avatar user={post.author} size={44} showOnline />
+                        </div>
                     </Link>
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Author row — clean, never wraps clutter */}
+                        <div className="flex items-center gap-1.5 min-w-0">
                             <Link
                                 to={`/u/${post.author?.username}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="font-heading font-semibold tracking-tight hover:underline underline-offset-2 truncate text-black"
+                                className="font-heading font-semibold tracking-tight hover:underline underline-offset-4 decoration-black/20 truncate text-black"
                             >
                                 {post.author?.name}
                             </Link>
                             {post.author?.verified && <VerifiedBadge size={14} />}
                             <span className="font-mono text-[12px] text-black/45 truncate">@{post.author?.username}</span>
-                            <span className="text-black/20">·</span>
-                            <span className="font-mono text-[12px] text-black/45" title={fullTime(post.created_at)}>{smartTime(post.created_at)}</span>
+                            <span className="text-black/20" aria-hidden>·</span>
+                            <span
+                                className="font-mono text-[12px] text-black/45 tabular-nums whitespace-nowrap"
+                                title={fullTime(post.created_at)}
+                            >
+                                {smartTime(post.created_at)}
+                            </span>
                             <ThermometerFetch
                                 kind="post"
                                 value={post.id}
@@ -232,46 +250,8 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                 size="xs"
                                 testid={`thermometer-post-${post.id}`}
                             />
-                            {editedAt && (
-                                <span className="font-mono text-[10px] text-black/45 inline-flex items-center gap-0.5" title={`Editado em ${fullTime(editedAt)}`}>
-                                    <Pencil size={9} strokeWidth={1.6} /> editado
-                                </span>
-                            )}
-                            <EditHistoryButton history={editHistory} currentContent={content} />
-                            {/* F2.4 — identity ring badge (only when not publico, since publico is the default) */}
-                            {post.audience_ring && post.audience_ring !== "publico" && (
-                                <span
-                                    className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/65 px-1.5 py-0.5 rounded-full border border-black/[0.12] bg-white/60"
-                                    title={
-                                        post.audience_ring === "amigos"
-                                            ? "Anel azul-tejo — apenas seguidores"
-                                            : "Anel terracota — grupo íntimo (Tasca)"
-                                    }
-                                    data-testid={`ring-${post.id}`}
-                                >
-                                    <span
-                                        className="w-2 h-2 rounded-full"
-                                        style={{
-                                            background:
-                                                post.audience_ring === "amigos"
-                                                    ? "linear-gradient(135deg, #6a91cc 0%, #2c6fd1 100%)"
-                                                    : "linear-gradient(135deg, #df8a7d 0%, #c64a3d 100%)",
-                                        }}
-                                    />
-                                    {post.audience_ring === "amigos" ? "Amigos" : "Tasca"}
-                                </span>
-                            )}
-                            {audience !== "everyone" && (
-                                <span
-                                    className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/60 px-1.5 py-0.5 rounded-full border border-black/[0.12] bg-white/60"
-                                    title={`Respostas: ${AudMeta.label}`}
-                                    data-testid={`audience-${post.id}`}
-                                >
-                                    <AudIcon size={9} strokeWidth={2} /> {AudMeta.label}
-                                </span>
-                            )}
                             {!showRepostHeader && (
-                                <div className="ml-auto">
+                                <div className="ml-auto pl-1">
                                     <PostMenu
                                         post={{ ...post, content, pinned }}
                                         isOwn={isOwn}
@@ -283,10 +263,57 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                 </div>
                             )}
                         </div>
+
+                        {/* Secondary meta — audience, ring, edited (only when relevant) */}
+                        {hasSecondaryMeta && (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                                {post.audience_ring && post.audience_ring !== "publico" && (
+                                    <span
+                                        className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/65 px-1.5 py-0.5 rounded-full border border-black/[0.08] bg-white/70 backdrop-blur-sm"
+                                        title={
+                                            post.audience_ring === "amigos"
+                                                ? "Anel azul-tejo — apenas seguidores"
+                                                : "Anel terracota — grupo íntimo (Tasca)"
+                                        }
+                                        data-testid={`ring-${post.id}`}
+                                    >
+                                        <span
+                                            className="w-2 h-2 rounded-full"
+                                            style={{
+                                                background:
+                                                    post.audience_ring === "amigos"
+                                                        ? "linear-gradient(135deg, #6a91cc 0%, #2c6fd1 100%)"
+                                                        : "linear-gradient(135deg, #df8a7d 0%, #c64a3d 100%)",
+                                            }}
+                                        />
+                                        {post.audience_ring === "amigos" ? "Amigos" : "Tasca"}
+                                    </span>
+                                )}
+                                {audience !== "everyone" && (
+                                    <span
+                                        className="inline-flex items-center gap-1 font-mono text-[10px] font-medium text-black/60 px-1.5 py-0.5 rounded-full border border-black/[0.08] bg-white/70 backdrop-blur-sm"
+                                        title={`Respostas: ${AudMeta.label}`}
+                                        data-testid={`audience-${post.id}`}
+                                    >
+                                        <AudIcon size={9} strokeWidth={2} /> {AudMeta.label}
+                                    </span>
+                                )}
+                                {editedAt && (
+                                    <span
+                                        className="font-mono text-[10px] text-black/45 inline-flex items-center gap-1"
+                                        title={`Editado em ${fullTime(editedAt)}`}
+                                    >
+                                        <Pencil size={9} strokeWidth={1.7} /> editado
+                                    </span>
+                                )}
+                                <EditHistoryButton history={editHistory} currentContent={content} />
+                            </div>
+                        )}
+
                         {content && (
                             <ExpandableText
                                 text={content}
-                                className="mt-1 text-[15px] leading-relaxed text-black/90"
+                                className="mt-1.5 text-[15px] leading-[1.55] text-black/90"
                                 testid={`post-text-${post.id}`}
                             />
                         )}
@@ -307,11 +334,13 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                         )}
 
                         {images.length > 0 && (
-                            <ImageCarousel
-                                images={images}
-                                onOpen={(i) => setLightboxIdx(i)}
-                                onDoubleTap={() => likeFromDoubleTap()}
-                            />
+                            <div className="mt-3 rounded-2xl overflow-hidden hairline-soft">
+                                <ImageCarousel
+                                    images={images}
+                                    onOpen={(i) => setLightboxIdx(i)}
+                                    onDoubleTap={() => likeFromDoubleTap()}
+                                />
+                            </div>
                         )}
 
                         {poll && (
@@ -332,28 +361,28 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     e.stopPropagation();
                                     navigate(`/post/${post.quote_of.id}`);
                                 }}
-                                className="mt-3 pl-4 pr-3 py-3 border border-black/[0.06] rounded-2xl hover:bg-black/[0.02] cursor-pointer transition group/quote relative overflow-hidden"
+                                className="mt-3 pl-4 pr-3.5 py-3 border border-black/[0.07] rounded-2xl hover:border-black/[0.14] hover:shadow-[0_6px_20px_-12px_rgba(13,13,16,0.18)] cursor-pointer transition-all duration-200 group/quote relative overflow-hidden"
                                 data-testid={`quote-ref-${post.id}`}
                                 style={{ background: "rgba(247,245,239,0.55)" }}
                             >
                                 <span
                                     aria-hidden
-                                    className="absolute left-0 top-0 bottom-0 w-[3px] transition-colors group-hover/quote:opacity-100"
-                                    style={{ background: "linear-gradient(180deg, #C8102E 0%, #FFCC29 100%)", opacity: 0.85 }}
+                                    className="absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300 group-hover/quote:w-[4px]"
+                                    style={{ background: "linear-gradient(180deg, #C8102E 0%, #FFCC29 100%)", opacity: 0.9 }}
                                 />
-                                <div className="flex items-center gap-2 text-sm">
+                                <div className="flex items-center gap-2 text-sm min-w-0">
                                     <Avatar user={post.quote_of.author} size={20} />
-                                    <span className="font-heading font-semibold text-black">{post.quote_of.author?.name}</span>
+                                    <span className="font-heading font-semibold text-black truncate">{post.quote_of.author?.name}</span>
                                     {post.quote_of.author?.verified && <VerifiedBadge size={11} />}
-                                    <span className="font-mono text-xs text-black/45">@{post.quote_of.author?.username}</span>
-                                    <span className="text-black/25">·</span>
-                                    <span className="font-mono text-xs text-black/45">{smartTime(post.quote_of.created_at)}</span>
+                                    <span className="font-mono text-xs text-black/45 truncate">@{post.quote_of.author?.username}</span>
+                                    <span className="text-black/25" aria-hidden>·</span>
+                                    <span className="font-mono text-xs text-black/45 tabular-nums whitespace-nowrap">{smartTime(post.quote_of.created_at)}</span>
                                 </div>
                                 <p
                                     className="mt-1.5 line-clamp-3 font-editorial italic"
                                     style={{
                                         fontSize: 15,
-                                        lineHeight: 1.45,
+                                        lineHeight: 1.5,
                                         color: "rgba(10,10,10,0.78)",
                                         fontWeight: 460,
                                         fontVariationSettings: '"opsz" 22, "SOFT" 50',
@@ -378,7 +407,7 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                             </div>
                         )}
 
-                        <div className="post-actions mt-4" data-testid={`actions-${post.id}`}>
+                        <div className="post-actions mt-3.5" data-testid={`actions-${post.id}`}>
                             {/* Left cluster — primary engagement */}
                             <div className="post-actions-cluster">
                                 <button
@@ -406,8 +435,14 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     className={`eng-btn ${liked ? "is-liked" : ""}`}
                                     title="Gosto"
                                     aria-label="Gosto"
+                                    aria-pressed={liked}
                                 >
-                                    <Heart size={18} strokeWidth={1.7} fill={liked ? "currentColor" : "none"} className={animLike ? "anim-pop" : ""} />
+                                    <Heart
+                                        size={18}
+                                        strokeWidth={1.7}
+                                        fill={liked ? "currentColor" : "none"}
+                                        className={animLike ? "anim-pop" : ""}
+                                    />
                                     <span
                                         key={likes}
                                         className={`text-[12.5px] tabular-nums inline-block ${animLike ? "anim-count-roll" : ""}`}
@@ -419,7 +454,10 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
 
                             {/* Right cluster — utility actions */}
                             <div className="post-actions-cluster">
-                                <span className="inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45" title="visualizações">
+                                <span
+                                    className="hidden sm:inline-flex items-center gap-1 text-[11.5px] tabular-nums text-black/45 px-1.5"
+                                    title="visualizações"
+                                >
                                     <Eye size={14} strokeWidth={1.6} /> {formatNum(views)}
                                 </span>
                                 <button
@@ -427,8 +465,14 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     data-testid={`bookmark-btn-${post.id}`}
                                     className={`eng-btn ${bookmarked ? "is-bookmarked" : ""}`}
                                     aria-label="Guardar"
+                                    aria-pressed={bookmarked}
                                 >
-                                    <Bookmark size={18} strokeWidth={1.7} fill={bookmarked ? "currentColor" : "none"} />
+                                    <Bookmark
+                                        size={18}
+                                        strokeWidth={1.7}
+                                        fill={bookmarked ? "currentColor" : "none"}
+                                        className={animBookmark ? "anim-pop" : ""}
+                                    />
                                 </button>
                                 <button
                                     onClick={share}
@@ -543,7 +587,7 @@ export function PostCard({ post, onChange, onDelete, clickable = true }) {
             >
                 {newReplyChip}
                 <div className="flex items-center gap-2 type-overline ml-12 mb-2 normal-case tracking-[0.16em]">
-                    <Repeat2 size={12} strokeWidth={1.6} className="text-green-soft" />
+                    <Repeat2 size={12} strokeWidth={1.8} className="text-green-soft" />
                     <Link to={`/u/${post.author?.username}`} className="ink-link hover:text-black">
                         @{post.author?.username} republicou
                     </Link>
