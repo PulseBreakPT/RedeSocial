@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Backend URL — overridable via env
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://empty-feed-fix.preview.emergentagent.com/api"
+    "BASE_URL", "https://feed-fusion-30.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment (see /app/memory/test_credentials.md).
