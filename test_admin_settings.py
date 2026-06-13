@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Backend URL — overridable via env
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://apaga-rotas.preview.emergentagent.com/api"
+    "BASE_URL", "https://posts-hub-v2.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment (see /app/memory/test_credentials.md).

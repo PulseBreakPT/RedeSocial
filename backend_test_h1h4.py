@@ -13,7 +13,7 @@ from typing import Optional
 
 # Backend URL (use /api prefix for all routes)
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://apaga-rotas.preview.emergentagent.com/api"
+    "BASE_URL", "https://posts-hub-v2.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment (read from /app/backend/.env or
