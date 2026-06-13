@@ -156,7 +156,7 @@ export function RightSidebar() {
             <ActivityTicker />
 
             {/* 1. Calendário PT */}
-            <Widget testid="widget-calendar-pt" kicker="Agenda · Portugal" accent={PT.red} title="O que vem aí" Icon={Calendar}>
+            <Widget testid="widget-calendar-pt" accent={PT.red} title="O que vem aí" Icon={Calendar}>
                 {(!calendar.today && (calendar.upcoming || []).length === 0) ? (
                     <EmptyMini text="Sem datas marcadas." />
                 ) : (
@@ -171,7 +171,7 @@ export function RightSidebar() {
 
             {/* 2. Tendências */}
             {isHome && (
-                <Widget testid="widget-trending" kicker="Em alta · Portugal" accent={PT.peixe} title="Tendências" Icon={TrendingUp}>
+                <Widget testid="widget-trending" accent={PT.peixe} title="Tendências" Icon={TrendingUp}>
                     {trending.length === 0 ? (
                         <EmptyMini text="Ainda sem tendências. Publica e participa." />
                     ) : (
@@ -201,7 +201,7 @@ export function RightSidebar() {
 
             {/* 3. Sugestões */}
             {suggestions.length > 0 && (
-                <Widget testid="widget-suggestions" kicker="Pessoas reais" accent={PT.atl} title="Para seguir" Icon={UserPlus}>
+                <Widget testid="widget-suggestions" accent={PT.atl} title="Para seguir" Icon={UserPlus}>
                     <ul className="space-y-3">
                         {suggestions.slice(0, 4).map((u) => {
                             const st = followingMap[u.id];
@@ -241,7 +241,7 @@ export function RightSidebar() {
 
             {/* 4. Comunidades */}
             {communities.length > 0 && (
-                <Widget testid="widget-communities" kicker="Vai à mesa" accent={PT.telha} title="Comunidades" Icon={Users}>
+                <Widget testid="widget-communities" accent={PT.telha} title="Comunidades" Icon={Users}>
                     <ul className="space-y-2.5">
                         {communities.map((c) => (
                             <li key={c.slug}>
@@ -269,9 +269,9 @@ export function RightSidebar() {
 }
 
 // =============================================================================
-// Widget — clean editorial card
+// Widget — card editorial limpo com título centrado + ícone (sem kicker duplicado)
 // =============================================================================
-function Widget({ children, kicker, accent = PT.ink, title, Icon, testid }) {
+function Widget({ children, accent = PT.ink, title, Icon, testid }) {
     return (
         <div
             className="overflow-hidden transition-all duration-200"
@@ -283,31 +283,17 @@ function Widget({ children, kicker, accent = PT.ink, title, Icon, testid }) {
             }}
             data-testid={testid}
         >
-            {/* Header — kicker editorial com dot pulse */}
-            <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
-                <div className="min-w-0">
-                    <div className="inline-flex items-center gap-1.5 mb-1">
-                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: accent }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: accent }} />
-                        </span>
-                        <p
-                            className="font-mono text-[10px] font-bold uppercase"
-                            style={{ color: "rgba(10,10,10,0.55)", letterSpacing: "0.20em" }}
-                        >
-                            {kicker}
-                        </p>
-                    </div>
-                    <h3
-                        className="font-black tracking-[-0.02em]"
-                        style={{ fontSize: 17, color: PT.ink, lineHeight: 1.15 }}
-                    >
-                        {title}
-                    </h3>
-                </div>
+            {/* Header — título único, centrado, com ícone à esquerda do texto */}
+            <div className="flex items-center justify-center gap-2 px-4 pt-4 pb-3">
                 {Icon && (
-                    <Icon size={15} strokeWidth={1.9} className="mt-1 shrink-0" style={{ color: accent, opacity: 0.85 }} />
+                    <Icon size={16} strokeWidth={2.0} className="shrink-0" style={{ color: accent }} />
                 )}
+                <h3
+                    className="font-black tracking-[-0.02em] text-center"
+                    style={{ fontSize: 16, color: PT.ink, lineHeight: 1.15 }}
+                >
+                    {title}
+                </h3>
             </div>
             <div className="px-4 pb-4">
                 {children}
@@ -333,14 +319,16 @@ function FooterLink({ to, label = "ver tudo →" }) {
 }
 
 function CalendarItem({ item, highlight = false }) {
-    const themeColor = {
+    // Acentos cromáticos restritos a texto/ícone — fundos sempre brancos/cinzentos
+    // (sem amarelos, beges ou cremes) a pedido do utilizador.
+    const accentColor = {
         festa:    PT.laranja,
         orgulho:  PT.eucalipto,
         praia:    PT.peixe,
         tradicao: PT.fado,
         cultura:  PT.malva,
         santo:    PT.red,
-        feriado:  PT.gold,
+        feriado:  PT.ink,
     }[item.theme] || PT.ink;
 
     const days = item.days_until;
@@ -369,8 +357,11 @@ function CalendarItem({ item, highlight = false }) {
             <div
                 className="w-10 h-10 rounded-lg grid place-items-center shrink-0 text-[18px] leading-none"
                 style={{
-                    background: highlight ? themeColor : "rgba(10,10,10,0.05)",
-                    color: highlight ? "#fff" : PT.ink,
+                    // Sempre cinzento neutro — o destaque "highlight" passa
+                    // a ser dado pelo texto e por uma fina barra lateral.
+                    background: highlight ? "rgba(10,10,10,0.08)" : "rgba(10,10,10,0.05)",
+                    color: PT.ink,
+                    borderLeft: highlight ? `3px solid ${accentColor}` : "none",
                 }}
             >
                 <span>{item.emoji || "•"}</span>
@@ -379,7 +370,7 @@ function CalendarItem({ item, highlight = false }) {
                 <div className="text-[13.5px] font-bold tracking-tight truncate" style={{ color: PT.ink }}>{item.label}</div>
                 <div
                     className="font-mono text-[10.5px] font-bold uppercase truncate"
-                    style={{ color: highlight ? themeColor : "rgba(10,10,10,0.5)", letterSpacing: "0.12em" }}
+                    style={{ color: highlight ? accentColor : "rgba(10,10,10,0.5)", letterSpacing: "0.12em" }}
                 >
                     {when}
                 </div>

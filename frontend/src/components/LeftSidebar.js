@@ -85,8 +85,6 @@ export function LeftSidebar({ onCompose }) {
         return () => { alive = false; clearInterval(id); };
     }, [user?.username]);
 
-    const today = new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).replace(/\./g, "").toUpperCase();
-
     return (
         <aside
             className="hidden lg:flex flex-col h-[calc(100vh-1.5rem)] sticky top-3 py-3 pr-2"
@@ -113,16 +111,8 @@ export function LeftSidebar({ onCompose }) {
                     }}
                 />
             </Link>
-            <p
-                className="px-3 mb-4 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase shrink-0"
-                style={{ color: "rgba(10,10,10,0.42)", letterSpacing: "0.22em" }}
-            >
-                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.red }} />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.red }} />
-                </span>
-                Edição · {today}
-            </p>
+            {/* "Edição · DD/MM" REMOVIDO a pedido do utilizador.
+                Mantemos só o logo + nav, sem cronómetros editoriais. */}
 
             {/* Nav */}
             <nav className="flex flex-col gap-0.5 min-h-0 overflow-y-auto no-scrollbar pr-1">

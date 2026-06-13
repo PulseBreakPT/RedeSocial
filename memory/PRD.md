@@ -112,3 +112,28 @@ Língua de toda a UI/copy: **pt-PT**.
 
 ### Test
 - Validado E2E via Playwright: 0 tabs presentes, 3 posts únicos exibidos (dedupe ok), ordem desc por `created_at` confirmada, kebab menu de notificações abre com as 4 opções esperadas.
+
+
+## Session 2026-06-13 (cont.) — Feed limpo + RightSidebar unificado visualmente
+
+### Frontend — `Feed.js`
+- **Removido** masthead preto inteiro: "LUSORAE · FEED · AO VIVO · LISBOA HH:MM · EDIÇÃO DD MMM".
+- **Removida** pill "Notícias reais" do hero.
+- Background do feed: `PT.cream` (FDFBE9) → `#f7f7f8` (cinzento neutro responsivo).
+- Sticky bar do hero: `rgba(247,245,239,0.92)` (cream) → `rgba(255,255,255,0.92)` (branco translúcido).
+
+### Frontend — `RightSidebar.js`
+- **Eliminada a duplicação de títulos** em todos os widgets: cada um agora tem **um único título centrado com ícone à esquerda** (sem kicker `Agenda · Portugal`, `Em alta · Portugal`, `Pessoas reais`, `Vai à mesa`).
+- Widget header redesenhado: `flex items-center justify-center gap-2`, fontSize 16, h-1.5 dot eliminado.
+- `CalendarItem` highlight: fundo amarelo/gold removido; agora cinzento neutro com fina barra lateral colorida (3px) como acento.
+
+### Frontend — `ActivityTicker.js`
+- Substituída a `card-lux` (border 2.5px sólida + box-shadow hard) por o mesmo container limpo dos outros widgets.
+- Removido "Em direto · Ao vivo" → único título centrado **"Atividade recente"** com ícone Activity.
+
+### Frontend — `LeftSidebar.js`
+- Removido bloco "Edição · DD MMM" (com lusorae-pulse vermelho) sob o logo.
+- Removida variável `today` órfã.
+
+### Test
+- Validado E2E (Playwright): 10/10 strings proibidas confirmadas removidas; 3/3 títulos esperados presentes; screenshots desktop e mobile limpos sem fundos cremes/amarelos nem bordas grossas.

@@ -170,7 +170,7 @@ export default function Feed() {
     }, [ptrRefreshing]);
 
     return (
-        <div data-testid="feed-page" className="relative" style={{ background: PT.cream, minHeight: "100vh" }}>
+        <div data-testid="feed-page" className="relative" style={{ background: "#f7f7f8", minHeight: "100vh" }}>
             <LiveActivityBeacon />
             <div
                 className="ptr-indicator lg:hidden"
@@ -201,25 +201,12 @@ export default function Feed() {
             <div
                 className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
                 style={{
-                    background: "rgba(247,245,239,0.92)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "rgba(255,255,255,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
-                {/* Masthead — faixa editorial em ink, alinhada à Landing */}
-                <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: PT.bone }}>
-                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
-                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
-                        </span>
-                        LUSORAE · FEED · AO VIVO
-                    </span>
-                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
-                        <span>LISBOA · {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
-                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
-                        <span>EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}</span>
-                    </span>
-                </div>
+                {/* Masthead editorial preto REMOVIDO a pedido do utilizador.
+                    Não há mais "LUSORAE · FEED · AO VIVO / LISBOA · HH:MM / EDIÇÃO · DD MMM". */}
 
                 {/* Hero editorial — tipografia massiva, alinhada à Landing */}
                 <div className="px-7 pt-7 pb-5 relative z-10">
@@ -263,23 +250,7 @@ export default function Feed() {
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 pb-1">
-                            <span
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase"
-                                style={{
-                                    background: "#fff",
-                                    color: "rgba(10,10,10,0.68)",
-                                    border: "1px solid rgba(10,10,10,0.08)",
-                                    borderRadius: 999,
-                                    letterSpacing: "0.18em",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.04)",
-                                }}
-                            >
-                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.green }} />
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.green }} />
-                                </span>
-                                Notícias reais
-                            </span>
+                            {/* Pill "Notícias reais" REMOVIDA a pedido do utilizador. */}
                             <button
                                 onClick={refresh}
                                 data-testid="feed-refresh"
