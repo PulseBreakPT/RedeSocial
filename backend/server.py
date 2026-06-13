@@ -7368,6 +7368,10 @@ async def calendar_all(
             e["days_until"] = None
             e["status"] = "upcoming"
 
+    # Slug kebab-case por evento (URL-friendly, derivado do key)
+    for e in resolved:
+        e["slug"] = _event_slug_for(e.get("key", ""))
+
     # Agrupa por mês (chave YYYY-MM, no ano em que ocorre)
     by_month: dict = {}
     for e in resolved:
@@ -7387,6 +7391,421 @@ async def calendar_all(
         "categories": pt_events_data.CATEGORY_META,
         "regions": pt_events_data.REGION_META,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Calendário — Evento individual partilhável (`/e/{slug}`)
+# ─────────────────────────────────────────────────────────────────────
+def _event_slug_for(key: str) -> str:
+    """Converte um event.key (snake_case) em slug URL-friendly kebab-case."""
+    if not key:
+        return ""
+    return key.replace("_", "-").lower()
+
+
+def _find_event_by_slug(slug: str) -> Optional[dict]:
+    """Resolve slug → evento curado do dataset PT (com year resolution)."""
+    if not slug:
+        return None
+    target = slug.strip().lower().replace("_", "-")
+    ref = datetime.now(timezone.utc)
+    raw = pt_events_data.all_events()
+    for ev in raw:
+        if _event_slug_for(ev.get("key", "")) == target:
+            resolved = _resolve_event_year(ev, ref)
+            # Anota estado igual ao calendar_all (DRY-ish para uma página dedicada)
+            try:
+                d = datetime.fromisoformat(resolved["iso_date"]).replace(tzinfo=timezone.utc)
+                end_d = datetime.fromisoformat(resolved.get("iso_end", resolved["iso_date"])).replace(tzinfo=timezone.utc)
+                days = (d.date() - ref.date()).days
+                end_days = (end_d.date() - ref.date()).days
+                resolved["days_until"] = days
+                if end_days < 0:
+                    resolved["status"] = "past"
+                elif days <= 0 <= end_days:
+                    resolved["status"] = "now"
+                else:
+                    resolved["status"] = "upcoming"
+            except Exception:
+                resolved["days_until"] = None
+                resolved["status"] = "upcoming"
+            resolved["slug"] = target
+            return resolved
+    return None
+
+
+def _similar_events(ev: dict, limit: int = 4) -> list:
+    """3-4 eventos relacionados pela mesma categoria/região/proximidade temporal.
+    Heurística simples:
+      • mesma categoria (+3)
+      • mesma região (+2)
+      • mesma cidade (+2)
+      • dentro de ±45 dias (+1)
+      • upcoming (não passado) (+0.5)
+    """
+    ref = datetime.now(timezone.utc)
+    raw = pt_events_data.all_events()
+    all_resolved = [_resolve_event_year(e, ref) for e in raw]
+    target_key = ev.get("key")
+    try:
+        target_date = datetime.fromisoformat(ev["iso_date"]).date()
+    except Exception:
+        target_date = None
+    scored = []
+    for cand in all_resolved:
+        if cand.get("key") == target_key:
+            continue
+        score = 0.0
+        if cand.get("category") == ev.get("category"):
+            score += 3
+        if cand.get("region") == ev.get("region") and cand.get("region") != "all":
+            score += 2
+        if cand.get("city") and cand.get("city") == ev.get("city"):
+            score += 2
+        try:
+            cand_date = datetime.fromisoformat(cand["iso_date"]).date()
+            if target_date and abs((cand_date - target_date).days) <= 45:
+                score += 1
+            if cand_date >= ref.date():
+                score += 0.5
+        except Exception:
+            pass
+        if score > 0:
+            cand_copy = dict(cand)
+            cand_copy["slug"] = _event_slug_for(cand_copy.get("key", ""))
+            try:
+                d = datetime.fromisoformat(cand_copy["iso_date"]).replace(tzinfo=timezone.utc)
+                end_d = datetime.fromisoformat(cand_copy.get("iso_end", cand_copy["iso_date"])).replace(tzinfo=timezone.utc)
+                days = (d.date() - ref.date()).days
+                end_days = (end_d.date() - ref.date()).days
+                cand_copy["days_until"] = days
+                if end_days < 0:
+                    cand_copy["status"] = "past"
+                elif days <= 0 <= end_days:
+                    cand_copy["status"] = "now"
+                else:
+                    cand_copy["status"] = "upcoming"
+            except Exception:
+                cand_copy["days_until"] = None
+                cand_copy["status"] = "upcoming"
+            scored.append((score, cand_copy))
+    scored.sort(key=lambda x: (-x[0], x[1].get("days_until") if x[1].get("days_until") is not None else 9999))
+    return [c for _, c in scored[:limit]]
+
+
+async def _event_public_counts(event_key: str) -> dict:
+    """Counts agregados públicos: vão / talvez / partilhas."""
+    going = await db.event_interests.count_documents({"event_key": event_key, "type": "going"})
+    maybe = await db.event_interests.count_documents({"event_key": event_key, "type": "maybe"})
+    shares = await db.event_shares.count_documents({"event_key": event_key})
+    return {"going": going, "maybe": maybe, "shares": shares}
+
+
+@api.get("/calendar/event/{slug}")
+async def calendar_event_detail(slug: str, viewer: Optional[dict] = Depends(maybe_user)):
+    """Detalhe público de um evento curado + similares + counts agregados.
+    NÃO requer autenticação — visitantes anónimos podem aceder via link partilhado."""
+    ev = _find_event_by_slug(slug)
+    if not ev:
+        raise HTTPException(404, "Evento não encontrado")
+    similar = _similar_events(ev, limit=4)
+    counts = await _event_public_counts(ev["key"])
+    # Estado do viewer face ao evento (interesse + se já partilhou)
+    viewer_state = {"interest": None, "shared": False}
+    if viewer:
+        my = await db.event_interests.find_one(
+            {"event_key": ev["key"], "user_id": viewer["id"]},
+            {"_id": 0, "type": 1},
+        )
+        if my:
+            viewer_state["interest"] = my.get("type")
+        viewer_state["shared"] = bool(await db.event_shares.find_one(
+            {"event_key": ev["key"], "user_id": viewer["id"]}, {"_id": 1}
+        ))
+    return {
+        "event": ev,
+        "similar": similar,
+        "counts": counts,
+        "viewer_state": viewer_state,
+        "categories": pt_events_data.CATEGORY_META,
+        "regions": pt_events_data.REGION_META,
+    }
+
+
+@api.get("/calendar/event/{slug}/social")
+async def calendar_event_social(slug: str, user=Depends(get_current_user)):
+    """Social proof contextual: amigos teus interessados + na tua cidade.
+    Requer auth (anónimo recebe counts genéricos via endpoint público acima)."""
+    ev = _find_event_by_slug(slug)
+    if not ev:
+        raise HTTPException(404, "Evento não encontrado")
+    following_ids = list(user.get("following", []) or [])
+    # Amigos teus interessados (going + maybe)
+    friends_rows = []
+    if following_ids:
+        friends_rows = await db.event_interests.find(
+            {"event_key": ev["key"], "user_id": {"$in": following_ids}, "type": {"$in": ["going", "maybe"]}},
+            {"_id": 0, "user_id": 1, "type": 1},
+        ).to_list(50)
+    friend_ids = [r["user_id"] for r in friends_rows]
+    friend_users = []
+    if friend_ids:
+        friend_users = await db.users.find(
+            {"id": {"$in": friend_ids}},
+            {"_id": 0, "id": 1, "username": 1, "name": 1, "avatar": 1},
+        ).to_list(50)
+        # Mapeia type
+        type_by_id = {r["user_id"]: r["type"] for r in friends_rows}
+        for fu in friend_users:
+            fu["interest_type"] = type_by_id.get(fu["id"], "going")
+    # Pessoas da tua cidade interessadas (excluindo amigos)
+    city_count = 0
+    if user.get("city"):
+        same_city_users = await db.users.find(
+            {"city": user["city"], "id": {"$ne": user["id"], "$nin": friend_ids}},
+            {"_id": 0, "id": 1},
+        ).to_list(500)
+        same_city_ids = [u["id"] for u in same_city_users]
+        if same_city_ids:
+            city_count = await db.event_interests.count_documents({
+                "event_key": ev["key"],
+                "user_id": {"$in": same_city_ids},
+                "type": {"$in": ["going", "maybe"]},
+            })
+    return {
+        "friends": friend_users,
+        "friends_count": len(friend_users),
+        "city_count": city_count,
+        "city": user.get("city"),
+    }
+
+
+class EventInterestIn(BaseModel):
+    type: Optional[str] = Field(default=None, description="going|maybe|null (null = remove)")
+
+
+@api.post("/calendar/event/{slug}/interest")
+async def calendar_event_interest(slug: str, payload: EventInterestIn, user=Depends(get_current_user)):
+    """Toggle interesse de um utilizador num evento. type=null remove."""
+    ev = _find_event_by_slug(slug)
+    if not ev:
+        raise HTTPException(404, "Evento não encontrado")
+    if payload.type and payload.type not in ("going", "maybe"):
+        raise HTTPException(400, "type inválido (going|maybe|null)")
+    if not payload.type:
+        await db.event_interests.delete_one({"event_key": ev["key"], "user_id": user["id"]})
+        new_state = None
+    else:
+        await db.event_interests.update_one(
+            {"event_key": ev["key"], "user_id": user["id"]},
+            {"$set": {
+                "event_key": ev["key"],
+                "user_id": user["id"],
+                "type": payload.type,
+                "ts": now_iso(),
+            }},
+            upsert=True,
+        )
+        new_state = payload.type
+    counts = await _event_public_counts(ev["key"])
+    return {"ok": True, "interest": new_state, "counts": counts}
+
+
+class EventShareIn(BaseModel):
+    channel: str = Field(description="whatsapp|x|telegram|facebook|instagram|copy|webshare|other")
+    via: Optional[str] = None
+
+
+@api.post("/calendar/event/{slug}/share")
+async def calendar_event_share(slug: str, payload: EventShareIn, request: Request, viewer: Optional[dict] = Depends(maybe_user)):
+    """Regista um share (autenticado ou anónimo). Permite tracking de viralidade."""
+    ev = _find_event_by_slug(slug)
+    if not ev:
+        raise HTTPException(404, "Evento não encontrado")
+    allowed = {"whatsapp", "x", "telegram", "facebook", "instagram", "copy", "webshare", "other"}
+    ch = (payload.channel or "other").lower()
+    if ch not in allowed:
+        ch = "other"
+    ip = (request.client.host if request.client else "0.0.0.0") or "0.0.0.0"
+    ip_hash = hashlib.sha256(ip.encode("utf-8")).hexdigest()[:16]
+    await db.event_shares.insert_one({
+        "event_key": ev["key"],
+        "user_id": viewer["id"] if viewer else None,
+        "username": viewer.get("username") if viewer else None,
+        "channel": ch,
+        "via": payload.via,
+        "ip_hash": ip_hash,
+        "ts": now_iso(),
+    })
+    counts = await _event_public_counts(ev["key"])
+    return {"ok": True, "counts": counts}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# OG image dinâmica — `/api/og/event/{slug}.png`
+# ─────────────────────────────────────────────────────────────────────
+_OG_IMAGE_CACHE: dict = {}  # slug → (bytes, ts) — cache simples em memória 6h
+_OG_TTL_SECONDS = 6 * 3600
+
+
+def _category_palette(category: str) -> tuple:
+    """Devolve (bg_top, bg_bottom, accent) para a categoria."""
+    palettes = {
+        "feriado":           ((25, 28, 35), (10, 10, 10), (255, 215, 0)),     # ink + gold
+        "festa_cidade":      ((200, 16, 46), (130, 5, 25), (255, 220, 80)),    # red deep + gold
+        "festival_musica":   ((30, 80, 140), (15, 30, 60), (255, 200, 50)),    # azul + gold
+        "feira":             ((180, 90, 30), (90, 40, 10), (255, 200, 100)),   # terracota
+        "cultura":           ((45, 55, 65), (15, 20, 25), (245, 220, 180)),    # ink + cream
+        "religioso":         ((100, 60, 130), (50, 25, 70), (240, 210, 240)),  # roxo
+        "sazonal":           ((40, 100, 60), (15, 45, 25), (255, 215, 100)),   # verde
+        "desporto":          ((20, 30, 80), (10, 15, 40), (255, 130, 50)),     # azul + laranja
+        "gastronomia":       ((180, 50, 40), (90, 20, 15), (255, 220, 100)),   # vermelho terra
+    }
+    return palettes.get(category, ((25, 28, 35), (10, 10, 10), (255, 215, 0)))
+
+
+def _render_og_image(ev: dict) -> bytes:
+    """Renderiza um cartão OG 1200×630 PNG para o evento."""
+    from PIL import Image, ImageDraw, ImageFont
+    import io
+
+    W, H = 1200, 630
+    bg_top, bg_bot, accent = _category_palette(ev.get("category", ""))
+
+    # Vertical gradient (limpo, sem grain — o grain anterior gerava linhas
+    # diagonais brancas duras porque o canal alpha é ignorado em modo RGB).
+    img = Image.new("RGB", (W, H), bg_top)
+    draw = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / H
+        r = int(bg_top[0] * (1 - t) + bg_bot[0] * t)
+        g = int(bg_top[1] * (1 - t) + bg_bot[1] * t)
+        b = int(bg_top[2] * (1 - t) + bg_bot[2] * t)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
+
+    # Try to load a real font; fallback to default
+    def _load_font(size):
+        candidates = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+        ]
+        for path in candidates:
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                continue
+        return ImageFont.load_default()
+
+    f_kicker = _load_font(22)
+    f_title = _load_font(72)
+    f_title_small = _load_font(56)
+    f_meta = _load_font(28)
+    f_brand = _load_font(20)
+    f_emoji = _load_font(200)
+
+    # Top accent bar
+    draw.rectangle([(0, 0), (W, 6)], fill=accent)
+
+    # Kicker — categoria
+    cat_label = (ev.get("category") or "evento").upper().replace("_", " ")
+    draw.text((64, 56), cat_label, font=f_kicker, fill=accent)
+    # Dot before kicker
+    draw.ellipse((44, 64, 54, 74), fill=accent)
+
+    # Emoji XL no canto direito
+    emoji = ev.get("emoji") or "🎉"
+    try:
+        draw.text((W - 280, 88), emoji, font=f_emoji, fill=(255, 255, 255), embedded_color=True)
+    except Exception:
+        # PIL versões antigas não suportam emoji color font — fallback texto
+        draw.text((W - 280, 88), emoji, font=f_emoji, fill=(255, 255, 255))
+
+    # Título do evento (wrap se muito longo)
+    title = ev.get("title") or "Evento"
+    title_font = f_title if len(title) <= 28 else f_title_small
+    # Wrap simples a 24 chars max por linha
+    lines = []
+    cur = []
+    cur_len = 0
+    for w in title.split():
+        if cur_len + len(w) + 1 > 24:
+            lines.append(" ".join(cur))
+            cur = [w]
+            cur_len = len(w)
+        else:
+            cur.append(w)
+            cur_len += len(w) + 1
+    if cur:
+        lines.append(" ".join(cur))
+    y_title = 280
+    for line in lines[:2]:
+        draw.text((64, y_title), line, font=title_font, fill=(255, 255, 255))
+        y_title += title_font.size + 8
+
+    # Subtitle (truncado)
+    sub = ev.get("subtitle") or ""
+    if sub:
+        if len(sub) > 80:
+            sub = sub[:77] + "…"
+        draw.text((64, y_title + 12), sub, font=f_meta, fill=(255, 255, 255, 200))
+
+    # Meta footer: cidade · data
+    meta_parts = []
+    if ev.get("city"):
+        meta_parts.append(ev["city"])
+    iso = ev.get("iso_date")
+    if iso:
+        try:
+            d = datetime.fromisoformat(iso)
+            months_pt = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+            meta_str = f"{d.day} {months_pt[d.month - 1]} {d.year}"
+            if ev.get("iso_end") and ev["iso_end"] != iso:
+                e = datetime.fromisoformat(ev["iso_end"])
+                if e.month == d.month:
+                    meta_str = f"{d.day}–{e.day} {months_pt[d.month - 1]} {d.year}"
+                else:
+                    meta_str = f"{d.day} {months_pt[d.month - 1]} → {e.day} {months_pt[e.month - 1]}"
+            meta_parts.append(meta_str)
+        except Exception:
+            pass
+    if meta_parts:
+        draw.text((64, H - 110), "  ·  ".join(meta_parts), font=f_meta, fill=accent)
+
+    # Brand strip
+    draw.line([(64, H - 60), (W - 64, H - 60)], fill=(255, 255, 255, 60), width=1)
+    draw.text((64, H - 44), "LUSORAE  ·  A praça pública portuguesa", font=f_brand, fill=(255, 255, 255, 180))
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+@api.get("/og/event/{slug}.png")
+async def og_event_image(slug: str):
+    """Cartão social 1200×630 PNG para Twitter/WhatsApp/Facebook unfurl.
+    Cache em memória 6h por slug — invalidação por restart suficiente para
+    eventos curados (não mudam durante a vida do processo)."""
+    from fastapi.responses import Response
+    cleaned = slug.removesuffix(".png")
+    ev = _find_event_by_slug(cleaned)
+    if not ev:
+        raise HTTPException(404, "Evento não encontrado")
+    now_ts = datetime.now(timezone.utc).timestamp()
+    cache_entry = _OG_IMAGE_CACHE.get(cleaned)
+    if cache_entry and (now_ts - cache_entry[1]) < _OG_TTL_SECONDS:
+        png_bytes = cache_entry[0]
+    else:
+        png_bytes = _render_og_image(ev)
+        _OG_IMAGE_CACHE[cleaned] = (png_bytes, now_ts)
+    return Response(
+        content=png_bytes,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=21600, s-maxage=21600",
+            "X-Lusorae-Slug": cleaned,
+        },
+    )
 
 
 @api.get("/daily/digest")
@@ -10791,6 +11210,9 @@ CSRF_EXEMPT_PREFIXES = (
     "/api/csp-report",
     # FASE 3 — waitlist público (pré-auth)
     "/api/waitlist",
+    # Event share tracking — anónimos podem partilhar sem CSRF
+    # (já há rate-limit por IP-hash via colecção event_shares)
+    "/api/calendar/event/",
 )
 
 

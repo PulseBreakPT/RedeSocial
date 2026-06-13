@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 // =============================================================================
 // LUSORAE EDITORIAL — clean redesign (Jun 2026)
 // 5 lentes profissionais aplicadas:
@@ -16,11 +17,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
     CalendarDays, MapPin, ExternalLink, Filter, ChevronRight, X,
     LayoutGrid, AlignJustify, ChevronDown, Sparkles, Flame, Star, Dot,
+    Share2,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
+import { EventShareSheet } from "../components/EventShareSheet";
 
 /* ════════════════════════════════════════════════════════════════
    Tokens & helpers
@@ -250,13 +253,20 @@ function YearStrip({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, onJ
 /* ════════════════════════════════════════════════════════════════
    EventCard — duas variantes (magazine / list)
    ════════════════════════════════════════════════════════════════ */
-function EventCard({ ev, catMeta, density, indexInMonth }) {
+function EventCard({ ev, catMeta, density, indexInMonth, onShare }) {
     const { day, month } = fmtDate(ev.iso_date);
     const rangeLabel = dateRangeLabel(ev.iso_date, ev.iso_end);
     const isMulti = ev.iso_end && ev.iso_end !== ev.iso_date;
     const featured = isFeaturedEvent(ev);
     const accentColor = catMeta?.color || PT.ink;
     const delayMs = Math.min(indexInMonth * 24, 220);
+    const slug = ev.slug || (ev.key || "").replace(/_/g, "-");
+    const eventUrl = `/e/${slug}`;
+    const handleShareClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onShare) onShare(ev);
+    };
 
     /* ───────── LISTA (densidade compacta) ───────── */
     if (density === "list") {
@@ -284,13 +294,19 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                     <span className="font-black text-[19px] sm:text-[22px] tabular-nums mt-0.5" style={{ color: PT.ink }}>{day}</span>
                 </time>
                 <div className="min-w-0">
-                    <h3
-                        className="font-semibold leading-tight tracking-tight truncate"
-                        style={{ color: PT.ink, fontSize: "clamp(14px, 3.4vw, 16px)" }}
+                    <Link
+                        to={eventUrl}
+                        data-testid={`cal-event-link-${ev.key}`}
+                        className="block hover:underline underline-offset-4 decoration-1"
                     >
-                        {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
-                        {ev.title}
-                    </h3>
+                        <h3
+                            className="font-semibold leading-tight tracking-tight truncate"
+                            style={{ color: PT.ink, fontSize: "clamp(14px, 3.4vw, 16px)" }}
+                        >
+                            {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
+                            {ev.title}
+                        </h3>
+                    </Link>
                     <div className="flex items-center gap-x-2.5 gap-y-0.5 flex-wrap text-[11.5px] mt-1" style={{ color: INK_MUTE }}>
                         <span className="inline-flex items-center gap-1.5">
                             <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
@@ -309,21 +325,18 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                         <span>{rangeLabel}</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                     <StatusPill status={ev.status} days={ev.days_until} compact />
-                    {ev.url && (
-                        <a
-                            href={ev.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            data-testid={`cal-link-${ev.key}`}
-                            aria-label={`site oficial — ${ev.title}`}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-black/[0.04]"
-                            style={{ color: PT.azul, border: HAIRLINE }}
-                        >
-                            <ExternalLink size={13} strokeWidth={2.2} />
-                        </a>
-                    )}
+                    <button
+                        type="button"
+                        onClick={handleShareClick}
+                        data-testid={`cal-share-${ev.key}`}
+                        aria-label={`Partilhar — ${ev.title}`}
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-all hover:bg-black/[0.04] hover:-translate-y-px"
+                        style={{ color: PT.ink, border: HAIRLINE }}
+                    >
+                        <Share2 size={13} strokeWidth={2.2} />
+                    </button>
                 </div>
             </article>
         );
@@ -402,17 +415,23 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                     )}
                 </div>
 
-                <h3
-                    className="font-black leading-[1.15] tracking-tight break-words"
-                    style={{
-                        color: PT.ink,
-                        fontSize: featured ? "clamp(18px, 4.6vw, 24px)" : "clamp(16px, 4vw, 20px)",
-                        letterSpacing: "-0.015em",
-                    }}
+                <Link
+                    to={eventUrl}
+                    data-testid={`cal-event-link-${ev.key}`}
+                    className="block group/title hover:no-underline"
                 >
-                    {ev.emoji && <span className="mr-1.5" aria-hidden>{ev.emoji}</span>}
-                    {ev.title}
-                </h3>
+                    <h3
+                        className="font-black leading-[1.15] tracking-tight break-words transition-colors group-hover/title:text-[#c8102e]"
+                        style={{
+                            color: PT.ink,
+                            fontSize: featured ? "clamp(18px, 4.6vw, 24px)" : "clamp(16px, 4vw, 20px)",
+                            letterSpacing: "-0.015em",
+                        }}
+                    >
+                        {ev.emoji && <span className="mr-1.5" aria-hidden>{ev.emoji}</span>}
+                        {ev.title}
+                    </h3>
+                </Link>
 
                 {ev.subtitle && (
                     <p className="text-[13px] sm:text-[14px] leading-relaxed mt-2" style={{ color: "rgba(10,10,10,0.68)" }}>
@@ -424,19 +443,32 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                     <span className="font-mono text-[11px] uppercase tracking-[0.10em]" style={{ color: INK_MUTE }}>
                         {rangeLabel}
                     </span>
-                    {ev.url && (
-                        <a
-                            href={ev.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            data-testid={`cal-link-${ev.key}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-medium underline-offset-4 hover:underline ml-auto"
-                            style={{ color: PT.azul }}
+                    <div className="ml-auto flex items-center gap-1.5">
+                        {ev.url && (
+                            <a
+                                href={ev.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-testid={`cal-link-${ev.key}`}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium underline-offset-4 hover:underline"
+                                style={{ color: PT.azul }}
+                            >
+                                site oficial
+                                <ExternalLink size={11} strokeWidth={2.2} />
+                            </a>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleShareClick}
+                            data-testid={`cal-share-${ev.key}`}
+                            aria-label={`Partilhar — ${ev.title}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all hover:bg-black/[0.04] hover:-translate-y-px"
+                            style={{ color: PT.ink, border: HAIRLINE }}
                         >
-                            site oficial
-                            <ExternalLink size={11} strokeWidth={2.2} />
-                        </a>
-                    )}
+                            <Share2 size={11} strokeWidth={2.2} />
+                            partilhar
+                        </button>
+                    </div>
                 </div>
             </div>
         </article>
@@ -446,7 +478,7 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
 /* ════════════════════════════════════════════════════════════════
    MonthSection — header minimal sem watermark gigante
    ════════════════════════════════════════════════════════════════ */
-function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
+function MonthSection({ monthKey, events, catMetaMap, isCurrent, density, onShare }) {
     const [, m] = monthKey.split("-");
     const idx = parseInt(m, 10) - 1;
     const monthName = MONTH_PT[idx];
@@ -514,7 +546,7 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
 
             <div className={density === "list" ? "space-y-2" : "space-y-3 sm:space-y-3.5"}>
                 {events.map((ev, i) => (
-                    <EventCard key={ev.key} ev={ev} catMeta={catMetaMap[ev.category]} density={density} indexInMonth={i} />
+                    <EventCard key={ev.key} ev={ev} catMeta={catMetaMap[ev.category]} density={density} indexInMonth={i} onShare={onShare} />
                 ))}
             </div>
         </section>
@@ -524,18 +556,19 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
 /* ════════════════════════════════════════════════════════════════
    Highlight — cartões "a seguir" (mais clean, hover real)
    ════════════════════════════════════════════════════════════════ */
-function Highlight({ ev, catMetaMap }) {
+function Highlight({ ev, catMetaMap, onShare }) {
     if (!ev) return null;
     const meta = catMetaMap[ev.category];
     const { day, month } = fmtDate(ev.iso_date);
     const accentColor = meta?.color || PT.ink;
     const daysLabel = ev.days_until === 0 ? "hoje" : ev.days_until === 1 ? "amanhã" : `em ${ev.days_until} dias`;
+    const slug = ev.slug || (ev.key || "").replace(/_/g, "-");
 
     return (
-        <a
-            href={`#cal-event-${ev.key}`}
+        <Link
+            to={`/e/${slug}`}
             data-testid={`cal-highlight-${ev.key}`}
-            className="block w-[78vw] sm:w-auto flex-shrink-0 snap-start rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5"
+            className="block w-[78vw] sm:w-auto flex-shrink-0 snap-start rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 relative"
             style={{
                 background: "#fff",
                 border: HAIRLINE,
@@ -576,7 +609,19 @@ function Highlight({ ev, catMetaMap }) {
                     </div>
                 </div>
             </div>
-        </a>
+            {onShare && (
+                <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(ev); }}
+                    data-testid={`cal-highlight-share-${ev.key}`}
+                    aria-label={`Partilhar — ${ev.title}`}
+                    className="absolute top-3 right-3 inline-flex items-center justify-center w-7 h-7 rounded-full transition-all hover:bg-black/[0.06] hover:-translate-y-px"
+                    style={{ color: PT.ink, background: "#fff", border: HAIRLINE }}
+                >
+                    <Share2 size={11} strokeWidth={2.2} />
+                </button>
+            )}
+        </Link>
     );
 }
 
@@ -701,6 +746,7 @@ export default function Calendario() {
         try { window.localStorage.setItem(LS_DENSITY_KEY, v); } catch { /* ignore */ }
     };
     const [filtersOpen, setFiltersOpen] = useState(false);
+    const [shareEvent, setShareEvent] = useState(null);
 
     const [currentMonth, setCurrentMonth] = useState(null);
     const monthRefs = useRef({});
@@ -983,12 +1029,12 @@ export default function Calendario() {
                         </div>
                         <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 sm:hidden" style={HIDE_SCROLLBAR} data-testid="cal-next3-mobile">
                             {data.next3.map((ev) => (
-                                <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
+                                <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} onShare={setShareEvent} />
                             ))}
                         </div>
                         <div className="hidden sm:grid sm:grid-cols-3 gap-3">
                             {data.next3.map((ev) => (
-                                <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
+                                <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} onShare={setShareEvent} />
                             ))}
                         </div>
                     </section>
@@ -1187,6 +1233,7 @@ export default function Calendario() {
                         catMetaMap={catMetaMap}
                         isCurrent={currentMonth === mk}
                         density={density}
+                        onShare={(ev) => setShareEvent(ev)}
                     />
                 ))}
 
@@ -1203,6 +1250,13 @@ export default function Calendario() {
                     </footer>
                 )}
             </div>
+
+            {/* ── Share Sheet (montado uma vez, controlado por shareEvent state) ── */}
+            <EventShareSheet
+                open={!!shareEvent}
+                onOpenChange={(o) => { if (!o) setShareEvent(null); }}
+                event={shareEvent}
+            />
         </PtPageShell>
     );
 }

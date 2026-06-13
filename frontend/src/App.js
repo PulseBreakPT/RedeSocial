@@ -56,6 +56,7 @@ const StoryArchive = lazy(() => import("./pages/StoryArchive"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Premium = lazy(() => import("./pages/Premium"));
 const Calendario = lazy(() => import("./pages/Calendario"));
+const EventPage = lazy(() => import("./pages/EventPage"));
 
 function RouteFallback() {
     return (
@@ -128,6 +129,8 @@ function App() {
                         <Route path="/legal/governance" element={<Governance />} />
                         <Route path="/legal/seguranca-investigadores" element={<Seguranca />} />
                         <Route path="/manifesto" element={<Manifesto />} />
+                        {/* Evento partilhável — acessível sem auth (porta de entrada viral) */}
+                        <Route path="/e/:slug" element={<EventPage />} />
                         <Route path="/" element={<Landing />} />
                         <Route
                             element={

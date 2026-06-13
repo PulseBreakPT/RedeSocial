@@ -342,3 +342,83 @@ A página `/calendario` ainda usava a estética FANZINE antiga (já removida das
 ### Notas
 - `/api/users/me/onboard` (POST) é o endpoint correcto para marcar `onboarded=true` (não PATCH /users/me).
 - Test user criado no preview: `t1781357229@test.pt` (apenas para QA visual; pode ser removido).
+
+
+## Session 2026-06-13 (cont. 7) — Calendário viral: `/e/{slug}` cartaz partilhável
+
+### Visão
+Cada evento curado do Calendário (155+) deixa de ser linha numa lista e passa a ser uma **landing page viral autónoma** em `/e/{slug}` — sem auth wall, com identidade visual por categoria, countdown live, social proof, RSVP soft e share sheet rico para 6 canais.
+
+### Backend novo (`server.py`, +480 linhas)
+- **`GET /api/calendar/event/{slug}`** — PÚBLICO (sem auth). Devolve evento resolvido + 4 similares + counts agregados + viewer_state (interest + shared). Suporta tanto `festas-lisboa-jun` (kebab) como `festas_lisboa_jun` (snake) — normaliza no servidor.
+- **`GET /api/calendar/event/{slug}/social`** — auth-aware. Amigos teus interessados (following overlap) + count de pessoas da tua cidade.
+- **`POST /api/calendar/event/{slug}/interest`** — auth. Toggle `going` | `maybe` | `null` (remove). DB: `event_interests` (event_key, user_id, type, ts).
+- **`POST /api/calendar/event/{slug}/share`** — auth opcional. Track de partilha por canal + via (referrer username). DB: `event_shares` (event_key, user_id|null, channel, via, ip_hash, ts). CSRF-exempt (prefix `/api/calendar/event/`) porque permite anónimos rastreados via ip_hash.
+- **`GET /api/og/event/{slug}.png`** — OG image dinâmica 1200×630 gerada via Pillow:
+  - Gradient vertical por categoria (9 paletas: feriado/festa_cidade/festival_musica/feira/cultura/religioso/sazonal/desporto/gastronomia)
+  - Top accent bar, kicker categoria, emoji XL, título (auto-wrap), subtitle truncated, meta cidade+data range, "LUSORAE · A praça pública portuguesa" brand
+  - DejaVuSans-Bold (fallback ImageFont.load_default)
+  - Cache em memória 6h por slug + headers `Cache-Control: public, max-age=21600`
+- **Helpers**: `_event_slug_for(key)`, `_find_event_by_slug(slug)`, `_similar_events(ev, limit=4)` (algoritmo score: categoria +3, região +2, cidade +2, ±45d +1, upcoming +0.5), `_event_public_counts(event_key)`.
+
+### Frontend novo
+- **`pages/EventPage.js`** (642 linhas) — landing pública partilhável:
+  - Rota `/e/:slug` em `App.js` (lazy-loaded, fora de ProtectedRoute → acessível a anónimos)
+  - **Hero full-bleed** com gradient categoria (9 paletas matched com backend), kicker "● categoria · @ cidade", H1 com `clamp(36-78px)`, subtitle, date range + EventCountdown live, emoji XL 240px no canto direito
+  - **3 CTAs no hero**: Tenho interesse / Talvez / Partilhar (desktop) + floating bar sticky bottom em mobile
+  - **Counters strip**: VÃO · TALVEZ · PARTILHAS com tabular-nums
+  - **Social proof contextual** (auth): avatares amigos + counter cidade
+  - **Eventos semelhantes**: 4 cards SimilarCard linkados a `/e/{slug}` correspondente
+  - **Smart paywall anónimo**: card sticky bottom-right com Bell icon "Não percas {evento}. Junta-te à Lusorae" + CTA "Criar conta grátis"
+  - **Meta tags dinâmicas**: `document.title` + `og:title/description/image/url/type=event` + `twitter:card=summary_large_image` actualizados em runtime via useEffect
+  - **Attribution analytics**: detecta `?ref=share&via={user}&ch={channel}` e dispara `posthog.capture("event_view_from_share")` (consent-gated)
+- **`components/EventShareSheet.js`** — Radix Dialog com:
+  - **Preview** da OG image dinâmica (fallback graceful se 404)
+  - URL canónica + botão Copy com check animado 2.2s
+  - 6 canais: WhatsApp (#25D366) · X (preto) · Telegram (#26A5E4) · Facebook (#1877F2) · Instagram (gradient brand) · Sistema (Web Share API — só visível se `canUseWebShare()`)
+- **`components/EventCountdown.js`** — re-render 60s, calcula `start.getTime() - now.getTime()`:
+  - "agora a decorrer" (pulse dot vermelho)
+  - "amanhã em Xd Yh Zm"
+  - "começa em Xh Ym" (se ≤24h)
+  - "começa em X dias"
+  - "terminou há X dias"
+  - 3 tamanhos: lg/md/sm
+- **`lib/eventShare.js`** — utilitários cross-channel:
+  - `buildEventUrl(slug, {via, channel})` com `?ref=share&via=X&ch=Y`
+  - `buildEventShareText(ev, {channel, viewerUsername})` — texto pré-formatado em PT por canal (WhatsApp markdown, X compacto, Facebook descritivo)
+  - `shareEvent({event, channel, viewerUsername})` — disparador unificado
+  - `canUseWebShare()` — deteção robusta navigator.share
+
+### Calendario.js — botão partilhar inline em cada evento
+- Cada `EventCard` (155+) ganha:
+  - **Wrap em `<Link to="/e/{slug}">`** no título h3
+  - Botão **"partilhar"** pill no rodapé (magazine) ou icon-button round (list)
+- `Highlight` ("A seguir" cards): wrap completo em `<Link>` + share button sobre top-right
+- State `shareEvent` no `Calendario` controla o `EventShareSheet` (montado uma vez no fim)
+
+### Testes E2E (Playwright)
+- ✅ `GET /api/calendar/event/festas-lisboa-jun` (anonymous) → 200, evento resolvido, similares populados, counts agregados
+- ✅ `GET /api/og/event/dia-portugal.png` → 12KB PNG válido com `Cache-Control` 6h
+- ✅ `GET /api/calendar/event/inexistente-xyz` → 404
+- ✅ `POST /api/calendar/event/dia-portugal/share` (anonymous, sem CSRF) → 200 + shares counter +1
+- ✅ Frontend `/e/festas-lisboa-jun` (anonymous):
+  - Hero render correcto (gradient vermelho festa_cidade, emoji 💃)
+  - Document title: `💃 Festas de Lisboa · 1–30 de junho 2026 — Lusorae`
+  - og:image meta atualizada para `/api/og/event/festas-lisboa-jun.png`
+  - Smart paywall anónimo visível bottom-right
+  - 4 similar events linkados correctamente
+  - Share sheet abre via top trigger, hero CTA, mobile floating bar
+- ✅ `/calendario` autenticado: 155 botões `cal-share-{key}` detectados, click abre share sheet com OG image correcta da categoria do evento
+
+### Métricas viralidade que ficam mensuráveis
+- `event_shares` collection: agregar por `channel`, `via`, `event_key` → K-factor mensal
+- `event_interests`: `going / total_views` por evento = conversion rate
+- `?ref=share&via={user}` URL params → attribution end-to-end
+- OG image hits: backend log + cache hit ratio (memória 6h)
+
+### Decisões de design assumidas
+- **URL formato `/e/{slug}`** (35 chars vs 50 em `/evento/`) — ideal para WhatsApp e bio do Twitter
+- **Slug aceita kebab + snake** — resiliência face a URLs antigas
+- **OG image em memória 6h** — Pillow ~12KB por imagem, cache aceitável até 200 entries
+- **CSRF exempt no namespace `/api/calendar/event/`** — share anónimo prioritário; risco residual de CSRF em /interest é não-crítico (sem leakage, sem $)
+- **SSR/SSG não implementado** — meta tags actualizadas client-side via useEffect. Para crawlers que fazem fetch HTML, retornam tags genéricas do `index.html` da SPA. Aceitável para esta sprint; sprint futura: backend serve HTML rico ao detectar UA `Twitterbot|facebookexternalhit|WhatsApp|TelegramBot`.
