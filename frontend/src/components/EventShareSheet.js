@@ -90,14 +90,18 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
                 {/* ── Header compacto (sem preview gigante) ── */}
                 <div className="px-4 sm:px-5 pt-4 pb-3" style={{ borderBottom: HAIRLINE }}>
                     <div className="flex items-center gap-2 pr-7">
-                        <Share2 size={14} strokeWidth={2.2} style={{ color: PT.ink }} />
-                        <span className="font-semibold tracking-tight text-[14px] truncate" style={{ color: PT.ink }}>
+                        <Share2 size={14} strokeWidth={2.2} style={{ color: PT.ink, flexShrink: 0 }} />
+                        <span className="font-semibold tracking-tight text-[14px]" style={{ color: PT.ink }}>
                             Partilhar
                         </span>
-                        <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] truncate max-w-[120px]" style={{ color: "rgba(10,10,10,0.45)" }}>
-                            {event.title}
-                        </span>
                     </div>
+                    <p
+                        className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.14em] leading-snug pr-7"
+                        style={{ color: "rgba(10,10,10,0.55)" }}
+                        data-testid="event-share-event-title"
+                    >
+                        {event.title}
+                    </p>
                 </div>
 
                 {/* ── URL + copy ── */}
