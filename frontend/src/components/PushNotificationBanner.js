@@ -65,18 +65,18 @@ export function PushNotificationBanner() {
             <div
                 className="grid place-items-center shrink-0"
                 style={{
-                    width: 38, height: 38, borderRadius: 10,
+                    width: 32, height: 32, borderRadius: 8,
                     background: PT.red, color: "#fff",
                 }}
             >
-                <Bell size={18} strokeWidth={2.4} />
+                <Bell size={15} strokeWidth={2.4} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="font-bold text-[13.5px]" style={{ color: PT.ink }}>
-                    Quer ser avisado quando algo importante acontece?
+                <p className="font-bold text-[12.5px]" style={{ color: PT.ink }}>
+                    Activar notificações?
                 </p>
-                <p className="text-[12px] font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
-                    Activa notificações push. Sem spam — só o que te diz respeito.
+                <p className="text-[11px] font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
+                    Sem spam. Só o que te diz respeito.
                 </p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -84,7 +84,7 @@ export function PushNotificationBanner() {
                     onClick={enable}
                     disabled={busy}
                     data-testid="push-banner-enable"
-                    className="px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider tap-shrink"
+                    className="px-3 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider tap-shrink"
                     style={{ background: PT.ink, color: "#fff", opacity: busy ? 0.6 : 1 }}
                 >
                     {busy ? "…" : "Activar"}
@@ -93,10 +93,10 @@ export function PushNotificationBanner() {
                     onClick={dismiss}
                     aria-label="Fechar"
                     data-testid="push-banner-dismiss"
-                    className="grid place-items-center w-7 h-7 rounded-full hover:bg-black/[0.04] transition"
+                    className="grid place-items-center w-6 h-6 rounded-full hover:bg-black/[0.04] transition"
                     style={{ color: "rgba(10,10,10,0.5)" }}
                 >
-                    <X size={14} strokeWidth={2.4} />
+                    <X size={12} strokeWidth={2.4} />
                 </button>
             </div>
         </div>

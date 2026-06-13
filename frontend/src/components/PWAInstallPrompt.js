@@ -61,40 +61,40 @@ export function PWAInstallPrompt() {
     return (
         <div
             data-testid="pwa-install-prompt"
-            className="fixed z-[80] bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm animate-in fade-in slide-in-from-bottom-4"
+            className="fixed z-[80] bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-[320px] animate-in fade-in slide-in-from-bottom-4"
             style={{
                 background: "#fff",
                 border: "1px solid rgba(10,10,10,0.10)",
-                borderRadius: 20,
-                boxShadow: "0 30px 80px -20px rgba(10,10,10,0.32), 0 8px 20px -10px rgba(10,10,10,0.18)",
-                padding: 18,
+                borderRadius: 16,
+                boxShadow: "0 20px 50px -20px rgba(10,10,10,0.25), 0 6px 14px -8px rgba(10,10,10,0.15)",
+                padding: 14,
             }}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2.5">
                 <div
                     className="grid place-items-center shrink-0"
                     style={{
-                        width: 44, height: 44, borderRadius: 12,
+                        width: 36, height: 36, borderRadius: 10,
                         background: PT.ink, color: "#fff",
                     }}
                 >
-                    <Download size={20} strokeWidth={2.4} />
+                    <Download size={16} strokeWidth={2.4} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "rgba(10,10,10,0.5)" }}>
-                        Instala o Lusorae
+                    <p className="font-mono text-[9.5px] font-bold uppercase tracking-[0.22em]" style={{ color: "rgba(10,10,10,0.55)" }}>
+                        Instalar app
                     </p>
-                    <h3 className="font-black tracking-tight mt-1" style={{ fontSize: 17, color: PT.ink }}>
-                        Tem-no à mão, sempre.
+                    <h3 className="font-black tracking-tight mt-0.5" style={{ fontSize: 13.5, color: PT.ink }}>
+                        Tem o Lusorae à mão.
                     </h3>
-                    <p className="text-[12.5px] mt-1.5 font-medium leading-snug" style={{ color: "rgba(10,10,10,0.6)" }}>
-                        Instala como app no teu ecrã principal. Mais rápido e com notificações.
+                    <p className="text-[11px] mt-1 font-medium leading-snug" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        No ecrã principal, com notificações.
                     </p>
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex items-center gap-1.5 mt-2.5">
                         <button
                             onClick={install}
                             data-testid="pwa-install-btn"
-                            className="px-3.5 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-wider tap-shrink"
+                            className="px-3 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider tap-shrink"
                             style={{ background: PT.ink, color: "#fff", border: "1px solid " + PT.ink }}
                         >
                             Instalar
@@ -102,7 +102,7 @@ export function PWAInstallPrompt() {
                         <button
                             onClick={dismiss}
                             data-testid="pwa-install-dismiss"
-                            className="px-3 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-wider tap-shrink"
+                            className="px-2.5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider tap-shrink"
                             style={{ background: "transparent", color: "rgba(10,10,10,0.6)" }}
                         >
                             Mais tarde
@@ -112,10 +112,10 @@ export function PWAInstallPrompt() {
                 <button
                     onClick={dismiss}
                     aria-label="Fechar"
-                    className="shrink-0 grid place-items-center w-6 h-6 rounded-full hover:bg-black/[0.04] transition"
+                    className="shrink-0 grid place-items-center w-5 h-5 rounded-full hover:bg-black/[0.04] transition"
                     style={{ color: "rgba(10,10,10,0.45)" }}
                 >
-                    <X size={14} strokeWidth={2.4} />
+                    <X size={12} strokeWidth={2.4} />
                 </button>
             </div>
         </div>

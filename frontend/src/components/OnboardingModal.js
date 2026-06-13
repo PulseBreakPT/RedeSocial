@@ -38,8 +38,8 @@ const INTEREST_OPTIONS = [
     { key: "noticias",        label: "Notícias",         emoji: "📰" },
 ];
 
-const MIN_INTERESTS = 5;
-const MIN_FOLLOWS = 5;
+const MIN_INTERESTS = 3;
+const SUGGESTED_FOLLOWS = 5; // sugestão (não obrigatório)
 
 export function OnboardingModal() {
     const { user, setUser } = useAuth();
@@ -114,14 +114,13 @@ export function OnboardingModal() {
     };
 
     const finish = async () => {
-        if (followCount < MIN_FOLLOWS) return;
+        // Seguir é OPCIONAL — utilizador pode terminar sem seguir ninguém.
         setBusy(true);
-        try { await api.post("/users/me/onboard"); } catch {}
+        try { await api.post("/users/me/onboard"); } catch { /* noop */ }
         setUser({ ...user, onboarded: true });
     };
 
     const canStep1 = interests.size >= MIN_INTERESTS;
-    const canFinish = followCount >= MIN_FOLLOWS;
 
     return (
         <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-md grid place-items-end sm:place-items-center p-0 sm:p-4" data-testid="onboarding-modal">
@@ -145,15 +144,15 @@ export function OnboardingModal() {
                             />
                         </div>
                     </div>
-                    <h2 className="font-black tracking-tight leading-[1.05]" style={{ fontSize: 30, color: PT.ink }}>
+                    <h2 className="font-black tracking-tight leading-[1.05]" style={{ fontSize: 24, color: PT.ink }}>
                         {step === 1
-                            ? <>Olá, {user.name?.split(" ")[0]}.<br /><span style={{ color: PT.red }}>Conta-nos o que te interessa.</span></>
-                            : <>Agora segue quem <span style={{ color: PT.red }}>te interessa</span>.</>}
+                            ? <>Olá, {user.name?.split(" ")[0]}. <span style={{ color: PT.red }}>O que te interessa?</span></>
+                            : <>Sugestões para <span style={{ color: PT.red }}>arrancar</span>.</>}
                     </h2>
-                    <p className="text-[14px] mt-3 font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                    <p className="text-[12.5px] mt-2 font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
                         {step === 1
-                            ? `Escolhe pelo menos ${MIN_INTERESTS} para começarmos.`
-                            : `Segue pelo menos ${MIN_FOLLOWS} pessoas e activamos o teu feed.`}
+                            ? `Escolhe pelo menos ${MIN_INTERESTS}.`
+                            : "Segue quem quiseres. Podes saltar este passo."}
                     </p>
                 </div>
 
@@ -168,7 +167,7 @@ export function OnboardingModal() {
                                         key={it.key}
                                         data-testid={`onb-interest-${it.key}`}
                                         onClick={() => toggleInterest(it.key)}
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition tap-shrink"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition tap-shrink"
                                         style={{
                                             background: on ? PT.ink : "#fff",
                                             color: on ? "#fff" : PT.ink,
@@ -178,7 +177,7 @@ export function OnboardingModal() {
                                     >
                                         <span aria-hidden>{it.emoji}</span>
                                         {it.label}
-                                        {on && <Check size={12} strokeWidth={2.6} />}
+                                        {on && <Check size={11} strokeWidth={2.6} />}
                                     </button>
                                 );
                             })}
@@ -194,25 +193,13 @@ export function OnboardingModal() {
                                     ))}
                                 </div>
                             ) : suggestions.length === 0 ? (
-                                <div className="py-10 text-center">
-                                    <p className="font-black text-[18px]" style={{ color: PT.ink }}>
-                                        Ainda não há ninguém para te sugerir.
+                                <div className="py-8 text-center">
+                                    <p className="font-black text-[15px]" style={{ color: PT.ink }}>
+                                        Ainda não há sugestões.
                                     </p>
-                                    <p className="text-[13px] mt-2 text-black/55 max-w-xs mx-auto">
-                                        Esta rede está a nascer. Convida quem conheces e activa o teu feed.
+                                    <p className="text-[12px] mt-1.5 text-black/55 max-w-xs mx-auto">
+                                        Esta rede está a nascer. Vais encontrá-las à medida que crescer.
                                     </p>
-                                    <button
-                                        onClick={async () => {
-                                            // bypass gate temporário quando não há sugestões: marca onboarded e fecha
-                                            try { await api.post("/users/me/onboard"); } catch {}
-                                            setUser({ ...user, onboarded: true });
-                                        }}
-                                        data-testid="onb-bypass-empty"
-                                        className="mt-5 px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider"
-                                        style={{ background: PT.ink, color: "#fff" }}
-                                    >
-                                        Entrar no Lusorae →
-                                    </button>
                                 </div>
                             ) : (
                                 <ul className="space-y-2">
@@ -263,40 +250,41 @@ export function OnboardingModal() {
                 <div className="px-6 py-4 border-t border-black/[0.05] flex items-center justify-between gap-4">
                     {step === 1 ? (
                         <>
-                            <span className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: canStep1 ? PT.ink : "rgba(10,10,10,0.5)" }} data-testid="step1-counter">
+                            <span className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: canStep1 ? PT.ink : "rgba(10,10,10,0.5)" }} data-testid="step1-counter">
                                 {interests.size} / {MIN_INTERESTS}
                             </span>
                             <button
                                 onClick={goToStep2}
                                 disabled={!canStep1 || busy}
                                 data-testid="onb-step1-next"
-                                className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                                className="px-5 py-2.5 rounded-full text-[12.5px] font-bold uppercase tracking-wider transition tap-shrink"
                                 style={{
                                     background: canStep1 ? PT.ink : "rgba(10,10,10,0.08)",
                                     color: canStep1 ? "#fff" : "rgba(10,10,10,0.35)",
                                     cursor: canStep1 ? "pointer" : "not-allowed",
                                 }}
                             >
-                                Continuar →
+                                Continuar
                             </button>
                         </>
                     ) : (
                         <>
-                            <span className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: canFinish ? PT.ink : "rgba(10,10,10,0.5)" }} data-testid="step2-counter">
-                                {followCount} / {MIN_FOLLOWS}
+                            <span className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: "rgba(10,10,10,0.55)" }} data-testid="step2-counter">
+                                {followCount > 0 ? `${followCount} a seguir` : `Sugerimos ${SUGGESTED_FOLLOWS}`}
                             </span>
                             <button
                                 onClick={finish}
-                                disabled={!canFinish || busy}
+                                disabled={busy}
                                 data-testid="finish-onboarding"
-                                className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                                className="px-5 py-2.5 rounded-full text-[12.5px] font-bold uppercase tracking-wider transition tap-shrink"
                                 style={{
-                                    background: canFinish ? PT.ink : "rgba(10,10,10,0.08)",
-                                    color: canFinish ? "#fff" : "rgba(10,10,10,0.35)",
-                                    cursor: canFinish ? "pointer" : "not-allowed",
+                                    background: PT.ink,
+                                    color: "#fff",
+                                    cursor: busy ? "wait" : "pointer",
+                                    opacity: busy ? 0.6 : 1,
                                 }}
                             >
-                                Activar o meu feed →
+                                {followCount > 0 ? "Entrar" : "Saltar e entrar"}
                             </button>
                         </>
                     )}
