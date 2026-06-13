@@ -20,8 +20,6 @@ const navItems = [
     { to: "/messages", icon: MessageCircle,testid: "mnav-messages", label: "DMs", badgeKey: "msg" },
 ];
 
-const WHISPER_KEY = "vm:fab-whisper:v1";
-
 function haptic(ms = 12) {
     centralHaptic([ms]);
 }
@@ -34,7 +32,6 @@ export function MobileBottomNav({ onCompose }) {
     const [draftCount, setDraftCount] = useState(0);
     const [quickOpen, setQuickOpen] = useState(false);
     const [pressed, setPressed] = useState(false);
-    const [showWhisper, setShowWhisper] = useState(false);
 
     const fabHidden = useHideOnScroll(140) && !quickOpen;
 
@@ -74,19 +71,6 @@ export function MobileBottomNav({ onCompose }) {
     }, [user?.username]);
 
     useEffect(() => {
-        if (!user?.username) return;
-        try {
-            if (sessionStorage.getItem(WHISPER_KEY)) return;
-        } catch { return; }
-        const t = setTimeout(() => {
-            setShowWhisper(true);
-            try { sessionStorage.setItem(WHISPER_KEY, "1"); } catch {}
-            setTimeout(() => setShowWhisper(false), 3700);
-        }, 1500);
-        return () => clearTimeout(t);
-    }, [user?.username]);
-
-    useEffect(() => {
         if (!quickOpen) return;
         const onDoc = (e) => {
             if (e.target?.closest?.("[data-fab-quick]")) return;
@@ -111,7 +95,6 @@ export function MobileBottomNav({ onCompose }) {
             longPressFired.current = true;
             haptic(18);
             setQuickOpen(true);
-            setShowWhisper(false);
             setPressed(false);
         }, 480);
     }, []);
@@ -128,7 +111,6 @@ export function MobileBottomNav({ onCompose }) {
         }
         if (quickOpen) { setQuickOpen(false); return; }
         haptic(10);
-        setShowWhisper(false);
         onCompose?.();
     }, [onCompose, quickOpen]);
 
@@ -174,12 +156,6 @@ export function MobileBottomNav({ onCompose }) {
                     if (it.center) {
                         return (
                             <div key={idx} className="flex items-center justify-center relative" data-fab-quick="root">
-                                {showWhisper && !quickOpen && (
-                                    <span className="fab-whisper" role="status" aria-live="polite">
-                                        Partilha algo ✨
-                                    </span>
-                                )}
-
                                 {quickOpen && (
                                     <div className="fab-quick-sheet" data-fab-quick="sheet" data-testid="fab-quick-sheet">
                                         <div
