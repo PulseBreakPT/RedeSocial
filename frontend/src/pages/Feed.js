@@ -12,6 +12,7 @@ import { StoriesBar } from "../components/StoriesBar";
 import { MobileHomeHero } from "../components/MobileHomeHero";
 import { PostSkeletonList } from "../components/Skeleton";
 import { LiveActivityBeacon } from "../components/LiveActivityBeacon";
+import { MobileFeedTopWidgets, MobileFeedInterstitial } from "../components/FeedAside";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useScrollHealth } from "../hooks/useScrollHealth";
@@ -286,6 +287,13 @@ export default function Feed() {
             {/* Stories — right under the greeting, on both desktop & mobile */}
             <StoriesBar />
 
+            {/* PARIDADE DESKTOP ↔ MOBILE: widgets do top da right-sidebar.
+                Em desktop a sidebar à direita mostra Calendar + Atividade entre
+                outros; em mobile injectamos os mesmos *inline* aqui (compactos),
+                imediatamente depois das stories — informação leve, time-sensitive,
+                pattern aprovado por Twitter/X e Threads. */}
+            <MobileFeedTopWidgets />
+
             {/* Mobile-only tabs — REMOVIDAS (feed unificado).
                 Mantemos apenas o sticky bar vazio? Não — removemos o bloco todo
                 para libertar espaço vertical no mobile. O dia-marker do feed
@@ -334,13 +342,21 @@ export default function Feed() {
                 </div>
             ) : (
                 <div className="relative z-10">
-                    {posts.map((p) => (
-                        <PostCard
-                            key={p.id}
-                            post={p}
-                            onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
-                            onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
-                        />
+                    {posts.map((p, idx) => (
+                        <div key={p.id}>
+                            <PostCard
+                                post={p}
+                                onChange={(np) => setPosts((prev) => prev.map((x) => (x.id === np.id ? np : x)))}
+                                onDelete={(id) => setPosts((prev) => prev.filter((x) => x.id !== id))}
+                            />
+                            {/* PARIDADE MOBILE — interstitials intercalados.
+                                Apenas visíveis em mobile (FeedAside aplica `lg:hidden`).
+                                Padrão Twitter/X: descoberta dentro do scroll, sem dump
+                                vertical no topo. */}
+                            {idx === 2  && <MobileFeedInterstitial slot="trending" />}
+                            {idx === 6  && <MobileFeedInterstitial slot="suggestions" />}
+                            {idx === 11 && <MobileFeedInterstitial slot="communities" />}
+                        </div>
                     ))}
                 </div>
             )}

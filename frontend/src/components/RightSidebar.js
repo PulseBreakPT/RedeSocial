@@ -1,41 +1,27 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, TrendingUp, Hash, X, Calendar, Users, UserPlus, Check } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Search, Hash, X } from "lucide-react";
 import { api } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
-import { ActivityTicker } from "./ActivityTicker";
-import { TrendingPulse } from "./TrendingPulse";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { FeedWidgetsStack } from "./FeedAside";
 import { PT } from "../theme/editorial";
 
 // =============================================================================
-// LUSORAE — Right Sidebar (clean editorial)
-// Search · Calendário PT · Tendências · Sugestões · Comunidades
-//
-// Removido: header masthead sólido fanzine, bordas 2.5px ink, sombras 3D
-// Mantido: estrutura, kickers mono, paleta para acentos contextuais
+// LUSORAE — Right Sidebar (desktop-only).
+// Composição: Search + FeedWidgetsStack (partilhado com mobile via FeedAside).
+// Mantemos a sidebar minimalista — toda a lógica de widgets vive em FeedAside.js,
+// garantindo paridade desktop/mobile sem duplicação de código.
 // =============================================================================
 export function RightSidebar() {
     const [q, setQ] = useState("");
     const [results, setResults] = useState({ users: [], tags: [] });
     const [focused, setFocused] = useState(false);
-    const [trending, setTrending] = useState([]);
-    const [suggestions, setSuggestions] = useState([]);
-    const [followingMap, setFollowingMap] = useState({});
-    const [calendar, setCalendar] = useState({ today: null, upcoming: [] });
-    const [communities, setCommunities] = useState([]);
     const navigate = useNavigate();
     const { pathname } = useLocation();
     const searchRef = useClickOutside(() => setFocused(false), focused);
     const isHome = pathname === "/" || pathname === "/feed";
-
-    useEffect(() => {
-        api.get("/trending").then((r) => setTrending((r.data || []).slice(0, 5))).catch(() => {});
-        api.get("/users/suggestions?limit=4").then((r) => setSuggestions(r.data || [])).catch(() => {});
-        api.get("/calendar/pt").then((r) => setCalendar(r.data || { today: null, upcoming: [] })).catch(() => {});
-        api.get("/trending/comunidades").then((r) => setCommunities((r.data || []).slice(0, 3))).catch(() => {});
-    }, []);
 
     useEffect(() => {
         if (!q.trim()) { setResults({ users: [], tags: [] }); return; }
@@ -56,18 +42,6 @@ export function RightSidebar() {
     const closeSearch = () => { setQ(""); setFocused(false); };
     const showDropdown = focused && q.trim().length > 0;
     const isEmpty = results.users.length === 0 && results.tags.length === 0;
-
-    const toggleFollow = async (user) => {
-        if (followingMap[user.id] === "loading") return;
-        const isFollowing = followingMap[user.id] === true;
-        setFollowingMap((m) => ({ ...m, [user.id]: "loading" }));
-        try {
-            await api.post(`/users/${user.username}/follow`);
-            setFollowingMap((m) => ({ ...m, [user.id]: !isFollowing }));
-        } catch {
-            setFollowingMap((m) => ({ ...m, [user.id]: isFollowing }));
-        }
-    };
 
     return (
         <aside
@@ -153,245 +127,12 @@ export function RightSidebar() {
                 )}
             </div>
 
-            <ActivityTicker />
-
-            {/* 1. Calendário PT */}
-            <Widget testid="widget-calendar-pt" accent={PT.red} title="O que vem aí" Icon={Calendar}>
-                {(!calendar.today && (calendar.upcoming || []).length === 0) ? (
-                    <EmptyMini text="Sem datas marcadas." />
-                ) : (
-                    <ul className="space-y-2.5">
-                        {calendar.today && <CalendarItem item={calendar.today} highlight />}
-                        {(calendar.upcoming || []).slice(0, 4).map((ev) => (
-                            <CalendarItem key={ev.key + ev.iso_date} item={ev} />
-                        ))}
-                    </ul>
-                )}
-            </Widget>
-
-            {/* 2. Tendências */}
-            {isHome && (
-                <Widget testid="widget-trending" accent={PT.peixe} title="Tendências" Icon={TrendingUp}>
-                    {trending.length === 0 ? (
-                        <EmptyMini text="Ainda sem tendências. Publica e participa." />
-                    ) : (
-                        <ul className="space-y-2.5">
-                            {trending.map((t, idx) => (
-                                <li
-                                    key={t.tag}
-                                    onClick={() => navigate(`/tag/${t.tag}`)}
-                                    data-testid={`trending-${t.tag}`}
-                                    className="group cursor-pointer flex items-start gap-3 rounded-lg -mx-2 px-2 py-1.5 transition hover:bg-black/[0.025]"
-                                >
-                                    <span className="font-mono text-[10.5px] mt-1 w-5 tabular-nums" style={{ color: "rgba(10,10,10,0.38)", letterSpacing: "0.04em" }}>{String(idx + 1).padStart(2, "0")}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[14.5px] font-bold tracking-tight truncate flex items-center gap-2 group-hover:opacity-80 transition" style={{ color: PT.ink }}>
-                                            <span>#{t.tag}</span>
-                                            <TrendingPulse tag={t.tag} width={42} height={14} />
-                                        </div>
-                                        <div className="text-[11.5px] mt-0.5" style={{ color: "rgba(10,10,10,0.5)" }}>{t.count} publicações</div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    <FooterLink to="/trending" />
-                </Widget>
-            )}
-
-            {/* 3. Sugestões */}
-            {suggestions.length > 0 && (
-                <Widget testid="widget-suggestions" accent={PT.atl} title="Para seguir" Icon={UserPlus}>
-                    <ul className="space-y-3">
-                        {suggestions.slice(0, 4).map((u) => {
-                            const st = followingMap[u.id];
-                            const following = st === true;
-                            const loading = st === "loading";
-                            return (
-                                <li key={u.id} className="flex items-center gap-3" data-testid={`suggestion-${u.username}`}>
-                                    <Link to={`/u/${u.username}`} className="shrink-0">
-                                        <Avatar user={u} size={38} />
-                                    </Link>
-                                    <Link to={`/u/${u.username}`} className="flex-1 min-w-0 group">
-                                        <div className="text-[13.5px] font-bold tracking-tight truncate flex items-center gap-1 group-hover:opacity-80 transition" style={{ color: PT.ink }}>
-                                            {u.name} {u.verified && <VerifiedBadge size={10} />}
-                                        </div>
-                                        <div className="text-[11.5px] font-mono truncate" style={{ color: "rgba(10,10,10,0.5)" }}>@{u.username}{u.city ? ` · ${u.city}` : ""}</div>
-                                    </Link>
-                                    <button
-                                        onClick={() => toggleFollow(u)}
-                                        disabled={loading}
-                                        data-testid={`follow-${u.username}`}
-                                        className="shrink-0 text-[11.5px] font-bold px-3.5 py-1.5 rounded-full transition disabled:opacity-50"
-                                        style={
-                                            following
-                                                ? { background: "#fff", color: PT.ink, border: "1px solid rgba(10,10,10,0.16)" }
-                                                : { background: PT.ink, color: "#fff", border: `1px solid ${PT.ink}`, boxShadow: "0 6px 14px -6px rgba(10,10,10,0.35)" }
-                                        }
-                                    >
-                                        {loading ? "…" : following ? (<span className="inline-flex items-center gap-1"><Check size={11} strokeWidth={3} /> a seguir</span>) : "Seguir"}
-                                    </button>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                    <FooterLink to="/explore" label="descobrir mais" />
-                </Widget>
-            )}
-
-            {/* 4. Comunidades */}
-            {communities.length > 0 && (
-                <Widget testid="widget-communities" accent={PT.telha} title="Comunidades" Icon={Users}>
-                    <ul className="space-y-2.5">
-                        {communities.map((c) => (
-                            <li key={c.slug}>
-                                <Link to={`/c/${c.slug}`} className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-1.5 transition hover:bg-black/[0.025]" data-testid={`community-${c.slug}`}>
-                                    <div className="w-9 h-9 rounded-lg grid place-items-center font-black text-[14px] shrink-0" style={{ background: "rgba(10,10,10,0.05)", color: PT.ink }}>
-                                        {(c.name || c.slug || "?").slice(0, 1).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-[13.5px] font-bold tracking-tight truncate" style={{ color: PT.ink }}>{c.name || c.slug}</div>
-                                        <div className="text-[11.5px] font-mono truncate" style={{ color: "rgba(10,10,10,0.5)" }}>{c.members_count || 0} membros</div>
-                                    </div>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                    <FooterLink to="/communities" label="ver todas" />
-                </Widget>
-            )}
+            {/* Widgets — partilhados com mobile via FeedAside.js (DRY). */}
+            <FeedWidgetsStack isHome={isHome} />
 
             <p className="font-mono text-[10px] font-bold uppercase px-2 mt-auto pt-2" style={{ color: "rgba(10,10,10,0.32)", letterSpacing: "0.18em" }}>
                 © lusorae · {new Date().getFullYear()}
             </p>
         </aside>
-    );
-}
-
-// =============================================================================
-// Widget — card editorial limpo com título centrado + ícone (sem kicker duplicado)
-// =============================================================================
-function Widget({ children, accent = PT.ink, title, Icon, testid }) {
-    return (
-        <div
-            className="overflow-hidden transition-all duration-200"
-            style={{
-                background: "#fff",
-                border: "1px solid rgba(10,10,10,0.07)",
-                borderRadius: 18,
-                boxShadow: "0 1px 0 rgba(255,255,255,0.6) inset, 0 12px 28px -20px rgba(10,10,10,0.10)",
-            }}
-            data-testid={testid}
-        >
-            {/* Header — título único, centrado, com ícone à esquerda do texto */}
-            <div className="flex items-center justify-center gap-2 px-4 pt-4 pb-3">
-                {Icon && (
-                    <Icon size={16} strokeWidth={2.0} className="shrink-0" style={{ color: accent }} />
-                )}
-                <h3
-                    className="font-black tracking-[-0.02em] text-center"
-                    style={{ fontSize: 16, color: PT.ink, lineHeight: 1.15 }}
-                >
-                    {title}
-                </h3>
-            </div>
-            <div className="px-4 pb-4">
-                {children}
-            </div>
-        </div>
-    );
-}
-
-function EmptyMini({ text }) {
-    return <p className="text-[12px] text-center py-3 font-mono" style={{ color: "rgba(10,10,10,0.45)" }}>{text}</p>;
-}
-
-function FooterLink({ to, label = "ver tudo →" }) {
-    return (
-        <Link
-            to={to}
-            className="mt-4 block text-center font-mono text-[10px] font-bold uppercase hover:opacity-100 transition opacity-65"
-            style={{ color: PT.ink, letterSpacing: "0.18em" }}
-        >
-            {label}
-        </Link>
-    );
-}
-
-function CalendarItem({ item, highlight = false }) {
-    // Acentos cromáticos restritos a texto/ícone — fundos sempre brancos/cinzentos
-    // (sem amarelos, beges ou cremes) a pedido do utilizador.
-    const accentColor = {
-        festa:    PT.laranja,
-        orgulho:  PT.eucalipto,
-        praia:    PT.peixe,
-        tradicao: PT.fado,
-        cultura:  PT.malva,
-        santo:    PT.red,
-        feriado:  PT.ink,
-    }[item.theme] || PT.ink;
-
-    const days = item.days_until;
-    const when =
-        days === 0 ? "HOJE" :
-        days === 1 ? "amanhã" :
-        days != null ? `em ${days} dias` :
-        "";
-
-    let pretty = "";
-    try {
-        if (item.iso_date) {
-            const d = new Date(item.iso_date + "T00:00:00");
-            pretty = d
-                .toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })
-                .replace(/\./g, "")
-                .toLowerCase();
-        }
-    } catch { /* noop */ }
-
-    return (
-        <li
-            className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-1.5 transition hover:bg-black/[0.025]"
-            data-testid={`calendar-${item.key}`}
-        >
-            <div
-                className="w-10 h-10 rounded-lg grid place-items-center shrink-0 text-[18px] leading-none"
-                style={{
-                    // Sempre cinzento neutro — o destaque "highlight" passa
-                    // a ser dado pelo texto e por uma fina barra lateral.
-                    background: highlight ? "rgba(10,10,10,0.08)" : "rgba(10,10,10,0.05)",
-                    color: PT.ink,
-                    borderLeft: highlight ? `3px solid ${accentColor}` : "none",
-                }}
-            >
-                <span>{item.emoji || "•"}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-[13.5px] font-bold tracking-tight truncate" style={{ color: PT.ink }}>{item.label}</div>
-                <div
-                    className="font-mono text-[10.5px] font-bold uppercase truncate"
-                    style={{ color: highlight ? accentColor : "rgba(10,10,10,0.5)", letterSpacing: "0.12em" }}
-                >
-                    {when}
-                </div>
-            </div>
-            {pretty && (
-                <div
-                    className="shrink-0 text-right font-mono font-bold text-[10.5px] tabular-nums"
-                    style={{ color: PT.ink, letterSpacing: "0.04em" }}
-                >
-                    <span
-                        className="inline-block px-2 py-1 rounded-md"
-                        style={{
-                            background: "rgba(10,10,10,0.05)",
-                            lineHeight: 1.05,
-                            minWidth: 44,
-                        }}
-                    >
-                        {pretty}
-                    </span>
-                </div>
-            )}
-        </li>
     );
 }

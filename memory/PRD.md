@@ -137,3 +137,29 @@ Língua de toda a UI/copy: **pt-PT**.
 
 ### Test
 - Validado E2E (Playwright): 10/10 strings proibidas confirmadas removidas; 3/3 títulos esperados presentes; screenshots desktop e mobile limpos sem fundos cremes/amarelos nem bordas grossas.
+
+## Session 2026-06-13 (cont. 2) — Paridade desktop ↔ mobile (FeedAside.js)
+
+### Problema
+Em desktop a right-sidebar mostrava 4 widgets (Atividade recente, O que vem aí, Tendências, Para seguir) + Search. Em mobile não havia equivalente — perda total de descoberta.
+
+### Solução (5 lentes profissionais — pattern Twitter/X)
+- **PM**: Widgets críticos visíveis em mobile, sem clonar a sidebar como dump vertical.
+- **UX (mobile-first)**: 2 widgets compactos imediatamente após Stories (Calendar PT + Atividade recente — informação leve, time-sensitive); restantes intercalados no feed (Tendências após 3º post, Para seguir após 7º, Comunidades após 12º) — replica o "Who to follow" pattern do Twitter.
+- **FE (DRY)**: Criado `/app/frontend/src/components/FeedAside.js` com:
+  - `<Card>` shared (background branco, hairline 1px, título único centrado com ícone)
+  - 5 widgets standalone: `ActivityWidget`, `CalendarPtWidget`, `TrendingWidget`, `SuggestionsWidget`, `CommunitiesWidget`
+  - 2 layouts: `<FeedWidgetsStack />` (desktop sidebar) e `<MobileFeedTopWidgets />` + `<MobileFeedInterstitial slot=… />` (mobile)
+- **A11y**: `<section aria-labelledby>` + `<h3 id>` semântico em cada widget; mobile widgets escondem-se em desktop (`lg:hidden`) e vice-versa, evitando double-render.
+- **Perf**: Widgets mobile usam `limit=3` em vez de 4-5 (menos bytes em conexões móveis); cada widget faz a sua própria fetch independente (não há fetch duplicada simultânea porque um dispositivo nunca renderiza desktop + mobile ao mesmo tempo).
+
+### Mudanças concretas
+- `FeedAside.js` (NEW) — single source of truth para widgets do feed.
+- `RightSidebar.js` reduzido de 407 → 137 linhas (delega tudo para `FeedWidgetsStack`).
+- `Feed.js` ganhou `<MobileFeedTopWidgets />` após `<StoriesBar />` e `<MobileFeedInterstitial slot=trending|suggestions|communities />` intercalados no map dos posts.
+- `ActivityTicker.js` (componente raiz, não-admin) **removido** — funcionalidade migrada para `ActivityWidget` em `FeedAside.js`.
+
+### Validado E2E (Playwright)
+- Desktop (1440px): 4/4 widgets presentes na sidebar (Atividade, Calendar, Trending, Suggestions) ✅
+- Mobile (390px): `mobile-feed-top-widgets` presente; Calendar e Activity intercalados após Stories; `mobile-feed-interstitial-trending` confirmado após 3º post ✅
+- Screenshots: paridade visual total, sem fundos cremes/amarelos, sem bordas grossas.
