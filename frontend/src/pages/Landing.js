@@ -4,6 +4,13 @@ import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } 
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { track } from "../lib/analytics";
+
+// Helper: cria onClick handler que dispara `cta_click` no PostHog.
+// No-op se o utilizador não consentiu (analytics.js trata da gating).
+const trackCta = (location, label, extra = {}) => () => {
+    track("cta_click", { location, label, ...extra });
+};
 
 // =============================================================================
 // LUSORAE — Landing pública SSS-tier · ONE-SCREEN
@@ -470,6 +477,7 @@ function MobileStickyCta() {
                 <Link
                     to="/register"
                     data-testid="mobile-sticky-register"
+                    onClick={trackCta("mobile_sticky", "register")}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[12.5px] font-bold shrink-0"
                     style={{
                         background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
@@ -541,6 +549,7 @@ function TopNav() {
                     <Link
                         to="/login"
                         data-testid="nav-login"
+                        onClick={trackCta("top_nav", "login")}
                         className="text-[14px] font-semibold transition-opacity hover:opacity-60"
                         style={{ color: PT.ink }}
                     >
@@ -549,6 +558,7 @@ function TopNav() {
                     <Link
                         to="/register"
                         data-testid="nav-register"
+                        onClick={trackCta("top_nav", "register")}
                         className="inline-flex items-center gap-1.5 text-[13.5px] font-bold px-5 py-2.5 rounded-full transition-all hover:scale-[1.03]"
                         style={{ background: PT.ink, color: "#fff", boxShadow: `0 4px 16px -4px rgba(10,10,10,0.35)` }}
                     >
@@ -591,7 +601,7 @@ function TopNav() {
                         <div className="pt-3 mt-2 grid grid-cols-2 gap-2.5" style={{ borderTop: "1px solid rgba(10,10,10,0.08)" }}>
                             <Link
                                 to="/login"
-                                onClick={() => setMobileOpen(false)}
+                                onClick={() => { setMobileOpen(false); track("cta_click", { location: "mobile_drawer", label: "login" }); }}
                                 className="text-center py-3 text-[14px] font-bold rounded-full"
                                 style={{ border: `1.5px solid ${PT.ink}`, color: PT.ink }}
                             >
@@ -599,7 +609,7 @@ function TopNav() {
                             </Link>
                             <Link
                                 to="/register"
-                                onClick={() => setMobileOpen(false)}
+                                onClick={() => { setMobileOpen(false); track("cta_click", { location: "mobile_drawer", label: "register" }); }}
                                 className="text-center py-3 text-[14px] font-bold rounded-full"
                                 style={{ background: PT.ink, color: "#fff" }}
                             >
@@ -801,6 +811,7 @@ function Hero({ stats }) {
                             <Link
                                 to="/register"
                                 data-testid="hero-cta-register"
+                                onClick={trackCta("hero", "register")}
                                 className="group inline-flex items-center gap-2 px-7 py-4 sm:px-8 sm:py-[18px] rounded-full text-[14.5px] sm:text-[15.5px] font-bold transition-all hover:scale-[1.04]"
                                 style={{
                                     background: `linear-gradient(180deg, #1f1f1f 0%, ${PT.ink} 100%)`,
@@ -819,6 +830,7 @@ function Hero({ stats }) {
                         <Link
                             to="/login"
                             data-testid="hero-cta-explore"
+                            onClick={trackCta("hero", "explore")}
                             className="group inline-flex items-center gap-1.5 text-[14.5px] sm:text-[15.5px] font-bold py-2 transition-all"
                             style={{ color: PT.ink, borderBottom: `2px solid ${PT.ink}`, paddingBottom: 4 }}
                         >
@@ -2137,6 +2149,7 @@ function FinalCta() {
                                 <Link
                                     to="/register"
                                     data-testid="final-cta-register"
+                                    onClick={trackCta("final", "register")}
                                     className="group inline-flex items-center justify-center gap-2 px-7 py-[18px] rounded-full text-[15px] font-bold transition-all hover:scale-[1.03] w-full sm:w-auto"
                                     style={{ background: "#fff", color: PT.ink, boxShadow: `0 14px 32px -10px rgba(0,0,0,0.5)` }}
                                 >
@@ -2147,6 +2160,7 @@ function FinalCta() {
                             <Link
                                 to="/login"
                                 data-testid="final-cta-login"
+                                onClick={trackCta("final", "login")}
                                 className="inline-flex items-center justify-center gap-1.5 text-[14.5px] font-bold py-[15px] px-6 rounded-full"
                                 style={{ border: `1.5px solid rgba(255,255,255,0.45)`, color: "#fff" }}
                             >
@@ -2307,6 +2321,35 @@ export default function Landing() {
             }
         })();
         return () => { mounted = false; };
+    }, []);
+
+    // === Analytics: page view + scroll depth (25/50/75/100%) ===
+    // Tudo gated por consent — no-op se utilizador rejeitou analytics.
+    useEffect(() => {
+        track("landing_view", {
+            referrer: typeof document !== "undefined" ? document.referrer : "",
+            viewport: typeof window !== "undefined"
+                ? `${window.innerWidth}x${window.innerHeight}`
+                : "",
+        });
+
+        const milestones = [25, 50, 75, 100];
+        const reached = new Set();
+        const onScroll = () => {
+            const doc = document.documentElement;
+            const scrollTop = window.scrollY || doc.scrollTop;
+            const scrollHeight = Math.max(1, doc.scrollHeight - window.innerHeight);
+            const pct = Math.min(100, Math.round((scrollTop / scrollHeight) * 100));
+            for (const m of milestones) {
+                if (pct >= m && !reached.has(m)) {
+                    reached.add(m);
+                    track("landing_scroll_depth", { percent: m });
+                }
+            }
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll();
+        return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
     if (!checking && user) return <Navigate to="/feed" replace />;

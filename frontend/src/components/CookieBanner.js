@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Cookie, X, ShieldCheck, ChevronRight } from "lucide-react";
+import { track } from "../lib/analytics";
 
 /**
  * CookieBanner — RGPD + Lei n.º 41/2004 (ePrivacy) compliant.
@@ -72,27 +73,32 @@ export function openCookiePreferences() {
 }
 
 export function CookieBanner() {
-    const [open, setOpen] = useState(false);
+    // Lazy initialização — lê localStorage e decide estado inicial UMA vez,
+    // sem precisar de setState dentro de useEffect (cumpre regra
+    // react-hooks/set-state-in-effect).
+    const initial = (() => {
+        if (typeof window === "undefined") {
+            return { open: false, prefs: DEFAULT_PREFS };
+        }
+        const isAdminRoute = (window.location.pathname || "").startsWith("/admin");
+        const existing = readConsent();
+        if (isAdminRoute) {
+            return {
+                open: false,
+                prefs: existing ? { ...DEFAULT_PREFS, ...existing.prefs } : DEFAULT_PREFS,
+            };
+        }
+        if (!existing) return { open: true, prefs: DEFAULT_PREFS };
+        return { open: false, prefs: { ...DEFAULT_PREFS, ...existing.prefs } };
+    })();
+
+    const [open, setOpen] = useState(initial.open);
     const [showDetails, setShowDetails] = useState(false);
-    const [prefs, setPrefs] = useState(DEFAULT_PREFS);
+    const [prefs, setPrefs] = useState(initial.prefs);
 
     useEffect(() => {
-        // Skip banner entirely inside the admin shell — admins consent via
-        // their own legal/privacy flow and the banner conflicts with the
-        // operational density of the panel.
-        const isAdminRoute = typeof window !== "undefined"
-            && (window.location.pathname || "").startsWith("/admin");
-        if (isAdminRoute) {
-            const existing = readConsent();
-            if (existing) setPrefs({ ...DEFAULT_PREFS, ...existing.prefs });
-            return undefined;
-        }
-        const existing = readConsent();
-        if (!existing) {
-            setOpen(true);
-        } else {
-            setPrefs({ ...DEFAULT_PREFS, ...existing.prefs });
-        }
+        // Listener para re-abrir o banner via openCookiePreferences() — usado
+        // por links no footer e na página Cookies.
         const onOpen = () => {
             const cur = readConsent();
             if (cur) setPrefs({ ...DEFAULT_PREFS, ...cur.prefs });
@@ -108,6 +114,10 @@ export function CookieBanner() {
         writeConsent(p, "accept_all");
         setPrefs(p);
         setOpen(false);
+        // O `vm:consent-changed` event vai inicializar o PostHog; este track
+        // só dispara depois da próxima volta porque o init é assíncrono.
+        // Para garantir captura imediata, deixamos o listener tomar conta.
+        setTimeout(() => track("consent_decision", { mode: "accept_all" }), 50);
     }, []);
 
     const rejectAll = useCallback(() => {
@@ -115,11 +125,15 @@ export function CookieBanner() {
         writeConsent(p, "reject_all");
         setPrefs(p);
         setOpen(false);
+        // Aqui não há track — utilizador rejeitou analytics.
     }, []);
 
     const saveCustom = useCallback(() => {
         writeConsent(prefs, "custom");
         setOpen(false);
+        if (prefs.analytics) {
+            setTimeout(() => track("consent_decision", { mode: "custom", analytics: true }), 50);
+        }
     }, [prefs]);
 
     const togglePref = (key) => {
@@ -129,53 +143,45 @@ export function CookieBanner() {
 
     if (!open) return null;
 
-    return (
-        <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cookie-banner-title"
-            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pointer-events-none"
-        >
-            {/* Backdrop only when "details" mode (full modal) */}
-            {showDetails && (
+    // === DETAILS MODE — centered modal with backdrop (granular settings) ===
+    if (showDetails) {
+        return (
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="cookie-banner-title"
+                className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pointer-events-none"
+            >
                 <button
                     type="button"
                     aria-label="Fechar"
                     onClick={() => setShowDetails(false)}
                     className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto animate-fade-in"
                 />
-            )}
-
-            <div
-                className={`pointer-events-auto bg-white text-black shadow-[0_24px_64px_-12px_rgba(0,0,0,0.30)] ring-1 ring-black/[0.08] ${
-                    showDetails
-                        ? "w-full max-w-[640px] mx-3 sm:mx-4 mb-3 sm:mb-0 rounded-2xl max-h-[88vh] overflow-y-auto"
-                        : "w-full sm:max-w-[760px] sm:mx-4 mb-3 sm:mb-6 rounded-2xl"
-                }`}
-                data-testid="cookie-banner"
-            >
-                {/* Header */}
-                <div className="flex items-start gap-3.5 px-5 pt-5 pb-3">
-                    <div className="w-10 h-10 rounded-full bg-black/[0.04] grid place-items-center shrink-0">
-                        <Cookie size={18} strokeWidth={1.7} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h2
-                            id="cookie-banner-title"
-                            className="font-display text-[17px] font-bold tracking-tight leading-tight"
-                        >
-                            Os teus dados, à tua maneira
-                        </h2>
-                        <p className="mt-1 text-[13px] text-black/65 leading-relaxed">
-                            Usamos cookies para o site funcionar bem. Com a tua autorização, alguns ajudam-nos
-                            também a melhorar a experiência.{" "}
-                            <Link to="/legal/cookies" className="underline underline-offset-2 hover:text-black">
-                                Saber mais
-                            </Link>
-                            .
-                        </p>
-                    </div>
-                    {showDetails && (
+                <div
+                    className="pointer-events-auto bg-white text-black shadow-[0_24px_64px_-12px_rgba(0,0,0,0.30)] ring-1 ring-black/[0.08] w-full max-w-[640px] mx-3 sm:mx-4 mb-3 sm:mb-0 rounded-2xl max-h-[88vh] overflow-y-auto"
+                    data-testid="cookie-banner"
+                >
+                    {/* Header */}
+                    <div className="flex items-start gap-3.5 px-5 pt-5 pb-3">
+                        <div className="w-10 h-10 rounded-full bg-black/[0.04] grid place-items-center shrink-0">
+                            <Cookie size={18} strokeWidth={1.7} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h2
+                                id="cookie-banner-title"
+                                className="font-display text-[17px] font-bold tracking-tight leading-tight"
+                            >
+                                Personalizar cookies
+                            </h2>
+                            <p className="mt-1 text-[13px] text-black/65 leading-relaxed">
+                                Escolhe o que aceitas. Os essenciais ficam sempre ativos.{" "}
+                                <Link to="/legal/cookies" className="underline underline-offset-2 hover:text-black">
+                                    Saber mais
+                                </Link>
+                                .
+                            </p>
+                        </div>
                         <button
                             type="button"
                             onClick={() => setShowDetails(false)}
@@ -184,11 +190,9 @@ export function CookieBanner() {
                         >
                             <X size={16} />
                         </button>
-                    )}
-                </div>
+                    </div>
 
-                {/* Details */}
-                {showDetails && (
+                    {/* Granular categories */}
                     <div className="px-5 pb-2">
                         <div className="border-t border-black/[0.06] pt-3 space-y-2.5">
                             <CategoryRow
@@ -226,21 +230,9 @@ export function CookieBanner() {
                             </span>
                         </p>
                     </div>
-                )}
 
-                {/* Actions */}
-                <div className="px-5 pt-3 pb-5 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between border-t border-black/[0.04]">
-                    {!showDetails ? (
-                        <button
-                            type="button"
-                            onClick={() => setShowDetails(true)}
-                            data-testid="cookie-customize"
-                            className="text-[13px] font-medium text-black/70 hover:text-black inline-flex items-center gap-1 self-start"
-                        >
-                            Personalizar
-                            <ChevronRight size={14} />
-                        </button>
-                    ) : (
+                    {/* Actions */}
+                    <div className="px-5 pt-3 pb-5 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between border-t border-black/[0.04]">
                         <button
                             type="button"
                             onClick={saveCustom}
@@ -249,23 +241,94 @@ export function CookieBanner() {
                         >
                             Guardar escolhas
                         </button>
-                    )}
-                    <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                                type="button"
+                                onClick={rejectAll}
+                                data-testid="cookie-reject"
+                                className="flex-1 sm:flex-initial px-4 py-2 rounded-full text-[13px] font-medium bg-black/[0.05] text-black hover:bg-black/[0.09] active:scale-95 transition"
+                            >
+                                Rejeitar todos
+                            </button>
+                            <button
+                                type="button"
+                                onClick={acceptAll}
+                                data-testid="cookie-accept"
+                                className="flex-1 sm:flex-initial px-4 py-2 rounded-full text-[13px] font-medium text-white bg-black hover:bg-[#1a1a1a] active:scale-95 transition"
+                            >
+                                Aceitar todos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // === COMPACT MODE — bottom thin bar (não cobre o hero, RGPD-compliant) ===
+    return (
+        <div
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="cookie-banner-title-compact"
+            className="fixed inset-x-0 bottom-0 sm:bottom-3 lg:bottom-4 z-[100] flex justify-center px-0 sm:px-3 lg:px-4 pointer-events-none"
+        >
+            <div
+                className="pointer-events-auto bg-white text-black w-full sm:w-auto sm:max-w-[1040px] shadow-[0_18px_44px_-12px_rgba(0,0,0,0.22)] ring-1 ring-black/[0.08] rounded-t-2xl sm:rounded-2xl animate-slide-up-fade"
+                data-testid="cookie-banner"
+                style={{
+                    paddingBottom: "max(env(safe-area-inset-bottom, 0px), 0px)",
+                }}
+            >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4 px-4 sm:px-5 py-3 sm:py-3.5">
+                    {/* Icon + copy — desktop: inline; mobile: stacked */}
+                    <div className="flex items-start gap-2.5 sm:items-center flex-1 min-w-0">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/[0.04] grid place-items-center shrink-0">
+                            <Cookie size={15} strokeWidth={1.8} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p
+                                id="cookie-banner-title-compact"
+                                className="text-[12.5px] sm:text-[13px] leading-snug text-black/80"
+                            >
+                                <span className="font-semibold text-black">Cookies essenciais ativos.</span>{" "}
+                                Aceitas analytics opcionais para melhorarmos a experiência?{" "}
+                                <Link
+                                    to="/legal/cookies"
+                                    className="underline underline-offset-2 hover:text-black hidden sm:inline"
+                                >
+                                    Saber mais
+                                </Link>
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Actions — desktop: inline row; mobile: 3-button grid */}
+                    <div className="flex items-center gap-2 sm:gap-2 sm:shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setShowDetails(true)}
+                            data-testid="cookie-customize"
+                            className="text-[12px] sm:text-[12.5px] font-medium text-black/65 hover:text-black inline-flex items-center gap-0.5 px-2 py-1.5 sm:px-1.5"
+                        >
+                            Personalizar
+                            <ChevronRight size={13} className="hidden sm:inline" />
+                        </button>
                         <button
                             type="button"
                             onClick={rejectAll}
                             data-testid="cookie-reject"
-                            className="flex-1 sm:flex-initial px-4 py-2 rounded-full text-[13px] font-medium bg-black/[0.05] text-black hover:bg-black/[0.09] active:scale-95 transition"
+                            className="flex-1 sm:flex-initial px-3.5 py-2 sm:py-1.5 rounded-full text-[12.5px] sm:text-[12.5px] font-semibold bg-black/[0.05] text-black hover:bg-black/[0.09] active:scale-95 transition whitespace-nowrap"
                         >
-                            Rejeitar todos
+                            Rejeitar
                         </button>
                         <button
                             type="button"
                             onClick={acceptAll}
                             data-testid="cookie-accept"
-                            className="flex-1 sm:flex-initial px-4 py-2 rounded-full text-[13px] font-medium text-white bg-black hover:bg-[#1a1a1a] active:scale-95 transition"
+                            className="flex-1 sm:flex-initial px-4 py-2 sm:py-1.5 rounded-full text-[12.5px] sm:text-[12.5px] font-semibold text-white bg-black hover:bg-[#1a1a1a] active:scale-95 transition whitespace-nowrap"
                         >
-                            Aceitar todos
+                            Aceitar
                         </button>
                     </div>
                 </div>

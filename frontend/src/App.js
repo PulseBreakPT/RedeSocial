@@ -12,6 +12,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
+import { initAnalyticsFromConsent } from "./lib/analytics";
 
 // Páginas carregadas sob demanda (code-splitting por rota). Corta o bundle
 // inicial: cada página vira um chunk próprio, e libs que só servem uma rota
@@ -70,13 +71,20 @@ function App() {
         try {
             document.documentElement.classList.add("smooth-scroll");
             document.body.classList.add("smooth-scroll");
-        } catch {}
+        } catch { /* ignore */ }
         return () => {
             try {
                 document.documentElement.classList.remove("smooth-scroll");
                 document.body.classList.remove("smooth-scroll");
-            } catch {}
+            } catch { /* ignore */ }
         };
+    }, []);
+
+    // Bootstrap analytics — consent-gated PostHog (RGPD compliant).
+    // Só dispara init() se o utilizador já consentiu; caso contrário, fica em
+    // standby a ouvir o evento vm:consent-changed.
+    useEffect(() => {
+        initAnalyticsFromConsent();
     }, []);
     return (
         <div className="App">
