@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Compass, MessageCircle, Plus, PenSquare, Image as ImageIcon, Bell } from "lucide-react";
+import { Home, Compass, MessageCircle, Plus, PenSquare, Image as ImageIcon, Bell, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
