@@ -422,3 +422,37 @@ Painel de 10 profissões avaliou `Landing.js` (2433 linhas, 123 KB). Score geral
 - **P1 Architecture**: split de `Landing.js` (2433 linhas) em ~12 módulos `<200 linhas`
 - **P1 Performance**: migrar imagens Unsplash → `/public/img/` WebP/AVIF
 - **P2 Long-term**: avaliar migração CRA → Next.js para SSR/SSG (SEO real, OG dinâmico)
+
+## Seed Network Realism Ω (Feb 14, 2026) ✅
+50 personas portuguesas curadas + 500 posts + 1000 comentários + 1871 arestas de follow injectados em MongoDB.
+
+### Implementação
+- **Dados curados:** `/app/backend/scripts/seed_realism_data.py` (50 personas com nome, username, idade, cidade, freguesia, profissão, bio, voice_tag, p_post/comment/reply/dm, photo_brief) + biblioteca de ~50 vozes (`VOICES`) + 9 buckets de comentários (`COMMENTS`) + hashtags por tema.
+- **Seeder:** `/app/backend/scripts/seed_realism_runner.py` — gera tudo em memória, audita, e injecta no Mongo. Reprodutível (RNG seed fixa). Idempotente: `--apply` faz reset+insert. `--reset` apaga tudo. `--dry-run` mostra amostra+auditoria. `--audit` corre auditoria contra DB.
+- **Marcação:** todos os docs criados têm `is_seed: true` + `seed_marker: "lusorae_omega_v1"` para limpeza fácil ou filtragem.
+
+### Auditoria Ω (8/8 ✓)
+- 5 buckets etários completos (18-24, 25-34, 35-44, 45-54, 55+)
+- 11 cidades portuguesas distintas
+- Posts médios 54 chars (max 123) — voz humana curta
+- 89% sem hashtag (PT real usa poucos)
+- 86% começam com minúscula (estilo informal real)
+- Jaccard lexical médio 0.04 (diversidade extrema entre autores)
+- Follow degree avg 37 (range 18-49) coerente com idade
+- Distribuição horária com picos almoço (12-14h) e noite (19-21h)
+
+### Grafo de follows
+Heurística: 60% mesma cidade, 15% mesma região, 10% por interesse partilhado, 15% clube de futebol, 5% mood, 35% bidireccional. Adolescentes/jovens seguem 40-80; reformados 10-25.
+
+### Validação em produção
+Login real funciona via `mariana.silva@seed.lusorae.pt` / `LusoraeSeed2026!`. Feed `/api/feed/v2` devolve 80 posts variados. Trending `/api/trending` mostra `#almodovar`, `#saramago`, `#musicaportuguesa`, `#jogo`, `#fcporto` (todos emergentes do conteúdo). Comments threaded com replies. Screenshot do feed confirma renderização editorial premium.
+
+### Princípios respeitados
+- Sem geração de imagens (apenas `bio_slots.photo_brief` em texto descritivo).
+- Sem IA: 100% lexicons curados manualmente + RNG ponderada.
+- Personas marcadas `is_seed:true` permitem exclusão futura de métricas vivas se necessário (Pulse, Reputation, Topology continuam a operar matematicamente em cima delas).
+- Pulse engine NÃO mostra actividade fabricada — só conta últimos 60s, o que significa que os widgets ambient continuam honestos.
+
+### Credenciais de teste
+Ver `/app/memory/test_credentials.md` — todos com password `LusoraeSeed2026!`.
+
