@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "./ui/dialog";
 import {
     Share2, Copy, Check, MessageCircle, Send, Facebook, Instagram, ExternalLink, X as XIcon,
@@ -8,14 +8,14 @@ import { useAuth } from "../context/AuthContext";
 import { shareEvent, buildEventUrl, canUseWebShare } from "../lib/eventShare";
 
 /**
- * EventShareSheet — share sheet rico para um evento do Calendário.
+ * EventShareSheet — share sheet compacto e responsivo para um evento.
  *
- * Mostra:
- *   1. Preview do cartão (OG image dinâmica, igual ao que aparece em unfurl)
- *   2. URL canónica com botão copy + check animado
- *   3. 6 destinos: WhatsApp, X, Telegram, Facebook, Instagram, Web Share/Sistema
+ * Layout (vertical):
+ *   1. Header — Partilhar + ícone (preview removido a pedido do user)
+ *   2. URL canónica + botão Copy
+ *   3. 6 canais em grid 3×2 (compactos)
  *
- * Faz POST /api/calendar/event/{slug}/share para tracking attribution.
+ * Cabe inteiramente em viewport 360×640 sem scroll.
  */
 
 const PT = {
@@ -25,13 +25,13 @@ const PT = {
 };
 const HAIRLINE = "1px solid rgba(10,10,10,0.08)";
 
-function _SocialIcon({ channel }) {
-    if (channel === "whatsapp") return <MessageCircle size={20} strokeWidth={2} />;
-    if (channel === "x") return <XIcon size={20} strokeWidth={2} />;
-    if (channel === "telegram") return <Send size={20} strokeWidth={2} />;
-    if (channel === "facebook") return <Facebook size={20} strokeWidth={2} />;
-    if (channel === "instagram") return <Instagram size={20} strokeWidth={2} />;
-    return <Share2 size={20} strokeWidth={2} />;
+function _SocialIcon({ channel, size = 18 }) {
+    if (channel === "whatsapp") return <MessageCircle size={size} strokeWidth={2} />;
+    if (channel === "x") return <XIcon size={size} strokeWidth={2} />;
+    if (channel === "telegram") return <Send size={size} strokeWidth={2} />;
+    if (channel === "facebook") return <Facebook size={size} strokeWidth={2} />;
+    if (channel === "instagram") return <Instagram size={size} strokeWidth={2} />;
+    return <Share2 size={size} strokeWidth={2} />;
 }
 
 const CHANNELS = [
@@ -46,30 +46,20 @@ const CHANNELS = [
 export function EventShareSheet({ open, onOpenChange, event, onShared }) {
     const { user } = useAuth();
     const [copied, setCopied] = useState(false);
-    const [imgOk, setImgOk] = useState(true);
-    const [hasWebShare, setHasWebShare] = useState(false);
-
-    useEffect(() => {
-        setHasWebShare(canUseWebShare());
-    }, []);
-
-    useEffect(() => {
-        if (!open) {
-            setCopied(false);
-            setImgOk(true);
-        }
-    }, [open]);
+    // Lazy init — evita setState dentro de useEffect (regra react-hooks).
+    const [hasWebShare] = useState(() => {
+        try { return canUseWebShare(); } catch { return false; }
+    });
 
     if (!event) return null;
 
     const slug = event.slug || (event.key || "").replace(/_/g, "-");
     const url = buildEventUrl(slug, { via: user?.username });
-    const ogUrl = `/api/og/event/${slug}.png`;
 
     const handleChannel = async (ch) => {
         const res = await shareEvent({ event, channel: ch, viewerUsername: user?.username });
         if (res?.cancelled) return;
-        // Tracking server-side
+        // Tracking server-side (best-effort)
         try {
             await api.post(`/calendar/event/${slug}/share`, {
                 channel: ch,
@@ -83,10 +73,12 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
         if (onShared) onShared(ch, res);
     };
 
+    const channels = CHANNELS.filter((c) => c.key !== "webshare" || hasWebShare);
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="max-w-[460px] p-0 overflow-hidden gap-0"
+                className="grid-cols-1 max-w-[400px] w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 gap-0 rounded-2xl"
                 data-testid="event-share-sheet"
                 style={{ background: "#fff", border: HAIRLINE }}
             >
@@ -95,49 +87,28 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
                     Escolhe um canal para partilhar este evento.
                 </DialogDescription>
 
-                {/* ── Preview do card OG ── */}
-                <div className="p-4 pb-3" style={{ borderBottom: HAIRLINE }}>
-                    <div className="flex items-center gap-2 mb-3">
+                {/* ── Header compacto (sem preview gigante) ── */}
+                <div className="px-4 sm:px-5 pt-4 pb-3" style={{ borderBottom: HAIRLINE }}>
+                    <div className="flex items-center gap-2 pr-7">
                         <Share2 size={14} strokeWidth={2.2} style={{ color: PT.ink }} />
-                        <span className="font-semibold tracking-tight text-[14px]" style={{ color: PT.ink }}>
+                        <span className="font-semibold tracking-tight text-[14px] truncate" style={{ color: PT.ink }}>
                             Partilhar
                         </span>
-                        <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.14em]" style={{ color: "rgba(10,10,10,0.45)" }}>
-                            pré-visualização
+                        <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] truncate max-w-[120px]" style={{ color: "rgba(10,10,10,0.45)" }}>
+                            {event.title}
                         </span>
-                    </div>
-                    <div
-                        className="rounded-xl overflow-hidden"
-                        style={{ aspectRatio: "1200 / 630", background: "rgba(10,10,10,0.04)", border: HAIRLINE }}
-                    >
-                        {imgOk ? (
-                            <img
-                                src={ogUrl}
-                                alt={`Cartão de partilha — ${event.title}`}
-                                className="w-full h-full object-cover"
-                                onError={() => setImgOk(false)}
-                                data-testid="event-share-og-preview"
-                                loading="eager"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <span className="font-mono uppercase text-[10px] tracking-[0.14em]" style={{ color: "rgba(10,10,10,0.4)" }}>
-                                    pré-visualização indisponível
-                                </span>
-                            </div>
-                        )}
                     </div>
                 </div>
 
                 {/* ── URL + copy ── */}
-                <div className="p-4 pt-3" style={{ borderBottom: HAIRLINE }}>
+                <div className="px-4 sm:px-5 py-3" style={{ borderBottom: HAIRLINE }}>
                     <div
                         className="flex items-center gap-2 px-3 py-2 rounded-full"
                         style={{ background: "rgba(10,10,10,0.04)", border: HAIRLINE }}
                     >
-                        <ExternalLink size={13} strokeWidth={2.2} style={{ color: "rgba(10,10,10,0.55)", flexShrink: 0 }} />
+                        <ExternalLink size={12} strokeWidth={2.2} style={{ color: "rgba(10,10,10,0.55)", flexShrink: 0 }} />
                         <span
-                            className="font-mono text-[11.5px] truncate flex-1"
+                            className="font-mono text-[11px] truncate flex-1 min-w-0"
                             style={{ color: "rgba(10,10,10,0.72)" }}
                             data-testid="event-share-url"
                         >
@@ -148,7 +119,7 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
                             data-testid="event-share-copy"
                             onClick={() => handleChannel("copy")}
                             aria-label="Copiar link"
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold text-[11.5px] transition-all duration-200 flex-shrink-0"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold text-[11px] transition-all duration-200 flex-shrink-0"
                             style={{
                                 background: copied ? "rgba(34,138,73,0.10)" : PT.ink,
                                 color: copied ? "#228a49" : "#fff",
@@ -157,12 +128,12 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
                         >
                             {copied ? (
                                 <>
-                                    <Check size={12} strokeWidth={2.6} />
+                                    <Check size={11} strokeWidth={2.6} />
                                     copiado
                                 </>
                             ) : (
                                 <>
-                                    <Copy size={12} strokeWidth={2.4} />
+                                    <Copy size={11} strokeWidth={2.4} />
                                     copiar
                                 </>
                             )}
@@ -170,29 +141,29 @@ export function EventShareSheet({ open, onOpenChange, event, onShared }) {
                     </div>
                 </div>
 
-                {/* ── Canais ── */}
-                <div className="p-4">
-                    <div className="grid grid-cols-3 gap-2.5" data-testid="event-share-channels">
-                        {CHANNELS.filter((c) => c.key !== "webshare" || hasWebShare).map((c) => (
+                {/* ── Canais (3×2 grid compacto) ── */}
+                <div className="px-4 sm:px-5 py-4">
+                    <div className="grid grid-cols-3 gap-2" data-testid="event-share-channels">
+                        {channels.map((c) => (
                             <button
                                 key={c.key}
                                 type="button"
                                 onClick={() => handleChannel(c.key)}
                                 data-testid={`event-share-${c.key}`}
-                                className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                                className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md min-w-0"
                                 style={{
                                     background: c.bg,
                                     color: c.color,
                                     border: "1px solid rgba(0,0,0,0.10)",
                                 }}
                             >
-                                <_SocialIcon channel={c.key} />
-                                <span className="font-semibold text-[11.5px] tracking-tight">{c.label}</span>
+                                <_SocialIcon channel={c.key} size={17} />
+                                <span className="font-semibold text-[10.5px] tracking-tight truncate max-w-full px-1">{c.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    <p className="mt-4 text-[11px] text-center" style={{ color: "rgba(10,10,10,0.48)" }}>
+                    <p className="mt-3 text-[10.5px] text-center" style={{ color: "rgba(10,10,10,0.48)" }}>
                         Cada link traz portugueses novos para a Lusorae.
                     </p>
                 </div>
