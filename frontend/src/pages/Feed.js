@@ -41,7 +41,6 @@ const PTR_PHRASES = [
 
 export default function Feed() {
     const { user } = useAuth();
-    const [tab, setTab] = useState("following");
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -60,40 +59,53 @@ export default function Feed() {
     }, []);
     const firstName = (user?.name || user?.username || "").split(" ")[0] || "";
 
+    // Feed unificado — funde "Seguindo" (cronológico) + "Para ti" (ranking V2)
+    // num único stream. Dedupe por id, sort por created_at desc.
+    // Princípio: o utilizador vê uma timeline coerente, não dois silos com
+    // a mesma informação noutra ordem.
+    const mergeFeeds = (arrA, arrB) => {
+        const seen = new Map();
+        for (const p of [...(arrA || []), ...(arrB || [])]) {
+            if (p && p.id && !seen.has(p.id)) seen.set(p.id, p);
+        }
+        return Array.from(seen.values()).sort((a, b) => {
+            const ta = new Date(a.created_at || 0).getTime();
+            const tb = new Date(b.created_at || 0).getTime();
+            return tb - ta;
+        });
+    };
+
     const load = useCallback(
-        async (which = tab, showSkeleton = true) => {
+        async (showSkeleton = true) => {
             if (showSkeleton) setLoading(true);
             try {
                 const params = new URLSearchParams();
                 params.set("sort", "recent");
-                // V2: For You uses the new ranking engine, Following stays chronological
-                let url;
-                if (which === "foryou") {
-                    url = `/feed/v2`;
-                } else if (which === "following") {
-                    url = `/posts/feed?${params}`;
-                } else {
-                    url = `/posts/explore?${params}`;
-                }
-                const { data } = await api.get(url);
-                setPosts(data);
-                knownIdsRef.current = new Set(data.map((p) => p.id));
+                // Promise.allSettled: se um endpoint falhar, mantemos o outro.
+                const [followingRes, forYouRes] = await Promise.allSettled([
+                    api.get(`/posts/feed?${params}`),
+                    api.get(`/feed/v2`),
+                ]);
+                const following = followingRes.status === "fulfilled" ? followingRes.value.data : [];
+                const forYou    = forYouRes.status    === "fulfilled" ? forYouRes.value.data    : [];
+                const merged = mergeFeeds(following, forYou);
+                setPosts(merged);
+                knownIdsRef.current = new Set(merged.map((p) => p.id));
                 setNewCount(0);
-                // Track post order for swipe-between-posts navigation
+                // Track post order for swipe-between-posts navigation (single key)
                 try {
-                    // Lazy import to keep main bundle slim
                     const { trackPostList } = await import("../lib/postTrack");
-                    trackPostList(which, data.map((p) => p.id));
+                    trackPostList("home", merged.map((p) => p.id));
                 } catch {}
             } finally {
                 setLoading(false);
                 setRefreshing(false);
             }
         },
-        [tab],
+        [],
     );
 
-    useEffect(() => { load(tab); }, [load, tab]);
+    useEffect(() => { load(); }, [load]);
 
     // B-040 — Realtime: when WS is live, rely on `new_post` broadcasts;
     // fall back to polling if WS goes offline.
@@ -118,22 +130,27 @@ export default function Feed() {
             try {
                 const params = new URLSearchParams();
                 params.set("sort", "recent");
-                const url = tab === "following" ? `/posts/feed?${params}` : `/posts/explore?${params}`;
-                const { data } = await api.get(url);
+                const [followingRes, forYouRes] = await Promise.allSettled([
+                    api.get(`/posts/feed?${params}`),
+                    api.get(`/feed/v2`),
+                ]);
+                const following = followingRes.status === "fulfilled" ? followingRes.value.data : [];
+                const forYou    = forYouRes.status    === "fulfilled" ? forYouRes.value.data    : [];
+                const merged = mergeFeeds(following, forYou);
                 let n = 0;
-                for (const p of data) if (!knownIdsRef.current.has(p.id)) n++;
+                for (const p of merged) if (!knownIdsRef.current.has(p.id)) n++;
                 if (n > 0) setNewCount(n);
             } catch {}
         }, 30000);
         return () => clearInterval(id);
-    }, [tab, wsState]);
+    }, [wsState]);
 
     const refresh = useCallback(async () => {
         setRefreshing(true);
         pendingIdsRef.current = new Set();
-        await load(tab, false);
+        await load(false);
         window.scrollTo({ top: 0, behavior: "smooth" });
-    }, [load, tab]);
+    }, [load]);
 
     const { pull, refreshing: ptrRefreshing, threshold } = usePullToRefresh(refresh);
     const showPtr = pull > 4 || ptrRefreshing;
@@ -282,32 +299,11 @@ export default function Feed() {
                     </div>
                 </div>
 
-                {/* Tabs — magazine premium com indicador animado */}
-                <div className="grid grid-cols-2 px-7 relative" style={{ borderTop: "1px solid rgba(10,10,10,0.06)" }}>
-                    {[
-                        { key: "following", label: "Seguindo", testId: "tab-following" },
-                        { key: "foryou",    label: "Para ti",  testId: "tab-foryou" },
-                    ].map((t) => {
-                        const active = tab === t.key;
-                        return (
-                            <button
-                                key={t.key}
-                                onClick={() => setTab(t.key)}
-                                data-testid={t.testId}
-                                className="py-4 font-black uppercase text-[12px] tracking-[0.14em] transition relative active:scale-[0.98] hover:text-black"
-                                style={{ color: active ? PT.ink : "rgba(10,10,10,0.42)" }}
-                            >
-                                {t.label}
-                                {active && (
-                                    <span
-                                        className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 h-[2.5px]"
-                                        style={{ background: PT.red, width: 72, borderRadius: 999 }}
-                                    />
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
+                {/* Tabs "Seguindo" / "Para ti" — REMOVIDAS.
+                    Feed unificado: as duas fontes fundem-se num único stream
+                    cronológico/relevância (ver mergeFeeds em load()).
+                    Mantemos só um hairline para preservar a hierarquia visual. */}
+                <div style={{ borderTop: "1px solid rgba(10,10,10,0.06)" }} />
             </div>
 
             {/* Mobile-only hero strip — greeting only (sort removed) */}
@@ -319,40 +315,10 @@ export default function Feed() {
             {/* Stories — right under the greeting, on both desktop & mobile */}
             <StoriesBar />
 
-            {/* Mobile-only tabs — sticky under MobileTopBar */}
-            <div
-                className="lg:hidden sticky z-20 backdrop-blur relative"
-                style={{
-                    top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
-                    background: "rgba(247,245,239,0.92)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
-                }}
-            >
-                <div className="grid grid-cols-2 relative">
-                    <button
-                        onClick={() => setTab("following")}
-                        data-testid="tab-following-mobile"
-                        className={`py-3 font-black uppercase text-[11.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
-                        style={{ color: tab === "following" ? PT.red : "rgba(10,10,10,0.55)" }}
-                    >
-                        Seguindo
-                        {tab === "following" && (
-                            <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full" style={{ background: PT.red, width: 48 }} />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setTab("foryou")}
-                        data-testid="tab-foryou-mobile"
-                        className={`py-3 font-black uppercase text-[11.5px] tracking-[0.08em] transition relative active:scale-[0.98]`}
-                        style={{ color: tab === "foryou" ? PT.red : "rgba(10,10,10,0.55)" }}
-                    >
-                        Para ti
-                        {tab === "foryou" && (
-                            <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] rounded-full" style={{ background: PT.red, width: 48 }} />
-                        )}
-                    </button>
-                </div>
-            </div>
+            {/* Mobile-only tabs — REMOVIDAS (feed unificado).
+                Mantemos apenas o sticky bar vazio? Não — removemos o bloco todo
+                para libertar espaço vertical no mobile. O dia-marker do feed
+                fica imediatamente sob o MobileTopBar. */}
 
             {/* Mood chips removed — discovery filters live only on /explore now */}
 

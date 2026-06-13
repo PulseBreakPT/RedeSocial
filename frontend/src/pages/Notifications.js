@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 // DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
 // =============================================================================
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog, Reply, Send, X, Eye } from "lucide-react";
+import { Heart, MessageCircle, UserPlus, Repeat2, AtSign, Quote, Bell, Star, BellOff, Trash2, CheckCheck, Settings as Cog, Reply, Send, X, Eye, MoreHorizontal, BellMinus } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { VerifiedBadge } from "../components/VerifiedBadge";
@@ -17,6 +17,13 @@ import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
 import { confirmDialog } from "../components/ConfirmDialog";
 import { NotifSkeletonList } from "../components/Skeleton";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
 import { PT } from "../theme/editorial";
 
 /* ── Tokens fanzine PT por tipo de notificação ───────────────── */
@@ -198,12 +205,45 @@ export default function Notifications() {
                 title="Notificações"
                 testid="notifications-header"
                 action={
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" data-testid="notif-header-actions">
+                        <Link
+                            to="/settings"
+                            data-testid="notif-settings"
+                            aria-label="Definições de notificações"
+                            title="Definições de notificações"
+                            className="w-10 h-10 grid place-items-center tap-shrink transition hover:bg-black/[0.04]"
+                            style={{
+                                background: "#fff",
+                                color: "rgba(10,10,10,0.65)",
+                                border: "1px solid rgba(10,10,10,0.08)",
+                                borderRadius: 999,
+                            }}
+                        >
+                            <Cog size={16} strokeWidth={2.0} />
+                        </Link>
+                        <button
+                            onClick={clearRead}
+                            data-testid="notif-clear"
+                            aria-label="Apagar notificações lidas"
+                            title="Apagar lidas"
+                            className="w-10 h-10 grid place-items-center tap-shrink"
+                            style={{
+                                background: "#fff",
+                                color: PT.ink,
+                                border: "1px solid rgba(10,10,10,0.10)",
+                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                borderRadius: 999,
+                            }}
+                        >
+                            <Trash2 size={15} strokeWidth={2.4} />
+                        </button>
                         <button
                             onClick={markAll}
                             data-testid="notif-mark-all"
+                            aria-label="Marcar todas como lidas"
                             title="Marcar todas como lidas"
-                            className="w-9 h-9 grid place-items-center tap-shrink"
+                            disabled={unreadCount === 0}
+                            className="h-10 px-3 sm:px-4 grid grid-flow-col items-center gap-1.5 tap-shrink disabled:opacity-40 disabled:cursor-not-allowed"
                             style={{
                                 background: PT.green,
                                 color: "#fff",
@@ -213,35 +253,10 @@ export default function Notifications() {
                             }}
                         >
                             <CheckCheck size={15} strokeWidth={2.5} />
+                            <span className="hidden sm:inline font-black uppercase text-[11.5px]" style={{ letterSpacing: "0.06em" }}>
+                                Marcar lidas
+                            </span>
                         </button>
-                        <button
-                            onClick={clearRead}
-                            data-testid="notif-clear"
-                            title="Apagar lidas"
-                            className="w-9 h-9 grid place-items-center tap-shrink"
-                            style={{
-                                background: "#fff",
-                                color: PT.ink,
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                borderRadius: 999,
-                            }}
-                        >
-                            <Trash2 size={14} strokeWidth={2.5} />
-                        </button>
-                        <Link
-                            to="/settings"
-                            title="Definições de notificações"
-                            className="w-9 h-9 grid place-items-center tap-shrink transition hover:bg-black/[0.04]"
-                            style={{
-                                background: "#fff",
-                                color: "rgba(10,10,10,0.65)",
-                                border: "1px solid rgba(10,10,10,0.08)",
-                                borderRadius: 999,
-                            }}
-                        >
-                            <Cog size={15} strokeWidth={2.0} />
-                        </Link>
                     </div>
                 }
             >
@@ -425,134 +440,150 @@ export default function Notifications() {
                                         background: n.read ? "transparent" : "rgba(255,204,41,0.10)",
                                     }}
                                 >
-                                    <div className="flex items-start gap-3 px-4 lg:px-5 py-4">
-                                        <TypeStamp type={n.type} size={38} />
-                                        <Link to={linkTo} className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar user={n.from_user} size={28} />
-                                                <span className="font-black text-[14px] tracking-tight flex items-center gap-1 truncate" style={{ color: PT.ink }}>
-                                                    {n.from_user?.name}
-                                                    {n.from_user?.verified && <VerifiedBadge size={11} />}
-                                                </span>
-                                                <span className="font-mono font-bold text-[10px] flex-shrink-0 ml-auto" style={{ color: "rgba(10,10,10,0.5)" }}>
-                                                    {smartTime(n.created_at)}
-                                                </span>
-                                                {!n.read && (
-                                                    <span
-                                                        className="w-2 h-2 flex-shrink-0"
-                                                        style={{
-                                                            background: PT.red,
-                                                            border: `1.5px solid ${PT.ink}`,
-                                                            borderRadius: 999,
-                                                        }}
-                                                        aria-label="não lida"
-                                                    />
-                                                )}
-                                            </div>
-                                            <p className="mt-1.5 text-[13.5px] leading-relaxed line-clamp-2 font-medium" style={{ color: "rgba(10,10,10,0.72)" }}>
-                                                {n.text}
-                                            </p>
-                                            <NotificationReplyPreview notif={n} />
-                                        </Link>
-                                        <div className="flex flex-col gap-1 opacity-70 group-hover:opacity-100 transition">
-                                            {canReply && (
-                                                <button
-                                                    onClick={() => { setReplyTo(isReplying ? null : n.id); setReplyText(""); }}
-                                                    data-testid={`notif-reply-${n.id}`}
-                                                    title="Responder rápido"
-                                                    className="w-7 h-7 grid place-items-center"
+                                <div className="flex items-start gap-3 px-4 lg:px-5 py-4">
+                                    <TypeStamp type={n.type} size={38} />
+                                    <Link to={linkTo} className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar user={n.from_user} size={28} />
+                                            <span className="font-black text-[14px] tracking-tight flex items-center gap-1 truncate" style={{ color: PT.ink }}>
+                                                {n.from_user?.name}
+                                                {n.from_user?.verified && <VerifiedBadge size={11} />}
+                                            </span>
+                                            <span className="font-mono font-bold text-[10px] flex-shrink-0 ml-auto" style={{ color: "rgba(10,10,10,0.5)" }}>
+                                                {smartTime(n.created_at)}
+                                            </span>
+                                            {!n.read && (
+                                                <span
+                                                    className="w-2 h-2 flex-shrink-0"
                                                     style={{
-                                                        background: isReplying ? PT.azul : "#fff",
-                                                        color: isReplying ? "#fff" : PT.ink,
-                                                        border: "1px solid rgba(10,10,10,0.10)",
-                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                        borderRadius: 6,
+                                                        background: PT.red,
+                                                        border: `1.5px solid ${PT.ink}`,
+                                                        borderRadius: 999,
                                                     }}
-                                                >
-                                                    <Reply size={12} strokeWidth={2.4} />
-                                                </button>
+                                                    aria-label="não lida"
+                                                />
                                             )}
-                                            {n.post_id && (
-                                                <button
-                                                    onClick={() => openContext(n)}
-                                                    data-testid={`notif-context-${n.id}`}
-                                                    title="Ver contexto"
-                                                    className="w-7 h-7 grid place-items-center"
-                                                    style={{
-                                                        background: isExpanded ? PT.ink : "#fff",
-                                                        color: isExpanded ? "#fff" : PT.ink,
-                                                        border: "1px solid rgba(10,10,10,0.10)",
-                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                        borderRadius: 6,
-                                                    }}
-                                                >
-                                                    <Eye size={12} strokeWidth={2.4} />
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => toggleStar(n)}
-                                                data-testid={`notif-star-${n.id}`}
-                                                title={n.starred ? "Desmarcar" : "Importante"}
-                                                className="w-7 h-7 grid place-items-center"
-                                                style={{
-                                                    background: n.starred ? PT.gold : "#fff",
-                                                    color: PT.ink,
-                                                    border: "1px solid rgba(10,10,10,0.10)",
-                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                    borderRadius: 6,
-                                                }}
-                                            >
-                                                <Star size={12} strokeWidth={2.4} fill={n.starred ? "currentColor" : "none"} />
-                                            </button>
-                                            <button
-                                                onClick={() => snooze(n)}
-                                                data-testid={`notif-snooze-${n.id}`}
-                                                title="Silenciar 24h"
-                                                className="w-7 h-7 grid place-items-center"
-                                                style={{
-                                                    background: "#fff",
-                                                    color: PT.ink,
-                                                    border: "1px solid rgba(10,10,10,0.10)",
-                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                    borderRadius: 6,
-                                                }}
-                                            >
-                                                <BellOff size={12} strokeWidth={2.4} />
-                                            </button>
-                                            <button
-                                                onClick={() => muteCategory(n.type)}
-                                                data-testid={`notif-mute-cat-${n.id}`}
-                                                title={`Silenciar todos os "${n.type}"`}
-                                                className="w-7 h-7 grid place-items-center"
-                                                style={{
-                                                    background: "#fff",
-                                                    color: "rgba(10,10,10,0.55)",
-                                                    border: "1px solid rgba(10,10,10,0.08)",
-                                                    borderRadius: 6,
-                                                }}
-                                            >
-                                                <BellOff size={10} strokeWidth={2.4} />
-                                            </button>
-                                            <button
-                                                onClick={() => remove(n)}
-                                                data-testid={`notif-delete-${n.id}`}
-                                                title="Apagar"
-                                                className="w-7 h-7 grid place-items-center"
-                                                style={{
-                                                    background: "#fff",
-                                                    color: PT.red,
-                                                    border: "1px solid rgba(10,10,10,0.10)",
-                                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                                    borderRadius: 6,
-                                                }}
-                                            >
-                                                <Trash2 size={12} strokeWidth={2.4} />
-                                            </button>
                                         </div>
+                                        <p className="mt-1.5 text-[13.5px] leading-relaxed line-clamp-2 font-medium" style={{ color: "rgba(10,10,10,0.72)" }}>
+                                            {n.text}
+                                        </p>
+                                        <NotificationReplyPreview notif={n} />
+                                    </Link>
+                                </div>
+
+                                {/* Footer-row de acções — 2 primárias + kebab menu.
+                                    Substitui a coluna vertical de 5 botões para melhor
+                                    responsividade e a11y (tap targets 36px+). */}
+                                <div
+                                    className="flex items-center gap-1.5 px-4 lg:px-5 pb-3 pl-[68px]"
+                                    data-testid={`notif-actions-${n.id}`}
+                                >
+                                    {canReply && (
+                                        <button
+                                            onClick={() => { setReplyTo(isReplying ? null : n.id); setReplyText(""); }}
+                                            data-testid={`notif-reply-${n.id}`}
+                                            aria-label={isReplying ? "Fechar resposta rápida" : "Responder rápido"}
+                                            title="Responder rápido"
+                                            className="h-9 px-3 inline-flex items-center gap-1.5 text-[11.5px] font-black uppercase tap-shrink transition"
+                                            style={{
+                                                background: isReplying ? PT.azul : "#fff",
+                                                color: isReplying ? "#fff" : PT.ink,
+                                                border: "1px solid rgba(10,10,10,0.10)",
+                                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                                borderRadius: 999,
+                                                letterSpacing: "0.06em",
+                                            }}
+                                        >
+                                            <Reply size={13} strokeWidth={2.4} />
+                                            <span className="hidden sm:inline">Responder</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => toggleStar(n)}
+                                        data-testid={`notif-star-${n.id}`}
+                                        aria-label={n.starred ? "Remover dos importantes" : "Marcar como importante"}
+                                        aria-pressed={!!n.starred}
+                                        title={n.starred ? "Desmarcar" : "Importante"}
+                                        className="h-9 w-9 grid place-items-center tap-shrink transition"
+                                        style={{
+                                            background: n.starred ? PT.gold : "#fff",
+                                            color: PT.ink,
+                                            border: "1px solid rgba(10,10,10,0.10)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                            borderRadius: 999,
+                                        }}
+                                    >
+                                        <Star size={14} strokeWidth={2.4} fill={n.starred ? "currentColor" : "none"} />
+                                    </button>
+
+                                    <div className="ml-auto">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    data-testid={`notif-more-${n.id}`}
+                                                    aria-label="Mais opções"
+                                                    title="Mais opções"
+                                                    className="h-9 w-9 grid place-items-center tap-shrink transition"
+                                                    style={{
+                                                        background: "#fff",
+                                                        color: PT.ink,
+                                                        border: "1px solid rgba(10,10,10,0.10)",
+                                                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                                        borderRadius: 999,
+                                                    }}
+                                                >
+                                                    <MoreHorizontal size={15} strokeWidth={2.4} />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                sideOffset={6}
+                                                className="w-60"
+                                                data-testid={`notif-more-menu-${n.id}`}
+                                            >
+                                                {n.post_id && (
+                                                    <DropdownMenuItem
+                                                        onSelect={() => openContext(n)}
+                                                        data-testid={`notif-context-${n.id}`}
+                                                        className="gap-2.5 cursor-pointer"
+                                                    >
+                                                        <Eye size={14} strokeWidth={2.2} />
+                                                        <span className="font-medium">{isExpanded ? "Esconder contexto" : "Ver contexto"}</span>
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem
+                                                    onSelect={() => snooze(n)}
+                                                    data-testid={`notif-snooze-${n.id}`}
+                                                    className="gap-2.5 cursor-pointer"
+                                                >
+                                                    <BellOff size={14} strokeWidth={2.2} />
+                                                    <span className="font-medium">Silenciar 24h</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onSelect={() => muteCategory(n.type)}
+                                                    data-testid={`notif-mute-cat-${n.id}`}
+                                                    className="gap-2.5 cursor-pointer"
+                                                >
+                                                    <BellMinus size={14} strokeWidth={2.2} />
+                                                    <span className="font-medium">Silenciar tipo &ldquo;{n.type}&rdquo;</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    onSelect={() => remove(n)}
+                                                    data-testid={`notif-delete-${n.id}`}
+                                                    className="gap-2.5 cursor-pointer focus:bg-red-50 focus:text-red-700"
+                                                    style={{ color: PT.red }}
+                                                >
+                                                    <Trash2 size={14} strokeWidth={2.2} />
+                                                    <span className="font-medium">Apagar notificação</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
+                                </div>
 
                                     {isExpanded && ctx && (
-                                        <div className="px-5 pb-3 -mt-2 pl-[68px]" data-testid={`notif-context-content-${n.id}`}>
+                                        <div className="px-5 pb-3 pl-[68px]" data-testid={`notif-context-content-${n.id}`}>
                                             <div
                                                 className="px-3 py-2.5 text-[12.5px] font-medium line-clamp-3"
                                                 style={{
@@ -569,7 +600,7 @@ export default function Notifications() {
                                     )}
 
                                     {isReplying && (
-                                        <div className="px-4 lg:px-5 pb-3 -mt-2 pl-[68px]" data-testid={`notif-reply-form-${n.id}`}>
+                                        <div className="px-4 lg:px-5 pb-3 pl-[68px]" data-testid={`notif-reply-form-${n.id}`}>
                                             <div className="flex items-end gap-2">
                                                 <textarea
                                                     value={replyText}

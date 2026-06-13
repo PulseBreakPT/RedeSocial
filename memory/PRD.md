@@ -83,3 +83,32 @@ Língua de toda a UI/copy: **pt-PT**.
 - Push: VAPID auto-gerado em memória em dev (subscriptions perdem-se em restart). Em prod, definir `VAPID_PRIVATE_KEY_PEM` + `VAPID_PUBLIC_KEY_B64`.
 - Automod: regex-based, admins bypass via `user.is_admin`.
 - Invites: 3 códigos por user, reutilizáveis (cada um pode aceitar múltiplos users).
+
+
+## Session 2026-06-13 (fork) — Feed unificado + Notifications UX + Manifesto
+
+### Frontend — feed.js
+- Removidas as tabs "Seguindo" / "Para ti" (desktop e mobile).
+- Feed unificado num único stream: `Promise.allSettled([/posts/feed, /feed/v2])` → merge por `id` (Map) → sort por `created_at` desc.
+- Polling de novos posts (fallback WS) também passou a olhar para os dois endpoints e a usar a mesma função `mergeFeeds`.
+- `trackPostList` usa chave única `"home"` (antes alternava "following" / "foryou").
+- Texto "desliza para o lado" não existia no codebase; com tabs removidas, a referência fica obsoleta.
+
+### Frontend — Notifications.js (refactor responsividade)
+- 5 perspectivas profissionais aplicadas (UX, PM, FE, A11y, Mobile).
+- Eliminada a **duplicação** dos dois botões `BellOff` (Snooze 24h vs Mute categoria) que partilhavam o mesmo ícone.
+- Coluna vertical de 5 botões substituída por **footer-row** (2 primárias visíveis: Star + Reply quando aplicável) + **kebab menu** (`DropdownMenu` shadcn) com Ver contexto, Silenciar 24h, Silenciar tipo, Apagar.
+- Tap targets aumentados de 28 px → 36/40 px (WCAG ≥ AA).
+- Header redesenhado: pill "Marcar lidas" com label visível em ≥sm, `disabled` quando `unreadCount === 0`; reordenado para hierarquia clara (Settings < Limpar < Marcar lidas).
+- Todos os botões com `aria-label` consistentes.
+
+### Páginas legais alinhadas
+- `Manifesto.js`: promessa #4 reescrita como "Feed único, cronológico, sem 'Para ti'."
+- `Manifesto.js`: ELI5 actualizado.
+- `Vision.js`: 2º compromisso ("Algoritmo legível") agora declara explicitamente que **não existe** feed "Para ti" separado — o default não personalizado é o próprio feed único (DSA art. 27).
+
+### Infra
+- Recriados `.env` em falta (`/app/backend/.env`, `/app/frontend/.env`); backend estava em loop a crashar por `JWT_SECRET` ausente.
+
+### Test
+- Validado E2E via Playwright: 0 tabs presentes, 3 posts únicos exibidos (dedupe ok), ordem desc por `created_at` confirmada, kebab menu de notificações abre com as 4 opções esperadas.

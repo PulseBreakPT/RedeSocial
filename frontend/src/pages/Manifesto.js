@@ -33,8 +33,8 @@ const PROMISES = [
         icon: Sparkles,
     },
     {
-        title: "Algoritmo destacável e feed cronológico.",
-        desc: "Tens sempre uma versão não personalizada do feed. Podes reiniciar a tua bolha. Cumprimento integral do artigo 27.º do DSA.",
+        title: "Feed único, cronológico, sem “Para ti”.",
+        desc: "Não separamos “Seguindo” e “Para ti”. Tens um único stream cronológico onde os conteúdos de quem segues e os sinais de relevância vivem lado a lado, sem silos algorítmicos a escolherem por ti. Cumprimento integral do artigo 27.º do DSA — a versão não personalizada é o próprio default.",
         ref: "Reg. UE 2022/2065 · DSA art. 27",
         icon: Cog,
     },
@@ -80,7 +80,7 @@ export default function Manifesto() {
             title="O nosso Manifesto"
             subtitle="Não te queremos viciado. Queremos-te bem. Estas seis promessas não são marketing, são regras de engenharia de produto. Se algum dia as quebrarmos, podes lembrar-nos aqui."
             lastUpdated="Junho de 2026"
-            eli5="Sem streaks. Boa Noite por defeito. Sem urgência inventada nas notificações. Feed cronológico sempre disponível. Read receipts opcionais. Contagens esbatidas. Em conformidade com o DSA."
+            eli5="Sem streaks. Boa Noite por defeito. Sem urgência inventada nas notificações. Feed único cronológico (sem &lsquo;Para ti&rsquo;). Read receipts opcionais. Contagens esbatidas. Em conformidade com o DSA."
         >
             <LegalKPIs items={[
                 { value: "0",    label: "anúncios mostrados",          sub: "Nunca. Não é um plano.",       icon: Shield },

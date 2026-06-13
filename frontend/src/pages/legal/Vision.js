@@ -63,7 +63,7 @@ export default function Vision() {
             <p>
                 O <Link to="/manifesto">Manifesto</Link> operacionaliza estes compromissos ao nível do produto, em
                 regras concretas de engenharia (sem <em>streaks</em>, Modo Boa Noite por defeito, contagens esbatidas,
-                <em> read receipts</em> opcionais, feed cronológico disponível). Esta página descreve o{" "}
+                <em> read receipts</em> opcionais, feed único cronológico sem &ldquo;Para ti&rdquo; algorítmico). Esta página descreve o{" "}
                 <strong>enquadramento institucional</strong> desses compromissos; o Manifesto descreve a sua{" "}
                 <strong>tradução operacional</strong>.
             </p>
@@ -74,7 +74,7 @@ export default function Vision() {
                         <strong>Atenção honesta.</strong> O Lusorae não é desenhado para maximizar tempo de ecrã. Não usamos notificações sintéticas, badges de urgência inventada, streaks coercivos, scroll infinito sem pausas naturais, nem conteúdo escondido propositadamente para provocar regresso compulsivo.
                     </li>
                     <li style={{ marginBottom: 10, fontSize: 13.5, lineHeight: 1.55, color: "rgba(0,0,0,0.78)" }}>
-                        <strong>Algoritmo legível.</strong> Os parâmetros principais do feed, da descoberta e das recomendações são públicos e descritos em linguagem clara. Está sempre disponível uma alternativa não personalizada, conforme exige o artigo 27.º do DSA.
+                        <strong>Algoritmo legível.</strong> O Lusorae opera um feed único, cronológico por defeito, com sinais de relevância transparentes e descritos em linguagem clara. Não existe um feed &ldquo;Para ti&rdquo; separado nem uma alternativa &ldquo;Seguindo&rdquo; em silo: a versão não personalizada é o próprio default, em conformidade com o artigo 27.º do DSA.
                     </li>
                     <li style={{ marginBottom: 10, fontSize: 13.5, lineHeight: 1.55, color: "rgba(0,0,0,0.78)" }}>
                         <strong>Dados próprios.</strong> Não vendemos, alugamos ou cedemos dados pessoais para fins comerciais de terceiros. Os subcontratantes que utilizamos operam sob contrato nos termos do artigo 28.º do RGPD, com finalidade estritamente limitada à prestação técnica do Serviço.
