@@ -1,113 +1,302 @@
 import { useEffect, useState } from "react";
-import { Sparkles, UserPlus, X } from "lucide-react";
+import { UserPlus, Check } from "lucide-react";
 import { api } from "../lib/api";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { useAuth } from "../context/AuthContext";
+import { PT } from "../theme/editorial";
+
+// =============================================================================
+// LUSORAE — Onboarding Hard Gate
+// Step 1 → Escolhe 5 interesses
+// Step 2 → Segue ≥ 5 sugestões para activar o feed
+// Sem botão "saltar". Sem X. O utilizador só sai quando completa.
+// =============================================================================
+
+const INTEREST_OPTIONS = [
+    { key: "futebol",         label: "Futebol",          emoji: "⚽" },
+    { key: "tecnologia",      label: "Tecnologia",       emoji: "💻" },
+    { key: "livros",          label: "Livros",           emoji: "📚" },
+    { key: "cinema",          label: "Cinema",           emoji: "🎬" },
+    { key: "series",          label: "Séries",           emoji: "📺" },
+    { key: "fotografia",      label: "Fotografia",       emoji: "📷" },
+    { key: "gaming",          label: "Gaming",           emoji: "🎮" },
+    { key: "surf",            label: "Surf",             emoji: "🌊" },
+    { key: "corrida",         label: "Corrida",          emoji: "🏃" },
+    { key: "caminhadas",      label: "Caminhadas",       emoji: "🥾" },
+    { key: "culinaria",       label: "Culinária",        emoji: "🍳" },
+    { key: "musica",          label: "Música",           emoji: "🎵" },
+    { key: "universidade",    label: "Universidade",     emoji: "🎓" },
+    { key: "empreendedorismo",label: "Empreendedorismo", emoji: "🚀" },
+    { key: "jardinagem",      label: "Jardinagem",       emoji: "🌱" },
+    { key: "pesca",           label: "Pesca",            emoji: "🎣" },
+    { key: "motas",           label: "Motas",            emoji: "🏍️" },
+    { key: "familia",         label: "Família",          emoji: "👨‍👩‍👧" },
+    { key: "cafe",            label: "Café & tasca",     emoji: "☕" },
+    { key: "praia",           label: "Praia",            emoji: "🏖️" },
+    { key: "cultura",         label: "Cultura PT",       emoji: "🇵🇹" },
+    { key: "noticias",        label: "Notícias",         emoji: "📰" },
+];
+
+const MIN_INTERESTS = 5;
+const MIN_FOLLOWS = 5;
 
 export function OnboardingModal() {
     const { user, setUser } = useAuth();
-    const [suggestions, setSuggestions] = useState([]);
-    const [followed, setFollowed] = useState(new Set());
     const visible = user && user.onboarded === false;
 
+    const [step, setStep] = useState(1);
+    const [interests, setInterests] = useState(new Set());
+    const [suggestions, setSuggestions] = useState([]);
+    const [loadingSugg, setLoadingSugg] = useState(false);
+    const [followingMap, setFollowingMap] = useState({});
+    const [followCount, setFollowCount] = useState(0);
+    const [busy, setBusy] = useState(false);
+
     useEffect(() => {
-        if (visible) {
-            api.get("/users/suggestions").then((r) => setSuggestions(r.data)).catch(() => {});
-        }
+        if (!visible) return;
+        // reset state quando o modal abre
+        setStep(1);
+        setInterests(new Set());
+        setSuggestions([]);
+        setFollowingMap({});
+        setFollowCount(0);
     }, [visible]);
 
     if (!visible) return null;
 
-    const toggle = async (u) => {
+    const toggleInterest = (k) => {
+        setInterests((s) => {
+            const ns = new Set(s);
+            if (ns.has(k)) ns.delete(k);
+            else if (ns.size < 12) ns.add(k);
+            return ns;
+        });
+    };
+
+    const goToStep2 = async () => {
+        if (interests.size < MIN_INTERESTS) return;
+        setBusy(true);
         try {
-            await api.post(`/users/${u.username}/follow`);
-            setFollowed((s) => {
-                const ns = new Set(s);
-                ns.has(u.id) ? ns.delete(u.id) : ns.add(u.id);
-                return ns;
-            });
+            // grava interesses no perfil — endpoint legacy /users/me aceita updates
+            await api.patch("/users/me", { bio_slots: { ...(user.bio_slots || {}), interests: Array.from(interests).join(", ") } }).catch(() => {});
         } catch {}
+        setLoadingSugg(true);
+        try {
+            const r = await api.get("/users/suggestions?limit=20");
+            setSuggestions(Array.isArray(r.data) ? r.data : []);
+        } catch {
+            setSuggestions([]);
+        } finally {
+            setLoadingSugg(false);
+            setBusy(false);
+            setStep(2);
+        }
+    };
+
+    const handleFollow = async (u) => {
+        if (followingMap[u.id]) return;
+        setFollowingMap((m) => ({ ...m, [u.id]: true }));
+        setFollowCount((c) => c + 1);
+        try {
+            await api.post(`/users/${u.username || u.id}/follow`);
+        } catch {
+            // tenta endpoint alternativo
+            try { await api.post(`/users/${u.id}/follow`); }
+            catch {
+                setFollowingMap((m) => ({ ...m, [u.id]: false }));
+                setFollowCount((c) => Math.max(0, c - 1));
+            }
+        }
     };
 
     const finish = async () => {
-        try {
-            await api.post("/users/me/onboard");
-        } catch {}
+        if (followCount < MIN_FOLLOWS) return;
+        setBusy(true);
+        try { await api.post("/users/me/onboard"); } catch {}
         setUser({ ...user, onboarded: true });
     };
 
+    const canStep1 = interests.size >= MIN_INTERESTS;
+    const canFinish = followCount >= MIN_FOLLOWS;
+
     return (
-        <div className="fixed inset-0 z-[90] bg-black/30 backdrop-blur-sm grid place-items-center p-4" data-testid="onboarding-modal">
-            <div className="w-full max-w-lg bg-white border border-black/[0.08] rounded-3xl overflow-hidden shadow-[0_40px_100px_-20px_rgba(13,13,16,0.35)] anim-fade-up">
-                <div className="relative p-7 hairline-b bg-paper grain isolate">
-                    <div
-                        className="absolute -top-20 -right-16 w-[280px] h-[280px] rounded-full opacity-40 pointer-events-none"
-                        style={{ background: "radial-gradient(circle, rgba(212,212,220,0.6), transparent 65%)" }}
-                    />
-                    <button onClick={finish} data-testid="skip-onboarding" className="absolute top-4 right-4 w-9 h-9 rounded-full grid place-items-center hover:bg-black/[0.04] text-black/55">
-                        <X size={16} strokeWidth={1.7} />
-                    </button>
-                    <div className="relative">
-                        <p className="type-overline mb-3">Bem-vindo</p>
-                        <div className="flex items-center gap-3">
-                            <div className="ring-silver w-12 h-12 rounded-full grid place-items-center">
-                                <Sparkles size={18} strokeWidth={1.4} className="text-black/70" />
-                            </div>
-                            <h2 className="font-display text-[34px] tracking-tight leading-none text-black">
-                                Olá, {user.name?.split(" ")[0]}.
-                            </h2>
+        <div className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-md grid place-items-end sm:place-items-center p-0 sm:p-4" data-testid="onboarding-modal">
+            <div
+                className="w-full sm:max-w-xl bg-white border border-black/[0.08] rounded-t-3xl sm:rounded-3xl overflow-hidden anim-sheet-up sm:anim-fade-up"
+                style={{ boxShadow: "0 40px 100px -20px rgba(13,13,16,0.5)" }}
+            >
+                {/* Header */}
+                <div className="relative px-7 pt-7 pb-5 border-b border-black/[0.05]">
+                    <div className="flex items-center gap-2 mb-3" data-testid="onboarding-progress">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-black/45">
+                            Passo {step} de 2
+                        </span>
+                        <div className="flex-1 relative h-1 rounded-full bg-black/[0.06] overflow-hidden">
+                            <div
+                                className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                                style={{
+                                    width: step === 1 ? "50%" : "100%",
+                                    background: PT.ink,
+                                }}
+                            />
                         </div>
-                        <p className="text-black/60 mt-3 max-w-sm leading-relaxed">
-                            Vamos preparar o teu feed. Segue algumas pessoas para começares.
-                        </p>
                     </div>
+                    <h2 className="font-black tracking-tight leading-[1.05]" style={{ fontSize: 30, color: PT.ink }}>
+                        {step === 1
+                            ? <>Olá, {user.name?.split(" ")[0]}.<br /><span style={{ color: PT.red }}>Conta-nos o que te interessa.</span></>
+                            : <>Agora segue quem <span style={{ color: PT.red }}>te interessa</span>.</>}
+                    </h2>
+                    <p className="text-[14px] mt-3 font-medium" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        {step === 1
+                            ? `Escolhe pelo menos ${MIN_INTERESTS} para começarmos.`
+                            : `Segue pelo menos ${MIN_FOLLOWS} pessoas e activamos o teu feed.`}
+                    </p>
                 </div>
 
-                <div className="p-6">
-                    <p className="type-overline mb-3">Sugestões</p>
-                    <h3 className="font-display text-[22px] tracking-tight leading-none text-black mb-1">Quem seguir</h3>
-                    <p className="font-mono text-[11px] text-black/45 mb-5">seleciona pelo menos um para popular o teu feed</p>
-
-                    {suggestions.length === 0 ? (
-                        <p className="text-black/50 font-mono text-sm py-6 text-center">Nenhuma sugestão disponível agora.</p>
-                    ) : (
-                        <ul className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
-                            {suggestions.map((s) => {
-                                const isFollowing = followed.has(s.id);
+                {/* Body */}
+                <div className="px-6 py-5 max-h-[58vh] overflow-y-auto">
+                    {step === 1 && (
+                        <div className="flex flex-wrap gap-2" data-testid="onboarding-interests">
+                            {INTEREST_OPTIONS.map((it) => {
+                                const on = interests.has(it.key);
                                 return (
-                                    <li key={s.id} className="flex items-center gap-3" data-testid={`onb-suggestion-${s.username}`}>
-                                        <Avatar user={s} size={44} />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-1 font-heading font-medium text-[14px] tracking-tight text-black">
-                                                {s.name} {s.verified && <VerifiedBadge size={12} />}
-                                            </div>
-                                            <div className="font-mono text-[11px] text-black/45 truncate">@{s.username}</div>
-                                        </div>
-                                        <button
-                                            onClick={() => toggle(s)}
-                                            data-testid={`onb-follow-${s.username}`}
-                                            className={`text-[11px] font-heading font-medium tracking-tight rounded-full px-4 py-2 transition active:scale-95 ${
-                                                isFollowing ? "chip-on" : "btn-obsidian"
-                                            }`}
-                                        >
-                                            {isFollowing ? "Seguindo" : "Seguir"}
-                                        </button>
-                                    </li>
+                                    <button
+                                        key={it.key}
+                                        data-testid={`onb-interest-${it.key}`}
+                                        onClick={() => toggleInterest(it.key)}
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium transition tap-shrink"
+                                        style={{
+                                            background: on ? PT.ink : "#fff",
+                                            color: on ? "#fff" : PT.ink,
+                                            border: on ? "1px solid " + PT.ink : "1px solid rgba(10,10,10,0.12)",
+                                            boxShadow: on ? "0 6px 16px -10px rgba(10,10,10,0.4)" : "0 1px 2px rgba(10,10,10,0.03)",
+                                        }}
+                                    >
+                                        <span aria-hidden>{it.emoji}</span>
+                                        {it.label}
+                                        {on && <Check size={12} strokeWidth={2.6} />}
+                                    </button>
                                 );
                             })}
-                        </ul>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div data-testid="onboarding-suggestions">
+                            {loadingSugg ? (
+                                <div className="space-y-2">
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <div key={i} className="h-14 bg-black/[0.04] rounded-2xl animate-pulse" />
+                                    ))}
+                                </div>
+                            ) : suggestions.length === 0 ? (
+                                <div className="py-10 text-center">
+                                    <p className="font-black text-[18px]" style={{ color: PT.ink }}>
+                                        Ainda não há ninguém para te sugerir.
+                                    </p>
+                                    <p className="text-[13px] mt-2 text-black/55 max-w-xs mx-auto">
+                                        Esta rede está a nascer. Convida quem conheces e activa o teu feed.
+                                    </p>
+                                    <button
+                                        onClick={async () => {
+                                            // bypass gate temporário quando não há sugestões: marca onboarded e fecha
+                                            try { await api.post("/users/me/onboard"); } catch {}
+                                            setUser({ ...user, onboarded: true });
+                                        }}
+                                        data-testid="onb-bypass-empty"
+                                        className="mt-5 px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider"
+                                        style={{ background: PT.ink, color: "#fff" }}
+                                    >
+                                        Entrar no Lusorae →
+                                    </button>
+                                </div>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {suggestions.map((s) => {
+                                        const isFollowing = !!followingMap[s.id];
+                                        return (
+                                            <li
+                                                key={s.id}
+                                                data-testid={`onb-suggestion-${s.username}`}
+                                                className="flex items-center gap-3 p-2.5 rounded-2xl border transition"
+                                                style={{
+                                                    borderColor: isFollowing ? "rgba(10,10,10,0.18)" : "rgba(10,10,10,0.06)",
+                                                    background: isFollowing ? "rgba(10,10,10,0.02)" : "#fff",
+                                                }}
+                                            >
+                                                <Avatar user={s} size={42} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1 font-bold text-[14px] tracking-tight text-black truncate">
+                                                        {s.name} {s.verified && <VerifiedBadge size={12} />}
+                                                    </div>
+                                                    <div className="font-mono text-[11px] text-black/50 truncate">
+                                                        @{s.username}{s.city ? <span className="text-black/40"> · {s.city}</span> : null}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleFollow(s)}
+                                                    data-testid={`onb-follow-${s.username}`}
+                                                    disabled={isFollowing}
+                                                    className="shrink-0 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider transition tap-shrink"
+                                                    style={{
+                                                        background: isFollowing ? "rgba(10,10,10,0.05)" : PT.ink,
+                                                        color: isFollowing ? "rgba(10,10,10,0.7)" : "#fff",
+                                                        border: isFollowing ? "1px solid rgba(10,10,10,0.1)" : "1px solid " + PT.ink,
+                                                    }}
+                                                >
+                                                    {isFollowing ? <><Check size={11} strokeWidth={2.4}/> a seguir</> : <><UserPlus size={11} strokeWidth={2.4}/> seguir</>}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </div>
                     )}
                 </div>
 
-                <div className="p-5 hairline-t flex justify-end gap-2">
-                    <button
-                        onClick={finish}
-                        data-testid="finish-onboarding"
-                        className="btn-obsidian text-[12px] px-6 py-2.5 flex items-center gap-2"
-                    >
-                        <UserPlus size={13} strokeWidth={1.8} /> Tudo pronto
-                    </button>
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-black/[0.05] flex items-center justify-between gap-4">
+                    {step === 1 ? (
+                        <>
+                            <span className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: canStep1 ? PT.ink : "rgba(10,10,10,0.5)" }} data-testid="step1-counter">
+                                {interests.size} / {MIN_INTERESTS}
+                            </span>
+                            <button
+                                onClick={goToStep2}
+                                disabled={!canStep1 || busy}
+                                data-testid="onb-step1-next"
+                                className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                                style={{
+                                    background: canStep1 ? PT.ink : "rgba(10,10,10,0.08)",
+                                    color: canStep1 ? "#fff" : "rgba(10,10,10,0.35)",
+                                    cursor: canStep1 ? "pointer" : "not-allowed",
+                                }}
+                            >
+                                Continuar →
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <span className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: canFinish ? PT.ink : "rgba(10,10,10,0.5)" }} data-testid="step2-counter">
+                                {followCount} / {MIN_FOLLOWS}
+                            </span>
+                            <button
+                                onClick={finish}
+                                disabled={!canFinish || busy}
+                                data-testid="finish-onboarding"
+                                className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                                style={{
+                                    background: canFinish ? PT.ink : "rgba(10,10,10,0.08)",
+                                    color: canFinish ? "#fff" : "rgba(10,10,10,0.35)",
+                                    cursor: canFinish ? "pointer" : "not-allowed",
+                                }}
+                            >
+                                Activar o meu feed →
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

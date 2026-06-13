@@ -85,6 +85,30 @@ export function StoriesBar() {
                             </div>
                         ))}
                     </>
+                ) : orderedGroups.length === 0 ? (
+                    // EMPTY STATE CTA — sê o primeiro a partilhar
+                    <button
+                        onClick={() => setComposerOpen(true)}
+                        data-testid="stories-empty-cta"
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-dashed transition tap-shrink"
+                        style={{
+                            borderColor: "rgba(10,10,10,0.18)",
+                            background: "rgba(255,255,255,0.5)",
+                        }}
+                    >
+                        <div className="grid place-items-center w-10 h-10 rounded-full"
+                             style={{ background: "#0d0d10", color: "#fff" }}>
+                            <Plus size={16} strokeWidth={2.5} />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-[13px] font-bold text-black leading-tight">
+                                Sê o primeiro a partilhar um momento.
+                            </p>
+                            <p className="text-[11px] font-mono uppercase tracking-wider text-black/50 mt-0.5">
+                                Story · 24h
+                            </p>
+                        </div>
+                    </button>
                 ) : (
                     orderedGroups.map((g, idx) => (
                         <StoryThumb

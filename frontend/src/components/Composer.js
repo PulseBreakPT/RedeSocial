@@ -85,6 +85,25 @@ const RINGS = [
 ];
 const MAX_IMAGES = 4;
 
+// Composer placeholder rotativo — voz portuguesa concreta
+const PT_PLACEHOLDERS = [
+    "Que se passa em Lisboa hoje?",
+    "Conta o teu domingo",
+    "Partilha o teu petisco favorito",
+    "Recomenda um livro PT",
+    "O que ouviste hoje no caminho?",
+    "Café da manhã: onde?",
+    "Um pensamento solto",
+    "Algo que viste e não saiu da cabeça",
+    "A frase que te ficou esta semana",
+    "O que estás a ler agora?",
+    "Um sítio que mereces conhecer",
+    "Uma pequena vitória de hoje",
+    "Música para a tarde",
+    "O que te tirou um sorriso?",
+    "Onde estás agora — sem geo, só palavras",
+];
+
 function relativeSavedLabel(ts) {
     if (!ts) return "";
     const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
@@ -125,6 +144,16 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const [, setNowTick] = useState(0); // forces re-render so "há Xs" stays fresh
     // Pre-publish preview modal
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+    // Placeholder rotativo (apenas no global feed, não em communities)
+    const [phIdx, setPhIdx] = useState(() => Math.floor(Math.random() * PT_PLACEHOLDERS.length));
+    useEffect(() => {
+        if (communityId) return;
+        const id = setInterval(() => {
+            setPhIdx((i) => (i + 1) % PT_PLACEHOLDERS.length);
+        }, 3800);
+        return () => clearInterval(id);
+    }, [communityId]);
 
     const fileRef = useRef(null);
     const textareaRef = useRef(null);
@@ -303,7 +332,17 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             setScheduleOpen(false);
             onPosted?.(data);
             haptic("publish");
-            toast.success(isDraft ? "Rascunho guardado" : isScheduled ? "Agendado" : "Publicado");
+
+            // 🎉 FIRST-POST CELEBRATION — momento memorável
+            // Detecta primeiro post via flag persistente em localStorage.
+            const FIRST_POST_KEY = "lusorae.firstPostCelebrated";
+            const isFirstPost = !isDraft && !isScheduled && !localStorage.getItem(FIRST_POST_KEY);
+            if (isFirstPost) {
+                try { localStorage.setItem(FIRST_POST_KEY, String(Date.now())); } catch {}
+                window.dispatchEvent(new CustomEvent("lusorae:first-post"));
+            } else {
+                toast.success(isDraft ? "Rascunho guardado" : isScheduled ? "Agendado" : "Publicado");
+            }
             onClose?.();
         } catch (e) {
             toastApiError(e);
@@ -362,6 +401,9 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 <Copy size={13} strokeWidth={1.7} />
                             </button>
                             <span className="mx-1 h-4 w-px bg-black/[0.08]" />
+                            {/* PRE-LANÇAMENTO: Preview Desktop/Mobile + Fullscreen escondidos — matam foco. */}
+                            {false && (
+                            <>
                             <button
                                 onClick={() => setPreviewMode("desktop")}
                                 data-testid="composer-preview-desktop"
@@ -386,6 +428,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             >
                                 {fullscreen ? <Minimize2 size={13} strokeWidth={1.7} /> : <Maximize2 size={13} strokeWidth={1.7} />}
                             </button>
+                            </>
+                            )}
                         </div>
                         {/* Auto-save indicator */}
                         {content && (savedAt || isTyping) && (
@@ -415,16 +459,20 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         </div>
                     )}
 
-                    {/* Audience + Identity Ring selectors */}
-                    <div className="mb-2 flex items-center gap-2 flex-wrap">
+                    {/* Audience selector — escondido por defeito (default: público).
+                        Identity Ring REMOVIDO no pré-lançamento — consolidado em audience.
+                        Audience só aparece se utilizador já está a escrever (content.length > 0). */}
+                    {content.length > 0 && (
+                    <div className="mb-2 flex items-center gap-2 flex-wrap" data-testid="composer-audience-wrap">
                         <div className="relative inline-block" ref={audRef}>
                             <button
                                 onClick={() => setAudOpen((v) => !v)}
                                 data-testid="composer-audience-btn"
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/60 tap-shrink"
+                                title="Quem pode ver este post"
                             >
                                 <AudienceIcon size={12} />
-                                {audienceLabel}
+                                {audienceLabel} ▼
                             </button>
                             {audOpen && (
                                 <div
@@ -452,61 +500,17 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                                 </div>
                             )}
                         </div>
-
-                        {/* F2.4 Identity Ring */}
-                        <div className="relative inline-block" ref={ringRef}>
-                            <button
-                                onClick={() => setRingOpen((v) => !v)}
-                                data-testid="composer-ring-btn"
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/[0.08] hover:bg-black/[0.04] text-[12px] font-mono text-black/70 tap-shrink"
-                                title="Anel de identidade — quem vê este post"
-                            >
-                                <span
-                                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                                    style={{ background: RINGS.find((r) => r.id === ring)?.dot }}
-                                />
-                                {RINGS.find((r) => r.id === ring)?.label || "Público"}
-                            </button>
-                            {ringOpen && (
-                                <div
-                                    className="absolute left-0 top-full mt-1 bg-white border border-black/[0.08] rounded-2xl py-1.5 shadow-xl z-30 min-w-[260px] anim-fade-up"
-                                >
-                                    {RINGS.map((r) => (
-                                        <button
-                                            key={r.id}
-                                            onClick={() => {
-                                                setRing(r.id);
-                                                setRingOpen(false);
-                                            }}
-                                            data-testid={`composer-ring-${r.id}`}
-                                            className={`w-full flex items-start gap-3 px-4 py-2.5 hover:bg-black/[0.04] text-left ${
-                                                ring === r.id ? "bg-black/[0.025]" : ""
-                                            }`}
-                                        >
-                                            <span
-                                                className="w-3 h-3 rounded-full mt-1 shrink-0"
-                                                style={{ background: r.dot }}
-                                            />
-                                            <span className="flex-1 min-w-0">
-                                                <span
-                                                    className={`block text-sm ${
-                                                        ring === r.id
-                                                            ? "text-black font-semibold"
-                                                            : "text-black/80"
-                                                    }`}
-                                                >
-                                                    {r.label}
-                                                </span>
-                                                <span className="block text-[11.5px] text-black/55 leading-snug mt-0.5">
-                                                    {r.hint}
-                                                </span>
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                     </div>
+                    )}
+
+                    {/* IDENTITY RING REMOVIDO no pré-lançamento.
+                        Ring + Audience eram redundantes — consolidado no Audience picker.
+                        Default permanece "publico" enviado ao backend. */}
+                    {false && (
+                        <div className="relative inline-block" ref={ringRef}>
+                            <button data-testid="composer-ring-btn" onClick={() => setRingOpen(!ringOpen)} />
+                        </div>
+                    )}
 
                     <textarea
                         ref={textareaRef}
@@ -514,7 +518,7 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         value={content}
                         onChange={(e) => { setContent(e.target.value); if (onType && e.target.value) onType(); }}
                         onPaste={handlePaste}
-                        placeholder={communityId ? "Partilha algo com a comunidade..." : "O que está a acontecer?"}
+                        placeholder={communityId ? "Partilha algo com a comunidade..." : PT_PLACEHOLDERS[phIdx]}
                         rows={asModal ? 4 : 2}
                         maxLength={500}
                         className="w-full bg-transparent text-[17px] font-body placeholder:text-black/40 focus:outline-none resize-none leading-snug text-black"

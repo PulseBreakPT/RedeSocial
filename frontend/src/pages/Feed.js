@@ -22,6 +22,7 @@ import { SmartTodayBanner } from "../components/SmartTodayBanner";
 import { PulseBar } from "../components/pulse/PulseBar";
 import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
 import { FeedContextLine } from "../components/pulse/FeedContextLine";
+import { EmptyFeedFollow10 } from "../components/EmptyFeedFollow10";
 import { haptic } from "../lib/haptics";
 import { PT } from "../theme/editorial";
 
@@ -211,7 +212,8 @@ export default function Feed() {
                             {new Date().toLocaleDateString("pt-PT", { weekday: "long", day: "2-digit", month: "long" })}
                         </span>
                         <span style={{ color: "rgba(10,10,10,0.18)" }}>—</span>
-                        <FeedContextLine className="inline-block" />
+                        {/* FeedContextLine escondida no pré-lançamento — ambient noise sem sinal real. */}
+                        {false && <FeedContextLine className="inline-block" />}
                     </div>
 
                     <div className="flex items-end justify-between gap-6">
@@ -378,10 +380,11 @@ export default function Feed() {
             {/* Inline composer removed — publishing happens via the "+" button (mobile bottom nav / desktop "Publicar"). */}
 
             <div className="px-4 lg:px-5 pt-3 space-y-3">
-                {/* Pulse Engine — sinais ambientais, só aparecem quando há sinal real */}
-                <PulseBar />
-                <TopicBurstChips />
-                <SmartTodayBanner />
+                {/* PRE-LANÇAMENTO: Pulse Engine + ambient widgets escondidos até > 500 DAU.
+                    Mostram zeros quando não há actividade real, o que mata o tom do produto. */}
+                {false && <PulseBar />}
+                {false && <TopicBurstChips />}
+                {false && <SmartTodayBanner />}
             </div>
 
             {/* MobileDiscoverStrip removed — trending is hidden on home, online-agora moved to /messages */}
@@ -389,24 +392,8 @@ export default function Feed() {
             {loading ? (
                 <PostSkeletonList count={5} />
             ) : posts.length === 0 ? (
-                <div className="px-6 py-20 text-center anim-fade-up relative z-10" data-testid="feed-empty">
-                    <div
-                        className="w-20 h-20 grid place-items-center mx-auto mb-6"
-                        style={{
-                            background: "#fff",
-                            border: "1px solid rgba(10,10,10,0.08)",
-                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 10px 30px -12px rgba(10,10,10,0.18)",
-                            borderRadius: 999,
-                        }}
-                    >
-                        <Sparkles size={26} strokeWidth={2.0} style={{ color: PT.ink }} />
-                    </div>
-                    <h3 className="font-black tracking-tight leading-tight mt-2" style={{ fontSize: 22, color: PT.ink }}>
-                        {tab === "following" ? "O teu feed está calmo." : "Sê o primeiro."}
-                    </h3>
-                    <p className="text-[14px] mt-3 max-w-xs mx-auto leading-relaxed font-medium" style={{ color: "rgba(10,10,10,0.62)" }}>
-                        {tab === "following" ? "Segue pessoas ou passa para Para ti e descobre novidades." : "Nenhuma publicação ainda — começa a conversa."}
-                    </p>
+                <div className="px-2" data-testid="feed-empty">
+                    <EmptyFeedFollow10 />
                 </div>
             ) : (
                 <div className="relative z-10">

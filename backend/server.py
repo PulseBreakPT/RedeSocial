@@ -2744,7 +2744,7 @@ async def search_users(q: str = "", user=Depends(get_current_user)):
 
 
 @api.get("/users/suggestions")
-async def user_suggestions(user=Depends(get_current_user)):
+async def user_suggestions(limit: int = 5, user=Depends(get_current_user)):
     # Smart: friends-of-friends ranked by mutual followers + recent activity
     following = set(user.get("following", []))
     excluded = following | {user["id"]}
@@ -2760,8 +2760,9 @@ async def user_suggestions(user=Depends(get_current_user)):
         score = mutual * 10 + math.log1p(followers_total) + (2 if c.get("verified") else 0)
         scored.append((score, mutual, c))
     scored.sort(key=lambda x: x[0], reverse=True)
+    lim = max(1, min(int(limit or 5), 20))
     out = []
-    for score, mutual, c in scored[:5]:
+    for score, mutual, c in scored[:lim]:
         d = public_user(c)
         d["mutual_count"] = mutual
         d["reason"] = (

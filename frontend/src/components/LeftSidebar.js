@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
-    Home, Compass, Flame, Bell, MessageCircle, Bookmark, Users as UsersIcon,
-    FileText, Clock, PenSquare, MoreHorizontal, Shield, Coffee, Map as MapIcon,
-    Sparkles, CalendarDays,
+    Home, Compass, Bell, MessageCircle, Users as UsersIcon,
+    PenSquare, MoreHorizontal, Shield, Settings,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
@@ -34,18 +33,16 @@ import { PT } from "../theme/editorial";
 const NAV_ITEMS = [
     { to: "/feed",          label: "Início",         icon: Home,         testid: "nav-home", end: true },
     { to: "/explore",       label: "Explorar",       icon: Compass,      testid: "nav-explore" },
-    { to: "/trending",      label: "Tendências",     icon: Flame,        testid: "nav-trending" },
     { to: "/notifications", label: "Notificações",   icon: Bell,         testid: "nav-notifications", badgeKey: "notif" },
     { to: "/messages",      label: "Mensagens",      icon: MessageCircle,testid: "nav-messages", badgeKey: "msg" },
-    { to: "/bookmarks",     label: "Guardados",      icon: Bookmark,     testid: "nav-bookmarks" },
-    { to: "/communities",   label: "Comunidades",    icon: UsersIcon,    testid: "nav-communities" },
-    { to: "/mesas",         label: "Mesas",          icon: Coffee,       testid: "nav-mesas" },
-    { to: "/topologia",     label: "Topologia",      icon: MapIcon,      testid: "nav-topologia" },
-    { to: "/calendario",    label: "Calendário",     icon: CalendarDays, testid: "nav-calendario" },
-    { to: "/drafts",        label: "Rascunhos",      icon: FileText,     testid: "nav-drafts" },
-    { to: "/scheduled",     label: "Agendados",      icon: Clock,        testid: "nav-scheduled" },
-    { to: "/premium",       label: "Plus & Aura",    icon: Sparkles,     testid: "nav-premium", isPremium: true },
+    { to: "__profile__",    label: "Perfil",         icon: UsersIcon,    testid: "nav-profile" },
+    { to: "/settings",      label: "Definições",     icon: Settings,     testid: "nav-settings" },
 ];
+
+// Itens ocultados no pré-lançamento (mantidos como rotas, fora da nav)
+// - Tendências, Guardados, Comunidades, Mesas, Topologia, Calendário,
+//   Rascunhos, Agendados, Plus & Aura
+// Re-acessíveis via URL directa ou via redes acima de 500 DAU.
 
 const ADMIN_NAV = { to: "/admin", label: "Admin", icon: Shield, testid: "nav-admin" };
 
@@ -132,11 +129,15 @@ export function LeftSidebar({ onCompose }) {
                 {[...NAV_ITEMS, ...(user?.is_admin ? [ADMIN_NAV] : [])].map((item) => {
                     const Icon = item.icon;
                     const badge = item.badgeKey ? counts[item.badgeKey] : 0;
+                    // resolve link dinâmico do perfil
+                    const to = item.to === "__profile__"
+                        ? (user?.username ? `/u/${user.username}` : "/settings")
+                        : item.to;
 
                     return (
                         <NavLink
-                            key={item.to}
-                            to={item.to}
+                            key={item.testid}
+                            to={to}
                             end={item.end}
                             data-testid={item.testid}
                             className="group relative flex items-center gap-3.5 pl-3 pr-4 py-2.5 rounded-full transition-all duration-200 tap-shrink"

@@ -98,20 +98,10 @@ export default function Bookmarks() {
         <PageShell max="max-w-5xl">
             <PageHero
                 title="Guardados"
-                subtitle={`${posts.length} ${posts.length === 1 ? "item" : "itens"} · ${collections.length} ${collections.length === 1 ? "coleção" : "coleções"}`}
+                subtitle={`${posts.length} ${posts.length === 1 ? "item" : "itens"}`}
                 badge="Os teus marcadores"
                 accent={PT.gold}
-                actions={
-                    <button onClick={() => setShowNew(true)} data-testid="new-collection-btn"
-                        className="inline-flex items-center gap-1.5 h-10 px-4 font-black uppercase transition hover:translate-y-[-1px]"
-                        style={{
-                            background: PT.ink, color: "#fff", borderRadius: 999,
-                            fontSize: 11.5, letterSpacing: "0.14em",
-                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10), 0 12px 28px -10px rgba(10,10,10,0.40)",
-                        }}>
-                        <FolderPlus size={13} strokeWidth={2.5} /> Nova coleção
-                    </button>
-                }
+                /* PRE-LANÇAMENTO: criar/renomear/apagar coleções escondido — lista simples chega. */
             />
 
             <div className="px-4 lg:px-7 pt-6 pb-12">
@@ -157,7 +147,9 @@ export default function Bookmarks() {
                     </div>
                 </div>
 
-                {/* Collections row */}
+                {/* PRE-LANÇAMENTO: collections row escondida (create/rename/delete overkill).
+                    Mantém-se "Todos" / "Sem coleção" como lista simples. */}
+                {false && (
                 <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-1">
                     <button onClick={() => setActiveCol("")} data-testid="bookmarks-col-all"
                         className="shrink-0 px-3.5 py-1.5 text-[11.5px] font-black uppercase transition"
@@ -202,8 +194,10 @@ export default function Bookmarks() {
                         );
                     })}
                 </div>
+                )}
 
-                {showNew && (
+                {/* Modal "nova coleção" também escondido durante pre-lançamento. */}
+                {false && showNew && (
                     <div className="fixed inset-0 z-[70] flex items-end lg:items-center lg:justify-center p-0 lg:p-4" style={{ background: "rgba(10,10,10,0.35)", backdropFilter: "blur(6px)" }} onClick={() => setShowNew(false)}>
                         <div onClick={(e) => e.stopPropagation()} className="w-full lg:max-w-sm anim-sheet-up lg:anim-fade-up pb-safe p-6 space-y-4" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)", borderRadius: 24, boxShadow: "0 1px 2px rgba(10,10,10,0.06), 0 24px 50px -25px rgba(10,10,10,0.30)" }}>
                             <div className="flex justify-between items-start">

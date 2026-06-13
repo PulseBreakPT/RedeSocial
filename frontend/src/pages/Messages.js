@@ -1273,7 +1273,7 @@ function ChatView({ other, onBack }) {
             {/* Body */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1.5 scroll-mom bg-paper grain isolate" data-testid="chat-body">
                 {messages.length === 0 && !typing && (
-                    <div className="text-center py-12">
+                    <div className="text-center py-12" data-testid="chat-empty-cold-start">
                         <Avatar user={other} size={64} />
                         <p className="type-overline mb-2 mt-4">Início da conversa</p>
                         <p className="font-display text-[22px] tracking-tight text-black/80">Diz olá a {other.name}.</p>
@@ -1283,6 +1283,55 @@ function ChatView({ other, onBack }) {
                                 <MapPin size={11} /> {other.city || other.region}
                             </p>
                         )}
+                        {/* DM COLD START — diz olá em 5 emojis (one-tap) */}
+                        <div className="mt-6">
+                            <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-black/40 mb-3">
+                                ou começa em 1 toque
+                            </p>
+                            <div className="flex items-center justify-center gap-2 flex-wrap" data-testid="cold-start-emojis">
+                                {[
+                                    { e: "👋", k: "wave" },
+                                    { e: "☕", k: "cafe" },
+                                    { e: "🌊", k: "mar" },
+                                    { e: "🔥", k: "fogo" },
+                                    { e: "🇵🇹", k: "pt" },
+                                ].map(({ e, k }) => (
+                                    <button
+                                        key={k}
+                                        data-testid={`cold-start-emoji-${k}`}
+                                        onClick={async () => {
+                                            if (sending) return;
+                                            setSending(true);
+                                            const tempId = `temp_${Date.now()}`;
+                                            const optimistic = {
+                                                id: tempId, sender_id: me?.id, recipient_id: other.id,
+                                                content: e, kind: "text", reply_to: null,
+                                                created_at: new Date().toISOString(), read: false, _pending: true,
+                                            };
+                                            setMessages((m) => [...m, optimistic]);
+                                            try {
+                                                const { data } = await api.post("/messages/v2", {
+                                                    to_user_id: other.id, content: e, kind: "text",
+                                                });
+                                                setMessages((m) => m.map((x) => (x.id === tempId ? data : x)));
+                                            } catch {
+                                                setMessages((m) => m.filter((x) => x.id !== tempId));
+                                            } finally {
+                                                setSending(false);
+                                            }
+                                        }}
+                                        className="w-12 h-12 rounded-full grid place-items-center text-[22px] tap-shrink transition"
+                                        style={{
+                                            background: "#fff",
+                                            border: "1px solid rgba(10,10,10,0.08)",
+                                            boxShadow: "0 1px 2px rgba(10,10,10,0.04), 0 6px 16px -10px rgba(10,10,10,0.25)",
+                                        }}
+                                    >
+                                        {e}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
                 {groups.map((g) => {
@@ -1340,6 +1389,45 @@ function ChatView({ other, onBack }) {
 
             {/* Composer */}
             <div className="border-t border-black/[0.06] p-3 pb-safe bg-white/95 backdrop-blur">
+                {/* Slash commands — aparecem só quando o utilizador começa por "/" */}
+                {text.startsWith("/") && (() => {
+                    const q = text.slice(1).toLowerCase().split(/\s/)[0];
+                    const CMDS = [
+                        { k: "foto", label: "/foto", hint: "anexar imagem", run: () => { setText(""); fileInputRef.current?.click(); } },
+                        { k: "loc",  label: "/loc",  hint: `enviar localização (${other.city || "cidade"})`, run: () => { setText(`📍 ${other.city || me?.city || "Portugal"}`); } },
+                        { k: "vibe", label: "/vibe", hint: "vibe rápida", run: () => { setText(""); setVibeOpen(true); setAttachOpen(false); } },
+                    ];
+                    const matches = q ? CMDS.filter(c => c.k.startsWith(q)) : CMDS;
+                    if (matches.length === 0) return null;
+                    return (
+                        <div
+                            data-testid="slash-commands-bar"
+                            className="mb-2 px-3 py-2 rounded-xl flex items-center gap-2 flex-wrap"
+                            style={{
+                                background: "rgba(247,245,239,0.85)",
+                                border: "1px solid rgba(10,10,10,0.08)",
+                            }}
+                        >
+                            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/45 mr-1">comandos</span>
+                            {matches.map(c => (
+                                <button
+                                    key={c.k}
+                                    onClick={c.run}
+                                    data-testid={`slash-${c.k}`}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-mono transition tap-shrink"
+                                    style={{
+                                        background: "#fff",
+                                        border: "1px solid rgba(10,10,10,0.10)",
+                                        color: "#0d0d10",
+                                    }}
+                                >
+                                    <strong>{c.label}</strong>
+                                    <span className="text-black/55">{c.hint}</span>
+                                </button>
+                            ))}
+                        </div>
+                    );
+                })()}
                 <div className="flex items-end gap-2 relative">
                     <input
                         ref={fileInputRef} type="file" accept="image/*" className="hidden"

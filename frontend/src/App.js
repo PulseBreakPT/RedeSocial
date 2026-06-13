@@ -12,6 +12,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
+import { FirstPostCelebration } from "./components/FirstPostCelebration";
 import { initAnalyticsFromConsent } from "./lib/analytics";
 
 // Páginas carregadas sob demanda (code-splitting por rota). Corta o bundle
@@ -107,6 +108,7 @@ function App() {
                             },
                         }}
                     />
+                    <FirstPostCelebration />
                     <Suspense fallback={<RouteFallback />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />

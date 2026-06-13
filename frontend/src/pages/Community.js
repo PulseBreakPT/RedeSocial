@@ -20,14 +20,14 @@ import { useCommunityPulse } from "../hooks/useCommunityPulse";
 import { useCommunityRhythm } from "../hooks/useCommunityRhythm";
 import { toast } from "sonner";
 
+// PRE-LANÇAMENTO: Nucleo/Pertenca/Saude/As-tuas-pessoas/Happenings escondidos
+// até a comunidade ter > 500 membros. Mantemos só 3 tabs essenciais.
 const BASE_TABS = [
     { key: "conversas", label: "Conversas" },
-    { key: "alta", label: "Em alta" },
     { key: "pessoas", label: "Pessoas" },
-    { key: "media", label: "Media" },
-    { key: "agora", label: "Agora" },
     { key: "sobre", label: "Sobre" },
 ];
+// Hidden: alta, agora, media — re-add quando relevante.
 
 const TEMP_STYLE = {
     fria: "bg-slate-100 text-slate-600",
@@ -457,7 +457,7 @@ export default function Community() {
                 <PessoasTab members={members} nowData={nowData} presentNow={presentNow}
                     canMod={canMod} isOwner={isOwner} ownerId={community.owner_id}
                     onBan={banMember} onMute={muteMember} onPromote={promoteMod}
-                    nucleo={nucleo} yourPeople={yourPeople} pertenca={pertenca} />
+                    nucleo={null} yourPeople={[]} pertenca={null} />
             )}
 
             {tab === "mod" && canMod && (

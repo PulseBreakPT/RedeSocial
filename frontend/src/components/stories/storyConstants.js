@@ -1,22 +1,15 @@
 // Constantes partilhadas entre composer, viewer e overlay.
 // SSS-tier: paleta PT-PT alargada + estilos de texto cinemáticos.
 
+// PRE-LANÇAMENTO: 6 backgrounds apenas (de 15).
+// Selecção: paleta PT-PT identitária — sem neon/pastel/azulejo/etc.
 export const STORY_BG_PRESETS = [
-    { key: "coral",      label: "Coral",       css: "linear-gradient(135deg,#FF6B6B 0%,#E03E3E 100%)",                                  textHint: "#ffffff" },
-    { key: "ocean",      label: "Oceano",      css: "linear-gradient(135deg,#4FACFE 0%,#1E40AF 100%)",                                  textHint: "#ffffff" },
-    { key: "dusk",       label: "Crepúsculo",  css: "linear-gradient(135deg,#FA709A 0%,#FEE140 100%)",                                  textHint: "#1f1147" },
-    { key: "fado",       label: "Fado",        css: "linear-gradient(135deg,#1F1147 0%,#7E1F86 50%,#F08C1F 100%)",                      textHint: "#ffffff" },
-    { key: "saudade",    label: "Saudade",     css: "linear-gradient(180deg,#0E2148 0%,#283593 60%,#7E57C2 100%)",                      textHint: "#ffffff" },
-    { key: "tasca",      label: "Tasca",       css: "linear-gradient(135deg,#7C2D12 0%,#B45309 100%)",                                  textHint: "#ffffff" },
-    { key: "tejo",       label: "Tejo",        css: "linear-gradient(180deg,#4A6FA5 0%,#7BA7C9 50%,#E8C39E 100%)",                      textHint: "#ffffff" },
-    { key: "azulejo",    label: "Azulejo",     css: "linear-gradient(135deg,#1E40AF 0%,#3B82F6 50%,#F0F9FF 100%)",                      textHint: "#ffffff" },
-    { key: "pinhal",     label: "Pinhal",      css: "linear-gradient(135deg,#064E3B 0%,#10B981 60%,#FDE68A 100%)",                      textHint: "#ffffff" },
-    { key: "praia",      label: "Praia",       css: "linear-gradient(135deg,#A1FFCE 0%,#FAFFD1 100%)",                                  textHint: "#0e2148" },
-    { key: "noite",      label: "Noite",       css: "linear-gradient(135deg,#0F2027 0%,#203A43 50%,#2C5364 100%)",                      textHint: "#ffffff" },
-    { key: "neon",       label: "Neon",        css: "linear-gradient(135deg,#FA00FF 0%,#00F0FF 100%)",                                  textHint: "#ffffff" },
-    { key: "pastel",     label: "Pastel",      css: "linear-gradient(135deg,#FBC2EB 0%,#A6C1EE 100%)",                                  textHint: "#1f1147" },
-    { key: "monochrome", label: "Mono",        css: "linear-gradient(180deg,#1a1a1a 0%,#404040 100%)",                                  textHint: "#ffffff" },
     { key: "papel",      label: "Papel",       css: "linear-gradient(135deg,#F5F1E8 0%,#E8DCC4 100%)",                                  textHint: "#2a2218" },
+    { key: "tasca",      label: "Tasca",       css: "linear-gradient(135deg,#7C2D12 0%,#B45309 100%)",                                  textHint: "#ffffff" },
+    { key: "fado",       label: "Fado",        css: "linear-gradient(135deg,#1F1147 0%,#7E1F86 50%,#F08C1F 100%)",                      textHint: "#ffffff" },
+    { key: "tejo",       label: "Tejo",        css: "linear-gradient(180deg,#4A6FA5 0%,#7BA7C9 50%,#E8C39E 100%)",                      textHint: "#ffffff" },
+    { key: "noite",      label: "Noite",       css: "linear-gradient(135deg,#0F2027 0%,#203A43 50%,#2C5364 100%)",                      textHint: "#ffffff" },
+    { key: "monochrome", label: "Mono",        css: "linear-gradient(180deg,#1a1a1a 0%,#404040 100%)",                                  textHint: "#ffffff" },
 ];
 
 // Cores de texto sugeridas (rápidas de aplicar)
@@ -28,22 +21,17 @@ export const STORY_TEXT_COLORS = [
 // Backgrounds claros — para sombras/glow auto-adaptáveis
 export const LIGHT_BG_KEYS = new Set(["papel", "pastel", "praia", "dusk"]);
 
+// PRE-LANÇAMENTO: 3 fonts apenas (de 7).
+// Mantém-se modern (default), classic (literário), bold (impacto).
 export const STORY_FONTS = [
     { key: "modern",     label: "Aa Moderno",    style: { fontFamily: '"Inter", system-ui, sans-serif', fontWeight: 700, letterSpacing: "-0.025em" } },
     { key: "classic",    label: "Aa Clássico",   style: { fontFamily: '"Playfair Display", "Georgia", serif', fontWeight: 700, fontStyle: "italic", letterSpacing: "-0.005em" } },
-    { key: "serif",      label: "Aa Serif",      style: { fontFamily: '"Georgia", serif', fontWeight: 500 } },
-    { key: "neon",       label: "Aa Neon",       style: { fontFamily: '"Inter", sans-serif', fontWeight: 800, textShadow: "0 0 18px currentColor, 0 0 8px currentColor", letterSpacing: "0.02em" } },
-    { key: "typewriter", label: "Aa Mono",       style: { fontFamily: '"JetBrains Mono", monospace', fontWeight: 500, letterSpacing: "-0.01em" } },
     { key: "bold",       label: "Aa Bold",       style: { fontFamily: '"Inter", sans-serif', fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 0.95 } },
-    { key: "brush",      label: "Aa Brush",      style: { fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive', fontWeight: 700, letterSpacing: "0.01em" } },
 ];
 
-// Estilos visuais aplicáveis ao texto (camada estética por cima da fonte).
+// PRE-LANÇAMENTO: 1 estilo de texto apenas (de 4). "Realce" / "Contorno" / "Brilho" escondidos.
 export const STORY_TEXT_STYLES = [
     { key: "plain",     label: "Limpo",     description: "Sem extras" },
-    { key: "highlight", label: "Realce",    description: "Caixa de cor" },
-    { key: "outline",   label: "Contorno",  description: "Stroke nítido" },
-    { key: "glow",      label: "Brilho",    description: "Halo coral" },
 ];
 
 export const STORY_REACTIONS = ["❤️", "🔥", "👏", "😂", "😢", "💯", "🫶", "🥹"];
@@ -54,10 +42,9 @@ export const STORY_AUDIENCES = [
     { key: "roda",      label: "Roda íntima",  emoji: "🫂", description: "Só pessoas na tua Roda" },
 ];
 
+// PRE-LANÇAMENTO: poll/question/slider escondidos — apenas reaction + reply.
+// Mantemos só os "estáticos" (mention/hashtag/location/countdown).
 export const STICKER_TYPES = [
-    { key: "poll",      label: "Sondagem",   emoji: "📊" },
-    { key: "question",  label: "Pergunta",   emoji: "❓" },
-    { key: "slider",    label: "Slider",     emoji: "🎚" },
     { key: "mention",   label: "Menção",     emoji: "@" },
     { key: "hashtag",   label: "Hashtag",    emoji: "#" },
     { key: "location",  label: "Localização", emoji: "📍" },

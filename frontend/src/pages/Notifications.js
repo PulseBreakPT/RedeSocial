@@ -54,14 +54,11 @@ function TypeStamp({ type, size = 36 }) {
 }
 
 const FILTERS = [
-    { key: "all", label: "Tudo" },
-    { key: "priority", label: "Prioridade" },
-    { key: "unread", label: "Não lidas" },
-    { key: "star", label: "Importantes" },
+    { key: "all",     label: "Tudo" },
+    { key: "unread",  label: "Não lidas" },
     { key: "mention", label: "Menções" },
-    { key: "like", label: "Gostos" },
-    { key: "follow", label: "Seguidores" },
 ];
+// Pré-lançamento: Priority/Important/Likes/Follows escondidos — 3 filtros chega.
 
 function groupByDay(items) {
     const groups = {};
@@ -347,7 +344,7 @@ export default function Notifications() {
                     })}
                 </div>
             ) : filtered.length === 0 ? (
-                <div className="px-6 py-16 text-center anim-fade-up">
+                <div className="px-6 py-16 text-center anim-fade-up" data-testid="notifications-empty">
                     <div
                         className="w-20 h-20 grid place-items-center mx-auto mb-6"
                         style={{
@@ -361,17 +358,35 @@ export default function Notifications() {
                         <Bell size={26} strokeWidth={2.0} />
                     </div>
                     <p className="font-mono font-bold uppercase mb-3" style={{ fontSize: 10.5, letterSpacing: "0.22em", color: "rgba(10,10,10,0.42)" }}>
-                        Tudo lido
+                        Em silêncio
                     </p>
                     <h3
                         className="font-black tracking-[-0.025em] leading-tight"
                         style={{ fontSize: "clamp(22px, 3vw, 28px)", color: PT.ink }}
                     >
-                        Tudo <Highlight color={PT.green}>calmo</Highlight> por aqui.
+                        Vais saber <Highlight color={PT.green}>aqui</Highlight> quando alguém te responder.
                     </h3>
-                    <p className="mt-4 text-[13.5px] font-medium" style={{ color: "rgba(10,10,10,0.55)" }}>
-                        Volta mais tarde para novidades.
+                    <p className="mt-4 text-[14px] font-medium max-w-md mx-auto" style={{ color: "rgba(10,10,10,0.6)" }}>
+                        Diz olá a alguém para começar a conversa.
                     </p>
+                    <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
+                        <Link
+                            to="/explore"
+                            data-testid="notif-empty-explore"
+                            className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                            style={{ background: PT.ink, color: "#fff" }}
+                        >
+                            Explorar pessoas →
+                        </Link>
+                        <Link
+                            to="/messages"
+                            data-testid="notif-empty-messages"
+                            className="px-5 py-2.5 rounded-full text-[13px] font-bold uppercase tracking-wider transition tap-shrink"
+                            style={{ background: "transparent", color: PT.ink, border: `1.5px solid ${PT.ink}` }}
+                        >
+                            Enviar uma mensagem
+                        </Link>
+                    </div>
                 </div>
             ) : (
                 grouped.map(([day, list]) => (

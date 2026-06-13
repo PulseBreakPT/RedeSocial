@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Compass, MessageCircle, Plus, PenSquare, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Home, Compass, MessageCircle, Plus, PenSquare, Image as ImageIcon, Bell } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -16,8 +16,8 @@ const navItems = [
     { to: "/feed",     icon: Home,         testid: "mnav-home",     end: true, label: "Início" },
     { to: "/explore",  icon: Compass,      testid: "mnav-explore",  label: "Explorar" },
     { to: null,        icon: Plus,         testid: "mnav-compose",  center: true },
+    { to: "/notifications", icon: Bell,    testid: "mnav-notifications", label: "Notif.", badgeKey: "notif" },
     { to: "/messages", icon: MessageCircle,testid: "mnav-messages", label: "DMs", badgeKey: "msg" },
-    { to: "/premium",  icon: Sparkles,     testid: "mnav-premium",  label: "Premium", isPremium: true },
 ];
 
 const WHISPER_KEY = "vm:fab-whisper:v1";
@@ -30,6 +30,7 @@ export function MobileBottomNav({ onCompose }) {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [msgCount, setMsgCount] = useState(0);
+    const [notifCount, setNotifCount] = useState(0);
     const [draftCount, setDraftCount] = useState(0);
     const [quickOpen, setQuickOpen] = useState(false);
     const [pressed, setPressed] = useState(false);
@@ -43,8 +44,12 @@ export function MobileBottomNav({ onCompose }) {
     useEffect(() => {
         const tick = async () => {
             try {
-                const m = await api.get("/messages/unread-count");
+                const [m, n] = await Promise.all([
+                    api.get("/messages/unread-count"),
+                    api.get("/notifications/unread-count"),
+                ]);
                 setMsgCount(m.data.count);
+                setNotifCount(n.data.count);
             } catch {}
         };
         tick();
@@ -279,6 +284,8 @@ export function MobileBottomNav({ onCompose }) {
                     }
                     const to = it.to === "/profile" ? `/u/${user?.username}` : it.to;
                     const isMsg = it.badgeKey === "msg";
+                    const isNotif = it.badgeKey === "notif";
+                    const badge = isMsg ? msgCount : isNotif ? notifCount : 0;
 
                     return (
                         <NavLink
@@ -306,9 +313,9 @@ export function MobileBottomNav({ onCompose }) {
                                             strokeWidth={isActive ? 2.3 : 1.85}
                                             style={{ color: isActive ? PT.ink : "rgba(10,10,10,0.55)" }}
                                         />
-                                        {isMsg && msgCount > 0 && (
+                                        {badge > 0 && (
                                             <span
-                                                data-testid="mnav-msg-badge"
+                                                data-testid={`mnav-${it.badgeKey}-badge`}
                                                 className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 grid place-items-center font-bold font-mono"
                                                 style={{
                                                     background: PT.red, color: "#fff",
@@ -318,7 +325,7 @@ export function MobileBottomNav({ onCompose }) {
                                                     letterSpacing: "0.02em",
                                                 }}
                                             >
-                                                {msgCount > 99 ? "99+" : msgCount}
+                                                {badge > 99 ? "99+" : badge}
                                             </span>
                                         )}
                                     </span>
