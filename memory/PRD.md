@@ -213,3 +213,132 @@ Backgrounds cremes (`rgba(247,245,239, 0.9x)`) substituídos por brancos transl�
 - Mobile bottom-nav: 5/5 slots ok (mnav-home, mnav-explore, mnav-compose, mnav-notifications, mnav-messages) ✅
 - Mobile drawer: 6/6 itens visíveis (drawer-profile, **drawer-calendario**, drawer-communities, drawer-mesas, drawer-topologia, drawer-settings) ✅
 - Mobile drawer → click em "Calendário" → navega para `/calendario` ✅
+
+
+## Session 2026-06-13 (cont. 5) — Cleanup backend de Topologia/Mesas + PROJECT EVOLUTION ENGINE
+
+### Limpeza backend (Mesas efémeras + Topologia)
+Frontend tinha sido limpo em sessão anterior; backend ainda continha código órfão.
+
+**Removido de `/app/backend/server.py`:**
+- `import mesas as mesas_engine` (linha 43)
+- Startup wiring `await mesas_engine.init_mesas_indexes(db)` (Fase 5 lifespan)
+- `@api.get("/communities/{slug}/mesas")` (community mesas listing)
+- `@api.get("/pulse/topology")` (mapa social vivo)
+- Secção completa "Fase 5 — MESAS (conversas efémeras)":
+  - `MesaCreateIn`, `MesaMessageIn` (Pydantic models)
+  - `POST /mesas`, `GET /mesas`, `GET /mesas/{id}`, `POST /mesas/{id}/join`, `POST /mesas/{id}/message`
+- Total: ~210 linhas removidas; `server.py` agora ~17.063 linhas.
+
+**Removido de `/app/backend/community_pulse.py`:**
+- Bloco `import mesas` + `await mesas.auto_topic_mesa(...)` (auto-mesa de bairro)
+
+**Apagado:**
+- `/app/backend/mesas.py` (módulo inteiro)
+
+**Mantido (feature diferente, sem ligação):**
+- `/api/users/me/mesa` + `/api/users/me/mesa/{user_id}` — inner-circle de 5 pessoas (depende de roda)
+- `/api/feed/mesa` — feed do inner-circle
+- Testes em `test_v3_features.py::TestMesa` + `TestFeedMesa` — não tocam efémeras
+
+**Validado:**
+- ✅ Backend arranca sem erros (`/api/health` → 200)
+- ✅ `GET /api/mesas` → 404
+- ✅ `GET /api/pulse/topology` → 404
+- ✅ `GET /api/communities/x/mesas` → 404
+- ✅ `GET /api/users/me/mesa` → 401 (auth-protected, mantido)
+- ✅ `EDITORIAL.md`: removidas referências a `/topologia, /mesas`
+
+### Infra
+- Recriados `.env` ausentes (fork sem env files):
+  - `/app/backend/.env` (MONGO_URL, DB_NAME, JWT_SECRET, CORS_ORIGINS, APP_ENV)
+  - `/app/frontend/.env` (REACT_APP_BACKEND_URL, WDS_SOCKET_PORT)
+- `/app/memory/test_credentials.md` criado (estava em falta).
+
+### PROJECT EVOLUTION ENGINE — Auditoria C-level
+Criado `/app/docs/PROJECT_EVOLUTION_ENGINE.md` (586 linhas):
+- Sumário executivo (3 riscos existenciais, oportunidade, decisão crítica)
+- Inventário (19 módulos, 386 endpoints, 38 rotas, 6 motores)
+- **Top 50 ADICIONAR** (crescimento, retenção, profundidade editorial, monetização)
+- **Top 50 MELHORAR** (UX, arquitectura, confiança, admin)
+- **Top 50 REMOVER** (features mortas, código órfão, A/B candidatos)
+- **Top 50 ESCONDER** (atrás de feature flags, role-check, A/B)
+- O que falta para crescer (aquisição, activação, retenção, referral, monetização)
+- Diferenciação competitiva (vs Twitter, Threads, BlueSky)
+- Roadmap 90 dias (6 sprints, P0-P2)
+- Roadmap 12 meses (Q1-Q4)
+- Refactor técnico prioritário (server.py 17K linhas → 25 routers)
+- A única decisão mais crítica: **Stripe + Email lifecycle + 100 embaixadores nas próximas 4 semanas**
+- Métricas AARRR + North Star
+- Insights por persona C-level
+
+## P0/P1/P2 Backlog actualizado (Junho 2026)
+
+### P0 — próximos 30 dias (do audit)
+- Stripe checkout funcional (price IDs reais)
+- Email lifecycle (Welcome, D1, D7, win-back D30)
+- OG images dinâmicas por post
+- SEO público (sitemap, robots.txt, `/p/:id` sem auth, structured data)
+- 100 embaixadores recrutados manualmente
+
+### P1 — Sprint 3-4 (do audit)
+- Refactor `server.py` em 25 routers
+- Pydantic v2 + BaseDocument consistente
+- Pytest cobertura ≥70%
+- Login social Google (Emergent-managed)
+- Quick-share buttons WhatsApp/X/LinkedIn
+
+### P2 — Sprint 5-6
+- Automod ML PT (substituir regex)
+- Appeals process DSA art. 20
+- Export GDPR self-service
+- B2B Municípios MVP
+- Cleanup features mortas (Cosmetics se não monetizadas, etc.)
+
+
+## Session 2026-06-13 (cont. 6) — Calendário redesign LUSORAE EDITORIAL
+
+### Problema
+A página `/calendario` ainda usava a estética FANZINE antiga (já removida das outras páginas):
+- Bordas pretas grossas (1.5–5px), sombras offset hard
+- Stickers rotativos + StampCircle decorativos
+- Watermark gigante 156px do número do mês
+- Background creme `rgba(247,245,239,0.92)`
+- Kickers verbose `// lusorae · papel`, `// folha n.º 06`, `edição n.º`
+- Year Compass com heatmap amarelo/dourado saturado
+- Tipografia mono uppercase tracking-tight nos H1/H2 (não apenas em kickers)
+
+### Redesign (5 lentes profissionais)
+1. **Senior Product Designer (Linear/Notion/Stripe)** — depurar decoração; única H1 + sub; profundidade via sombras difusas (`0 1px 2px rgba(0,0,0,0.04), 0 8px 24px -8px rgba(0,0,0,0.12)`), não via bordas grossas.
+2. **Information Architect** — agenda como informação (Quando · Onde · O quê · Categoria); agrupamento mensal limpo; scan-first; categoria como dot pequeno (não bloco grande).
+3. **Frontend Engineer Senior** — `<time datetime>` semântico; tabular-nums; CSS-only animations respeitando `prefers-reduced-motion`; IntersectionObserver fluido; CSS vars centralizadas (`HAIRLINE`, `SHADOW_SOFT`, `INK_MUTE`).
+4. **Calendar UX Specialist (Cal.com / Google / Fantastical)** — today subtle (dot vermelho); "agora" badge rounded unobtrusivo; **YearStrip** como bar chart minimal (12 colunas cinzas + acento red em today); month-nav pills 999px.
+5. **Accessibility (WCAG AA)** — contraste ≥4.5:1; `aria-current/pressed/live`; focus-visible rings; tap targets ≥40px; reduced-motion respeitado.
+
+### Mudanças concretas
+- `pages/Calendario.js` reescrito (1251 → 768 linhas) preservando 100% dos `data-testid` (cal-compass, cal-cat-*, cal-event-*, cal-highlight-*, cal-jump-*, cal-stats, cal-masthead, cal-monthnav, cal-filters-toggle, cal-empty, cal-toggle-past, etc.) — zero quebras em testes E2E.
+- **YearCompass → YearStrip**: bar chart minimal em cinzas (3 stops de opacidade) + acento red para current month; today indicado com pequeno dot vermelho no canto.
+- **MonthSection header**: numeral inline "06 · Junho" (em vez de watermark gigante 156px); breakdown de categorias com dots; sem "// folha n.º".
+- **EventCard**: data-block em fundo `rgba(10,10,10,0.03)` (ou red subtil 5% se featured) com hairline; título Geist font-black tracking-tight; metadata em cinza; faixa lateral 3px só em featured (em vez de sempre); `time datetime` semântico.
+- **Masthead**: H1 "O que vem aí em Portugal" (substitui o "Calendário · Portugal · curadoria 2026" antigo); kicker pequeno "● curadoria editorial"; intro 2 linhas; stats strip clean (4 cols, hairlines, accent subtil só em "agora").
+- **Stats strip**: 4 cells com hairlines, sem fundos vermelhos saturados; accent vermelho subtil apenas quando `now > 0`.
+- **Highlights "A seguir"**: 3 cards rounded-2xl com sombras difusas; hover lift via `-translate-y-0.5` + box-shadow upgrade; dot vermelho pulse em `days_until ≤ 1`.
+- **Sticky month nav**: pills 999px com hairline + active=PT.ink; "a ler · junho" kicker subtil; DensityToggle como segmented pill (Linear-style).
+- **Filtros**: accordion rounded-2xl; chips de categoria 999px com emoji + label + count; CTA "Limpar" com cor red mas texto-only.
+
+### CSS tokens (Lusorae Editorial)
+- `HAIRLINE = "1px solid rgba(10,10,10,0.08)"`
+- `HAIRLINE_STRONG = "1px solid rgba(10,10,10,0.12)"`
+- `SHADOW_SOFT = "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px -8px rgba(0,0,0,0.12)"`
+- `SHADOW_HOVER = "0 2px 4px rgba(0,0,0,0.05), 0 14px 32px -12px rgba(0,0,0,0.16)"`
+- `INK_MUTE = "rgba(10,10,10,0.58)"` / `INK_MUTE_2 = "rgba(10,10,10,0.45)"`
+
+### Validado (E2E Playwright + login real)
+- ✅ Lint Javascript: 0 erros
+- ✅ Página carrega autenticada: 155 eventos detectados
+- ✅ Todos os testids preservados: calendar-header, cal-stats, cal-compass, cal-masthead, cal-monthnav, cal-filters-toggle, cal-event-* (155)
+- ✅ Screenshots desktop top + mid confirmam: zero fundos cremes, zero watermarks gigantes, zero hard shadows, zero stickers rotativos. Alinhado 100% com Feed/RightSidebar/FeedAside.
+
+### Notas
+- `/api/users/me/onboard` (POST) é o endpoint correcto para marcar `onboarded=true` (não PATCH /users/me).
+- Test user criado no preview: `t1781357229@test.pt` (apenas para QA visual; pode ser removido).

@@ -359,12 +359,6 @@ async def _tick_once(db, ws_manager) -> None:
                                                    on_started=_HAPPENING_ON_STARTED)
             except Exception as exc:
                 logger.warning(f"community_pulse: happening detect failed for {comm.get('id')}: {exc}")
-            # Mesa de bairro automática quando um tópico interno rebenta.
-            try:
-                import mesas
-                await mesas.auto_topic_mesa(db, comm, snap, ws_manager)
-            except Exception as exc:
-                logger.warning(f"community_pulse: auto-mesa failed for {comm.get('id')}: {exc}")
         except Exception as exc:
             logger.warning(f"community_pulse: tick failed for {comm.get('id')}: {exc}")
 

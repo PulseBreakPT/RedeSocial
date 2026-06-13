@@ -69,7 +69,7 @@ ficheiro. Lista completa:
 - `/communities`, `/c/:slug` — `pages/Communities.js`, `pages/Community.js`
 - `/trending`, `/tag/:tag` — `pages/Trending.js`, `pages/TagPage.js`
 - `/bookmarks`, `/drafts`, `/scheduled`, `/series/:id`, `/story-archive`,
-  `/visitors`, `/topologia`, `/mesas`, `/p/:id` — todas marcadas
+  `/visitors`, `/p/:id` — todas marcadas
 - `/admin` — `pages/Admin.js`
 - `/legal/*` — shell partilhado `pages/legal/LegalShell.js`
 

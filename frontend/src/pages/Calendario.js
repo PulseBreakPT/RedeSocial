@@ -1,19 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 // =============================================================================
-// DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
+// LUSORAE EDITORIAL — clean redesign (Jun 2026)
+// 5 lentes profissionais aplicadas:
+//   1. Senior Product Designer (Linear/Notion/Stripe) — depurar decoração,
+//      hierarquia única, profundidade via sombras difusas (não bordas grossas).
+//   2. Information Architect — agenda como informação (Quando · Onde · O quê
+//      · Categoria), agrupamento mensal limpo, scan-first.
+//   3. Frontend Engineer Senior — <time> semântico, CSS-only animations
+//      respeitando prefers-reduced-motion, IntersectionObserver fluido.
+//   4. Calendar UX Specialist (Cal.com / Google / Fantastical) — today subtle,
+//      "agora" unobtrusivo, year strip = bar chart minimal, agrupamento por dia.
+//   5. Accessibility (WCAG AA) — contrast ≥4.5, aria-current/pressed/live,
+//      focus rings, tap targets ≥40px.
 // =============================================================================
 import {
     CalendarDays, MapPin, ExternalLink, Filter, ChevronRight, X,
-    LayoutGrid, AlignJustify, Compass, ChevronDown, Sparkles, Flame,
+    LayoutGrid, AlignJustify, ChevronDown, Sparkles, Flame, Star, Dot,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
 import { PT } from "../theme/editorial";
-import { Sticker, StampCircle } from "../components/editorial/Primitives";
 
 /* ════════════════════════════════════════════════════════════════
-   Constants & helpers
+   Tokens & helpers
    ════════════════════════════════════════════════════════════════ */
 const MONTH_PT = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -24,20 +34,30 @@ const ALL_CATS = { key: "all", label: "Tudo", emoji: "✦" };
 const HIDE_SCROLLBAR = { scrollbarWidth: "none", msOverflowStyle: "none" };
 const LS_DENSITY_KEY = "lusorae.cal.density";
 
+// Lusorae Editorial primitives — alinhado com PageHeader / FeedAside / RightSidebar.
+const HAIRLINE = "1px solid rgba(10,10,10,0.08)";
+const HAIRLINE_STRONG = "1px solid rgba(10,10,10,0.12)";
+const SHADOW_SOFT = "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px -8px rgba(0,0,0,0.12)";
+const SHADOW_HOVER = "0 2px 4px rgba(0,0,0,0.05), 0 14px 32px -12px rgba(0,0,0,0.16)";
+const INK_MUTE = "rgba(10,10,10,0.58)";
+const INK_MUTE_2 = "rgba(10,10,10,0.45)";
+
 const fmtDate = (iso) => {
     const d = new Date(iso + "T00:00:00");
-    return { day: d.getDate(), month: MONTH_PT[d.getMonth()].slice(0, 3).toUpperCase(), monthIdx: d.getMonth() };
+    return { day: d.getDate(), month: MONTH_PT[d.getMonth()].slice(0, 3).toLowerCase(), monthIdx: d.getMonth() };
 };
 
 const dateRangeLabel = (start, end) => {
     if (!end || end === start) {
         const d = new Date(start + "T00:00:00");
-        return `${d.getDate()} de ${MONTH_PT[d.getMonth()]}`;
+        return `${d.getDate()} de ${MONTH_PT[d.getMonth()].toLowerCase()}`;
     }
     const a = new Date(start + "T00:00:00");
     const b = new Date(end + "T00:00:00");
-    if (a.getMonth() === b.getMonth()) return `${a.getDate()}–${b.getDate()} de ${MONTH_PT[a.getMonth()]}`;
-    return `${a.getDate()} ${MONTH_PT[a.getMonth()].slice(0, 3)} → ${b.getDate()} ${MONTH_PT[b.getMonth()].slice(0, 3)}`;
+    if (a.getMonth() === b.getMonth()) {
+        return `${a.getDate()}–${b.getDate()} de ${MONTH_PT[a.getMonth()].toLowerCase()}`;
+    }
+    return `${a.getDate()} ${MONTH_PT[a.getMonth()].slice(0, 3).toLowerCase()} → ${b.getDate()} ${MONTH_PT[b.getMonth()].slice(0, 3).toLowerCase()}`;
 };
 
 const isFeaturedEvent = (ev) =>
@@ -45,35 +65,36 @@ const isFeaturedEvent = (ev) =>
     (typeof ev.days_until === "number" && ev.days_until >= 0 && ev.days_until <= 2 && ev.status !== "past");
 
 /* ════════════════════════════════════════════════════════════════
-   Primitives — pequenas réguas editoriais
+   Kicker — pequena régua de meta (mono uppercase com dot pulse opcional)
    ════════════════════════════════════════════════════════════════ */
-const Overline = ({ children, color = "rgba(10,10,10,0.50)", className = "" }) => (
+const Kicker = ({ children, color = INK_MUTE, dot = false, className = "" }) => (
     <span
-        className={`font-mono font-bold uppercase tracking-[0.20em] text-[10px] sm:text-[11px] ${className}`}
+        className={`inline-flex items-center gap-1.5 font-mono font-semibold uppercase tracking-[0.16em] text-[10.5px] ${className}`}
         style={{ color }}
     >
+        {dot && <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: PT.red }} />}
         {children}
     </span>
 );
 
+/* ════════════════════════════════════════════════════════════════
+   StatusPill — "agora" / "hoje" / "amanhã" / "em X dias" / "já passou"
+   ════════════════════════════════════════════════════════════════ */
 function StatusPill({ status, days, compact = false }) {
     const baseClass = compact
-        ? "inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px]"
-        : "inline-flex items-center gap-1 px-2 py-0.5 text-[10px]";
-    const fontClass = "font-mono font-bold uppercase tracking-[0.12em]";
+        ? "inline-flex items-center gap-1 px-2 py-[3px] text-[9.5px]"
+        : "inline-flex items-center gap-1 px-2.5 py-[3px] text-[10px]";
+    const fontClass = "font-mono font-semibold uppercase tracking-[0.12em] rounded-full";
 
     if (status === "now") {
         return (
             <span
-                className={`${baseClass} ${fontClass} animate-pulse`}
-                style={{
-                    background: PT.red,
-                    color: "#fff",
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                }}
+                className={`${baseClass} ${fontClass}`}
+                style={{ background: PT.red, color: "#fff" }}
+                aria-live="polite"
             >
-                ● a decorrer
+                <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                agora
             </span>
         );
     }
@@ -81,26 +102,22 @@ function StatusPill({ status, days, compact = false }) {
         return (
             <span
                 className={`${baseClass} ${fontClass}`}
-                style={{
-                    background: "transparent",
-                    color: "rgba(10,10,10,0.40)",
-                    border: "1px solid rgba(10,10,10,0.08)",
-                }}
+                style={{ background: "transparent", color: INK_MUTE_2, border: HAIRLINE }}
             >
-                já passou
+                passou
             </span>
         );
     }
     if (typeof days === "number") {
-        const label = days === 0 ? "Hoje" : days === 1 ? "Amanhã" : days <= 7 ? `em ${days} dias` : `daqui a ${days}d`;
+        const label = days === 0 ? "hoje" : days === 1 ? "amanhã" : days <= 7 ? `em ${days} dias` : `em ${days}d`;
+        const urgent = days <= 2;
         return (
             <span
                 className={`${baseClass} ${fontClass}`}
                 style={{
-                    background: PT.gold,
-                    color: PT.ink,
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                    background: urgent ? "rgba(200,16,46,0.08)" : "rgba(10,10,10,0.05)",
+                    color: urgent ? PT.red : "rgba(10,10,10,0.72)",
+                    border: HAIRLINE,
                 }}
             >
                 {label}
@@ -110,6 +127,9 @@ function StatusPill({ status, days, compact = false }) {
     return null;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   CategoryChip — pill 999px com count, hairline
+   ════════════════════════════════════════════════════════════════ */
 function CategoryChip({ meta, active, onClick, count }) {
     return (
         <button
@@ -117,24 +137,22 @@ function CategoryChip({ meta, active, onClick, count }) {
             data-testid={`cal-cat-${meta.key}`}
             onClick={onClick}
             aria-pressed={active}
-            className="tap-shrink inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-[0.10em] whitespace-nowrap flex-shrink-0 snap-start"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium whitespace-nowrap flex-shrink-0 snap-start rounded-full transition-all duration-150"
             style={{
                 background: active ? PT.ink : "#fff",
-                color: active ? PT.cream : PT.ink,
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: active ? "none" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                transform: active ? "translate(3px,3px)" : "none",
-                transition: "transform 0.08s",
+                color: active ? "#fff" : PT.ink,
+                border: active ? HAIRLINE_STRONG : HAIRLINE,
+                boxShadow: active ? "0 4px 12px -4px rgba(10,10,10,0.25)" : "none",
             }}
         >
-            <span aria-hidden>{meta.emoji}</span>
+            <span aria-hidden style={{ opacity: 0.85 }}>{meta.emoji}</span>
             <span>{meta.label}</span>
-            {typeof count === "number" && (
+            {typeof count === "number" && count > 0 && (
                 <span
-                    className="ml-1 text-[9px] opacity-70"
-                    style={{ color: active ? PT.cream : "rgba(10,10,10,0.55)" }}
+                    className="ml-0.5 text-[10.5px] font-mono"
+                    style={{ color: active ? "rgba(255,255,255,0.6)" : INK_MUTE_2 }}
                 >
-                    · {count}
+                    {count}
                 </span>
             )}
         </button>
@@ -142,47 +160,46 @@ function CategoryChip({ meta, active, onClick, count }) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   YearCompass — 12 quadrículas Jan→Dez com heatmap de eventos
+   YearStrip — bar chart minimal 12-mês com intensidade subtil
+   Substitui o YearCompass colorido. Inspirado em Cal.com / Google.
    ════════════════════════════════════════════════════════════════ */
-function YearCompass({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, onJump, totalFiltered }) {
+function YearStrip({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, onJump, totalFiltered }) {
     return (
         <div
-            className="relative"
             data-testid="cal-compass"
-            style={{
-                background: "#fff",
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-            }}
+            className="rounded-2xl overflow-hidden"
+            style={{ background: "#fff", border: HAIRLINE, boxShadow: SHADOW_SOFT }}
         >
-            {/* Header da rosa-dos-meses */}
             <div
-                className="flex items-center justify-between px-3 sm:px-4 py-2.5"
-                style={{ borderBottom: "1px solid rgba(10,10,10,0.10)", background: PT.ink, color: PT.cream }}
+                className="flex items-center justify-between px-4 sm:px-5 py-3"
+                style={{ borderBottom: HAIRLINE }}
             >
-                <span className="inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-[0.16em] text-[10px]">
-                    <Compass size={12} strokeWidth={2.4} />
-                    rosa do ano · {year}
-                </span>
-                <span className="font-mono font-bold uppercase tracking-[0.12em] text-[10px] opacity-80">
-                    {totalFiltered} no filtro
-                </span>
+                <div className="inline-flex items-center gap-2">
+                    <CalendarDays size={14} strokeWidth={2.2} style={{ color: PT.ink }} />
+                    <span className="font-semibold tracking-tight text-[13.5px]" style={{ color: PT.ink }}>
+                        Vista do ano
+                    </span>
+                    <span className="font-mono text-[11px]" style={{ color: INK_MUTE_2 }}>{year}</span>
+                </div>
+                <Kicker color={INK_MUTE_2}>{totalFiltered} no filtro</Kicker>
             </div>
 
-            <div className="cal-compass-grid grid grid-cols-6 sm:grid-cols-12 gap-0">
+            <div className="grid grid-cols-6 sm:grid-cols-12 px-2 sm:px-3 pt-3 pb-2 gap-1 sm:gap-1.5">
                 {Array.from({ length: 12 }, (_, i) => {
                     const n = counts[i] || 0;
                     const isCurrent = currentMonthIdx === i;
                     const isToday = todayMonthIdx === i;
                     const intensity = maxCount > 0 ? n / maxCount : 0;
-                    let bg = "#fff";
+                    // Altura da barra (24–56px) com easing.
+                    const barH = n === 0 ? 8 : Math.max(12, Math.round(12 + intensity * 44));
+                    // Cor da barra: cinza neutro → ink. Today + current pintam acento.
+                    let barBg = "rgba(10,10,10,0.08)";
                     if (n > 0) {
-                        if (intensity > 0.75) bg = PT.gold;
-                        else if (intensity > 0.50) bg = "#FFE066";
-                        else if (intensity > 0.25) bg = "#FFF1A8";
-                        else bg = "#FFF8DC";
+                        if (intensity > 0.65) barBg = "rgba(10,10,10,0.85)";
+                        else if (intensity > 0.35) barBg = "rgba(10,10,10,0.55)";
+                        else barBg = "rgba(10,10,10,0.28)";
                     }
-                    if (isCurrent) bg = PT.red;
+                    if (isCurrent) barBg = PT.red;
 
                     return (
                         <button
@@ -192,58 +209,46 @@ function YearCompass({ year, counts, todayMonthIdx, currentMonthIdx, maxCount, o
                             disabled={n === 0}
                             data-testid={`cal-compass-${String(i + 1).padStart(2, "0")}`}
                             aria-label={`${MONTH_PT[i]} — ${n} ${n === 1 ? "evento" : "eventos"}`}
-                            className="cal-compass-cell tap-shrink relative flex flex-col items-start justify-between p-2 sm:p-2.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{
-                                background: bg,
-                                color: isCurrent ? "#fff" : PT.ink,
-                                minHeight: 58,
-                            }}
+                            aria-current={isCurrent ? "true" : undefined}
+                            className="group relative flex flex-col items-center justify-end gap-1.5 px-1 pt-3 pb-2 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+                            style={{ minHeight: 78 }}
                         >
-                            <div className="flex items-center justify-between w-full">
-                                <span className="font-mono font-bold uppercase tracking-[0.10em] text-[9px] leading-none">
-                                    {MONTH_PT_SHORT[i]}
-                                </span>
-                                {isToday && !isCurrent && (
-                                    <span
-                                        aria-hidden
-                                        className="block w-1.5 h-1.5"
-                                        style={{ background: PT.red, border: `1.5px solid ${PT.ink}` }}
-                                    />
-                                )}
+                            <div className="flex items-end justify-center w-full" style={{ height: 56 }}>
+                                <span
+                                    aria-hidden
+                                    className="w-2.5 sm:w-3 rounded-t-sm transition-all duration-200"
+                                    style={{ height: barH, background: barBg }}
+                                />
                             </div>
                             <span
-                                className="font-black leading-none text-base sm:text-lg mt-1.5"
-                                style={{ opacity: n === 0 ? 0.4 : 1 }}
+                                className="font-mono text-[10px] uppercase tracking-[0.10em] leading-none"
+                                style={{ color: isCurrent ? PT.red : INK_MUTE, fontWeight: isCurrent ? 700 : 500 }}
+                            >
+                                {MONTH_PT_SHORT[i].toLowerCase()}
+                            </span>
+                            <span
+                                className="font-semibold leading-none text-[11px] tabular-nums"
+                                style={{ color: n === 0 ? INK_MUTE_2 : PT.ink, opacity: n === 0 ? 0.4 : 1 }}
                             >
                                 {n}
                             </span>
+                            {isToday && !isCurrent && (
+                                <span
+                                    aria-hidden
+                                    className="absolute top-1.5 right-1.5 inline-block w-1.5 h-1.5 rounded-full"
+                                    style={{ background: PT.red }}
+                                />
+                            )}
                         </button>
                     );
                 })}
-            </div>
-
-            {/* legenda */}
-            <div
-                className="flex items-center justify-between px-3 sm:px-4 py-2 text-[9.5px] font-mono uppercase tracking-[0.14em]"
-                style={{ borderTop: "1px solid rgba(10,10,10,0.10)", color: "rgba(10,10,10,0.55)" }}
-            >
-                <span className="inline-flex items-center gap-1.5">
-                    <span aria-hidden className="inline-block w-2.5 h-2.5" style={{ background: "#FFF8DC", border: `1.5px solid ${PT.ink}` }} />
-                    poucos
-                    <span aria-hidden className="inline-block w-2.5 h-2.5 ml-1" style={{ background: PT.gold, border: `1.5px solid ${PT.ink}` }} />
-                    muitos
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                    <span aria-hidden className="inline-block w-2.5 h-2.5" style={{ background: PT.red, border: `1.5px solid ${PT.ink}` }} />
-                    a ler
-                </span>
             </div>
         </div>
     );
 }
 
 /* ════════════════════════════════════════════════════════════════
-   EventCard — duas variantes (revista / lista) + featured
+   EventCard — duas variantes (magazine / list)
    ════════════════════════════════════════════════════════════════ */
 function EventCard({ ev, catMeta, density, indexInMonth }) {
     const { day, month } = fmtDate(ev.iso_date);
@@ -251,8 +256,7 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
     const isMulti = ev.iso_end && ev.iso_end !== ev.iso_date;
     const featured = isFeaturedEvent(ev);
     const accentColor = catMeta?.color || PT.ink;
-    const isLightAccent = accentColor === "#FFCC00";
-    const delayMs = Math.min(indexInMonth * 35, 280);
+    const delayMs = Math.min(indexInMonth * 24, 220);
 
     /* ───────── LISTA (densidade compacta) ───────── */
     if (density === "list") {
@@ -260,44 +264,52 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
             <article
                 id={`cal-event-${ev.key}`}
                 data-testid={`cal-event-${ev.key}`}
-                className="cal-reveal group grid grid-cols-[44px_1fr_auto] sm:grid-cols-[56px_1fr_auto] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5"
+                className="cal-reveal group grid grid-cols-[48px_1fr_auto] sm:grid-cols-[64px_1fr_auto] items-center gap-3 sm:gap-4 px-4 py-3 rounded-xl transition-all duration-200 hover:-translate-y-px"
                 style={{
-                    background: featured ? "#FFFCF5" : "#fff",
-                    border: "1px solid rgba(10,10,10,0.10)",
-                    boxShadow: featured ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                    background: "#fff",
+                    border: HAIRLINE,
+                    boxShadow: SHADOW_SOFT,
                     animationDelay: `${delayMs}ms`,
-                    borderLeft: `5px solid ${accentColor}`,
                 }}
             >
-                <div className="flex flex-col items-center justify-center leading-none" style={{ color: PT.ink }}>
-                    <span className="font-mono font-bold uppercase tracking-[0.12em] text-[8.5px] opacity-60">{month}</span>
-                    <span className="font-black text-lg sm:text-xl mt-0.5">{day}</span>
-                </div>
+                <time
+                    dateTime={ev.iso_date}
+                    className="flex flex-col items-center justify-center leading-none rounded-lg py-2"
+                    style={{
+                        background: featured ? "rgba(200,16,46,0.06)" : "rgba(10,10,10,0.03)",
+                        border: HAIRLINE,
+                    }}
+                >
+                    <span className="font-mono uppercase tracking-[0.10em] text-[9.5px]" style={{ color: INK_MUTE }}>{month}</span>
+                    <span className="font-black text-[19px] sm:text-[22px] tabular-nums mt-0.5" style={{ color: PT.ink }}>{day}</span>
+                </time>
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                        <h3
-                            className="font-black leading-tight tracking-[-0.015em] truncate"
-                            style={{ color: PT.ink, fontSize: "clamp(13.5px, 3.6vw, 16px)" }}
-                        >
-                            {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
-                            {ev.title}
-                        </h3>
-                    </div>
-                    <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap text-[10px] font-mono uppercase tracking-[0.08em]" style={{ color: "rgba(10,10,10,0.55)" }}>
-                        <span className="inline-flex items-center gap-1" style={{ color: accentColor === PT.gold ? "rgba(10,10,10,0.70)" : accentColor }}>
-                            <span aria-hidden className="inline-block w-1.5 h-1.5" style={{ background: accentColor, border: `1px solid ${PT.ink}` }} />
+                    <h3
+                        className="font-semibold leading-tight tracking-tight truncate"
+                        style={{ color: PT.ink, fontSize: "clamp(14px, 3.4vw, 16px)" }}
+                    >
+                        {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
+                        {ev.title}
+                    </h3>
+                    <div className="flex items-center gap-x-2.5 gap-y-0.5 flex-wrap text-[11.5px] mt-1" style={{ color: INK_MUTE }}>
+                        <span className="inline-flex items-center gap-1.5">
+                            <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
                             {catMeta?.label || ev.category}
                         </span>
                         {ev.city && (
-                            <span className="inline-flex items-center gap-0.5">
-                                <MapPin size={9} strokeWidth={2.4} />
-                                {ev.city}
-                            </span>
+                            <>
+                                <Dot size={10} aria-hidden style={{ color: INK_MUTE_2 }} />
+                                <span className="inline-flex items-center gap-0.5">
+                                    <MapPin size={10} strokeWidth={2.2} aria-hidden />
+                                    {ev.city}
+                                </span>
+                            </>
                         )}
+                        <Dot size={10} aria-hidden style={{ color: INK_MUTE_2 }} />
                         <span>{rangeLabel}</span>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     <StatusPill status={ev.status} days={ev.days_until} compact />
                     {ev.url && (
                         <a
@@ -306,10 +318,10 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                             rel="noopener noreferrer"
                             data-testid={`cal-link-${ev.key}`}
                             aria-label={`site oficial — ${ev.title}`}
-                            className="inline-flex items-center justify-center w-7 h-7"
-                            style={{ color: PT.azul, border: `1.5px solid ${PT.ink}`, background: "#fff" }}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors hover:bg-black/[0.04]"
+                            style={{ color: PT.azul, border: HAIRLINE }}
                         >
-                            <ExternalLink size={11} strokeWidth={2.4} />
+                            <ExternalLink size={13} strokeWidth={2.2} />
                         </a>
                     )}
                 </div>
@@ -322,94 +334,94 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
         <article
             id={`cal-event-${ev.key}`}
             data-testid={`cal-event-${ev.key}`}
-            className="cal-reveal group relative grid grid-cols-[56px_1fr] sm:grid-cols-[92px_1fr] gap-3 sm:gap-5 p-3 sm:p-5 transition-all duration-150"
+            className="cal-reveal group relative grid grid-cols-[64px_1fr] sm:grid-cols-[96px_1fr] gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl transition-all duration-200 hover:-translate-y-0.5"
             style={{
-                background: featured ? "#FFFCF5" : "#fff",
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: featured ? "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                background: "#fff",
+                border: HAIRLINE,
+                boxShadow: SHADOW_SOFT,
                 animationDelay: `${delayMs}ms`,
             }}
         >
-            {/* faixa cromática à esquerda — código de categoria */}
-            <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5" style={{ background: accentColor }} />
-
-            {/* fita "EM DESTAQUE" no canto superior direito (apenas featured) */}
+            {/* faixa cromática hairline à esquerda — apenas se featured */}
             {featured && (
                 <span
                     aria-hidden
-                    className="absolute -top-2 right-3 px-1.5 py-0.5 font-mono font-bold uppercase tracking-[0.16em] text-[9px]"
-                    style={{
-                        background: PT.red,
-                        color: "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                        boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                    }}
-                >
-                    em destaque
-                </span>
+                    className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full"
+                    style={{ background: accentColor }}
+                />
             )}
 
-            {/* bloco de data */}
-            <div
-                className="flex flex-col items-center justify-center py-2 px-1"
+            {/* bloco de data — agenda style minimal */}
+            <time
+                dateTime={ev.iso_date}
+                className="flex flex-col items-center justify-center py-3 rounded-xl"
                 style={{
-                    background: accentColor,
-                    color: isLightAccent ? PT.ink : "#fff",
-                    border: "1px solid rgba(10,10,10,0.10)",
+                    background: featured ? "rgba(200,16,46,0.05)" : "rgba(10,10,10,0.03)",
+                    border: HAIRLINE,
                 }}
             >
-                <span className="font-mono font-bold tracking-[0.14em] text-[9px] sm:text-[11px] uppercase" style={{ opacity: 0.85 }}>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em]" style={{ color: INK_MUTE }}>
                     {month}
                 </span>
-                <span className="font-black leading-none text-2xl sm:text-[2.6rem] mt-0.5">{day}</span>
+                <span className="font-black leading-none text-[28px] sm:text-[40px] tabular-nums mt-1" style={{ color: PT.ink, letterSpacing: "-0.02em" }}>
+                    {day}
+                </span>
                 {isMulti && (
-                    <span className="font-mono text-[8px] sm:text-[9px] mt-1 uppercase tracking-[0.08em] text-center leading-none" style={{ opacity: 0.85 }}>
+                    <span className="font-mono text-[9.5px] uppercase tracking-[0.10em] mt-1.5 text-center leading-none" style={{ color: INK_MUTE_2 }}>
                         → {fmtDate(ev.iso_end).day} {fmtDate(ev.iso_end).month}
                     </span>
                 )}
-            </div>
+            </time>
 
             {/* conteúdo */}
             <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9.5px] font-mono font-bold uppercase tracking-[0.10em]"
+                        className="inline-flex items-center gap-1.5 px-2 py-[3px] text-[10.5px] font-mono font-semibold uppercase tracking-[0.10em] rounded-full"
                         style={{
-                            background: accentColor,
-                            color: isLightAccent ? PT.ink : "#fff",
-                            border: `1.5px solid ${PT.ink}`,
+                            background: "rgba(10,10,10,0.04)",
+                            color: PT.ink,
+                            border: HAIRLINE,
                         }}
                     >
+                        <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
                         {catMeta?.label || ev.category}
                     </span>
                     {ev.city && (
-                        <Overline color="rgba(10,10,10,0.55)" className="inline-flex items-center gap-1">
-                            <MapPin size={10} strokeWidth={2.4} />
+                        <span className="inline-flex items-center gap-1 font-mono text-[10.5px] uppercase tracking-[0.12em]" style={{ color: INK_MUTE }}>
+                            <MapPin size={10} strokeWidth={2.2} aria-hidden />
                             {ev.city}
-                        </Overline>
+                        </span>
                     )}
                     <StatusPill status={ev.status} days={ev.days_until} compact />
+                    {featured && ev.status !== "now" && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em]" style={{ color: PT.red }}>
+                            <Star size={10} strokeWidth={2.4} fill={PT.red} aria-hidden />
+                            destaque
+                        </span>
+                    )}
                 </div>
 
                 <h3
-                    className="font-black leading-[1.1] tracking-[-0.015em] break-words"
+                    className="font-black leading-[1.15] tracking-tight break-words"
                     style={{
                         color: PT.ink,
-                        fontSize: featured ? "clamp(17px, 5vw, 24px)" : "clamp(15px, 4.4vw, 21px)",
+                        fontSize: featured ? "clamp(18px, 4.6vw, 24px)" : "clamp(16px, 4vw, 20px)",
+                        letterSpacing: "-0.015em",
                     }}
                 >
-                    {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
+                    {ev.emoji && <span className="mr-1.5" aria-hidden>{ev.emoji}</span>}
                     {ev.title}
                 </h3>
 
                 {ev.subtitle && (
-                    <p className="text-[12.5px] sm:text-sm leading-snug mt-1.5" style={{ color: "rgba(10,10,10,0.78)" }}>
+                    <p className="text-[13px] sm:text-[14px] leading-relaxed mt-2" style={{ color: "rgba(10,10,10,0.68)" }}>
                         {ev.subtitle}
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-2.5">
-                    <span className="text-[10.5px] font-mono uppercase tracking-[0.10em]" style={{ color: "rgba(10,10,10,0.55)" }}>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.10em]" style={{ color: INK_MUTE }}>
                         {rangeLabel}
                     </span>
                     {ev.url && (
@@ -418,10 +430,11 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
                             target="_blank"
                             rel="noopener noreferrer"
                             data-testid={`cal-link-${ev.key}`}
-                            className="inline-flex items-center gap-1 text-[10.5px] font-mono font-bold uppercase tracking-[0.10em] underline-offset-4 hover:underline ml-auto"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium underline-offset-4 hover:underline ml-auto"
                             style={{ color: PT.azul }}
                         >
-                            site oficial <ExternalLink size={10} strokeWidth={2.4} />
+                            site oficial
+                            <ExternalLink size={11} strokeWidth={2.2} />
                         </a>
                     )}
                 </div>
@@ -431,10 +444,10 @@ function EventCard({ ev, catMeta, density, indexInMonth }) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   MonthSection — header magazine + lista de eventos
+   MonthSection — header minimal sem watermark gigante
    ════════════════════════════════════════════════════════════════ */
 function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
-    const [y, m] = monthKey.split("-");
+    const [, m] = monthKey.split("-");
     const idx = parseInt(m, 10) - 1;
     const monthName = MONTH_PT[idx];
     const monthNum = String(parseInt(m, 10)).padStart(2, "0");
@@ -447,63 +460,51 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
 
     return (
         <section
-            className="mb-12 sm:mb-16 first:mt-0 mt-10 sm:mt-14"
+            className="mb-10 sm:mb-12 first:mt-0 mt-8 sm:mt-10"
             id={`cal-month-${monthKey}`}
             data-testid={`cal-month-${monthKey}`}
         >
-            {/* HEADER do mês — magazine-style: numeral gigante watermark */}
-            <header className="relative mb-5 sm:mb-7 pb-4 sm:pb-5" style={{ borderBottom: "1px solid rgba(10,10,10,0.10)" }}>
-                <div className="flex items-end gap-3 sm:gap-5">
-                    <span
-                        className="font-black leading-none tracking-[-0.05em] select-none flex-shrink-0"
-                        style={{
-                            color: isCurrent ? PT.red : "rgba(10,10,10,0.08)",
-                            fontSize: "clamp(72px, 18vw, 156px)",
-                            lineHeight: "0.78",
-                        }}
-                        aria-hidden
-                    >
-                        {monthNum}
-                    </span>
-                    <div className="min-w-0 flex-1 pb-1 sm:pb-2">
-                        <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
-                            <Overline color="rgba(10,10,10,0.50)">/ folha&nbsp;n.º&nbsp;{monthNum}</Overline>
-                            {isCurrent && (
-                                <span
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-[0.14em]"
-                                    style={{ background: PT.red, color: "#fff", border: `1.5px solid ${PT.ink}` }}
-                                >
-                                    agora
-                                </span>
-                            )}
-                        </div>
+            <header className="mb-5 sm:mb-6 pb-4" style={{ borderBottom: HAIRLINE }}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-baseline gap-3 min-w-0">
+                        <span
+                            className="font-mono text-[12px] uppercase tracking-[0.18em] tabular-nums"
+                            style={{ color: INK_MUTE_2 }}
+                        >
+                            {monthNum}
+                        </span>
                         <h2
-                            className="font-black tracking-[-0.025em] leading-[0.92]"
-                            style={{ color: PT.ink, fontSize: "clamp(26px, 7.5vw, 46px)" }}
+                            className="font-black tracking-tight leading-none"
+                            style={{
+                                color: PT.ink,
+                                fontSize: "clamp(22px, 5.5vw, 32px)",
+                                letterSpacing: "-0.025em",
+                            }}
                         >
                             {monthName}
                         </h2>
-                        <p
-                            className="font-mono text-[11px] sm:text-xs mt-1.5 sm:mt-2 uppercase tracking-[0.10em]"
-                            style={{ color: "rgba(10,10,10,0.55)" }}
-                        >
-                            {events.length} {events.length === 1 ? "evento" : "eventos"} · {y}
-                        </p>
+                        {isCurrent && (
+                            <Kicker color={PT.red} dot>a ler</Kicker>
+                        )}
                     </div>
+                    <span className="font-mono text-[11px] tabular-nums" style={{ color: INK_MUTE }}>
+                        {events.length} {events.length === 1 ? "evento" : "eventos"}
+                    </span>
                 </div>
 
                 {breakdown.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3 sm:mt-4">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
                         {breakdown.map(([catKey, n]) => {
                             const cm = catMetaMap[catKey];
                             return (
                                 <span
                                     key={catKey}
-                                    className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.08em]"
-                                    style={{ color: "rgba(10,10,10,0.65)" }}
+                                    className="inline-flex items-center gap-1.5 text-[11px]"
+                                    style={{ color: INK_MUTE }}
                                 >
-                                    <span aria-hidden className="inline-block w-2 h-2" style={{ background: cm?.color || PT.ink, border: `1.5px solid ${PT.ink}` }} />
-                                    {cm?.label || catKey} · {n}
+                                    <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: cm?.color || PT.ink }} />
+                                    {cm?.label || catKey}
+                                    <span className="font-mono tabular-nums" style={{ color: INK_MUTE_2 }}>· {n}</span>
                                 </span>
                             );
                         })}
@@ -511,7 +512,7 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
                 )}
             </header>
 
-            <div className={density === "list" ? "space-y-2" : "space-y-2.5 sm:space-y-3.5"}>
+            <div className={density === "list" ? "space-y-2" : "space-y-3 sm:space-y-3.5"}>
                 {events.map((ev, i) => (
                     <EventCard key={ev.key} ev={ev} catMeta={catMetaMap[ev.category]} density={density} indexInMonth={i} />
                 ))}
@@ -521,53 +522,67 @@ function MonthSection({ monthKey, events, catMetaMap, isCurrent, density }) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   Highlights — cartões "a seguir"
+   Highlight — cartões "a seguir" (mais clean, hover real)
    ════════════════════════════════════════════════════════════════ */
 function Highlight({ ev, catMetaMap }) {
     if (!ev) return null;
     const meta = catMetaMap[ev.category];
     const { day, month } = fmtDate(ev.iso_date);
+    const accentColor = meta?.color || PT.ink;
+    const daysLabel = ev.days_until === 0 ? "hoje" : ev.days_until === 1 ? "amanhã" : `em ${ev.days_until} dias`;
+
     return (
         <a
             href={`#cal-event-${ev.key}`}
             data-testid={`cal-highlight-${ev.key}`}
-            className="block p-3 sm:p-4 hover:translate-y-[-2px] transition-transform w-[78vw] sm:w-auto flex-shrink-0 snap-start"
+            className="block w-[78vw] sm:w-auto flex-shrink-0 snap-start rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5"
             style={{
                 background: "#fff",
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                border: HAIRLINE,
+                boxShadow: SHADOW_SOFT,
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = SHADOW_HOVER; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = SHADOW_SOFT; }}
         >
-            <div className="flex items-center gap-3">
-                <div
-                    className="flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 shrink-0"
-                    style={{
-                        background: meta?.color || PT.ink,
-                        color: meta?.color === "#FFCC00" ? PT.ink : "#fff",
-                        border: "1px solid rgba(10,10,10,0.10)",
-                    }}
+            <div className="flex items-start gap-3">
+                <time
+                    dateTime={ev.iso_date}
+                    className="flex flex-col items-center justify-center w-14 h-14 shrink-0 rounded-xl"
+                    style={{ background: "rgba(10,10,10,0.04)", border: HAIRLINE }}
                 >
-                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] opacity-85">{month}</span>
-                    <span className="font-black text-lg sm:text-xl leading-none">{day}</span>
-                </div>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em]" style={{ color: INK_MUTE }}>{month}</span>
+                    <span className="font-black text-[20px] tabular-nums leading-none mt-0.5" style={{ color: PT.ink, letterSpacing: "-0.02em" }}>{day}</span>
+                </time>
                 <div className="min-w-0 flex-1">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] mb-0.5" style={{ color: "rgba(10,10,10,0.55)" }}>
-                        {ev.days_until === 0 ? "hoje" : ev.days_until === 1 ? "amanhã" : `daqui a ${ev.days_until} dias`}
+                    <Kicker color={ev.days_until <= 1 ? PT.red : INK_MUTE} dot={ev.days_until <= 1}>
+                        {daysLabel}
+                    </Kicker>
+                    <p className="font-semibold leading-tight mt-1 truncate tracking-tight" style={{ color: PT.ink, fontSize: 15 }}>
+                        {ev.emoji && <span className="mr-1" aria-hidden>{ev.emoji}</span>}
+                        {ev.title}
                     </p>
-                    <p className="font-black leading-tight truncate" style={{ color: PT.ink, fontSize: 15 }}>
-                        {ev.emoji} {ev.title}
-                    </p>
-                    {ev.city && (
-                        <p className="text-[11px] font-mono uppercase tracking-[0.10em] truncate" style={{ color: "rgba(10,10,10,0.55)" }}>
-                            {ev.city}
-                        </p>
-                    )}
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[11.5px]" style={{ color: INK_MUTE }}>
+                        <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
+                        <span className="truncate">{meta?.label || ev.category}</span>
+                        {ev.city && (
+                            <>
+                                <Dot size={10} aria-hidden />
+                                <span className="inline-flex items-center gap-0.5 truncate">
+                                    <MapPin size={10} strokeWidth={2.2} aria-hidden />
+                                    {ev.city}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </a>
     );
 }
 
+/* ════════════════════════════════════════════════════════════════
+   MonthJumpPill — sticky nav (limpo, sem hard shadows)
+   ════════════════════════════════════════════════════════════════ */
 function MonthJumpPill({ monthKey, count, onClick, isCurrent }) {
     const [, m] = monthKey.split("-");
     const idx = parseInt(m, 10) - 1;
@@ -576,25 +591,29 @@ function MonthJumpPill({ monthKey, count, onClick, isCurrent }) {
             type="button"
             onClick={onClick}
             data-testid={`cal-jump-${monthKey}`}
-            className="tap-shrink flex flex-col items-center justify-center px-3 py-1.5 flex-shrink-0 snap-start min-w-[58px]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 flex-shrink-0 snap-start rounded-full transition-all duration-150 hover:bg-black/[0.04]"
             style={{
-                background: isCurrent ? PT.red : "#fff",
+                background: isCurrent ? PT.ink : "#fff",
                 color: isCurrent ? "#fff" : PT.ink,
-                border: "1px solid rgba(10,10,10,0.10)",
-                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                border: isCurrent ? HAIRLINE_STRONG : HAIRLINE,
             }}
             aria-current={isCurrent ? "true" : undefined}
         >
-            <span className="font-mono font-bold uppercase tracking-[0.10em] text-[9px] leading-none">
-                {MONTH_PT_SHORT[idx]}
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.10em] leading-none">
+                {MONTH_PT_SHORT[idx].toLowerCase()}
             </span>
-            <span className="font-black text-[11px] leading-none mt-0.5">{count}</span>
+            <span
+                className="font-mono text-[10.5px] tabular-nums leading-none"
+                style={{ color: isCurrent ? "rgba(255,255,255,0.6)" : INK_MUTE_2 }}
+            >
+                {count}
+            </span>
         </button>
     );
 }
 
 /* ════════════════════════════════════════════════════════════════
-   DensityToggle — Revista | Lista
+   DensityToggle — pill segmented control
    ════════════════════════════════════════════════════════════════ */
 function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
     const opts = [
@@ -603,13 +622,13 @@ function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
     ];
     return (
         <div
-            className="inline-flex items-center flex-shrink-0"
+            className="inline-flex items-center flex-shrink-0 rounded-full overflow-hidden p-0.5"
             data-testid={idPrefix}
             role="radiogroup"
             aria-label="densidade da agenda"
-            style={{ border: "1px solid rgba(10,10,10,0.10)", background: "#fff" }}
+            style={{ border: HAIRLINE, background: "rgba(10,10,10,0.04)" }}
         >
-            {opts.map((o, i) => {
+            {opts.map((o) => {
                 const Icon = o.icon;
                 const active = value === o.key;
                 return (
@@ -620,18 +639,46 @@ function DensityToggle({ value, onChange, idPrefix = "cal-density" }) {
                         aria-checked={active}
                         data-testid={`${idPrefix}-${o.key}`}
                         onClick={() => onChange(o.key)}
-                        className="tap-shrink inline-flex items-center gap-1.5 px-2.5 py-1.5 font-mono font-bold uppercase tracking-[0.12em] text-[10px]"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-[11px] rounded-full transition-all duration-150"
                         style={{
-                            background: active ? PT.ink : "transparent",
-                            color: active ? PT.cream : PT.ink,
-                            borderLeft: i > 0 ? "1px solid rgba(10,10,10,0.10)" : "none",
+                            background: active ? "#fff" : "transparent",
+                            color: active ? PT.ink : INK_MUTE,
+                            boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
                         }}
                     >
-                        <Icon size={11} strokeWidth={2.4} />
+                        <Icon size={11} strokeWidth={2.2} />
                         {o.label}
                     </button>
                 );
             })}
+        </div>
+    );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   StatCell — célula da stat strip (clean)
+   ════════════════════════════════════════════════════════════════ */
+function StatCell({ label, value, valueSuffix, accent = false, noBorder = false }) {
+    return (
+        <div
+            className={`px-4 py-3.5 ${noBorder ? "" : "border-r"}`}
+            style={{
+                borderColor: "rgba(10,10,10,0.08)",
+                background: accent ? "rgba(200,16,46,0.04)" : "transparent",
+            }}
+        >
+            <Kicker color={accent ? PT.red : INK_MUTE_2} dot={accent && value > 0}>{label}</Kicker>
+            <p
+                className="font-black leading-none mt-1.5 tracking-tight tabular-nums"
+                style={{ color: accent && value > 0 ? PT.red : PT.ink, fontSize: "clamp(20px, 4vw, 26px)", letterSpacing: "-0.02em" }}
+            >
+                {value}
+                {valueSuffix && (
+                    <span className="font-mono font-medium text-[10px] uppercase tracking-[0.14em] ml-1.5" style={{ color: INK_MUTE_2 }}>
+                        {valueSuffix}
+                    </span>
+                )}
+            </p>
         </div>
     );
 }
@@ -710,7 +757,7 @@ export default function Calendario() {
 
     const monthKeys = useMemo(() => Object.keys(byMonth).sort(), [byMonth]);
 
-    /* Compass — contagem por índice de mês 0..11 do ANO do dataset */
+    /* YearStrip — contagem por índice de mês 0..11 do ANO do dataset */
     const compassData = useMemo(() => {
         const year = data?.year;
         if (!year) return { counts: Array(12).fill(0), max: 0, todayIdx: null, currentIdx: null };
@@ -730,7 +777,7 @@ export default function Calendario() {
         return { counts, max, todayIdx, currentIdx };
     }, [filtered, data, currentMonth]);
 
-    /* IntersectionObserver — atualiza mês "a ler" no nav */
+    /* IntersectionObserver — actualiza "mês a ler" no sticky nav */
     useEffect(() => {
         if (monthKeys.length === 0) return;
         const observer = new IntersectionObserver(
@@ -812,16 +859,10 @@ export default function Calendario() {
         return () => window.removeEventListener("keydown", onKey);
     }, [filtersOpen]);
 
-    const editionLabel = useMemo(() => {
-        if (!data?.today) return null;
-        const t = new Date(data.today + "T00:00:00");
-        return `edição n.º ${String(t.getMonth() + 1).padStart(2, "0")} · ${MONTH_PT[t.getMonth()].toLowerCase()}`;
-    }, [data]);
-
     return (
         <PtPageShell testid="page-calendario">
             <CalendarioStyles />
-            <PageHeader title="Calendário · Portugal" subtitle="curadoria 2026" testid="calendar-header" />
+            <PageHeader title="Calendário" subtitle="Portugal · 2026" testid="calendar-header" />
 
             {/* ─── STICKY MONTH NAV ─── */}
             {data && monthKeys.length > 1 && (
@@ -829,22 +870,20 @@ export default function Calendario() {
                     className="sticky z-20 backdrop-blur"
                     style={{
                         top: "calc(var(--mobile-topbar-h) + 56px)",
-                        background: "rgba(247,245,239,0.92)",
-                        borderBottom: "1px solid rgba(10,10,10,0.10)",
+                        background: "rgba(255,255,255,0.92)",
+                        borderBottom: HAIRLINE,
                     }}
                     data-testid="cal-monthnav"
                 >
-                    <div className="lg:max-w-[1200px] lg:mx-auto px-3 sm:px-5 lg:px-8">
-                        <div className="flex items-center gap-2 py-2 overflow-x-auto snap-x snap-mandatory" style={HIDE_SCROLLBAR}>
-                            <div className="flex items-center gap-1 flex-shrink-0 pr-1.5 border-r-2 border-black/15">
-                                <Overline color="rgba(10,10,10,0.55)">
-                                    {currentMonthLabel ? (
-                                        <>a ler · <span style={{ color: PT.red }}>{currentMonthLabel}</span></>
-                                    ) : (
-                                        <>saltar →</>
-                                    )}
-                                </Overline>
-                            </div>
+                    <div className="lg:max-w-[1100px] lg:mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex items-center gap-2 py-2.5 overflow-x-auto snap-x snap-mandatory" style={HIDE_SCROLLBAR}>
+                            <Kicker color={INK_MUTE_2} className="flex-shrink-0 pr-1.5" >
+                                {currentMonthLabel ? (
+                                    <>a ler · <span style={{ color: PT.red, fontWeight: 700 }}>{currentMonthLabel.toLowerCase()}</span></>
+                                ) : (
+                                    <>saltar →</>
+                                )}
+                            </Kicker>
                             {monthKeys.map((mk) => (
                                 <MonthJumpPill
                                     key={mk}
@@ -854,7 +893,7 @@ export default function Calendario() {
                                     onClick={() => scrollToMonth(mk)}
                                 />
                             ))}
-                            <div className="flex-shrink-0 ml-auto pl-1.5 border-l-2 border-black/15 hidden sm:block">
+                            <div className="flex-shrink-0 ml-auto pl-2 hidden sm:block">
                                 <DensityToggle value={density} onChange={setDensity} idPrefix="cal-density-nav" />
                             </div>
                         </div>
@@ -862,84 +901,55 @@ export default function Calendario() {
                 </div>
             )}
 
-            <div className="px-3 sm:px-5 lg:px-8 pt-5 sm:pt-7 pb-24 lg:max-w-[1200px] lg:mx-auto">
+            <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-24 lg:max-w-[1100px] lg:mx-auto">
                 {/* ═══════════════════════════════════════════════════
-                    MASTHEAD — editorial header (assimétrico no desktop)
+                    MASTHEAD — minimal, único H1, intro de duas linhas
                 ═══════════════════════════════════════════════════ */}
-                <header className="relative mb-8 sm:mb-12" data-testid="cal-masthead">
-                    {/* edition strip */}
-                    <div
-                        className="flex items-center justify-between gap-3 mb-4 pb-2"
-                        style={{ borderBottom: "1px solid rgba(10,10,10,0.08)" }}
+                <header className="mb-8 sm:mb-10" data-testid="cal-masthead">
+                    <Kicker color={INK_MUTE_2} dot>curadoria editorial</Kicker>
+                    <h1
+                        className="mt-3 font-black tracking-tight"
+                        style={{
+                            color: PT.ink,
+                            fontSize: "clamp(28px, 5.8vw, 44px)",
+                            letterSpacing: "-0.03em",
+                            lineHeight: "1.05",
+                        }}
                     >
-                        <div className="inline-flex items-center gap-2 sm:gap-3 min-w-0">
-                            <Overline color={PT.ink}>// lusorae · papel</Overline>
-                            {editionLabel && (
-                                <span className="hidden sm:inline-flex font-mono font-bold uppercase tracking-[0.16em] text-[10px]" style={{ color: "rgba(10,10,10,0.50)" }}>
-                                    · {editionLabel}
-                                </span>
-                            )}
-                        </div>
-                        {data?.today && (
-                            <span className="font-mono font-bold uppercase tracking-[0.16em] text-[10px] flex-shrink-0" style={{ color: "rgba(10,10,10,0.50)" }}>
-                                {data.today}
-                            </span>
-                        )}
-                    </div>
+                        O que vem aí em Portugal
+                    </h1>
+                    <p
+                        className="max-w-[620px] mt-3 text-[14.5px] sm:text-[15.5px] leading-relaxed"
+                        style={{ color: "rgba(10,10,10,0.62)" }}
+                    >
+                        Feriados, festas das cidades, festivais, romarias e dias para marcar — da Brejeira ao Pico,
+                        do Carnaval ao Magusto. Um mapa afectivo dos próximos meses.
+                    </p>
 
-                    <div className="min-w-0">
-                        <div className="flex items-start gap-2.5 mb-4">
-                            <StampCircle size={52} bg={PT.red} rotate={-10}>
-                                <div className="text-center leading-tight">
-                                    <div className="text-[7px] font-mono tracking-[0.18em]">ANO</div>
-                                    <div className="text-base font-black">{data?.year || 2026}</div>
-                                </div>
-                            </StampCircle>
-                            <Sticker bg={PT.gold} rotate={3}>
-                                <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.14em]">
-                                    curadoria editorial
-                                </span>
-                            </Sticker>
-                        </div>
-
-                        <p
-                            className="max-w-[640px] text-[14.5px] sm:text-base leading-relaxed"
-                            style={{ color: "rgba(10,10,10,0.72)" }}
+                    {/* STAT STRIP — clean, sem fundos saturados, hairlines */}
+                    {stats && (
+                        <div
+                            className="mt-6 grid grid-cols-2 sm:grid-cols-4 rounded-2xl overflow-hidden"
+                            style={{ background: "#fff", border: HAIRLINE, boxShadow: SHADOW_SOFT }}
+                            data-testid="cal-stats"
                         >
-                            Feriados, festas das cidades, festivais, romarias, feiras e dias para marcar a tinta —
-                            da Brejeira ao Pico, do Carnaval ao Magusto. Um mapa afetivo dos próximos meses, com
-                            datas confirmadas e palcos por descobrir.
-                        </p>
+                            <StatCell label="eventos" value={stats.total} />
+                            <StatCell label="regiões" value={stats.regions} />
+                            <StatCell label="categorias" value={stats.categories} noBorder />
+                            <StatCell
+                                label="agora"
+                                value={stats.now}
+                                valueSuffix={stats.now === 1 ? "evento" : "eventos"}
+                                accent={stats.now > 0}
+                                noBorder
+                            />
+                        </div>
+                    )}
 
-                        {/* STAT STRIP — sem decoração extra */}
-                        {stats && (
-                            <div
-                                className="mt-5 sm:mt-6 grid grid-cols-3 sm:grid-cols-4 gap-0"
-                                style={{
-                                    border: "1px solid rgba(10,10,10,0.10)",
-                                    boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                                    background: "#fff",
-                                }}
-                                data-testid="cal-stats"
-                            >
-                                <StatCell label="eventos" value={stats.total} />
-                                <StatCell label="regiões" value={stats.regions} />
-                                <StatCell label="categorias" value={stats.categories} hideBorderRightOnMobile />
-                                <StatCell
-                                    label="agora"
-                                    value={stats.now}
-                                    valueSuffix={stats.now === 1 ? "evento" : "eventos"}
-                                    accent={stats.now > 0}
-                                    spanFull
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Year Compass — único elemento de wayfinding macro */}
+                    {/* YearStrip — bar chart minimal */}
                     {data && (
-                        <div className="mt-6 sm:mt-7">
-                            <YearCompass
+                        <div className="mt-6">
+                            <YearStrip
                                 year={data.year}
                                 counts={compassData.counts}
                                 todayMonthIdx={compassData.todayIdx}
@@ -956,25 +966,27 @@ export default function Calendario() {
                     HIGHLIGHTS — "A seguir"
                 ═══════════════════════════════════════════════════ */}
                 {data && data.next3?.length > 0 && (
-                    <section className="mb-9 sm:mb-11" data-testid="cal-next3">
-                        <div className="flex items-center justify-between mb-3 pl-0.5">
+                    <section className="mb-8 sm:mb-10" data-testid="cal-next3">
+                        <div className="flex items-center justify-between mb-4">
                             <div className="inline-flex items-center gap-2">
-                                <Flame size={13} strokeWidth={2.4} style={{ color: PT.red }} />
-                                <Overline data-testid="cal-next3-heading">// a seguir</Overline>
+                                <Flame size={14} strokeWidth={2.2} style={{ color: PT.red }} />
+                                <h2 className="font-semibold tracking-tight text-[14px]" data-testid="cal-next3-heading" style={{ color: PT.ink }}>
+                                    A seguir
+                                </h2>
                             </div>
                             <span
-                                className="sm:hidden inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.14em]"
-                                style={{ color: "rgba(10,10,10,0.40)" }}
+                                className="sm:hidden inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em]"
+                                style={{ color: INK_MUTE_2 }}
                             >
-                                desliza <ChevronRight size={11} strokeWidth={2.4} />
+                                desliza <ChevronRight size={11} strokeWidth={2.2} />
                             </span>
                         </div>
-                        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-3 px-3 pb-2 sm:hidden" style={HIDE_SCROLLBAR} data-testid="cal-next3-mobile">
+                        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 sm:hidden" style={HIDE_SCROLLBAR} data-testid="cal-next3-mobile">
                             {data.next3.map((ev) => (
                                 <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
                             ))}
                         </div>
-                        <div className="hidden sm:grid sm:grid-cols-3 gap-4">
+                        <div className="hidden sm:grid sm:grid-cols-3 gap-3">
                             {data.next3.map((ev) => (
                                 <Highlight key={ev.key} ev={ev} catMetaMap={catMetaMap} />
                             ))}
@@ -983,34 +995,32 @@ export default function Calendario() {
                 )}
 
                 {/* ═══════════════════════════════════════════════════
-                    FILTROS — painel colapsável
+                    FILTROS — botão minimal + painel rounded
                 ═══════════════════════════════════════════════════ */}
-                <section className="mb-10 sm:mb-12" data-testid="cal-filters">
+                <section className="mb-8 sm:mb-10" data-testid="cal-filters">
                     <button
                         type="button"
                         onClick={() => setFiltersOpen((o) => !o)}
                         aria-expanded={filtersOpen}
                         aria-controls="cal-filters-panel"
                         data-testid="cal-filters-toggle"
-                        className="w-full flex items-center justify-between gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition-colors"
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl transition-all duration-150"
                         style={{
                             background: filtersOpen ? PT.ink : "#fff",
-                            color: filtersOpen ? PT.cream : PT.ink,
-                            border: "1px solid rgba(10,10,10,0.10)",
-                            boxShadow: filtersOpen ? "none" : "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
-                            transform: filtersOpen ? "translate(4px,4px)" : "none",
-                            transition: "transform 0.08s, background 0.12s",
+                            color: filtersOpen ? "#fff" : PT.ink,
+                            border: filtersOpen ? HAIRLINE_STRONG : HAIRLINE,
+                            boxShadow: filtersOpen ? "none" : SHADOW_SOFT,
                         }}
                     >
                         <span className="inline-flex items-center gap-2 min-w-0">
-                            <Filter size={13} strokeWidth={2.4} />
-                            <span className="font-mono font-bold uppercase tracking-[0.16em] text-[11px]">filtrar agenda</span>
+                            <Filter size={14} strokeWidth={2.2} />
+                            <span className="font-semibold text-[13.5px] tracking-tight">Filtrar agenda</span>
                             {hasActiveFilters && (
                                 <span
-                                    className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-[0.12em]"
+                                    className="inline-flex items-center px-2 py-[2px] text-[10px] font-mono uppercase tracking-[0.12em] rounded-full"
                                     style={{
-                                        background: filtersOpen ? PT.gold : PT.ink,
-                                        color: filtersOpen ? PT.ink : PT.cream,
+                                        background: filtersOpen ? PT.gold : "rgba(200,16,46,0.10)",
+                                        color: filtersOpen ? PT.ink : PT.red,
                                     }}
                                     data-testid="cal-active-count"
                                 >
@@ -1018,13 +1028,13 @@ export default function Calendario() {
                                 </span>
                             )}
                         </span>
-                        <span className="inline-flex items-center gap-2 flex-shrink-0">
-                            <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.14em] opacity-70">
+                        <span className="inline-flex items-center gap-2.5 flex-shrink-0">
+                            <span className="hidden sm:inline font-mono text-[11px] tabular-nums" style={{ opacity: 0.7 }}>
                                 {filtered.length} resultados
                             </span>
                             <ChevronDown
-                                size={14}
-                                strokeWidth={2.4}
+                                size={15}
+                                strokeWidth={2.2}
                                 style={{ transform: filtersOpen ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}
                             />
                         </span>
@@ -1033,35 +1043,34 @@ export default function Calendario() {
                     {filtersOpen && (
                         <div
                             id="cal-filters-panel"
-                            className="cal-reveal p-3 sm:p-4 mt-2.5"
+                            className="cal-reveal p-4 sm:p-5 mt-2 rounded-2xl"
                             style={{
                                 background: "#fff",
-                                border: "1px solid rgba(10,10,10,0.10)",
-                                borderTop: "1px solid rgba(10,10,10,0.08)",
-                                boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                border: HAIRLINE,
+                                boxShadow: SHADOW_SOFT,
                             }}
                         >
-                            <div className="flex items-center justify-between mb-3">
-                                <Overline>// filtros</Overline>
+                            <div className="flex items-center justify-between mb-3.5">
+                                <Kicker color={INK_MUTE}>filtros</Kicker>
                                 {hasActiveFilters && (
                                     <button
                                         type="button"
                                         onClick={clearFilters}
                                         data-testid="cal-clear-filters"
-                                        className="inline-flex items-center gap-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.14em] underline-offset-4 hover:underline"
+                                        className="inline-flex items-center gap-1 text-[12px] font-medium hover:underline underline-offset-4"
                                         style={{ color: PT.red }}
                                     >
-                                        <X size={11} strokeWidth={2.6} />
-                                        limpar
+                                        <X size={12} strokeWidth={2.4} />
+                                        Limpar
                                     </button>
                                 )}
                             </div>
 
-                            <div className="mb-3">
-                                <span className="font-mono text-[10px] uppercase tracking-[0.14em] block mb-1.5" style={{ color: "rgba(10,10,10,0.45)" }}>
+                            <div className="mb-4">
+                                <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] block mb-2" style={{ color: INK_MUTE_2 }}>
                                     categoria
                                 </span>
-                                <div className="flex sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0" style={HIDE_SCROLLBAR}>
+                                <div className="flex sm:flex-wrap gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0" style={HIDE_SCROLLBAR}>
                                     {catChips.map((c) => (
                                         <CategoryChip
                                             key={c.key}
@@ -1074,41 +1083,44 @@ export default function Calendario() {
                                 </div>
                             </div>
 
-                            <div className="mt-3">
-                                <span className="font-mono text-[10px] uppercase tracking-[0.14em] block mb-1.5" style={{ color: "rgba(10,10,10,0.45)" }}>
+                            <div>
+                                <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] block mb-2" style={{ color: INK_MUTE_2 }}>
                                     região
                                 </span>
-                                <div className="flex sm:flex-wrap items-center gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0" style={HIDE_SCROLLBAR}>
-                                    {Object.keys(regionMetaMap).map((rk) => (
-                                        <button
-                                            key={rk}
-                                            type="button"
-                                            data-testid={`cal-reg-${rk}`}
-                                            onClick={() => setRegion(rk)}
-                                            aria-pressed={region === rk}
-                                            className="tap-shrink px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.10em] whitespace-nowrap flex-shrink-0 snap-start"
-                                            style={{
-                                                background: region === rk ? PT.ink : "transparent",
-                                                color: region === rk ? PT.cream : PT.ink,
-                                                border: "1px solid rgba(10,10,10,0.10)",
-                                            }}
-                                        >
-                                            {regionMetaMap[rk].label}
-                                        </button>
-                                    ))}
+                                <div className="flex sm:flex-wrap items-center gap-2 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 sm:pb-0" style={HIDE_SCROLLBAR}>
+                                    {Object.keys(regionMetaMap).map((rk) => {
+                                        const active = region === rk;
+                                        return (
+                                            <button
+                                                key={rk}
+                                                type="button"
+                                                data-testid={`cal-reg-${rk}`}
+                                                onClick={() => setRegion(rk)}
+                                                aria-pressed={active}
+                                                className="px-3 py-1.5 text-[12px] font-medium whitespace-nowrap flex-shrink-0 snap-start rounded-full transition-all duration-150"
+                                                style={{
+                                                    background: active ? PT.ink : "#fff",
+                                                    color: active ? "#fff" : PT.ink,
+                                                    border: active ? HAIRLINE_STRONG : HAIRLINE,
+                                                }}
+                                            >
+                                                {regionMetaMap[rk].label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
+                            <div className="mt-4 pt-4 flex items-center justify-between gap-3 flex-wrap" style={{ borderTop: HAIRLINE }}>
                                 <label className="inline-flex items-center gap-2 cursor-pointer select-none" data-testid="cal-toggle-past">
                                     <input
                                         type="checkbox"
                                         checked={showPast}
                                         onChange={(e) => setShowPast(e.target.checked)}
-                                        className="w-4 h-4 accent-black"
+                                        className="w-4 h-4 rounded accent-black"
                                     />
-                                    <span className="font-mono font-bold uppercase tracking-[0.14em] text-[10px]" style={{ color: "rgba(10,10,10,0.65)" }}>
-                                        mostrar passados
+                                    <span className="text-[12.5px]" style={{ color: "rgba(10,10,10,0.72)" }}>
+                                        Mostrar eventos passados
                                     </span>
                                 </label>
                                 <div className="sm:hidden">
@@ -1123,40 +1135,45 @@ export default function Calendario() {
                 {loading && (
                     <div className="py-20 text-center">
                         <div className="inline-flex items-center gap-2">
-                            <Sparkles size={14} strokeWidth={2.4} className="animate-pulse" style={{ color: PT.gold }} />
-                            <Overline color="rgba(10,10,10,0.45)">a carregar agenda…</Overline>
+                            <Sparkles size={14} strokeWidth={2.2} className="animate-pulse" style={{ color: PT.gold }} />
+                            <Kicker color={INK_MUTE_2}>a carregar agenda…</Kicker>
                         </div>
                     </div>
                 )}
 
                 {error && !loading && (
                     <div
-                        className="p-6 text-center"
-                        style={{ background: "#fff", border: `1.5px solid ${PT.red}`, boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)" }}
+                        className="p-6 rounded-2xl text-center"
+                        style={{ background: "#fff", border: HAIRLINE, boxShadow: SHADOW_SOFT }}
                     >
-                        <p className="font-black mb-1">Não foi possível carregar.</p>
-                        <p className="text-sm font-mono" style={{ color: "rgba(10,10,10,0.6)" }}>{error}</p>
+                        <p className="font-semibold mb-1 tracking-tight" style={{ color: PT.ink }}>Não foi possível carregar.</p>
+                        <p className="text-[13px]" style={{ color: INK_MUTE }}>{error}</p>
                     </div>
                 )}
 
                 {!loading && !error && monthKeys.length === 0 && (
-                    <div className="p-8 text-center" style={{ background: "#fff", border: "1px solid rgba(10,10,10,0.08)" }} data-testid="cal-empty">
-                        <CalendarDays size={32} strokeWidth={2.2} style={{ color: PT.ink, margin: "0 auto 10px" }} />
-                        <p className="font-black">Nada nesta combinação.</p>
-                        <p className="text-sm font-mono mt-1" style={{ color: "rgba(10,10,10,0.6)" }}>
+                    <div
+                        className="p-8 rounded-2xl text-center"
+                        style={{ background: "#fff", border: HAIRLINE, boxShadow: SHADOW_SOFT }}
+                        data-testid="cal-empty"
+                    >
+                        <CalendarDays size={28} strokeWidth={2.2} style={{ color: INK_MUTE, margin: "0 auto 12px" }} />
+                        <p className="font-semibold tracking-tight" style={{ color: PT.ink }}>Nada nesta combinação.</p>
+                        <p className="text-[13px] mt-1" style={{ color: INK_MUTE }}>
                             Tenta outra categoria ou região.
                         </p>
                         {hasActiveFilters && (
                             <button
                                 type="button"
                                 onClick={clearFilters}
-                                className="mt-4 inline-flex items-center gap-1 font-mono text-xs font-bold uppercase tracking-[0.14em]"
+                                className="mt-5 inline-flex items-center gap-1.5 text-[12.5px] font-medium rounded-full px-4 py-2 transition-all duration-150"
                                 style={{
-                                    background: PT.ink, color: PT.cream, padding: "6px 12px",
-                                    border: "1px solid rgba(10,10,10,0.10)", boxShadow: "0 1px 2px rgba(10,10,10,0.05), 0 8px 20px -10px rgba(10,10,10,0.15)",
+                                    background: PT.ink,
+                                    color: "#fff",
+                                    boxShadow: "0 4px 12px -4px rgba(10,10,10,0.25)",
                                 }}
                             >
-                                limpar filtros
+                                Limpar filtros
                             </button>
                         )}
                     </div>
@@ -1176,13 +1193,11 @@ export default function Calendario() {
                 {/* RODAPÉ */}
                 {!loading && data && (
                     <footer
-                        className="mt-12 p-5 text-center"
-                        style={{ background: "transparent", border: "1px solid rgba(10,10,10,0.08)" }}
+                        className="mt-12 p-5 rounded-2xl text-center"
+                        style={{ background: "rgba(10,10,10,0.02)", border: HAIRLINE }}
                     >
-                        <Overline color="rgba(10,10,10,0.55)">
-                            // {data.total} eventos curados · datas confirmadas para {data.year}
-                        </Overline>
-                        <p className="font-mono text-[9.5px] sm:text-[10px] mt-1" style={{ color: "rgba(10,10,10,0.40)" }}>
+                        <Kicker color={INK_MUTE}>{data.total} eventos curados · {data.year}</Kicker>
+                        <p className="text-[11.5px] mt-1.5" style={{ color: INK_MUTE_2 }}>
                             Fontes oficiais e calendários municipais. Atualizado em {data.today}.
                         </p>
                     </footer>
@@ -1193,57 +1208,20 @@ export default function Calendario() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   StatCell — célula da stat strip
-   ════════════════════════════════════════════════════════════════ */
-function StatCell({ label, value, valueSuffix, accent = false, spanFull = false, hideBorderRightOnMobile = false }) {
-    return (
-        <div
-            className={`p-3 sm:p-4 ${spanFull ? "col-span-3 sm:col-span-1 border-t-2 sm:border-t-0 border-black" : (hideBorderRightOnMobile ? "sm:border-r-2 border-black" : "border-r-2 border-black")}`}
-            style={{ background: accent ? PT.red : "transparent" }}
-        >
-            <Overline color={accent ? "rgba(255,255,255,0.80)" : "rgba(10,10,10,0.50)"}>{label}</Overline>
-            <p
-                className="font-black leading-none mt-1.5"
-                style={{ color: accent ? "#fff" : PT.ink, fontSize: "clamp(20px, 4.6vw, 30px)" }}
-            >
-                {value}
-                {valueSuffix && (
-                    <span className="font-mono font-bold text-[10px] sm:text-xs uppercase tracking-[0.14em] align-middle opacity-80 ml-1">
-                        {valueSuffix}
-                    </span>
-                )}
-            </p>
-        </div>
-    );
-}
-
-/* ════════════════════════════════════════════════════════════════
-   CalendarioStyles — animações de entrada (stagger reveals)
+   CalendarioStyles — micro-animations (stagger reveals)
    ════════════════════════════════════════════════════════════════ */
 function CalendarioStyles() {
     return (
         <style>{`
             @keyframes cal-reveal-in {
-                0% { opacity: 0; transform: translateY(8px); }
+                0% { opacity: 0; transform: translateY(6px); }
                 100% { opacity: 1; transform: translateY(0); }
             }
             .cal-reveal {
-                animation: cal-reveal-in 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+                animation: cal-reveal-in 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both;
             }
             @media (prefers-reduced-motion: reduce) {
                 .cal-reveal { animation: none; }
-            }
-            /* Compass cell borders — responsive (6×2 mobile / 12×1 sm+) */
-            .cal-compass-cell {
-                border-right: 1.5px solid #0A0A0A;
-                border-bottom: 1.5px solid #0A0A0A;
-            }
-            .cal-compass-cell:nth-child(6n) { border-right: none; }
-            .cal-compass-cell:nth-child(n+7) { border-bottom: none; }
-            @media (min-width: 640px) {
-                .cal-compass-cell { border-bottom: none; border-right: 1.5px solid #0A0A0A; }
-                .cal-compass-cell:nth-child(6n) { border-right: 1.5px solid #0A0A0A; }
-                .cal-compass-cell:nth-child(12) { border-right: none; }
             }
         `}</style>
     );
