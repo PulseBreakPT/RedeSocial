@@ -163,3 +163,26 @@ Em desktop a right-sidebar mostrava 4 widgets (Atividade recente, O que vem aí,
 - Desktop (1440px): 4/4 widgets presentes na sidebar (Atividade, Calendar, Trending, Suggestions) ✅
 - Mobile (390px): `mobile-feed-top-widgets` presente; Calendar e Activity intercalados após Stories; `mobile-feed-interstitial-trending` confirmado após 3º post ✅
 - Screenshots: paridade visual total, sem fundos cremes/amarelos, sem bordas grossas.
+
+
+## Session 2026-06-13 (cont. 3) — Limpeza global "EDIÇÃO ·" + lazy-load interstitials
+
+### Limpeza global
+Strips pretos com "LUSORAE · X · Y / LISBOA · HH:MM / EDIÇÃO · DD MMM" removidos de:
+- `pages/Explore.js`
+- `pages/Messages.js`
+- `components/PageShell.js` (PageHero — afecta todas as páginas que o usam)
+- `components/editorial/Masthead.jsx` (EditorialMasthead `StripDesktop` é agora no-op para preservar API)
+
+Backgrounds cremes (`rgba(247,245,239, 0.9x)`) substituídos por brancos translúcidos (`rgba(255,255,255, 0.9x)`) e hairlines de `0.10` → `0.08` (mais subtis). Background base do Explore.js: `PT.cream` → `#f7f7f8`.
+
+### Lazy-load via IntersectionObserver
+- Criado `/app/frontend/src/hooks/useInView.js` — hook minimalista com `rootMargin` pré-carregador (200-240 px), fallback gracioso quando `IntersectionObserver` não está disponível.
+- `MobileFeedInterstitial` em `FeedAside.js` agora monta o widget interno (Trending / Suggestions / Communities) apenas quando o utilizador chega a ~240 px do componente.
+- Placeholder de 140 px preserva layout (zero CLS).
+- **Benefício mensurável** (validado E2E): widgets NÃO estão montados ao abrir o feed (sem fetch desperdiçada); são montados quando aproximados via scroll. Em conexões móveis lentas, evita 3 fetches paralelas no boot que nunca seriam vistas se o utilizador abandonasse cedo.
+
+### Validado
+- 3/3 páginas confirmadas limpas (Feed, Explore, Messages): 0 strings "EDIÇÃO ·" / "LISBOA · " no DOM.
+- Lazy-mount: `widget mounted at top: No` → `widget mounted after scroll: OK lazy mount fired`.
+- Screenshots desktop limpos sem regressões.

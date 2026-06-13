@@ -1533,25 +1533,13 @@ export default function Messages() {
                     <div
                         className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
                         style={{
-                            background: "rgba(247,245,239,0.92)",
-                            borderBottom: "1px solid rgba(10,10,10,0.10)",
+                            background: "rgba(255,255,255,0.92)",
+                            borderBottom: "1px solid rgba(10,10,10,0.08)",
                         }}
                         data-testid="messages-header"
                     >
-                        <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
-                            <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: PT.gold }}>
-                                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: PT.gold }} />
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: PT.gold }} />
-                                </span>
-                                LUSORAE · MENSAGENS · PRIVADAS
-                            </span>
-                            <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
-                                <span>LISBOA · {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}</span>
-                                <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
-                                <span>EDIÇÃO · {new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase()}</span>
-                            </span>
-                        </div>
+                        {/* Strip editorial preto REMOVIDO (LUSORAE · MENSAGENS · PRIVADAS / LISBOA · HH:MM / EDIÇÃO · DD/MM)
+                            a pedido do utilizador. */}
                         <div className="px-7 pt-7 pb-5 relative z-10">
                             <div className="flex items-center gap-2.5 mb-3.5">
                                 <span className="font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: "rgba(10,10,10,0.45)" }}>

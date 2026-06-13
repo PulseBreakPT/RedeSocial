@@ -25,37 +25,11 @@ function todayLong() {
 }
 
 // ── Desktop top ink strip ────────────────────────────────────────────────────
-function StripDesktop({ brandPath, meta, accent = PT.gold }) {
-    return (
-        <div
-            className="hidden lg:flex items-center justify-between px-7 py-2"
-            style={{ background: PT.ink, color: "#FBFAF6" }}
-        >
-            <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: accent }}>
-                <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                    <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: accent }} />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: accent }} />
-                </span>
-                {brandPath || "LUSORAE"}
-            </span>
-            <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
-                {meta && meta.length > 0
-                    ? meta.map((m, i) => (
-                          <span key={i} className="inline-flex items-center gap-3">
-                              {i > 0 && <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>}
-                              <span style={m.accent ? { color: m.accent === "gold" ? PT.gold : m.accent } : undefined}>{m.text}</span>
-                          </span>
-                      ))
-                    : (
-                        <>
-                            <span>LISBOA · {nowHHMM()}</span>
-                            <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
-                            <span>EDIÇÃO · {todayShort()}</span>
-                        </>
-                    )}
-            </span>
-        </div>
-    );
+// REMOVIDO a pedido do utilizador: o strip "LUSORAE · X / LISBOA · HH:MM /
+// EDIÇÃO · DD/MM" deixa de ser renderizado. A função fica como no-op para
+// preservar a assinatura caso algum consumer ainda a invoque diretamente.
+function StripDesktop() {
+    return null;
 }
 
 // ── Wavy red underline (assinatura editorial) ────────────────────────────────
@@ -112,8 +86,8 @@ export function EditorialMasthead({
             <div
                 className="hidden lg:block sticky top-0 z-30 backdrop-blur relative"
                 style={{
-                    background: "rgba(247,245,239,0.92)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "rgba(255,255,255,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.08)",
                 }}
                 data-testid={testid}
             >
@@ -164,8 +138,8 @@ export function EditorialMasthead({
                 className="lg:hidden sticky z-30 backdrop-blur"
                 style={{
                     top: "calc(var(--mobile-topbar-h) + var(--safe-top))",
-                    background: "rgba(247,245,239,0.94)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "rgba(255,255,255,0.94)",
+                    borderBottom: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
                 <div className="px-4 pt-3 pb-3.5">

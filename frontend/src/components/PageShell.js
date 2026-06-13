@@ -50,32 +50,18 @@ export function Kicker({ children, color = PT.red, dot = true, className = "" })
 // Compat: aceita `icon` mas não o mostra (estética premium não usa caixas com ícone).
 // =============================================================================
 export function PageHero({ title, subtitle, badge, actions, children, accent = PT.gold }) {
-    const meta = { hh: new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }),
-                   day: new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short" }).toUpperCase() };
     return (
         <div className="relative" data-testid="page-hero">
             {/* DESKTOP MASTHEAD */}
             <div
                 className="hidden lg:block sticky top-0 z-30 backdrop-blur"
                 style={{
-                    background: "rgba(247,245,239,0.92)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "rgba(255,255,255,0.92)",
+                    borderBottom: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
-                <div className="flex items-center justify-between px-7 py-2" style={{ background: PT.ink, color: "#FBFAF6" }}>
-                    <span className="inline-flex items-center gap-2 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.22em", color: accent }}>
-                        <span className="relative flex h-1.5 w-1.5" aria-hidden>
-                            <span className="absolute inline-flex h-full w-full rounded-full lusorae-pulse" style={{ background: accent }} />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: accent }} />
-                        </span>
-                        LUSORAE · {(typeof title === "string" ? title : (badge || "")).toUpperCase()}
-                    </span>
-                    <span className="inline-flex items-center gap-3 font-mono text-[10px] font-bold uppercase" style={{ letterSpacing: "0.18em", color: "rgba(255,244,220,0.55)" }}>
-                        <span>LISBOA · {meta.hh}</span>
-                        <span style={{ color: "rgba(255,244,220,0.28)" }}>·</span>
-                        <span>EDIÇÃO · {meta.day}</span>
-                    </span>
-                </div>
+                {/* Strip editorial preto (LUSORAE · X / LISBOA · HH:MM / EDIÇÃO · DD/MM)
+                    REMOVIDO a pedido do utilizador. Mantemos só o hero limpo. */}
                 <div className="px-7 pt-7 pb-5">
                     <div className="flex items-end justify-between gap-6 flex-wrap">
                         <div className="min-w-0 flex-1">
@@ -109,8 +95,8 @@ export function PageHero({ title, subtitle, badge, actions, children, accent = P
                 className="lg:hidden sticky z-30 backdrop-blur"
                 style={{
                     top: "calc(var(--mobile-topbar-h, 0px) + var(--safe-top, 0px))",
-                    background: "rgba(247,245,239,0.94)",
-                    borderBottom: "1px solid rgba(10,10,10,0.10)",
+                    background: "rgba(255,255,255,0.94)",
+                    borderBottom: "1px solid rgba(10,10,10,0.08)",
                 }}
             >
                 <div className="px-4 pt-3 pb-3.5">

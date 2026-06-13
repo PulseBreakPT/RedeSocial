@@ -25,6 +25,7 @@ import { VerifiedBadge } from "./VerifiedBadge";
 import { TrendingPulse } from "./TrendingPulse";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
+import { useInView } from "../hooks/useInView";
 import { PT } from "../theme/editorial";
 
 // Card visual partilhado — título único centrado, ícone à esquerda, hairline 1px.
@@ -371,13 +372,41 @@ export function MobileFeedTopWidgets() {
 /**
  * Mobile-only: card intercalado a inserir no meio do feed.
  * Aceita `slot` para escolher o widget (Twitter "Who to follow" pattern).
+ *
+ * LAZY-MOUNT via IntersectionObserver: o widget só monta (e portanto só
+ * dispara o seu fetch interno) quando o utilizador estiver a ~200px de o
+ * ver. Melhora First Contentful Paint em conexões móveis — evita 3 fetches
+ * paralelas no boot que nunca chegariam a ser vistas se o utilizador
+ * abandonar antes de scrollar.
+ *
+ * Placeholder mantém o mesmo footprint vertical aproximado (~140px) para
+ * preservar layout stability (zero CLS).
  */
 export function MobileFeedInterstitial({ slot }) {
+    const { ref, hasBeenVisible } = useInView({ rootMargin: "240px" });
     return (
-        <div className="lg:hidden px-4 py-2" data-testid={`mobile-feed-interstitial-${slot}`}>
-            {slot === "trending" && <TrendingWidget limit={3} />}
-            {slot === "suggestions" && <SuggestionsWidget limit={3} />}
-            {slot === "communities" && <CommunitiesWidget limit={3} />}
+        <div
+            ref={ref}
+            className="lg:hidden px-4 py-2"
+            data-testid={`mobile-feed-interstitial-${slot}`}
+        >
+            {hasBeenVisible ? (
+                <>
+                    {slot === "trending"    && <TrendingWidget    limit={3} />}
+                    {slot === "suggestions" && <SuggestionsWidget limit={3} />}
+                    {slot === "communities" && <CommunitiesWidget limit={3} />}
+                </>
+            ) : (
+                <div
+                    aria-hidden
+                    style={{
+                        height: 140,
+                        background: "rgba(10,10,10,0.025)",
+                        border: "1px solid rgba(10,10,10,0.05)",
+                        borderRadius: 18,
+                    }}
+                />
+            )}
         </div>
     );
 }
