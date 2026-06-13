@@ -25,6 +25,12 @@ try {
 } catch { /* never let security guard crash the app */ }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+// Sync zen-mode class before render to avoid FOUC.
+try {
+    if (localStorage.getItem("lusorae.zen-mode") === "1") {
+        document.documentElement.classList.add("zen-mode");
+    }
+} catch { /* noop */ }
 root.render(
   <React.StrictMode>
     <App />

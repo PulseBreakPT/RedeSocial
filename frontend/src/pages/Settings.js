@@ -20,6 +20,7 @@ import { AppearanceTab } from "./settings/AppearanceTab";
 import { NotifTab } from "./settings/NotifTab";
 import { PrivacyTab } from "./settings/PrivacyTab";
 import { LegalTab } from "./settings/LegalTab";
+import { MutePreferences } from "../components/MutePreferences";
 
 /* ============================================================
    GROUPS — 5 grupos lógicos do módulo Definições.
@@ -69,6 +70,7 @@ const GROUPS = [
         keywords: ["online", "escrever", "pesquisa", "dados", "rgpd", "privacidade", "palavra-passe", "password", "2fa", "sessões", "login", "alertas", "segurança", "recuperação"],
         sections: [
             { key: "priv", label: "Privacidade" },
+            { key: "conforto", label: "Conforto & Filtros" },
             { key: "seg", label: "Segurança" },
         ],
     },
@@ -615,6 +617,11 @@ export default function Settings() {
                             )}
                             {sec.key === "priv" && (
                                 <PrivacyTab prefs={prefs} setPref={setPref} />
+                            )}
+                            {sec.key === "conforto" && (
+                                <div className="px-4 lg:px-8 py-6">
+                                    <MutePreferences />
+                                </div>
                             )}
                             {sec.key === "seg" && (
                                 <SecurityTab user={user} onUserUpdate={handleUserUpdate} />

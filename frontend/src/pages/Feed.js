@@ -19,6 +19,7 @@ import { useScrollHealth } from "../hooks/useScrollHealth";
 import { useWsMessages, useWsState } from "../components/WebSocketProvider";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { shouldHidePost, listMutedWords, listSnoozedAuthors } from "../lib/uiPrefs";
 import { SmartTodayBanner } from "../components/SmartTodayBanner";
 import { PulseBar } from "../components/pulse/PulseBar";
 import { TopicBurstChips } from "../components/pulse/TopicBurstChips";
@@ -43,6 +44,18 @@ const PTR_PHRASES = [
 export default function Feed() {
     const { user } = useAuth();
     const [posts, setPosts] = useState([]);
+    const [, setMutePrefsVersion] = useState(0);
+
+    // Re-render feed when client-side mute/snooze/word lists change.
+    useEffect(() => {
+        const bump = () => setMutePrefsVersion((v) => v + 1);
+        window.addEventListener("lusorae:snooze-changed", bump);
+        window.addEventListener("lusorae:muted-words-changed", bump);
+        return () => {
+            window.removeEventListener("lusorae:snooze-changed", bump);
+            window.removeEventListener("lusorae:muted-words-changed", bump);
+        };
+    }, []);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [newCount, setNewCount] = useState(0);
@@ -342,7 +355,7 @@ export default function Feed() {
                 </div>
             ) : (
                 <div className="relative z-10">
-                    {posts.map((p, idx) => (
+                    {posts.filter((p) => !shouldHidePost(p) && !shouldHidePost(p.repost_of)).map((p, idx) => (
                         <div key={p.id}>
                             <PostCard
                                 post={p}

@@ -327,6 +327,105 @@ function MusicSticker({ sticker, isAuthor }) {
     );
 }
 
+function QuizSticker({ story, sticker, isAuthor, onUpdate }) {
+    const data = sticker.data || {};
+    const options = data.options || [];
+    const correct = data.correct ?? 0;
+    const [picked, setPicked] = useState(null);
+    const onPick = (idx) => {
+        if (picked !== null || isAuthor) return;
+        setPicked(idx);
+        onUpdate?.({ ...sticker, data: { ...data, _viewerPicked: idx } });
+    };
+    return (
+        <StickerWrap sticker={sticker} isAuthor={isAuthor}>
+            <div className="sv-sticker-glass rounded-2xl px-3 py-2.5 min-w-[220px] max-w-[280px]">
+                <div className="inline-flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-black/55 mb-1.5">
+                    <span>🧠</span> Quiz
+                </div>
+                <p className="text-[13px] font-heading font-semibold text-black mb-2 leading-snug">
+                    {data.question || "Pergunta"}
+                </p>
+                <div className="space-y-1">
+                    {options.map((o, idx) => {
+                        const isCorrect = idx === correct;
+                        const isPicked = picked === idx;
+                        const reveal = picked !== null || isAuthor;
+                        return (
+                            <button
+                                key={o.id || idx}
+                                onClick={() => onPick(idx)}
+                                disabled={reveal}
+                                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-mono transition ${
+                                    reveal
+                                        ? isCorrect
+                                            ? "bg-emerald-500 text-white"
+                                            : isPicked
+                                                ? "bg-red-500/85 text-white"
+                                                : "bg-black/[0.06] text-black/70"
+                                        : "bg-black/[0.06] hover:bg-black/[0.10] text-black/80"
+                                }`}
+                            >
+                                {o.text}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </StickerWrap>
+    );
+}
+
+function AddYoursSticker({ sticker, isAuthor }) {
+    const data = sticker.data || {};
+    return (
+        <StickerWrap sticker={sticker} isAuthor={isAuthor}>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    try { window.dispatchEvent(new CustomEvent("vermillion:open-story-composer")); } catch { /* noop */ }
+                }}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full sv-sticker-glass text-[12.5px] font-heading font-semibold text-black/90 hover:bg-black hover:text-white transition"
+            >
+                <span>🪩</span>
+                <span className="truncate max-w-[200px]">{data.prompt || "Junta-te"}</span>
+            </button>
+        </StickerWrap>
+    );
+}
+
+function TimeSticker({ sticker, isAuthor }) {
+    const data = sticker.data || {};
+    const created = sticker.created_at ? new Date(sticker.created_at) : new Date();
+    const label = created.toLocaleTimeString("pt-PT", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: data.format === "12h",
+    });
+    return (
+        <StickerWrap sticker={sticker} isAuthor={isAuthor}>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/85 text-white text-[12.5px] font-mono tabular-nums shadow-lg">
+                🕒 {label}
+            </div>
+        </StickerWrap>
+    );
+}
+
+function DateSticker({ sticker, isAuthor }) {
+    const data = sticker.data || {};
+    const created = sticker.created_at ? new Date(sticker.created_at) : new Date();
+    const label = data.format === "short"
+        ? created.toLocaleDateString("pt-PT")
+        : created.toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" });
+    return (
+        <StickerWrap sticker={sticker} isAuthor={isAuthor}>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 text-black text-[12.5px] font-mono shadow-lg">
+                📅 {label}
+            </div>
+        </StickerWrap>
+    );
+}
+
 export function StoryStickerOverlay({ story, isAuthor, onPause, onUpdateSticker }) {
     if (!story.stickers?.length) return null;
     return (
@@ -346,6 +445,10 @@ export function StoryStickerOverlay({ story, isAuthor, onPause, onUpdateSticker 
                     case "countdown": return <CountdownSticker key={s.id} sticker={s} isAuthor={isAuthor} />;
                     case "link":      return <LinkSticker      key={s.id} sticker={s} isAuthor={isAuthor} />;
                     case "music":     return <MusicSticker     key={s.id} sticker={s} isAuthor={isAuthor} />;
+                    case "quiz":      return <QuizSticker      {...common} onUpdate={handleUpdate} />;
+                    case "add_yours": return <AddYoursSticker  key={s.id} sticker={s} isAuthor={isAuthor} />;
+                    case "time":      return <TimeSticker      key={s.id} sticker={s} isAuthor={isAuthor} />;
+                    case "date":      return <DateSticker      key={s.id} sticker={s} isAuthor={isAuthor} />;
                     default: return null;
                 }
             })}

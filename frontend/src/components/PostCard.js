@@ -32,10 +32,13 @@ import { EditHistoryButton } from "./EditHistoryModal";
 import { ReasonChip } from "./ReasonChip";
 import { ThermometerFetch } from "./ThermometerFetch";
 import { PostLiveSignals } from "./PostLiveSignals";
+import { HoverProfileCard } from "./HoverProfileCard";
+import { LikersSheet } from "./LikersSheet";
 import { useFeedPulse } from "../hooks/useFeedPulse";
 import { useAuth } from "../context/AuthContext";
 import { smartTime, fullTime } from "../lib/time";
 import { haptic } from "../lib/haptics";
+import { shareEntity, postUrl } from "../lib/sharing";
 import { toast } from "sonner";
 
 function formatNum(n) {
@@ -71,7 +74,11 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
     const [editing, setEditing] = useState(false);
     const [quoting, setQuoting] = useState(false);
     const [analytics, setAnalytics] = useState(false);
+    const [menuForceOpen, setMenuForceOpen] = useState(false);
+    const [likersOpen, setLikersOpen] = useState(false);
     const viewedRef = useRef(false);
+    const longPressTimer = useRef(null);
+    const longPressFired = useRef(false);
     const isOwn = user?.id === post.author?.id;
     const audience = post.reply_audience || "everyone";
     const AudMeta = AUDIENCE_META[audience] || AUDIENCE_META.everyone;
@@ -177,11 +184,47 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
         }
     };
 
-    const share = (e) => {
+    const share = async (e) => {
         e.stopPropagation();
-        navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
-        toast.success("Link copiado");
+        await shareEntity({
+            url: postUrl(post.id),
+            title: post.author?.name ? `${post.author.name} no Lusorae` : "Publicação Lusorae",
+            text: (post.content || "").slice(0, 140),
+        });
     };
+
+    // Long-press on Like → open Likers sheet (mobile gesture).
+    const onLikeLongPressStart = (e) => {
+        longPressFired.current = false;
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = setTimeout(() => {
+            longPressFired.current = true;
+            haptic("medium");
+            setLikersOpen(true);
+        }, 480);
+    };
+    const onLikeLongPressEnd = () => clearTimeout(longPressTimer.current);
+    const onLikeClickGuard = (e) => {
+        if (longPressFired.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            longPressFired.current = false;
+            return;
+        }
+        toggleLike(e);
+    };
+
+    // Long-press anywhere on the card → opens PostMenu (mobile-friendly affordance).
+    const onCardLongPressStart = () => {
+        if (showRepostHeader) return;
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = setTimeout(() => {
+            haptic("medium");
+            setMenuForceOpen(true);
+            longPressFired.current = true;
+        }, 540);
+    };
+    const onCardLongPressEnd = () => clearTimeout(longPressTimer.current);
 
     const remove = async () => {
         const ok = await confirmDialog({
@@ -211,7 +254,15 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
 
     return (
         <>
-            <div ref={articleRef} onClick={openDetail} className={clickable ? "cursor-pointer" : ""}>
+            <div
+                ref={articleRef}
+                onClick={openDetail}
+                onTouchStart={onCardLongPressStart}
+                onTouchEnd={onCardLongPressEnd}
+                onTouchMove={onCardLongPressEnd}
+                onTouchCancel={onCardLongPressEnd}
+                className={clickable ? "cursor-pointer" : ""}
+            >
                 {pinned && (
                     <div className="flex items-center gap-1.5 type-overline ml-12 mb-2 normal-case tracking-[0.16em] text-black/50" data-testid={`pinned-${post.id}`}>
                         <Pin size={10} strokeWidth={1.8} className="text-black/55" />
@@ -219,21 +270,22 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                     </div>
                 )}
                 <div className="flex gap-3 lg:gap-4">
-                    <Link to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start">
+                    <HoverProfileCard username={post.author?.username} to={`/u/${post.author?.username}`} onClick={(e) => e.stopPropagation()} className="flex-shrink-0 self-start">
                         <div className="relative transition-transform duration-300 hover:-translate-y-px">
                             <Avatar user={post.author} size={44} showOnline />
                         </div>
-                    </Link>
+                    </HoverProfileCard>
                     <div className="flex-1 min-w-0">
                         {/* Author row — clean, never wraps clutter */}
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <Link
+                            <HoverProfileCard
+                                username={post.author?.username}
                                 to={`/u/${post.author?.username}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="font-heading font-semibold tracking-tight hover:underline underline-offset-4 decoration-black/20 truncate text-black"
                             >
                                 {post.author?.name}
-                            </Link>
+                            </HoverProfileCard>
                             {post.author?.verified && <VerifiedBadge size={14} />}
                             <span className="font-mono text-[12px] text-black/45 truncate">@{post.author?.username}</span>
                             <span className="text-black/20" aria-hidden>·</span>
@@ -259,6 +311,8 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                         onDelete={remove}
                                         onPinToggle={setPinned}
                                         onAnalytics={() => setAnalytics(true)}
+                                        externallyOpen={menuForceOpen ? true : null}
+                                        onExternallyClose={() => setMenuForceOpen(false)}
                                     />
                                 </div>
                             )}
@@ -334,12 +388,38 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                         )}
 
                         {images.length > 0 && (
-                            <div className="mt-3 rounded-2xl overflow-hidden hairline-soft">
-                                <ImageCarousel
-                                    images={images}
-                                    onOpen={(i) => setLightboxIdx(i)}
-                                    onDoubleTap={() => likeFromDoubleTap()}
-                                />
+                            <div
+                                className={`mt-3 rounded-2xl overflow-hidden hairline-soft relative ${
+                                    showMedia ? "" : "select-none"
+                                }`}
+                            >
+                                <div
+                                    className={`${showMedia ? "" : "blur-xl scale-105 pointer-events-none"} transition-[filter,transform] duration-300`}
+                                    aria-hidden={!showMedia}
+                                >
+                                    <ImageCarousel
+                                        images={images}
+                                        onOpen={(i) => showMedia && setLightboxIdx(i)}
+                                        onDoubleTap={() => showMedia && likeFromDoubleTap()}
+                                    />
+                                </div>
+                                {!showMedia && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setNsfwRevealed(true); }}
+                                        data-testid={`nsfw-reveal-${post.id}`}
+                                        className="absolute inset-0 grid place-items-center text-center px-6"
+                                    >
+                                        <span className="inline-flex flex-col items-center gap-2 bg-white/90 backdrop-blur-md border border-white/60 rounded-2xl px-4 py-3 shadow-[0_10px_30px_-8px_rgba(13,13,16,0.35)]">
+                                            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/55">
+                                                Aviso de conteúdo
+                                            </span>
+                                            <span className="font-heading font-bold text-[14px] text-black">
+                                                {post.content_warning || "Conteúdo sensível"}
+                                            </span>
+                                            <span className="font-mono text-[10px] text-black/55">toca para revelar</span>
+                                        </span>
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -430,10 +510,15 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
                                     onQuote={() => setQuoting(true)}
                                 />
                                 <button
-                                    onClick={toggleLike}
+                                    onClick={onLikeClickGuard}
+                                    onMouseDown={onLikeLongPressStart}
+                                    onMouseUp={onLikeLongPressEnd}
+                                    onMouseLeave={onLikeLongPressEnd}
+                                    onTouchStart={onLikeLongPressStart}
+                                    onTouchEnd={onLikeLongPressEnd}
                                     data-testid={`like-btn-${post.id}`}
                                     className={`eng-btn ${liked ? "is-liked" : ""}`}
-                                    title="Gosto"
+                                    title="Gosto · segura para ver quem gostou"
                                     aria-label="Gosto"
                                     aria-pressed={liked}
                                 >
@@ -500,6 +585,9 @@ function PostBody({ post, onChange, clickable, showRepostHeader, onDelete }) {
             </div>
             {lightboxIdx >= 0 && images[lightboxIdx] && (
                 <ImageLightbox src={images[lightboxIdx]} onClose={() => setLightboxIdx(-1)} />
+            )}
+            {likersOpen && (
+                <LikersSheet postId={post.id} onClose={() => setLikersOpen(false)} />
             )}
             {editing && (
                 <EditPostModal

@@ -3612,4 +3612,18 @@
         .legal-viz-flow, .legal-viz-ladder, .legal-viz-reportflow { break-inside: avoid; }
     }
 
+    /* ============================================================
+       Modo Zen — esconde contadores agressivos sem prejudicar
+       a navegação. Activa-se via classe no <html>, gerida por
+       /lib/uiPrefs.js. Apenas oculta números — mantém ícones.
+       ============================================================ */
+    html.zen-mode .eng-btn > span,
+    html.zen-mode [data-zen-hide],
+    html.zen-mode .post-actions-cluster [title="visualizações"],
+    html.zen-mode .post-actions-cluster [title="visualizações"] svg + * {
+        display: none !important;
+    }
+    html.zen-mode .eng-btn { padding-inline: 0.55rem; }
+
+
 }

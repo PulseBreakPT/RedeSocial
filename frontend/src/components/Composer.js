@@ -21,6 +21,7 @@ import {
     Monitor,
     Check,
     Eye,
+    EyeOff,
 } from "lucide-react";
 import { api, formatApiError, toastApiError } from "../lib/api";
 import { Avatar } from "./Avatar";
@@ -118,6 +119,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
     const draftKey = communityId ? `draft:c:${communityId}` : "draft:global";
     const [content, setContent, clearDraft] = useLocalDraft(draftKey, initialPost?.content || "");
     const [images, setImages] = useState(initialPost?.images || []);
+    const [imageAlts, setImageAlts] = useState(initialPost?.image_alts || []);
+    const [nsfw, setNsfw] = useState(!!initialPost?.nsfw);
     const [busy, setBusy] = useState(false);
     const [hadDraft, setHadDraft] = useState(false);
     const [audOpen, setAudOpen] = useState(false);
@@ -203,6 +206,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         if (!ok) return;
         setContent("");
         setImages([]);
+        setImageAlts([]);
+        setNsfw(false);
         setPollOpen(false);
         setPollOptions(["", ""]);
         setScheduleOpen(false);
@@ -258,7 +263,18 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
         }
     };
 
-    const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
+    const removeImage = (idx) => {
+        setImages((prev) => prev.filter((_, i) => i !== idx));
+        setImageAlts((prev) => prev.filter((_, i) => i !== idx));
+    };
+    const setAltAt = (idx, value) => {
+        setImageAlts((prev) => {
+            const next = [...prev];
+            while (next.length < images.length) next.push("");
+            next[idx] = value.slice(0, 140);
+            return next;
+        });
+    };
 
     const submit = async (mode = "publish") => {
         const isDraft = mode === "draft";
@@ -280,8 +296,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
             const editingExisting = !!(initialPost?.id && (initialPost.is_draft || initialPost.scheduled_at));
             let data;
             if (editingExisting) {
-                // 1) update content + images
-                await api.patch(`/posts/${initialPost.id}`, { content, images });
+                // 1) update content + images + alts + nsfw flag
+                await api.patch(`/posts/${initialPost.id}`, { content, images, image_alts: imageAlts.slice(0, images.length), nsfw });
                 if (isDraft) {
                     // Stay as a draft; just refetch
                     const r = await api.get(`/posts/${initialPost.id}`);
@@ -299,6 +315,8 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                 const body = {
                     content,
                     images,
+                    image_alts: imageAlts.slice(0, images.length),
+                    nsfw,
                     reply_audience: audience,
                     audience_ring: ring,
                     is_draft: isDraft,
@@ -576,14 +594,33 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                         >
                             {images.map((src, i) => (
                                 <div key={i} className="relative group rounded-2xl overflow-hidden border border-black/[0.08]">
-                                    <img src={src} alt="" className={`w-full ${images.length === 1 ? "max-h-72 object-cover" : "h-32 object-cover"}`} />
+                                    <img src={src} alt={imageAlts[i] || ""} className={`w-full ${images.length === 1 ? "max-h-72 object-cover" : "h-32 object-cover"}`} />
                                     <button
                                         onClick={() => removeImage(i)}
                                         data-testid={`composer-remove-image-${i}`}
                                         className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-black rounded-full p-1.5 text-white"
+                                        aria-label="Remover imagem"
                                     >
                                         <X size={12} />
                                     </button>
+                                    <input
+                                        type="text"
+                                        value={imageAlts[i] || ""}
+                                        onChange={(e) => setAltAt(i, e.target.value)}
+                                        placeholder="Texto alternativo (acessibilidade)…"
+                                        maxLength={140}
+                                        data-testid={`composer-alt-${i}`}
+                                        aria-label={`Texto alternativo da imagem ${i + 1}`}
+                                        className="absolute left-1.5 right-12 bottom-1.5 bg-white/90 backdrop-blur-sm border border-white/60 rounded-full px-2.5 py-1 text-[10.5px] font-mono text-black/85 placeholder:text-black/40 focus:bg-white focus:outline-none focus:border-black/40 transition"
+                                    />
+                                    {imageAlts[i] && (
+                                        <span
+                                            className="absolute top-1.5 left-1.5 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-emerald-500/95 text-white text-[9px] font-mono uppercase tracking-[0.14em] shadow"
+                                            title="Alt-text definido"
+                                        >
+                                            ALT ✓
+                                        </span>
+                                    )}
                                 </div>
                             ))}
                             {images.length < MAX_IMAGES && (
@@ -696,6 +733,14 @@ export function Composer({ onPosted, asModal = false, onClose, communityId = nul
                             </ComposerIconBtn>
                             <ComposerIconBtn onClick={() => insertText("@")} label="menção">
                                 <AtSign size={18} />
+                            </ComposerIconBtn>
+                            <ComposerIconBtn
+                                onClick={() => setNsfw((v) => !v)}
+                                active={nsfw}
+                                data-testid="composer-nsfw-btn"
+                                label={nsfw ? "aviso de conteúdo ativo" : "aviso de conteúdo"}
+                            >
+                                <EyeOff size={18} />
                             </ComposerIconBtn>
                         </div>
                         <div className="flex items-center gap-2">

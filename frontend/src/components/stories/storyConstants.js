@@ -42,13 +42,23 @@ export const STORY_AUDIENCES = [
     { key: "roda",      label: "Roda íntima",  emoji: "🫂", description: "Só pessoas na tua Roda" },
 ];
 
-// PRE-LANÇAMENTO: poll/question/slider escondidos — apenas reaction + reply.
-// Mantemos só os "estáticos" (mention/hashtag/location/countdown).
+// Os stickers ativos cobrem agora todo o leque editorial PT-PT:
+// utility (mention/hashtag/location), tempo (countdown/time/date),
+// interativos (poll/question/slider/quiz), comunitários (add_yours)
+// e contextuais (link). Sem música/GIF/donation/shopping por decisão de produto.
 export const STICKER_TYPES = [
-    { key: "mention",   label: "Menção",     emoji: "@" },
-    { key: "hashtag",   label: "Hashtag",    emoji: "#" },
+    { key: "mention",   label: "Menção",      emoji: "@" },
+    { key: "hashtag",   label: "Hashtag",     emoji: "#" },
     { key: "location",  label: "Localização", emoji: "📍" },
-    { key: "countdown", label: "Contagem",   emoji: "⏱" },
+    { key: "countdown", label: "Contagem",    emoji: "⏱" },
+    { key: "time",      label: "Hora",        emoji: "🕒" },
+    { key: "date",      label: "Data",        emoji: "📅" },
+    { key: "poll",      label: "Sondagem",    emoji: "📊" },
+    { key: "question",  label: "Pergunta",    emoji: "❓" },
+    { key: "slider",    label: "Slider",      emoji: "🎚" },
+    { key: "quiz",      label: "Quiz",        emoji: "🧠" },
+    { key: "add_yours", label: "Junta-te",    emoji: "🪩" },
+    { key: "link",      label: "Link",        emoji: "🔗" },
 ];
 
 export const bgPreset = (key) =>

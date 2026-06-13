@@ -595,6 +595,11 @@ function StickerPreview({ sticker }) {
     if (sticker.type === "hashtag")  return <div className="bg-black text-white rounded-full shadow px-2.5 py-0.5 text-[10.5px] font-semibold">#{sticker.data?.tag}</div>;
     if (sticker.type === "location") return <div className={base}>📍 {sticker.data?.place}</div>;
     if (sticker.type === "countdown")return <div className="bg-black/85 text-white rounded-xl shadow px-2.5 py-0.5 text-[10.5px] font-medium">⏱ {sticker.data?.title}</div>;
+    if (sticker.type === "quiz")     return <div className={base}>🧠 <span className="truncate inline-block max-w-[140px] align-middle">{sticker.data?.question || "Quiz"}</span></div>;
+    if (sticker.type === "add_yours")return <div className="bg-white/95 text-black rounded-2xl shadow px-2.5 py-1 text-[10.5px] font-semibold inline-flex items-center gap-1">🪩 {sticker.data?.prompt?.slice(0, 24) || "Junta-te"}</div>;
+    if (sticker.type === "time")     return <div className="bg-black/80 text-white rounded-full shadow px-2.5 py-0.5 text-[10.5px] font-mono tabular-nums">🕒 {new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit", hour12: sticker.data?.format === "12h" })}</div>;
+    if (sticker.type === "date")     return <div className="bg-white/95 text-black rounded-full shadow px-2.5 py-0.5 text-[10.5px] font-mono">📅 {sticker.data?.format === "short" ? new Date().toLocaleDateString("pt-PT") : new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" })}</div>;
+    if (sticker.type === "link")     return <div className="bg-[var(--atl-500)] text-white rounded-xl shadow px-2.5 py-0.5 text-[10.5px] font-semibold inline-flex items-center gap-1">🔗 {sticker.data?.label || sticker.data?.url?.replace(/^https?:\/\//, "").slice(0, 22)}</div>;
     return null;
 }
 
@@ -810,10 +815,15 @@ function StickerEditor({ type, onSubmit, onClose }) {
             case "poll":      return { question: "", options: [{ id: "a", text: "" }, { id: "b", text: "" }] };
             case "question":  return { prompt: "Faz-me uma pergunta", placeholder: "Escreve aqui..." };
             case "slider":    return { prompt: "Quão fixe é?", emoji: "🔥" };
+            case "quiz":      return { question: "", options: [{ id: "a", text: "" }, { id: "b", text: "" }], correct: 0 };
+            case "add_yours": return { prompt: "Junta-te a esta corrente" };
             case "mention":   return { username: "" };
             case "hashtag":   return { tag: "" };
             case "location":  return { place: "" };
             case "countdown": return { title: "Contagem", ends_at: defaultCountdownIso() };
+            case "time":      return { format: "24h" };
+            case "date":      return { format: "long" };
+            case "link":      return { url: "", label: "" };
             default:          return {};
         }
     });
@@ -821,10 +831,16 @@ function StickerEditor({ type, onSubmit, onClose }) {
         if (type === "poll" && (!draft.options || draft.options.filter((o) => o.text.trim()).length < 2)) {
             toast.error("A sondagem precisa de pelo menos 2 opções com texto"); return;
         }
+        if (type === "quiz") {
+            const valid = (draft.options || []).filter((o) => o.text.trim()).length >= 2;
+            if (!valid || !draft.question.trim()) { toast.error("Quiz precisa de pergunta e ≥2 opções"); return; }
+        }
+        if (type === "add_yours" && !draft.prompt.trim()) { toast.error("Indica o desafio"); return; }
         if (type === "mention" && !draft.username.trim()) { toast.error("Indica o utilizador"); return; }
         if (type === "hashtag" && !draft.tag.trim()) { toast.error("Indica a hashtag"); return; }
         if (type === "location" && !draft.place.trim()) { toast.error("Indica o local"); return; }
         if (type === "countdown" && !draft.ends_at) { toast.error("Define a data"); return; }
+        if (type === "link" && !draft.url.trim()) { toast.error("Indica o link"); return; }
         onSubmit({ data: { ...draft } });
     };
     const cssInput = "w-full px-3 py-3 rounded-xl border border-black/15 outline-none focus:border-coral text-[14px] bg-white";
@@ -884,6 +900,109 @@ function StickerEditor({ type, onSubmit, onClose }) {
                 <div className="space-y-2">
                     <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Título (ex: Concerto)" className={cssInput} />
                     <input type="datetime-local" value={draft.ends_at?.slice(0, 16) || ""} onChange={(e) => setDraft({ ...draft, ends_at: new Date(e.target.value).toISOString() })} className={cssInput} />
+                </div>
+            )}
+            {type === "quiz" && (
+                <div className="space-y-2">
+                    <input value={draft.question} onChange={(e) => setDraft({ ...draft, question: e.target.value })} placeholder="Pergunta…" className={cssInput} />
+                    {draft.options.map((o, idx) => (
+                        <div key={o.id} className="flex items-center gap-2">
+                            <input
+                                value={o.text}
+                                onChange={(e) => {
+                                    const newOpts = [...draft.options];
+                                    newOpts[idx] = { ...o, text: e.target.value };
+                                    setDraft({ ...draft, options: newOpts });
+                                }}
+                                placeholder={`Opção ${idx + 1}`}
+                                className={`${cssInput} flex-1`}
+                            />
+                            <button
+                                onClick={() => setDraft({ ...draft, correct: idx })}
+                                className={`px-3 py-2 rounded-full text-[10px] font-mono uppercase tracking-[0.14em] tap-shrink transition ${
+                                    draft.correct === idx
+                                        ? "bg-black text-white"
+                                        : "bg-black/[0.05] text-black/55 hover:bg-black/[0.10]"
+                                }`}
+                                aria-label="Marcar como correta"
+                            >
+                                {draft.correct === idx ? "correta ✓" : "marcar"}
+                            </button>
+                        </div>
+                    ))}
+                    <div className="flex gap-3">
+                        {draft.options.length < 4 && (
+                            <button onClick={() => setDraft({ ...draft, options: [...draft.options, { id: `o${draft.options.length}`, text: "" }] })} className="text-[12px] font-mono text-coral hover:underline inline-flex items-center gap-1"><Plus size={12} /> opção</button>
+                        )}
+                        {draft.options.length > 2 && (
+                            <button onClick={() => setDraft({ ...draft, options: draft.options.slice(0, -1) })} className="text-[12px] font-mono text-black/45 hover:underline">– remover última</button>
+                        )}
+                    </div>
+                </div>
+            )}
+            {type === "add_yours" && (
+                <div className="space-y-2">
+                    <input value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="Ex: o teu pôr-do-sol favorito" className={cssInput} />
+                    <p className="text-[11px] font-mono text-black/45 leading-snug">
+                        Outras pessoas podem juntar-se a esta corrente com o seu próprio momento.
+                    </p>
+                </div>
+            )}
+            {type === "time" && (
+                <div className="space-y-2">
+                    <div className="flex gap-2">
+                        {["24h", "12h"].map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setDraft({ ...draft, format: f })}
+                                className={`flex-1 px-3 py-2 rounded-xl text-[12px] font-mono uppercase tracking-[0.14em] tap-shrink transition ${
+                                    draft.format === f
+                                        ? "bg-black text-white"
+                                        : "bg-black/[0.05] text-black/55 hover:bg-black/[0.10]"
+                                }`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-[11px] font-mono text-black/45 leading-snug">
+                        Hora atual gravada no momento da publicação.
+                    </p>
+                </div>
+            )}
+            {type === "date" && (
+                <div className="space-y-2">
+                    {["long", "short"].map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => setDraft({ ...draft, format: f })}
+                            className={`w-full px-3 py-2 rounded-xl text-[12.5px] font-mono text-left tap-shrink transition ${
+                                draft.format === f
+                                    ? "bg-black text-white"
+                                    : "bg-black/[0.05] text-black/65 hover:bg-black/[0.10]"
+                            }`}
+                        >
+                            {f === "long" ? "13 de junho de 2026" : "13.06.26"}
+                        </button>
+                    ))}
+                </div>
+            )}
+            {type === "link" && (
+                <div className="space-y-2">
+                    <input
+                        value={draft.url}
+                        onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+                        placeholder="https://exemplo.pt"
+                        type="url"
+                        className={cssInput}
+                    />
+                    <input
+                        value={draft.label}
+                        onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+                        placeholder="Texto do botão (opcional)"
+                        maxLength={32}
+                        className={cssInput}
+                    />
                 </div>
             )}
             <button
