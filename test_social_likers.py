@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any
 
 # Backend URL — overridable via env
 BASE_URL = os.environ.get(
-    "BASE_URL", "https://prd-legal-review.preview.emergentagent.com/api"
+    "BASE_URL", "https://lusorae-genesis.preview.emergentagent.com/api"
 )
 
 # Test credentials must come from environment.
