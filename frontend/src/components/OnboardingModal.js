@@ -202,45 +202,92 @@ export function OnboardingModal() {
                                     </p>
                                 </div>
                             ) : (
-                                <ul className="space-y-2">
-                                    {suggestions.map((s) => {
-                                        const isFollowing = !!followingMap[s.id];
-                                        return (
-                                            <li
-                                                key={s.id}
-                                                data-testid={`onb-suggestion-${s.username}`}
-                                                className="flex items-center gap-3 p-2.5 rounded-2xl border transition"
-                                                style={{
-                                                    borderColor: isFollowing ? "rgba(10,10,10,0.18)" : "rgba(10,10,10,0.06)",
-                                                    background: isFollowing ? "rgba(10,10,10,0.02)" : "#fff",
-                                                }}
-                                            >
-                                                <Avatar user={s} size={42} />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-1 font-bold text-[14px] tracking-tight text-black truncate">
-                                                        {s.name} {s.verified && <VerifiedBadge size={12} />}
-                                                    </div>
-                                                    <div className="font-mono text-[11px] text-black/50 truncate">
-                                                        @{s.username}{s.city ? <span className="text-black/40"> · {s.city}</span> : null}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleFollow(s)}
-                                                    data-testid={`onb-follow-${s.username}`}
-                                                    disabled={isFollowing}
-                                                    className="shrink-0 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider transition tap-shrink"
+                                <>
+                                    {/* Carrossel horizontal (mobile) */}
+                                    <div
+                                        className="sm:hidden flex gap-2 overflow-x-auto pb-1 -mx-6 px-6 scrollbar-hide"
+                                        style={{ scrollSnapType: "x mandatory" }}
+                                        data-testid="onb-suggestions-carousel"
+                                    >
+                                        {suggestions.map((s) => {
+                                            const isFollowing = !!followingMap[s.id];
+                                            return (
+                                                <div
+                                                    key={s.id}
+                                                    data-testid={`onb-suggestion-${s.username}`}
+                                                    className="shrink-0 w-[150px] p-3 rounded-2xl border flex flex-col items-start gap-2"
                                                     style={{
-                                                        background: isFollowing ? "rgba(10,10,10,0.05)" : PT.ink,
-                                                        color: isFollowing ? "rgba(10,10,10,0.7)" : "#fff",
-                                                        border: isFollowing ? "1px solid rgba(10,10,10,0.1)" : "1px solid " + PT.ink,
+                                                        borderColor: isFollowing ? "rgba(10,10,10,0.18)" : "rgba(10,10,10,0.06)",
+                                                        background: isFollowing ? "rgba(10,10,10,0.02)" : "#fff",
+                                                        scrollSnapAlign: "start",
                                                     }}
                                                 >
-                                                    {isFollowing ? <><Check size={11} strokeWidth={2.4}/> a seguir</> : <><UserPlus size={11} strokeWidth={2.4}/> seguir</>}
-                                                </button>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
+                                                    <Avatar user={s} size={38} />
+                                                    <div className="min-w-0 w-full">
+                                                        <div className="flex items-center gap-1 font-bold text-[12.5px] tracking-tight text-black truncate leading-tight">
+                                                            {s.name} {s.verified && <VerifiedBadge size={10} />}
+                                                        </div>
+                                                        <div className="font-mono text-[10.5px] text-black/50 truncate mt-0.5">
+                                                            @{s.username}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleFollow(s)}
+                                                        data-testid={`onb-follow-${s.username}`}
+                                                        disabled={isFollowing}
+                                                        className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-full text-[10.5px] font-bold uppercase tracking-wider transition tap-shrink mt-auto"
+                                                        style={{
+                                                            background: isFollowing ? "rgba(10,10,10,0.05)" : PT.ink,
+                                                            color: isFollowing ? "rgba(10,10,10,0.7)" : "#fff",
+                                                            border: isFollowing ? "1px solid rgba(10,10,10,0.1)" : "1px solid " + PT.ink,
+                                                        }}
+                                                    >
+                                                        {isFollowing ? <><Check size={10} strokeWidth={2.4}/> a seguir</> : <><UserPlus size={10} strokeWidth={2.4}/> seguir</>}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Lista vertical (desktop) */}
+                                    <ul className="hidden sm:block space-y-2">
+                                        {suggestions.map((s) => {
+                                            const isFollowing = !!followingMap[s.id];
+                                            return (
+                                                <li
+                                                    key={s.id}
+                                                    className="flex items-center gap-3 p-2.5 rounded-2xl border transition"
+                                                    style={{
+                                                        borderColor: isFollowing ? "rgba(10,10,10,0.18)" : "rgba(10,10,10,0.06)",
+                                                        background: isFollowing ? "rgba(10,10,10,0.02)" : "#fff",
+                                                    }}
+                                                >
+                                                    <Avatar user={s} size={42} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-1 font-bold text-[14px] tracking-tight text-black truncate">
+                                                            {s.name} {s.verified && <VerifiedBadge size={12} />}
+                                                        </div>
+                                                        <div className="font-mono text-[11px] text-black/50 truncate">
+                                                            @{s.username}{s.city ? <span className="text-black/40"> · {s.city}</span> : null}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleFollow(s)}
+                                                        disabled={isFollowing}
+                                                        className="shrink-0 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider transition tap-shrink"
+                                                        style={{
+                                                            background: isFollowing ? "rgba(10,10,10,0.05)" : PT.ink,
+                                                            color: isFollowing ? "rgba(10,10,10,0.7)" : "#fff",
+                                                            border: isFollowing ? "1px solid rgba(10,10,10,0.1)" : "1px solid " + PT.ink,
+                                                        }}
+                                                    >
+                                                        {isFollowing ? <><Check size={11} strokeWidth={2.4}/> a seguir</> : <><UserPlus size={11} strokeWidth={2.4}/> seguir</>}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </>
                             )}
                         </div>
                     )}
