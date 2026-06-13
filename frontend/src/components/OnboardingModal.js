@@ -78,8 +78,11 @@ export function OnboardingModal() {
         if (interests.size < MIN_INTERESTS) return;
         setBusy(true);
         try {
-            // grava interesses no perfil — endpoint legacy /users/me aceita updates
-            await api.patch("/users/me", { bio_slots: { ...(user.bio_slots || {}), interests: Array.from(interests).join(", ") } }).catch(() => {});
+            // FASE 3 — endpoint dedicado de interesses
+            await api.post("/users/me/interests", { interests: Array.from(interests) }).catch(async () => {
+                // fallback legacy
+                await api.patch("/users/me", { bio_slots: { ...(user.bio_slots || {}), interests: Array.from(interests).join(", ") } }).catch(() => {});
+            });
         } catch {}
         setLoadingSugg(true);
         try {

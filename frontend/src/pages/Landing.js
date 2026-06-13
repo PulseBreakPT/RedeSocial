@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, MapPin, Calendar, Users, Sparkles, Menu, X } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
+import { WaitlistForm } from "../components/WaitlistForm";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import { track } from "../lib/analytics";
@@ -840,6 +841,11 @@ function Hero({ stats }) {
                                 className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
                             />
                         </Link>
+                    </div>
+
+                    {/* Waitlist form — pré-lançamento, reserva de @handle */}
+                    <div className="mt-6 sm:mt-8 max-w-md lusorae-reveal-up" style={{ animationDelay: "0.55s" }}>
+                        <WaitlistForm compact />
                     </div>
 
                     {/* Social proof — beta honest framing */}

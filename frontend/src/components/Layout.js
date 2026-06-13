@@ -3,7 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
 import { Composer } from "./Composer";
-// import { OnboardingModal } from "./OnboardingModal"; // removed per user request
+import { OnboardingModal } from "./OnboardingModal";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileTopBar } from "./MobileTopBar";
 import { MobileChatDrawer } from "./MobileChatDrawer";
@@ -118,7 +118,7 @@ export function Layout() {
                 {!isWide && <RightSidebar />}
             </div>
 
-            {/* OnboardingModal removed per user request */}
+            <OnboardingModal />
             <MobileBottomNav onCompose={() => openCompose()} />
             <ScrollToTop />
             <ActivityTickerLive />

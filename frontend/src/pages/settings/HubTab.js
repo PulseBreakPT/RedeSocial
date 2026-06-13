@@ -7,6 +7,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { StatusPill } from "./_shared";
+import { InvitesPanel } from "../../components/InvitesPanel";
 
 /* =============================================================
    HubTab — Visão geral SSS tier.
@@ -265,6 +266,20 @@ export function HubTab({ user, form, stats, setActiveTab }) {
                     <StatCard icon={Heart} value={fmtNumber(rich?.likes_received ?? 0)} label="Gostos recebidos" tintBg="#C8102E" tintFg="#fff" />
                     <StatCard icon={MessageSquare} value={fmtNumber(rich?.comments_received ?? 0)} label="Comentários" sub={`${fmtNumber(rich?.reposts_received ?? 0)} repartilhas`} tintBg="#FFCC29" tintFg="#0A0A0A" />
                     <StatCard icon={TrendingUp} value={`${(rich?.engagement_rate ?? 0).toFixed(2)}%`} label="Engagement" sub={`${user?.followers_count ?? 0} seguidores`} tintBg="#046A38" tintFg="#fff" />
+                </div>
+
+                {/* INVITES — convida 3 amigos e ganha badge fundador */}
+                <div className="lg:col-span-12 card-lux p-5" data-testid="hub-invites">
+                    <div className="mb-4">
+                        <p className="type-overline mb-0">Convites</p>
+                        <h3 className="font-heading font-bold text-[17px] tracking-tight text-black mt-1">
+                            Cresce a tua tribo
+                        </h3>
+                        <p className="text-[12px] text-black/55 mt-1 leading-snug">
+                            Convida 3 amigos para a BETA e desbloqueias a badge de fundador.
+                        </p>
+                    </div>
+                    <InvitesPanel />
                 </div>
 
                 {/* SCORES — completude + segurança detalhada */}

@@ -13,6 +13,7 @@ import { CookieBanner } from "./components/CookieBanner";
 import { ConfirmDialogHost } from "./components/ConfirmDialog";
 import { ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate";
 import { FirstPostCelebration } from "./components/FirstPostCelebration";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { initAnalyticsFromConsent } from "./lib/analytics";
 
 // Páginas carregadas sob demanda (code-splitting por rota). Corta o bundle
@@ -109,6 +110,7 @@ function App() {
                         }}
                     />
                     <FirstPostCelebration />
+                    <PWAInstallPrompt />
                     <Suspense fallback={<RouteFallback />}>
                     <Routes>
                         <Route path="/login" element={<Login />} />

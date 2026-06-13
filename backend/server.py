@@ -1212,6 +1212,7 @@ def public_user(user: dict, extra: Optional[dict] = None) -> dict:
         # premium completa vem de /premium/status (resolvida server-side).
         "plan": entitlements.plan_of(user),
         "early_supporter": bool(user.get("early_supporter")),
+        "interests": user.get("interests", []),
         "track_visits": user.get("track_visits", True),
         # Privacy prefs (settings → Privacidade)
         "show_online": user.get("show_online", True),
@@ -1897,6 +1898,16 @@ async def create_notification(user_id: str, ntype: str, from_user_id: str,
             })
     except Exception:
         pass
+    # FASE 3 — Web Push best-effort (silencioso em dev sem VAPID).
+    try:
+        import push_web as _pw
+        if _pw.is_configured():
+            _title = "Lusorae"
+            _body = text or "Tens uma nova notificação."
+            _url = f"/post/{post_id}" if post_id else "/notifications"
+            await _pw.send_to_user(db, user_id, _title, _body, url=_url, tag=ntype)
+    except Exception:
+        pass
 
 
 async def handle_mentions(text: str, author: dict, post_id: str) -> None:
@@ -2215,6 +2226,11 @@ async def register(payload: RegisterIn, request: Request, response: Response):
         _provided = (payload.invite_code or "").strip()
         if _provided != _invite_required:
             raise HTTPException(403, "Código de convite inválido ou em falta.")
+    # FASE 3 — Convite peer-to-peer (Lusorae) — opcional, gera badge fundador.
+    _peer_invite_doc = None
+    _peer_invite_code = (payload.invite_code or "").strip().upper()
+    if _peer_invite_code and (not _invite_required or _peer_invite_code != _invite_required.upper()):
+        _peer_invite_doc = await db.invites.find_one({"code": _peer_invite_code}, {"_id": 0})
     # Dynamic username + password policy (admin-controlled).
     await _validate_username_policy(payload.username)
     await _validate_password_policy(payload.password)
@@ -2242,6 +2258,9 @@ async def register(payload: RegisterIn, request: Request, response: Response):
         "verified": auto_verified, "private": False, "onboarded": False,
         "followers": [], "following": [], "bookmarks": [],
         "last_seen": now, "created_at": now,
+        # FASE 3 — interesses (preenchidos no onboarding) + inviter tracking
+        "interests": [],
+        "inviter_id": (_peer_invite_doc or {}).get("inviter_id") if _peer_invite_doc else None,
         # PT identity
         "city": (payload.city or "").strip(),
         "freguesia": (payload.freguesia or "").strip(),
@@ -2266,6 +2285,27 @@ async def register(payload: RegisterIn, request: Request, response: Response):
         },
     }
     await db.users.insert_one(user)
+    # FASE 3 — Regista uso do invite peer-to-peer + desbloqueia fundador.
+    if _peer_invite_doc:
+        try:
+            await db.invites.update_one(
+                {"code": _peer_invite_code},
+                {"$push": {"used_by": {"user_id": user["id"], "at": now}}},
+            )
+            _inviter_id = _peer_invite_doc.get("inviter_id")
+            if _inviter_id:
+                # conta total de invites aceites do inviter
+                _all = await db.invites.find(
+                    {"inviter_id": _inviter_id}, {"_id": 0, "used_by": 1},
+                ).to_list(20)
+                _total = sum(len(x.get("used_by", [])) for x in _all)
+                if _total >= 3:
+                    await db.users.update_one(
+                        {"id": _inviter_id},
+                        {"$set": {"early_supporter": True, "founder_badge_at": now}},
+                    )
+        except Exception:
+            pass
     jti = await create_session(user["id"], request, source="register")
     _ttl = await get_limit("session_ttl_days")
     token = create_access_token(user["id"], email, jti=jti, ttl_days=_ttl)
@@ -3285,6 +3325,17 @@ async def create_post(payload: PostIn, user=Depends(get_current_user)):
     poll = build_poll(payload.poll, max_options=_poll_cap) if payload.poll else None
     if not payload.content.strip() and not images and not poll and not payload.quote_of:
         raise HTTPException(400, "Publicação vazia")
+    # FASE 3 — Automod PT (palavrões, caps, repetição, links). Admins bypass.
+    if not user.get("is_admin") and (payload.content or "").strip():
+        try:
+            import automod_pt as _am
+            _blocked, _code, _msg = _am.analyse_text(payload.content)
+            if _blocked:
+                raise HTTPException(422, _msg)
+        except HTTPException:
+            raise
+        except Exception:
+            pass
     # Minimum content length (only when content is the primary medium)
     if not user.get("is_admin"):
         _min_chars = await get_limit("min_post_chars")
@@ -10631,6 +10682,229 @@ async def ws_broadcast_activity(event_type: str, payload: dict):
         pass
 
 
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ FASE 3 — Waitlist + Invites + Push + Automod + Interests                ║
+# ║   Registers extras antes do include_router para entrarem no /api router.║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+import push_web  # noqa: E402
+import automod_pt  # noqa: E402
+
+
+# ─── Interests ─────────────────────────────────────────────────────────────
+class InterestsIn(BaseModel):
+    interests: List[str] = Field(default_factory=list)
+
+
+@api.post("/users/me/interests")
+async def save_interests(payload: InterestsIn, user=Depends(get_current_user)):
+    """Guarda interesses do utilizador (lista de slugs). Usado no onboarding."""
+    items = [
+        (s or "").strip().lower()
+        for s in (payload.interests or [])
+        if (s or "").strip()
+    ][:12]
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"interests": items, "interests_updated_at": now_iso()}},
+    )
+    return {"ok": True, "interests": items}
+
+
+@api.get("/users/me/interests")
+async def get_my_interests(user=Depends(get_current_user)):
+    u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "interests": 1})
+    return {"interests": (u or {}).get("interests", [])}
+
+
+# ─── Waitlist ──────────────────────────────────────────────────────────────
+class WaitlistIn(BaseModel):
+    email: EmailStr
+    handle: Optional[str] = None
+    referrer: Optional[str] = None
+
+
+@api.post("/waitlist")
+@limiter.limit("5/minute")
+async def waitlist_join(payload: WaitlistIn, request: Request, response: Response):
+    """Reserva email + @handle na waitlist pré-lançamento."""
+    email = payload.email.lower().strip()
+    handle = (payload.handle or "").lower().strip().lstrip("@")
+
+    # idempotente por email (re-submissão com mesmo handle não falha)
+    existing = await db.waitlist.find_one({"email": email})
+    if existing:
+        if handle and handle != (existing.get("handle") or "") and not existing.get("handle"):
+            # email já existe sem handle → permite atribuir handle agora
+            if await db.users.find_one({"username": handle}):
+                raise HTTPException(409, "Esse @handle já está reservado por um utilizador.")
+            if await db.waitlist.find_one({"handle": handle, "email": {"$ne": email}}):
+                raise HTTPException(409, "Esse @handle já foi reservado.")
+            await db.waitlist.update_one(
+                {"email": email}, {"$set": {"handle": handle}},
+            )
+        return {"ok": True, "already": True, "position": existing.get("position", 0)}
+
+    if handle:
+        if not re.match(r"^[a-z0-9_]{3,20}$", handle):
+            raise HTTPException(400, "Handle inválido: 3-20 caracteres, letras/números/_.")
+        if await db.users.find_one({"username": handle}):
+            raise HTTPException(409, "Esse @handle já está reservado por um utilizador.")
+        if await db.waitlist.find_one({"handle": handle}):
+            raise HTTPException(409, "Esse @handle já foi reservado na waitlist.")
+
+    count = await db.waitlist.count_documents({})
+    doc = {
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "handle": handle or None,
+        "referrer": (payload.referrer or "")[:80] or None,
+        "position": count + 1,
+        "created_at": now_iso(),
+        "ip": (request.client.host if request and request.client else "")[:40],
+    }
+    await db.waitlist.insert_one(doc)
+    return {"ok": True, "position": doc["position"]}
+
+
+@api.get("/waitlist/check")
+async def waitlist_check(handle: str = ""):
+    """Verifica se um @handle está disponível para reservar."""
+    h = (handle or "").lower().strip().lstrip("@")
+    if not h or not re.match(r"^[a-z0-9_]{3,20}$", h):
+        return {"available": False, "reason": "invalid"}
+    if await db.users.find_one({"username": h}):
+        return {"available": False, "reason": "user_exists"}
+    if await db.waitlist.find_one({"handle": h}):
+        return {"available": False, "reason": "reserved"}
+    return {"available": True}
+
+
+@api.get("/waitlist/stats")
+async def waitlist_stats():
+    """Stats públicas (count) — para mostrar 'já somos N' na landing."""
+    total = await db.waitlist.count_documents({})
+    users = await db.users.count_documents({})
+    return {"waitlist_count": total, "users_count": users}
+
+
+# ─── Invites (3 amigos = badge fundador) ───────────────────────────────────
+_FOUNDER_INVITES_REQUIRED = 3
+
+
+def _gen_invite_code() -> str:
+    # 8 chars alphanum sem ambiguidade (sem 0/O, 1/I/l)
+    alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alpha) for _ in range(8))
+
+
+@api.post("/invites/generate")
+async def generate_invites(user=Depends(get_current_user)):
+    """Gera até 3 códigos de convite reutilizáveis para o user. Idempotente."""
+    existing = await db.invites.find(
+        {"inviter_id": user["id"]}, {"_id": 0},
+    ).to_list(20)
+    if len(existing) >= 3:
+        return {"invites": existing}
+    needed = 3 - len(existing)
+    new_codes = []
+    for _ in range(needed):
+        for _retry in range(5):
+            code = _gen_invite_code()
+            if not await db.invites.find_one({"code": code}):
+                break
+        doc = {
+            "id": str(uuid.uuid4()),
+            "code": code,
+            "inviter_id": user["id"],
+            "used_by": [],
+            "created_at": now_iso(),
+        }
+        await db.invites.insert_one(doc)
+        # strip mongo _id before returning
+        doc.pop("_id", None)
+        new_codes.append(doc)
+    out = existing + new_codes
+    return {"invites": out}
+
+
+@api.get("/invites/mine")
+async def list_my_invites(user=Depends(get_current_user)):
+    invites = await db.invites.find(
+        {"inviter_id": user["id"]}, {"_id": 0},
+    ).to_list(20)
+    accepted = sum(len(i.get("used_by", [])) for i in invites)
+    founder = accepted >= _FOUNDER_INVITES_REQUIRED
+    return {
+        "invites": invites,
+        "accepted_count": accepted,
+        "founder_threshold": _FOUNDER_INVITES_REQUIRED,
+        "founder_unlocked": founder,
+    }
+
+
+# ─── Push Notifications ────────────────────────────────────────────────────
+class PushSubIn(BaseModel):
+    endpoint: str
+    keys: dict
+
+
+@api.get("/push/vapid-public-key")
+async def push_vapid_key():
+    return {
+        "publicKey": push_web.public_key(),
+        "configured": push_web.is_configured(),
+    }
+
+
+@api.post("/push/subscribe")
+async def push_subscribe(payload: PushSubIn, user=Depends(get_current_user)):
+    if not payload.endpoint or not payload.keys:
+        raise HTTPException(400, "Subscription inválida")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "endpoint": payload.endpoint,
+        "keys": payload.keys,
+        "created_at": now_iso(),
+    }
+    # upsert por endpoint (per-device)
+    await db.push_subscriptions.update_one(
+        {"endpoint": payload.endpoint},
+        {"$set": doc},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@api.delete("/push/subscribe")
+async def push_unsubscribe(payload: PushSubIn, user=Depends(get_current_user)):
+    await db.push_subscriptions.delete_one({
+        "endpoint": payload.endpoint, "user_id": user["id"],
+    })
+    return {"ok": True}
+
+
+@api.post("/push/test")
+async def push_test(user=Depends(get_current_user)):
+    """Envia um push de teste ao próprio user (debug/onboarding)."""
+    n = await push_web.send_to_user(
+        db, user["id"],
+        title="Lusorae",
+        body="Notificações activadas. Vais saber quando algo importante acontece.",
+        url="/feed",
+        tag="welcome-push",
+    )
+    return {"sent": n}
+
+
+# ─── Automod admin endpoint (smoke test) ───────────────────────────────────
+@api.get("/automod/check")
+async def automod_check(q: str = "", user=Depends(get_current_user)):
+    """Util de debug para conferir se um texto seria bloqueado."""
+    blocked, code, msg = automod_pt.analyse_text(q)
+    return {"blocked": blocked, "code": code, "message": msg}
+
+
 app.include_router(api)
 
 # ─── CORS (deploy-hardened) ────────────────────────────────────────────────────
@@ -10699,6 +10973,8 @@ CSRF_EXEMPT_PREFIXES = (
     "/api/auth/2fa",  # 2fa setup/verify flows
     "/api/webhooks/",
     "/api/csp-report",
+    # FASE 3 — waitlist público (pré-auth)
+    "/api/waitlist",
 )
 
 

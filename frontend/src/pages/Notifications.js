@@ -11,6 +11,7 @@ import { PageHeader } from "../components/PageHeader";
 import { PtPageShell } from "../components/PtPageShell";
 import { Highlight } from "../components/editorial/Primitives";
 import { NotificationReplyPreview } from "../components/NotificationReplyPreview";
+import { PushNotificationBanner } from "../components/PushNotificationBanner";
 import { smartTime } from "../lib/time";
 import { useLiveTime } from "../hooks/useLiveTime";
 import { toast } from "sonner";
@@ -271,6 +272,8 @@ export default function Notifications() {
                     })}
                 </div>
             </PageHeader>
+
+            <PushNotificationBanner />
 
             {loading ? (
                 <NotifSkeletonList count={6} />

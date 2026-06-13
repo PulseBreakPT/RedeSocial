@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // =============================================================================
 // DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
 // =============================================================================
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
     ArrowRight, ArrowLeft, Check, Loader2, X, Eye, EyeOff,
     AlertCircle, CheckCircle2, MapPin, Sparkles,
@@ -96,6 +96,8 @@ const _validateEmailLocal = (e) => {
 export default function Register() {
     const { user, register } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const inviteFromQuery = (searchParams.get("invite") || "").toUpperCase().trim().slice(0, 16);
     const [step, setStep] = useState(1);
 
     const [form, setForm] = useState({ name: "", username: "", email: "", password: "", passwordConfirm: "" });
@@ -230,6 +232,17 @@ export default function Register() {
                 <div className="auth-fade-up">
                     {/* Kicker */}
                     <Kicker color={stepAccent}>Criar conta · BETA</Kicker>
+
+                    {inviteFromQuery && (
+                        <div
+                            data-testid="register-invite-applied"
+                            className="mb-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11.5px] font-bold uppercase tracking-wider"
+                            style={{ background: PT.gold + "20", color: PT.ink, border: `1px solid ${PT.gold}55` }}
+                        >
+                            <Sparkles size={11} strokeWidth={2.6} />
+                            Convite aplicado · <span className="font-mono">{inviteFromQuery}</span>
+                        </div>
+                    )}
 
                     {/* Título bold + itálico */}
                     <h1
