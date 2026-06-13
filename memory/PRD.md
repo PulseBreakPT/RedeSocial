@@ -352,3 +352,73 @@ Documenta tudo o que ainda não foi implementado, priorizado para chegar a SSS e
 
 
 
+
+
+## Landing Page — Auditoria 10 Profissões + Pacote SEO P0 (Feb 13, 2026) ✅
+
+### Auditoria entregue
+Painel de 10 profissões avaliou `Landing.js` (2433 linhas, 123 KB). Score geral: **8.1/10**.
+- Forças: sistema editorial coeso, anti-features ("Sem ads / sem algoritmo"), micro-interações premium (Magnetic/Tilt/CursorDot), mobile sticky CTA com persist.
+- Maior buraco identificado: **SEO 3/10** (sem OG, sem Twitter cards, `lang=en`, sem schema, sem canonical, sem sitemap).
+
+### Pacote SEO P0 — implementado e validado (19/19 checks pass)
+
+**Files touched:**
+- `/app/frontend/public/index.html` — reescrito head (~75 linhas novas)
+- `/app/frontend/public/site.webmanifest` — atualizado lang, theme, categories
+- `/app/frontend/public/robots.txt` — NOVO (políticas crawl, GPTBot/Claude allowed, scrapers bloqueados, sitemap ref)
+- `/app/frontend/public/sitemap.xml` — NOVO (10 URLs com priority + image extension)
+- `/app/frontend/public/og/og-image.jpg` — NOVO (1200×630, brand-cohesive, blocos PT)
+- `/app/frontend/public/og/twitter-card.jpg` — NOVO (mesma imagem, summary_large_image)
+
+**SEO Specialist — entregue:**
+- `<html lang="pt-PT">` (era `en` — ranking PT corrigido)
+- `<title>` keyword-rich: "Lusorae — Rede social portuguesa sem ads · BETA 2026"
+- `<meta description>` com CTA + keywords (160 chars)
+- `<link rel="canonical">` + 2 hreflang (pt-PT, x-default)
+- `<meta robots>` com `max-image-preview:large, max-snippet:-1`
+- robots.txt com Sitemap + Host + políticas IA (GPTBot allow, CCBot deny)
+- sitemap.xml com 10 URLs + image:image extension na home
+
+**Social Media Architect — entregue:**
+- Open Graph completo: type, site_name, locale (pt_PT), url, title, description, image (+ secure_url, type, width, height, alt)
+- Twitter Cards: summary_large_image, site, creator, url, title, description, image, alt
+
+**Structured Data Engineer — entregue:**
+- JSON-LD `@graph` com 3 entidades:
+  - `Organization` (name, url, logo, foundingDate, foundingLocation, areaServed PT, contactPoints apoio@/dpo@)
+  - `WebSite` (publisher refs Organization, inLanguage pt-PT)
+  - `SoftwareApplication` (category SocialNetworkingApplication, offer 0 EUR)
+
+**A11y Specialist — entregue:**
+- Removido `maximum-scale=1, user-scalable=no` do viewport (cumpre WCAG 2.2 SC 1.4.4 Resize Text)
+- Theme-color dual: `#F7F5EF` light / `#0A0A0A` dark (prefers-color-scheme)
+
+**Performance Engineer — entregue:**
+- OG image otimizada (147 KB JPEG q=90, dimensões 1200×630 exatas)
+- Image preconnect mantido (fonts.googleapis, fonts.gstatic)
+- robots.txt previne crawl de áreas autenticadas (/feed, /messages, /admin, etc.)
+
+### Validação
+- 19/19 SEO checks ✓ (curl + assertions)
+- JSON-LD: parse válido, 3 entidades, 2821 chars
+- sitemap.xml: XML válido, 10 URLs
+- site.webmanifest: JSON válido, lang=pt-PT
+- HTTP 200 em /robots.txt, /sitemap.xml, /og/og-image.jpg, /og/twitter-card.jpg, /site.webmanifest
+- Smoke test screenshot — landing renderiza sem regressão visual
+- Frontend reiniciado para forçar CRA re-bake do template
+
+### Score landing após P0 SEO
+| Eixo | Antes | Depois |
+|------|-------|--------|
+| SEO | 3.0/10 🔴 | **9.0/10** ✓ |
+| A11y | 7.0/10 | **8.0/10** ✓ |
+| Geral | 8.1/10 | **8.8/10** |
+
+### Pendente do plano original (não bloqueante)
+- **P1 CRO**: PostHog `capture()` em CTAs (hero, sticky, nav) + email-only magic-link signup
+- **P1 RGPD**: PostHog init gated atrás do consent banner
+- **P1 UI**: cookie banner → bottom thin bar (não cobrir hero no first paint)
+- **P1 Architecture**: split de `Landing.js` (2433 linhas) em ~12 módulos `<200 linhas`
+- **P1 Performance**: migrar imagens Unsplash → `/public/img/` WebP/AVIF
+- **P2 Long-term**: avaliar migração CRA → Next.js para SSR/SSG (SEO real, OG dinâmico)

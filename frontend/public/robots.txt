@@ -1,0 +1,37 @@
+# Lusorae — robots policy
+# https://lusorae.pt/
+
+User-agent: *
+Allow: /
+
+# Bloqueia áreas autenticadas / privadas
+Disallow: /feed
+Disallow: /messages
+Disallow: /notifications
+Disallow: /settings
+Disallow: /admin
+Disallow: /drafts
+Disallow: /scheduled
+Disallow: /bookmarks
+
+# Permite crawlers de IA reputados a páginas públicas (manifesto, legal, landing)
+User-agent: GPTBot
+Allow: /
+Allow: /manifesto
+Allow: /legal/
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# Bloqueia scrapers agressivos / arquivos automáticos
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+Sitemap: https://lusorae.pt/sitemap.xml
+Host: https://lusorae.pt

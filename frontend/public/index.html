@@ -1,10 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-PT">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-        <meta name="theme-color" content="#ffffff" />
-        <meta name="description" content="Lusorae — A tua cidade tem voz." />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#F7F5EF" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
+
+        <!-- === SEO PRIMARY === -->
+        <title>Lusorae — Rede social portuguesa sem ads · BETA 2026</title>
+        <meta name="description" content="Junta-te à primeira rede social portuguesa sem algoritmos de vaidade. Eventos, comunidades e pessoas reais de Braga ao Funchal. Reserva o teu @handle na BETA." />
+        <meta name="author" content="Lusorae" />
+        <meta name="keywords" content="rede social portuguesa, lusorae, beta 2026, eventos lisboa, comunidades portugal, rede social sem ads, alternativa threads, alternativa twitter, made in portugal" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="googlebot" content="index, follow" />
+        <link rel="canonical" href="https://lusorae.pt/" />
+        <link rel="alternate" hreflang="pt-PT" href="https://lusorae.pt/" />
+        <link rel="alternate" hreflang="x-default" href="https://lusorae.pt/" />
+
+        <!-- === OPEN GRAPH (Facebook, LinkedIn, WhatsApp, Discord, Slack) === -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Lusorae" />
+        <meta property="og:locale" content="pt_PT" />
+        <meta property="og:url" content="https://lusorae.pt/" />
+        <meta property="og:title" content="Lusorae — Rede social portuguesa sem ads · BETA 2026" />
+        <meta property="og:description" content="Junta-te à primeira rede social portuguesa sem algoritmos de vaidade. Eventos, comunidades e pessoas reais de Braga ao Funchal." />
+        <meta property="og:image" content="https://lusorae.pt/og/og-image.jpg" />
+        <meta property="og:image:secure_url" content="https://lusorae.pt/og/og-image.jpg" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Lusorae — A tua cidade. A tua rede. BETA 2026 · Made in Portugal" />
+
+        <!-- === TWITTER / X CARDS === -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@lusorae_pt" />
+        <meta name="twitter:creator" content="@lusorae_pt" />
+        <meta name="twitter:url" content="https://lusorae.pt/" />
+        <meta name="twitter:title" content="Lusorae — Rede social portuguesa sem ads · BETA 2026" />
+        <meta name="twitter:description" content="Junta-te à primeira rede social portuguesa sem algoritmos de vaidade. Eventos, comunidades e pessoas reais de Braga ao Funchal." />
+        <meta name="twitter:image" content="https://lusorae.pt/og/twitter-card.jpg" />
+        <meta name="twitter:image:alt" content="Lusorae — A tua cidade. A tua rede." />
 
         <!-- Favicons (white background) -->
         <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="any" />
@@ -36,7 +71,75 @@
         work correctly both with client-side routing and a non-root public URL.
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
-        <title>Lusorae</title>
+        <!-- Title already set above in SEO PRIMARY block -->
+
+        <!-- === STRUCTURED DATA (Schema.org JSON-LD) === -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Organization",
+                    "@id": "https://lusorae.pt/#organization",
+                    "name": "Lusorae",
+                    "url": "https://lusorae.pt/",
+                    "logo": {
+                        "@type": "ImageObject",
+                        "url": "https://lusorae.pt/brand/lusorae-wordmark.png",
+                        "width": 1376,
+                        "height": 768
+                    },
+                    "description": "Rede social portuguesa sem ads, sem algoritmos de vaidade. Eventos, comunidades e pessoas reais de Braga ao Funchal.",
+                    "foundingDate": "2026",
+                    "foundingLocation": {
+                        "@type": "Place",
+                        "name": "Lisboa, Portugal"
+                    },
+                    "areaServed": {
+                        "@type": "Country",
+                        "name": "Portugal"
+                    },
+                    "contactPoint": [
+                        {
+                            "@type": "ContactPoint",
+                            "email": "apoio@lusorae.pt",
+                            "contactType": "customer support",
+                            "availableLanguage": ["Portuguese", "English"]
+                        },
+                        {
+                            "@type": "ContactPoint",
+                            "email": "dpo@lusorae.pt",
+                            "contactType": "Data Protection Officer",
+                            "availableLanguage": ["Portuguese"]
+                        }
+                    ]
+                },
+                {
+                    "@type": "WebSite",
+                    "@id": "https://lusorae.pt/#website",
+                    "url": "https://lusorae.pt/",
+                    "name": "Lusorae",
+                    "description": "Rede social portuguesa sem ads · BETA 2026",
+                    "publisher": { "@id": "https://lusorae.pt/#organization" },
+                    "inLanguage": "pt-PT"
+                },
+                {
+                    "@type": "SoftwareApplication",
+                    "name": "Lusorae",
+                    "operatingSystem": "Web, iOS, Android",
+                    "applicationCategory": "SocialNetworkingApplication",
+                    "description": "Rede social portuguesa sem ads · eventos, comunidades e pessoas reais.",
+                    "offers": {
+                        "@type": "Offer",
+                        "price": "0",
+                        "priceCurrency": "EUR"
+                    },
+                    "publisher": { "@id": "https://lusorae.pt/#organization" }
+                }
+            ]
+        }
+        </script>
+
         <style>
             #emergent-badge { display: none !important; visibility: hidden !important; pointer-events: none !important; opacity: 0 !important; }
         </style>

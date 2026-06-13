@@ -1,7 +1,7 @@
 {
-  "name": "Lusorae",
+  "name": "Lusorae — Rede social portuguesa",
   "short_name": "Lusorae",
-  "description": "Lusorae — A tua cidade tem voz.",
+  "description": "Rede social portuguesa sem ads · eventos, comunidades e pessoas reais. BETA 2026.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -22,8 +22,12 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#F7F5EF",
+  "background_color": "#F7F5EF",
   "display": "standalone",
-  "start_url": "/"
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "lang": "pt-PT",
+  "categories": ["social", "lifestyle", "communication"]
 }
