@@ -1,13 +1,16 @@
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-    User, Settings, Archive, LogOut, Bookmark, FileText, Clock,
-    Shield, ChevronRight, Users as UsersIcon, Coffee, Map as MapIcon,
-} from "lucide-react";
+import { LogOut, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
+import {
+    DRAWER_PERSONAL,
+    DRAWER_DISCOVER,
+    DRAWER_STORIES,
+    drawerAccountFor,
+} from "../lib/navItems";
 import { PT } from "../theme/editorial";
 
 /**
@@ -153,33 +156,19 @@ export function ProfileSidebarMenu({
     const SECTIONS = [
         {
             title: "Painel pessoal",
-            items: [
-                { to: profileTo, label: "O meu perfil", icon: User, testid: "drawer-profile" },
-                { to: "/bookmarks", label: "Guardados", icon: Bookmark, testid: "drawer-bookmarks" },
-                { to: "/drafts", label: "Rascunhos", icon: FileText, testid: "drawer-drafts" },
-                { to: "/scheduled", label: "Agendados", icon: Clock, testid: "drawer-scheduled" },
-            ],
+            items: DRAWER_PERSONAL(profileTo),
         },
         {
             title: "Descobrir",
-            items: [
-                { to: "/communities", label: "Comunidades", icon: UsersIcon, testid: "drawer-communities" },
-                { to: "/mesas", label: "Mesas", icon: Coffee, testid: "drawer-mesas" },
-                { to: "/topologia", label: "Topologia", icon: MapIcon, testid: "drawer-topologia" },
-            ],
+            items: DRAWER_DISCOVER,
         },
         {
             title: "Stories",
-            items: [
-                { to: "/stories/archive", label: "Arquivo de stories", icon: Archive, testid: "drawer-stories-archive" },
-            ],
+            items: DRAWER_STORIES,
         },
         {
             title: "Conta",
-            items: [
-                { to: "/settings", label: "Definições", icon: Settings, testid: "drawer-settings" },
-                { to: "/legal", label: "Centro legal", icon: Shield, testid: "drawer-legal" },
-            ],
+            items: drawerAccountFor(user),
         },
     ];
 

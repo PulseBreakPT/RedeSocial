@@ -1,23 +1,44 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Compass, MessageCircle, Plus, PenSquare, Image as ImageIcon, Bell, Sparkles } from "lucide-react";
+import { Plus, PenSquare, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useHideOnScroll } from "../hooks/useHideOnScroll";
 import { haptic as centralHaptic } from "../lib/haptics";
+import { PRIMARY_NAV } from "../lib/navItems";
 import { PT } from "../theme/editorial";
 
 // =============================================================================
 // LUSORAE — Mobile Bottom Nav (clean editorial)
-// Bar paper limpo, FAB central premium ink com soft shadow.
-// Long-press → quick actions sheet.
+// 5 slots padrão indústria (Twitter/IG/Threads): Início · Explorar · FAB ·
+// Notif · DMs. Rotas secundárias (Perfil, Calendário, Definições, Admin)
+// chegam-se via avatar do MobileTopBar → ProfileSidebarMenu (drawer).
+//
+// Itens primários consumidos do single source of truth /lib/navItems.js,
+// garantindo paridade automática com a desktop sidebar.
 // =============================================================================
+
+// Adapta PRIMARY_NAV para o formato do bottom-nav e injecta o FAB central.
+// Os 4 itens (Home, Explorar, Notif, DMs) ficam ao redor do FAB de criação.
+const MOBILE_LABELS_OVERRIDE = {
+    "nav-notifications": "Notif.",
+    "nav-messages":      "DMs",
+};
+const mnavTestidFor = (id) => id.replace(/^nav-/, "mnav-");
+const PRIMARY_AS_MNAV = PRIMARY_NAV.map((it) => ({
+    to:       it.to,
+    icon:     it.icon,
+    end:      it.end,
+    label:    MOBILE_LABELS_OVERRIDE[it.testid] || it.label,
+    testid:   mnavTestidFor(it.testid),
+    badgeKey: it.badgeKey,
+}));
 const navItems = [
-    { to: "/feed",     icon: Home,         testid: "mnav-home",     end: true, label: "Início" },
-    { to: "/explore",  icon: Compass,      testid: "mnav-explore",  label: "Explorar" },
-    { to: null,        icon: Plus,         testid: "mnav-compose",  center: true },
-    { to: "/notifications", icon: Bell,    testid: "mnav-notifications", label: "Notif.", badgeKey: "notif" },
-    { to: "/messages", icon: MessageCircle,testid: "mnav-messages", label: "DMs", badgeKey: "msg" },
+    PRIMARY_AS_MNAV[0],                                              // Início
+    PRIMARY_AS_MNAV[1],                                              // Explorar
+    { to: null, icon: Plus, testid: "mnav-compose", center: true }, // FAB
+    PRIMARY_AS_MNAV[2],                                              // Notif
+    PRIMARY_AS_MNAV[3],                                              // DMs
 ];
 
 function haptic(ms = 12) {

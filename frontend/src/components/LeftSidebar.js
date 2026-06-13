@@ -1,50 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
-import {
-    Home, Compass, Bell, MessageCircle, Users as UsersIcon,
-    PenSquare, MoreHorizontal, Shield, Settings,
-} from "lucide-react";
+import { PenSquare, MoreHorizontal } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar } from "./Avatar";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { api } from "../lib/api";
 import { ProfileSidebarMenu } from "./ProfileSidebarMenu";
+import { PRIMARY_NAV, DESKTOP_EXTRA, ADMIN_NAV } from "../lib/navItems";
 import { PT } from "../theme/editorial";
 
 // =============================================================================
 // DESIGN SYSTEM: LUSORAE EDITORIAL — ver /src/theme/EDITORIAL.md
 // Left Sidebar (clean editorial, alinhado com a Landing/Auth).
+// Composição da nav vive em /lib/navItems.js (single source of truth) — ver lá.
 // =============================================================================
-//
-// Removido (legacy fanzine PT):
-//   · sombras 3D offset (`3px 3px 0 ink` / `4px 4px 0 ink`)
-//   · stickers rotacionados
-//   · text-shadow no logo
-//   · pill activo vermelho com sombra dura
-//
-// Lusorae Editorial:
-//   · nav active = pill ink suave (linear-gradient charcoal → black)
-//   · CTA Publicar = pill ink premium com soft shadow
-//   · perfil card = paper limpo com hairline
-//   · kickers mono uppercase com dot pulse
-//
-// =============================================================================
-
-const NAV_ITEMS = [
-    { to: "/feed",          label: "Início",         icon: Home,         testid: "nav-home", end: true },
-    { to: "/explore",       label: "Explorar",       icon: Compass,      testid: "nav-explore" },
-    { to: "/notifications", label: "Notificações",   icon: Bell,         testid: "nav-notifications", badgeKey: "notif" },
-    { to: "/messages",      label: "Mensagens",      icon: MessageCircle,testid: "nav-messages", badgeKey: "msg" },
-    { to: "__profile__",    label: "Perfil",         icon: UsersIcon,    testid: "nav-profile" },
-    { to: "/settings",      label: "Definições",     icon: Settings,     testid: "nav-settings" },
-];
-
-// Itens ocultados no pré-lançamento (mantidos como rotas, fora da nav)
-// - Tendências, Guardados, Comunidades, Mesas, Topologia, Calendário,
-//   Rascunhos, Agendados, Plus & Aura
-// Re-acessíveis via URL directa ou via redes acima de 500 DAU.
-
-const ADMIN_NAV = { to: "/admin", label: "Admin", icon: Shield, testid: "nav-admin" };
 
 export function LeftSidebar({ onCompose }) {
     const { user } = useAuth();
@@ -114,9 +83,15 @@ export function LeftSidebar({ onCompose }) {
             {/* "Edição · DD/MM" REMOVIDO a pedido do utilizador.
                 Mantemos só o logo + nav, sem cronómetros editoriais. */}
 
-            {/* Nav */}
+            {/* Nav — composta de PRIMARY_NAV + DESKTOP_EXTRA + ADMIN_NAV (condicional).
+                Ordem: rotas de uso diário primeiro; rotas secundárias (Calendário,
+                Perfil, Definições) imediatamente a seguir; Admin no final. */}
             <nav className="flex flex-col gap-0.5 min-h-0 overflow-y-auto no-scrollbar pr-1">
-                {[...NAV_ITEMS, ...(user?.is_admin ? [ADMIN_NAV] : [])].map((item) => {
+                {[
+                    ...PRIMARY_NAV,
+                    ...DESKTOP_EXTRA,
+                    ...(user?.is_admin ? [ADMIN_NAV] : []),
+                ].map((item) => {
                     const Icon = item.icon;
                     const badge = item.badgeKey ? counts[item.badgeKey] : 0;
                     // resolve link dinâmico do perfil
